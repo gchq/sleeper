@@ -39,6 +39,7 @@ public class LoggingStack extends NestedStack {
         for (LogGroupRef ref : LogGroupRef.values()) {
             logGroupByRef.put(ref, createLogGroup(this, ref, instanceProperties));
         }
+        Utils.addTags(this, instanceProperties);
     }
 
     public ILogGroup getLogGroup(LogGroupRef ref) {

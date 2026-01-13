@@ -26,6 +26,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Parses individual log messages from the state store comitter.
+ */
 public class ReadStateStoreCommitterLogs {
 
     private ReadStateStoreCommitterLogs() {
@@ -38,6 +41,9 @@ public class ReadStateStoreCommitterLogs {
             "Lambda finished at ([^\\s]+) |" + // Lambda finished message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
+    /**
+     * Constants to refer to capture groups in the regular expression above.
+     */
     private static class CapturingGroups {
         private static final int START_TIME = 1;
         private static final int FINISH_TIME = 2;
@@ -74,6 +80,14 @@ public class ReadStateStoreCommitterLogs {
         return null;
     }
 
+    /**
+     * Reads an entry from the state store committer log that matches one of the expected types of message. This can be
+     * a {@link StateStoreCommitterRunStarted}, a {@link StateStoreCommitterRunFinished} or
+     * a {@link StateStoreCommitSummary}.
+     *
+     * @param  entry the log entry as returned from Amazon CloudWatch
+     * @return       the parsed entry, or null if it was not one of the expected message types
+     */
     public static StateStoreCommitterLogEntry read(List<ResultField> entry) {
         String logStream = null;
         String timestamp = null;

@@ -109,7 +109,7 @@ public class IngestStack extends NestedStack {
         IFunction taskCreator = lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
         coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(this, cluster, taskCreator);
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks) {

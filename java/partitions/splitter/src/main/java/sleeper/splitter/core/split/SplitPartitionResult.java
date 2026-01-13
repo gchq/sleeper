@@ -17,6 +17,8 @@ package sleeper.splitter.core.split;
 
 import sleeper.core.partition.Partition;
 
+import java.util.stream.Stream;
+
 public class SplitPartitionResult {
 
     private final Partition parentPartition;
@@ -39,5 +41,9 @@ public class SplitPartitionResult {
 
     public Partition getRightChild() {
         return rightChild;
+    }
+
+    public Stream<Partition> streamChildPartitions() {
+        return Stream.of(leftChild, rightChild);
     }
 }

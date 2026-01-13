@@ -21,7 +21,18 @@ import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
+/**
+ * Creates reports on the status of files tracked by the ingest batcher. The format and output destination can vary
+ * based on the implementation.
+ */
 public interface IngestBatcherReporter {
 
+    /**
+     * Creates a report on the status of files tracked by the ingest batcher.
+     *
+     * @param statusList    the file tracking information retrieved from the ingest batcher store
+     * @param queryType     the type of query to produce the report
+     * @param tableProvider a provider to retrieve the status of a Sleeper table
+     */
     void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
 }

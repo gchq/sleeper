@@ -101,6 +101,6 @@ public class KeepLambdaWarmStack extends NestedStack {
                 .build();
         new CfnOutput(this, "QueryExecutionPeriodicTriggerRuleARN", ruleArn);
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

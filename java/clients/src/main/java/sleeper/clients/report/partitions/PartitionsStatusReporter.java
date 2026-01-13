@@ -27,6 +27,9 @@ import sleeper.splitter.core.status.PartitionsStatus;
 
 import java.io.PrintStream;
 
+/**
+ * Returns partition status information to the user on the console.
+ */
 public class PartitionsStatusReporter {
 
     private static final int SPLIT_VALUE_MAX_LENGTH = 30;
@@ -53,6 +56,11 @@ public class PartitionsStatusReporter {
         this.out = out;
     }
 
+    /**
+     * Writes a report.
+     *
+     * @param status the report
+     */
     public void report(PartitionsStatus status) {
         out.println();
         out.println("Partitions Status Report:");

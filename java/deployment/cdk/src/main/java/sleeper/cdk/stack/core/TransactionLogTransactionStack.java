@@ -71,7 +71,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
         createFunctionToFollowTransactionLog(props.getInstanceProperties(), lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, trackDeadLetters);
-        Utils.addStackTagIfSet(this, props.getInstanceProperties());
+        Utils.addTags(this, props.getInstanceProperties());
     }
 
     private void createTransactionDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode,

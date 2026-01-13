@@ -62,7 +62,7 @@ public class EmrBulkImportStack extends NestedStack {
                 LogGroupRef.BULK_IMPORT_EMR_NON_PERSISTENT_START, commonEmrStack);
 
         configureJobStarterFunction(instanceProperties, jobStarter);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private static void configureJobStarterFunction(

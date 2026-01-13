@@ -21,11 +21,29 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Writes reports on the status of compaction tasks. The format and output destination can vary based on the
+ * implementation.
+ */
 @FunctionalInterface
 public interface CompactionTaskStatusReporter {
 
+    /**
+     * Writes a report on the status of compaction tasks.
+     *
+     * @param query the query for the report
+     * @param tasks the data retrieved from the task tracker
+     */
     void report(CompactionTaskQuery query, List<CompactionTaskStatus> tasks);
 
+    /**
+     * Creates a reporter of the given type as specified on the command line.
+     *
+     * @param  type                     the reporter type command line argument
+     * @param  out                      the output to write the report to
+     * @return                          the reporter
+     * @throws IllegalArgumentException if the reporter type is unrecognised
+     */
     static CompactionTaskStatusReporter from(String type, PrintStream out) {
         switch (type.toLowerCase(Locale.ROOT)) {
             case "standard":

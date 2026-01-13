@@ -15,8 +15,6 @@
  */
 package sleeper.splitter.core.split;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +24,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketches.Sketches;
+import sleeper.splitter.core.sketches.SketchForSplitting;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
 
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -43,7 +42,7 @@ public class FindPartitionSplitPoint {
     private FindPartitionSplitPoint() {
     }
 
-    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, Partition partition, List<Sketches> sketches, Supplier<String> idSupplier) {
+    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
         SplitPartitionResultFactory resultFactory = new SplitPartitionResultFactory(schema, idSupplier);
         return IntStream.range(0, schema.getRowKeyFields().size())
                 .mapToObj(dimension -> splitPointForDimension(schema, sketches, dimension)
@@ -52,9 +51,9 @@ public class FindPartitionSplitPoint {
                 .findFirst();
     }
 
-    private static Optional<Object> splitPointForDimension(Schema schema, List<Sketches> sketches, int dimension) {
+    private static Optional<Object> splitPointForDimension(Schema schema, SketchesForSplitting sketches, int dimension) {
         Field field = schema.getRowKeyFields().get(dimension);
-        ItemsSketch<?> sketch = unionSketches(sketches, field);
+        SketchForSplitting sketch = sketches.getSketch(field);
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 field.getName(), field.getType(), dimension);
         Optional<Object> splitPoint = splitPointForField(field, dimension, sketch);
@@ -65,11 +64,11 @@ public class FindPartitionSplitPoint {
         }
     }
 
-    private static Optional<Object> splitPointForField(Field field, int dimension, ItemsSketch<?> sketch) {
+    private static Optional<Object> splitPointForField(Field field, int dimension, SketchForSplitting sketch) {
         Comparator<Object> comparator = Sketches.createComparator(field.getType());
-        Object min = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
-        Object median = Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(0.5D), field);
-        Object max = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
+        Object min = sketch.getMin();
+        Object median = sketch.getMedian();
+        Object max = sketch.getMax();
         LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
         if (comparator.compare(min, max) > 0) {
             throw new IllegalStateException("Min > max");
@@ -81,17 +80,6 @@ public class FindPartitionSplitPoint {
             LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
             return Optional.empty();
         }
-    }
-
-    private static <T> ItemsSketch<T> unionSketches(List<Sketches> sketches, Field field) {
-        if (sketches.size() == 1) {
-            return sketches.get(0).getQuantilesSketch(field.getName());
-        }
-        ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
-        for (Sketches sketch : sketches) {
-            union.update(sketch.getQuantilesSketch(field.getName()));
-        }
-        return union.getResult();
     }
 
 }

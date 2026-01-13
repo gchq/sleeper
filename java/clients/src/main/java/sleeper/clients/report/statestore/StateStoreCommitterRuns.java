@@ -25,17 +25,32 @@ import java.util.Set;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Finds separate runs of the state store committer based on log entries.
+ */
 public class StateStoreCommitterRuns {
 
     private StateStoreCommitterRuns() {
     }
 
+    /**
+     * Organises a list of log entries into separate runs of the state store committer.
+     *
+     * @param  logs the log entries
+     * @return      the state store committer runs
+     */
     public static List<StateStoreCommitterRun> findRunsByLogStream(List<StateStoreCommitterLogEntry> logs) {
         BuilderByLogStream builder = new BuilderByLogStream();
         logs.forEach(builder::add);
         return builder.buildRuns();
     }
 
+    /**
+     * Indexes runs of the state store committer according to which Sleeper tables were included in that run.
+     *
+     * @param  runs the state store committer runs
+     * @return      a map from Sleeper table ID to runs that committed to that table
+     */
     public static Map<String, List<StateStoreCommitterRun>> indexRunsByTableId(List<StateStoreCommitterRun> runs) {
         Map<String, List<StateStoreCommitterRun>> runsByTableId = new HashMap<>();
         for (StateStoreCommitterRun run : runs) {
@@ -50,6 +65,10 @@ public class StateStoreCommitterRuns {
         return runsByTableId;
     }
 
+    /**
+     * Detects which state store committer log entries were in the same run of the committer. Assumes a one to one
+     * correspondence between a CloudWatch log stream and a run of the committter.
+     */
     private static class BuilderByLogStream {
         private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
 

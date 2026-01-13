@@ -29,10 +29,21 @@ import sleeper.core.tracker.job.status.JobStatusUpdate;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * A GSON plugin to write JSON for reports, on runs of jobs held in a job tracker. This must be used in combination with
+ * other GSON plugins for the specific type of jobs being processed.
+ */
 public class JsonJobRunReporter {
     private JsonJobRunReporter() {
     }
 
+    /**
+     * Creates a GSON serialiser for job runs. Handles {@link JobRuns} objects. Needs some handling specific to the
+     * type of jobs being processed.
+     *
+     * @param  getType a function to retreive the type of a status update for a job
+     * @return         the GSON serialiser
+     */
     public static JsonSerializer<JobRuns> jobRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
         return (processRuns, type, context) -> createJobRunsJson(processRuns, context, getType);
     }

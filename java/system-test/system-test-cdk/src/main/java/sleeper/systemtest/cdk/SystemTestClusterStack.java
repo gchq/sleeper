@@ -74,7 +74,7 @@ public class SystemTestClusterStack extends NestedStack {
             SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties.testPropertiesOnly(), properties::set, properties, networking, bucketStack, autoStopEcsClusterTasksStack);
-        Utils.addStackTagIfSet(this, properties);
+        Utils.addTags(this, properties);
     }
 
     private void create(

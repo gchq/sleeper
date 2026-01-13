@@ -23,6 +23,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
 
+/**
+ * A query to generate a report on all jobs held in a job tracker.
+ */
 public class AllJobsQuery implements JobQuery {
     private final String tableId;
 

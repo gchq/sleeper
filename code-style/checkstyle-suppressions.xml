@@ -72,8 +72,6 @@
     <suppress files="[\\/]sleeper[\\/]clients[\\/]images[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]clients[\\/]report[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]clients[\\/]report[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]table[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]table[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]testutil[\\/].*" id="missingJavadocMethod"/>

@@ -115,7 +115,7 @@ public class QueryStack extends NestedStack {
 
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
         leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,

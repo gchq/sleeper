@@ -53,14 +53,29 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedInge
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.validatedIngestStartedStatus;
 
+/**
+ * Creates example data for testing reports on ingest jobs.
+ */
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
     }
 
+    /**
+     * Creates a record of messages on the standard ingest job queue, with no messages on any other ingest queues.
+     *
+     * @param  messages the number of standard ingest job messages
+     * @return          the queue message counts
+     */
     public static IngestQueueMessages ingestMessageCount(int messages) {
         return IngestQueueMessages.builder().ingestMessages(messages).build();
     }
 
+    /**
+     * Creates example data for ingest jobs from the job tracker with a mix of statuses where the jobs have not yet
+     * finished.
+     *
+     * @return the job statuses
+     */
     public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
         IngestJob job1 = createJob(1, 1);
         Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
@@ -91,6 +106,11 @@ public class IngestJobStatusReporterTestData {
                 ingestJobStatus(job1, acceptedRun(job1, startTime1)));
     }
 
+    /**
+     * Creates example data for ingest jobs from the job tracker with a mix of different statuses.
+     *
+     * @return the job statuses
+     */
     public static List<IngestJobStatus> mixedJobStatuses() {
         IngestJob job1 = createJob(1, 1);
         Instant startTime1 = Instant.parse("2022-09-21T13:34:12.001Z");
@@ -130,6 +150,11 @@ public class IngestJobStatusReporterTestData {
                         List.of("Something went wrong", "More details")));
     }
 
+    /**
+     * Creates example data for a single ingest job from the job tracker that has been run several times.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> jobWithMultipleRuns() {
         IngestJob job = createJob(1, 1);
 
@@ -139,6 +164,12 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestRun(job, task(1), summary(Instant.parse("2022-10-12T10:01:00.001Z"), Duration.ofSeconds(20), 300, 200), 1)));
     }
 
+    /**
+     * Creates example data for ingest jobs from the job tracker with a variety of values for their statistics. This
+     * includes the duration of the job, and the number of rows read and written.
+     *
+     * @return the job statuses
+     */
     public static List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
         Instant startTime1 = Instant.parse("2022-10-13T10:00:10Z");
         Instant startTime2 = Instant.parse("2022-10-13T12:01:10Z");
@@ -152,12 +183,24 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000), 1));
     }
 
+    /**
+     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has been accepted
+     * but not yet started.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> acceptedJob() {
         IngestJob job = createJob(1, 2);
         return List.of(ingestJobStatus(job,
                 acceptedRun(job, Instant.parse("2023-06-05T17:20:00Z"))));
     }
 
+    /**
+     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has been accepted
+     * and started, but not yet finished.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> acceptedJobWhichStarted() {
         IngestJob job = createJob(1, 2);
         return List.of(ingestJobStatus(job,
@@ -166,6 +209,12 @@ public class IngestJobStatusReporterTestData {
                         Instant.parse("2023-06-05T18:20:00Z"))));
     }
 
+    /**
+     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has been rejected
+     * with a single reason for the rejection.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> rejectedJobWithOneReason() {
         List<String> reasons = List.of("Test validation reason");
         IngestJob job = createJob(1, 2);
@@ -173,6 +222,12 @@ public class IngestJobStatusReporterTestData {
                 rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
+    /**
+     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has been rejected
+     * with multiple reasons for the rejection.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> rejectedJobWithMultipleReasons() {
         List<String> reasons = List.of("Test validation reason 1", "Test validation reason 2", "Test validation reason 3");
         IngestJob job = createJob(1, 2);
@@ -180,6 +235,11 @@ public class IngestJobStatusReporterTestData {
                 rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
+    /**
+     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has fully completed.
+     *
+     * @return the job status list with a single job
+     */
     public static List<IngestJobStatus> finishedBulkImportJob() {
         IngestJob job8 = createJob(8, 8);
         Instant startTime8 = Instant.parse("2022-09-28T13:34:12.001Z");
@@ -190,6 +250,14 @@ public class IngestJobStatusReporterTestData {
                 ingestAddedFilesStatus(startTime8.plus(Duration.ofMinutes(11)), 1))));
     }
 
+    /**
+     * Creates an example ingest or bulk import job. This can be used to create further example data for testing
+     * reports.
+     *
+     * @param  jobNum         a number identifying this job as distinct from others in the test
+     * @param  inputFileCount the number of input files in the job (will be named test1.parquet, test2.parquet, etc.)
+     * @return                the job
+     */
     public static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(job(jobNum))
@@ -199,14 +267,38 @@ public class IngestJobStatusReporterTestData {
                 .build();
     }
 
+    /**
+     * Creates an example status update when a bulk import job was accepted in the bulk import starter.
+     *
+     * @param  job            the bulk import job, as an ingest job
+     * @param  validationTime the time the job was accepted in the bulk import starter
+     * @return                the status update
+     */
     public static IngestJobAcceptedStatus acceptedStatusUpdate(IngestJob job, Instant validationTime) {
         return IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime));
     }
 
+    /**
+     * Creates an example status update when a bulk import job was rejected in the bulk import starter. Usually this
+     * means a validation failure.
+     *
+     * @param  job            the bulk import job, as an ingest job
+     * @param  validationTime the time the job was rejected in the bulk import starter
+     * @return                the status update
+     */
     public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime) {
         return rejectedStatusUpdate(job, validationTime, null);
     }
 
+    /**
+     * Creates an example status update when a bulk import job was rejected in the bulk import starter. Usually this
+     * means a validation failure.
+     *
+     * @param  job            the bulk import job, as an ingest job
+     * @param  validationTime the time the job was rejected in the bulk import starter
+     * @param  jsonMessage    the JSON body of the message that was rejected
+     * @return                the status update
+     */
     public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime, String jsonMessage) {
         return IngestJobRejectedStatus.builder().inputFileCount(job.getFileCount())
                 .validationTime(validationTime).updateTime(defaultUpdateTime(validationTime))
