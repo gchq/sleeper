@@ -117,18 +117,63 @@ public class InMemoryTablePropertiesStoreTest {
         @Test
         void shouldUpdateTablePropertiesByPreviousName() {
             // Given
-            tableProperties.setNumber(PAGE_SIZE, 123);
-            store.save(tableProperties);
-            tableProperties.set(TABLE_ID, "newId");
-            tableProperties.set(TABLE_NAME, "newName");
-            tableProperties.setList(PREVIOUS_TABLE_NAMES, List.of(tableName));
-            tableProperties.setNumber(PAGE_SIZE, 456);
             store.save(tableProperties);
 
-            // When / Then
+            // When
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(TABLE_NAME, "newName");
+            tableProperties.setList(PREVIOUS_TABLE_NAMES, List.of(tableName));
+            store.save(tableProperties);
+
+            // Then
             assertThat(store.loadByName("newName"))
-                    .extracting(properties -> properties.getInt(PAGE_SIZE))
-                    .isEqualTo(456);
+                    .extracting(properties -> properties.get(TABLE_ID))
+                    .isEqualTo(tableId);
+        }
+
+        @Test
+        void shouldUpdateTablePropertiesWithMultiplePreviousNames() {
+            // Given
+            store.save(tableProperties);
+
+            // When
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(TABLE_NAME, "newNewName");
+            tableProperties.setList(PREVIOUS_TABLE_NAMES, List.of(tableName, "newName"));
+            store.save(tableProperties);
+
+            // Then
+            assertThat(store.loadByName("newNewName"))
+                    .extracting(properties -> properties.get(TABLE_ID))
+                    .isEqualTo(tableId);
+        }
+
+        @Test
+        void shouldBeAbleToSaveTableEvenIfNewTableCreatedWithPreviousName() {
+            // Given
+            // Create table
+            store.save(tableProperties);
+            //Rename Table
+            tableProperties.set(TABLE_NAME, "newName");
+            store.save(tableProperties);
+            //Create new table with original name
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(TABLE_NAME, tableName);
+            store.save(tableProperties);
+
+            //When
+            //Attempt to rename original table
+            tableProperties.set(TABLE_ID, tableId);
+            tableProperties.set(TABLE_NAME, "newNewName");
+            store.save(tableProperties);
+
+            // Then
+            assertThat(store.loadByName("newNewName"))
+                    .extracting(properties -> properties.get(TABLE_ID))
+                    .isEqualTo(tableId);
+            assertThat(store.loadByName(tableName))
+                    .extracting(properties -> properties.get(TABLE_ID))
+                    .isNotEqualTo(tableId);
         }
 
         @Test
