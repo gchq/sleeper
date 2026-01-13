@@ -173,6 +173,7 @@ public class IngestBatcherStack extends NestedStack {
                 .targets(List.of(new LambdaFunction(jobCreatorLambda)))
                 .build();
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+        Utils.addTags(this, instanceProperties);
     }
 
     public IQueue getSubmitQueue() {

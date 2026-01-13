@@ -65,7 +65,7 @@ public class CompactionStack extends NestedStack {
 
         new CompactionTaskResources(this, props, lambdaCode, jarsBucket, jobResources, coreStacks);
 
-        Utils.addStackTagIfSet(this, props.getInstanceProperties());
+        Utils.addTags(this, props.getInstanceProperties());
     }
 
     public Queue getCompactionJobsQueue() {

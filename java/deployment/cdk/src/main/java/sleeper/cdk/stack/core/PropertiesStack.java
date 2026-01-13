@@ -72,6 +72,6 @@ public class PropertiesStack extends NestedStack {
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

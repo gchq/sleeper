@@ -49,7 +49,7 @@ public class TopicStack extends NestedStack {
             topic.addSubscription(new EmailSubscription(emailAddress));
         }
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     public Topic getTopic() {

@@ -33,6 +33,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Vpc"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -151,6 +155,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -251,6 +259,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -273,6 +285,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Configuration"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -421,6 +437,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -538,7 +558,17 @@
                   "Outputs.TestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
                 ]
               }
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "TableDataNestedStackTableDataNestedStackResourceBB9D1CD9": {
@@ -546,7 +576,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "TemplateURL": "removed-for-test"
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableData"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestNestedStackIngestNestedStackResourceD6AFAC89": {
@@ -669,6 +709,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -765,6 +809,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -787,6 +835,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "EmrStudio"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -864,7 +916,17 @@
                   "Outputs.TestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
                 ]
               }
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "DashboardNestedStackDashboardNestedStackResource8EE10CBD": {
@@ -999,6 +1061,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Dashboard"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1093,6 +1159,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1102,7 +1172,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "TemplateURL": "removed-for-test"
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableIndex"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE": {
@@ -1207,6 +1287,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1216,7 +1300,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "TemplateURL": "removed-for-test"
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestTracker"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "LoggingNestedStackLoggingNestedStackResourceBF8F7D28": {
@@ -1224,7 +1318,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "TemplateURL": "removed-for-test"
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "TopicNestedStackTopicNestedStackResource178581F0": {
@@ -1237,6 +1341,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Topic"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1383,6 +1491,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1411,6 +1523,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoDeleteS3Objects"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1499,6 +1615,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1596,7 +1716,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "TemplateURL": "removed-for-test"
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TransactionLogStateStore"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "PropertiesNestedStackPropertiesNestedStackResourceE8D202E1": {
@@ -2343,6 +2473,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Properties"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -2371,6 +2505,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -2670,7 +2808,17 @@
                   "Outputs.TestInstanceLoggingstatestorecommitterCB6F35F0Arn"
                 ]
               }
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Policies"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "AutoStopEmrServerlessApplicationNestedStackAutoStopEmrServerlessApplicationNestedStackResource26009A0C": {
@@ -2697,6 +2845,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEmrServerlessApplication"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -2954,7 +3106,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-job-creation-trigger"
+            "LogGroupName": "sleeper-test-instance-compaction-job-creation-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "queryexecutor2F9ADA64": {
@@ -2963,7 +3125,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-query-executor"
+            "LogGroupName": "sleeper-test-instance-query-executor",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkimporteksstarterE7F97994": {
@@ -2972,7 +3144,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-import-eks-starter"
+            "LogGroupName": "sleeper-test-instance-bulk-import-eks-starter",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statesnapshotcreation91FC7C75": {
@@ -2981,7 +3163,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-snapshot-creation"
+            "LogGroupName": "sleeper-test-instance-state-snapshot-creation",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkimportNonPersistentEMRstart4DABFB3A": {
@@ -2990,7 +3182,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-import-NonPersistentEMR-start"
+            "LogGroupName": "sleeper-test-instance-bulk-import-NonPersistentEMR-start",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autostopemrserverless5D91AD47": {
@@ -2999,7 +3201,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-stop-emr-serverless"
+            "LogGroupName": "sleeper-test-instance-auto-stop-emr-serverless",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "FargateCompactionTasksBE3CEE8A": {
@@ -3008,7 +3220,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-FargateCompactionTasks"
+            "LogGroupName": "sleeper-test-instance-FargateCompactionTasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statesnapshotdeletion1B65D1E1": {
@@ -3017,7 +3239,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-snapshot-deletion"
+            "LogGroupName": "sleeper-test-instance-state-snapshot-deletion",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "propertieswriterproviderEB9514F4": {
@@ -3026,7 +3258,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-properties-writer-provider"
+            "LogGroupName": "sleeper-test-instance-properties-writer-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "partitionsplittinghandler1B821F8F": {
@@ -3035,7 +3277,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-partition-splitting-handler"
+            "LogGroupName": "sleeper-test-instance-partition-splitting-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "querywebsockethandlerF25883F9": {
@@ -3044,7 +3296,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-query-websocket-handler"
+            "LogGroupName": "sleeper-test-instance-query-websocket-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "vpccheck00A59E42": {
@@ -3053,7 +3315,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-vpc-check"
+            "LogGroupName": "sleeper-test-instance-vpc-check",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "compactioncommitbatcherA0C3F222": {
@@ -3062,7 +3334,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-commit-batcher"
+            "LogGroupName": "sleeper-test-instance-compaction-commit-batcher",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "tabledefiner1B009C7F": {
@@ -3071,7 +3353,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-table-definer"
+            "LogGroupName": "sleeper-test-instance-table-definer",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "querykeepwarm130FBF6F": {
@@ -3080,7 +3372,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-query-keep-warm"
+            "LogGroupName": "sleeper-test-instance-query-keep-warm",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "ingestbatchersubmitfiles36085FD4": {
@@ -3089,7 +3391,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-ingest-batcher-submit-files"
+            "LogGroupName": "sleeper-test-instance-ingest-batcher-submit-files",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "garbagecollector6811DA7A": {
@@ -3098,7 +3410,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-garbage-collector"
+            "LogGroupName": "sleeper-test-instance-garbage-collector",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "vpccheckprovider90DDB7B7": {
@@ -3107,7 +3429,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-vpc-check-provider"
+            "LogGroupName": "sleeper-test-instance-vpc-check-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "compactiontaskscreator49AB98C5": {
@@ -3116,7 +3448,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-tasks-creator"
+            "LogGroupName": "sleeper-test-instance-compaction-tasks-creator",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "partitionsplittingtrigger643F1AC9": {
@@ -3125,7 +3467,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-partition-splitting-trigger"
+            "LogGroupName": "sleeper-test-instance-partition-splitting-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IteratorApplyingathenahandler386594FD": {
@@ -3134,7 +3486,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-IteratorApplying-athena-handler"
+            "LogGroupName": "sleeper-test-instance-IteratorApplying-athena-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autostopecsclustertasks0E1ACADF": {
@@ -3143,7 +3505,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-stop-ecs-cluster-tasks"
+            "LogGroupName": "sleeper-test-instance-auto-stop-ecs-cluster-tasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "garbagecollectortriggerE916FCCF": {
@@ -3152,7 +3524,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-garbage-collector-trigger"
+            "LogGroupName": "sleeper-test-instance-garbage-collector-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autostopecsclustertasksproviderE6EF3690": {
@@ -3161,7 +3543,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-stop-ecs-cluster-tasks-provider"
+            "LogGroupName": "sleeper-test-instance-auto-stop-ecs-cluster-tasks-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "ingestcreatetasks1BDA4902": {
@@ -3170,7 +3562,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-ingest-create-tasks"
+            "LogGroupName": "sleeper-test-instance-ingest-create-tasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statetransactionfollower963FEA58": {
@@ -3179,7 +3581,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-transaction-follower"
+            "LogGroupName": "sleeper-test-instance-state-transaction-follower",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "compactionjobcreationhandler9AF30E88": {
@@ -3188,7 +3600,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-job-creation-handler"
+            "LogGroupName": "sleeper-test-instance-compaction-job-creation-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "metricspublisher3BBA1804": {
@@ -3197,7 +3619,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-metrics-publisher"
+            "LogGroupName": "sleeper-test-instance-metrics-publisher",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autodeletes3objects12690525": {
@@ -3206,7 +3638,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-delete-s3-objects"
+            "LogGroupName": "sleeper-test-instance-auto-delete-s3-objects",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkimportPersistentEMRstart64C1297A": {
@@ -3215,7 +3657,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-import-PersistentEMR-start"
+            "LogGroupName": "sleeper-test-instance-bulk-import-PersistentEMR-start",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "compactionjobdispatcher69528F2F": {
@@ -3224,7 +3676,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-job-dispatcher"
+            "LogGroupName": "sleeper-test-instance-compaction-job-dispatcher",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "compactioncustomtermination0F0AC2BB": {
@@ -3233,7 +3695,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-compaction-custom-termination"
+            "LogGroupName": "sleeper-test-instance-compaction-custom-termination",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "partitionsplittingfindtosplit360D4258": {
@@ -3242,7 +3714,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-partition-splitting-find-to-split"
+            "LogGroupName": "sleeper-test-instance-partition-splitting-find-to-split",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "metricstrigger28CF8B4E": {
@@ -3251,7 +3733,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-metrics-trigger"
+            "LogGroupName": "sleeper-test-instance-metrics-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "queryleafpartition1578E157": {
@@ -3260,7 +3752,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-query-leaf-partition"
+            "LogGroupName": "sleeper-test-instance-query-leaf-partition",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestTasks534A92CA": {
@@ -3269,7 +3771,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-IngestTasks"
+            "LogGroupName": "sleeper-test-instance-IngestTasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statetransactiondeletion103BE2C5": {
@@ -3278,7 +3790,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-transaction-deletion"
+            "LogGroupName": "sleeper-test-instance-state-transaction-deletion",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statesnapshotcreationtriggerF1B2F725": {
@@ -3287,7 +3809,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-snapshot-creation-trigger"
+            "LogGroupName": "sleeper-test-instance-state-snapshot-creation-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkexporttaskcreatorB880DEE3": {
@@ -3296,7 +3828,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-export-task-creator"
+            "LogGroupName": "sleeper-test-instance-bulk-export-task-creator",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statestorecommitter30FE6C5B": {
@@ -3305,7 +3847,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-statestore-committer"
+            "LogGroupName": "sleeper-test-instance-statestore-committer",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "Simpleathenahandler8B8139D8": {
@@ -3314,7 +3866,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-Simple-athena-handler"
+            "LogGroupName": "sleeper-test-instance-Simple-athena-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statetransactiondeletiontrigger2C17884E": {
@@ -3323,7 +3885,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-transaction-deletion-trigger"
+            "LogGroupName": "sleeper-test-instance-state-transaction-deletion-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkimportEMRServerlessstartD8228E87": {
@@ -3332,7 +3904,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-import-EMRServerless-start"
+            "LogGroupName": "sleeper-test-instance-bulk-import-EMRServerless-start",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkexport1C9790F1": {
@@ -3341,7 +3923,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-export"
+            "LogGroupName": "sleeper-test-instance-bulk-export",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autostopemrserverlessproviderBD3B8437": {
@@ -3350,7 +3942,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-stop-emr-serverless-provider"
+            "LogGroupName": "sleeper-test-instance-auto-stop-emr-serverless-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EksBulkImportStateMachineE0D868D1": {
@@ -3359,7 +3961,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "/aws/vendedlogs/states/sleeper-test-instance-EksBulkImportStateMachine"
+            "LogGroupName": "/aws/vendedlogs/states/sleeper-test-instance-EksBulkImportStateMachine",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "FargateBulkExportTasks4B026EF7": {
@@ -3368,7 +3980,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-FargateBulkExportTasks"
+            "LogGroupName": "sleeper-test-instance-FargateBulkExportTasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "autodeletes3objectsproviderFBB60680": {
@@ -3377,7 +3999,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-auto-delete-s3-objects-provider"
+            "LogGroupName": "sleeper-test-instance-auto-delete-s3-objects-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "tabledefinerprovider41F0A6E3": {
@@ -3386,7 +4018,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-table-definer-provider"
+            "LogGroupName": "sleeper-test-instance-table-definer-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "ingestbatchercreatejobs2FB73B9F": {
@@ -3395,7 +4037,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-ingest-batcher-create-jobs"
+            "LogGroupName": "sleeper-test-instance-ingest-batcher-create-jobs",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "bulkimporteks4A330953": {
@@ -3404,7 +4056,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-bulk-import-eks"
+            "LogGroupName": "sleeper-test-instance-bulk-import-eks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "propertieswriterA45719C7": {
@@ -3413,7 +4075,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-properties-writer"
+            "LogGroupName": "sleeper-test-instance-properties-writer",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "statesnapshotdeletiontrigger530F2E17": {
@@ -3422,7 +4094,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-state-snapshot-deletion-trigger"
+            "LogGroupName": "sleeper-test-instance-state-snapshot-deletion-trigger",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EC2CompactionTasks7088FA7C": {
@@ -3431,7 +4113,17 @@
           "UpdateReplacePolicy": "Retain",
           "Properties": {
             "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-EC2CompactionTasks"
+            "LogGroupName": "sleeper-test-instance-EC2CompactionTasks",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         }
       }
@@ -3514,6 +4206,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoDeleteS3Objects"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3581,6 +4277,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoDeleteS3Objects"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3623,6 +4323,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoDeleteS3Objects"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3677,6 +4381,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoDeleteS3Objects"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3752,6 +4460,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Vpc"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3816,6 +4528,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Vpc"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3853,6 +4569,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Vpc"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3889,6 +4609,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Vpc"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -3941,6 +4665,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Topic"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "TopicName": "sleeper-test-instance-ErrorsTopic"
@@ -4036,6 +4764,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -4103,6 +4835,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -4145,6 +4881,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -4188,6 +4928,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -5388,7 +6132,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Policies"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "ClearInstanceE5727330": {
@@ -5754,7 +6508,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Policies"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "Query435140A1": {
@@ -5990,7 +6754,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Policies"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "Reporting8B9C339B": {
@@ -6704,7 +7478,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableData"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         }
       }
@@ -6791,6 +7575,16 @@
                 "AttributeName": "TABLE_ID",
                 "KeyType": "HASH"
               }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TransactionLogStateStore"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
             ]
           }
         },
@@ -6823,6 +7617,16 @@
                 "AttributeName": "TRANSACTION_NUMBER",
                 "KeyType": "RANGE"
               }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TransactionLogStateStore"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
             ]
           }
         },
@@ -6851,6 +7655,16 @@
               {
                 "AttributeName": "TRANSACTION_NUMBER",
                 "KeyType": "RANGE"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TransactionLogStateStore"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -6883,6 +7697,16 @@
               {
                 "AttributeName": "TRANSACTION_NUMBER",
                 "KeyType": "RANGE"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TransactionLogStateStore"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -6960,6 +7784,16 @@
                 "KeyType": "HASH"
               }
             ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestTracker"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
             "TimeToLiveSpecification": {
               "Enabled": true,
               "AttributeName": "ExpiryDate"
@@ -6996,6 +7830,16 @@
                 "KeyType": "RANGE"
               }
             ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestTracker"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
             "TimeToLiveSpecification": {
               "Enabled": true,
               "AttributeName": "ExpiryDate"
@@ -7030,6 +7874,16 @@
               {
                 "AttributeName": "JobIdAndUpdate",
                 "KeyType": "RANGE"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestTracker"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "TimeToLiveSpecification": {
@@ -7233,6 +8087,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Configuration"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -7311,6 +8169,16 @@
                 "AttributeName": "TableName",
                 "KeyType": "RANGE"
               }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableIndex"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
             ]
           }
         },
@@ -7335,6 +8203,16 @@
                 "AttributeName": "TableName",
                 "KeyType": "HASH"
               }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableIndex"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
             ]
           }
         },
@@ -7358,6 +8236,16 @@
               {
                 "AttributeName": "TableId",
                 "KeyType": "HASH"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableIndex"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -7483,7 +8371,17 @@
                 "StateStoreCommitterQueue8377FD80",
                 "Arn"
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "StateStoreCommitterDLQ97945443": {
@@ -7492,7 +8390,17 @@
           "UpdateReplacePolicy": "Delete",
           "Properties": {
             "FifoQueue": true,
-            "QueueName": "sleeper-test-instance-StateStoreCommitterDLQ.fifo"
+            "QueueName": "sleeper-test-instance-StateStoreCommitterDLQ.fifo",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "StateStoreCommitterF1F6771C": {
@@ -7532,7 +8440,17 @@
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
               "S3Key": "statestore-lambda-1.2.3.jar"
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "StateStoreCommitterServiceRole4DCF0ECC": {
@@ -7563,7 +8481,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "StateStoreCommitterAlarm34162B3B": {
@@ -7600,6 +8528,16 @@
             },
             "Statistic": "Sum",
             "DatapointsToAlarm": 1,
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
             "Threshold": 0
           }
         },
@@ -7621,7 +8559,17 @@
             "FifoQueue": true,
             "DeduplicationScope": "messageGroup",
             "VisibilityTimeout": 900,
-            "QueueName": "sleeper-test-instance-StateStoreCommitterQ.fifo"
+            "QueueName": "sleeper-test-instance-StateStoreCommitterQ.fifo",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "StateStoreCommitter"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "StateStoreCommitterCurrentVersionF3ECCC04d8e48f47d388348a15bd59a0c703ec4b": {
@@ -8121,6 +9069,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8158,6 +9110,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8173,6 +9129,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8347,6 +9307,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8385,6 +9349,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8410,6 +9378,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8675,6 +9647,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8720,6 +9696,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8805,6 +9785,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -8843,6 +9827,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -8889,6 +9877,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9320,6 +10312,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -9359,6 +10355,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9392,6 +10392,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-TransactionLogSnapshotDeletionRule"
@@ -9415,6 +10419,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-TransactionLogSnapshotCreationRule"
@@ -9442,6 +10450,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9467,6 +10479,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9504,6 +10520,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogSnapshot"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9670,6 +10690,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9833,6 +10857,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9875,6 +10903,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -9932,6 +10964,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -9981,6 +11017,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10006,6 +11046,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10067,6 +11111,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10089,6 +11137,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-TransactionLogTransactionDeletionRule"
@@ -10127,6 +11179,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10142,6 +11198,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10493,6 +11553,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -10801,6 +11865,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TransactionLogTransaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11141,6 +12209,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11163,6 +12235,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-MetricsPublishRule"
@@ -11189,6 +12265,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11254,6 +12334,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11291,6 +12375,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11474,6 +12562,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11519,6 +12611,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11556,6 +12652,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -11598,6 +12698,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "TableMetrics"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -12769,6 +13873,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEmrServerlessApplication"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -12836,6 +13944,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEmrServerlessApplication"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -12878,6 +13990,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEmrServerlessApplication"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -12932,6 +14048,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "AutoStopEmrServerlessApplication"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13048,6 +14168,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13090,6 +14214,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -13495,6 +14623,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13805,6 +14937,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13829,6 +14965,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13853,6 +14993,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13909,6 +15053,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13939,6 +15087,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -13974,6 +15126,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "BulkImportEMRServerless"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "sleeper-test-instance"
@@ -14081,6 +15237,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "EmrStudio"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14127,6 +15287,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "EmrStudio"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "sleeper-test-instance-emr-studio"
@@ -14163,6 +15327,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "EmrStudio"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14186,6 +15354,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "EmrStudio"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14350,6 +15522,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14372,6 +15548,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-GarbageCollectorPeriodicTrigger"
@@ -14659,6 +15839,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14674,6 +15858,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14719,6 +15907,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14761,6 +15953,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -14819,6 +16015,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14872,6 +16072,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -14921,6 +16125,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "GarbageCollector"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -15377,6 +16585,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -15431,6 +16643,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "MaximumBatchingWindowInSeconds": 30
@@ -15456,6 +16672,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -15481,6 +16701,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -15854,6 +17078,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -15896,6 +17124,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -15943,6 +17175,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16025,6 +17261,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16071,6 +17311,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16122,6 +17366,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16164,6 +17412,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -16203,6 +17455,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16324,6 +17580,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16357,6 +17617,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-CompactionTasksCreationRule"
@@ -16446,6 +17710,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16562,6 +17830,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16611,6 +17883,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16648,6 +17924,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16662,6 +17942,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16699,6 +17983,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16752,6 +18040,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -16903,6 +18195,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16945,6 +18241,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -16960,6 +18260,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -16982,6 +18286,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-CompactionJobCreationRule"
@@ -17001,6 +18309,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -17408,6 +18720,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -17773,6 +19089,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -17810,6 +19130,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -17848,6 +19172,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -17893,6 +19221,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Compaction"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18097,6 +19429,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18144,6 +19480,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18184,6 +19524,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18221,6 +19565,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18263,6 +19611,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -18301,6 +19653,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18323,6 +19679,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-FindPartitionsToSplitPeriodicTrigger"
@@ -18612,6 +19972,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -18639,6 +20003,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18677,6 +20045,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18715,6 +20087,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18761,6 +20137,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -18798,6 +20178,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -19208,6 +20592,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -19222,6 +20610,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "PartitionSplitting"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -19597,6 +20989,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -19621,6 +21017,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -19646,6 +21046,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20069,6 +21473,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -20085,6 +21493,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20417,6 +21829,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20452,6 +21868,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "TimeToLiveSpecification": {
@@ -20514,6 +21934,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20586,6 +22010,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20621,6 +22049,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20658,6 +22090,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -20695,6 +22131,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21344,6 +22784,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21367,6 +22811,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21407,6 +22855,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21421,6 +22873,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21470,6 +22926,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21493,6 +22953,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21566,6 +23030,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Name": "test-instance-IngestTasksCreationRule"
@@ -21599,6 +23067,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21671,6 +23143,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -21713,6 +23189,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Ingest"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "Threshold": 0
@@ -21848,7 +23328,17 @@
                 "IngestBatcherSubmitQueue455D6E24",
                 "Arn"
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "SubmitToIngestBatcherLambda5509FC1C": {
@@ -21887,7 +23377,17 @@
               "S3ObjectVersion": "ingest-batcher-submitter-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
               "S3Key": "ingest-batcher-submitter-1.2.3.jar"
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestBatcherJobCreationLambdaServiceRole487921CC": {
@@ -21918,7 +23418,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "DynamoDBIngestBatcherRequestsTableF9077058": {
@@ -21949,6 +23459,16 @@
               {
                 "AttributeName": "FilePath",
                 "KeyType": "RANGE"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ],
             "TimeToLiveSpecification": {
@@ -22166,6 +23686,16 @@
                 "Id": "Target0"
               }
             ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
             "Name": "test-instance-IngestBatcherJobCreationRule"
           }
         },
@@ -22206,7 +23736,17 @@
               "S3ObjectVersion": "ingest-batcher-job-creator-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
               "S3Key": "ingest-batcher-job-creator-1.2.3.jar"
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7": {
@@ -22248,7 +23788,17 @@
                   }
                 }
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "SubmitToIngestBatcherLambdaServiceRoleDefaultPolicy425D387F": {
@@ -22456,7 +24006,17 @@
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "QueueName": "sleeper-test-instance-IngestBatcherSubmitDLQ"
+            "QueueName": "sleeper-test-instance-IngestBatcherSubmitDLQ",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestBatcherSubmitQueue455D6E24": {
@@ -22474,7 +24034,17 @@
               }
             },
             "VisibilityTimeout": 20,
-            "QueueName": "sleeper-test-instance-IngestBatcherSubmitQ"
+            "QueueName": "sleeper-test-instance-IngestBatcherSubmitQ",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "IngestBatcherAlarm090F922D": {
@@ -22511,6 +24081,16 @@
             },
             "Statistic": "Sum",
             "DatapointsToAlarm": 1,
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "IngestBatcher"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
             "Threshold": 0
           }
         }
@@ -23136,6 +24716,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Properties"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -23224,6 +24808,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Properties"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -23261,6 +24849,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Properties"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -23842,6 +25434,10 @@
               {
                 "Key": "DeploymentStack",
                 "Value": "Properties"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }

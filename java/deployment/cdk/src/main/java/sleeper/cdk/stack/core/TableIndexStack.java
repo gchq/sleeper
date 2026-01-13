@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.Utils;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -102,6 +103,7 @@ public final class TableIndexStack extends NestedStack {
         grantRead(policiesStack.getIngestByQueuePolicyForGrants());
         grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
         grantReadWrite(policiesStack.getClearInstancePolicyForGrants());
+        Utils.addTags(this, instanceProperties);
     }
 
     public void grantRead(IGrantable grantee) {

@@ -129,6 +129,6 @@ public class TableMetricsStack extends NestedStack {
                 .resources(List.of("*"))
                 .build());
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

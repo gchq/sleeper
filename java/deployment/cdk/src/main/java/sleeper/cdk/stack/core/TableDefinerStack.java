@@ -74,6 +74,6 @@ public class TableDefinerStack extends NestedStack {
                 .serviceToken(tableDefinerProvider.getServiceToken())
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

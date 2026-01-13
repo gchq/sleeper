@@ -89,7 +89,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .logGroup(providerLogGroup)
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
 
     }
 
