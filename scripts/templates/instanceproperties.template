@@ -1199,6 +1199,14 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.partition.splitting.threshold=1000000000
 
+# When expanding the partition tree explicitly, this is the default for how many rows are required in
+# the input data to be able to split a partition. This will be used when pre-splitting partitions.
+# For example, during bulk import when there are too few leaf partitions, the partition tree will be
+# extended based on the data in the bulk import job. The bulk import job must contain at least this
+# much data per new split point.
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.partition.splitting.min.rows=1000
+
 
 ## The following instance properties relate to garbage collection.
 
