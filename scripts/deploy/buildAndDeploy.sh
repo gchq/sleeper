@@ -27,7 +27,7 @@ SUBNET=$3
 
 INSTANCE_PROPERTIES="${4:-$INSTANCE_PROPERTIES}"
 DEPLOY_PAUSED="${5:-$DEPLOY_PAUSED}"
-i
+
 
 echo "-------------------------------------------------------------------------------"
 echo "Running Build & Deploy"
