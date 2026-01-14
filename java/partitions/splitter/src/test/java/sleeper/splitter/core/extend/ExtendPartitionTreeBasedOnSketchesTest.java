@@ -18,6 +18,7 @@ package sleeper.splitter.core.extend;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -437,8 +438,38 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     class SplitMoreDataFirst {
 
         @Test
-        void shouldSplitOneOfTwoPartitions() {
-            // TODO
+        @Disabled("TODO")
+        void shouldSplitLargerOfTwoPartitions() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 90))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .buildTree(),
+                            List.of("R"),
+                            List.of("P1", "P2")));
         }
     }
 
