@@ -17,7 +17,7 @@ package sleeper.splitter.core.extend;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.presentation.Representation;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -54,6 +54,11 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
     PartitionTree partitionsBefore;
     Map<String, Sketches> partitionIdToSketches = new HashMap<>();
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 0);
+    }
 
     @Nested
     @DisplayName("Split from a single root partition")
@@ -255,7 +260,6 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         // - Partition tree cannot be extended enough due to insufficient data, so fail completely
 
         @Test
-        @Disabled("TODO property for minimum rows")
         void shouldNotSplitPartitionWithLessThanMinimumRowsInSketch() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);

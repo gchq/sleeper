@@ -43,19 +43,27 @@ public class FindPartitionSplitPoint {
     }
 
     public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
+        return getResultIfSplittable(schema, 0, partition, sketches, idSupplier);
+    }
+
+    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, long minRowsInSketch, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
         SplitPartitionResultFactory resultFactory = new SplitPartitionResultFactory(schema, idSupplier);
         return IntStream.range(0, schema.getRowKeyFields().size())
-                .mapToObj(dimension -> splitPointForDimension(schema, sketches, dimension)
+                .mapToObj(dimension -> splitPointForDimension(schema, minRowsInSketch, sketches, dimension)
                         .map(splitPoint -> resultFactory.splitPartition(partition, splitPoint, dimension)))
                 .flatMap(Optional::stream)
                 .findFirst();
     }
 
-    private static Optional<Object> splitPointForDimension(Schema schema, SketchesForSplitting sketches, int dimension) {
+    private static Optional<Object> splitPointForDimension(Schema schema, long minRowsInSketch, SketchesForSplitting sketches, int dimension) {
         Field field = schema.getRowKeyFields().get(dimension);
         SketchForSplitting sketch = sketches.getSketch(field);
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 field.getName(), field.getType(), dimension);
+        if (sketch.getNumberOfRows() < minRowsInSketch) {
+            LOGGER.info("Sketch is not based on enough rows for a split, found {}, required {}", sketch.getNumberOfRows(), minRowsInSketch);
+            return Optional.empty();
+        }
         Optional<Object> splitPoint = splitPointForField(field, dimension, sketch);
         if (field.getType() instanceof ByteArrayType) {
             return splitPoint.map(object -> (ByteArray) object).map(ByteArray::getArray);

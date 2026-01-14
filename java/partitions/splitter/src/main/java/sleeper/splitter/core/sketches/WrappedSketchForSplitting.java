@@ -45,6 +45,11 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
     }
 
     @Override
+    public long getNumberOfRows() {
+        return sketch.getN();
+    }
+
+    @Override
     public Object getMin() {
         return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(minQuantile), field);
     }
