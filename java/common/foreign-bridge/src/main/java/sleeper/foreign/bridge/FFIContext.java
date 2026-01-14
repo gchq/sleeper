@@ -28,21 +28,24 @@ import java.util.Objects;
 /**
  * Provides a high level interface to foreign function code.
  *
- * If this class is shared between threads, external synchronisation must be used.
+ * If this class is shared between threads, external synchronisation must be
+ * used.
  *
  * Clients should create an instance of this class in a <a
- * href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">
- * try-with-resources</a>
- * construct:
+ * href=
+ * "https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">
+ * try-with-resources</a> construct:
  *
  * <pre>
- * try (FFIContext context = new FFIContext(functions)) {
+ * Class<SomeFunctionClass> functions = ...;
+ * try (FFIContext<SomeFunctionClass> context = getFFIContextSafely(functions)) {
  *   ...
  * }
  * </pre>
  *
- * Thread safety: This class is not thread safe! Do NOT attempt to re-use instances of this class across multiple
- * threads without external synchronisation. A better strategy is to create new context objects for each thread.
+ * Thread safety: This class is not thread safe! Do NOT attempt to re-use
+ * instances of this class across multiple threads without external synchronisation.
+ * A better strategy is to create new context objects for each thread.
  *
  * @param <T> the interface type of the functions to be called in this context
  */
@@ -68,8 +71,8 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * This will attempt to extract the native library from the JAR file and
      * load it into the JVM. It will then establish the Rust side of the context
-     * to enable FFI calls to be executed. If possible a new context will be created from an
-     * existing one.
+     * to enable FFI calls to be executed. If possible a new context will be created
+     * from an existing one.
      *
      * This method is thread-safe.
      *
@@ -84,18 +87,20 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Creates an FFI context.
      *
-     * This will either create a new FFI context object on the foreign side, or clone from an existing "root" one. The
-     * root context is generally never closed.
+     * This will either create a new FFI context object on the foreign side, or
+     * clone from an existing "root" one. The root context is generally never closed.
      *
      * This method is thread safe.
      *
-     * @param  <T>                  the interface type of the functions to be called in this context
-     * @param  functionClass        class type for the FFI interface
-     * @return                      a valid and open FFIContext for making FFI calls
+     * @param <T>           the interface type of the functions to be called in this
+     *                      context
+     * @param functionClass class type for the FFI interface
+     * @return a valid, open FFIContext for making FFI calls
      * @throws UncheckedIOException if the native library couldn't be loaded
-     * @see                         FFIContext#closeRootContext()
+     * @see FFIContext#closeRootContext()
      */
-    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws UncheckedIOException {
+    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass)
+            throws UncheckedIOException {
         synchronized (CONTEXT_LOCK) {
             try {
                 T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
@@ -113,14 +118,15 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Creates an FFI context with fallback if native library can't be loaded.
      *
-     * This behaves exactly as {@link FFIContext#getForeignContext()}, but instead of throwing an exception on failure,
-     * a dummy context is returned. If any foreign functions are called on it, an {@link UnsupportedOperationException}
-     * will be thrown.
+     * This behaves exactly as {@link FFIContext#getForeignContext()}, but instead
+     * of throwing an exception on failure, a dummy context is returned. The dummy context
+     * may be open and closed, but will throw {@link UnsupportedOperationException} if any foreign
+     * functions are called on it.
      *
-     * @param  <T>           the interface type of the functions to be called in this context
-     * @param  functionClass class type for the FFI interface
-     * @return               a dummy context that can be opened and closed, but will not support any foreign function
-     *                       calls
+     * @param <T>           the interface type of the functions to be called in this
+     *                      context
+     * @param functionClass class type for the FFI interface
+     * @return a valid, open FFIContext for making FFI calls OR a dummy context as a fallback
      */
     public static <T extends ForeignFunctions> FFIContext<T> getFFIContextSafely(Class<T> functionClass) {
         try {
@@ -134,7 +140,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     static <T extends ForeignFunctions> FFIContext<T> createDummyContext(Class<T> functionClass, Exception e) {
         // create a dynamic proxy that implements T
         @SuppressWarnings("unchecked")
-        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[]{functionClass},
+        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[] {functionClass},
                 (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "create_context":
@@ -145,7 +151,8 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
                         case "clone_context":
                         default:
                             throw new UnsupportedOperationException(
-                                    "The native sleeper_df library is not loaded, native implementation not available", e);
+                                    "The native sleeper_df library is not loaded, native implementation not available",
+                                    e);
                     }
                 });
         return new FFIContext<T>(functions, functions.create_context());
@@ -154,8 +161,8 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Closes the root FFI context.
      *
-     * Other FFI contexts created from this root context will remain open and valid. Once all contexts are closed,
-     * any foreign resources will be automatically released.
+     * Other FFI contexts created from this root context will remain open and valid.
+     * Once all contexts are closed, any foreign resources will be automatically released.
      */
     public static void closeRootContext() {
         synchronized (CONTEXT_LOCK) {
@@ -212,7 +219,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Gets a pointer to the foreign context object.
      *
-     * @return                       foreign pointer
+     * @return foreign pointer
      * @throws IllegalStateException if this context has already been closed
      */
     public Pointer getForeignContext() {
