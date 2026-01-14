@@ -44,9 +44,8 @@ import java.util.Objects;
  * </pre>
  *
  * Thread safety: This class is not thread safe! Do NOT attempt to re-use
- * instances of this class across multiple
- * threads without external synchronisation. A better strategy is to create new
- * context objects for each thread.
+ * instances of this class across multiple threads without external synchronisation.
+ * A better strategy is to create new context objects for each thread.
  *
  * @param <T> the interface type of the functions to be called in this context
  */
@@ -73,8 +72,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * This will attempt to extract the native library from the JAR file and
      * load it into the JVM. It will then establish the Rust side of the context
      * to enable FFI calls to be executed. If possible a new context will be created
-     * from an
-     * existing one.
+     * from an existing one.
      *
      * This method is thread-safe.
      *
@@ -90,8 +88,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * Creates an FFI context.
      *
      * This will either create a new FFI context object on the foreign side, or
-     * clone from an existing "root" one. The
-     * root context is generally never closed.
+     * clone from an existing "root" one. The root context is generally never closed.
      *
      * This method is thread safe.
      *
@@ -122,17 +119,14 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * Creates an FFI context with fallback if native library can't be loaded.
      *
      * This behaves exactly as {@link FFIContext#getForeignContext()}, but instead
-     * of throwing an exception on failure,
-     * a dummy context is returned. If any foreign functions are called on it, an
-     * {@link UnsupportedOperationException}
-     * will be thrown.
+     * of throwing an exception on failure, a dummy context is returned. If any foreign
+     * functions are called on it, an {@link UnsupportedOperationException} will be thrown.
      *
      * @param <T>           the interface type of the functions to be called in this
      *                      context
      * @param functionClass class type for the FFI interface
      * @return a dummy context that can be opened and closed, but will not support
-     *         any foreign function
-     *         calls
+     *         any foreign function calls
      */
     public static <T extends ForeignFunctions> FFIContext<T> getFFIContextSafely(Class<T> functionClass) {
         try {
@@ -168,8 +162,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * Closes the root FFI context.
      *
      * Other FFI contexts created from this root context will remain open and valid.
-     * Once all contexts are closed,
-     * any foreign resources will be automatically released.
+     * Once all contexts are closed, any foreign resources will be automatically released.
      */
     public static void closeRootContext() {
         synchronized (CONTEXT_LOCK) {
