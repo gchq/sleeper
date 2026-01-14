@@ -289,11 +289,6 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         }
 
         @Test
-        void shouldNotSplitExistingPartitionWithLessThanMinimumRowsInSketch() {
-            // TODO
-        }
-
-        @Test
         void shouldFailWithLessThanMinimumRowsInHalfOfSketch() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
