@@ -28,6 +28,11 @@ import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of ingest tasks. An ingest task is a process that starts up, runs some number of
+ * ingest jobs, then terminates. Note that this does not include bulk import. This takes an {@link IngestTaskQuery}
+ * and outputs information about the tasks matching that query.
+ */
 public class IngestTaskStatusReport {
     private final IngestTaskTracker tracker;
 
@@ -43,6 +48,9 @@ public class IngestTaskStatusReport {
         this.query = query;
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
         reporter.report(query, query.run(tracker));
     }

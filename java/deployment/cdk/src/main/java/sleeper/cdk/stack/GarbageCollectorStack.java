@@ -140,6 +140,6 @@ public class GarbageCollectorStack extends NestedStack {
                 .build());
         coreStacks.grantInvokeScheduled(triggerFunction, queue);
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

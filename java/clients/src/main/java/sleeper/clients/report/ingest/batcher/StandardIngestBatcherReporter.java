@@ -28,6 +28,10 @@ import java.util.List;
 
 import static sleeper.core.util.NumberFormatUtils.formatBytesAsHumanReadableString;
 
+/**
+ * Creates reports in human-readable string format on the status of files tracked by the ingest batcher. This produces
+ * a table.
+ */
 public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField fileNameField;
     private final TableField fileSizeBytesField;

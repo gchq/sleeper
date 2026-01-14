@@ -17,9 +17,22 @@ package sleeper.clients.report.statestore;
 
 import java.time.Instant;
 
+/**
+ * A log entry retrieved from Amazon CloudWatch.
+ */
 public interface LogEntry {
 
+    /**
+     * Gets the name of the log stream this entry was written to.
+     *
+     * @return the log stream
+     */
     String getLogStream();
 
+    /**
+     * Gets the timestamp of this log entry.
+     *
+     * @return the timestamp
+     */
     Instant getTimestamp();
 }

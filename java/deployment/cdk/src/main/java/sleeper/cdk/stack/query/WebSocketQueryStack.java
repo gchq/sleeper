@@ -63,7 +63,7 @@ public final class WebSocketQueryStack extends NestedStack {
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private void setupWebSocketApi(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,

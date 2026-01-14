@@ -16,10 +16,15 @@
 package sleeper.clients.report.filestatus;
 
 /**
- * An interface the represents a method of presenting the status of files in
- * Sleeper to a user.
+ * A reporter to present the status of files in a Sleeper table to a user.
  */
 public interface FileStatusReporter {
 
+    /**
+     * Writes a report on the status of files.
+     *
+     * @param status  the status of files in the Sleeper table
+     * @param verbose true if the report should be verbose
+     */
     void report(TableFilesStatus status, boolean verbose);
 }

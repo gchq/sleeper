@@ -22,6 +22,10 @@ import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
+/**
+ * A query to retrieve file tracking information from the ingest batcher store, for files that are pending and have not
+ * yet been included in ingest or bulk import jobs.
+ */
 public class PendingFilesQuery implements BatcherQuery {
     @Override
     public List<IngestBatcherTrackedFile> run(IngestBatcherStore store) {

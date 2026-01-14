@@ -21,12 +21,23 @@ import sleeper.clients.report.job.query.JobQueryArgument;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
+/**
+ * Reads arguments from the command line when creating a query to generate a report from the ingest job tracker.
+ */
 public class IngestJobQueryArgument {
     private static final String REJECTED_ARG = "-n";
 
     private IngestJobQueryArgument() {
     }
 
+    /**
+     * Reads the type of job tracker query from a command line argument. Defaults to prompting from the command line if
+     * the query type is not specified. There's a specific query type for that.
+     *
+     * @param  args  the command line arguments
+     * @param  index the index of the query type argument
+     * @return       the job tracker query type
+     */
     public static JobQuery.Type readTypeArgument(String[] args, int index) {
         return optionalArgument(args, index)
                 .map(IngestJobQueryArgument::readType)

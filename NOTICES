@@ -95,6 +95,10 @@ Logback (ch.qos.logback:logback-*:1.*)
 - Eclipse Public License 1.0
 - GNU Lesser General Public License, version 2.1
 
+Log4J (org.apache.logging.log4j:log4j-*:2.*)
+
+- Apache License, Version 2.0
+
 Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0

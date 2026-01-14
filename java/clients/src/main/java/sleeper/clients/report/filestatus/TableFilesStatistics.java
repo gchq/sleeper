@@ -24,6 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Statistics on files in a Sleeper table. Includes information about the rows held in the table, the references to
+ * files, and whether the data is held against leaf or non-leaf partitions. Partitions are held in a tree that
+ * partitions the space of possible row key values into smaller regions. Data in a Sleeper table consists of files that
+ * are referenced on one or more of these partitions. Each of the smallest regions is represented by a leaf partition,
+ * which is a partition that has not been split. If data is referenced in non-leaf partitions, this usually indicates
+ * either the partition tree has been recently split, or data has been ingested to non-leaf partitions directly.
+ */
 public class TableFilesStatistics {
     private final Rows rows;
     private final References fileReferences;
@@ -33,6 +41,13 @@ public class TableFilesStatistics {
         this.fileReferences = fileReferences;
     }
 
+    /**
+     * Computes statistics on files in a Sleeper table.
+     *
+     * @param  files         the files held in the table
+     * @param  partitionById all partitions in the table, indexed by their ID
+     * @return               the statistics
+     */
     public static TableFilesStatistics from(AllReferencesToAllFiles files, Map<String, Partition> partitionById) {
 
         List<FileReference> fileReferences = files.getFilesWithReferences().stream()
@@ -107,6 +122,9 @@ public class TableFilesStatistics {
         return fileReferences.totalReferences;
     }
 
+    /**
+     * Statistics on rows in a Sleeper table.
+     */
     private static class Rows {
         private final FileRowsStats allPartitions;
         private final FileRowsStats leafPartitions;
@@ -119,6 +137,9 @@ public class TableFilesStatistics {
         }
     }
 
+    /**
+     * Statistics on file references in a Sleeper table.
+     */
     private static class References {
         private final int totalFiles;
         private final int totalReferences;

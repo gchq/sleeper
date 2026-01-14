@@ -106,7 +106,7 @@ public class PartitionSplittingStack extends NestedStack {
         // arriving on partitionSplittingQueue)
         createSplitPartitionFunction(instanceProperties, lambdaCode, coreStacks, environmentVariables);
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private Queue createBatchQueues(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {

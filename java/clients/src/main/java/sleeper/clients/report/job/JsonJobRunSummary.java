@@ -22,11 +22,20 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
 
+/**
+ * A GSON plugin to write JSON for reports, on summaries of runs of jobs held in a job tracker. This must be used in
+ * combination with other GSON plugins for the specific type of jobs being processed.
+ */
 public class JsonJobRunSummary {
 
     private JsonJobRunSummary() {
     }
 
+    /**
+     * Creates a GSON serialiser for job run summaries. Handles {@link JobRunSummary} objects.
+     *
+     * @return the GSON serialiser
+     */
     public static JsonSerializer<JobRunSummary> serializer() {
         return (summary, type, context) -> createSummaryJson(summary, context);
     }

@@ -59,7 +59,7 @@ public class EmrStudioStack extends NestedStack {
         createDefaultEngineSecurityGroup(coreStacks.getVpc(), instanceId);
         createWorkspaceSecurityGroup(coreStacks.getVpc(), instanceId);
         createEmrStudio(instanceProperties, coreStacks);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
 
     }
 

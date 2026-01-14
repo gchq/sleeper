@@ -29,10 +29,18 @@ import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryPartially
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryQueued;
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.subQueryInProgress;
 
+/**
+ * Helpers for testing reports based on the query tracker. Creates example query tracking data.
+ */
 public class QueryTrackerReporterTestHelper {
     private QueryTrackerReporterTestHelper() {
     }
 
+    /**
+     * Creates a mix of queries in different statuses.
+     *
+     * @return the query tracker data
+     */
     public static List<TrackedQuery> mixedQueries() {
         return List.of(
                 queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")),
@@ -42,6 +50,11 @@ public class QueryTrackerReporterTestHelper {
                 queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"), "Error: Query failed"));
     }
 
+    /**
+     * Creates data for a single query with two sub-queries.
+     *
+     * @return the query tracker data
+     */
     public static List<TrackedQuery> queryWithSubqueries() {
         return List.of(
                 queryInProgress("parent-query-1", Instant.parse("2023-09-28T19:15:00Z")),
@@ -49,6 +62,13 @@ public class QueryTrackerReporterTestHelper {
                 subQueryInProgress("parent-query-1", "sub-query-2", Instant.parse("2023-09-28T19:17:00Z")));
     }
 
+    /**
+     * Creates a report in standard, human readable format.
+     *
+     * @param  query          the reporting query used to retrieve the data from the query tracker
+     * @param  trackedQueries the data from the query tracker
+     * @return                the report
+     */
     public static String getStandardReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardQueryTrackerReporter(output.getPrintStream())
@@ -56,6 +76,13 @@ public class QueryTrackerReporterTestHelper {
         return output.toString();
     }
 
+    /**
+     * Creates a report in JSON format.
+     *
+     * @param  query          the reporting query used to retrieve the data from the query tracker
+     * @param  trackedQueries the data from the query tracker
+     * @return                the report
+     */
     public static String getJsonReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonQueryTrackerReporter(output.getPrintStream())

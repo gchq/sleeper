@@ -22,11 +22,20 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.tracker.job.run.JobRunTime;
 
+/**
+ * A GSON plugin to write JSON for reports, on the run times of jobs held in a job tracker. This must be used in
+ * combination with other GSON plugins for the specific type of jobs being processed.
+ */
 public class JsonJobRunTime {
 
     private JsonJobRunTime() {
     }
 
+    /**
+     * Creates a GSON serialiser for job run times. Handles {@link JobRunTime} objects.
+     *
+     * @return the GSON serialiser
+     */
     public static JsonSerializer<JobRunTime> serializer() {
         return (runTime, type, context) -> createRunTimeJson(runTime, context);
     }

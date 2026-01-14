@@ -18,14 +18,29 @@ package sleeper.clients.report;
 
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 
+/**
+ * Helpers for testing reports on status held in trackers.
+ */
 public class StatusReporterTestHelper {
     private StatusReporterTestHelper() {
     }
 
+    /**
+     * Creates an example job ID based on a number. Note that jobs are not usually numbered in reality.
+     *
+     * @param  number the number of the job
+     * @return        the job ID
+     */
     public static String job(int number) {
         return exampleUUID("job", number);
     }
 
+    /**
+     * Creates an example task ID based on a number. Note that tasks are not usually numbered in reality.
+     *
+     * @param  number the number of the task
+     * @return        the task ID
+     */
     public static String task(int number) {
         return exampleUUID("task", number);
     }

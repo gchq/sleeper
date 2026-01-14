@@ -29,6 +29,9 @@ import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Creates reports in JSON format on the status of queries.
+ */
 public class JsonQueryTrackerReporter implements QueryTrackerReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(TrackedQuery.class, trackedQueryJsonSerializer())
