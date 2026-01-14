@@ -140,7 +140,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     static <T extends ForeignFunctions> FFIContext<T> createDummyContext(Class<T> functionClass, Exception e) {
         // create a dynamic proxy that implements T
         @SuppressWarnings("unchecked")
-        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[] { functionClass },
+        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[] {functionClass},
                 (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "create_context":
