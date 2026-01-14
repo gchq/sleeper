@@ -95,7 +95,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @param <T>           the interface type of the functions to be called in this
      *                      context
      * @param functionClass class type for the FFI interface
-     * @return a valid and open FFIContext for making FFI calls
+     * @return a valid, open FFIContext for making FFI calls
      * @throws UncheckedIOException if the native library couldn't be loaded
      * @see FFIContext#closeRootContext()
      */
@@ -119,14 +119,14 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * Creates an FFI context with fallback if native library can't be loaded.
      *
      * This behaves exactly as {@link FFIContext#getForeignContext()}, but instead
-     * of throwing an exception on failure, a dummy context is returned. If any foreign
-     * functions are called on it, an {@link UnsupportedOperationException} will be thrown.
+     * of throwing an exception on failure, a dummy context is returned. The dummy context
+     * may be open and closed, but will throw {@link UnsupportedOperationException} if any foreign
+     * functions are called on it.
      *
      * @param <T>           the interface type of the functions to be called in this
      *                      context
      * @param functionClass class type for the FFI interface
-     * @return a dummy context that can be opened and closed, but will not support
-     *         any foreign function calls
+     * @return a valid, open FFIContext for making FFI calls OR a dummy context as a fallback
      */
     public static <T extends ForeignFunctions> FFIContext<T> getFFIContextSafely(Class<T> functionClass) {
         try {
