@@ -365,6 +365,12 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         }
     }
 
+    @Nested
+    @DisplayName("Split partitions with more data first")
+    class SplitMoreDataFirst {
+        // TODO
+    }
+
     private ExtendPartitionTreeTransaction createTransaction() {
         return ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, supplyNumberedIdsWithPrefix("P"))
                 .createTransaction(partitionsBefore, partitionIdToSketches);
