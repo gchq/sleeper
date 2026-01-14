@@ -50,6 +50,7 @@ import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
@@ -202,7 +203,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty PARTITION_SPLIT_MIN_ROWS = Index.propertyBuilder("sleeper.table.partition.splitting.min.rows")
-            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_MIN_ROWS)
             .description("When expanding the partition tree explicitly, this many rows are required in the input " +
                     "data to be able to split a partition. This will be used when pre-splitting partitions.\n" +
                     "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
