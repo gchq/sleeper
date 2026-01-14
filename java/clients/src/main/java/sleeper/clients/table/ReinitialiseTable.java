@@ -83,6 +83,10 @@ public class ReinitialiseTable {
                 .getStateStore(tableProperties);
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
         Set<String> filesToDelete = stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames();
+        LOGGER.info("Found following files to delete:");
+        for (String s : filesToDelete) {
+            LOGGER.info(s);
+        }
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
             ClearPartitionsTransaction.create().synchronousCommit(stateStore);
