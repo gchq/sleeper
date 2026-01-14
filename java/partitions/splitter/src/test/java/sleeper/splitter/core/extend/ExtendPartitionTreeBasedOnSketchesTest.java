@@ -250,14 +250,8 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     }
 
     @Nested
-    @DisplayName("Exclude partitions with insufficient data")
-    class ExcludeInsufficientData {
-        // Test list:
-        // - Partition has fewer than minimum rows
-        // - Partition has fewer than 10% of the expected number of rows based on an even distribution
-        // - One partition has enough rows to split once but not again later, other partition has enough rows to meet minimum partition count
-        // - Leaf partitions that are not split should still count towards minimum leaf partition count
-        // - Partition tree cannot be extended enough due to insufficient data, so fail completely
+    @DisplayName("Do not split a partition when we have less than a minimum number of sketched rows")
+    class MinimumRowsToSplit {
 
         @Test
         void shouldNotSplitPartitionWithLessThanMinimumRowsInSketch() {
@@ -295,9 +289,41 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         }
 
         @Test
-        void shouldNotSplitTwiceWithLessThanMinimumRowsInHalfOfSketch() {
+        void shouldNotSplitExistingPartitionWithLessThanMinimumRowsInSketch() {
             // TODO
         }
+
+        @Test
+        void shouldFailWithLessThanMinimumRowsInHalfOfSketch() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 5);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .buildTree());
+            setPartitionSketchData("root", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40)),
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 90))));
+
+            // When / Then
+            assertThatThrownBy(() -> createTransaction())
+                    .asInstanceOf(InstanceOfAssertFactories.type(InsufficientDataForPartitionSplittingException.class))
+                    .extracting(
+                            InsufficientDataForPartitionSplittingException::getMinLeafPartitions,
+                            InsufficientDataForPartitionSplittingException::getMaxLeafPartitionsAfterSplits)
+                    .containsExactly(4, 2);
+        }
+    }
+
+    @Nested
+    @DisplayName("Do not split a partition when we have less than a percentage of the expected number of rows based on an even distribution")
+    class MinimumDistributionToSplit {
+        // TODO
     }
 
     private ExtendPartitionTreeTransaction createTransaction() {
