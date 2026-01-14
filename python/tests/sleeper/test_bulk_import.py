@@ -30,13 +30,13 @@ from tests.sleeper.properties.instance_properties_helper import create_test_inst
 # This test will run for each of the values for the pytest fixture platform
 def should_put_bulk_export_message_on_the_queue(sleeper_client: SleeperClient, bulk_import_queue: Queue, properties: InstanceProperties, platform: str):
     # Given
-    id = properties.get(CommonProperty.ID)
+    instance_id = properties.get(CommonProperty.ID)
 
     # When
     sleeper_client.bulk_import_parquet_files_from_s3(table_name="test-table", files=["file1.parquet"], id=id, platform=platform, platform_spec=None, class_name=None)
 
     # Then
-    expected_message_json = [{"id": id, "tableName": "test-table", "files": ["file1.parquet"]}]
+    expected_message_json = [{"id": instance_id, "tableName": "test-table", "files": ["file1.parquet"]}]
     messages = receive_messages(bulk_import_queue)
 
     assert messages == expected_message_json
