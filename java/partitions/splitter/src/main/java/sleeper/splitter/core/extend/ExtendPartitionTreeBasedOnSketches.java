@@ -82,15 +82,19 @@ public class ExtendPartitionTreeBasedOnSketches {
      */
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
-        SplitsTracker tracker = new SplitsTracker();
+        SplitsTracker tracker = new SplitsTracker(originalLeafPartitions);
         PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
         List<Partition> workingPartitions = originalLeafPartitions;
         while (tracker.getNumLeafPartitions() < minLeafPartitions) {
-            workingPartitions = splitLeaves(sketchIndex, workingPartitions)
+            List<Partition> afterSplits = splitLeaves(sketchIndex, workingPartitions)
                     .peek(tracker::recordSplit)
                     .peek(sketchIndex::recordSplit)
                     .flatMap(SplitPartitionResult::streamChildPartitions)
                     .toList();
+            if (afterSplits.isEmpty()) {
+                throw new InsufficientDataForPartitionSplittingException(minLeafPartitions, tracker.getNumLeafPartitions());
+            }
+            workingPartitions = afterSplits;
         }
         return tracker.buildTransaction();
     }

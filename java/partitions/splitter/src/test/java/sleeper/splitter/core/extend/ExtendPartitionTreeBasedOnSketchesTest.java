@@ -15,7 +15,9 @@
  */
 package sleeper.splitter.core.extend;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.presentation.Representation;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -191,18 +194,94 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     }
 
     @Nested
+    @DisplayName("Fail to split due to insufficient unique row key values")
+    class InsufficientRowKeyValues {
+
+        @Test
+        void shouldFailWhenAllValuesAreSameForRowKey() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
+            setPartitionSketchData("root", List.of(
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 50))));
+
+            // When / Then
+            assertThatThrownBy(() -> createTransaction())
+                    .asInstanceOf(InstanceOfAssertFactories.type(InsufficientDataForPartitionSplittingException.class))
+                    .extracting(
+                            InsufficientDataForPartitionSplittingException::getMinLeafPartitions,
+                            InsufficientDataForPartitionSplittingException::getMaxLeafPartitionsAfterSplits)
+                    .containsExactly(2, 1);
+        }
+
+        @Test
+        void shouldFailWhenOnePartitionHasAllValuesSameForRowKey() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 25))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 90))));
+
+            // When / Then
+            assertThatThrownBy(() -> createTransaction())
+                    .asInstanceOf(InstanceOfAssertFactories.type(InsufficientDataForPartitionSplittingException.class))
+                    .extracting(
+                            InsufficientDataForPartitionSplittingException::getMinLeafPartitions,
+                            InsufficientDataForPartitionSplittingException::getMaxLeafPartitionsAfterSplits)
+                    .containsExactly(4, 3);
+        }
+    }
+
+    @Nested
     @DisplayName("Exclude partitions with insufficient data")
     class ExcludeInsufficientData {
         // Test list:
         // - Partition has fewer than minimum rows
         // - Partition has fewer than 10% of the expected number of rows based on an even distribution
         // - One partition has enough rows to split once but not again later, other partition has enough rows to meet minimum partition count
-        // - Leaf partitions that are not split should still count towards minimum leaf partition count (see TODO in SplitsTracker)
+        // - Leaf partitions that are not split should still count towards minimum leaf partition count
         // - Partition tree cannot be extended enough due to insufficient data, so fail completely
 
         @Test
+        @Disabled("TODO property for minimum rows")
         void shouldNotSplitPartitionWithLessThanMinimumRowsInSketch() {
-            // TODO
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 25))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 90))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .buildTree(),
+                            List.of("R"),
+                            List.of("P1", "P2")));
         }
     }
 
