@@ -50,6 +50,7 @@ import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -209,6 +210,18 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
                     "be extended based on the data in the bulk import job. The bulk import job must contain at least " +
                     "this much data per new split point.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    TableProperty PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT = Index.propertyBuilder("sleeper.table.partition.splitting.min.distribution.percent")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT)
+            .description("When expanding the partition tree explicitly, this is the minimum percentage of the " +
+                    "expected number of rows to split a partition assuming an even distribution of rows.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. For each current leaf partition, we make " +
+                    "a sketch of the data from the job that's in that partition. We divide the number of rows in the " +
+                    "job's input data by the current number of leaf partitions, to get the expected rows per " +
+                    "partition. If this propery is set to 10, then any partition with less than 10% of the expected " +
+                    "rows per partition will be ignored when extending the partition tree.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")

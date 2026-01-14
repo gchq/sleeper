@@ -42,6 +42,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -58,6 +59,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     @BeforeEach
     void setUp() {
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 0);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 0);
     }
 
     @Nested
@@ -318,7 +320,12 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     @Nested
     @DisplayName("Do not split a partition when we have less than a percentage of the expected number of rows based on an even distribution")
     class MinimumDistributionToSplit {
-        // TODO
+
+        @Test
+        void shouldNotSplitPartitionWithLessThanHalfExpectedRowsAssumingEvenDistribution() {
+            // Given
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 50);
+        }
     }
 
     private ExtendPartitionTreeTransaction createTransaction() {
