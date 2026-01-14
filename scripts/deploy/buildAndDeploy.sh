@@ -25,12 +25,9 @@ INSTANCE_ID=$1
 VPC=$2
 SUBNET=$3
 
-if [ xFALSE != x"$4" ]; then
-   INSTANCE_PROPERTIES=$4
-fi
-if [ xFALSE != x"$5" ]; then
-   DEPLOY_PAUSED=$5
-fi
+INSTANCE_PROPERTIES="${4:-$INSTANCE_PROPERTIES}"
+DEPLOY_PAUSED="${5:-$DEPLOY_PAUSED}"
+i
 
 echo "-------------------------------------------------------------------------------"
 echo "Running Build & Deploy"
