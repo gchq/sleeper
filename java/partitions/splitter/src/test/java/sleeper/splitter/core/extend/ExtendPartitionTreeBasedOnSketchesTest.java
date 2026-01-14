@@ -42,6 +42,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -258,15 +259,20 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         void shouldNotSplitPartitionWithLessThanMinimumRowsInSketch() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 5);
             setPartitionsBefore(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50)
                     .buildTree());
             setPartitionSketchData("L", List.of(
-                    new Row(Map.of("key", 25))));
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
             setPartitionSketchData("R", List.of(
                     new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 70)),
                     new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
                     new Row(Map.of("key", 90))));
 
             // When
@@ -282,6 +288,11 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
                                     .buildTree(),
                             List.of("R"),
                             List.of("P1", "P2")));
+        }
+
+        @Test
+        void shouldNotSplitTwiceWithLessThanMinimumRowsInHalfOfSketch() {
+            // TODO
         }
     }
 

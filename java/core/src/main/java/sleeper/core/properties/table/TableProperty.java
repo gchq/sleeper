@@ -201,6 +201,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Partitions in this table with more than the following number of rows in will be split.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
+    TableProperty PARTITION_SPLIT_MIN_ROWS = Index.propertyBuilder("sleeper.table.partition.splitting.min.rows")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .description("When expanding the partition tree explicitly, this many rows are required in the input " +
+                    "data to be able to split a partition. This will be used when pre-splitting partitions.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. The bulk import job must contain at least " +
+                    "this much data per new split point.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
             .defaultPropertyWithBehaviour(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
