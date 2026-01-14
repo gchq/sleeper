@@ -32,6 +32,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -80,15 +81,15 @@ public class ReinitialiseTable {
 
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
-
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
-
+        Set<String> filesToDelete = stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames();
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
             ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
+
         deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
-                key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
+                key -> filesToDelete.contains(key));
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             buildPartitions.apply(tableProperties).synchronousCommit(stateStore);

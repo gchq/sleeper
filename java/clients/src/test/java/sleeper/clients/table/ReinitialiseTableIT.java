@@ -52,7 +52,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -70,6 +69,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_2 = "for_ingest/file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_1 = "partition-root/file1.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_2 = "partition-1/file2.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_3 = "partition-2/file3.parquet";
     private static final String SPLIT_PARTITION_STRING_1 = "alpha";
     private static final String SPLIT_PARTITION_STRING_2 = "beta";
 
@@ -258,9 +260,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1), RequestBody.fromString("some-content"));
         s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2), RequestBody.fromString("some-content"));
         s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-root/file1.parquet"), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-1/file2.parquet"), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-2/file3.parquet"), RequestBody.fromString("some-content"));
+        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_1), RequestBody.fromString("some-content"));
+        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_2), RequestBody.fromString("some-content"));
+        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_3), RequestBody.fromString("some-content"));
     }
 
     private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
@@ -278,13 +280,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = createTempDirectory(tempDir, null).toString();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        String file3 = folderName + "/file3.parquet";
-
-        FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
-        FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
+        final String tableId = tableProperties.get(TABLE_ID);
+        FileReference fileReference1 = createFileReference(tableId + "/" + FILE_SHOULD_BE_DELETED_1, rootPartition.getId());
+        FileReference fileReference2 = createFileReference(tableId + "/" + FILE_SHOULD_BE_DELETED_2, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -299,7 +297,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         update(stateStore).addFilesWithReferences(List.of(
                 fileWithReferences(List.of(fileReference1)),
                 fileWithReferences(List.of(fileReference2)),
-                fileWithNoReferences(file3)));
+                fileWithNoReferences(tableId + "/" + FILE_SHOULD_BE_DELETED_3)));
     }
 
     private FileReference createFileReference(String filename, String partitionId) {
