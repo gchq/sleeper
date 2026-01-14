@@ -322,9 +322,46 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     class MinimumDistributionToSplit {
 
         @Test
-        void shouldNotSplitPartitionWithLessThanHalfExpectedRowsAssumingEvenDistribution() {
+        void shouldNotSplitPartitionWithLessThanExpectedRowsAssumingEvenDistribution() {
             // Given
-            tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 50);
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 60);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            // 12 rows spread over 2 partitions means we expect 6 per partition.
+            // 60% of 6 is 3.6 rows.
+            // 3 rows in partition L does not meet that threshold.
+            // 9 rows in partition R does.
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 55)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 65)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 85)),
+                    new Row(Map.of("key", 90)),
+                    new Row(Map.of("key", 95))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .buildTree(),
+                            List.of("R"),
+                            List.of("P1", "P2")));
         }
     }
 

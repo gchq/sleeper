@@ -21,9 +21,9 @@ public class InsufficientDataForPartitionSplittingException extends RuntimeExcep
     private final int maxLeafPartitionsAfterSplits;
 
     public InsufficientDataForPartitionSplittingException(int minLeafPartitions, int maxLeafPartitionsAfterSplits) {
-        super("Required " + minLeafPartitions + " minimum leaf partitions. Unable to create more than "
-                + maxLeafPartitionsAfterSplits + " leaf partitions based on the given data. Either there are not enough unique " +
-                "values for the row key fields, or not enough data was provided.");
+        super("Required " + minLeafPartitions + " minimum leaf partitions. Unable to reach more than "
+                + maxLeafPartitionsAfterSplits + " leaf partitions based on the given data. Either there are not " +
+                "enough unique values for the row key fields, or not enough data was provided.");
         this.minLeafPartitions = minLeafPartitions;
         this.maxLeafPartitionsAfterSplits = maxLeafPartitionsAfterSplits;
     }
