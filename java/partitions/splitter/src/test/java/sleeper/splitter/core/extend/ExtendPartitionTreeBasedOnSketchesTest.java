@@ -42,6 +42,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -58,6 +59,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     @BeforeEach
     void setUp() {
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 0);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 0);
     }
 
     @Nested
@@ -289,6 +291,35 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         }
 
         @Test
+        void shouldFailWhenLessThanMinimumRowsInOneOfTwoPartitionsMeansWeCannotMeetMinimumCount() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 5);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 90))));
+
+            // When / Then
+            assertThatThrownBy(() -> createTransaction())
+                    .asInstanceOf(InstanceOfAssertFactories.type(InsufficientDataForPartitionSplittingException.class))
+                    .extracting(
+                            InsufficientDataForPartitionSplittingException::getMinLeafPartitions,
+                            InsufficientDataForPartitionSplittingException::getMaxLeafPartitionsAfterSplits)
+                    .containsExactly(4, 3);
+        }
+
+        @Test
         void shouldFailWithLessThanMinimumRowsInHalfOfSketch() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
@@ -318,7 +349,97 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     @Nested
     @DisplayName("Do not split a partition when we have less than a percentage of the expected number of rows based on an even distribution")
     class MinimumDistributionToSplit {
-        // TODO
+
+        @Test
+        void shouldNotSplitPartitionWithLessThanExpectedRowsAssumingEvenDistribution() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 60);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            // 12 rows spread over 2 partitions means we expect 6 per partition.
+            // 60% of 6 is 3.6 rows.
+            // 3 rows in partition L does not meet that threshold.
+            // 9 rows in partition R does.
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 55)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 65)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 85)),
+                    new Row(Map.of("key", 90)),
+                    new Row(Map.of("key", 95))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .buildTree(),
+                            List.of("R"),
+                            List.of("P1", "P2")));
+        }
+
+        @Test
+        void shouldFailWhenLessThanMinimumRowsInOneOfTwoPartitionsMeansWeCannotMeetMinimumCount() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT, 60);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            // 12 rows spread over 2 partitions means we expect 6 per partition.
+            // 60% of 6 is 3.6 rows.
+            // 3 rows in partition L does not meet that threshold.
+            // 9 rows in partition R does.
+            // Partition R can only be split once because it has only 3 unique values of the row key.
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 80))));
+
+            // When / Then
+            assertThatThrownBy(() -> createTransaction())
+                    .asInstanceOf(InstanceOfAssertFactories.type(InsufficientDataForPartitionSplittingException.class))
+                    .extracting(
+                            InsufficientDataForPartitionSplittingException::getMinLeafPartitions,
+                            InsufficientDataForPartitionSplittingException::getMaxLeafPartitionsAfterSplits)
+                    .containsExactly(4, 3);
+        }
+    }
+
+    @Nested
+    @DisplayName("Split partitions with more data first")
+    class SplitMoreDataFirst {
+
+        @Test
+        void shouldSplitOneOfTwoPartitions() {
+            // TODO
+        }
     }
 
     private ExtendPartitionTreeTransaction createTransaction() {
