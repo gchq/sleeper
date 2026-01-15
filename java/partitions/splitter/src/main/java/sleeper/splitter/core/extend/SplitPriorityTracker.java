@@ -30,7 +30,8 @@ import java.util.PriorityQueue;
 class SplitPriorityTracker {
 
     private final PriorityQueue<PartitionPriority> queue = new PriorityQueue<>(
-            Comparator.comparing(PartitionPriority::rowsSketched));
+            Comparator.comparing(PartitionPriority::rowsSketched).reversed()
+                    .thenComparing(PartitionPriority::order));
     private final PartitionSketchIndex sketchIndex;
 
     SplitPriorityTracker(List<Partition> leafPartitions, PartitionSketchIndex sketchIndex) {
@@ -38,21 +39,21 @@ class SplitPriorityTracker {
         leafPartitions.forEach(this::add);
     }
 
-    void recordSplit(SplitPartitionResult result) {
-        add(result.getLeftChild());
-        add(result.getRightChild());
-    }
-
     Optional<Partition> nextPartition() {
         return Optional.ofNullable(queue.poll())
                 .map(PartitionPriority::partition);
     }
 
-    private void add(Partition partition) {
-        queue.add(new PartitionPriority(partition, sketchIndex.getNumberOfRecordsSketched(partition)));
+    void recordSplit(SplitPartitionResult result) {
+        add(result.getLeftChild());
+        add(result.getRightChild());
     }
 
-    private record PartitionPriority(Partition partition, long rowsSketched) {
+    private void add(Partition partition) {
+        queue.add(new PartitionPriority(partition, sketchIndex.getNumberOfRecordsSketched(partition), queue.size()));
+    }
+
+    private record PartitionPriority(Partition partition, long rowsSketched, int order) {
     }
 
 }

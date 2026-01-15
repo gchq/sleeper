@@ -18,7 +18,6 @@ package sleeper.splitter.core.extend;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
@@ -94,7 +94,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         @Test
         void shouldSplitFromSingleExistingPartitionTwice() {
             // Given
-            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
             setPartitionsBefore(new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
             setPartitionSketchData("root", List.of(
                     new Row(Map.of("key", 10)),
@@ -438,8 +438,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     class SplitMoreDataFirst {
 
         @Test
-        @Disabled("TODO")
-        void shouldSplitLargerOfTwoPartitionsWhenBothCanBeSplit() {
+        void shouldSplitPartitionWithMoreDataWhenTwoCanBeSplit() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
             setPartitionsBefore(new PartitionsBuilder(tableProperties)
@@ -504,9 +503,15 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
             PartitionTree partitionsAfter = new PartitionTree(state.all());
             return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitionsAfter)
                     + "\nUpdated partition IDs:\n"
-                    + transaction.getUpdatePartitions().stream().map(Partition::getId).toList()
+                    + printPartitionLocationNamesAndIds(transaction.getUpdatePartitions(), partitionsAfter)
                     + "\n\nNew partition IDs:\n"
-                    + transaction.getNewPartitions().stream().map(Partition::getId).toList();
+                    + printPartitionLocationNamesAndIds(transaction.getNewPartitions(), partitionsAfter);
         };
+    }
+
+    private static String printPartitionLocationNamesAndIds(List<Partition> partitions, PartitionTree tree) {
+        return partitions.stream()
+                .map(partition -> PartitionsPrinter.buildPartitionLocationName(partition, tree) + ": " + partition.getId())
+                .collect(joining("\n"));
     }
 }
