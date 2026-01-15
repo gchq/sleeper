@@ -40,4 +40,4 @@ echo "DEPLOY_PAUSED: ${DEPLOY_PAUSED}"
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
 "$SCRIPTS_DIR/build/build.sh"
-"$SCRIPTS_DIR/deploy/deployNew.sh" $@
+"$SCRIPTS_DIR/deploy/deployNew.sh" "$@"
