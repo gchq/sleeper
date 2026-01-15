@@ -525,7 +525,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
                     .splitToNewChildren("root", "L", "R", 50)
                     .buildTree());
             // L has 3 rows, R has 7 rows
-            // R has 3 rows per child excluding the split point, so L takes priority as it is earlier in the tree
+            // R has 3 rows per child excluding the split point, so L takes priority as it was defined earlier
             setPartitionSketchData("L", List.of(
                     new Row(Map.of("key", 10)),
                     new Row(Map.of("key", 25)),
