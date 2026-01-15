@@ -23,6 +23,13 @@ package sleeper.splitter.core.sketches;
 public interface SketchForSplitting {
 
     /**
+     * Retrieves the number of rows that were used to create the sketch.
+     *
+     * @return the number of rows
+     */
+    long getNumberOfRows();
+
+    /**
      * Retrieves the minimum value in the range of values covered.
      *
      * @return the minimum value

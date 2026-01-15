@@ -28,20 +28,27 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
 
     private final Field field;
     private final ItemsSketch<Object> sketch;
+    private final long numberOfRows;
     private final double minQuantile;
     private final double medianQuantile;
     private final double maxQuantile;
 
     public WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch) {
-        this(field, sketch, 0.0, 0.5, 1.0);
+        this(field, sketch, sketch.getN(), 0.0, 0.5, 1.0);
     }
 
-    private WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch, double minQuantile, double medianQuantile, double maxQuantile) {
+    private WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch, long numberOfRows, double minQuantile, double medianQuantile, double maxQuantile) {
         this.field = field;
         this.sketch = sketch;
+        this.numberOfRows = numberOfRows;
         this.minQuantile = minQuantile;
         this.medianQuantile = medianQuantile;
         this.maxQuantile = maxQuantile;
+    }
+
+    @Override
+    public long getNumberOfRows() {
+        return numberOfRows;
     }
 
     @Override
@@ -66,7 +73,7 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
      */
     public WrappedSketchForSplitting splitLeft() {
         double newMedian = (medianQuantile - minQuantile) / 2.0 + minQuantile;
-        return new WrappedSketchForSplitting(field, sketch, minQuantile, newMedian, medianQuantile);
+        return new WrappedSketchForSplitting(field, sketch, numberOfRows / 2, minQuantile, newMedian, medianQuantile);
     }
 
     /**
@@ -76,7 +83,7 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
      */
     public WrappedSketchForSplitting splitRight() {
         double newMedian = (maxQuantile - medianQuantile) / 2.0 + medianQuantile;
-        return new WrappedSketchForSplitting(field, sketch, medianQuantile, newMedian, maxQuantile);
+        return new WrappedSketchForSplitting(field, sketch, numberOfRows / 2, medianQuantile, newMedian, maxQuantile);
     }
 
 }

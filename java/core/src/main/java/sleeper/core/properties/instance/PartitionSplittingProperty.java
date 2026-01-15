@@ -96,6 +96,15 @@ public interface PartitionSplittingProperty {
                     "number of rows in will be split. This value can be overridden on a per-table basis.")
             .defaultValue("1000000000")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_MIN_ROWS = Index.propertyBuilder("sleeper.default.table.partition.splitting.min.rows")
+            .description("When expanding the partition tree explicitly, this is the default for how many rows are " +
+                    "required in the input data to be able to split a partition. This will be used when " +
+                    "pre-splitting partitions.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. The bulk import job must contain at least " +
+                    "this much data per new split point.")
+            .defaultValue("1000")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
