@@ -33,7 +33,7 @@ def should_put_bulk_export_message_on_the_queue(sleeper_client: SleeperClient, b
     instance_id = properties.get(CommonProperty.ID)
 
     # When
-    sleeper_client.bulk_import_parquet_files_from_s3(table_name="test-table", files=["file1.parquet"], id=id, platform=platform, platform_spec=None, class_name=None)
+    sleeper_client.bulk_import_parquet_files_from_s3(table_name="test-table", files=["file1.parquet"], id=instance_id, platform=platform, platform_spec=None, class_name=None)
 
     # Then
     expected_message_json = [{"id": instance_id, "tableName": "test-table", "files": ["file1.parquet"]}]
