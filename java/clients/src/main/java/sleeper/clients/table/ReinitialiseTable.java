@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.utils.S3Path;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -32,6 +33,7 @@ import sleeper.statestore.StateStoreFactory;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketWithPrefix;
@@ -80,7 +82,11 @@ public class ReinitialiseTable {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
-        Set<String> filesToDelete = stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames();
+        final Set<String> filesToDelete = stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
+                .stream()
+                .map(filename -> S3Path.parse(filename).requestedPath())
+                .collect(Collectors.toSet());
+
         LOGGER.info("Found following files to delete:");
         for (String s : filesToDelete) {
             LOGGER.info(s);
