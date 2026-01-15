@@ -41,7 +41,7 @@ public interface SketchesForSplitting {
      * @param  schema the Sleeper table schema
      * @return        the number of rows used to generate the sketch
      */
-    default long getNumerOfRecordsSketched(Schema schema) {
+    default long getNumberOfRecordsSketched(Schema schema) {
         Field firstRowKeyField = schema.getRowKeyFields().get(0);
         return getSketch(firstRowKeyField).getNumberOfRows();
     }

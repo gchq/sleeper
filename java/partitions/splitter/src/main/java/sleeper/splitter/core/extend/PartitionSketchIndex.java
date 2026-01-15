@@ -51,6 +51,10 @@ class PartitionSketchIndex {
         return partitionIdToSketches.get(partition.getId());
     }
 
+    long getNumberOfRecordsSketched(Partition partition) {
+        return getSketches(partition).getNumberOfRecordsSketched(schema);
+    }
+
     void recordSplit(SplitPartitionResult result) {
         int dimension = result.getParentPartition().getDimension();
         Field field = schema.getRowKeyFields().get(dimension);

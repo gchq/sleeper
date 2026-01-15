@@ -92,29 +92,28 @@ public class ExtendPartitionTreeBasedOnSketches {
      */
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
-        SplitsTracker tracker = new SplitsTracker(originalLeafPartitions);
+        TreeExtensionTracker extensionTracker = new TreeExtensionTracker(originalLeafPartitions);
         PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
         List<Partition> workingPartitions = findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(originalLeafPartitions, sketchIndex);
-        while (tracker.getNumLeafPartitions() < minLeafPartitions) {
+        while (extensionTracker.getNumLeafPartitions() < minLeafPartitions) {
             List<Partition> afterSplits = splitLeaves(sketchIndex, workingPartitions)
-                    .peek(tracker::recordSplit)
+                    .peek(extensionTracker::recordSplit)
                     .peek(sketchIndex::recordSplit)
                     .flatMap(SplitPartitionResult::streamChildPartitions)
                     .toList();
             if (afterSplits.isEmpty()) {
-                throw new InsufficientDataForPartitionSplittingException(minLeafPartitions, tracker.getNumLeafPartitions());
+                throw new InsufficientDataForPartitionSplittingException(minLeafPartitions, extensionTracker.getNumLeafPartitions());
             }
             workingPartitions = afterSplits;
         }
-        return tracker.buildTransaction();
+        return extensionTracker.buildTransaction();
     }
 
     private List<Partition> findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(List<Partition> leafPartitions, PartitionSketchIndex sketchIndex) {
         Map<String, Long> partitionIdToNumRows = leafPartitions.stream()
                 .collect(toMap(
                         Partition::getId,
-                        partition -> sketchIndex.getSketches(partition)
-                                .getNumerOfRecordsSketched(schema)));
+                        sketchIndex::getNumberOfRecordsSketched));
         long totalRows = partitionIdToNumRows.values().stream().mapToLong(n -> n).sum();
         long expectedPartitionRows = totalRows / leafPartitions.size();
         long minPartitionRows = PercentageUtil.getCeilPercent(expectedPartitionRows, minExpectedPercentRows);

@@ -30,13 +30,13 @@ import static java.util.stream.Collectors.toSet;
 /**
  * Tracks which partitions are updated and created as splits occur.
  */
-class SplitsTracker {
+class TreeExtensionTracker {
 
     private final List<Partition> updatedPartitions = new ArrayList<>();
     private final Map<String, Partition> newPartitionsById = new LinkedHashMap<>();
     private final Set<String> leafPartitionIds;
 
-    SplitsTracker(List<Partition> originalLeafPartitions) {
+    TreeExtensionTracker(List<Partition> originalLeafPartitions) {
         leafPartitionIds = originalLeafPartitions.stream().map(Partition::getId).collect(toSet());
     }
 
