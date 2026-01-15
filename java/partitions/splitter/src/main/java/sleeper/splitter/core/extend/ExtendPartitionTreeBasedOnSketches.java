@@ -92,24 +92,24 @@ public class ExtendPartitionTreeBasedOnSketches {
      */
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
-        TreeExtensionTracker extensionTracker = new TreeExtensionTracker(originalLeafPartitions);
+        TreeExtensionTracker treeTracker = new TreeExtensionTracker(originalLeafPartitions);
         PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
         List<Partition> splittablePartitions = findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(originalLeafPartitions, sketchIndex);
         SplitPriorityTracker priorityTracker = new SplitPriorityTracker(splittablePartitions, sketchIndex);
-        while (extensionTracker.getNumLeafPartitions() < minLeafPartitions) {
+        while (treeTracker.getNumLeafPartitions() < minLeafPartitions) {
             Partition partition = priorityTracker.nextPartition()
-                    .orElseThrow(() -> new InsufficientDataForPartitionSplittingException(minLeafPartitions, extensionTracker.getNumLeafPartitions()));
+                    .orElseThrow(() -> new InsufficientDataForPartitionSplittingException(minLeafPartitions, treeTracker.getNumLeafPartitions()));
             SketchesForSplitting sketches = sketchIndex.getSketches(partition);
             Optional<SplitPartitionResult> splitResultOpt = FindPartitionSplitPoint.getResultIfSplittable(schema, minRowsInSketch, partition, sketches, idSupplier);
             if (splitResultOpt.isEmpty()) {
                 continue;
             }
             SplitPartitionResult splitResult = splitResultOpt.get();
-            extensionTracker.recordSplit(splitResult);
+            treeTracker.recordSplit(splitResult);
             sketchIndex.recordSplit(splitResult);
             priorityTracker.recordSplit(splitResult);
         }
-        return extensionTracker.buildTransaction();
+        return treeTracker.buildTransaction();
     }
 
     private List<Partition> findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(List<Partition> leafPartitions, PartitionSketchIndex sketchIndex) {
