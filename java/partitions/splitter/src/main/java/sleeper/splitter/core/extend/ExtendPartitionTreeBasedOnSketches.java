@@ -114,9 +114,7 @@ public class ExtendPartitionTreeBasedOnSketches {
 
     private List<Partition> findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(List<Partition> leafPartitions, PartitionSketchIndex sketchIndex) {
         Map<String, Long> partitionIdToNumRows = leafPartitions.stream()
-                .collect(toMap(
-                        Partition::getId,
-                        sketchIndex::getNumberOfRecordsSketched));
+                .collect(toMap(Partition::getId, sketchIndex::getNumberOfRecordsSketched));
         long totalRows = partitionIdToNumRows.values().stream().mapToLong(n -> n).sum();
         long expectedPartitionRows = totalRows / leafPartitions.size();
         long minPartitionRows = PercentageUtil.getCeilPercent(expectedPartitionRows, minExpectedPercentRows);
