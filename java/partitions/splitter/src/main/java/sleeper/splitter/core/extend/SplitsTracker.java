@@ -20,11 +20,12 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTr
 import sleeper.splitter.core.split.SplitPartitionResult;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Tracks which partitions are updated and created as splits occur.
@@ -32,10 +33,11 @@ import java.util.Set;
 class SplitsTracker {
 
     private final List<Partition> updatedPartitions = new ArrayList<>();
-    private final Map<String, Partition> newPartitionsById = new HashMap<>();
-    private final Set<String> newLeafPartitionIds = new HashSet<>();
+    private final Map<String, Partition> newPartitionsById = new LinkedHashMap<>();
+    private final Set<String> leafPartitionIds;
 
-    SplitsTracker() {
+    SplitsTracker(List<Partition> originalLeafPartitions) {
+        leafPartitionIds = originalLeafPartitions.stream().map(Partition::getId).collect(toSet());
     }
 
     void recordSplit(SplitPartitionResult result) {
@@ -45,9 +47,7 @@ class SplitsTracker {
     }
 
     int getNumLeafPartitions() {
-        // TODO handle case where existing leaf partitions were not split, they still need to be included in this count
-        // (see test list in ExtendPartitionTreeBasedOnSketchesTest)
-        return newLeafPartitionIds.size();
+        return leafPartitionIds.size();
     }
 
     ExtendPartitionTreeTransaction buildTransaction() {
@@ -55,17 +55,17 @@ class SplitsTracker {
     }
 
     private void recordParent(Partition partition) {
+        leafPartitionIds.remove(partition.getId());
         if (!newPartitionsById.containsKey(partition.getId())) {
             updatedPartitions.add(partition);
         } else {
             newPartitionsById.put(partition.getId(), partition);
-            newLeafPartitionIds.remove(partition.getId());
         }
     }
 
     private void recordChild(Partition partition) {
         newPartitionsById.put(partition.getId(), partition);
-        newLeafPartitionIds.add(partition.getId());
+        leafPartitionIds.add(partition.getId());
     }
 
 }
