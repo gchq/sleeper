@@ -42,6 +42,44 @@ def should_put_bulk_export_message_on_the_queue(sleeper_client: SleeperClient, b
     assert messages == expected_message_json
 
 
+def should_put_full_bulk_export_message_on_the_queue(sleeper_client: SleeperClient, bulk_import_queue: Queue, properties: InstanceProperties, platform: str):
+    # Given
+    if platform == "PersistentEMR":
+        pytest.skip("PersistentEMR cannot have a platformSpec.")
+
+    instance_id = properties.get(CommonProperty.ID)
+    platformSpec = {}
+
+    # When
+    sleeper_client.bulk_import_parquet_files_from_s3(
+        table_name="test-table", files=["file1.parquet"], id=instance_id, platform=platform, platform_spec=platformSpec, class_name="SleeperBulkImportTest"
+    )
+
+    # Then
+    expected_message_json = [{"id": instance_id, "tableName": "test-table", "files": ["file1.parquet"], "platformSpec": platformSpec, "className": "SleeperBulkImportTest"}]
+    messages = receive_messages(bulk_import_queue)
+
+    assert messages == expected_message_json
+
+
+@pytest.mark.parametrize("platform", ["PersistentEMR"])
+def should_put_full_bulk_export_message_on_the_queue_with_persistent_emr(sleeper_client: SleeperClient, bulk_import_queue: Queue, properties: InstanceProperties, platform: str):
+    # Given
+    instance_id = properties.get(CommonProperty.ID)
+    platformSpec = {}
+
+    # When
+    sleeper_client.bulk_import_parquet_files_from_s3(
+        table_name="test-table", files=["file1.parquet"], id=instance_id, platform=platform, platform_spec=platformSpec, class_name="SleeperBulkImportTest"
+    )
+
+    # Then
+    expected_message_json = [{"id": instance_id, "tableName": "test-table", "files": ["file1.parquet"], "className": "SleeperBulkImportTest"}]
+    messages = receive_messages(bulk_import_queue)
+
+    assert messages == expected_message_json
+
+
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
     LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
