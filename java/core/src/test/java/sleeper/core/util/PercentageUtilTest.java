@@ -43,4 +43,18 @@ public class PercentageUtilTest {
                 .isEqualTo(0L);
     }
 
+    @Test
+    void shouldGet100PercentOfLongValueWhenRoundingUp() {
+        // When / Then
+        assertThat(PercentageUtil.getCeilPercent(6L, 100))
+                .isEqualTo(6L);
+    }
+
+    @Test
+    void shouldGetOver100PercentOfLongValueWhenRoundingUp() {
+        // When / Then
+        assertThat(PercentageUtil.getCeilPercent(6L, 150))
+                .isEqualTo(9L);
+    }
+
 }
