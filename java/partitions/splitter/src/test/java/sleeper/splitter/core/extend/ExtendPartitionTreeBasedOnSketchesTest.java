@@ -38,6 +38,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -558,6 +560,25 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         }
     }
 
+    @Test
+    void shouldExtendToLargePartitionTree() {
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 10_000);
+        setPartitionsBefore(new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
+        // Use a k value that makes the sketch big enough to hold enough unique split point values
+        setPartitionSketchDataWithKValue("root", 2048,
+                IntStream.rangeClosed(0, 500_000)
+                        .map(i -> i * 100)
+                        .mapToObj(i -> new Row(Map.of("key", i))));
+
+        // When
+        ExtendPartitionTreeTransaction transaction = createTransaction();
+
+        // Then
+        assertThat(partitionsAfter(transaction).getLeafPartitions().size())
+                .isEqualTo(10_000);
+    }
+
     private ExtendPartitionTreeTransaction createTransaction() {
         return ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, supplyNumberedIdsWithPrefix("P"))
                 .createTransaction(partitionsBefore, partitionIdToSketches);
@@ -568,7 +589,11 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     }
 
     private void setPartitionSketchData(String partitionId, List<Row> rows) {
-        Sketches sketches = Sketches.from(tableProperties.getSchema());
+        setPartitionSketchDataWithKValue(partitionId, 1024, rows.stream());
+    }
+
+    private void setPartitionSketchDataWithKValue(String partitionId, int k, Stream<Row> rows) {
+        Sketches sketches = Sketches.from(tableProperties.getSchema(), k);
         rows.forEach(sketches::update);
         partitionIdToSketches.put(partitionId, sketches);
     }
@@ -583,16 +608,20 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     private Representation transactionRepresentation() {
         return object -> {
             ExtendPartitionTreeTransaction transaction = (ExtendPartitionTreeTransaction) object;
-            StateStorePartitions state = StateStorePartitions.from(partitionsBefore.getAllPartitions());
-            transaction.validate(state, tableProperties);
-            transaction.apply(state, Instant.parse("2026-01-12T14:46:00Z"));
-            PartitionTree partitionsAfter = new PartitionTree(state.all());
+            PartitionTree partitionsAfter = partitionsAfter(transaction);
             return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitionsAfter)
                     + "\nUpdated partition IDs:\n"
                     + printPartitionLocationNamesAndIds(transaction.getUpdatePartitions(), partitionsAfter)
                     + "\n\nNew partition IDs:\n"
                     + printPartitionLocationNamesAndIds(transaction.getNewPartitions(), partitionsAfter);
         };
+    }
+
+    private PartitionTree partitionsAfter(ExtendPartitionTreeTransaction transaction) {
+        StateStorePartitions state = StateStorePartitions.from(partitionsBefore.getAllPartitions());
+        transaction.validate(state, tableProperties);
+        transaction.apply(state, Instant.parse("2026-01-12T14:46:00Z"));
+        return new PartitionTree(state.all());
     }
 
     private static String printPartitionLocationNamesAndIds(List<Partition> partitions, PartitionTree tree) {
