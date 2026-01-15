@@ -94,7 +94,7 @@ public class ExtendPartitionTreeBasedOnSketches {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
         SplitsTracker tracker = new SplitsTracker(originalLeafPartitions);
         PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
-        List<Partition> workingPartitions = findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(originalLeafPartitions, partitionIdToSketches);
+        List<Partition> workingPartitions = findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(originalLeafPartitions, sketchIndex);
         while (tracker.getNumLeafPartitions() < minLeafPartitions) {
             List<Partition> afterSplits = splitLeaves(sketchIndex, workingPartitions)
                     .peek(tracker::recordSplit)
@@ -109,9 +109,12 @@ public class ExtendPartitionTreeBasedOnSketches {
         return tracker.buildTransaction();
     }
 
-    private List<Partition> findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(List<Partition> leafPartitions, Map<String, Sketches> partitionIdToSketches) {
+    private List<Partition> findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(List<Partition> leafPartitions, PartitionSketchIndex sketchIndex) {
         Map<String, Long> partitionIdToNumRows = leafPartitions.stream()
-                .collect(toMap(Partition::getId, partition -> getNumberOfRecordsSketchedInPartition(partition, partitionIdToSketches)));
+                .collect(toMap(
+                        Partition::getId,
+                        partition -> sketchIndex.getSketches(partition)
+                                .getNumerOfRecordsSketched(schema)));
         long totalRows = partitionIdToNumRows.values().stream().mapToLong(n -> n).sum();
         long expectedPartitionRows = totalRows / leafPartitions.size();
         long minPartitionRows = PercentageUtil.getCeilPercent(expectedPartitionRows, minExpectedPercentRows);
@@ -120,16 +123,10 @@ public class ExtendPartitionTreeBasedOnSketches {
                 .toList();
     }
 
-    private long getNumberOfRecordsSketchedInPartition(Partition partition, Map<String, Sketches> partitionIdToSketches) {
-        Sketches sketches = partitionIdToSketches.get(partition.getId());
-        String firstRowKeyField = schema.getRowKeyFields().get(0).getName();
-        return sketches.getQuantilesSketch(firstRowKeyField).getN();
-    }
-
     private Stream<SplitPartitionResult> splitLeaves(PartitionSketchIndex sketchIndex, List<Partition> leafPartitions) {
         return leafPartitions.stream()
                 .flatMap(partition -> {
-                    SketchesForSplitting sketches = sketchIndex.get(partition.getId());
+                    SketchesForSplitting sketches = sketchIndex.getSketches(partition);
                     return FindPartitionSplitPoint.getResultIfSplittable(schema, minRowsInSketch, partition, sketches, idSupplier).stream();
                 });
     }

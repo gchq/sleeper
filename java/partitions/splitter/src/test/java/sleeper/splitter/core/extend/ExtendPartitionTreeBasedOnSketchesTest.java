@@ -439,7 +439,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
 
         @Test
         @Disabled("TODO")
-        void shouldSplitLargerOfTwoPartitions() {
+        void shouldSplitLargerOfTwoPartitionsWhenBothCanBeSplit() {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
             setPartitionsBefore(new PartitionsBuilder(tableProperties)

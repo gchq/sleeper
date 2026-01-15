@@ -16,6 +16,7 @@
 package sleeper.splitter.core.sketches;
 
 import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 
 /**
  * Finds split points during partition splitting based on sketches. We avoid referencing the sketches directly so that
@@ -32,5 +33,17 @@ public interface SketchesForSplitting {
      * @return             the sketch of data in that field
      */
     SketchForSplitting getSketch(Field rowKeyField);
+
+    /**
+     * Retrieves the number of records that were used to generate the sketches. Assumes that all the sketches include
+     * the same records, and checks the sketch for the first row key field (dimension 0).
+     *
+     * @param  schema the Sleeper table schema
+     * @return        the number of rows used to generate the sketch
+     */
+    default long getNumerOfRecordsSketched(Schema schema) {
+        Field firstRowKeyField = schema.getRowKeyFields().get(0);
+        return getSketch(firstRowKeyField).getNumberOfRows();
+    }
 
 }

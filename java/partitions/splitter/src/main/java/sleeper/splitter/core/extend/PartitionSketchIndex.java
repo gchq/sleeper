@@ -15,6 +15,7 @@
  */
 package sleeper.splitter.core.extend;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
@@ -46,8 +47,8 @@ class PartitionSketchIndex {
                         .collect(Collectors.toMap(Entry::getKey, entry -> WrappedSketchesForSplitting.from(schema, entry.getValue()))));
     }
 
-    SketchesForSplitting get(String partitionId) {
-        return partitionIdToSketches.get(partitionId);
+    SketchesForSplitting getSketches(Partition partition) {
+        return partitionIdToSketches.get(partition.getId());
     }
 
     void recordSplit(SplitPartitionResult result) {
