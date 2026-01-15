@@ -26,8 +26,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
@@ -87,16 +85,16 @@ public class ReinitialiseTable {
         for (String s : filesToDelete) {
             LOGGER.info(s);
         }
-        new ClearFilesTransaction().synchronousCommit(stateStore);
+        //Temp remove: new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
-            ClearPartitionsTransaction.create().synchronousCommit(stateStore);
+            //Temp ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
 
         deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
                 key -> filesToDelete.contains(key));
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
-            buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
+            //Temp buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
         }
     }
 
