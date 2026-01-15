@@ -470,6 +470,49 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
                             List.of("R"),
                             List.of("P1", "P2")));
         }
+
+        @Test
+        void shouldSplitOnePartitionDownTwoLevelsBeforeSplittingOtherOriginalLeaf() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 6);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 51)),
+                    new Row(Map.of("key", 55)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 65)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 85)),
+                    new Row(Map.of("key", 90)),
+                    new Row(Map.of("key", 95)),
+                    new Row(Map.of("key", 99))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .splitToNewChildren("P1", "P3", "P4", 60)
+                                    .splitToNewChildren("P2", "P5", "P6", 90)
+                                    .splitToNewChildren("L", "P7", "P8", 25)
+                                    .buildTree(),
+                            List.of("R", "L"),
+                            List.of("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8")));
+        }
     }
 
     private ExtendPartitionTreeTransaction createTransaction() {
