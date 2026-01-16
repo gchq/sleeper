@@ -281,7 +281,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
         final String tableId = tableProperties.get(TABLE_ID);
-        FileReference fileReference1 = createFileReference(tableId + "/" + FILE_SHOULD_BE_DELETED_1, rootPartition.getId());
+        FileReference fileReference1 = createFileReference("s3a://" + tableId + "/" + FILE_SHOULD_BE_DELETED_1, rootPartition.getId());
         FileReference fileReference2 = createFileReference(tableId + "/" + FILE_SHOULD_BE_DELETED_2, rootPartition.getId());
 
         //  - Split root partition
