@@ -48,6 +48,7 @@ public class FindPartitionSplitPoint {
 
     public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, long minRowsInSketch, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
         SplitPartitionResultFactory resultFactory = new SplitPartitionResultFactory(schema, idSupplier);
+        LOGGER.info("Looking for split point for partition {}", partition.getId());
         return IntStream.range(0, schema.getRowKeyFields().size())
                 .mapToObj(dimension -> splitPointForDimension(schema, minRowsInSketch, sketches, dimension)
                         .map(splitPoint -> resultFactory.splitPartition(partition, splitPoint, dimension)))

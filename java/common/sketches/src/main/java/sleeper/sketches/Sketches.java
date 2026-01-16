@@ -43,9 +43,13 @@ public class Sketches {
     }
 
     public static Sketches from(Schema schema) {
+        return from(schema, 1024);
+    }
+
+    public static Sketches from(Schema schema, int k) {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType(), 1024));
+            keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType(), k));
         }
         return new Sketches(schema, keyFieldToSketch);
     }
