@@ -73,6 +73,7 @@ jobs:
         run: |
           rm -rf ./scripts/docker
           rm -rf ./scripts/jars
+          docker buildx rm --force sleeper
       - name: Docker image tests
         working-directory: ./java
         if: ${{ inputs.testClassNames != '' }}
