@@ -105,7 +105,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 bulkImportJobQueue, lambdaCode, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_SERVERLESS_START, List.of(emrRole));
         configureJobStarterFunction(instanceProperties, jobStarter);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private static void configureJobStarterFunction(InstanceProperties instanceProperties, IFunction bulkImportJobStarter) {

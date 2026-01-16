@@ -27,6 +27,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Creates reports in human-readable string format on the status of queries. This produces a table.
+ */
 public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private PrintStream out;
     private final TableField state;

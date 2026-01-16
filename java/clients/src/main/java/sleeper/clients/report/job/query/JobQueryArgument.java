@@ -20,6 +20,9 @@ import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
+/**
+ * Reads arguments from the command line when creating a query to generate a report from a job tracker.
+ */
 public class JobQueryArgument {
 
     private JobQueryArgument() {
@@ -34,12 +37,26 @@ public class JobQueryArgument {
         QUERY_TYPES.put("-u", JobQuery.Type.UNFINISHED);
     }
 
+    /**
+     * Reads the type of job tracker query from a command line argument. Defaults to prompting from the command line if
+     * the query type is not specified. There's a specific query type for that.
+     *
+     * @param  args  the command line arguments
+     * @param  index the index of the query type argument
+     * @return       the job tracker query type
+     */
     public static JobQuery.Type readTypeArgument(String[] args, int index) {
         return optionalArgument(args, index)
                 .map(JobQueryArgument::readType)
                 .orElse(JobQuery.Type.PROMPT);
     }
 
+    /**
+     * Reads the type of job tracker query from a command line argument.
+     *
+     * @param  queryTypeStr the query type argument as specified on the command line
+     * @return              the job tracker query type
+     */
     public static JobQuery.Type readType(String queryTypeStr) {
         if (!QUERY_TYPES.containsKey(queryTypeStr)) {
             throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");

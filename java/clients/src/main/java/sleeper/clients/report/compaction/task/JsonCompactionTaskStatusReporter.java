@@ -24,6 +24,9 @@ import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import java.io.PrintStream;
 import java.util.List;
 
+/**
+ * Creates reports in JSON format on the status of compaction tasks.
+ */
 public class JsonCompactionTaskStatusReporter implements CompactionTaskStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder().create();
     private final PrintStream out;

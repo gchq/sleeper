@@ -15,52 +15,57 @@
  */
 package sleeper.splitter.core.split;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.store.SketchesStore;
+import sleeper.splitter.core.sketches.SketchForSplitting;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 /**
- * Finds a split point for a partition by examining the sketches for each file.
+ * Finds a split point for a partition based on sketches of the data in the partition.
  */
 public class FindPartitionSplitPoint {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
 
-    private final Schema schema;
-    private final List<Sketches> sketches;
-
-    private FindPartitionSplitPoint(Schema schema, List<Sketches> sketches) {
-        this.schema = schema;
-        this.sketches = sketches;
+    private FindPartitionSplitPoint() {
     }
 
-    public static FindPartitionSplitPoint loadSketches(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
-        List<Sketches> sketches = new ArrayList<>();
-        for (String fileName : fileNames) {
-            LOGGER.info("Loading sketches for file {}", fileName);
-            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
-        }
-        return new FindPartitionSplitPoint(schema, sketches);
+    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
+        return getResultIfSplittable(schema, 0, partition, sketches, idSupplier);
     }
 
-    public Optional<Object> splitPointForDimension(int dimension) {
+    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, long minRowsInSketch, Partition partition, SketchesForSplitting sketches, Supplier<String> idSupplier) {
+        SplitPartitionResultFactory resultFactory = new SplitPartitionResultFactory(schema, idSupplier);
+        LOGGER.info("Looking for split point for partition {}", partition.getId());
+        return IntStream.range(0, schema.getRowKeyFields().size())
+                .mapToObj(dimension -> splitPointForDimension(schema, minRowsInSketch, sketches, dimension)
+                        .map(splitPoint -> resultFactory.splitPartition(partition, splitPoint, dimension)))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    private static Optional<Object> splitPointForDimension(Schema schema, long minRowsInSketch, SketchesForSplitting sketches, int dimension) {
         Field field = schema.getRowKeyFields().get(dimension);
+        SketchForSplitting sketch = sketches.getSketch(field);
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 field.getName(), field.getType(), dimension);
-        Optional<Object> splitPoint = splitPointForField(field, dimension);
+        if (sketch.getNumberOfRows() < minRowsInSketch) {
+            LOGGER.info("Sketch is not based on enough rows for a split, found {}, required {}", sketch.getNumberOfRows(), minRowsInSketch);
+            return Optional.empty();
+        }
+        Optional<Object> splitPoint = splitPointForField(field, dimension, sketch);
         if (field.getType() instanceof ByteArrayType) {
             return splitPoint.map(object -> (ByteArray) object).map(ByteArray::getArray);
         } else {
@@ -68,12 +73,11 @@ public class FindPartitionSplitPoint {
         }
     }
 
-    private Optional<Object> splitPointForField(Field field, int dimension) {
-        ItemsSketch sketch = unionSketches(field);
-        Comparator comparator = Sketches.createComparator(field.getType());
-        Object min = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
-        Object median = Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(0.5D), field);
-        Object max = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
+    private static Optional<Object> splitPointForField(Field field, int dimension, SketchForSplitting sketch) {
+        Comparator<Object> comparator = Sketches.createComparator(field.getType());
+        Object min = sketch.getMin();
+        Object median = sketch.getMedian();
+        Object max = sketch.getMax();
         LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
         if (comparator.compare(min, max) > 0) {
             throw new IllegalStateException("Min > max");
@@ -85,14 +89,6 @@ public class FindPartitionSplitPoint {
             LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
             return Optional.empty();
         }
-    }
-
-    private <T> ItemsSketch<T> unionSketches(Field field) {
-        ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
-        for (Sketches sketch : sketches) {
-            union.update(sketch.getQuantilesSketch(field.getName()));
-        }
-        return union.getResult();
     }
 
 }

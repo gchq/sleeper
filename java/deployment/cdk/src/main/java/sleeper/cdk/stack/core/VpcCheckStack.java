@@ -83,6 +83,6 @@ public class VpcCheckStack extends NestedStack {
                 .serviceToken(provider.getServiceToken())
                 .build());
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 }

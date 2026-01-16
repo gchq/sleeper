@@ -62,7 +62,7 @@ public class ConfigBucketStack extends NestedStack {
         configBucket.grantRead(policiesStack.getClearInstancePolicyForGrants());
         configBucket.grantDelete(policiesStack.getClearInstancePolicyForGrants());
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     public void grantRead(IGrantable grantee) {

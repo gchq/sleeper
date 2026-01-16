@@ -73,6 +73,7 @@ public class S3SketchesStore implements SketchesStore {
 
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
+        LOGGER.info("Loading sketches for file {}", filename);
         S3Filename s3Filename = S3Filename.parse(filename);
         SketchesSerDe serDe = new SketchesSerDe(schema);
         return s3Client.getObject(request -> request

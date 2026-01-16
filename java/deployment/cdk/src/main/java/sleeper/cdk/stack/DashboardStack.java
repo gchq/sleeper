@@ -96,7 +96,7 @@ public class DashboardStack extends NestedStack {
                 .value(constructUrl(instanceProperties))
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private static String constructUrl(InstanceProperties instanceProperties) {

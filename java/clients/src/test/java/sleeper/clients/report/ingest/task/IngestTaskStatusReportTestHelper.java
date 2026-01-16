@@ -24,10 +24,20 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+/**
+ * Creates example ingest task statuses for tests.
+ */
 public class IngestTaskStatusReportTestHelper {
     private IngestTaskStatusReportTestHelper() {
     }
 
+    /**
+     * Creates an example status for an ingest task that just started.
+     *
+     * @param  taskId    the task ID
+     * @param  startTime the time the task started
+     * @return           the status
+     */
     public static IngestTaskStatus startedTask(String taskId, String startTime) {
         return startedTaskBuilder(taskId, startTime).build();
     }
@@ -38,11 +48,30 @@ public class IngestTaskStatusReportTestHelper {
                 .taskId(taskId);
     }
 
+    /**
+     * Creates an example status for an ingest task that ran a single ingest job and then finished.
+     *
+     * @param  taskId      the task ID
+     * @param  startTime   the time the task started
+     * @param  finishTime  the time the task finished
+     * @param  rowsRead    the number of rows read during the job
+     * @param  rowsWritten the number of rows written during the job
+     * @return             the status
+     */
     public static IngestTaskStatus finishedTask(
             String taskId, String startTime, String finishTime, long rowsRead, long rowsWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, rowsRead, rowsWritten).build();
     }
 
+    /**
+     * Creates an example status for an ingest task that ran some number of ingest jobs and then finished.
+     *
+     * @param  taskId     the task ID
+     * @param  startTime  the time the task started
+     * @param  finishTime the time the task finished
+     * @param  summaries  a summary of each ingest job that ran in the task
+     * @return            the status
+     */
     public static IngestTaskStatus finishedTask(
             String taskId, String startTime, String finishTime, JobRunSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)

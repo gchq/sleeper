@@ -22,11 +22,23 @@ import sleeper.core.table.TableStatus;
 import java.time.Clock;
 import java.util.Map;
 
+/**
+ * Prompts the user on the command line to create a query to generate a report from a job tracker.
+ */
 public class JobQueryPrompt {
 
     private JobQueryPrompt() {
     }
 
+    /**
+     * Creates a query by prompting the user. This can be used to generate a report from a job tracker.
+     *
+     * @param  table        the Sleeper table to query
+     * @param  clock        a clock to get the current time (can be fixed for tests)
+     * @param  in           the console to prompt the user
+     * @param  extraQueries specific queries to allow for this prompt
+     * @return              the query
+     */
     public static JobQuery from(TableStatus table, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
