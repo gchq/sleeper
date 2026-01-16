@@ -56,13 +56,6 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.userjars=
 
-# A list of tags that will automatically be applied to all the resources in this deployment of
-# Sleeper.
-# The tags should be specified in a separate file called tags.properties.
-# Review /docs/deployment/instance-configuration.md for further details.
-# (uncomment to set a value)
-# sleeper.tags=
-
 # A name for a tag to identify the stack that deployed a resource. This will be set for all AWS
 # resources, to the ID of the CDK stack that they are deployed under. This can be used to organise the
 # cost explorer for billing.

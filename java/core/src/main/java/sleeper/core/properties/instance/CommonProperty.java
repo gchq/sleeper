@@ -73,7 +73,7 @@ public interface CommonProperty {
                     "Review /docs/deployment/instance-configuration.md for further details.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
-            .includedInTemplate(true).build();
+            .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")
