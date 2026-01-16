@@ -36,6 +36,7 @@ SCHEMA=${TABLE_DIR}/schema.json
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "Generating properties"
+
 mkdir -p "${TABLE_DIR}"
 
 # Schema
