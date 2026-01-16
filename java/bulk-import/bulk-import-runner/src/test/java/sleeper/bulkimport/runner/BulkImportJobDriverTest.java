@@ -16,6 +16,7 @@
 
 package sleeper.bulkimport.runner;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -45,6 +46,7 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -69,6 +71,11 @@ class BulkImportJobDriverTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 0);
+    }
 
     @Test
     void shouldReportJobFinished() throws Exception {
@@ -202,6 +209,14 @@ class BulkImportJobDriverTest {
         // Then
         assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
                 .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
+    }
+
+    @Test
+    void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+
+        // TODO
     }
 
     private void runJob(
