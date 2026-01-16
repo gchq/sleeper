@@ -86,7 +86,7 @@ public class ReinitialiseTable {
                 .stream()
                 .map(filename -> {
                     S3Path path = S3Path.parse(filename);
-                    return path.bucket() + "/" + path.prefix();
+                    return path.prefix();
                 })
                 .collect(Collectors.toSet());
 
