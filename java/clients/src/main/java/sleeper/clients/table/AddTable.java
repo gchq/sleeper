@@ -26,7 +26,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
@@ -56,13 +55,12 @@ public class AddTable {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.out.println("Usage: <instance-id> <table-properties-file> <schema-file>");
+        if (args.length != 2) {
+            System.out.println("Usage: <instance-id> <table-properties-file>");
             return;
         }
         String instanceId = args[0];
         Path tablePropertiesFile = Path.of(args[1]);
-        Path schemaFile = Path.of(args[2]);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
@@ -70,7 +68,6 @@ public class AddTable {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = LoadLocalProperties.loadTableFromPropertiesFileNoValidation(instanceProperties, tablePropertiesFile).properties();
-            tableProperties.setSchema(Schema.load(schemaFile));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);

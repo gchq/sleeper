@@ -36,6 +36,16 @@ SCHEMA=${TABLE_DIR}/schema.json
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "Generating properties"
+mkdir -p "${TABLE_DIR}"
+
+# Schema
+cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
+
+# Table Properties
+sed \
+  -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
+  "${TEMPLATE_DIR}/tableproperties.template" \
+  > "${TABLE_PROPERTIES}"
 
 echo "-------------------------------------------------------"
 echo "Adding table"
