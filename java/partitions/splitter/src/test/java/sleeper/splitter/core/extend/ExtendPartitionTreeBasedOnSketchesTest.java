@@ -38,7 +38,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
@@ -93,7 +96,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
         @Test
         void shouldSplitFromSingleExistingPartitionTwice() {
             // Given
-            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
             setPartitionsBefore(new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
             setPartitionSketchData("root", List.of(
                     new Row(Map.of("key", 10)),
@@ -437,9 +440,143 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     class SplitMoreDataFirst {
 
         @Test
-        void shouldSplitOneOfTwoPartitions() {
-            // TODO
+        void shouldSplitPartitionWithMoreDataWhenTwoCanBeSplit() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 90))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .buildTree(),
+                            List.of("R"),
+                            List.of("P1", "P2")));
         }
+
+        @Test
+        void shouldSplitOnePartitionDownTwoLevelsBeforeSplittingOtherOriginalLeaf() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 6);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            // L has 3 rows, R has 11 rows
+            // R has 5 rows per child excluding the split point, so each child is bigger than L
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 51)),
+                    new Row(Map.of("key", 55)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 65)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 85)),
+                    new Row(Map.of("key", 90)),
+                    new Row(Map.of("key", 95)),
+                    new Row(Map.of("key", 99))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .splitToNewChildren("P1", "P3", "P4", 60)
+                                    .splitToNewChildren("P2", "P5", "P6", 90)
+                                    .splitToNewChildren("L", "P7", "P8", 25)
+                                    .buildTree(),
+                            List.of("R", "L"),
+                            List.of("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8")));
+        }
+
+        @Test
+        void shouldSplitOnePartitionDownOneLevelThenSplitOtherOriginalLeafThenSplitAnotherLevelUnderFirstPartition() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 6);
+            setPartitionsBefore(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree());
+            // L has 3 rows, R has 7 rows
+            // R has 3 rows per child excluding the split point, so L takes priority as it was defined earlier
+            setPartitionSketchData("L", List.of(
+                    new Row(Map.of("key", 10)),
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 40))));
+            setPartitionSketchData("R", List.of(
+                    new Row(Map.of("key", 55)),
+                    new Row(Map.of("key", 60)),
+                    new Row(Map.of("key", 70)),
+                    new Row(Map.of("key", 75)),
+                    new Row(Map.of("key", 80)),
+                    new Row(Map.of("key", 90)),
+                    new Row(Map.of("key", 95))));
+
+            // When
+            ExtendPartitionTreeTransaction transaction = createTransaction();
+
+            // Then
+            assertThat(transaction)
+                    .withRepresentation(transactionRepresentation())
+                    .isEqualTo(transactionWithUpdatedAndNewPartitions(
+                            new PartitionsBuilder(tableProperties).singlePartition("root")
+                                    .splitToNewChildren("root", "L", "R", 50)
+                                    .splitToNewChildren("R", "P1", "P2", 75)
+                                    .splitToNewChildren("L", "P3", "P4", 25)
+                                    .splitToNewChildren("P1", "P5", "P6", 60)
+                                    .splitToNewChildren("P2", "P7", "P8", 90)
+                                    .buildTree(),
+                            List.of("R", "L"),
+                            List.of("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8")));
+        }
+    }
+
+    @Test
+    void shouldExtendToLargePartitionTree() {
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 10_000);
+        setPartitionsBefore(new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
+        // Use a k value that makes the sketch big enough to hold enough unique split point values
+        setPartitionSketchDataWithKValue("root", 2048,
+                IntStream.rangeClosed(0, 500_000)
+                        .map(i -> i * 100)
+                        .mapToObj(i -> new Row(Map.of("key", i))));
+
+        // When
+        ExtendPartitionTreeTransaction transaction = createTransaction();
+
+        // Then
+        assertThat(partitionsAfter(transaction).getLeafPartitions().size())
+                .isEqualTo(10_000);
     }
 
     private ExtendPartitionTreeTransaction createTransaction() {
@@ -452,7 +589,11 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     }
 
     private void setPartitionSketchData(String partitionId, List<Row> rows) {
-        Sketches sketches = Sketches.from(tableProperties.getSchema());
+        setPartitionSketchDataWithKValue(partitionId, 1024, rows.stream());
+    }
+
+    private void setPartitionSketchDataWithKValue(String partitionId, int k, Stream<Row> rows) {
+        Sketches sketches = Sketches.from(tableProperties.getSchema(), k);
         rows.forEach(sketches::update);
         partitionIdToSketches.put(partitionId, sketches);
     }
@@ -467,15 +608,25 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     private Representation transactionRepresentation() {
         return object -> {
             ExtendPartitionTreeTransaction transaction = (ExtendPartitionTreeTransaction) object;
-            StateStorePartitions state = StateStorePartitions.from(partitionsBefore.getAllPartitions());
-            transaction.validate(state, tableProperties);
-            transaction.apply(state, Instant.parse("2026-01-12T14:46:00Z"));
-            PartitionTree partitionsAfter = new PartitionTree(state.all());
+            PartitionTree partitionsAfter = partitionsAfter(transaction);
             return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitionsAfter)
                     + "\nUpdated partition IDs:\n"
-                    + transaction.getUpdatePartitions().stream().map(Partition::getId).toList()
+                    + printPartitionLocationNamesAndIds(transaction.getUpdatePartitions(), partitionsAfter)
                     + "\n\nNew partition IDs:\n"
-                    + transaction.getNewPartitions().stream().map(Partition::getId).toList();
+                    + printPartitionLocationNamesAndIds(transaction.getNewPartitions(), partitionsAfter);
         };
+    }
+
+    private PartitionTree partitionsAfter(ExtendPartitionTreeTransaction transaction) {
+        StateStorePartitions state = StateStorePartitions.from(partitionsBefore.getAllPartitions());
+        transaction.validate(state, tableProperties);
+        transaction.apply(state, Instant.parse("2026-01-12T14:46:00Z"));
+        return new PartitionTree(state.all());
+    }
+
+    private static String printPartitionLocationNamesAndIds(List<Partition> partitions, PartitionTree tree) {
+        return partitions.stream()
+                .map(partition -> PartitionsPrinter.buildPartitionLocationName(partition, tree) + ": " + partition.getId())
+                .collect(joining("\n"));
     }
 }

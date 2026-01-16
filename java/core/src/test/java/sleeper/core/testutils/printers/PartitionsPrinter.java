@@ -69,7 +69,15 @@ public class PartitionsPrinter {
         return printer.toString();
     }
 
-    static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
+    /**
+     * Generates a name for a partition based on its location in the tree. This is the same name used when printing a
+     * whole partition tree.
+     *
+     * @param  partition the partition
+     * @param  tree      the partition tree
+     * @return           the name for the partition based on its location in the tree
+     */
+    public static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
         String parentId = partition.getParentPartitionId();
         if (parentId == null) {
             return "root";
