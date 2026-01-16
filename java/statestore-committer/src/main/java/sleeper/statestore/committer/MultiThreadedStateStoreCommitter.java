@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -144,6 +145,16 @@ public class MultiThreadedStateStoreCommitter {
      * @throws Exception Error
      */
     public void run() throws Exception {
+        runUntil(() -> false);
+    }
+
+    /**
+     * Apply asynchronous commits from the committer SQS queue until a particular condition is satisfied.
+     *
+     * @param shouldStopRunning A function that returns true when the committer should stop processing commit requests
+     * @throws Exception Error
+     */
+    public void runUntil(Supplier<Boolean> shouldStopRunning) throws Exception {
         Exception err = null;
 
         Instant startedAt = Instant.now();
@@ -154,7 +165,7 @@ public class MultiThreadedStateStoreCommitter {
         }
 
         try {
-            while (true) {
+            while (!shouldStopRunning.get()) {
                 ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                     .queueUrl(qUrl)
                     .maxNumberOfMessages(10)
