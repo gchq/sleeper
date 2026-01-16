@@ -32,6 +32,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTr
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -91,7 +92,11 @@ public class ReinitialiseTable {
                     return path.prefix();
                 })
                 .collect(Collectors.toSet());
-
+        final Set<String> sketchesFiles = new HashSet<>();
+        for (String s : filesToDelete) {
+            sketchesFiles.add(s.replace(".parquet", ".sketches"));
+        }
+        filesToDelete.addAll(sketchesFiles);
         for (String s : filesToDelete) {
             LOGGER.info(s);
         }
