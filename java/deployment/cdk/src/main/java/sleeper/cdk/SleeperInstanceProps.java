@@ -125,6 +125,10 @@ public class SleeperInstanceProps {
     public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        String instanceId = context.tryGetContext("id");
+        if (instanceId != null) {
+            configuration.getInstanceProperties().set(ID, instanceId);
+        }
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
                 .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration))
