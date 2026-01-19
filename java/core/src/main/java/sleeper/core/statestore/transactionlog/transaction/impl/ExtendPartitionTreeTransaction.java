@@ -93,6 +93,14 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
         newPartitions.forEach(state::put);
     }
 
+    public List<Partition> getUpdatePartitions() {
+        return updatePartitions;
+    }
+
+    public List<Partition> getNewPartitions() {
+        return newPartitions;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(updatePartitions, newPartitions);
