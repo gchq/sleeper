@@ -423,7 +423,7 @@ def _bulk_import(
         "tableName": table_name,
         "files": files_to_ingest,
     }
-    if platform_spec is not None and platform != "PersistentEMR":
+    if platform_spec is not None:
         bulk_import_message["platformSpec"] = platform_spec
     if class_name is not None:
         bulk_import_message["className"] = class_name
