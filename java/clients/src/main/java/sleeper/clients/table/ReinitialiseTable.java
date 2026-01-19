@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketWithPrefix;
@@ -85,21 +84,8 @@ public class ReinitialiseTable {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
-        final Set<String> filesToDelete = stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
-                .stream()
-                .map(filename -> {
-                    S3Path path = S3Path.parse(filename);
-                    return path.prefix();
-                })
-                .collect(Collectors.toSet());
-        final Set<String> sketchesFiles = new HashSet<>();
-        for (String s : filesToDelete) {
-            sketchesFiles.add(s.replace(".parquet", ".sketches"));
-        }
-        filesToDelete.addAll(sketchesFiles);
-        for (String s : filesToDelete) {
-            LOGGER.info(s);
-        }
+        final Set<String> filesToDelete = getFilesToDelete(stateStore);
+
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
             ClearPartitionsTransaction.create().synchronousCommit(stateStore);
@@ -144,5 +130,17 @@ public class ReinitialiseTable {
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
+    }
+
+    private Set<String> getFilesToDelete(StateStore stateStore) {
+        final Set<String> filesToDelete = new HashSet<>();
+        stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
+                .stream()
+                .forEach(filename -> {
+                    S3Path path = S3Path.parse(filename);
+                    filesToDelete.add(path.prefix());
+                    filesToDelete.add(path.prefix().replace(".parquet", ".sketches"));
+                });
+        return filesToDelete;
     }
 }
