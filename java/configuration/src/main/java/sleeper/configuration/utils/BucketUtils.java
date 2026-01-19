@@ -88,11 +88,10 @@ public class BucketUtils {
      *
      * @param s3Client           the client to interact with AWS
      * @param bucketName         the string name of the bucket to check
-     * @param prefix             the string prefix of objects to delete
      * @param objectKeysToDelete the list of object keys to delete
      */
-    public static void deleteObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix, List<String> objectKeysToDelete) {
-        LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
+    public static void deleteObjectsInBucketFromListOfKeys(S3Client s3Client, String bucketName, List<String> objectKeysToDelete) {
+        LOGGER.info("Attempting to delete {} objects in the bucket {}", objectKeysToDelete.size(), bucketName);
         int totalObjectsDeleted = 0;
         int currentRequests = 0;
         while (currentRequests < objectKeysToDelete.size()) {
