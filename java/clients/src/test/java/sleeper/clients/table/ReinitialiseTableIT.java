@@ -125,7 +125,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         assertThat(stateStore.getAllPartitions()).hasSize(3);
         assertThat(stateStore.getLeafPartitions()).hasSize(2);
-        assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
+        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
     }
 
     @Test
@@ -202,17 +202,11 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertThat(listDataBucketObjectKeys())
                 .containsExactlyInAnyOrder(
                         tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableId + "/" + getSketchesNameFromParquet(FILE_SHOULD_NOT_BE_DELETED_1),
                         tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
-    }
-
-    private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
-        String tableId = tableProperties.get(TABLE_ID);
-        assertThat(listDataBucketObjectKeys())
-                .containsExactlyInAnyOrder(
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+                        tableId + "/" + getSketchesNameFromParquet(FILE_SHOULD_NOT_BE_DELETED_2),
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3,
+                        tableId + "/" + getSketchesNameFromParquet(FILE_SHOULD_NOT_BE_DELETED_3));
     }
 
     private List<String> listDataBucketObjectKeys() {
@@ -257,12 +251,13 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         String dataBucket = instanceProperties.get(DATA_BUCKET);
         String tableId = tableProperties.get(TABLE_ID);
 
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_1), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_2), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_BE_DELETED_3), RequestBody.fromString("some-content"));
+        List<String> filesToAddToS3 = List.of(FILE_SHOULD_BE_DELETED_1, FILE_SHOULD_BE_DELETED_2, FILE_SHOULD_BE_DELETED_3,
+                FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3);
+
+        for (String file : filesToAddToS3) {
+            s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + file), RequestBody.fromString("some-content"));
+            s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + getSketchesNameFromParquet(file)), RequestBody.fromString("some-content"));
+        }
     }
 
     private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
@@ -325,5 +320,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
             }
         }
         return path.toString();
+    }
+
+    private String getSketchesNameFromParquet(String parquetFilePath) {
+        return parquetFilePath.replace(".parquet", ".sketches");
     }
 }
