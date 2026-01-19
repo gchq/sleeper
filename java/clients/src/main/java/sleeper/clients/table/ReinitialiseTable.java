@@ -138,8 +138,8 @@ public class ReinitialiseTable {
                 .stream()
                 .forEach(filename -> {
                     S3Path path = S3Path.parse(filename);
-                    filesToDelete.add(path.prefix());
-                    filesToDelete.add(path.prefix().replace(".parquet", ".sketches"));
+                    filesToDelete.add(path.pathInBucket());
+                    filesToDelete.add(path.pathInBucket().replace(".parquet", ".sketches"));
                 });
         return filesToDelete;
     }
