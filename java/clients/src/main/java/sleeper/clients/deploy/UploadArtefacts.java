@@ -73,9 +73,9 @@ public class UploadArtefacts {
                         "deployment.\n" +
                         "\n" +
                         "--properties, -p\n" +
-                        "An instance properties file to read configuration from. The artefacts deployment ID will be " +
-                        "read from this file, defaulting to the instance ID. Docker images that are not required to " +
-                        "deploy this instance will not be uploaded.\n" +
+                        "An instance properties file to read configuration from. If you do not also set the " +
+                        "artefacts deployment ID, it will be read from this file, defaulting to the instance ID. " +
+                        "Docker images that are not required to deploy this instance will not be uploaded.\n" +
                         "\n" +
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
@@ -105,6 +105,9 @@ public class UploadArtefacts {
         String ecrPrefix;
         List<StackDockerImage> images;
         if (args.instanceProperties() != null) {
+            if (args.deploymentId() != null) {
+                args.instanceProperties().set(ARTEFACTS_DEPLOYMENT_ID, args.deploymentId());
+            }
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
