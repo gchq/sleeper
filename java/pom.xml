@@ -100,7 +100,7 @@
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.1</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
-        <dnsjava.version>3.6.3</dnsjava.version>
+        <dnsjava.version>3.6.4</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.11</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
