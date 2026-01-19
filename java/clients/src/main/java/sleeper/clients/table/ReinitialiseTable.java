@@ -32,9 +32,9 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTr
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -84,7 +84,7 @@ public class ReinitialiseTable {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
-        final Set<String> filesToDelete = getFilesToDelete(stateStore);
+        final List<String> filesToDelete = getFilesToDelete(stateStore);
 
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
@@ -92,7 +92,7 @@ public class ReinitialiseTable {
         }
 
         deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
-                key -> filesToDelete.contains(key));
+                filesToDelete);
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
@@ -132,8 +132,8 @@ public class ReinitialiseTable {
         }
     }
 
-    private Set<String> getFilesToDelete(StateStore stateStore) {
-        final Set<String> filesToDelete = new HashSet<>();
+    private List<String> getFilesToDelete(StateStore stateStore) {
+        final List<String> filesToDelete = new ArrayList<>();
         stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
                 .stream()
                 .forEach(filename -> {
