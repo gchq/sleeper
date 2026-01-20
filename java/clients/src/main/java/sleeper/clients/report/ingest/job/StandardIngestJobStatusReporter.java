@@ -91,9 +91,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                     .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
+
+            if (!statusList.isEmpty()) {
+                out.println();
+                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+            }
         }
-        out.println();
-        out.println("For more information concerning any failure reasons, please consult the more detailed report.");
     }
 
     private void printSummary(
