@@ -51,8 +51,8 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
  * Note that the Spark context should be stopped at the end of the bulk import job. This class implements AutoCloseable
  * to make that easier.
  */
-public class BulkImportContext implements AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportContext.class);
+public class BulkImportSparkContext implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkContext.class);
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
@@ -60,7 +60,7 @@ public class BulkImportContext implements AutoCloseable {
     private final Dataset<Row> rows;
     private final Broadcast<List<Partition>> partitionsBroadcast;
 
-    private BulkImportContext(
+    private BulkImportSparkContext(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             SparkContext sparkContext, Dataset<Row> rows, Broadcast<List<Partition>> partitionsBroadcast) {
         this.instanceProperties = instanceProperties;
@@ -79,7 +79,7 @@ public class BulkImportContext implements AutoCloseable {
      * @param  filenames          the paths to the input Parquet files, excluding the file system
      * @return                    the context for the bulk import
      */
-    public static BulkImportContext create(
+    public static BulkImportSparkContext create(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             List<Partition> partitions, List<String> filenames) {
         LOGGER.info("Initialising Spark");
@@ -99,7 +99,7 @@ public class BulkImportContext implements AutoCloseable {
                 .parquet(addFileSystem(instanceProperties, filenames).toArray(new String[0]));
         LOGGER.info("Prepared partitions broadcast and rows dataset");
 
-        return new BulkImportContext(instanceProperties, tableProperties, sparkContext, rows, partitionsBroadcast);
+        return new BulkImportSparkContext(instanceProperties, tableProperties, sparkContext, rows, partitionsBroadcast);
     }
 
     /**

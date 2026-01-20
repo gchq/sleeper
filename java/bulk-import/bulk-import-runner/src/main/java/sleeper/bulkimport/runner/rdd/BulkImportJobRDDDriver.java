@@ -21,8 +21,8 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 
-import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.bulkimport.runner.BulkImportJobDriver;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -38,7 +38,7 @@ public class BulkImportJobRDDDriver {
         BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileReferences(BulkImportContext input) {
+    public static Dataset<Row> createFileReferences(BulkImportSparkContext input) {
         Schema schema = input.getTableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         JavaRDD<Row> rdd = input.getRows().javaRDD()

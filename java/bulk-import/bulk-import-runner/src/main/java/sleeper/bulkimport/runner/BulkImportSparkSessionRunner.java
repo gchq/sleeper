@@ -57,7 +57,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        BulkImportContext context = BulkImportContext.create(instanceProperties, tableProperties, allPartitions, job.getFiles());
+        BulkImportSparkContext context = BulkImportSparkContext.create(instanceProperties, tableProperties, allPartitions, job.getFiles());
         List<FileReference> fileReferences = jobRunner.createFileReferences(context)
                 .collectAsList().stream()
                 .map(SparkFileReferenceRow::createFileReference)

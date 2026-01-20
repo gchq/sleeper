@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.runner.BulkImportContext;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
@@ -47,7 +47,7 @@ public class GenerateSketchesDriver {
      * @param  input the context of the bulk import
      * @return       a map from Sleeper partition ID to a sketch of the data in that partition
      */
-    public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportContext input) {
+    public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportSparkContext input) {
         LOGGER.info("Generating sketches...");
         Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
         Dataset<Row> sketchFiles = partitioned.mapPartitions(

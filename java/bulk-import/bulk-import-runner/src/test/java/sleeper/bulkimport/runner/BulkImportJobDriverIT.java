@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -90,6 +89,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -146,6 +146,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(BULK_IMPORT_BUCKET, UUID.randomUUID().toString());
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 0);
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
@@ -419,11 +420,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Check json file has been deleted
         assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
-    }
-
-    @Test
-    void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
-        // TODO
     }
 
     private static List<Row> readRows(String filename, Schema schema) {

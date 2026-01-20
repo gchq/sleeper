@@ -114,7 +114,7 @@ public abstract class SparkTestBase {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    protected BulkImportContext createBulkImportContext(List<String> filenames) {
+    protected BulkImportSparkContext createBulkImportContext(List<String> filenames) {
         return createBulkImportContext(lastTable, filenames);
     }
 
@@ -122,9 +122,9 @@ public abstract class SparkTestBase {
         return SketchesDeciles.from(lastTable, rows);
     }
 
-    protected BulkImportContext createBulkImportContext(TableProperties tableProperties, List<String> filenames) {
+    protected BulkImportSparkContext createBulkImportContext(TableProperties tableProperties, List<String> filenames) {
         List<Partition> partitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
-        return BulkImportContext.create(
+        return BulkImportSparkContext.create(
                 instanceProperties, tableProperties, partitions, filenames);
     }
 

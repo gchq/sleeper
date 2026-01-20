@@ -24,7 +24,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.serializer.KryoSerializer;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.runner.BulkImportContext;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
@@ -104,12 +104,12 @@ public class KryoSerializerTest {
     }
 
     private static Kryo kryo() {
-        SparkConf sparkConf = BulkImportContext.createSparkConf();
+        SparkConf sparkConf = BulkImportSparkContext.createSparkConf();
         return new KryoSerializer(sparkConf).newKryo();
     }
 
     private static Kryo kryoWithoutImmutableListSupport() {
-        SparkConf sparkConf = BulkImportContext.createSparkConf();
+        SparkConf sparkConf = BulkImportSparkContext.createSparkConf();
         sparkConf.remove("spark.kryo.registrator");
         return new KryoSerializer(sparkConf).newKryo();
     }
