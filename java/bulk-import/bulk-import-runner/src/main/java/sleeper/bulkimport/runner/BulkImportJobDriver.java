@@ -74,7 +74,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
     private final ContextCreator<C> contextCreator;
-    private final BulkImporter<C> sessionRunner;
+    private final BulkImporter<C> bulkImporter;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
@@ -83,14 +83,14 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
 
     public BulkImportJobDriver(
             ContextCreator<C> contextCreator,
-            BulkImporter<C> sessionRunner,
+            BulkImporter<C> bulkImporter,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobTracker tracker,
             StateStoreCommitRequestSender asyncSender,
             Supplier<Instant> getTime) {
         this.contextCreator = contextCreator;
-        this.sessionRunner = sessionRunner;
+        this.bulkImporter = bulkImporter;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
@@ -121,7 +121,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
             List<FileReference> fileReferences;
             try {
-                fileReferences = sessionRunner.createFileReferences(context);
+                fileReferences = bulkImporter.createFileReferences(context);
             } catch (RuntimeException e) {
                 tracker.jobFailed(IngestJobFailedEvent.builder()
                         .jobRunIds(runIds)
