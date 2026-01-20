@@ -20,12 +20,21 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
+import java.util.function.Consumer;
 
-public record FakeBulkImportContext(TableProperties tableProperties, List<Partition> partitions, BulkImportJob job, Runnable closeContext) implements BulkImportContext {
+public record FakeBulkImportContext(TableProperties tableProperties, List<Partition> partitions, BulkImportJob job, Consumer<FakeBulkImportContext> closeContext) implements BulkImportContext {
+
+    public static BulkImportJobDriver.ContextCreator<FakeBulkImportContext> creator(List<FakeBulkImportContext> trackCreatedContexts, List<FakeBulkImportContext> trackClosedContexts) {
+        return (tableProperties, partitions, job) -> {
+            FakeBulkImportContext context = new FakeBulkImportContext(tableProperties, partitions, job, trackClosedContexts::add);
+            trackCreatedContexts.add(context);
+            return context;
+        };
+    }
 
     @Override
     public void close() {
-        closeContext.run();
+        closeContext.accept(this);
     }
 
 }

@@ -16,17 +16,24 @@
 
 package sleeper.bulkimport.runner;
 
+import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -35,6 +42,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.testutils.printers.PartitionsPrinter;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
@@ -55,6 +63,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRows;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
@@ -73,11 +82,13 @@ class BulkImportJobDriverTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
-    private final List<BulkImportJob> jobContextClosed = new ArrayList<>();
+    private final List<FakeBulkImportContext> jobContextsCreated = new ArrayList<>();
+    private final List<FakeBulkImportContext> jobContextsClosed = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
+        stateStore.fixFileUpdateTime(null);
     }
 
     @Nested
@@ -108,7 +119,7 @@ class BulkImportJobDriverTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .isEqualTo(outputFiles);
             assertThat(commitRequestQueue).isEmpty();
-            assertThat(jobContextClosed).containsExactly(job);
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
 
         @Test
@@ -136,7 +147,7 @@ class BulkImportJobDriverTest {
                             failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(commitRequestQueue).isEmpty();
-            assertThat(jobContextClosed).containsExactly(job);
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
 
         @Test
@@ -168,7 +179,7 @@ class BulkImportJobDriverTest {
                             validatedIngestStartedStatus(startTime, 1),
                             failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
             assertThat(commitRequestQueue).isEmpty();
-            assertThat(jobContextClosed).containsExactly(job);
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
     }
 
@@ -236,11 +247,44 @@ class BulkImportJobDriverTest {
         // - Bulk import job doesn't count as started when pre-splitting partitions fails
 
         @Test
-        void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
+        @Disabled("TODO")
+        void shouldPreSplitPartitionsWhenNotEnoughArePresent() throws Exception {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+            tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
+            PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            update(stateStore).initialise(partitionsBefore);
+            PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 500)
+                    .buildTree();
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitionsAfter);
+            List<FileReference> outputFiles = List.of(
+                    fileFactory.partitionFile("L", 100),
+                    fileFactory.partitionFile("R", 100));
 
-            // TODO
+            // When
+            runJob(job, "test-run", "test-task", validationTime, driver(
+                    successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            ingestFinishedStatus(summary(startTime, finishTime, 200, 200), 2))));
+            assertThat(stateStore.getFileReferences()).isEqualTo(outputFiles);
+            assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextsCreated)
+                    .extracting(FakeBulkImportContext::partitions).singleElement()
+                    .withRepresentation(partitionsRepresentation())
+                    .isEqualTo(partitionsAfter.getAllPartitions())
+                    .isEqualTo(stateStore.getAllPartitions());
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
     }
 
@@ -258,7 +302,8 @@ class BulkImportJobDriverTest {
 
     private BulkImportJobDriver<FakeBulkImportContext> driver(
             BulkImportJobDriver.BulkImporter<FakeBulkImportContext> sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
-        return new BulkImportJobDriver<>(contextCreator(), sessionRunner,
+        return new BulkImportJobDriver<>(
+                FakeBulkImportContext.creator(jobContextsCreated, jobContextsClosed), sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 tracker, commitRequestQueue::add, timeSupplier);
@@ -274,9 +319,12 @@ class BulkImportJobDriverTest {
         };
     }
 
-    private BulkImportJobDriver.ContextCreator<FakeBulkImportContext> contextCreator() {
-        return (tableProperties, partitions, job) -> new FakeBulkImportContext(
-                tableProperties, partitions, job, () -> jobContextClosed.add(job));
+    private Representation partitionsRepresentation() {
+        return obj -> {
+            List<Partition> partitions = (List<Partition>) obj;
+            return PartitionsPrinter.printPartitions(tableProperties.getSchema(), new PartitionTree(partitions))
+                    + "\n\nPartition IDs: " + partitions.stream().map(Partition::getId).toList();
+        };
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
