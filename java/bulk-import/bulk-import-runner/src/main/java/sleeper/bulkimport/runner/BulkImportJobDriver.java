@@ -27,9 +27,11 @@ import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -50,6 +52,8 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.sketches.Sketches;
+import sleeper.splitter.core.extend.ExtendPartitionTreeBasedOnSketches;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -61,9 +65,12 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 
 /**
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
@@ -72,32 +79,38 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMM
  *
  * @param <C> the type of the Spark context
  */
-public class BulkImportJobDriver<C extends BulkImportContext> {
+public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
     private final ContextCreator<C> contextCreator;
+    private final DataSketcher<C> dataSketcher;
     private final BulkImporter<C> bulkImporter;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
     private final StateStoreCommitRequestSender asyncSender;
     private final Supplier<Instant> getTime;
+    private final Supplier<String> partitionIdSupplier;
 
     public BulkImportJobDriver(
             ContextCreator<C> contextCreator,
+            DataSketcher<C> dataSketcher,
             BulkImporter<C> bulkImporter,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobTracker tracker,
             StateStoreCommitRequestSender asyncSender,
-            Supplier<Instant> getTime) {
+            Supplier<Instant> getTime,
+            Supplier<String> partitionIdSupplier) {
         this.contextCreator = contextCreator;
+        this.dataSketcher = dataSketcher;
         this.bulkImporter = bulkImporter;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
         this.asyncSender = asyncSender;
         this.getTime = getTime;
+        this.partitionIdSupplier = partitionIdSupplier;
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -121,9 +134,10 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
         // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
+            C afterSplit = preSplitPartitionsIfNecessary(tableProperties, allPartitions, context);
             List<FileReference> fileReferences;
             try {
-                fileReferences = bulkImporter.createFileReferences(context);
+                fileReferences = bulkImporter.createFileReferences(afterSplit);
             } catch (RuntimeException e) {
                 tracker.jobFailed(IngestJobFailedEvent.builder()
                         .jobRunIds(runIds)
@@ -135,6 +149,21 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
 
             commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
         }
+    }
+
+    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, List<Partition> allPartitions, C context) {
+        PartitionTree tree = new PartitionTree(allPartitions);
+        List<Partition> leafPartitions = tree.getLeafPartitions();
+        if (leafPartitions.size() < tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)) {
+            Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
+                    .createTransaction(tree, partitionIdToSketches)
+                    .synchronousCommit(stateStore);
+            return context.withPartitions(stateStore.getAllPartitions());
+        }
+
+        return context;
     }
 
     private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
@@ -183,13 +212,18 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
     }
 
     @FunctionalInterface
-    public interface BulkImporter<C extends BulkImportContext> {
-        List<FileReference> createFileReferences(C context) throws IOException;
+    public interface ContextCreator<C extends BulkImportContext<C>> {
+        C createContext(TableProperties tableProperties, List<Partition> allPartitions, BulkImportJob job);
     }
 
     @FunctionalInterface
-    public interface ContextCreator<C extends BulkImportContext> {
-        C createContext(TableProperties tableProperties, List<Partition> allPartitions, BulkImportJob job);
+    public interface DataSketcher<C extends BulkImportContext<C>> {
+        Map<String, Sketches> generatePartitionIdToSketches(C context);
+    }
+
+    @FunctionalInterface
+    public interface BulkImporter<C extends BulkImportContext<C>> {
+        List<FileReference> createFileReferences(C context) throws IOException;
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
@@ -234,8 +268,9 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
             StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                     instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
             BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
-                    BulkImportSparkContext.creator(instanceProperties), runner.asImporter(),
-                    tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
+                    BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
+                    tablePropertiesProvider, stateStoreProvider, tracker, commitSender,
+                    Instant::now, () -> UUID.randomUUID().toString());
             driver.run(bulkImportJob, jobRunId, taskId);
         }
     }

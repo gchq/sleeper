@@ -15,7 +15,13 @@
  */
 package sleeper.bulkimport.runner;
 
-public interface BulkImportContext extends AutoCloseable {
+import sleeper.core.partition.Partition;
+
+import java.util.List;
+
+public interface BulkImportContext<C extends BulkImportContext<C>> extends AutoCloseable {
+
+    C withPartitions(List<Partition> partitions);
 
     void close();
 

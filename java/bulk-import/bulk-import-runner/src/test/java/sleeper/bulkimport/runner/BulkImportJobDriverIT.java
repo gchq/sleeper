@@ -32,6 +32,7 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver;
+import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
@@ -95,6 +96,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
@@ -555,8 +557,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                 properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
-                BulkImportSparkContext.creator(instanceProperties), runner.asImporter(),
-                tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier);
+                BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
+                tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier, supplyNumberedIdsWithPrefix("P"));
         driver.run(job, jobRunId, taskId);
     }
 

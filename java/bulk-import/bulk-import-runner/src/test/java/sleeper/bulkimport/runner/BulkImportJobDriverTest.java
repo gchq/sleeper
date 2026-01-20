@@ -18,7 +18,6 @@ package sleeper.bulkimport.runner;
 
 import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +29,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
@@ -47,16 +47,20 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.sketches.Sketches;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -64,6 +68,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRows;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
@@ -84,6 +89,7 @@ class BulkImportJobDriverTest {
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
     private final List<FakeBulkImportContext> jobContextsCreated = new ArrayList<>();
     private final List<FakeBulkImportContext> jobContextsClosed = new ArrayList<>();
+    private final Map<String, Sketches> partitionIdToSketches = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -247,16 +253,20 @@ class BulkImportJobDriverTest {
         // - Bulk import job doesn't count as started when pre-splitting partitions fails
 
         @Test
-        @Disabled("TODO")
         void shouldPreSplitPartitionsWhenNotEnoughArePresent() throws Exception {
             // Given
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
             tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
             PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
             update(stateStore).initialise(partitionsBefore);
+            setPartitionSketchData("root", List.of(
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 75))));
             PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 500)
+                    .splitToNewChildren("root", "P1", "P2", 50)
                     .buildTree();
             BulkImportJob job = singleFileImportJob();
             Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
@@ -264,8 +274,8 @@ class BulkImportJobDriverTest {
             Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
             FileReferenceFactory fileFactory = FileReferenceFactory.from(partitionsAfter);
             List<FileReference> outputFiles = List.of(
-                    fileFactory.partitionFile("L", 100),
-                    fileFactory.partitionFile("R", 100));
+                    fileFactory.partitionFile("P1", 100),
+                    fileFactory.partitionFile("P2", 100));
 
             // When
             runJob(job, "test-run", "test-task", validationTime, driver(
@@ -278,12 +288,15 @@ class BulkImportJobDriverTest {
                             validatedIngestStartedStatus(startTime, 1),
                             ingestFinishedStatus(summary(startTime, finishTime, 200, 200), 2))));
             assertThat(stateStore.getFileReferences()).isEqualTo(outputFiles);
-            assertThat(commitRequestQueue).isEmpty();
-            assertThat(jobContextsCreated)
-                    .extracting(FakeBulkImportContext::partitions).singleElement()
+            assertThat(stateStore.getAllPartitions())
                     .withRepresentation(partitionsRepresentation())
-                    .isEqualTo(partitionsAfter.getAllPartitions())
-                    .isEqualTo(stateStore.getAllPartitions());
+                    .isEqualTo(partitionsAfter.getAllPartitions());
+            assertThat(jobContextsCreated)
+                    .extracting(FakeBulkImportContext::partitions)
+                    .containsExactly(
+                            partitionsBefore.getAllPartitions(),
+                            partitionsAfter.getAllPartitions());
+            assertThat(commitRequestQueue).isEmpty();
             assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
     }
@@ -303,10 +316,20 @@ class BulkImportJobDriverTest {
     private BulkImportJobDriver<FakeBulkImportContext> driver(
             BulkImportJobDriver.BulkImporter<FakeBulkImportContext> sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
         return new BulkImportJobDriver<>(
-                FakeBulkImportContext.creator(jobContextsCreated, jobContextsClosed), sessionRunner,
+                FakeBulkImportContext.creator(jobContextsCreated, jobContextsClosed), dataSketcher(), sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                tracker, commitRequestQueue::add, timeSupplier);
+                tracker, commitRequestQueue::add, timeSupplier, supplyNumberedIdsWithPrefix("P"));
+    }
+
+    private void setPartitionSketchData(String partitionId, List<Row> rows) {
+        Sketches sketches = Sketches.from(tableProperties.getSchema());
+        rows.forEach(sketches::update);
+        partitionIdToSketches.put(partitionId, sketches);
+    }
+
+    private BulkImportJobDriver.DataSketcher<FakeBulkImportContext> dataSketcher() {
+        return context -> partitionIdToSketches;
     }
 
     private BulkImportJobDriver.BulkImporter<FakeBulkImportContext> successfulWithOutput(List<FileReference> outputFiles) {
@@ -320,11 +343,12 @@ class BulkImportJobDriverTest {
     }
 
     private Representation partitionsRepresentation() {
-        return obj -> {
-            List<Partition> partitions = (List<Partition>) obj;
-            return PartitionsPrinter.printPartitions(tableProperties.getSchema(), new PartitionTree(partitions))
-                    + "\n\nPartition IDs: " + partitions.stream().map(Partition::getId).toList();
-        };
+        return obj -> printPartitions((List<Partition>) obj);
+    }
+
+    private String printPartitions(List<Partition> partitions) {
+        return PartitionsPrinter.printPartitions(tableProperties.getSchema(), new PartitionTree(partitions))
+                + "\n\nPartition IDs: " + partitions.stream().map(Partition::getId).toList();
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
