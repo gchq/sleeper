@@ -69,6 +69,8 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMM
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
  * {@link BulkImportJobRunner} implementation, which takes rows from the input files and outputs a file for each Sleeper
  * partition. These will then be added to the {@link StateStore}.
+ *
+ * @param <C> the type of the Spark context
  */
 public class BulkImportJobDriver<C extends BulkImportContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
