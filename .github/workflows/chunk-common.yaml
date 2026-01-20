@@ -22,6 +22,7 @@ on:
       - 'java/common/localstack-test/**'
       - 'java/statestore/**'
       - 'java/statestore-committer-core/**'
+      - 'java/statestore-committer/**'
       - 'java/statestore-lambda/**'
       - 'java/statestore/**'
       - 'java/metrics/**'
