@@ -127,13 +127,16 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
+
             C afterSplit = preSplitPartitionsIfNecessary(tableProperties, runIds, allPartitions, context);
+
             Instant startTime = getTime.get();
             tracker.jobStarted(IngestJobStartedEvent.builder()
                     .jobRunIds(runIds)
                     .startTime(startTime)
                     .fileCount(job.getFiles().size())
                     .build());
+
             LOGGER.info("Running bulk import job with id {}", job.getId());
             List<FileReference> fileReferences;
             try {
