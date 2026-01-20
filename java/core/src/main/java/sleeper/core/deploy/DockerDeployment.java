@@ -51,6 +51,9 @@ public class DockerDeployment {
             .deploymentName("bulk-export-task-execution")
             .optionalStack(OptionalStack.BulkExportStack)
             .add();
+    public static final DockerDeployment STATESTORE_COMMITTER = builder()
+            .deploymentName("statestore-committer")
+            .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;

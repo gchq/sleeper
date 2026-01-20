@@ -92,6 +92,42 @@ public class StateStoreProviderTest {
                 "table-id-1");
     }
 
+    @Test
+    void shouldNotRemoveFromCacheIfStateStoreNotLoaded() {
+        // Given
+        TableProperties table = createTable("test-table-id", "test-table");
+        StateStore store = createStateStore(table);
+
+        // When
+        StateStoreProvider provider = provider();
+        boolean removed = provider.removeStateStoreFromCache(table);
+
+        // Then
+        assertThat(tableIdToStateStore.get(table.get(TABLE_ID))).isSameAs(store);
+        assertThat(tablesLoaded).isEmpty();
+        assertThat(removed).isFalse();
+    }
+
+    @Test
+    void shouldRemoveRequestedStateStoreFromCache() {
+        // Given
+        TableProperties table = createTable("test-table-id", "test-table");
+        StateStore store = createStateStore(table);
+
+        // When
+        StateStoreProvider provider = provider();
+        StateStore retrievedStore1 = provider.getStateStore(table);
+        boolean removed = provider.removeStateStoreFromCache(table);
+        // Table properties will be reloaded as no longer in cache
+        StateStore retrievedStore2 = provider.getStateStore(table);
+
+        // Then
+        assertThat(retrievedStore1).isSameAs(store);
+        assertThat(retrievedStore2).isSameAs(store);
+        assertThat(removed).isTrue();
+        assertThat(tablesLoaded).containsExactly("test-table-id", "test-table-id");
+    }
+
     private TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
