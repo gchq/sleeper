@@ -74,7 +74,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
     private final ContextCreator<C> contextCreator;
-    private final SessionRunnerNew<C> sessionRunner;
+    private final BulkImporter<C> sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
@@ -83,7 +83,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
 
     public BulkImportJobDriver(
             ContextCreator<C> contextCreator,
-            SessionRunnerNew<C> sessionRunner,
+            BulkImporter<C> sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobTracker tracker,
@@ -177,7 +177,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
     }
 
     @FunctionalInterface
-    public interface SessionRunnerNew<C extends BulkImportContext> {
+    public interface BulkImporter<C extends BulkImportContext> {
         List<FileReference> createFileReferences(C context) throws IOException;
     }
 

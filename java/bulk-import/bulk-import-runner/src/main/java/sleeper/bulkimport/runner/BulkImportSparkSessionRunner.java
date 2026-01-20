@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BulkImportSparkSessionRunner
-        implements BulkImportJobDriver.SessionRunnerNew<BulkImportSparkContext>, BulkImportJobDriver.ContextCreator<BulkImportSparkContext> {
+        implements BulkImportJobDriver.BulkImporter<BulkImportSparkContext>, BulkImportJobDriver.ContextCreator<BulkImportSparkContext> {
 
     private final BulkImportJobRunner jobRunner;
     private final InstanceProperties instanceProperties;

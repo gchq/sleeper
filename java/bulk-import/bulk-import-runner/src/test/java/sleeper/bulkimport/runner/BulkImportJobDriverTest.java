@@ -245,23 +245,23 @@ class BulkImportJobDriverTest {
     }
 
     private BulkImportJobDriver<FakeBulkImportContext> driver(
-            BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> sessionRunner, Supplier<Instant> timeSupplier) {
+            BulkImportJobDriver.BulkImporter<FakeBulkImportContext> sessionRunner, Supplier<Instant> timeSupplier) {
         return driver(sessionRunner, stateStore, timeSupplier);
     }
 
     private BulkImportJobDriver<FakeBulkImportContext> driver(
-            BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
+            BulkImportJobDriver.BulkImporter<FakeBulkImportContext> sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
         return new BulkImportJobDriver<>(contextCreator(), sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 tracker, commitRequestQueue::add, timeSupplier);
     }
 
-    private BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> successfulWithOutput(List<FileReference> outputFiles) {
+    private BulkImportJobDriver.BulkImporter<FakeBulkImportContext> successfulWithOutput(List<FileReference> outputFiles) {
         return context -> outputFiles;
     }
 
-    private BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> failWithException(RuntimeException e) {
+    private BulkImportJobDriver.BulkImporter<FakeBulkImportContext> failWithException(RuntimeException e) {
         return context -> {
             throw e;
         };
