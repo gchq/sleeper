@@ -227,8 +227,8 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                     instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-            BulkImportSparkSessionRunner sessionRunner = new BulkImportSparkSessionRunner(runner, instanceProperties);
-            BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(sessionRunner, sessionRunner,
+            BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
+                    BulkImportSparkContext.creator(instanceProperties), runner.asImporter(),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         }

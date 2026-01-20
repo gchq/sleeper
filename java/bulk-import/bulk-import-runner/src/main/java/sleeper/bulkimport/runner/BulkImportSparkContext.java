@@ -70,6 +70,10 @@ public class BulkImportSparkContext implements AutoCloseable, BulkImportContext 
         this.partitionsBroadcast = partitionsBroadcast;
     }
 
+    public static BulkImportJobDriver.ContextCreator<BulkImportSparkContext> creator(InstanceProperties instanceProperties) {
+        return (tableProperties, partitions, job) -> create(instanceProperties, tableProperties, partitions, job.getFiles());
+    }
+
     /**
      * Creates a context for a bulk import job. Creates a Spark context and feeds the input data to Spark.
      *
