@@ -29,9 +29,11 @@ import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -58,6 +60,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
@@ -163,6 +166,16 @@ public class BulkImportJobDriver {
     @FunctionalInterface
     public interface SessionRunner {
         BulkImportJobOutput run(BulkImportJob job) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface SessionRunnerNew<C extends BulkImportContext> {
+        List<FileReference> createFileReferences(C context) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface ContextCreator<C extends BulkImportContext> {
+        C createContext(TableProperties tableProperties, List<Partition> allPartitions, BulkImportJob job);
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {

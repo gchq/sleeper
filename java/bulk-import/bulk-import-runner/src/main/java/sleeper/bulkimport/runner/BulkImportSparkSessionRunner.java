@@ -32,7 +32,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
+public class BulkImportSparkSessionRunner
+        implements BulkImportJobDriver.SessionRunner, BulkImportJobDriver.SessionRunnerNew<BulkImportSparkContext>, BulkImportJobDriver.ContextCreator<BulkImportSparkContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);
 
     private final BulkImportJobRunner jobRunner;
@@ -57,12 +58,22 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        BulkImportSparkContext context = BulkImportSparkContext.create(instanceProperties, tableProperties, allPartitions, job.getFiles());
-        List<FileReference> fileReferences = jobRunner.createFileReferences(context)
+        BulkImportSparkContext context = createContext(tableProperties, allPartitions, job);
+        List<FileReference> fileReferences = createFileReferences(context);
+
+        return new BulkImportJobOutput(fileReferences, context::stopSparkContext);
+    }
+
+    @Override
+    public BulkImportSparkContext createContext(TableProperties tableProperties, List<Partition> allPartitions, BulkImportJob job) {
+        return BulkImportSparkContext.create(instanceProperties, tableProperties, allPartitions, job.getFiles());
+    }
+
+    @Override
+    public List<FileReference> createFileReferences(BulkImportSparkContext context) throws IOException {
+        return jobRunner.createFileReferences(context)
                 .collectAsList().stream()
                 .map(SparkFileReferenceRow::createFileReference)
                 .collect(Collectors.toList());
-
-        return new BulkImportJobOutput(fileReferences, context::stopSparkContext);
     }
 }

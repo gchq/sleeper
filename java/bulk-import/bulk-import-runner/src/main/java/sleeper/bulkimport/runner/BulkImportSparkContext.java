@@ -51,7 +51,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
  * Note that the Spark context should be stopped at the end of the bulk import job. This class implements AutoCloseable
  * to make that easier.
  */
-public class BulkImportSparkContext implements AutoCloseable {
+public class BulkImportSparkContext implements AutoCloseable, BulkImportContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkContext.class);
 
     private final InstanceProperties instanceProperties;
