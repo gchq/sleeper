@@ -77,7 +77,7 @@ class BulkImportJobDriverTest {
 
     @BeforeEach
     void setUp() {
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 0);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
     }
 
     @Nested
@@ -122,7 +122,7 @@ class BulkImportJobDriverTest {
             RuntimeException jobFailure = new RuntimeException("Failed running job", cause);
 
             // When
-            BulkImportJobDriver driver = driver(
+            var driver = driver(
                     failWithException(jobFailure), startAndFinishTime(startTime, finishTime));
             assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
                     .isSameAs(jobFailure);
@@ -152,7 +152,7 @@ class BulkImportJobDriverTest {
             });
 
             // When
-            BulkImportJobDriver driver = driver(
+            var driver = driver(
                     successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
             assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
                     .isInstanceOf(RuntimeException.class)
@@ -239,32 +239,30 @@ class BulkImportJobDriverTest {
 
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-            BulkImportJobDriver driver) throws Exception {
+            BulkImportJobDriver<FakeBulkImportContext> driver) throws Exception {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         driver.run(job, jobRunId, taskId);
     }
 
-    private BulkImportJobDriver driver(
-            BulkImportJobDriver.SessionRunner sessionRunner, Supplier<Instant> timeSupplier) {
+    private BulkImportJobDriver<FakeBulkImportContext> driver(
+            BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> sessionRunner, Supplier<Instant> timeSupplier) {
         return driver(sessionRunner, stateStore, timeSupplier);
     }
 
-    private BulkImportJobDriver driver(
-            BulkImportJobDriver.SessionRunner sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
-        return new BulkImportJobDriver(sessionRunner,
+    private BulkImportJobDriver<FakeBulkImportContext> driver(
+            BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> sessionRunner, StateStore stateStore, Supplier<Instant> timeSupplier) {
+        return new BulkImportJobDriver<>(contextCreator(), sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 tracker, commitRequestQueue::add, timeSupplier);
     }
 
-    private BulkImportJobDriver.SessionRunner successfulWithOutput(List<FileReference> outputFiles) {
-        BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
-        });
-        return job -> output;
+    private BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> successfulWithOutput(List<FileReference> outputFiles) {
+        return context -> outputFiles;
     }
 
-    private BulkImportJobDriver.SessionRunner failWithException(RuntimeException e) {
-        return job -> {
+    private BulkImportJobDriver.SessionRunnerNew<FakeBulkImportContext> failWithException(RuntimeException e) {
+        return context -> {
             throw e;
         };
     }

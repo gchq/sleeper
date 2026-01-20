@@ -146,7 +146,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(BULK_IMPORT_BUCKET, UUID.randomUUID().toString());
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 0);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
@@ -554,8 +554,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                 properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-        BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
-                runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+        BulkImportSparkSessionRunner sessionRunner = new BulkImportSparkSessionRunner(runner, instanceProperties);
+        BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(sessionRunner, sessionRunner,
                 tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier);
         driver.run(job, jobRunId, taskId);
     }

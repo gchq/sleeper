@@ -16,52 +16,27 @@
 
 package sleeper.bulkimport.runner;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class BulkImportSparkSessionRunner
-        implements BulkImportJobDriver.SessionRunner, BulkImportJobDriver.SessionRunnerNew<BulkImportSparkContext>, BulkImportJobDriver.ContextCreator<BulkImportSparkContext> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);
+        implements BulkImportJobDriver.SessionRunnerNew<BulkImportSparkContext>, BulkImportJobDriver.ContextCreator<BulkImportSparkContext> {
 
     private final BulkImportJobRunner jobRunner;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
 
     public BulkImportSparkSessionRunner(
-            BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+            BulkImportJobRunner jobRunner, InstanceProperties instanceProperties) {
         this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
-    }
-
-    @Override
-    public BulkImportJobOutput run(BulkImportJob job) throws IOException {
-        LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
-        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
-        LOGGER.info("Loading partitions");
-        List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
-
-        LOGGER.info("Running bulk import job with id {}", job.getId());
-        BulkImportSparkContext context = createContext(tableProperties, allPartitions, job);
-        List<FileReference> fileReferences = createFileReferences(context);
-
-        return new BulkImportJobOutput(fileReferences, context::stopSparkContext);
     }
 
     @Override

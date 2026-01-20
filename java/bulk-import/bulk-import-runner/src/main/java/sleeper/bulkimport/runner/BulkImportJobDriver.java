@@ -70,22 +70,26 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMM
  * {@link BulkImportJobRunner} implementation, which takes rows from the input files and outputs a file for each Sleeper
  * partition. These will then be added to the {@link StateStore}.
  */
-public class BulkImportJobDriver {
+public class BulkImportJobDriver<C extends BulkImportContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final SessionRunner sessionRunner;
+    private final ContextCreator<C> contextCreator;
+    private final SessionRunnerNew<C> sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
     private final StateStoreCommitRequestSender asyncSender;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(SessionRunner sessionRunner,
+    public BulkImportJobDriver(
+            ContextCreator<C> contextCreator,
+            SessionRunnerNew<C> sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobTracker tracker,
             StateStoreCommitRequestSender asyncSender,
             Supplier<Instant> getTime) {
+        this.contextCreator = contextCreator;
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -95,6 +99,7 @@ public class BulkImportJobDriver {
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+        LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
         Instant startTime = getTime.get();
@@ -107,9 +112,15 @@ public class BulkImportJobDriver {
                 .fileCount(job.getFiles().size())
                 .build());
 
-        BulkImportJobOutput output;
+        LOGGER.info("Loading partitions");
+        List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
+
+        LOGGER.info("Running bulk import job with id {}", job.getId());
+        C context;
+        List<FileReference> fileReferences;
         try {
-            output = sessionRunner.run(job);
+            context = contextCreator.createContext(tableProperties, allPartitions, job);
+            fileReferences = sessionRunner.createFileReferences(context);
         } catch (RuntimeException e) {
             tracker.jobFailed(IngestJobFailedEvent.builder()
                     .jobRunIds(runIds)
@@ -127,13 +138,13 @@ public class BulkImportJobDriver {
                         AddFilesTransaction.builder()
                                 .jobRunIds(runIds)
                                 .writtenTime(finishTime)
-                                .fileReferences(output.fileReferences())
+                                .fileReferences(fileReferences)
                                 .build()));
-                LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", output.numFiles(), table, runIds);
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", fileReferences.size(), table, runIds);
             } else {
-                AddFilesTransaction.fromReferences(output.fileReferences())
+                AddFilesTransaction.fromReferences(fileReferences)
                         .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
-                LOGGER.info("Added {} files to state store in table {}, {}", output.numFiles(), table, runIds);
+                LOGGER.info("Added {} files to state store in table {}, {}", fileReferences.size(), table, runIds);
             }
         } catch (RuntimeException e) {
             tracker.jobFailed(IngestJobFailedEvent.builder()
@@ -147,25 +158,22 @@ public class BulkImportJobDriver {
 
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
-        long numRows = output.numRows();
+        long numRows = fileReferences.stream()
+                .mapToLong(FileReference::getNumberOfRows)
+                .sum();
         double rate = numRows / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()
                 .jobRunIds(runIds)
                 .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
-                .fileReferencesAddedByJob(output.fileReferences())
+                .fileReferencesAddedByJob(fileReferences)
                 .committedBySeparateFileUpdates(asyncCommit)
                 .build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
-        output.stopSparkContext();
-    }
-
-    @FunctionalInterface
-    public interface SessionRunner {
-        BulkImportJobOutput run(BulkImportJob job) throws IOException;
+        context.stopSparkContext();
     }
 
     @FunctionalInterface
@@ -219,8 +227,8 @@ public class BulkImportJobDriver {
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                     instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-            BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
-                    runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+            BulkImportSparkSessionRunner sessionRunner = new BulkImportSparkSessionRunner(runner, instanceProperties);
+            BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(sessionRunner, sessionRunner,
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         }
