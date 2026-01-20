@@ -131,47 +131,53 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
                 throw e;
             }
 
-            Instant finishTime = getTime.get();
-            boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
-            try {
-                if (asyncCommit) {
-                    asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(),
-                            AddFilesTransaction.builder()
-                                    .jobRunIds(runIds)
-                                    .writtenTime(finishTime)
-                                    .fileReferences(fileReferences)
-                                    .build()));
-                    LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", fileReferences.size(), table, runIds);
-                } else {
-                    AddFilesTransaction.fromReferences(fileReferences)
-                            .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
-                    LOGGER.info("Added {} files to state store in table {}, {}", fileReferences.size(), table, runIds);
-                }
-            } catch (RuntimeException e) {
-                tracker.jobFailed(IngestJobFailedEvent.builder()
-                        .jobRunIds(runIds)
-                        .failureTime(finishTime)
-                        .failure(e)
-                        .build());
-                throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
-                        + "be re-imported for clients to access data", e);
-            }
-
-            LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
-            LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
-            long numRows = fileReferences.stream()
-                    .mapToLong(FileReference::getNumberOfRows)
-                    .sum();
-            double rate = numRows / (double) duration.getSeconds();
-            LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
-
-            tracker.jobFinished(IngestJobFinishedEvent.builder()
-                    .jobRunIds(runIds)
-                    .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
-                    .fileReferencesAddedByJob(fileReferences)
-                    .committedBySeparateFileUpdates(asyncCommit)
-                    .build());
+            commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
         }
+    }
+
+    private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
+
+        Instant finishTime = getTime.get();
+        boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
+        TableStatus table = tableProperties.getStatus();
+        try {
+            if (asyncCommit) {
+                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(),
+                        AddFilesTransaction.builder()
+                                .jobRunIds(runIds)
+                                .writtenTime(finishTime)
+                                .fileReferences(fileReferences)
+                                .build()));
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", fileReferences.size(), table, runIds);
+            } else {
+                AddFilesTransaction.fromReferences(fileReferences)
+                        .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
+                LOGGER.info("Added {} files to state store in table {}, {}", fileReferences.size(), table, runIds);
+            }
+        } catch (RuntimeException e) {
+            tracker.jobFailed(IngestJobFailedEvent.builder()
+                    .jobRunIds(runIds)
+                    .failureTime(finishTime)
+                    .failure(e)
+                    .build());
+            throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
+                    + "be re-imported for clients to access data", e);
+        }
+
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
+        LOGGER.info("Finished bulk import job {} at time {}", runIds.getJobId(), finishTime);
+        long numRows = fileReferences.stream()
+                .mapToLong(FileReference::getNumberOfRows)
+                .sum();
+        double rate = numRows / (double) duration.getSeconds();
+        LOGGER.info("Bulk import job {} took {} (rate of {} per second)", runIds.getJobId(), duration, rate);
+
+        tracker.jobFinished(IngestJobFinishedEvent.builder()
+                .jobRunIds(runIds)
+                .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
+                .fileReferencesAddedByJob(fileReferences)
+                .committedBySeparateFileUpdates(asyncCommit)
+                .build());
     }
 
     @FunctionalInterface
