@@ -51,7 +51,7 @@ public class StandardJobRunReporter {
     public static final TableFieldDefinition ROWS_WRITTEN = TableFieldDefinition.numeric("ROWS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
-    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE REASONS");
+    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE_REASONS");
 
     private final PrintStream out;
 
