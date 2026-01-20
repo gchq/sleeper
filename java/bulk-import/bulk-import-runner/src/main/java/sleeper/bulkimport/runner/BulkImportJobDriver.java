@@ -211,13 +211,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     + "be re-imported for clients to access data", e);
         }
 
-        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
-        LOGGER.info("Finished bulk import job {} at time {}", runIds.getJobId(), finishTime);
-        long numRows = fileReferences.stream()
-                .mapToLong(FileReference::getNumberOfRows)
-                .sum();
-        double rate = numRows / (double) duration.getSeconds();
-        LOGGER.info("Bulk import job {} took {} (rate of {} per second)", runIds.getJobId(), duration, rate);
+        long numRows = calcAndLogNumRows(runIds, startTime, finishTime, fileReferences);
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()
                 .jobRunIds(runIds)
@@ -225,6 +219,17 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 .fileReferencesAddedByJob(fileReferences)
                 .committedBySeparateFileUpdates(asyncCommit)
                 .build());
+    }
+
+    private long calcAndLogNumRows(IngestJobRunIds runIds, Instant startTime, Instant finishTime, List<FileReference> fileReferences) {
+        LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
+        LOGGER.info("Finished bulk import job {} at time {}", runIds.getJobId(), finishTime);
+        long numRows = fileReferences.stream()
+                .mapToLong(FileReference::getNumberOfRows)
+                .sum();
+        double rate = numRows / (double) duration.getSeconds();
+        LOGGER.info("Bulk import job {} took {} (rate of {} per second)", runIds.getJobId(), duration, rate);
+        return numRows;
     }
 
     @FunctionalInterface
