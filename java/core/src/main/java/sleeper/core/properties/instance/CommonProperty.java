@@ -73,7 +73,7 @@ public interface CommonProperty {
                     "For example if you want to add tags of \"user=some-user\" and \"project-name=sleeper-test\", " +
                     "then the list should be \"user,some-user,project-name,sleeper-test\".\n" +
                     "Preferably, tags should be specified in a separate file called tags.properties.\n" +
-                    "Review /docs/deployment/instance-configuration.md for further details.")
+                    "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for further details.")
             .propertyGroup(InstancePropertyGroup.COMMON).runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
