@@ -32,10 +32,10 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTr
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketFromListOfKeys;
@@ -83,7 +83,7 @@ public class ReinitialiseTable {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
-        final List<String> filesToDelete = getFilesToDelete(stateStore);
+        List<String> filesToDelete = getFilesToDelete(stateStore);
 
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
@@ -131,14 +131,12 @@ public class ReinitialiseTable {
     }
 
     private List<String> getFilesToDelete(StateStore stateStore) {
-        final List<String> filesToDelete = new ArrayList<>();
-        stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
+        return stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
                 .stream()
-                .forEach(filename -> {
-                    S3Path path = S3Path.parse(filename);
-                    filesToDelete.add(path.pathInBucket());
-                    filesToDelete.add(path.pathInBucket().replace(".parquet", ".sketches"));
-                });
-        return filesToDelete;
+                .map(S3Path::parse)
+                .flatMap(path -> Stream.of(
+                        path.pathInBucket(),
+                        path.pathInBucket().replace(".parquet", ".sketches")))
+                .toList();
     }
 }

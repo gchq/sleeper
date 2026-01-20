@@ -24,6 +24,8 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
+import sleeper.core.util.SplitIntoBatches;
+
 import java.util.List;
 
 /**
@@ -93,12 +95,10 @@ public class BucketUtils {
     public static void deleteObjectsInBucketFromListOfKeys(S3Client s3Client, String bucketName, List<String> objectKeysToDelete) {
         LOGGER.info("Attempting to delete {} objects in the bucket {}", objectKeysToDelete.size(), bucketName);
         int totalObjectsDeleted = 0;
-        int currentRequests = 0;
-        while (currentRequests < objectKeysToDelete.size()) {
-            //S3 Delete capped at 1000 objects
-            int upperLimit = Math.min(objectKeysToDelete.size(), currentRequests + 1000);
-            List<ObjectIdentifier> toDelete = objectKeysToDelete.subList(currentRequests, upperLimit)
-                    .stream()
+
+        //S3 Delete capped at 1000 objects
+        for (List<String> batch : SplitIntoBatches.splitListIntoBatchesOf(1000, objectKeysToDelete)) {
+            List<ObjectIdentifier> toDelete = batch.stream()
                     .map(key -> ObjectIdentifier.builder()
                             .key(key)
                             .build())
@@ -107,7 +107,6 @@ public class BucketUtils {
             if (!toDelete.isEmpty()) {
                 totalObjectsDeleted += deleteObjectsReturnDeletedCount(s3Client, bucketName, toDelete);
             }
-            currentRequests = upperLimit;
         }
 
         LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
