@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -78,6 +79,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -121,8 +123,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
     private final Instant endTime = Instant.parse("2023-04-05T16:01:11Z");
-    private InstanceProperties instanceProperties;
-    private TableProperties tableProperties;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private String dataDir;
     protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
@@ -141,8 +143,14 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         dataDir = folder.toString();
-        instanceProperties = createInstanceProperties(dataDir);
-        tableProperties = createTableProperties(instanceProperties);
+        instanceProperties.set(DATA_BUCKET, dataDir);
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(BULK_IMPORT_BUCKET, UUID.randomUUID().toString());
+
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @ParameterizedTest
@@ -413,6 +421,11 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
     }
 
+    @Test
+    void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
+        // TODO
+    }
+
     private static List<Row> readRows(String filename, Schema schema) {
         try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<Row> readRows = new ArrayList<>();
@@ -430,23 +443,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private static void sortRows(List<Row> rows) {
         RowComparator rowComparator = new RowComparator(getSchema());
         rows.sort(rowComparator);
-    }
-
-    public InstanceProperties createInstanceProperties(String dir) {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(DATA_BUCKET, dir);
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(BULK_IMPORT_BUCKET, "bulkimport");
-
-        createBucket(instanceProperties.get(CONFIG_BUCKET));
-        createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        return instanceProperties;
-    }
-
-    public TableProperties createTableProperties(InstanceProperties instanceProperties) {
-        return createTestTableProperties(instanceProperties, schema);
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
