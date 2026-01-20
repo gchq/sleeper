@@ -73,6 +73,7 @@ class BulkImportJobDriverTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
+    private final List<BulkImportJob> jobContextStopped = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -266,6 +267,11 @@ class BulkImportJobDriverTest {
         return job -> {
             throw e;
         };
+    }
+
+    private BulkImportJobDriver.ContextCreator<FakeBulkImportContext> contextCreator() {
+        return (tableProperties, partitions, job) -> new FakeBulkImportContext(
+                tableProperties, partitions, job, () -> jobContextStopped.add(job));
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
