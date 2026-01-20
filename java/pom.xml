@@ -43,6 +43,7 @@
         <module>query</module>
         <module>statestore</module>
         <module>statestore-committer-core</module>
+        <module>statestore-committer</module>
         <module>statestore-lambda</module>
         <module>system-test</module>
     </modules>
