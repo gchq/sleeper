@@ -116,7 +116,7 @@ public class BulkImportJobDriver<C extends BulkImportContext> {
         List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        // Closing the Spark context manually stops it potentially timing out after 10 seconds.
+        // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
             List<FileReference> fileReferences;
