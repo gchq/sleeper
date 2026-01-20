@@ -223,11 +223,7 @@ public class StandardJobRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
-    }
-
-    public List<TableFieldDefinition> getUnfinishedFields() {
-        return Arrays.asList(FAILURE_REASONS);
+        return Arrays.asList(DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     private static String getDurationString(JobRunSummary summary) {

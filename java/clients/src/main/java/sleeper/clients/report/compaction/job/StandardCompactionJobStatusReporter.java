@@ -55,7 +55,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final StandardJobRunReporter runReporter;
     private final TableField commitTimeField;
     private final List<TableFieldDefinition> finishedFields;
-    private final List<TableFieldDefinition> unfinishedFields;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
 
@@ -78,7 +77,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         runReporter = runReporterBuilder.addResultsFields().build(out);
         finishedFields = Stream.concat(runReporter.getFinishedFields().stream(), Stream.of(commitTimeFieldDef))
                 .collect(Collectors.toList());
-        unfinishedFields = runReporter.getUnfinishedFields();
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -91,7 +89,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         if (!queryType.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
                     .showFields(queryType != JobQuery.Type.UNFINISHED, finishedFields)
-                    .showFields(queryType == JobQuery.Type.UNFINISHED, unfinishedFields)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
         }
