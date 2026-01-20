@@ -76,5 +76,3 @@ State: CREATED
 Creation time: 2022-09-17T13:33:12.001Z
 Partition ID: partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
 --------------------------
-
-For more information concerning any failure reasons, please consult the more detailed report.

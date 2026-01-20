@@ -37,5 +37,3 @@ Write rate (writes per second): 2,439.02
 State store commit time: 2022-10-13T12:00:30Z
 Delay between finish and commit: 19.877s
 --------------------------
-
-For more information concerning any failure reasons, please consult the more detailed report.

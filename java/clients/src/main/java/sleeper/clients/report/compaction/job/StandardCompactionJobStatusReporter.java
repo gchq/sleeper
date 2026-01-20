@@ -91,10 +91,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                     .showFields(queryType != JobQuery.Type.UNFINISHED, finishedFields)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
-        }
-        if (!jobStatusList.isEmpty()) {
-            out.println();
-            out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+
+            if (!jobStatusList.isEmpty()) {
+                out.println();
+                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+            }
         }
     }
 
