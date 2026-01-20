@@ -211,14 +211,6 @@ class BulkImportJobDriverTest {
                 .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
     }
 
-    @Test
-    void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
-        // Given
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
-
-        // TODO
-    }
-
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
             BulkImportJobDriver driver) throws Exception {
