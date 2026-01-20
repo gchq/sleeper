@@ -48,6 +48,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.Sketches;
+import sleeper.splitter.core.extend.InsufficientDataForPartitionSplittingException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -248,10 +249,6 @@ class BulkImportJobDriverTest {
     @DisplayName("Pre-split partition tree")
     class PreSplitPartitions {
 
-        // Test list:
-        // - Pre-split partitions when not enough are present
-        // - Bulk import job doesn't count as started when pre-splitting partitions fails
-
         @Test
         void shouldPreSplitPartitionsWhenNotEnoughArePresent() throws Exception {
             // Given
@@ -297,6 +294,41 @@ class BulkImportJobDriverTest {
                             partitionsBefore.getAllPartitions(),
                             partitionsAfter.getAllPartitions());
             assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
+        }
+
+        @Test
+        void shouldTrackFailedPartitionSplitting() throws Exception {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 5); // Not enough rows in sketch data
+            tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
+            PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            update(stateStore).initialise(partitionsBefore);
+            setPartitionSketchData("root", List.of(
+                    new Row(Map.of("key", 25)),
+                    new Row(Map.of("key", 50)),
+                    new Row(Map.of("key", 75))));
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant failureTime = Instant.parse("2023-04-06T12:41:01Z");
+            var driver = driver(
+                    failWithException(new IllegalStateException("Did not expect job to start")), failureTime(failureTime));
+
+            // When / Then
+            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
+                    .isInstanceOf(InsufficientDataForPartitionSplittingException.class);
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            failedStatus(failureTime, List.of("Required 2 minimum leaf partitions. " +
+                                    "Unable to reach more than 1 leaf partitions based on the given data. " +
+                                    "Either there are not enough unique values for the row key fields, or not enough data was provided.")))));
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(stateStore.getAllPartitions()).isEqualTo(partitionsBefore.getAllPartitions());
+            assertThat(jobContextsCreated)
+                    .extracting(FakeBulkImportContext::partitions)
+                    .containsExactly(partitionsBefore.getAllPartitions());
             assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
     }
@@ -353,6 +385,10 @@ class BulkImportJobDriverTest {
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
         return List.of(startTime, finishTime).iterator()::next;
+    }
+
+    private Supplier<Instant> failureTime(Instant failureTime) {
+        return List.of(failureTime).iterator()::next;
     }
 
     private BulkImportJob singleFileImportJob() {

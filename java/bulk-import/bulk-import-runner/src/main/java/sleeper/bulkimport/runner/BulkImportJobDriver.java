@@ -117,24 +117,24 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
-        Instant startTime = getTime.get();
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(table.getTableUniqueId()).jobId(job.getId()).jobRunId(jobRunId).taskId(taskId).build();
-        LOGGER.info("Received bulk import job at time {}, {}", startTime, runIds);
+        LOGGER.info("Received bulk import job: {}", runIds);
         LOGGER.info("Job is for table {}: {}", table, job);
-        tracker.jobStarted(IngestJobStartedEvent.builder()
-                .jobRunIds(runIds)
-                .startTime(startTime)
-                .fileCount(job.getFiles().size())
-                .build());
 
         LOGGER.info("Loading partitions");
         List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
-        LOGGER.info("Running bulk import job with id {}", job.getId());
         // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
-            C afterSplit = preSplitPartitionsIfNecessary(tableProperties, allPartitions, context);
+            C afterSplit = preSplitPartitionsIfNecessary(tableProperties, runIds, allPartitions, context);
+            Instant startTime = getTime.get();
+            tracker.jobStarted(IngestJobStartedEvent.builder()
+                    .jobRunIds(runIds)
+                    .startTime(startTime)
+                    .fileCount(job.getFiles().size())
+                    .build());
+            LOGGER.info("Running bulk import job with id {}", job.getId());
             List<FileReference> fileReferences;
             try {
                 fileReferences = bulkImporter.createFileReferences(afterSplit);
@@ -151,16 +151,29 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         }
     }
 
-    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, List<Partition> allPartitions, C context) {
+    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, IngestJobRunIds runIds, List<Partition> allPartitions, C context) {
         PartitionTree tree = new PartitionTree(allPartitions);
         List<Partition> leafPartitions = tree.getLeafPartitions();
-        if (leafPartitions.size() < tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)) {
-            Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
-                    .createTransaction(tree, partitionIdToSketches)
-                    .synchronousCommit(stateStore);
-            return context.withPartitions(stateStore.getAllPartitions());
+        int minLeafPartitions = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
+        if (leafPartitions.size() < minLeafPartitions) {
+            LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
+            try {
+                Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
+                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+                ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
+                        .createTransaction(tree, partitionIdToSketches)
+                        .synchronousCommit(stateStore);
+                return context.withPartitions(stateStore.getAllPartitions());
+            } catch (RuntimeException e) {
+                tracker.jobFailed(IngestJobFailedEvent.builder()
+                        .jobRunIds(runIds)
+                        .failureTime(getTime.get())
+                        .failure(e)
+                        .build());
+                throw e;
+            }
+        } else {
+            LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
         }
 
         return context;
