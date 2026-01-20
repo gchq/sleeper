@@ -231,6 +231,10 @@ class BulkImportJobDriverTest {
     @DisplayName("Pre-split partition tree")
     class PreSplitPartitions {
 
+        // Test list:
+        // - Pre-split partitions when not enough are present
+        // - Bulk import job doesn't count as started when pre-splitting partitions fails
+
         @Test
         void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
             // Given
