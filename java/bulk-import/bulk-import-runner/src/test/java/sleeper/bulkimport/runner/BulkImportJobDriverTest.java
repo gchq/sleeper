@@ -73,7 +73,7 @@ class BulkImportJobDriverTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
-    private final List<BulkImportJob> jobContextStopped = new ArrayList<>();
+    private final List<BulkImportJob> jobContextClosed = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -108,6 +108,7 @@ class BulkImportJobDriverTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                     .isEqualTo(outputFiles);
             assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextClosed).containsExactly(job);
         }
 
         @Test
@@ -135,6 +136,7 @@ class BulkImportJobDriverTest {
                             failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextClosed).containsExactly(job);
         }
 
         @Test
@@ -166,6 +168,7 @@ class BulkImportJobDriverTest {
                             validatedIngestStartedStatus(startTime, 1),
                             failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
             assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextClosed).containsExactly(job);
         }
     }
 
@@ -269,7 +272,7 @@ class BulkImportJobDriverTest {
 
     private BulkImportJobDriver.ContextCreator<FakeBulkImportContext> contextCreator() {
         return (tableProperties, partitions, job) -> new FakeBulkImportContext(
-                tableProperties, partitions, job, () -> jobContextStopped.add(job));
+                tableProperties, partitions, job, () -> jobContextClosed.add(job));
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {

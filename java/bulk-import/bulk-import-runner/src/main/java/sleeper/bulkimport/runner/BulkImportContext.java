@@ -15,8 +15,8 @@
  */
 package sleeper.bulkimport.runner;
 
-public interface BulkImportContext {
+public interface BulkImportContext extends AutoCloseable {
 
-    void stopSparkContext();
+    void close();
 
 }

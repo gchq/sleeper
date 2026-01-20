@@ -21,11 +21,11 @@ import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
 
-public record FakeBulkImportContext(TableProperties tableProperties, List<Partition> partitions, BulkImportJob job, Runnable stopContext) implements BulkImportContext {
+public record FakeBulkImportContext(TableProperties tableProperties, List<Partition> partitions, BulkImportJob job, Runnable closeContext) implements BulkImportContext {
 
     @Override
-    public void stopSparkContext() {
-        stopContext.run();
+    public void close() {
+        closeContext.run();
     }
 
 }
