@@ -17,6 +17,8 @@
 package sleeper.bulkimport.runner;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -77,138 +79,161 @@ class BulkImportJobDriverTest {
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 0);
     }
 
-    @Test
-    void shouldReportJobFinished() throws Exception {
-        // Given
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
+    @Nested
+    @DisplayName("Report results of bulk import")
+    class ReportResults {
 
-        // When
-        runJob(job, "test-run", "test-task", validationTime,
-                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+        @Test
+        void shouldReportJobFinished() throws Exception {
+            // Given
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            List<FileReference> outputFiles = List.of(
+                    defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
 
-        // Then
-        assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                        ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(startTime, 1),
-                        ingestFinishedStatus(summary(startTime, finishTime, 100, 100), 1))));
-        assertThat(stateStore.getFileReferences())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .isEqualTo(outputFiles);
-        assertThat(commitRequestQueue).isEmpty();
+            // When
+            runJob(job, "test-run", "test-task", validationTime,
+                    driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            ingestFinishedStatus(summary(startTime, finishTime, 100, 100), 1))));
+            assertThat(stateStore.getFileReferences())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .isEqualTo(outputFiles);
+            assertThat(commitRequestQueue).isEmpty();
+        }
+
+        @Test
+        void shouldReportJobFailed() throws Exception {
+            // Given
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            RuntimeException rootCause = new RuntimeException("Root cause");
+            RuntimeException cause = new RuntimeException("Some cause", rootCause);
+            RuntimeException jobFailure = new RuntimeException("Failed running job", cause);
+
+            // When
+            BulkImportJobDriver driver = driver(
+                    failWithException(jobFailure), startAndFinishTime(startTime, finishTime));
+            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
+                    .isSameAs(jobFailure);
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(commitRequestQueue).isEmpty();
+        }
+
+        @Test
+        void shouldReportJobFinishedWithNoRowsWhenStateStoreUpdateFailed() throws Exception {
+            // Given
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            RuntimeException jobFailure = new RuntimeException("Failed updating files");
+            List<FileReference> outputFiles = List.of(
+                    defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                throw jobFailure;
+            });
+
+            // When
+            BulkImportJobDriver driver = driver(
+                    successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
+            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
+                    .isInstanceOf(RuntimeException.class)
+                    .cause().isInstanceOf(StateStoreException.class)
+                    .cause().isSameAs(jobFailure);
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
+            assertThat(commitRequestQueue).isEmpty();
+        }
     }
 
-    @Test
-    void shouldReportJobFailed() throws Exception {
-        // Given
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        RuntimeException rootCause = new RuntimeException("Root cause");
-        RuntimeException cause = new RuntimeException("Some cause", rootCause);
-        RuntimeException jobFailure = new RuntimeException("Failed running job", cause);
+    @Nested
+    @DisplayName("Commit to state store")
+    class CommitToStateStore {
 
-        // When
-        BulkImportJobDriver driver = driver(
-                failWithException(jobFailure), startAndFinishTime(startTime, finishTime));
-        assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isSameAs(jobFailure);
+        @Test
+        void shouldCommitNewFilesAsynchronouslyWhenConfigured() throws Exception {
+            // Given
+            tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "true");
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            List<FileReference> outputFiles = List.of(
+                    defaultFileOnRootPartitionWithRows("file1.parquet", 100),
+                    defaultFileOnRootPartitionWithRows("file2.parquet", 200));
 
-        // Then
-        assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                        ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(startTime, 1),
-                        failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
-        assertThat(stateStore.getFileReferences()).isEmpty();
-        assertThat(commitRequestQueue).isEmpty();
+            // When
+            runJob(job, "test-run", "test-task", validationTime, driver(
+                    successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            ingestFinishedStatusUncommitted(finishTime, 2, new RowsProcessed(300, 300)))));
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                    AddFilesTransaction.builder()
+                            .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
+                            .fileReferences(outputFiles)
+                            .build()));
+        }
+
+        @Test
+        void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
+            // Given
+            tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            List<FileReference> outputFiles = List.of(
+                    defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
+
+            // When
+            runJob(job, "test-run", "test-task", validationTime,
+                    driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+            // Then
+            assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                    .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
+        }
     }
 
-    @Test
-    void shouldReportJobFinishedWithNoRowsWhenStateStoreUpdateFailed() throws Exception {
-        // Given
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        RuntimeException jobFailure = new RuntimeException("Failed updating files");
-        List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
-        filesLogStore.atStartOfNextAddTransaction(() -> {
-            throw jobFailure;
-        });
+    @Nested
+    @DisplayName("Pre-split partition tree")
+    class PreSplitPartitions {
 
-        // When
-        BulkImportJobDriver driver = driver(
-                successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
-        assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isInstanceOf(RuntimeException.class)
-                .cause().isInstanceOf(StateStoreException.class)
-                .cause().isSameAs(jobFailure);
+        @Test
+        void shouldPreSplitPartitionsWhenNotEnoughArePresent() {
+            // Given
+            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
 
-        // Then
-        assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                        ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(startTime, 1),
-                        failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
-        assertThat(commitRequestQueue).isEmpty();
-    }
-
-    @Test
-    void shouldCommitNewFilesAsynchronouslyWhenConfigured() throws Exception {
-        // Given
-        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "true");
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRows("file1.parquet", 100),
-                defaultFileOnRootPartitionWithRows("file2.parquet", 200));
-
-        // When
-        runJob(job, "test-run", "test-task", validationTime, driver(
-                successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
-
-        // Then
-        assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                        ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(startTime, 1),
-                        ingestFinishedStatusUncommitted(finishTime, 2, new RowsProcessed(300, 300)))));
-        assertThat(stateStore.getFileReferences()).isEmpty();
-        assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                AddFilesTransaction.builder()
-                        .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
-                        .fileReferences(outputFiles)
-                        .build()));
-    }
-
-    @Test
-    void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
-        // Given
-        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
-
-        // When
-        runJob(job, "test-run", "test-task", validationTime,
-                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
-
-        // Then
-        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
-                .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
+            // TODO
+        }
     }
 
     private void runJob(
