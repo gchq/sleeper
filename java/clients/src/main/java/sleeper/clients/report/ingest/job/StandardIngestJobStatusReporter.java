@@ -92,10 +92,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
-        if (query != JobQuery.Type.UNFINISHED) {
-            out.println();
-            out.println("For more information concerning any failure reasons, please consult the more detailed report.");
-        }
+        out.println();
+        out.println("For more information concerning any failure reasons, please consult the more detailed report.");
     }
 
     private void printSummary(

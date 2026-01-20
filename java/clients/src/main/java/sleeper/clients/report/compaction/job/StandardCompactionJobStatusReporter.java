@@ -92,9 +92,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
         }
-        if (queryType == JobQuery.Type.UNFINISHED) {
+        if (!jobStatusList.isEmpty()) {
             out.println();
-            out.println("For more information concerning the failure reasons, please consult the more detailed report.");
+            out.println("For more information concerning any failure reasons, please consult the more detailed report.");
         }
     }
 

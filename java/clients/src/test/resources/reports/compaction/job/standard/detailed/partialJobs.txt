@@ -15,3 +15,5 @@ Rows written: 5
 State store commit time: 2025-05-14T10:47:01Z
 Delay between finish and commit: 1s
 --------------------------
+
+For more information concerning any failure reasons, please consult the more detailed report.
