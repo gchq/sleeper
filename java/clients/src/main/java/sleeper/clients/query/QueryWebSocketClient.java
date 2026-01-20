@@ -65,7 +65,7 @@ public class QueryWebSocketClient {
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
             Instant startTime = Instant.now();
-            return listener.getQueryFuture()
+            return future
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
