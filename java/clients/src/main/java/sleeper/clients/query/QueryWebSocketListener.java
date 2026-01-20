@@ -47,8 +47,15 @@ public class QueryWebSocketListener {
     private final QueryWebSocketMessageSerDe serDe;
     private final QuerySerDe querySerDe;
     private final Query query;
-    private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
+    private CompletableFuture<List<Row>> future;
     private Connection connection;
+
+    public QueryWebSocketListener(Schema schema, Query query, CompletableFuture<List<Row>> future) {
+        this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
+        this.querySerDe = new QuerySerDe(schema);
+        this.query = query;
+        this.future = future;
+    }
 
     public QueryWebSocketListener(Schema schema, Query query) {
         this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
