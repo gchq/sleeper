@@ -121,60 +121,50 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         LOGGER.info("Received bulk import job: {}", runIds);
         LOGGER.info("Job is for table {}: {}", table, job);
 
-        LOGGER.info("Loading partitions");
-        List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
+        try {
+            LOGGER.info("Loading partitions");
+            List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
-        // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
-        // Note that we stop the Spark context after we've applied the changes in Sleeper.
-        try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
+            // Closing the Spark context in a try-with-resources stops it potentially timing out after 10 seconds.
+            // Note that we stop the Spark context after we've applied the changes in Sleeper.
+            try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
 
-            C contextAfterSplit = preSplitPartitionsIfNecessary(tableProperties, runIds, allPartitions, context);
+                C contextAfterSplit = preSplitPartitionsIfNecessary(tableProperties, allPartitions, context);
 
-            Instant startTime = getTime.get();
-            tracker.jobStarted(IngestJobStartedEvent.builder()
-                    .jobRunIds(runIds)
-                    .startTime(startTime)
-                    .fileCount(job.getFiles().size())
-                    .build());
-
-            LOGGER.info("Running bulk import job with id {}", job.getId());
-            List<FileReference> fileReferences;
-            try {
-                fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
-            } catch (RuntimeException e) {
-                tracker.jobFailed(IngestJobFailedEvent.builder()
+                Instant startTime = getTime.get();
+                tracker.jobStarted(IngestJobStartedEvent.builder()
                         .jobRunIds(runIds)
-                        .failureTime(getTime.get())
-                        .failure(e)
+                        .startTime(startTime)
+                        .fileCount(job.getFiles().size())
                         .build());
-                throw e;
-            }
 
-            commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
+                LOGGER.info("Running bulk import job with id {}", job.getId());
+                List<FileReference> fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
+
+                commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
+            }
+        } catch (RuntimeException | IOException e) {
+            tracker.jobFailed(IngestJobFailedEvent.builder()
+                    .jobRunIds(runIds)
+                    .failureTime(getTime.get())
+                    .failure(e)
+                    .build());
+            throw e;
         }
     }
 
-    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, IngestJobRunIds runIds, List<Partition> allPartitions, C context) {
+    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, List<Partition> allPartitions, C context) {
         PartitionTree tree = new PartitionTree(allPartitions);
         List<Partition> leafPartitions = tree.getLeafPartitions();
         int minLeafPartitions = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
         if (leafPartitions.size() < minLeafPartitions) {
             LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
-            try {
-                Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
-                StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
-                        .createTransaction(tree, partitionIdToSketches)
-                        .synchronousCommit(stateStore);
-                return context.withPartitions(stateStore.getAllPartitions());
-            } catch (RuntimeException e) {
-                tracker.jobFailed(IngestJobFailedEvent.builder()
-                        .jobRunIds(runIds)
-                        .failureTime(getTime.get())
-                        .failure(e)
-                        .build());
-                throw e;
-            }
+            Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
+                    .createTransaction(tree, partitionIdToSketches)
+                    .synchronousCommit(stateStore);
+            return context.withPartitions(stateStore.getAllPartitions());
         } else {
             LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
             return context;
@@ -201,11 +191,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 LOGGER.info("Added {} files to state store in table {}, {}", fileReferences.size(), table, runIds);
             }
         } catch (RuntimeException e) {
-            tracker.jobFailed(IngestJobFailedEvent.builder()
-                    .jobRunIds(runIds)
-                    .failureTime(finishTime)
-                    .failure(e)
-                    .build());
             throw new RuntimeException("Failed to add files to state store. " +
                     "Ensure this service account has write access. " +
                     "Files may need to be re-imported for clients to access data.", e);

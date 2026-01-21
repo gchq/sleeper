@@ -114,7 +114,7 @@ class BulkImportJobDriverTest {
 
             // When
             runJob(job, "test-run", "test-task", validationTime,
-                    driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+                    driver(successfulWithOutput(outputFiles), startFinishAndFailureTime(startTime, finishTime, finishTime)));
 
             // Then
             assertThat(allJobsReported())
@@ -158,7 +158,7 @@ class BulkImportJobDriverTest {
         }
 
         @Test
-        void shouldReportJobFinishedWithNoRowsWhenStateStoreUpdateFailed() throws Exception {
+        void shouldReportStateStoreUpdateFailed() throws Exception {
             // Given
             BulkImportJob job = singleFileImportJob();
             Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
@@ -173,7 +173,7 @@ class BulkImportJobDriverTest {
 
             // When
             var driver = driver(
-                    successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
+                    successfulWithOutput(outputFiles), stateStore, startFinishAndFailureTime(startTime, finishTime, finishTime));
             assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
                     .isInstanceOf(RuntimeException.class)
                     .cause().isInstanceOf(StateStoreException.class)
@@ -184,7 +184,10 @@ class BulkImportJobDriverTest {
                     .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
                             ingestAcceptedStatus(validationTime, 1),
                             validatedIngestStartedStatus(startTime, 1),
-                            failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
+                            failedStatus(finishTime, List.of(
+                                    "Failed to add files to state store. Ensure this service account has write access. " +
+                                            "Files may need to be re-imported for clients to access data.",
+                                    "Failed adding transaction", "Failed updating files")))));
             assertThat(commitRequestQueue).isEmpty();
             assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
@@ -385,6 +388,10 @@ class BulkImportJobDriverTest {
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
         return List.of(startTime, finishTime).iterator()::next;
+    }
+
+    private Supplier<Instant> startFinishAndFailureTime(Instant startTime, Instant finishTime, Instant failureTime) {
+        return List.of(startTime, finishTime, failureTime).iterator()::next;
     }
 
     private Supplier<Instant> failureTime(Instant failureTime) {
