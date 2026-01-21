@@ -128,7 +128,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
 
-            C afterSplit = preSplitPartitionsIfNecessary(tableProperties, runIds, allPartitions, context);
+            C contextAfterSplit = preSplitPartitionsIfNecessary(tableProperties, runIds, allPartitions, context);
 
             Instant startTime = getTime.get();
             tracker.jobStarted(IngestJobStartedEvent.builder()
@@ -140,7 +140,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
             LOGGER.info("Running bulk import job with id {}", job.getId());
             List<FileReference> fileReferences;
             try {
-                fileReferences = bulkImporter.createFileReferences(afterSplit);
+                fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
             } catch (RuntimeException e) {
                 tracker.jobFailed(IngestJobFailedEvent.builder()
                         .jobRunIds(runIds)
