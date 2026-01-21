@@ -51,7 +51,7 @@ public class StandardJobRunReporter {
     public static final TableFieldDefinition ROWS_WRITTEN = TableFieldDefinition.numeric("ROWS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
-    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE REASONS");
+    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE_REASONS");
 
     private final PrintStream out;
 
@@ -223,11 +223,7 @@ public class StandardJobRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
-    }
-
-    public List<TableFieldDefinition> getUnfinishedFields() {
-        return Arrays.asList(FAILURE_REASONS);
+        return Arrays.asList(DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     private static String getDurationString(JobRunSummary summary) {
