@@ -27,6 +27,7 @@ import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 
 public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase {
 
@@ -609,6 +611,49 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pushImageCommand(ecrTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content"));
+        }
+    }
+
+    @Nested
+    @DisplayName("State store committer image")
+    class StateStoreCommitterImage {
+        // Test list:
+        // - Push image for EC2 platform
+        // - Don't push image for lambda platform
+        // - Push image when properties updated to change platform to EC2
+        // - Don't push image when properties updated to change platform to lambda
+
+        @BeforeEach
+        void setUp() {
+            properties.setEnumList(OPTIONAL_STACKS, List.of());
+        }
+
+        @Test
+        void shouldPushStateStoreCommitterImageForEc2Platform() throws Exception {
+            // Given
+            properties.setEnum(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.EC2);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-committer:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageCommand(expectedTag, "./docker/statestore-committer"),
+                    pushImageCommand(expectedTag));
+        }
+
+        @Test
+        void shouldNotPushStateStoreCommitterImageForLambdaPlatform() throws Exception {
+            // Given
+            properties.setEnum(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.LAMBDA);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            assertThat(commandsThatRan).isEmpty();
         }
     }
 

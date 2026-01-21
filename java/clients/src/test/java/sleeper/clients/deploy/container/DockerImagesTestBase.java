@@ -21,6 +21,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,10 @@ public class DockerImagesTestBase {
                     .deploymentName("bulk-import-runner-emr-serverless")
                     .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
                     .createEmrServerlessPolicy(true)
+                    .build(),
+            DockerDeployment.builder()
+                    .deploymentName("statestore-committer")
+                    .committerPlatform(StateStoreCommitterPlatform.EC2)
                     .build());
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder()

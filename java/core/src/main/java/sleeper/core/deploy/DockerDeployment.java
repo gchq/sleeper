@@ -17,10 +17,12 @@ package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
@@ -53,18 +55,21 @@ public class DockerDeployment {
             .add();
     public static final DockerDeployment STATESTORE_COMMITTER = builder()
             .deploymentName("statestore-committer")
+            .committerPlatform(StateStoreCommitterPlatform.EC2)
             .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;
+    private final StateStoreCommitterPlatform committerPlatform;
     private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
 
     private DockerDeployment(Builder builder) {
-        this.deploymentName = builder.deploymentName;
-        this.optionalStack = builder.optionalStack;
-        this.multiplatform = builder.multiplatform;
-        this.createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        deploymentName = builder.deploymentName;
+        optionalStack = builder.optionalStack;
+        committerPlatform = builder.committerPlatform;
+        multiplatform = builder.multiplatform;
+        createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
     public static Builder builder() {
@@ -97,6 +102,32 @@ public class DockerDeployment {
      */
     public OptionalStack getOptionalStack() {
         return optionalStack;
+    }
+
+    /**
+     * Retrieves which state store committer platform uses this deployment.
+     *
+     * @return the platform
+     */
+    public StateStoreCommitterPlatform getCommitterPlatform() {
+        return committerPlatform;
+    }
+
+    /**
+     * Checks whether this deployment is deployed given some configuration.
+     *
+     * @param  optionalStacks    the enabled optional stacks in the instance
+     * @param  committerPlatform the platform used to deploy the state store committer
+     * @return                   true if this is deployed
+     */
+    public boolean isDeployed(Set<OptionalStack> optionalStacks, StateStoreCommitterPlatform committerPlatform) {
+        if (this.committerPlatform != null && this.committerPlatform != committerPlatform) {
+            return false;
+        }
+        if (optionalStack != null && !optionalStacks.contains(optionalStack)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -147,6 +178,7 @@ public class DockerDeployment {
     public static class Builder {
         private String deploymentName;
         private OptionalStack optionalStack;
+        private StateStoreCommitterPlatform committerPlatform;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
 
@@ -170,6 +202,17 @@ public class DockerDeployment {
          */
         public Builder optionalStack(OptionalStack optionalStack) {
             this.optionalStack = optionalStack;
+            return this;
+        }
+
+        /**
+         * Sets which state store committer platform uses this deployment.
+         *
+         * @param  committerPlatform the platform
+         * @return                   this builder
+         */
+        public Builder committerPlatform(StateStoreCommitterPlatform committerPlatform) {
+            this.committerPlatform = committerPlatform;
             return this;
         }
 
