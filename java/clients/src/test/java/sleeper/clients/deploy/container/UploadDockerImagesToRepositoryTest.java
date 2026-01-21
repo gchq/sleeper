@@ -28,6 +28,12 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createNewBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.removeOldBuildxBuilderInstanceCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {

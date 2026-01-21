@@ -17,15 +17,8 @@ package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static sleeper.clients.util.command.Command.command;
-import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -44,26 +37,5 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
         uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, imageConfig));
     }
 
-    protected void uploadForUpdate(InstanceProperties before, InstanceProperties after, DockerImageConfiguration imageConfig) throws Exception {
-        uploader().upload(UploadDockerImagesToEcrRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), imageConfig).orElseThrow());
-    }
-
     protected abstract UploadDockerImagesToEcr uploader();
-
-    protected CommandPipeline dockerLoginToEcrCommand() {
-        return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
-                command("docker", "login", "--username", "AWS", "--password-stdin",
-                        "123.dkr.ecr.test-region.amazonaws.com"));
-    }
-
-    protected List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
-        List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(dockerLoginToEcrCommand());
-        for (String image : images) {
-            String tag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/" + image + ":1.0.0";
-            commands.add(buildImageCommand(tag, "./docker/" + image));
-            commands.add(pushImageCommand(tag));
-        }
-        return commands;
-    }
 }

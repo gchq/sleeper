@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
@@ -36,7 +35,16 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createNewBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pullImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.removeOldBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.tagImageCommand;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -156,62 +164,14 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        void shouldPushImageForOptionalLambdaWhenAdded() throws Exception {
+        void shouldPushImageForOptionalLambdaWhenSeveralOfItsStacksAreEnabled() throws Exception {
             // Given
-            properties.setList(OPTIONAL_STACKS, List.of());
-            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack));
-            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
-            files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
-
-            // When
-            uploadForUpdate(propertiesBefore, properties, lambdaImageConfig());
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
-                    pushImageCommand(expectedTag));
-            assertThat(files).isEqualTo(Map.of(
-                    Path.of("./jars/ingest.jar"), "ingest-jar-content",
-                    Path.of("./docker/lambda/lambda.jar"), "ingest-jar-content"));
-        }
-
-        @Test
-        void shouldPushImageForOptionalLambdaWhenOneOfItsStacksIsAdded() throws Exception {
-            // Given
-            properties.setList(OPTIONAL_STACKS, List.of());
-            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack));
-            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
-            files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
-
-            // When
-            uploadForUpdate(propertiesBefore, properties, lambdaImageConfig());
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
-                    pushImageCommand(expectedTag));
-            assertThat(files).isEqualTo(Map.of(
-                    Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
-                    Path.of("./docker/lambda/lambda.jar"), "bulk-import-starter-jar-content"));
-        }
-
-        @Test
-        void shouldPushImageForOptionalLambdaWhenSeveralOfItsStacksAreAdded() throws Exception {
-            // Given
-            properties.setList(OPTIONAL_STACKS, List.of());
-            InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack, OptionalStack.EksBulkImportStack));
             properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
 
             // When
-            uploadForUpdate(propertiesBefore, properties, lambdaImageConfig());
+            uploadForDeployment(optionalLambdasImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
@@ -524,26 +484,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // Then
             assertThat(commandsThatRan).isEmpty();
         }
-
-        @Test
-        void shouldBuildAndPushImageForExistingInstanceWithExistingImage() throws Exception {
-            // Given
-            properties.set(VERSION, "0.9.0");
-            properties.setList(OPTIONAL_STACKS, List.of());
-            InstanceProperties before = InstanceProperties.copyOf(properties);
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
-
-            // When
-            uploadForUpdate(before, properties, dockerDeploymentImageConfig());
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag, "./docker/ingest"),
-                    pushImageCommand(expectedTag));
-        }
     }
 
     @Nested
@@ -617,11 +557,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     @Nested
     @DisplayName("State store committer image")
     class StateStoreCommitterImage {
-        // Test list:
-        // - Push image for EC2 platform
-        // - Don't push image for lambda platform
-        // - Push image when properties updated to change platform to EC2
-        // - Don't push image when properties updated to change platform to lambda
 
         @BeforeEach
         void setUp() {

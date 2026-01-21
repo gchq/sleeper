@@ -34,6 +34,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 

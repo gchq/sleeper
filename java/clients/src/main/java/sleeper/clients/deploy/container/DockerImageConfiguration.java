@@ -16,12 +16,10 @@
 
 package sleeper.clients.deploy.container;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.SleeperPropertyValues;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
@@ -33,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -60,24 +57,6 @@ public class DockerImageConfiguration {
     public DockerImageConfiguration(List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
         this.dockerDeployments = dockerDeployments;
         this.lambdaHandlers = lambdaHandlers;
-    }
-
-    /**
-     * Finds which images need to be uploaded when redeploying due to a change to an instance property. This is computed
-     * based on which optional stacks have been added to the instance. This is needed in a context where Docker images
-     * are only uploaded to AWS when we deploy the stack associated with it.
-     *
-     * @param  properties the instance properties
-     * @param  diff       the diff describing the change that caused the redeploy
-     * @return            the list of Docker images that need to be uploaded
-     */
-    public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
-        List<StackDockerImage> imagesBefore = getImagesToUpload(diff.getValuesBefore(properties));
-        List<StackDockerImage> imagesAfter = getImagesToUpload(properties);
-        List<StackDockerImage> imagesToUpload = imagesAfter.stream()
-                .filter(image -> !imagesBefore.contains(image))
-                .collect(toList());
-        return imagesToUpload;
     }
 
     /**

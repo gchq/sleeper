@@ -34,6 +34,7 @@ import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
 import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.report.TableNamesReport;
@@ -104,8 +105,8 @@ public class AdminClient {
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient),
                     stsClient.getCallerIdentity().account(), regionProvider.getRegion().id());
-            errorCode = start(instanceId, s3Client, dynamoClient,
-                    cdk, generatedDir, uploadDockerImages, out, in,
+            errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir,
+                    uploadDockerImages, DockerImageConfiguration.getDefault(), out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
                     properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
@@ -114,13 +115,13 @@ public class AdminClient {
     }
 
     public static int start(String instanceId,
-            S3Client s3Client, DynamoDbClient dynamoClient,
-            InvokeCdk cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
+            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk, Path generatedDir,
+            UploadDockerImagesToEcr uploadDockerImages, DockerImageConfiguration dockerImageConfiguration,
             ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
         AdminClientPropertiesStore store = new AdminClientPropertiesStore(
-                s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages);
+                s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, dockerImageConfiguration);
         InstanceProperties instanceProperties;
         try {
             instanceProperties = store.loadInstanceProperties(instanceId);

@@ -42,14 +42,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
-    private InstanceProperties instanceProperties;
     protected final TableIndex tableIndex = new InMemoryTableIndex();
 
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
+        super.setInstanceProperties(instanceProperties);
         when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
-        instanceId = instanceProperties.get(ID);
-        this.instanceProperties = instanceProperties;
     }
 
     @Override

@@ -16,13 +16,11 @@
 
 package sleeper.clients.deploy.container;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -47,15 +45,6 @@ public class UploadDockerImagesToEcrRequest {
 
     public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties) {
         return forDeployment(properties, DockerImageConfiguration.getDefault());
-    }
-
-    public static Optional<UploadDockerImagesToEcrRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
-        List<StackDockerImage> images = configuration.getImagesToUploadOnUpdate(properties, diff);
-        if (images.isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(builder().properties(properties).images(images).build());
-        }
     }
 
     public Builder toBuilder() {

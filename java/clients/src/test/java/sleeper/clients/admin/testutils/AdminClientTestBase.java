@@ -32,6 +32,7 @@ import static org.mockito.Mockito.mock;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -51,12 +52,19 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
             .valueFields(new Field("value", new StringType()))
             .build();
 
+    protected InstanceProperties instanceProperties;
     protected String instanceId;
     protected static final String TABLE_NAME_VALUE = "test-table";
 
     @Override
     public String getInstanceId() {
         return instanceId;
+    }
+
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties) {
+        this.instanceProperties = instanceProperties;
+        this.instanceId = instanceProperties.get(ID);
     }
 
     protected RunAdminClient runClient() {
