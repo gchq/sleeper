@@ -20,6 +20,7 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
 import software.amazon.awscdk.services.autoscaling.UpdatePolicy;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InstanceArchitecture;
 import software.amazon.awscdk.services.ec2.InstanceType;
 import software.amazon.awscdk.services.ec2.LaunchTemplate;
 import software.amazon.awscdk.services.ec2.UserData;
@@ -165,12 +166,13 @@ public class StateStoreCommitterStack extends NestedStack {
             .build();
 
         String ec2InstanceType = instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
+        InstanceType instanceType = new InstanceType(ec2InstanceType);
 
         cluster.addAsgCapacityProvider(AsgCapacityProvider.Builder.create(this, "capacity-provider")
             .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
                 .launchTemplate(LaunchTemplate.Builder.create(this, "instance-template")
-                    .instanceType(new InstanceType(ec2InstanceType))
-                    .machineImage(EcsOptimizedImage.amazonLinux2023(AmiHardwareType.ARM))
+                    .instanceType(instanceType)
+                    .machineImage(EcsOptimizedImage.amazonLinux2023(lookupAmiHardwareType(instanceType.getArchitecture())))
                     .requireImdsv2(true)
                     .userData(UserData.forLinux())
                     .role(Role.Builder.create(this, "role")
@@ -274,4 +276,16 @@ public class StateStoreCommitterStack extends NestedStack {
     public void grantSendCommits(IGrantable grantee) {
         commitQueue.grantSendMessages(grantee);
     }
+
+    private static AmiHardwareType lookupAmiHardwareType(InstanceArchitecture architecture) {
+        switch (architecture) {
+            case ARM_64:
+                return AmiHardwareType.ARM;
+            case X86_64:
+                return AmiHardwareType.STANDARD;
+            default:
+                throw new IllegalArgumentException("Unrecognised architecture: " + architecture);
+        }
+    }
+
 }
