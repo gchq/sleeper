@@ -140,7 +140,7 @@ public class StateStoreProviderTest {
 
             // When
             StateStoreProvider provider = provider();
-            boolean removed = provider.removeStateStoreFromCache(table);
+            boolean removed = provider.removeStateStoreFromCache("test-table-id");
 
             // Then
             assertThat(tableIdToStateStore.get(table.get(TABLE_ID))).isSameAs(store);
@@ -157,7 +157,7 @@ public class StateStoreProviderTest {
             // When
             StateStoreProvider provider = provider();
             StateStore retrievedStore1 = provider.getStateStore(table);
-            boolean removed = provider.removeStateStoreFromCache(table);
+            boolean removed = provider.removeStateStoreFromCache("test-table-id");
             // Table properties will be reloaded as no longer in cache
             StateStore retrievedStore2 = provider.getStateStore(table);
 

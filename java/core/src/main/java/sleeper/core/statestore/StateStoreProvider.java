@@ -79,18 +79,6 @@ public class StateStoreProvider {
     /**
      * Remove a specific table's state store from the cache.
      *
-     * @param  tableProperties the Sleeper table properties
-     * @return                 true if the state store for the requested Sleeper table was in the cache and has been
-     *                         removed
-     */
-    public boolean removeStateStoreFromCache(TableProperties tableProperties) {
-        String tableId = tableProperties.get(TABLE_ID);
-        return removeStateStoreFromCache(tableId);
-    }
-
-    /**
-     * Remove a specific table's state store from the cache.
-     *
      * @param  tableId the Sleeper table ID
      * @return         true if the state store for the requested Sleeper table was in the cache and has been removed
      */
