@@ -177,9 +177,8 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
             }
         } else {
             LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
+            return context;
         }
-
-        return context;
     }
 
     private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
