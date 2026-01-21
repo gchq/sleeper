@@ -18,12 +18,9 @@ package sleeper.bulkimport.starter.executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.core.CheckLeafPartitionCount;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
@@ -106,10 +103,6 @@ public class BulkImportExecutor {
             failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
         }
 
-        if (!hasMinimumPartitions(bulkImportJob)) {
-            failedChecks.add("The minimum partition count was not reached");
-        }
-
         if (null == bulkImportJob.getFiles() || bulkImportJob.getFiles().isEmpty()) {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
@@ -124,12 +117,6 @@ public class BulkImportExecutor {
         } else {
             return true;
         }
-    }
-
-    private boolean hasMinimumPartitions(BulkImportJob bulkImportJob) {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(bulkImportJob.getTableName());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        return CheckLeafPartitionCount.hasMinimumPartitions(tableProperties, stateStore, bulkImportJob);
     }
 
     /**
