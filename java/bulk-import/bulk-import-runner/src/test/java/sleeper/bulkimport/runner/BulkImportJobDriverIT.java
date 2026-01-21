@@ -36,6 +36,7 @@ import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -422,6 +423,27 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Check json file has been deleted
         assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    void shouldPreSplitPartitionsBeforeBulkImport(BulkImportJobRunner runner) throws Exception {
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        List<Row> rows = getRows();
+        writeRowsToFile(rows, dataDir + "/import/a.parquet");
+        List<String> inputFiles = new ArrayList<>();
+        inputFiles.add(dataDir + "/import/a.parquet");
+        // - State store
+        StateStore stateStore = createTable(instanceProperties, tableProperties);
+
+        // When
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
+        runJob(runner, instanceProperties, job);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).hasSize(2);
+        assertThat(new PartitionTree(stateStore.getAllPartitions()).getLeafPartitions()).hasSize(2);
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
