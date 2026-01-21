@@ -47,6 +47,17 @@ public class StateStoreProvider {
     }
 
     /**
+     * Creates a state store provider with no limit to the number of tables that can be cached. The cache must be
+     * managed explicitly by calling methods on the provider.
+     *
+     * @param  stateStoreFactory the factory to create state store objects
+     * @return                   the provider
+     */
+    public static StateStoreProvider noCacheSizeLimit(Factory stateStoreFactory) {
+        return new StateStoreProvider(-1, stateStoreFactory);
+    }
+
+    /**
      * Retrieves or creates the state store client for the given Sleeper table.
      *
      * @param  tableProperties the Sleeper table properties
@@ -69,7 +80,8 @@ public class StateStoreProvider {
      * Remove a specific table's state store from the cache.
      *
      * @param  tableProperties the Sleeper table properties
-     * @return true if the state store for the requested Sleeper table was in the cache and has been removed
+     * @return                 true if the state store for the requested Sleeper table was in the cache and has been
+     *                         removed
      */
     public boolean removeStateStoreFromCache(TableProperties tableProperties) {
         String tableId = tableProperties.get(TABLE_ID);
@@ -80,11 +92,11 @@ public class StateStoreProvider {
      * Remove a specific table's state store from the cache.
      *
      * @param  tableId the Sleeper table ID
-     * @return true if the state store for the requested Sleeper table was in the cache and has been removed
+     * @return         true if the state store for the requested Sleeper table was in the cache and has been removed
      */
     public boolean removeStateStoreFromCache(String tableId) {
         return tableIdToStateStoreCache.remove(tableId) != null &&
-            tableIds.remove(tableId);
+                tableIds.remove(tableId);
     }
 
     /**
