@@ -196,7 +196,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     "Files may need to be re-imported for clients to access data.", e);
         }
 
-        long numRows = calcAndLogNumRows(runIds, startTime, finishTime, fileReferences);
+        long numRows = logFinishedGetNumRows(runIds, startTime, finishTime, fileReferences);
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()
                 .jobRunIds(runIds)
@@ -206,7 +206,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 .build());
     }
 
-    private long calcAndLogNumRows(IngestJobRunIds runIds, Instant startTime, Instant finishTime, List<FileReference> fileReferences) {
+    private long logFinishedGetNumRows(IngestJobRunIds runIds, Instant startTime, Instant finishTime, List<FileReference> fileReferences) {
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", runIds.getJobId(), finishTime);
         long numRows = fileReferences.stream()
