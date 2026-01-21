@@ -560,7 +560,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
         @BeforeEach
         void setUp() {
-            properties.setEnumList(OPTIONAL_STACKS, List.of());
+            properties.setList(OPTIONAL_STACKS, List.of());
         }
 
         @Test
