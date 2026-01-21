@@ -26,7 +26,7 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 public class DockerImageCommandTestData {
 
@@ -41,14 +41,14 @@ public class DockerImageCommandTestData {
 
     public static List<CommandPipeline> commandsToLoginDockerAndPushImages(InstanceProperties instanceProperties, String... images) {
         String ecrHostname = instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + ".amazonaws.com";
-        return commandsToLoginDockerAndPushImages(ecrHostname, instanceProperties.get(ID), instanceProperties.get(VERSION), images);
+        return commandsToLoginDockerAndPushImages(ecrHostname, instanceProperties.get(ECR_REPOSITORY_PREFIX), instanceProperties.get(VERSION), images);
     }
 
-    private static List<CommandPipeline> commandsToLoginDockerAndPushImages(String ecrHostname, String instanceId, String version, String... images) {
+    private static List<CommandPipeline> commandsToLoginDockerAndPushImages(String ecrHostname, String ecrPrefix, String version, String... images) {
         List<CommandPipeline> commands = new ArrayList<>();
         commands.add(dockerLoginToEcrCommand(ecrHostname));
         for (String image : images) {
-            String tag = ecrHostname + "/" + instanceId + "/" + image + ":" + version;
+            String tag = ecrHostname + "/" + ecrPrefix + "/" + image + ":" + version;
             commands.add(buildImageCommand(tag, "./docker/" + image));
             commands.add(pushImageCommand(tag));
         }
