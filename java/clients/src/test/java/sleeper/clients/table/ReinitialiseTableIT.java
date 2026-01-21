@@ -39,9 +39,14 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -49,6 +54,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -129,6 +135,35 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldNotDeleteTransationFilesAndSnapshots() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        //Store Transaction
+        S3TransactionBodyStore s3TransactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), 0);
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        String transactionKey = s3TransactionBodyStore.storeIfTooBig(tableProperties.get(TABLE_ID), transaction).getBodyKey().orElseThrow();
+
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
+
+        // When
+        reinitialiseTable(tableProperties);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+        assertThat(stateStore.getAllPartitions()).hasSize(3);
+        assertThat(stateStore.getLeafPartitions()).hasSize(2);
+        List<String> list = new ArrayList<>();
+        list.add(transactionKey);
+        assertOnlyExpectedObjectsHaveBeenDeleted(list);
+    }
+
+    @Test
     public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
         // Given
         saveProperties();
@@ -198,12 +233,16 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     }
 
     private void assertOnlyExpectedObjectsHaveBeenDeleted() {
+        assertOnlyExpectedObjectsHaveBeenDeleted(new ArrayList<>());
+    }
+
+    private void assertOnlyExpectedObjectsHaveBeenDeleted(List<String> objectKeys) {
         String tableId = tableProperties.get(TABLE_ID);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
         assertThat(listDataBucketObjectKeys())
-                .containsExactlyInAnyOrder(
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+                .containsExactlyInAnyOrder(objectKeys.toArray(new String[0]));
     }
 
     private List<String> listDataBucketObjectKeys() {
