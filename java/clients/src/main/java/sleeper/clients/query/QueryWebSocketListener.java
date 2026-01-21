@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class QueryWebSocketListener {
@@ -107,10 +106,6 @@ public class QueryWebSocketListener {
     public void onError(Exception error) {
         future.handleException(new WebSocketErrorException(error));
         close();
-    }
-
-    public CompletableFuture<List<Row>> getQueryFuture() {
-        return future;
     }
 
     private void handleError(QueryWebSocketMessage message) {

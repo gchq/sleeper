@@ -15,21 +15,45 @@
  */
 package sleeper.clients.query;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
-public class QueryWebSocketFuture<T> extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
+/**
+ * An interator used by QueryWebSocket. Turns an iterator into a {@link CloseableIterator}.
+ *
+ * @param <T> the type of elements returned by this iterator
+ */
+public class QueryIterator<T> implements CloseableIterator<T>, QueryWebSocketHandler {
+    private final Iterator<T> iterator;
+
+    public QueryIterator(Iterator<T> iterator) {
+        this.iterator = iterator;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+
+    @Override
+    public T next() {
+        return iterator.next();
+    }
+
+    @Override
+    public void close() {
+    }
 
     @Override
     public void handleException(Exception e) {
-        this.completeExceptionally(e);
+        System.out.println(e);
     }
 
     @Override
     public void handleResults(List<Row> results) {
-        this.complete(results);
+        System.out.println(results);
     }
-
 }
