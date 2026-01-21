@@ -167,6 +167,32 @@ public class StateStoreProviderTest {
             assertThat(removed).isTrue();
             assertThat(tablesLoaded).containsExactly("test-table-id", "test-table-id");
         }
+
+        @Test
+        void shouldRememberTableWasEvictedWhenRemovingOldestTableDueToMaxSize() {
+            // Given
+            instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+
+            // And we reorder the table ages by evicting and re-adding
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.removeStateStoreFromCache("table1");
+            provider.getStateStore(table1);
+
+            // When we overflow the max size and then load the old tables again
+            provider.getStateStore(table3);
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+
+            // Then the table that was evicted and re-added does not get evicted by the overflow
+            assertThat(tablesLoaded).containsExactly(
+                    "table1", "table2", "table1", "table3", "table2");
+        }
     }
 
     private TableProperties createTable(String tableId, String tableName) {
@@ -174,6 +200,12 @@ public class StateStoreProviderTest {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         return tableProperties;
+    }
+
+    private void createStateStores(TableProperties... tables) {
+        for (TableProperties table : tables) {
+            createStateStore(table);
+        }
     }
 
     private StateStore createStateStore(TableProperties table) {
