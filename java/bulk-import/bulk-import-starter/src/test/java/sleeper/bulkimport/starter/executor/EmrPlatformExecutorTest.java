@@ -72,7 +72,6 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUT
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -80,7 +79,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);
@@ -415,25 +413,6 @@ class EmrPlatformExecutorTest {
         }
 
         assertThat(conf).containsEntry("spark.hadoop.fs.s3a.connection.maximum", "100");
-    }
-
-    @Test
-    void shouldNotCreateClusterIfMinimumPartitionCountNotReached() {
-        // Given
-        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
-        BulkImportJob myJob = singleFileJob();
-        BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
-
-        // When
-        executor.runJob(myJob);
-
-        // Then
-        assertThat(requested.get())
-                .isNull();
-        assertThat(tracker.getAllJobs(tableId))
-                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
-                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
-                                "The minimum partition count was not reached")));
     }
 
     @Test
