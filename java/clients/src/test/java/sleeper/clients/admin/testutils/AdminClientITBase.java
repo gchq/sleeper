@@ -48,10 +48,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
@@ -89,9 +86,9 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                         .copyFile((source, target) -> {
                         })
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                        .version(instanceProperties.get(VERSION))
+                        .version(version)
                         .build(),
-                ecrClient, instanceProperties.get(ACCOUNT), instanceProperties.get(REGION));
+                ecrClient, account, region);
     }
 
     @Override

@@ -31,6 +31,9 @@ import java.util.Map;
 import static org.mockito.Mockito.mock;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -54,6 +57,9 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected InstanceProperties instanceProperties;
     protected String instanceId;
+    protected String version = "1.2.3";
+    protected String account = "test-account";
+    protected String region = "test-region";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
     @Override
@@ -65,6 +71,9 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
         this.instanceId = instanceProperties.get(ID);
+        this.version = instanceProperties.get(VERSION);
+        this.account = instanceProperties.get(ACCOUNT);
+        this.region = instanceProperties.get(REGION);
     }
 
     protected RunAdminClient runClient() {
