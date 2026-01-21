@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.runner;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -33,15 +34,17 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(BULK_IMPORT_BUCKET, UUID.randomUUID().toString());
+        createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
+    }
+
     @Test
     void shouldLoadBulkImportJobFromS3() {
         // Given
         String jobRunId = "load-run";
         String jobId = "load-job-id";
-        String testBucket = UUID.randomUUID().toString();
-        createBucket(testBucket);
-
-        instanceProperties.set(BULK_IMPORT_BUCKET, testBucket);
 
         BulkImportJob bulkImportJob = BulkImportJob.builder()
                 .id(jobId)
@@ -53,6 +56,9 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
         bulkImportJobWriterToS3.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
 
         // When / Then
-        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client)).isEqualTo(bulkImportJob);
+        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client))
+                .isEqualTo(bulkImportJob);
+        // And the file is deleted after it is loaded
+        assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
     }
 }

@@ -72,7 +72,9 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +82,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +93,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -118,7 +120,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @TempDir
-    public java.nio.file.Path folder;
+    public java.nio.file.Path tempDir;
     private final Schema schema = getSchema();
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final String taskId = "test-bulk-import-spark-cluster";
@@ -145,14 +147,14 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        dataDir = folder.toString();
-        instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(BULK_IMPORT_BUCKET, UUID.randomUUID().toString());
+        instanceProperties.set(DATA_BUCKET, createDir("data"));
+        instanceProperties.set(BULK_IMPORT_BUCKET, createDir("bulk-import"));
+        dataDir = instanceProperties.get(DATA_BUCKET);
+
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
@@ -222,6 +224,12 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         runJob(runner, instanceProperties, job);
 
         // Then
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
+                        ingestAcceptedStatus(ingestJob, validationTime),
+                        validatedIngestStartedStatus(ingestJob, startTime),
+                        ingestFinishedStatus(summary(startTime, endTime, 100, 100), 1))));
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Row> readRows = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
@@ -235,12 +243,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         sortRows(expectedRows);
         sortRows(readRows);
         assertThat(readRows).isEqualTo(expectedRows);
-        IngestJob ingestJob = job.toIngestJob();
-        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
-                        ingestAcceptedStatus(ingestJob, validationTime),
-                        validatedIngestStartedStatus(ingestJob, startTime),
-                        ingestFinishedStatus(summary(startTime, endTime, 100, 100), 1))));
     }
 
     @ParameterizedTest
@@ -386,50 +388,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldDeleteJsonFileAfterImport(BulkImportJobRunner runner) throws IOException {
-        // Given
-        // - Write some data to be imported
-        List<Row> rows = getRows();
-        writeRowsToFile(rows, dataDir + "/import/a.parquet");
-        List<String> inputFiles = new ArrayList<>();
-        inputFiles.add(dataDir + "/import/a.parquet");
-        // - State store
-        StateStore stateStore = createTable(instanceProperties, tableProperties);
-
-        // When
-        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, job);
-
-        // Then
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-        List<Row> readRows = new ArrayList<>();
-        for (FileReference fileReference : fileReferences) {
-            List<Row> rowsInThisFile = readRows(fileReference.getFilename(), schema);
-            assertThat(rowsInThisFile).isSortedAccordingTo(new RowComparator(getSchema()));
-            readRows.addAll(rowsInThisFile);
-        }
-        assertThat(readRows).hasSameSizeAs(rows);
-
-        List<Row> expectedRows = new ArrayList<>(rows);
-        sortRows(expectedRows);
-        sortRows(readRows);
-        assertThat(readRows).isEqualTo(expectedRows);
-        IngestJob ingestJob = job.toIngestJob();
-        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
-                        ingestAcceptedStatus(ingestJob, validationTime),
-                        validatedIngestStartedStatus(ingestJob, startTime),
-                        ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
-
-        // Check json file has been deleted
-        assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
-    }
-
-    @ParameterizedTest
-    @MethodSource("getParameters")
     void shouldPreSplitPartitionsBeforeBulkImport(BulkImportJobRunner runner) throws Exception {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
         List<Row> rows = getRows();
         writeRowsToFile(rows, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
@@ -592,5 +554,15 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return BulkImportJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .tableName(tableProperties.get(TABLE_NAME));
+    }
+
+    private String createDir(String name) {
+        java.nio.file.Path path = tempDir.resolve(name);
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return path.toString();
     }
 }
