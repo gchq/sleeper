@@ -20,9 +20,9 @@ import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
@@ -116,11 +116,11 @@ public class DockerDeployment {
     /**
      * Checks whether this deployment is deployed given some configuration.
      *
-     * @param  optionalStacks    the enabled optional stacks in the instance
      * @param  committerPlatform the platform used to deploy the state store committer
+     * @param  optionalStacks    the enabled optional stacks in the instance
      * @return                   true if this is deployed
      */
-    public boolean isDeployed(Set<OptionalStack> optionalStacks, StateStoreCommitterPlatform committerPlatform) {
+    public boolean isDeployed(StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
         if (this.committerPlatform != null && this.committerPlatform != committerPlatform) {
             return false;
         }

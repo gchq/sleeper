@@ -35,6 +35,10 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 public class DockerImagesTestBase {
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             DockerDeployment.builder()
+                    .deploymentName("statestore-committer")
+                    .committerPlatform(StateStoreCommitterPlatform.EC2)
+                    .build(),
+            DockerDeployment.builder()
                     .deploymentName("ingest")
                     .optionalStack(OptionalStack.IngestStack)
                     .build(),
@@ -51,10 +55,6 @@ public class DockerImagesTestBase {
                     .deploymentName("bulk-import-runner-emr-serverless")
                     .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
                     .createEmrServerlessPolicy(true)
-                    .build(),
-            DockerDeployment.builder()
-                    .deploymentName("statestore-committer")
-                    .committerPlatform(StateStoreCommitterPlatform.EC2)
                     .build());
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder()

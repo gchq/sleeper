@@ -105,29 +105,20 @@ public class DockerImageConfiguration {
     }
 
     private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties) {
-        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(deployment -> deployment.isDeployed(stacks, committerPlatform))
+                .filter(deployment -> deployment.isDeployed(committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
 
     private Stream<StackDockerImage> lambdaImages(SleeperPropertyValues<InstanceProperty> properties) {
-        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        return dockerLambdaHandlers(lambdaDeployType)
-                .filter(lambda -> lambda.isDeployed(stacks))
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
+        return lambdaHandlers.stream()
+                .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
                 .map(LambdaHandler::getJar).distinct()
                 .map(StackDockerImage::lambdaImage);
-    }
-
-    private Stream<LambdaHandler> dockerLambdaHandlers(LambdaDeployType lambdaDeployType) {
-        if (lambdaDeployType == LambdaDeployType.CONTAINER) {
-            return lambdaHandlers.stream();
-        } else {
-            return lambdaHandlers.stream()
-                    .filter(LambdaHandler::isAlwaysDockerDeploy);
-        }
     }
 
     /**
