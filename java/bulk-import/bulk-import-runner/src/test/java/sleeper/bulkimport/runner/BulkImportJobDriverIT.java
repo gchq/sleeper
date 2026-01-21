@@ -190,7 +190,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                                     .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
                             .build());
         });
-        assertThat(readRows()).isEqualTo(sorted(rows));
+        assertThat(readRowsInPartitionTreeOrder()).isEqualTo(sorted(rows));
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
@@ -220,7 +220,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 100, 100), 1))));
-        assertThat(readRows()).isEqualTo(sorted(rows));
+        assertThat(readRowsInPartitionTreeOrder()).isEqualTo(sorted(rows));
     }
 
     @ParameterizedTest
@@ -376,13 +376,16 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         // Then
         assertThat(stateStore().getFileReferences()).hasSize(2);
         assertThat(new PartitionTree(stateStore().getAllPartitions()).getLeafPartitions()).hasSize(2);
-        assertThat(readRows()).isEqualTo(sorted(rows));
+        assertThat(readRowsInPartitionTreeOrder()).isEqualTo(sorted(rows));
     }
 
-    private List<Row> readRows() {
+    private List<Row> readRowsInPartitionTreeOrder() {
         StateStore stateStore = stateStore();
         PartitionTree partitions = new PartitionTree(stateStore.getAllPartitions());
         List<FileReference> files = stateStore.getFileReferences();
+
+        // Read files in order of their position in the partition tree.
+        // If there's one file per partition, this should result in the rows being fully ordered in the resulting list.
         Map<String, List<FileReference>> partitionIdToFiles = files.stream().collect(groupingBy(FileReference::getPartitionId));
         return partitions.streamLeafPartitions()
                 .map(Partition::getId)
