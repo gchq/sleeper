@@ -53,6 +53,7 @@ public class DockerDeployment {
             .add();
     public static final DockerDeployment STATESTORE_COMMITTER = builder()
             .deploymentName("statestore-committer")
+            .multiplatform(true)
             .add();
 
     private final String deploymentName;
