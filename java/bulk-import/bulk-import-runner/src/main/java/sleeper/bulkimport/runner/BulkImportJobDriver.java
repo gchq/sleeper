@@ -196,17 +196,10 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     "Files may need to be re-imported for clients to access data.", e);
         }
 
-        long numRows = logFinishedGetNumRows(runIds, startTime, finishTime, fileReferences);
-
-        tracker.jobFinished(IngestJobFinishedEvent.builder()
-                .jobRunIds(runIds)
-                .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
-                .fileReferencesAddedByJob(fileReferences)
-                .committedBySeparateFileUpdates(asyncCommit)
-                .build());
+        trackJobFinished(runIds, startTime, finishTime, fileReferences, asyncCommit);
     }
 
-    private long logFinishedGetNumRows(IngestJobRunIds runIds, Instant startTime, Instant finishTime, List<FileReference> fileReferences) {
+    private void trackJobFinished(IngestJobRunIds runIds, Instant startTime, Instant finishTime, List<FileReference> fileReferences, boolean asyncCommit) {
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", runIds.getJobId(), finishTime);
         long numRows = fileReferences.stream()
@@ -214,7 +207,13 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 .sum();
         double rate = numRows / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", runIds.getJobId(), duration, rate);
-        return numRows;
+
+        tracker.jobFinished(IngestJobFinishedEvent.builder()
+                .jobRunIds(runIds)
+                .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
+                .fileReferencesAddedByJob(fileReferences)
+                .committedBySeparateFileUpdates(asyncCommit)
+                .build());
     }
 
     @FunctionalInterface
