@@ -206,8 +206,9 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     .failureTime(finishTime)
                     .failure(e)
                     .build());
-            throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
-                    + "be re-imported for clients to access data", e);
+            throw new RuntimeException("Failed to add files to state store. " +
+                    "Ensure this service account has write access. " +
+                    "Files may need to be re-imported for clients to access data.", e);
         }
 
         long numRows = calcAndLogNumRows(runIds, startTime, finishTime, fileReferences);
