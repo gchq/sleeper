@@ -60,7 +60,7 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        CompletableFuture<List<Row>> future = new CompletableFuture<>();
+        QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
         QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
