@@ -4,6 +4,6 @@ Ingest Job Status Report
 Jobs waiting in ingest queue (excluded from report): 0
 Total jobs waiting across all queues: 0
 Total jobs rejected: 0
--------------------------------------------------------
-| STATE | JOB_ID | INPUT_FILES | TASK_ID | START_TIME |
--------------------------------------------------------
+---------------------------------------------------------------------------------------
+| STATE | JOB_ID | INPUT_FILES | TASK_ID | START_TIME | FINISH_TIME | FAILURE_REASONS |
+---------------------------------------------------------------------------------------
