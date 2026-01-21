@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -61,71 +63,110 @@ public class StateStoreProviderTest {
         assertThat(tablesLoaded).containsExactly("test-table-id");
     }
 
-    @Test
-    void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
-        // Given
-        instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
-        TableProperties table1 = createTable("table-id-1", "test-table-1");
-        StateStore store1 = createStateStore(table1);
-        TableProperties table2 = createTable("table-id-2", "test-table-2");
-        StateStore store2 = createStateStore(table2);
-        TableProperties table3 = createTable("table-id-3", "test-table-3");
-        StateStore store3 = createStateStore(table3);
+    @Nested
+    @DisplayName("Maximum number of tables in cache")
+    class MaxTables {
 
-        // When
-        StateStoreProvider provider = provider();
-        StateStore retrievedStore1 = provider.getStateStore(table1);
-        StateStore retrievedStore2 = provider.getStateStore(table2);
-        // Cache size has been reached, oldest state store will be removed from cache
-        StateStore retrievedStore3 = provider.getStateStore(table3);
-        StateStore retrievedStore4 = provider.getStateStore(table1);
+        @Test
+        void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
+            // Given
+            instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+            TableProperties table1 = createTable("table-id-1", "test-table-1");
+            StateStore store1 = createStateStore(table1);
+            TableProperties table2 = createTable("table-id-2", "test-table-2");
+            StateStore store2 = createStateStore(table2);
+            TableProperties table3 = createTable("table-id-3", "test-table-3");
+            StateStore store3 = createStateStore(table3);
 
-        // Then
-        assertThat(retrievedStore1).isSameAs(store1);
-        assertThat(retrievedStore2).isSameAs(store2);
-        assertThat(retrievedStore3).isSameAs(store3);
-        assertThat(retrievedStore4).isSameAs(store1);
-        assertThat(tablesLoaded).containsExactly(
-                "table-id-1",
-                "table-id-2",
-                "table-id-3",
-                "table-id-1");
+            // When
+            StateStoreProvider provider = provider();
+            StateStore retrievedStore1 = provider.getStateStore(table1);
+            StateStore retrievedStore2 = provider.getStateStore(table2);
+            // Cache size has been reached, oldest state store will be removed from cache
+            StateStore retrievedStore3 = provider.getStateStore(table3);
+            StateStore retrievedStore4 = provider.getStateStore(table1);
+
+            // Then
+            assertThat(retrievedStore1).isSameAs(store1);
+            assertThat(retrievedStore2).isSameAs(store2);
+            assertThat(retrievedStore3).isSameAs(store3);
+            assertThat(retrievedStore4).isSameAs(store1);
+            assertThat(tablesLoaded).containsExactly(
+                    "table-id-1",
+                    "table-id-2",
+                    "table-id-3",
+                    "table-id-1");
+        }
+
+        @Test
+        void shouldHaveNoLimitWhenCacheSizeIsNegative() {
+            // Given
+            instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, -1);
+            TableProperties table1 = createTable("table-id-1", "test-table-1");
+            StateStore store1 = createStateStore(table1);
+            TableProperties table2 = createTable("table-id-2", "test-table-2");
+            StateStore store2 = createStateStore(table2);
+            TableProperties table3 = createTable("table-id-3", "test-table-3");
+            StateStore store3 = createStateStore(table3);
+
+            // When
+            StateStoreProvider provider = provider();
+            StateStore retrievedStore1 = provider.getStateStore(table1);
+            StateStore retrievedStore2 = provider.getStateStore(table2);
+            StateStore retrievedStore3 = provider.getStateStore(table3);
+            StateStore retrievedStore4 = provider.getStateStore(table1);
+
+            // Then
+            assertThat(retrievedStore1).isSameAs(store1);
+            assertThat(retrievedStore2).isSameAs(store2);
+            assertThat(retrievedStore3).isSameAs(store3);
+            assertThat(retrievedStore4).isSameAs(store1);
+            assertThat(tablesLoaded).containsExactly(
+                    "table-id-1",
+                    "table-id-2",
+                    "table-id-3");
+        }
     }
 
-    @Test
-    void shouldNotRemoveFromCacheIfStateStoreNotLoaded() {
-        // Given
-        TableProperties table = createTable("test-table-id", "test-table");
-        StateStore store = createStateStore(table);
+    @Nested
+    @DisplayName("Remove a table from the cache")
+    class RemoveFromCache {
 
-        // When
-        StateStoreProvider provider = provider();
-        boolean removed = provider.removeStateStoreFromCache(table);
+        @Test
+        void shouldNotRemoveFromCacheIfStateStoreNotLoaded() {
+            // Given
+            TableProperties table = createTable("test-table-id", "test-table");
+            StateStore store = createStateStore(table);
 
-        // Then
-        assertThat(tableIdToStateStore.get(table.get(TABLE_ID))).isSameAs(store);
-        assertThat(tablesLoaded).isEmpty();
-        assertThat(removed).isFalse();
-    }
+            // When
+            StateStoreProvider provider = provider();
+            boolean removed = provider.removeStateStoreFromCache(table);
 
-    @Test
-    void shouldRemoveRequestedStateStoreFromCache() {
-        // Given
-        TableProperties table = createTable("test-table-id", "test-table");
-        StateStore store = createStateStore(table);
+            // Then
+            assertThat(tableIdToStateStore.get(table.get(TABLE_ID))).isSameAs(store);
+            assertThat(tablesLoaded).isEmpty();
+            assertThat(removed).isFalse();
+        }
 
-        // When
-        StateStoreProvider provider = provider();
-        StateStore retrievedStore1 = provider.getStateStore(table);
-        boolean removed = provider.removeStateStoreFromCache(table);
-        // Table properties will be reloaded as no longer in cache
-        StateStore retrievedStore2 = provider.getStateStore(table);
+        @Test
+        void shouldRemoveRequestedStateStoreFromCache() {
+            // Given
+            TableProperties table = createTable("test-table-id", "test-table");
+            StateStore store = createStateStore(table);
 
-        // Then
-        assertThat(retrievedStore1).isSameAs(store);
-        assertThat(retrievedStore2).isSameAs(store);
-        assertThat(removed).isTrue();
-        assertThat(tablesLoaded).containsExactly("test-table-id", "test-table-id");
+            // When
+            StateStoreProvider provider = provider();
+            StateStore retrievedStore1 = provider.getStateStore(table);
+            boolean removed = provider.removeStateStoreFromCache(table);
+            // Table properties will be reloaded as no longer in cache
+            StateStore retrievedStore2 = provider.getStateStore(table);
+
+            // Then
+            assertThat(retrievedStore1).isSameAs(store);
+            assertThat(retrievedStore2).isSameAs(store);
+            assertThat(removed).isTrue();
+            assertThat(tablesLoaded).containsExactly("test-table-id", "test-table-id");
+        }
     }
 
     private TableProperties createTable(String tableId, String tableName) {
