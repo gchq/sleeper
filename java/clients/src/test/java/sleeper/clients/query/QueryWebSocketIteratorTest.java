@@ -35,6 +35,8 @@ public class QueryWebSocketIteratorTest {
     // When I iterate through the data without any results or failure, it times out with a configurable wait time (set to zero or close to zero for the test)
     // When I close the iterator the web socket should close
 
+    int numTimesWebSocketClosed = 0;
+
     @Test
     void shouldReturnRows() {
         // Given
@@ -77,8 +79,17 @@ public class QueryWebSocketIteratorTest {
         }
     }
 
+    @Test
+    void shouldCloseWebSocket() {
+        // When an iterator is opened and closed
+        try (QueryWebSocketIterator iterator = iterator()) {
+        }
+        // Then the web socket is closed
+        assertThat(numTimesWebSocketClosed).isEqualTo(1);
+    }
+
     private QueryWebSocketIterator iterator() {
-        return new QueryWebSocketIterator();
+        return new QueryWebSocketIterator(() -> numTimesWebSocketClosed++);
     }
 
 }

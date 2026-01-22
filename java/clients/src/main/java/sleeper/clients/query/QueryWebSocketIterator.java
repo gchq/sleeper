@@ -28,7 +28,12 @@ import java.util.concurrent.ExecutionException;
  */
 public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebSocketHandler {
 
-    private CompletableFuture<List<Row>> future = new CompletableFuture<>();
+    private final Runnable closeWebSocket;
+    private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
+
+    public QueryWebSocketIterator(Runnable closeWebSocket) {
+        this.closeWebSocket = closeWebSocket;
+    }
 
     @Override
     public boolean hasNext() {
@@ -42,6 +47,7 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public void close() {
+        closeWebSocket.run();
     }
 
     @Override
