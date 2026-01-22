@@ -17,15 +17,31 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.row.Row;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class QueryWebSocketIteratorTest {
 
     // When I iterate through the data and a successful result occurs, the rows are returned
     // When I iterate through the data and a failure occurs, the exception is thrown out of the iterator
+    // When I iterate through the data, it will block until results are available
     // When I iterate through the data without any results or failure, it times out with a configurable wait time (set to zero or close to zero for the test)
     // When I close the iterator the web socket should close
 
     @Test
     void shouldReturnRows() {
+        // Given
+        List<Row> rows = List.of(new Row(Map.of("key", "value")));
+        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+            iterator.handleResults(rows);
 
+            // When / Then
+            assertThat(iterator).toIterable()
+                    .containsExactlyElementsOf(rows);
+        }
     }
 }

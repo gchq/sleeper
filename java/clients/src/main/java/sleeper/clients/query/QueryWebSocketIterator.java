@@ -18,29 +18,24 @@ package sleeper.clients.query;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An interator used by QueryWebSocket. Turns an iterator into a {@link CloseableIterator}.
- *
- * @param <T> the type of elements returned by this iterator
+ * An iterator that receives results of a query from a web socket and returns them to the user.
  */
-public class QueryWebSocketIterator<T> implements CloseableIterator<T>, QueryWebSocketHandler {
-    private final Iterator<T> iterator;
+public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebSocketHandler {
 
-    public QueryWebSocketIterator(Iterator<T> iterator) {
-        this.iterator = iterator;
-    }
+    private List<Row> rows;
 
     @Override
     public boolean hasNext() {
-        return iterator.hasNext();
+        return !rows.isEmpty();
     }
 
     @Override
-    public T next() {
-        return iterator.next();
+    public Row next() {
+        return rows.remove(0);
     }
 
     @Override
@@ -54,6 +49,6 @@ public class QueryWebSocketIterator<T> implements CloseableIterator<T>, QueryWeb
 
     @Override
     public void handleResults(List<Row> results) {
-        System.out.println(results);
+        rows = new ArrayList<>(results);
     }
 }
