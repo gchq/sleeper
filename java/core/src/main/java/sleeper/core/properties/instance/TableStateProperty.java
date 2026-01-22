@@ -83,7 +83,9 @@ public interface TableStateProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
     UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.provider.cache.size")
-            .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
+            .description("The maximum size of state store providers. If a state store is needed and the cache is " +
+                    "full, the oldest state store in the cache will be removed to make space. This can be disabled " +
+                    "by setting a negative value, e.g. -1.")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
