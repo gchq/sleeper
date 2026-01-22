@@ -36,7 +36,7 @@ cargo_metadata = { version = "0.23.1" }             # Access cargo metadata prog
 chrono = { version = "0.4.43" }                     # Log helper
 clap = { version = "4.5.54" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
-cxx = { version = "1.0.192" }                       # Exception handling for Rust
+cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
 datafusion = { version = "52.0.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr

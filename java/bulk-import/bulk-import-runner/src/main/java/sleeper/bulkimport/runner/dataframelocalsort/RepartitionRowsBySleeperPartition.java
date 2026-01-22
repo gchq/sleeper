@@ -25,7 +25,7 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.runner.BulkImportContext;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.common.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -51,7 +51,7 @@ public class RepartitionRowsBySleeperPartition {
      * @param  input the context of the bulk import job
      * @return       the repartitioned data set
      */
-    public static Dataset<Row> repartition(BulkImportContext input) {
+    public static Dataset<Row> repartition(BulkImportSparkContext input) {
         Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);

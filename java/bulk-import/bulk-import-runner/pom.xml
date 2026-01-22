@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
