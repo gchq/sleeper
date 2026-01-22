@@ -20,26 +20,24 @@ import sleeper.core.row.Row;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An iterator that receives results of a query from a web socket and returns them to the user.
  */
 public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebSocketHandler {
 
-    private List<Row> rows;
-    private RuntimeException exception;
+    private CompletableFuture<List<Row>> future = new CompletableFuture<>();
 
     @Override
     public boolean hasNext() {
-        return !rows.isEmpty();
+        return !getRowList().isEmpty();
     }
 
     @Override
     public Row next() {
-        if (exception != null) {
-            throw exception;
-        }
-        return rows.remove(0);
+        return getRowList().remove(0);
     }
 
     @Override
@@ -48,11 +46,24 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public void handleException(RuntimeException e) {
-        exception = e;
+        future.completeExceptionally(e);
     }
 
     @Override
     public void handleResults(List<Row> results) {
-        rows = new ArrayList<>(results);
+        List<Row> rows = new ArrayList<>(results);
+        future.complete(rows);
+    }
+
+    private List<Row> getRowList() {
+        try {
+            return future.get();
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ie);
+        } catch (ExecutionException ee) {
+            throw (RuntimeException) ee.getCause();
+        }
+
     }
 }

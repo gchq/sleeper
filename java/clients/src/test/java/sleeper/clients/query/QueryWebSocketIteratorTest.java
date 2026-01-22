@@ -15,7 +15,6 @@
  */
 package sleeper.clients.query;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
@@ -63,7 +62,6 @@ public class QueryWebSocketIteratorTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReturnRowsAsync() throws Exception {
         // Given
         Row row = new Row(Map.of("key", "value"));
