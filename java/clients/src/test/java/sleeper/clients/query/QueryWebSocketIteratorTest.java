@@ -39,7 +39,7 @@ public class QueryWebSocketIteratorTest {
     void shouldReturnRows() {
         // Given
         List<Row> rows = List.of(new Row(Map.of("key", "value")));
-        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+        try (QueryWebSocketIterator iterator = iterator()) {
             iterator.handleResults(rows);
 
             // When / Then
@@ -52,10 +52,12 @@ public class QueryWebSocketIteratorTest {
     void shouldThrowExceptionWhenFailureOccurs() {
         // Given
         RuntimeException exception = new RuntimeException();
-        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+        try (QueryWebSocketIterator iterator = iterator()) {
             iterator.handleException(exception);
 
             // When / Then
+            assertThatThrownBy(() -> iterator.hasNext())
+                    .isSameAs(exception);
             assertThatThrownBy(() -> iterator.next())
                     .isSameAs(exception);
         }
@@ -65,7 +67,7 @@ public class QueryWebSocketIteratorTest {
     void shouldReturnRowsAsync() throws Exception {
         // Given
         Row row = new Row(Map.of("key", "value"));
-        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+        try (QueryWebSocketIterator iterator = iterator()) {
             ForkJoinTask<Row> task = ForkJoinPool.commonPool().submit(iterator::next);
             Thread.sleep(1);
             iterator.handleResults(List.of(row));
@@ -73,6 +75,10 @@ public class QueryWebSocketIteratorTest {
             // When / Then
             assertThat(task.join()).isEqualTo(row);
         }
+    }
+
+    private QueryWebSocketIterator iterator() {
+        return new QueryWebSocketIterator();
     }
 
 }
