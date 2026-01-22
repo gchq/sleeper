@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,9 +31,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -202,20 +206,25 @@ public class StateStoreProviderTest {
     class FreeUpHeapSpace {
 
         @Test
+        @Disabled("TODO")
         void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
             // Given
-            instanceProperties.set(STATESTORE_PROVIDER_CACHE_SIZE, null);
-            TableProperties table1 = createTable("table1", "test-table-1");
-            TableProperties table2 = createTable("table2", "test-table-2");
-            TableProperties table3 = createTable("table3", "test-table-3");
-            createStateStores(table1, table2, table3);
-            provideMemoryStates(machineTotalAndFreeMemory(100, 90));
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            provideMemoryStates(
+                    new JvmMemoryUse(90, 5, 100), // 15 total free memory
+                    new JvmMemoryUse(90, 15, 100)); // 25 total free memory
 
             // When
             StateStoreProvider provider = provider();
-            provider.getStateStore(table1);
-            provider.getStateStore(table2);
-            provider.getStateStore(table3);
+            provider.getStateStore(table);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table", "table");
         }
     }
 
@@ -247,10 +256,6 @@ public class StateStoreProviderTest {
 
     private void provideMemoryStates(JvmMemoryUse... states) {
         memoryStates = List.of(states);
-    }
-
-    private JvmMemoryUse machineTotalAndFreeMemory(long totalMemory, long freeMemory) {
-        return new JvmMemoryUse(totalMemory, freeMemory, totalMemory);
     }
 
     private JvmMemoryUse.Provider memoryProvider() {
