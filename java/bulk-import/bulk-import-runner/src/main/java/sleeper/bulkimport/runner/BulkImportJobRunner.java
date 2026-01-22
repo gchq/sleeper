@@ -23,6 +23,7 @@ import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 /**
  * A runner to split Sleeper rows across partitions and write the data to files. This takes in a {@link Dataset} of
@@ -33,5 +34,12 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileReferences(BulkImportContext input) throws IOException;
+    Dataset<Row> createFileReferences(BulkImportSparkContext input) throws IOException;
+
+    default BulkImportJobDriver.BulkImporter<BulkImportSparkContext> asImporter() {
+        return context -> createFileReferences(context)
+                .collectAsList().stream()
+                .map(SparkFileReferenceRow::createFileReference)
+                .collect(Collectors.toList());
+    }
 }

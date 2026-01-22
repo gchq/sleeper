@@ -18,7 +18,7 @@ package sleeper.bulkimport.runner.sketches;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.runner.BulkImportContext;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.SparkTestBase;
 import sleeper.core.row.Row;
 import sleeper.core.schema.type.IntType;
@@ -71,7 +71,7 @@ public class GenerateSketchesDriverIT extends SparkTestBase {
     }
 
     private Map<String, Sketches> generateSketches(List<String> filenames) {
-        try (BulkImportContext context = createBulkImportContext(filenames)) {
+        try (BulkImportSparkContext context = createBulkImportContext(filenames)) {
             return GenerateSketchesDriver.generatePartitionIdToSketches(context);
         }
     }
