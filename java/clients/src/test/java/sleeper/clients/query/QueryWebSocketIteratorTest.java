@@ -15,12 +15,15 @@
  */
 package sleeper.clients.query;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,6 +59,21 @@ public class QueryWebSocketIteratorTest {
             // When / Then
             assertThatThrownBy(() -> iterator.next())
                     .isSameAs(exception);
+        }
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldReturnRowsAsync() throws Exception {
+        // Given
+        Row row = new Row(Map.of("key", "value"));
+        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+            ForkJoinTask<Row> task = ForkJoinPool.commonPool().submit(iterator::next);
+            Thread.sleep(1);
+            iterator.handleResults(List.of(row));
+
+            // When / Then
+            assertThat(task.join()).isEqualTo(row);
         }
     }
 
