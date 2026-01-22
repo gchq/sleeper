@@ -24,6 +24,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.util.JvmMemoryUse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ public class StateStoreProviderTest {
     private final Schema schema = createSchemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
     private final List<String> tablesLoaded = new ArrayList<>();
+    private final List<JvmMemoryUse> memoryStates = new ArrayList<>();
 
     @Test
     void shouldCacheStateStore() {
@@ -195,6 +197,21 @@ public class StateStoreProviderTest {
         }
     }
 
+    @Nested
+    @DisplayName("Free up heap space")
+    class FreeUpHeapSpace {
+
+        @Test
+        void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
+            // Given
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+
+        }
+    }
+
     private TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
@@ -219,5 +236,9 @@ public class StateStoreProviderTest {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });
+    }
+
+    private JvmMemoryUse.Provider memoryProvider() {
+        return memoryStates.iterator()::next;
     }
 }
