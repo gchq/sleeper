@@ -47,6 +47,8 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -140,15 +142,14 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         saveProperties();
         saveTableDataFiles();
         //Store Transaction
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
         S3TransactionBodyStore s3TransactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), 0);
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
                 new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
-        String transactionKey = s3TransactionBodyStore.storeIfTooBig(tableProperties.get(TABLE_ID), transaction).getBodyKey().orElseThrow();
-
+        String transactionObjectKey = s3TransactionBodyStore.storeIfTooBig(tableProperties.get(TABLE_ID), transaction).getBodyKey().orElseThrow();
+        //Store Snapshot
         DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
                 .createSnapshot();
-
-        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
 
         // When
         reinitialiseTable(tableProperties);
@@ -158,8 +159,13 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         assertThat(stateStore.getAllPartitions()).hasSize(3);
         assertThat(stateStore.getLeafPartitions()).hasSize(2);
+
         List<String> list = new ArrayList<>();
-        list.add(transactionKey);
+        list.add(transactionObjectKey);
+        LatestSnapshots snapshot = new DynamoDBTransactionLogSnapshotMetadataStore(
+                instanceProperties, tableProperties, dynamoClient).getLatestSnapshots();
+        list.add(snapshot.getFilesSnapshot().get().getObjectKey());
+        list.add(snapshot.getPartitionsSnapshot().get().getObjectKey());
         assertOnlyExpectedObjectsHaveBeenDeleted(list);
     }
 
