@@ -46,17 +46,13 @@ public class QueryWebSocketListener {
     private final QueryWebSocketMessageSerDe serDe;
     private final QuerySerDe querySerDe;
     private final Query query;
-    private QueryWebSocketHandler handler;
+    private final QueryWebSocketHandler handler;
     private Connection connection;
 
-    public QueryWebSocketListener(Schema schema, Query query) {
+    public QueryWebSocketListener(Schema schema, Query query, QueryWebSocketHandler handler) {
         this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
         this.querySerDe = new QuerySerDe(schema);
         this.query = query;
-    }
-
-    public QueryWebSocketListener(Schema schema, Query query, QueryWebSocketHandler handler) {
-        this(schema, query);
         this.handler = handler;
     }
 
