@@ -44,13 +44,30 @@ public class FixedStateStoreProvider extends StateStoreProvider {
     }
 
     /**
+     * Creates a state store provider that will only load a particular table.
+     *
+     * @param  singleTableProperties the table properties
+     * @param  stateStore            the state store
+     * @return                       the provider
+     */
+    public static StateStoreProvider singleTable(TableProperties singleTableProperties, StateStore stateStore) {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
+            TableStatus requestedTable = tableProperties.getStatus();
+            if (!Objects.equals(requestedTable, singleTableProperties.getStatus())) {
+                throw new IllegalArgumentException("Table not found: " + requestedTable);
+            }
+            return stateStore;
+        });
+    }
+
+    /**
      * Creates a state store provider that will load the given state stores.
      *
      * @param  stateStoreByTableId a map of table ID to state store
      * @return                     the provider
      */
     public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
-        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
             String tableId = tableProperties.get(TABLE_ID);
             if (!stateStoreByTableId.containsKey(tableId)) {
                 throw new IllegalArgumentException("Table not found by ID: " + tableId);
@@ -66,7 +83,7 @@ public class FixedStateStoreProvider extends StateStoreProvider {
      * @return                       the provider
      */
     public static StateStoreProvider byTableName(Map<String, StateStore> stateStoreByTableName) {
-        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
             if (!stateStoreByTableName.containsKey(tableName)) {
                 throw new IllegalArgumentException("Table not found by name: " + tableName);
