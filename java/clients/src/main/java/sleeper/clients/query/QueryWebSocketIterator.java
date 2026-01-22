@@ -15,6 +15,7 @@
  */
 package sleeper.clients.query;
 
+import sleeper.clients.query.exception.WebSocketTimeoutException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
@@ -22,16 +23,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * An iterator that receives results of a query from a web socket and returns them to the user.
  */
 public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebSocketHandler {
 
+    private final long timeoutMilliseconds;
     private final Runnable closeWebSocket;
     private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
 
-    public QueryWebSocketIterator(Runnable closeWebSocket) {
+    public QueryWebSocketIterator(long timeoutMilliseconds, Runnable closeWebSocket) {
+        this.timeoutMilliseconds = timeoutMilliseconds;
         this.closeWebSocket = closeWebSocket;
     }
 
@@ -63,12 +68,18 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     private List<Row> getRowList() {
         try {
-            return future.get();
+            if (timeoutMilliseconds >= 0) {
+                return future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS);
+            } else {
+                return future.get();
+            }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(ie);
         } catch (ExecutionException ee) {
             throw (RuntimeException) ee.getCause();
+        } catch (TimeoutException e) {
+            throw new WebSocketTimeoutException(timeoutMilliseconds, e);
         }
 
     }

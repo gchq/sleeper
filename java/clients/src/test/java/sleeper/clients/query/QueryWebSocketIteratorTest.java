@@ -17,12 +17,14 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.query.exception.WebSocketTimeoutException;
 import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,6 +38,7 @@ public class QueryWebSocketIteratorTest {
     // When I close the iterator the web socket should close
 
     int numTimesWebSocketClosed = 0;
+    long timeoutMilliseconds = -1;
 
     @Test
     void shouldReturnRows() {
@@ -80,6 +83,18 @@ public class QueryWebSocketIteratorTest {
     }
 
     @Test
+    void shouldTimeOutWaitingForResponseWhenConfigured() {
+        // Given
+        setTimeout(1);
+        try (QueryWebSocketIterator iterator = iterator()) {
+            // When / Then
+            assertThatThrownBy(() -> iterator.next())
+                    .isInstanceOf(WebSocketTimeoutException.class)
+                    .hasCauseInstanceOf(TimeoutException.class);
+        }
+    }
+
+    @Test
     void shouldCloseWebSocket() {
         // When an iterator is opened and closed
         try (QueryWebSocketIterator iterator = iterator()) {
@@ -88,8 +103,12 @@ public class QueryWebSocketIteratorTest {
         assertThat(numTimesWebSocketClosed).isEqualTo(1);
     }
 
+    private void setTimeout(long milliseconds) {
+        timeoutMilliseconds = milliseconds;
+    }
+
     private QueryWebSocketIterator iterator() {
-        return new QueryWebSocketIterator(() -> numTimesWebSocketClosed++);
+        return new QueryWebSocketIterator(timeoutMilliseconds, () -> numTimesWebSocketClosed++);
     }
 
 }
