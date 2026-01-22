@@ -83,8 +83,8 @@ public class StateStoreProvider {
      * @return         true if the state store for the requested Sleeper table was in the cache and has been removed
      */
     public boolean removeStateStoreFromCache(String tableId) {
-        return tableIdToStateStoreCache.remove(tableId) != null &&
-                tableIds.remove(tableId);
+        return tableIdToStateStoreCache.remove(tableId) != null
+                && tableIds.remove(tableId);
     }
 
     /**
