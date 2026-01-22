@@ -44,7 +44,7 @@ public class StateStoreProviderTest {
     private final Schema schema = createSchemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
     private final List<String> tablesLoaded = new ArrayList<>();
-    private final List<JvmMemoryUse> memoryStates = new ArrayList<>();
+    private List<JvmMemoryUse> memoryStates = new ArrayList<>();
 
     @Test
     void shouldCacheStateStore() {
@@ -204,11 +204,18 @@ public class StateStoreProviderTest {
         @Test
         void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
             // Given
+            instanceProperties.set(STATESTORE_PROVIDER_CACHE_SIZE, null);
             TableProperties table1 = createTable("table1", "test-table-1");
             TableProperties table2 = createTable("table2", "test-table-2");
             TableProperties table3 = createTable("table3", "test-table-3");
             createStateStores(table1, table2, table3);
+            provideMemoryStates(machineTotalAndFreeMemory(100, 90));
 
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
         }
     }
 
@@ -236,6 +243,14 @@ public class StateStoreProviderTest {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         });
+    }
+
+    private void provideMemoryStates(JvmMemoryUse... states) {
+        memoryStates = List.of(states);
+    }
+
+    private JvmMemoryUse machineTotalAndFreeMemory(long totalMemory, long freeMemory) {
+        return new JvmMemoryUse(totalMemory, freeMemory, totalMemory);
     }
 
     private JvmMemoryUse.Provider memoryProvider() {

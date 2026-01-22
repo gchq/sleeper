@@ -90,6 +90,25 @@ public interface TableStateProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT = Index.propertyBuilder("sleeper.statestore.provider.min.heap.target.amount")
+            .description("The minimum amount of heap space that the state store provider will try to keep available " +
+                    "when sizing the cache to the available memory. This will usually only be used in cases where " +
+                    "the state store cache is the main use of memory, currently only in a state store committer on " +
+                    "the EC2 platform. This affects how many state stores can be cached in memory.")
+            .defaultValue("100M")
+            .validationPredicate(SleeperPropertyValueUtils::isValidNumberOfBytes)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE = Index.propertyBuilder("sleeper.statestore.provider.min.heap.target.percentage")
+            .description("The percentage of the total heap space that the state store provider should try to keep " +
+                    "available, as a minimum, when sizing the cache to the available memory. This will usually only " +
+                    "be used in cases where the state store cache is the main use of memory, currently only in a " +
+                    "state store committer on the EC2 platform. This affects how many state stores can be cached in " +
+                    "memory.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
     UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.statestore.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the DynamoDB state store. " +
                     "This is set on the DynamoDB tables.")
@@ -288,18 +307,6 @@ public interface TableStateProperty {
             .defaultValue("m8g.xlarge")
             .runCdkDeployWhenChanged(true)
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
-            .build();
-    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.amount")
-            .description("The minimum amount of heap space that the committer will try to keep available. This affects how many state stores can be cached in memory.")
-            .defaultValue("100M")
-            .validationPredicate(SleeperPropertyValueUtils::isValidNumberOfBytes)
-            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
-            .build();
-    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.percentage")
-            .description("The percentage of the total heap space that the committer should try to keep available, as a minimum. This affects how many state stores can be cached in memory.")
-            .defaultValue("1")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
 }

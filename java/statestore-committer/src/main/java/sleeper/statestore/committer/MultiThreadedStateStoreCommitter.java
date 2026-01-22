@@ -61,8 +61,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
 
 /**
  * Applies asynchronous commits to state stores in a manner optimised for multi core execution environments.
@@ -105,8 +105,8 @@ public class MultiThreadedStateStoreCommitter {
             qUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         }
 
-        long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT);
-        long heapSpacePercToKeepFree = (Runtime.getRuntime().maxMemory() / 100) * instanceProperties.getLong(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE);
+        long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT);
+        long heapSpacePercToKeepFree = (Runtime.getRuntime().maxMemory() / 100) * instanceProperties.getLong(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE);
         heapSpaceToKeepFree = Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
 
         if (heapSpaceToKeepFree > Runtime.getRuntime().maxMemory()) {
