@@ -27,6 +27,7 @@ import java.util.List;
 public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebSocketHandler {
 
     private List<Row> rows;
+    private RuntimeException exception;
 
     @Override
     public boolean hasNext() {
@@ -35,6 +36,9 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public Row next() {
+        if (exception != null) {
+            throw exception;
+        }
         return rows.remove(0);
     }
 
@@ -43,8 +47,8 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
     }
 
     @Override
-    public void handleException(Exception e) {
-        System.out.println(e);
+    public void handleException(RuntimeException e) {
+        exception = e;
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 public class QueryWebSocketFuture<T> extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
 
     @Override
-    public void handleException(Exception e) {
+    public void handleException(RuntimeException e) {
         this.completeExceptionally(e);
     }
 

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class QueryWebSocketIteratorTest {
 
@@ -44,4 +45,18 @@ public class QueryWebSocketIteratorTest {
                     .containsExactlyElementsOf(rows);
         }
     }
+
+    @Test
+    void shouldThrowExceptionWhenFailureOccurs() {
+        // Given
+        RuntimeException exception = new RuntimeException();
+        try (QueryWebSocketIterator iterator = new QueryWebSocketIterator()) {
+            iterator.handleException(exception);
+
+            // When / Then
+            assertThatThrownBy(() -> iterator.next())
+                    .isSameAs(exception);
+        }
+    }
+
 }

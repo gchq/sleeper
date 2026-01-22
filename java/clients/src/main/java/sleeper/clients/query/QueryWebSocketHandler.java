@@ -21,7 +21,7 @@ import java.util.List;
 
 public interface QueryWebSocketHandler {
 
-    void handleException(Exception e);
+    void handleException(RuntimeException e);
 
     void handleResults(List<Row> results);
 }
