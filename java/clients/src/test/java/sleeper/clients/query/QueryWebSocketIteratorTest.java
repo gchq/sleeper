@@ -95,6 +95,20 @@ public class QueryWebSocketIteratorTest {
     }
 
     @Test
+    void shouldGetResultsWhenTimeoutIsConfigured() {
+        // Given
+        setTimeout(1);
+        List<Row> rows = List.of(new Row(Map.of("key", "value")));
+        try (QueryWebSocketIterator iterator = iterator()) {
+            iterator.handleResults(rows);
+
+            // When / Then
+            assertThat(iterator).toIterable()
+                    .containsExactlyElementsOf(rows);
+        }
+    }
+
+    @Test
     void shouldCloseWebSocket() {
         // When an iterator is opened and closed
         try (QueryWebSocketIterator iterator = iterator()) {
