@@ -26,10 +26,10 @@ import java.util.List;
  *
  * @param <T> the type of elements returned by this iterator
  */
-public class QueryIterator<T> implements CloseableIterator<T>, QueryWebSocketHandler {
+public class QueryWebSocketIterator<T> implements CloseableIterator<T>, QueryWebSocketHandler {
     private final Iterator<T> iterator;
 
-    public QueryIterator(Iterator<T> iterator) {
+    public QueryWebSocketIterator(Iterator<T> iterator) {
         this.iterator = iterator;
     }
 
