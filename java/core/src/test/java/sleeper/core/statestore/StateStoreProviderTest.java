@@ -134,6 +134,33 @@ public class StateStoreProviderTest {
                     "table-id-2",
                     "table-id-3");
         }
+
+        @Test
+        void shouldRemoveLeastRecentlyUsedWhenOldestHasBeenUsedMoreRecently() {
+            // Given
+            instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+            TableProperties table1 = createTable("table-id-1", "test-table-1");
+            TableProperties table2 = createTable("table-id-2", "test-table-2");
+            TableProperties table3 = createTable("table-id-3", "test-table-3");
+            createStateStores(table1, table2, table3);
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table1);
+            // Cache size has been reached, oldest state store will be removed from cache
+            provider.getStateStore(table3);
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly(
+                    "table-id-1",
+                    "table-id-2",
+                    "table-id-3",
+                    "table-id-2");
+        }
     }
 
     @Nested

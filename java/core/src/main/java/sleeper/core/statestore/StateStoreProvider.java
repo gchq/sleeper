@@ -102,8 +102,9 @@ public class StateStoreProvider {
             }
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
             tableIdToStateStoreCache.put(tableId, stateStore);
-            tableIds.add(tableId);
         }
+        tableIds.remove(tableId);
+        tableIds.add(tableId);
         return tableIdToStateStoreCache.get(tableId);
     }
 
