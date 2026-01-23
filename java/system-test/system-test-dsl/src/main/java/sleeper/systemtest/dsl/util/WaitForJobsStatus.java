@@ -35,6 +35,7 @@ import sleeper.core.util.GsonConfig;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ public class WaitForJobsStatus {
             .create();
 
     private final Map<String, Integer> countByFurthestStatus;
+    private final List<String> failureReasons;
     private final Integer numUnstarted;
     private final int numUnfinished;
     private final Instant firstInProgressStartTime;
@@ -61,6 +63,7 @@ public class WaitForJobsStatus {
 
     private WaitForJobsStatus(Builder builder) {
         countByFurthestStatus = builder.countByFurthestStatus;
+        failureReasons = builder.failureReasons.isEmpty() ? null : builder.failureReasons;
         numUnstarted = builder.numUnstarted;
         numUnfinished = builder.numUnfinished;
         firstInProgressStartTime = builder.firstInProgressStartTime;
@@ -149,6 +152,7 @@ public class WaitForJobsStatus {
 
     public static final class Builder {
         private final Map<String, Integer> countByFurthestStatus = new TreeMap<>();
+        private final List<String> failureReasons = new ArrayList<>();
         private Integer numUnstarted;
         private int numUnfinished;
         private Instant firstInProgressStartTime;
@@ -173,6 +177,13 @@ public class WaitForJobsStatus {
                     if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
                         firstInProgressStartTime = startTime;
                         longestInProgressDuration = Duration.between(startTime, now);
+                    }
+                    List<String> runFailureReasons = run.getFailureReasons();
+                    for (int i = 0;
+                         i < runFailureReasons.size()
+                                 && failureReasons.size() < 10;
+                         i++) {
+                        failureReasons.add(runFailureReasons.get(i));
                     }
                 }
                 numUnfinished++;
