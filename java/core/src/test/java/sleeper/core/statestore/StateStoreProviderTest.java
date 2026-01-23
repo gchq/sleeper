@@ -362,6 +362,29 @@ public class StateStoreProviderTest {
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table3", "table3");
         }
+
+        @Test
+        void shouldNotRemoveFromCacheWithNoSizeLimit() {
+            // Given
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(100, 0, 100));
+
+            // When
+            StateStoreProvider provider = StateStoreProvider.noCacheSizeLimit(factory());
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table3");
+        }
     }
 
     @Nested
@@ -437,10 +460,14 @@ public class StateStoreProviderTest {
     }
 
     private StateStoreProvider provider() {
-        return new StateStoreProvider(instanceProperties, tableProperties -> {
+        return new StateStoreProvider(instanceProperties, factory(), memoryProvider);
+    }
+
+    private StateStoreProvider.Factory factory() {
+        return tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
-        }, memoryProvider);
+        };
     }
 
     private JvmMemoryUse initMaxMemory(long maxMemory) {
