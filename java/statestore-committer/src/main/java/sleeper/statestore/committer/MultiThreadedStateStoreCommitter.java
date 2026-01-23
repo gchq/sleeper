@@ -112,10 +112,8 @@ public class MultiThreadedStateStoreCommitter {
 
     /**
      * Apply asynchronous commits from the committer SQS queue.
-     *
-     * @throws Exception Error
      */
-    public void run() throws Exception {
+    public void run() {
         runUntil(() -> false);
     }
 
@@ -123,10 +121,8 @@ public class MultiThreadedStateStoreCommitter {
      * Apply asynchronous commits from the committer SQS queue until a particular condition is satisfied.
      *
      * @param  shouldStopRunning A function that returns true when the committer should stop processing commit requests
-     * @throws Exception         Error
      */
-    public void runUntil(Supplier<Boolean> shouldStopRunning) throws Exception {
-        Exception err = null;
+    public void runUntil(Supplier<Boolean> shouldStopRunning) {
 
         Instant startedAt = Instant.now();
         Instant lastReceivedCommitsAt = Instant.now();
@@ -200,9 +196,9 @@ public class MultiThreadedStateStoreCommitter {
                     tableFutures.put(tableId, task);
                 });
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
-            err = e;
+            throw e;
         } finally {
             long pendingTaskCount = tableFutures.values().stream().filter(task -> !task.isDone()).count();
             if (pendingTaskCount > 0) {
@@ -210,9 +206,6 @@ public class MultiThreadedStateStoreCommitter {
             }
             tableFutures.values().stream().forEach(CompletableFuture::join);
             LOGGER.info("All pending requests have been actioned");
-            if (err != null) {
-                throw err;
-            }
         }
     }
 
