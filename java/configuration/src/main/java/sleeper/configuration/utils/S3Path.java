@@ -20,7 +20,7 @@ package sleeper.configuration.utils;
  *
  * @param requestedPath the path requested before parsing
  * @param bucket        the S3 bucket name
- * @param pathInBucket  path in bucket either a prefix or a full object key.
+ * @param pathInBucket  the path in the bucket, either a prefix or a full object key
  */
 public record S3Path(String requestedPath, String bucket, String pathInBucket) {
 
