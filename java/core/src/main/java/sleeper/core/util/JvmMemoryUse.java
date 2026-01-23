@@ -61,6 +61,11 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
             public long maxMemory() {
                 return Runtime.getRuntime().maxMemory();
             }
+
+            @Override
+            public void gc() {
+                System.gc();
+            }
         };
     }
 
@@ -84,19 +89,26 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
     public interface Provider {
 
         /**
-         * Reads the current state of memory.
+         * Reads the current state of memory. Usually implemented with {@link Runtime}.
          *
          * @return the state of memory
          */
         JvmMemoryUse getMemory();
 
         /**
-         * Reads the maximum amount of memory that can be allocated to the JVM.
+         * Reads the maximum amount of memory that can be allocated to the JVM. Usually implemented with
+         * {@link Runtime#maxMemory()}.
          *
          * @return the maximum amount of memory
          */
         default long maxMemory() {
             return getMemory().maxMemory();
+        }
+
+        /**
+         * Triggers garbage collection. Usually implemented with {@link System#gc()}.
+         */
+        default void gc() {
         }
     }
 

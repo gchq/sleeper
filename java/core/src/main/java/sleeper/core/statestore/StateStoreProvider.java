@@ -125,6 +125,7 @@ public class StateStoreProvider {
                 LOGGER.warn("Could not free up memory because no table was available to be removed from the cache");
                 return false;
             }
+            memoryProvider.gc();
             memory = memoryProvider.getMemory();
             LOGGER.info("Memory now available: {}", memory);
         }

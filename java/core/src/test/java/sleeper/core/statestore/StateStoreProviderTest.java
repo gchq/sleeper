@@ -18,6 +18,7 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -33,6 +34,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
@@ -443,6 +447,40 @@ public class StateStoreProviderTest {
             // When / Then
             assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
                     .isEqualTo(50 * 1024 * 1024);
+        }
+    }
+
+    @Nested
+    @DisplayName("Collect garbage to free memory")
+    class FreeMemoryWithGC {
+
+        @Test
+        void shouldGC() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+
+            // And
+            memoryProvider = mock(JvmMemoryUse.Provider.class);
+            when(memoryProvider.maxMemory()).thenReturn(100L);
+            when(memoryProvider.getMemory()).thenReturn(
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+
+            // Then garbage collection is triggered before re-checking memory
+            InOrder order = inOrder(memoryProvider);
+            order.verify(memoryProvider).maxMemory();
+            order.verify(memoryProvider).getMemory();
+            order.verify(memoryProvider).gc();
+            order.verify(memoryProvider).getMemory();
+            order.verifyNoMoreInteractions();
         }
     }
 
