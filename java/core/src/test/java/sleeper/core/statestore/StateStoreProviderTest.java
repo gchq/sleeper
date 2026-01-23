@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -299,7 +298,6 @@ public class StateStoreProviderTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButTableIsRequired() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
@@ -316,6 +314,60 @@ public class StateStoreProviderTest {
 
             // Then
             assertThat(tablesLoaded).containsExactly("table");
+        }
+
+        @Test
+        void shouldRemoveOtherTableWhenLeastRecentlyUsedIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            createStateStores(table1, table2);
+            provideMemoryStates(
+                    initMaxMemory(100),
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table2");
+        }
+
+        @Test
+        void shouldRemoveLeastRecentlyUsedButNotOldestTableWhenLeastRecentlyUsedIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+            provideMemoryStates(
+                    initMaxMemory(100),
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+            provider.getStateStore(table2);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table3", "table3");
         }
     }
 

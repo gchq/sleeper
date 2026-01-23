@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
@@ -140,9 +141,15 @@ public class StateStoreProvider {
     }
 
     private boolean removeLeastRecentlyUsedStateStoreFromCache(Collection<String> requiredTableIds) {
-        String tableId = tableIds.poll();
-        LOGGER.info("Removing table from cache: {}", tableId);
-        return tableIdToStateStoreCache.remove(tableId) != null;
+
+        Optional<String> tableIdToRemove = tableIds.stream()
+                .filter(tableId -> !requiredTableIds.contains(tableId))
+                .findFirst();
+
+        if (tableIdToRemove.isPresent()) {
+            removeStateStoreFromCache(tableIdToRemove.get());
+        }
+        return tableIdToRemove.isPresent();
     }
 
     /**
