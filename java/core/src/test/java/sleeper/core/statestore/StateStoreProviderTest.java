@@ -72,7 +72,6 @@ public class StateStoreProviderTest {
     @Nested
     @DisplayName("Maximum number of tables in cache")
     class MaxTables {
-        // TODO remove least recently used from cache instead of least recently added
 
         @Test
         void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
@@ -233,12 +232,6 @@ public class StateStoreProviderTest {
     @DisplayName("Free up heap space")
     class FreeUpHeapSpace {
 
-        // TODO tests:
-        // Remove least recently used table (distinguish from least recently added)
-        // Don't remove specified table even if it's least recently used
-        // Remove a different table when least recently used is required
-        // Apply min free percentage as well as amount
-
         @Test
         void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
             // Given
@@ -368,6 +361,59 @@ public class StateStoreProviderTest {
 
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table3", "table3");
+        }
+    }
+
+    @Nested
+    @DisplayName("Calculate target amount of memory to keep free")
+    class TargetMemoryToKeepFree {
+
+        @Test
+        void shouldUseMinWhenPercentIsLessSpace() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            fixMemoryState(initMaxMemory(100)); // 10 percent of 100 is 10
+
+            // When / Then
+            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
+                    .isEqualTo(20);
+        }
+
+        @Test
+        void shouldUsePercentWhenItIsMoreSpaceThanMin() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "25");
+            fixMemoryState(initMaxMemory(100)); // 25 percent of 100 is 25
+
+            // When / Then
+            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
+                    .isEqualTo(25);
+        }
+
+        @Test
+        void shouldUseMinMB() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "100M");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            fixMemoryState(initMaxMemory(500 * 1024 * 1024)); // 10 percent of 500MB is 50MB
+
+            // When / Then
+            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
+                    .isEqualTo(100 * 1024 * 1024);
+        }
+
+        @Test
+        void shouldUsePercentOfMB() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "15M");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            fixMemoryState(initMaxMemory(500 * 1024 * 1024)); // 10 percent of 500MB is 50MB
+
+            // When / Then
+            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
+                    .isEqualTo(50 * 1024 * 1024);
         }
     }
 

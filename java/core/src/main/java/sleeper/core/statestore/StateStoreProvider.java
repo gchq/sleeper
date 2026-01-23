@@ -74,7 +74,7 @@ public class StateStoreProvider {
      */
     public static long getMemoryBytesToKeepFree(InstanceProperties instanceProperties, JvmMemoryUse.Provider memoryProvider) {
         long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT);
-        long heapSpacePercToKeepFree = memoryProvider.getMemory().maxMemory() * instanceProperties.getLong(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE) / 100;
+        long heapSpacePercToKeepFree = memoryProvider.maxMemory() * instanceProperties.getLong(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE) / 100;
         return Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
     }
 
