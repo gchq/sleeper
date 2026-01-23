@@ -30,17 +30,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * Test helper to implement state store provider with fixed state stores. Replaces StateStoreFactory with
  * pre-built state store instances.
  */
-public class FixedStateStoreProvider extends StateStoreProvider {
-    private static final int DEFAULT_STATESTORE_CACHE_SIZE = 10;
+public class FixedStateStoreProvider {
 
-    public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
-        super(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
-            TableStatus requestedTable = tableProperties.getStatus();
-            if (!Objects.equals(requestedTable, singleTableProperties.getStatus())) {
-                throw new IllegalArgumentException("Table not found: " + requestedTable);
-            }
-            return stateStore;
-        });
+    private FixedStateStoreProvider() {
     }
 
     /**

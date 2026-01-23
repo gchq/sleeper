@@ -489,7 +489,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .objectFactory(ObjectFactory.noUserJars())
                 .hadoopConfiguration(hadoopConf)
                 .localDir(tempDir.toString())
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, getStateStore()))
+                .stateStoreProvider(FixedStateStoreProvider.singleTable(tableProperties, getStateStore()))
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
