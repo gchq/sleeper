@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -394,6 +395,19 @@ public class StateStoreProviderTest {
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table3");
             assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenRequiredFreeSpaceIsGreaterThanMax() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "150");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            fixMemoryState(initMaxMemory(100));
+            StateStoreProvider provider = provider();
+
+            // When / Then
+            assertThatThrownBy(() -> provider.ensureEnoughHeapSpaceAvailable(Set.of()))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 

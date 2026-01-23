@@ -118,9 +118,14 @@ public class StateStoreProvider {
      */
     public boolean ensureEnoughHeapSpaceAvailable(Collection<String> requiredTableIds) {
         JvmMemoryUse memory = memoryProvider.getMemory();
+        if (memoryBytesToKeepFree > memory.maxMemory()) {
+            throw new IllegalArgumentException("This state store provider has been configured to keep at least " +
+                    memoryBytesToKeepFree + " of heap available, but the maximum allowed heap size is only " +
+                    memory.maxMemory() + "!");
+        }
         LOGGER.debug("Keeping {} free. Found memory use: {}", memoryBytesToKeepFree, memory);
         while (memory.availableMemory() < memoryBytesToKeepFree) {
-            LOGGER.info("Removing old state stores from cache as limited memory available: {}", memory);
+            LOGGER.info("Removing old state stores from cache. Keeping {} free, found: {}", memoryBytesToKeepFree, memory);
             if (!removeLeastRecentlyUsedStateStoreFromCache(requiredTableIds)) {
                 LOGGER.warn("Could not free up memory because no table was available to be removed from the cache");
                 return false;
