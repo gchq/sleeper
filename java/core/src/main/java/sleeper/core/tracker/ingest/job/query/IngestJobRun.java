@@ -129,8 +129,8 @@ public class IngestJobRun implements JobRunReport {
     }
 
     @Override
-    public String getFailureReasons(int maxLength) {
-        return JobRunReport.getFailureReasons(endedStatus, maxLength);
+    public List<String> getFailureReasons() {
+        return Optional.ofNullable(endedStatus).map(JobRunEndUpdate::getFailureReasons).orElseGet(List::of);
     }
 
     @Override

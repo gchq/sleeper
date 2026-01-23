@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
@@ -93,29 +92,26 @@ public interface JobRunReport {
     JobRunSummary getFinishedSummary();
 
     /**
+     * Retrieves descriptions of the reasons why the job run failed.
+     *
+     * @return the list of reasons for the failure
+     */
+    List<String> getFailureReasons();
+
+    /**
      * Generates a string list detailing all the reasons provided why the job run failed. The length of the string
      * created will be restricted to the given length.
      *
      * @param  maxLength the maximum length of the resulting string before it is concatenated
      * @return           combined list of reasons for failure
      */
-    String getFailureReasons(int maxLength);
-
-    /**
-     * Generates a string list detailing all the reasons provided why the job run failed. The length of the string
-     * created will be restricted to the given length. This can be used to implement the interface method.
-     *
-     * @param  endedStatus the status update where the run failed
-     * @param  maxLength   the maximum length of the resulting string before it is concatenated
-     * @return             combined list of reasons for failure
-     */
-    static String getFailureReasons(JobRunEndUpdate endedStatus, int maxLength) {
-        if (endedStatus == null) {
+    default String getFailureReasons(int maxLength) {
+        List<String> reasons = getFailureReasons();
+        if (reasons == null || reasons.isEmpty()) {
             return null;
         }
         StringBuffer outStr = new StringBuffer();
-        endedStatus.getFailureReasons()
-                .forEach(str -> outStr.append(str).append(". "));
+        reasons.forEach(str -> outStr.append(str).append(". "));
         if (outStr.length() >= maxLength) {
             return outStr.substring(0, maxLength) + "...";
         } else {

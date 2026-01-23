@@ -97,8 +97,8 @@ public class AggregatedTaskJobRuns implements JobRunReport {
     }
 
     @Override
-    public String getFailureReasons(int maxLength) {
-        return null;
+    public List<String> getFailureReasons() {
+        return List.of();
     }
 
 }
