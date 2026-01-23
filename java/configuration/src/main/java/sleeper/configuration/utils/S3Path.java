@@ -20,9 +20,9 @@ package sleeper.configuration.utils;
  *
  * @param requestedPath the path requested before parsing
  * @param bucket        the S3 bucket name
- * @param prefix        prefix for object keys
+ * @param pathInBucket  the path in the bucket, either a prefix or a full object key
  */
-public record S3Path(String requestedPath, String bucket, String prefix) {
+public record S3Path(String requestedPath, String bucket, String pathInBucket) {
 
     /**
      * Parses a path from a request in an ingest job, bulk import job or ingest batcher submission.
@@ -39,7 +39,7 @@ public record S3Path(String requestedPath, String bucket, String prefix) {
             int firstSlashLocation = bucketPath.indexOf("/");
             return new S3Path(path,
                     bucketPath.substring(0, firstSlashLocation),
-                    getPrefixAfterSlashes(bucketPath.substring(firstSlashLocation + 1)));
+                    getPathInBucketAfterSlashes(bucketPath.substring(firstSlashLocation + 1)));
         }
     }
 
@@ -47,7 +47,7 @@ public record S3Path(String requestedPath, String bucket, String prefix) {
         return path.startsWith("s3://") || path.startsWith("s3a://");
     }
 
-    private static String getPrefixAfterSlashes(String path) {
+    private static String getPathInBucketAfterSlashes(String path) {
         while (path.startsWith("/")) {
             path = path.substring(1);
         }
