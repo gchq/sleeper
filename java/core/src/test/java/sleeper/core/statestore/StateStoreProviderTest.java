@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
@@ -48,7 +49,7 @@ public class StateStoreProviderTest {
     private final Schema schema = createSchemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
     private final List<String> tablesLoaded = new ArrayList<>();
-    private List<JvmMemoryUse> memoryStates = new ArrayList<>();
+    private JvmMemoryUse.Provider memoryProvider = () -> new JvmMemoryUse(0, 0, Long.MAX_VALUE);
 
     @Test
     void shouldCacheStateStore() {
@@ -72,6 +73,7 @@ public class StateStoreProviderTest {
     @Nested
     @DisplayName("Maximum number of tables in cache")
     class MaxTables {
+        // TODO remove least recently used from cache instead of least recently added
 
         @Test
         void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
@@ -205,8 +207,13 @@ public class StateStoreProviderTest {
     @DisplayName("Free up heap space")
     class FreeUpHeapSpace {
 
+        // TODO tests:
+        // Remove least recently used table (distinguish from least recently added)
+        // Don't remove specified table even if it's least recently used
+        // Remove a different table when least recently used is required
+        // Apply min free percentage as well as amount
+
         @Test
-        @Disabled("TODO")
         void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
@@ -214,8 +221,9 @@ public class StateStoreProviderTest {
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
             provideMemoryStates(
-                    new JvmMemoryUse(90, 5, 100), // 15 total free memory
-                    new JvmMemoryUse(90, 15, 100)); // 25 total free memory
+                    initMaxMemory(100),
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
 
             // When
             StateStoreProvider provider = provider();
@@ -225,6 +233,62 @@ public class StateStoreProviderTest {
 
             // Then
             assertThat(tablesLoaded).containsExactly("table", "table");
+        }
+
+        @Test
+        void shouldNotFreeUpHeapSpaceWhenEnoughIsFreeAlready() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            provideMemoryStates(
+                    initMaxMemory(100),
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table");
+        }
+
+        @Test
+        void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButCacheIsAlreadyEmpty() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
+
+            // When / Then
+            StateStoreProvider provider = provider();
+            assertThatCode(() -> provider.ensureEnoughHeapSpaceAvailable(Set.of()))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButTableIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of("table"));
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table");
         }
     }
 
@@ -251,14 +315,22 @@ public class StateStoreProviderTest {
         return new StateStoreProvider(instanceProperties, tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
-        });
+        }, memoryProvider);
+    }
+
+    private JvmMemoryUse initMaxMemory(long maxMemory) {
+        return new JvmMemoryUse(0, 0, maxMemory);
+    }
+
+    private JvmMemoryUse jvmAllocatedFreeAndMaxAllocated(long totalMemory, long freeMemory, long maxMemory) {
+        return new JvmMemoryUse(totalMemory, freeMemory, maxMemory);
     }
 
     private void provideMemoryStates(JvmMemoryUse... states) {
-        memoryStates = List.of(states);
+        memoryProvider = List.of(states).iterator()::next;
     }
 
-    private JvmMemoryUse.Provider memoryProvider() {
-        return memoryStates.iterator()::next;
+    private void fixMemoryState(JvmMemoryUse state) {
+        memoryProvider = () -> state;
     }
 }

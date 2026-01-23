@@ -45,12 +45,37 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
         return new JvmMemoryUse(runtime.totalMemory(), runtime.freeMemory(), runtime.maxMemory());
     }
 
+    /**
+     * Gets a provider to read the current state of memory from the JVM runtime.
+     *
+     * @return the provider
+     */
     public static Provider getProvider() {
-        return () -> from(Runtime.getRuntime());
+        return new Provider() {
+            @Override
+            public JvmMemoryUse getMemory() {
+                return from(Runtime.getRuntime());
+            }
+
+            @Override
+            public long maxMemory() {
+                return Runtime.getRuntime().maxMemory();
+            }
+        };
     }
 
     public boolean isMaxMemoryKnown() {
         return maxMemory != Long.MAX_VALUE;
+    }
+
+    /**
+     * Computes the amount of available memory in bytes, according to the maximum memory useable by the JVM. If the
+     * maximum memory is not set, this will return a very large number.
+     *
+     * @return the amount of memory available in bytes
+     */
+    public long availableMemory() {
+        return maxMemory - totalMemory + freeMemory;
     }
 
     /**
@@ -64,6 +89,15 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
          * @return the state of memory
          */
         JvmMemoryUse getMemory();
+
+        /**
+         * Reads the maximum amount of memory that can be allocated to the JVM.
+         *
+         * @return the maximum amount of memory
+         */
+        default long maxMemory() {
+            return getMemory().maxMemory();
+        }
     }
 
 }
