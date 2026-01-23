@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * The amount of memory free and in use in the Java Virtual Machine. This is retrieved from methods on {@link Runtime}.
  * The names of the fields are inherited from {@link Runtime}, and their behaviour is unintuitive. Please see below.
@@ -63,6 +65,7 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
             }
 
             @Override
+            @SuppressFBWarnings("DM_GC")
             public void gc() {
                 System.gc();
             }
