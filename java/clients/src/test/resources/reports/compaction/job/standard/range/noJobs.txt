@@ -12,6 +12,6 @@ Jobs finished successfully: 0
 Jobs finished successfully with more than one run: 0
 Statistics for delay between finish and commit time:
   no jobs committed
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) | FAILURE_REASONS |
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
