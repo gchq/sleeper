@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,14 +119,15 @@ public class StateStoreProvider {
      */
     public boolean ensureEnoughHeapSpaceAvailable(Collection<String> requiredTableIds) {
         JvmMemoryUse memory = memoryProvider.getMemory();
+        String displayBytesToKeepFree = FileUtils.byteCountToDisplaySize(memoryBytesToKeepFree);
         if (memoryBytesToKeepFree > memory.maxMemory()) {
             throw new IllegalArgumentException("This state store provider has been configured to keep at least " +
-                    memoryBytesToKeepFree + " of heap available, but the maximum allowed heap size is only " +
-                    memory.maxMemory() + "!");
+                    displayBytesToKeepFree + " of heap available, but the maximum allowed heap size is only " +
+                    FileUtils.byteCountToDisplaySize(memory.maxMemory()) + "!");
         }
-        LOGGER.debug("Keeping {} free. Found memory use: {}", memoryBytesToKeepFree, memory);
+        LOGGER.debug("Keeping {} free. Found memory use: {}", displayBytesToKeepFree, memory);
         while (memory.availableMemory() < memoryBytesToKeepFree) {
-            LOGGER.info("Removing old state stores from cache. Keeping {} free, found: {}", memoryBytesToKeepFree, memory);
+            LOGGER.info("Removing old state stores from cache. Keeping {} free, found: {}", displayBytesToKeepFree, memory);
             if (!removeLeastRecentlyUsedStateStoreFromCache(requiredTableIds)) {
                 LOGGER.warn("Could not free up memory because no table was available to be removed from the cache");
                 return false;

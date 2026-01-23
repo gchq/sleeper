@@ -16,6 +16,7 @@
 package sleeper.core.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.io.FileUtils;
 
 /**
  * The amount of memory free and in use in the Java Virtual Machine. This is retrieved from methods on {@link Runtime}.
@@ -84,6 +85,15 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
      */
     public long availableMemory() {
         return maxMemory - totalMemory + freeMemory;
+    }
+
+    @Override
+    public final String toString() {
+        return "JvmMemoryUse{" +
+                "totalMemory='" + FileUtils.byteCountToDisplaySize(totalMemory) + '\'' +
+                ", freeMemory='" + FileUtils.byteCountToDisplaySize(freeMemory) + '\'' +
+                ", maxMemory='" + FileUtils.byteCountToDisplaySize(maxMemory) + '\'' +
+                '}';
     }
 
     /**
