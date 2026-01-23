@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
@@ -247,11 +246,12 @@ public class StateStoreProviderTest {
             // When
             StateStoreProvider provider = provider();
             provider.getStateStore(table);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
             provider.getStateStore(table);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table", "table");
+            assertThat(success).isTrue();
         }
 
         @Test
@@ -268,11 +268,12 @@ public class StateStoreProviderTest {
             // When
             StateStoreProvider provider = provider();
             provider.getStateStore(table);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
             provider.getStateStore(table);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table");
+            assertThat(success).isTrue();
         }
 
         @Test
@@ -284,10 +285,11 @@ public class StateStoreProviderTest {
             createStateStores(table);
             fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
 
-            // When / Then
-            StateStoreProvider provider = provider();
-            assertThatCode(() -> provider.ensureEnoughHeapSpaceAvailable(Set.of()))
-                    .doesNotThrowAnyException();
+            // When
+            boolean success = provider().ensureEnoughHeapSpaceAvailable(Set.of());
+
+            // Then
+            assertThat(success).isFalse();
         }
 
         @Test
@@ -302,11 +304,12 @@ public class StateStoreProviderTest {
             // When
             StateStoreProvider provider = provider();
             provider.getStateStore(table);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of("table"));
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table"));
             provider.getStateStore(table);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table");
+            assertThat(success).isFalse();
         }
 
         @Test
@@ -326,12 +329,13 @@ public class StateStoreProviderTest {
             StateStoreProvider provider = provider();
             provider.getStateStore(table1);
             provider.getStateStore(table2);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
             provider.getStateStore(table1);
             provider.getStateStore(table2);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table2");
+            assertThat(success).isTrue();
         }
 
         @Test
@@ -354,13 +358,14 @@ public class StateStoreProviderTest {
             provider.getStateStore(table2);
             provider.getStateStore(table3);
             provider.getStateStore(table2);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
             provider.getStateStore(table1);
             provider.getStateStore(table2);
             provider.getStateStore(table3);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table3", "table3");
+            assertThat(success).isTrue();
         }
 
         @Test
@@ -377,13 +382,14 @@ public class StateStoreProviderTest {
             provider.getStateStore(table1);
             provider.getStateStore(table2);
             provider.getStateStore(table3);
-            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
             provider.getStateStore(table1);
             provider.getStateStore(table2);
             provider.getStateStore(table3);
 
             // Then
             assertThat(tablesLoaded).containsExactly("table1", "table2", "table3");
+            assertThat(success).isTrue();
         }
     }
 

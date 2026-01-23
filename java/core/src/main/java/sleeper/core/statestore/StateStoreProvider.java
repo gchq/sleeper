@@ -113,20 +113,22 @@ public class StateStoreProvider {
      * Checks the available head space and removes tables from the cache if necessary. Allows setting tables that should
      * not be removed.
      *
-     * @param requiredTableIds the set of IDs of tables that should not be removed from the cache
+     * @param  requiredTableIds the set of IDs of tables that should not be removed from the cache
+     * @return                  true if there is enough memory available, or we could free enough, false otherwise
      */
-    public void ensureEnoughHeapSpaceAvailable(Collection<String> requiredTableIds) {
+    public boolean ensureEnoughHeapSpaceAvailable(Collection<String> requiredTableIds) {
         JvmMemoryUse memory = memoryProvider.getMemory();
         LOGGER.debug("Keeping {} free. Found memory use: {}", memoryBytesToKeepFree, memory);
         while (memory.availableMemory() < memoryBytesToKeepFree) {
             LOGGER.info("Removing old state stores from cache as limited memory available: {}", memory);
             if (!removeLeastRecentlyUsedStateStoreFromCache(requiredTableIds)) {
                 LOGGER.warn("Could not free up memory because no table was available to be removed from the cache");
-                break;
+                return false;
             }
             memory = memoryProvider.getMemory();
             LOGGER.info("Memory now available: {}", memory);
         }
+        return true;
     }
 
     /**
