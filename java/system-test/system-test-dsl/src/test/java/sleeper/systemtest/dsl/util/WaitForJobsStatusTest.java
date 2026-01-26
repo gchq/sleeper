@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.util;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -295,32 +297,101 @@ public class WaitForJobsStatusTest {
         assertThat(status.areAllJobsFinished()).isFalse();
     }
 
-    @Test
-    void shouldReportFailureReason() {
-        // Given
-        IngestJob job = createJobWithTableAndFiles("job-1", table, "test.parquet");
-        ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
-        ingestTracker.jobFailed(job.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z")).jobRunId("test-run").taskId("test-task")
-                .failureReasons(List.of("Some failure")).build());
+    @Nested
+    @DisplayName("Display failure reasons")
+    class FailureReasons {
 
-        // When
-        WaitForJobsStatus status = ingestStatus(
-                List.of("job-1"),
-                Instant.parse("2024-06-27T09:43:00Z"));
+        @Test
+        void shouldReportFailureReason() {
+            // Given
+            IngestJob job = createJobWithTableAndFiles("job-1", table, "test.parquet");
+            ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+            ingestTracker.jobFailed(job.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z")).jobRunId("test-run").taskId("test-task")
+                    .failureReasons(List.of("Some failure")).build());
 
-        // Then
-        assertThat(status).hasToString("{\n" +
-                "  \"countByFurthestStatus\": {\n" +
-                "    \"FAILED\": 1\n" +
-                "  },\n" +
-                "  \"failureReasons\": [\n" +
-                "    \"Some failure\"\n" +
-                "  ],\n" +
-                "  \"numUnfinished\": 1,\n" +
-                "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
-                "  \"longestInProgressDuration\": \"PT3M\"\n" +
-                "}");
-        assertThat(status.areAllJobsFinished()).isFalse();
+            // When
+            WaitForJobsStatus status = ingestStatus(
+                    List.of("job-1"),
+                    Instant.parse("2024-06-27T09:43:00Z"));
+
+            // Then
+            assertThat(status).hasToString("{\n" +
+                    "  \"countByFurthestStatus\": {\n" +
+                    "    \"FAILED\": 1\n" +
+                    "  },\n" +
+                    "  \"failureReasons\": [\n" +
+                    "    \"Some failure\"\n" +
+                    "  ],\n" +
+                    "  \"numUnfinished\": 1,\n" +
+                    "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
+                    "  \"longestInProgressDuration\": \"PT3M\"\n" +
+                    "}");
+            assertThat(status.areAllJobsFinished()).isFalse();
+        }
+
+        @Test
+        void shouldRestrictNumberOfFailureReasonsInOneJob() {
+            // Given
+            maxFailureReasons = 2;
+            IngestJob job = createJobWithTableAndFiles("job-1", table, "test.parquet");
+            ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+            ingestTracker.jobFailed(job.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z")).jobRunId("test-run").taskId("test-task")
+                    .failureReasons(List.of("Failure 1", "Failure 2", "Failure 3")).build());
+
+            // When
+            WaitForJobsStatus status = ingestStatus(
+                    List.of("job-1"),
+                    Instant.parse("2024-06-27T09:43:00Z"));
+
+            // Then
+            assertThat(status).hasToString("{\n" +
+                    "  \"countByFurthestStatus\": {\n" +
+                    "    \"FAILED\": 1\n" +
+                    "  },\n" +
+                    "  \"failureReasons\": [\n" +
+                    "    \"Failure 1\",\n" +
+                    "    \"Failure 2\"\n" +
+                    "  ],\n" +
+                    "  \"numUnfinished\": 1,\n" +
+                    "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
+                    "  \"longestInProgressDuration\": \"PT3M\"\n" +
+                    "}");
+            assertThat(status.areAllJobsFinished()).isFalse();
+        }
+
+        @Test
+        void shouldRestrictNumberOfFailureReasonsAcrossJobs() {
+            // Given
+            maxFailureReasons = 2;
+            IngestJob job1 = createJobWithTableAndFiles("job-1", table, "test.parquet");
+            ingestTracker.jobStarted(job1.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("run-1").taskId("test-task").build());
+            ingestTracker.jobFailed(job1.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z")).jobRunId("run-1").taskId("test-task")
+                    .failureReasons(List.of("Failure 1")).build());
+            IngestJob job2 = createJobWithTableAndFiles("job-2", table, "test.parquet");
+            ingestTracker.jobStarted(job2.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("run-2").taskId("test-task").build());
+            ingestTracker.jobFailed(job2.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z")).jobRunId("run-2").taskId("test-task")
+                    .failureReasons(List.of("Failure 2", "Failure 3")).build());
+
+            // When
+            WaitForJobsStatus status = ingestStatus(
+                    List.of("job-1", "job-2"),
+                    Instant.parse("2024-06-27T09:43:00Z"));
+
+            // Then
+            assertThat(status).hasToString("{\n" +
+                    "  \"countByFurthestStatus\": {\n" +
+                    "    \"FAILED\": 2\n" +
+                    "  },\n" +
+                    "  \"failureReasons\": [\n" +
+                    "    \"Failure 1\",\n" +
+                    "    \"Failure 2\"\n" +
+                    "  ],\n" +
+                    "  \"numUnfinished\": 2,\n" +
+                    "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
+                    "  \"longestInProgressDuration\": \"PT3M\"\n" +
+                    "}");
+            assertThat(status.areAllJobsFinished()).isFalse();
+        }
     }
 
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
