@@ -105,7 +105,7 @@ public interface JobRunReport {
      * @param  maxLength the maximum length of the resulting string before it is concatenated
      * @return           combined list of reasons for failure
      */
-    default String getFailureReasons(int maxLength) {
+    default String getFailureReasonsDisplay(int maxLength) {
         List<String> reasons = getFailureReasons();
         if (reasons == null || reasons.isEmpty()) {
             return null;

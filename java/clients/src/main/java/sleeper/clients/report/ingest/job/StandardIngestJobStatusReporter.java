@@ -224,7 +224,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             row.value(stateField, run.getStatusType());
             row.value(addedFilesCount, run.getFilesWrittenAndAdded().getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
-            row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons(30));
+            row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasonsDisplay(30));
         }));
     }
 
