@@ -1,4 +1,4 @@
-name: Nightly Docker Image Tests
+name: Docker Image Tests Nightly
 on:
   workflow_dispatch: # Allow manual running
   schedule:
