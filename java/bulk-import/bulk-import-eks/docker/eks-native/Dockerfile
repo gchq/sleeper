@@ -69,7 +69,9 @@ ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
 RUN chmod +x /usr/bin/tini
 
-RUN yum install -y libzstd shadow-utils.x86_64
+RUN yum -y update-minimal --security --sec-severity=Critical,Important && \
+    yum install -y libzstd shadow-utils.x86_64 && \
+    yum clean all && rm -rf /var/cache/yum
 
 RUN groupadd ${GROUP} && useradd --home-dir /opt/spark --gid ${GROUP} --no-create-home --shell /bin/bash ${USER}
 
