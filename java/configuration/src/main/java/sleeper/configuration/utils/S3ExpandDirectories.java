@@ -59,7 +59,7 @@ public class S3ExpandDirectories {
     private List<S3FileDetails> listFiles(S3Path path) {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(path.bucket())
-                .prefix(path.prefix())
+                .prefix(path.pathInBucket())
                 .build());
         return response.contents().stream()
                 .filter(s3Object -> checkIsParquetFile(s3Object.key()))

@@ -38,7 +38,7 @@ clap = { version = "4.5.54" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
-datafusion = { version = "52.0.0" }
+datafusion = { version = "52.1.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.3" }                       # Interact with version control

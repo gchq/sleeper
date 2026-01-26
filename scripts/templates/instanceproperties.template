@@ -218,7 +218,8 @@ sleeper.subnets=set-automatically
 # sleeper.cache.table.properties.provider.timeout.minutes=60
 
 # The maximum size of state store providers. If a state store is needed and the cache is full, the
-# oldest state store in the cache will be removed to make space.
+# oldest state store in the cache will be removed to make space. This can be disabled by setting a
+# negative value, e.g. -1.
 # (default value shown below, uncomment to set a value)
 # sleeper.statestore.provider.cache.size=10
 

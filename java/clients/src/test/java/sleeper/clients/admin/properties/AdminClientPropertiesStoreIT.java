@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.container.StackDockerImage;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -46,14 +45,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
@@ -336,7 +333,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     class UploadDockerImages {
         @BeforeEach
         void setup() {
+            dockerImageConfiguration = DockerImageConfiguration.getDefault();
             instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
+            ecrClient.addVersionToRepository(instanceId + "/compaction-job-execution", instanceProperties.get(VERSION));
+            ecrClient.addVersionToRepository(instanceId + "/query-lambda", instanceProperties.get(VERSION));
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
@@ -346,7 +346,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
         }
 
         @Test
@@ -355,7 +355,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
-            verifyNoInteractions(uploadDockerImages);
+            assertThat(dockerCommandsThatRan).isEmpty();
         }
 
         @Test
@@ -364,7 +364,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack");
 
             // Then
-            verify(uploadDockerImages, times(0)).upload(any());
+            assertThat(dockerCommandsThatRan).isEmpty();
         }
 
         @Test
@@ -373,7 +373,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
         }
 
         @Test
@@ -382,20 +382,12 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
 
             // Then
-            verify(uploadDockerImages, times(0)).upload(any());
+            assertThat(dockerCommandsThatRan).isEmpty();
         }
     }
 
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
         updateInstanceProperty(store(), instanceId, property, value);
-    }
-
-    private UploadDockerImagesToEcrRequest withImages(StackDockerImage... images) {
-        return UploadDockerImagesToEcrRequest.builder()
-                .ecrPrefix(instanceProperties.get(ID))
-                .version(instanceProperties.get(VERSION))
-                .images(List.of(images))
-                .build();
     }
 
     private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {

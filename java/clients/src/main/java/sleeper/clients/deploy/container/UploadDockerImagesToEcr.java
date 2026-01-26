@@ -63,14 +63,14 @@ public class UploadDockerImagesToEcr {
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
-        String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (repositoryChecker.versionExistsInRepository(imagePath, uploader.getVersion())) {
-            LOGGER.info("Stack image {} already exists in ECR with version {}",
-                    stackDockerImage.getImageName(), uploader.getVersion());
+        String repository = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (repositoryChecker.versionExistsInRepository(repository, uploader.getVersion())) {
+            LOGGER.info("ECR repository {} already contains version {}",
+                    repository, uploader.getVersion());
             return false;
         } else {
-            LOGGER.info("Stack image {} does not exist in ECR with version {}",
-                    stackDockerImage.getImageName(), uploader.getVersion());
+            LOGGER.info("ECR repository {} does not contain version {}",
+                    repository, uploader.getVersion());
             return true;
         }
     }
