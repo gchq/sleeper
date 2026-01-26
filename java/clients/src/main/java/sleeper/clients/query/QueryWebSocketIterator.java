@@ -15,12 +15,15 @@
  */
 package sleeper.clients.query;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.clients.query.exception.WebSocketTimeoutException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +49,10 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
     }
 
     @Override
-    public Row next() {
+    public Row next() throws NoSuchElementException {
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
         return getRowList().remove(0);
     }
 
@@ -66,6 +72,7 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
         future.complete(rows);
     }
 
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     private List<Row> getRowList() {
         try {
             if (timeoutMilliseconds >= 0) {

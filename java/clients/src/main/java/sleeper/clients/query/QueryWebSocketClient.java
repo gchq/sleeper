@@ -91,8 +91,9 @@ public class QueryWebSocketClient {
         try {
             return iterator;
         } catch (RuntimeException e) {
-            connection.close();
             throw e;
+        } finally {
+            connection.close();
         }
     }
 
