@@ -143,7 +143,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .setBySleeper(false).build();
     TableProperty SCHEMA = Index.propertyBuilder("sleeper.table.schema")
             .validationPredicate(Objects::nonNull)
-            .description("The schema representing the structure of this table.")
+            .description("The schema representing the structure of this table. This should be set in a separate " +
+                    "schema.json file, and may not be edited once the table has been created.\n" +
+                    "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for further details.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false)
             .includedInTemplate(false).build();
