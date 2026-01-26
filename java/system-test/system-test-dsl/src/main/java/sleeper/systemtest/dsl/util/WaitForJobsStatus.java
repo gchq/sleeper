@@ -206,9 +206,8 @@ public class WaitForJobsStatus {
             if (prevCount >= maxFailureReasons) {
                 return;
             }
-            int addCount = Math.max(maxFailureReasons - prevCount, runFailureReasons.size());
-            List<String> toAdd = runFailureReasons.subList(0, addCount);
-            failureReasons.addAll(toAdd);
+            int addCount = Math.min(maxFailureReasons - prevCount, runFailureReasons.size());
+            failureReasons.addAll(runFailureReasons.subList(0, addCount));
         }
 
         private void reportRemainingHaveNoStatus(int numJobs) {

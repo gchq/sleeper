@@ -48,6 +48,7 @@ public class WaitForJobsStatusTest {
     TableStatus table = tableProperties.getStatus();
     InMemoryCompactionJobTracker compactionTracker = new InMemoryCompactionJobTracker();
     IngestJobTracker ingestTracker = new InMemoryIngestJobTracker();
+    int maxFailureReasons = 10;
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
@@ -323,18 +324,24 @@ public class WaitForJobsStatusTest {
     }
 
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobs.JobTracker.forCompaction(List.of(tableProperties), compactionTracker)
-                .getStatus(jobIds, now);
+        return WaitForJobsStatus.atTime(now)
+                .maxFailureReasons(maxFailureReasons)
+                .reportById(jobIds, WaitForJobsStatus.streamCompactionJobs(compactionTracker, List.of(tableProperties)))
+                .build();
     }
 
     private WaitForJobsStatus allCompactionsStatus(Instant now) {
-        return WaitForJobs.JobTracker.forCompaction(List.of(tableProperties), compactionTracker)
-                .getAllJobsStatus(now);
+        return WaitForJobsStatus.atTime(now)
+                .maxFailureReasons(maxFailureReasons)
+                .report(WaitForJobsStatus.streamCompactionJobs(compactionTracker, List.of(tableProperties)))
+                .build();
     }
 
     private WaitForJobsStatus ingestStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobs.JobTracker.forIngest(List.of(tableProperties), ingestTracker)
-                .getStatus(jobIds, now);
+        return WaitForJobsStatus.atTime(now)
+                .maxFailureReasons(maxFailureReasons)
+                .reportById(jobIds, WaitForJobsStatus.streamIngestJobs(ingestTracker, List.of(tableProperties)))
+                .build();
     }
 
     private CompactionJob compactionJob(String id, String... files) {
