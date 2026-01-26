@@ -224,7 +224,7 @@
         <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
-        <assertj.version>3.27.6</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>26.6.0</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
