@@ -28,6 +28,12 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createNewBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.removeOldBuildxBuilderInstanceCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
@@ -44,6 +50,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
+        String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
@@ -51,6 +58,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 removeOldBuildxBuilderInstanceCommand(),
                 createNewBuildxBuilderInstanceCommand(),
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -70,11 +79,14 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
 
         // Then
+        String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -127,8 +139,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
         CommandPipeline buildImageCommand = buildImageCommand(
-                "www.somedocker.com/prefix/ingest:1.0.0",
-                "./docker/ingest");
+                "www.somedocker.com/prefix/statestore-committer:1.0.0",
+                "./docker/statestore-committer");
         setReturnExitCodeForCommand(42, buildImageCommand);
 
         // When / Then

@@ -32,7 +32,7 @@ public record S3PathContents(S3Path location, List<S3FileDetails> files) {
      */
     public void throwIfEmpty() throws S3FileNotFoundException {
         if (files.isEmpty()) {
-            throw new S3FileNotFoundException(location.bucket(), location.prefix());
+            throw new S3FileNotFoundException(location.bucket(), location.pathInBucket());
         }
     }
 

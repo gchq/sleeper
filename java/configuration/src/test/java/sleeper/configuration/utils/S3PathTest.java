@@ -34,7 +34,7 @@ public class S3PathTest {
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
         assertThat(s3Path.bucket()).isEqualTo(path);
-        assertThat(s3Path.prefix()).isEqualTo("");
+        assertThat(s3Path.pathInBucket()).isEqualTo("");
     }
 
     @Test
@@ -48,7 +48,7 @@ public class S3PathTest {
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
         assertThat(s3Path.bucket()).isEqualTo("bucket");
-        assertThat(s3Path.prefix()).isEqualTo("prefix");
+        assertThat(s3Path.pathInBucket()).isEqualTo("prefix");
     }
 
     @Test
@@ -62,7 +62,7 @@ public class S3PathTest {
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
         assertThat(s3Path.bucket()).isEqualTo("bucket");
-        assertThat(s3Path.prefix()).isEqualTo("prefix");
+        assertThat(s3Path.pathInBucket()).isEqualTo("prefix");
     }
 
     @ParameterizedTest
@@ -74,6 +74,6 @@ public class S3PathTest {
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
         assertThat(s3Path.bucket()).isEqualTo("bucket");
-        assertThat(s3Path.prefix()).isEqualTo("prefix");
+        assertThat(s3Path.pathInBucket()).isEqualTo("prefix");
     }
 }
