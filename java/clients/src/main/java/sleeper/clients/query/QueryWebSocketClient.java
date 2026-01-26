@@ -83,6 +83,13 @@ public class QueryWebSocketClient {
         }
     }
 
+    /**
+     * Run a query over a web socket.
+     *
+     * @param  query                the query to run
+     * @return                      the query results as an interator
+     * @throws InterruptedException if the thread gets interrupted
+     */
     public QueryWebSocketIterator submitIteratorQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         QueryWebSocketIterator iterator = new QueryWebSocketIterator(timeoutMs, () -> numTimesWebSocketClosed++);
