@@ -27,13 +27,10 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.util.WaitForJobsStatus.JobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -164,7 +161,7 @@ public class WaitForJobs {
         }
 
         default WaitForJobsStatus getAllJobsStatus(Instant now) {
-            return WaitForJobsStatus.fromJobs(streamAllJobsInTest(), now);
+            return WaitForJobsStatus.atTime(now).report(streamAllJobsInTest()).build();
         }
 
         default WaitForJobsStatus getStatus(Collection<String> jobIds) {
@@ -172,10 +169,7 @@ public class WaitForJobs {
         }
 
         default WaitForJobsStatus getStatus(Collection<String> jobIds, Instant now) {
-            Set<String> jobIdsSet = new HashSet<>(jobIds);
-            Stream<JobStatus<?>> statuses = streamAllJobsInTest()
-                    .filter(job -> jobIdsSet.contains(job.getJobId()));
-            return WaitForJobsStatus.fromJobs(statuses, jobIds.size(), now);
+            return WaitForJobsStatus.atTime(now).reportById(jobIds, streamAllJobsInTest()).build();
         }
 
         static JobTracker forIngest(Collection<TableProperties> tables, IngestJobTracker tracker) {
