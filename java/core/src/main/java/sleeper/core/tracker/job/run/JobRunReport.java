@@ -106,17 +106,7 @@ public interface JobRunReport {
      * @return           combined list of reasons for failure
      */
     default String getFailureReasonsDisplay(int maxLength) {
-        List<String> reasons = getFailureReasons();
-        if (reasons == null || reasons.isEmpty()) {
-            return null;
-        }
-        StringBuffer outStr = new StringBuffer();
-        reasons.forEach(str -> outStr.append(str).append(". "));
-        if (outStr.length() >= maxLength) {
-            return outStr.substring(0, maxLength) + "...";
-        } else {
-            return outStr.toString();
-        }
+        return JobRunFailureReasons.getFailureReasonsDisplay(maxLength, getFailureReasons());
     }
 
 }
