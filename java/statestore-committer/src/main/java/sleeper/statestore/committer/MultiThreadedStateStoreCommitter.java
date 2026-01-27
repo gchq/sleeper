@@ -50,6 +50,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -143,14 +144,11 @@ public class MultiThreadedStateStoreCommitter {
                         LoggedDuration.withShortOutput(startedAt, Instant.now()),
                         LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
 
-                if (!response.hasMessages()) {
-                    continue;
-                }
                 lastReceivedCommitsAt = Instant.now();
 
                 // Only initialise after we receive the first messages, because the instance properties may not have
                 // been written to the config bucket yet when we first start up.
-                if (committer == null) {
+                if (response.hasMessages() && committer == null) {
                     init();
                 }
 
@@ -164,15 +162,7 @@ public class MultiThreadedStateStoreCommitter {
                         .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
 
                 // Try to make sure there is going to be enough heap space available to process these commits
-                while (!stateStoreProvider.ensureEnoughHeapSpaceAvailable(messagesByTableId.keySet())) {
-                    LOGGER.error("Couldn't find any candidate state stores to remove from memory. All must currently be in use, will wait and try again...");
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
+                ensureEnoughHeapSpaceAvailable(messagesByTableId.keySet());
 
                 messagesByTableId.entrySet().forEach(tableMessages -> {
                     String tableId = tableMessages.getKey();
@@ -207,6 +197,21 @@ public class MultiThreadedStateStoreCommitter {
             }
             tableFutures.values().stream().forEach(CompletableFuture::join);
             LOGGER.info("All pending requests have been actioned");
+        }
+    }
+
+    private void ensureEnoughHeapSpaceAvailable(Set<String> tableIds) {
+        if (stateStoreProvider == null) {
+            return;
+        }
+        while (!stateStoreProvider.ensureEnoughHeapSpaceAvailable(tableIds)) {
+            LOGGER.error("Couldn't find any candidate state stores to remove from memory. All must currently be in use, will wait and try again...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
         }
     }
 
