@@ -16,6 +16,8 @@
 package sleeper.cdk.stack.compaction;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
@@ -83,6 +85,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 
 public class CompactionOnEc2Resources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionOnEc2Resources.class);
     private final InstanceProperties instanceProperties;
     private final Stack stack;
     private final SleeperCoreStacks coreStacks;
@@ -266,6 +269,7 @@ public class CompactionOnEc2Resources {
 
     private static ISecurityGroup addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
+        LOGGER.info("ECS Scaling Group Id: " + instanceProperties.get(ECS_SECURITY_GROUP));
         return SecurityGroup.fromLookupById(scope, "CompactionScalingSG" + index.getAndIncrement(),
                 instanceProperties.get(ECS_SECURITY_GROUP));
     }

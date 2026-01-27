@@ -113,7 +113,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue, policiesStack);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -155,7 +155,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
-            Queue commitQueue) {
+            Queue commitQueue, ManagedPoliciesStack policiesStack) {
         String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
@@ -191,7 +191,7 @@ public class StateStoreCommitterStack extends NestedStack {
                         .defaultInstanceWarmup(Duration.seconds(30))
                         .newInstancesProtectedFromScaleIn(false)
                         .updatePolicy(UpdatePolicy.rollingUpdate())
-                        .securityGroup(SecurityGroup.fromSecurityGroupId(cluster, instanceId, //Not sure if cluster here is correct
+                        .securityGroup(SecurityGroup.fromSecurityGroupId(policiesStack, instanceId,
                                 instanceProperties.get(ECS_SECURITY_GROUP)))
                         .build())
                 .instanceWarmupPeriod(30)
