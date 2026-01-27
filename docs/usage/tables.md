@@ -102,9 +102,9 @@ instance configuration folder structure, see issue https://github.com/gchq/sleep
 
 ### Add table
 
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
+The `addTable.sh` script will create a new table with properties defined by a path provided to the script.
+The template properies will be used as a basis and the provided script overriding where necessary.
+Default table properites found in `templates/tableproperties.template`, and the schema defined in `templates/schema.template`.
 
 ```bash
 cd scripts

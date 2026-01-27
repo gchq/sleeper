@@ -51,4 +51,4 @@ sed \
 echo "-------------------------------------------------------"
 echo "Adding table"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.table.AddTable "${INSTANCE_ID}" "${TABLE_PROPERTIES}" "${SCHEMA}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.table.AddTable "${INSTANCE_ID}" "${TABLE_PROPERTIES}"
