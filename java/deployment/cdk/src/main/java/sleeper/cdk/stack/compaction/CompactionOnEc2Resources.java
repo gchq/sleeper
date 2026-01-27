@@ -71,13 +71,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -166,8 +164,7 @@ public class CompactionOnEc2Resources {
                         .build())
                 .instanceProfile(InstanceProfile.Builder.create(stack, "CompactionScalingInstanceProfile").build())
                 .build();
-        addSecurityGroupReferences(stack, instanceProperties)
-                .forEach(scalingLaunchTemplate::addSecurityGroup);
+        scalingLaunchTemplate.addSecurityGroup(addSecurityGroupReferences(stack, instanceProperties));
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(stack, "CompactionScalingGroup")
                 .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
@@ -267,12 +264,10 @@ public class CompactionOnEc2Resources {
         }
     }
 
-    private static List<ISecurityGroup> addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
+    private static ISecurityGroup addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(ECS_SECURITY_GROUPS).stream()
-                .filter(Predicate.not(String::isBlank))
-                .map(groupId -> SecurityGroup.fromLookupById(scope, "CompactionScalingSG" + index.getAndIncrement(), groupId))
-                .collect(Collectors.toList());
+        return SecurityGroup.fromLookupById(scope, "CompactionScalingSG" + index.getAndIncrement(),
+                instanceProperties.get(ECS_SECURITY_GROUP));
     }
 
 }

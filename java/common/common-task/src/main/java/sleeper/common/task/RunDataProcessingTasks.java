@@ -45,8 +45,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -337,7 +337,8 @@ public class RunDataProcessingTasks {
     private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
                 .subnets(instanceProperties.getList(SUBNETS))
-                .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
+                //Read new instance property
+                .securityGroups(instanceProperties.get(ECS_SECURITY_GROUP))
                 .build();
         return NetworkConfiguration.builder()
                 .awsvpcConfiguration(vpcConfiguration)

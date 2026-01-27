@@ -219,11 +219,6 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
-            .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
-            .validationPredicate(value -> SleeperPropertyValueUtils.isListWithMaxSize(value, 5))
-            .runCdkDeployWhenChanged(true)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
             .description("Default value for the reserved concurrency for each lambda in the Sleeper instance " +
                     "that scales according to the number of Sleeper tables.\n" +

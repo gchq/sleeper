@@ -164,10 +164,6 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.properties.force.reload=false
 
-# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
-# (uncomment to set a value)
-# sleeper.ecs.security.groups=
-
 # Default value for the reserved concurrency for each lambda in the Sleeper instance that scales
 # according to the number of Sleeper tables.
 # The state store committer lambda is an exception to this, as it has reserved concurrency by default.

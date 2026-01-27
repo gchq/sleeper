@@ -16,6 +16,9 @@
 package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -36,8 +39,10 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -73,6 +78,8 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = createManagedPolicy("ReadIngestSources");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
+
+        createEcsSecurityGroup(this, instanceProperties.get(VPC_ID));
     }
 
     public SleeperInstanceRoles createRoles() {
@@ -192,5 +199,15 @@ public class ManagedPoliciesStack extends NestedStack {
         directIngestPolicy.attachToRole(role);
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, role.getRoleArn());
         return role;
+    }
+
+    private void createEcsSecurityGroup(Construct scope, String vpcId) {
+        SecurityGroup securityGroup = SecurityGroup.Builder.create(scope, "ECS")
+                .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
+                .description("ECS security group")
+                .allowAllOutbound(true)
+                .build();
+
+        instanceProperties.set(ECS_SECURITY_GROUP, securityGroup.getSecurityGroupId());
     }
 }
