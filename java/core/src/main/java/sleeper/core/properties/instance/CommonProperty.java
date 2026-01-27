@@ -71,9 +71,10 @@ public interface CommonProperty {
             .description("A list of tags that will automatically be applied to all the resources in this deployment " +
                     "of Sleeper. The list should be in the form \"key1,value1,key2,value2,key3,value3,...\".\n" +
                     "For example if you want to add tags of \"user=some-user\" and \"project-name=sleeper-test\", " +
-                    "then the list should be \"user,some-user,project-name,sleeper-test\".")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true)
+                    "then the list should be \"user,some-user,project-name,sleeper-test\".\n" +
+                    "Preferably, tags should be specified in a separate file called tags.properties.\n" +
+                    "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for further details.")
+            .propertyGroup(InstancePropertyGroup.COMMON).runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +

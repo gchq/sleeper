@@ -12,7 +12,9 @@ Jobs finished successfully: 0
 Jobs finished successfully with more than one run: 0
 Statistics for delay between finish and commit time:
   no jobs committed
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| STATE   | CREATE_TIME              | JOB_ID   | INPUT_FILES | PARTITION_ID   | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
-| CREATED | 2022-10-13T12:00:00.001Z | test-job |           5 | test-partition |         |            |             |             |          |           |              |               |                |
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE   | CREATE_TIME              | JOB_ID   | INPUT_FILES | PARTITION_ID   | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) | FAILURE_REASONS |
+| CREATED | 2022-10-13T12:00:00.001Z | test-job |           5 | test-partition |         |            |             |             |          |           |              |               |                |                 |
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+For more information concerning any failure reasons, please consult the more detailed report.

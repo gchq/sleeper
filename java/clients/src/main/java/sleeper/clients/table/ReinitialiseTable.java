@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.utils.S3Path;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -31,13 +32,14 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTr
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketWithPrefix;
+import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketFromListOfKeys;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -80,15 +82,15 @@ public class ReinitialiseTable {
 
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
-
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
+        List<String> filesToDelete = getFilesToDelete(stateStore);
 
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
             ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
-        deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
-                key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
+
+        deleteObjectsInBucketFromListOfKeys(s3Client, instanceProperties.get(DATA_BUCKET), filesToDelete);
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
@@ -126,5 +128,15 @@ public class ReinitialiseTable {
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
+    }
+
+    private List<String> getFilesToDelete(StateStore stateStore) {
+        return stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
+                .stream()
+                .map(S3Path::parse)
+                .flatMap(path -> Stream.of(
+                        path.pathInBucket(),
+                        path.pathInBucket().replace(".parquet", ".sketches")))
+                .toList();
     }
 }

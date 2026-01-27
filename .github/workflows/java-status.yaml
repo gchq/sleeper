@@ -5,6 +5,10 @@ on:
       - '.github/workflows/java-status.yaml'
       - '.github/config/chunks.yaml'
       - 'java/**'
+      # Check generated files are not edited directly
+      - 'examples/**'
+      - 'scripts/templates/**'
+      - 'docs/usage/properties/**'
   push:
     branches:
       - develop
@@ -52,7 +56,7 @@ jobs:
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.notices.CheckNotices \
             -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
             -Dexec.args="$NOTICES_FILE $MAVEN_PROJECT"
-      - name: Validate properties templates are up to date
+      - name: Validate generated files and documentation are up to date
         working-directory: ./java
         run: |
           PROJECT_ROOT=$(cd .. && pwd)

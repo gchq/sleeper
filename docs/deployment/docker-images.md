@@ -27,6 +27,7 @@ are listed here.
 | bulk-import-runner         | EksBulkImportStack | false         |
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
+| statestore-committer       |                    | true          |
 
 
 ## Lambda images

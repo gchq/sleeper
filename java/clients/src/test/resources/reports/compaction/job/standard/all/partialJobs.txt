@@ -13,7 +13,9 @@ Jobs finished successfully with more than one run: 0
 Average compaction rate: NaN read/s, NaN write/s
 Statistics for delay between finish and commit time:
   avg: 1s, min: 1s, 99%: 1s, 99.9%: 1s, max: 1s, std dev: 0s
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| STATE    | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID      | START_TIME | FINISH_TIME          | COMMIT_TIME          | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
-| FINISHED |             | job-1  |             |              | test-task-id |            | 2025-05-14T10:47:00Z | 2025-05-14T10:47:01Z |       0s |        10 |            5 |               |                |
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE    | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID      | START_TIME | FINISH_TIME          | COMMIT_TIME          | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) | FAILURE_REASONS |
+| FINISHED |             | job-1  |             |              | test-task-id |            | 2025-05-14T10:47:00Z | 2025-05-14T10:47:01Z |       0s |        10 |            5 |               |                |                 |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+For more information concerning any failure reasons, please consult the more detailed report.

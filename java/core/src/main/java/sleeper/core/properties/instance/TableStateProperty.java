@@ -17,11 +17,13 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties relating to handling the state of Sleeper tables.
@@ -81,7 +83,9 @@ public interface TableStateProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
     UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.provider.cache.size")
-            .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
+            .description("The maximum size of state store providers. If a state store is needed and the cache is " +
+                    "full, the oldest state store in the cache will be removed to make space. This can be disabled " +
+                    "by setting a negative value, e.g. -1.")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
@@ -237,6 +241,15 @@ public interface TableStateProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_PLATFORM = Index.propertyBuilder("sleeper.statestore.committer.platform")
+            .description("The platform that the state store committer will be deployed to for execution.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(StateStoreCommitterPlatform.class) + "\n" +
+                    "NB: The EC2 platform is currently considered experimental.")
+            .defaultValue(StateStoreCommitterPlatform.LAMBDA.toString())
+            .validationPredicate(StateStoreCommitterPlatform::isValid)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.statestore.committer.lambda.memory.mb")
             .description("The amount of memory in MB for the lambda that commits state store updates.")
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
@@ -270,4 +283,23 @@ public interface TableStateProperty {
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_INSTANCE_TYPE = Index.propertyBuilder("sleeper.statestore.committer.ec2.type")
+            .description("The EC2 instance type that the multi-threaded state store committer should be deployed onto.")
+            .defaultValue("m8g.xlarge")
+            .runCdkDeployWhenChanged(true)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.amount")
+            .description("The minimum amount of heap space that the committer will try to keep available. This affects how many state stores can be cached in memory.")
+            .defaultValue("100M")
+            .validationPredicate(SleeperPropertyValueUtils::isValidNumberOfBytes)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.percentage")
+            .description("The percentage of the total heap space that the committer should try to keep available, as a minimum. This affects how many state stores can be cached in memory.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
 }

@@ -121,11 +121,13 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .name("Driver")
                 .instanceTypeConfigs(readMasterInstanceTypes(instanceProperties, ebsConf))
                 .targetOnDemandCapacity(1)
+                .targetSpotCapacity(0)
                 .build();
         CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Executors")
                 .instanceTypeConfigs(readExecutorInstanceTypes(instanceProperties, ebsConf))
                 .targetOnDemandCapacity(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
+                .targetSpotCapacity(0)
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()

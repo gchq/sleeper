@@ -107,6 +107,15 @@ public class TablePropertiesStore {
     }
 
     /**
+     * Loads properties for online tables in the Sleeper instance.
+     *
+     * @return the table properties for online tables
+     */
+    public Stream<TableProperties> streamOnlineTables() {
+        return tableIndex.streamOnlineTables().map(this::loadProperties);
+    }
+
+    /**
      * Loads the table index entry for all tables in the Sleeper instance.
      *
      * @return the table statuses

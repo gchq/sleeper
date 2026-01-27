@@ -5,8 +5,6 @@ Jobs waiting in ingest queue (excluded from report): 0
 Total jobs waiting across all queues: 0
 Total jobs in report: 0
 Total jobs in progress: 0
----------------------------------------------------------------------------------------
-| STATE | JOB_ID | INPUT_FILES | ADDED_FILES | TASK_ID | START_TIME | FAILURE REASONS |
----------------------------------------------------------------------------------------
-
-For more information concerning the failure reasons, please consult the more detailed report.
+-----------------------------------------------------------------------------------------------------
+| STATE | JOB_ID | INPUT_FILES | ADDED_FILES | TASK_ID | START_TIME | FINISH_TIME | FAILURE_REASONS |
+-----------------------------------------------------------------------------------------------------

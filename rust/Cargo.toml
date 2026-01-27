@@ -36,9 +36,9 @@ cargo_metadata = { version = "0.23.1" }             # Access cargo metadata prog
 chrono = { version = "0.4.43" }                     # Log helper
 clap = { version = "4.5.54" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
-cxx = { version = "1.0.192" }                       # Exception handling for Rust
+cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
-datafusion = { version = "52.0.0" }
+datafusion = { version = "52.1.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.3" }                       # Interact with version control
@@ -57,7 +57,7 @@ serde_json = { version = "1.0.149" }                # Process metadata JSON
 tempfile = { version = "3.24.0" }                   # Create temporary files
 test-log = { version = "0.2.19" }
 testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
-thiserror = { version = "2.0.17" }                  # Derivable error enums
+thiserror = { version = "2.0.18" }                  # Derivable error enums
 tokio = { version = "1.49.0", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.5" }                  # Doc tests
 url = { version = "2.5.8" }                         # URL processing for S3

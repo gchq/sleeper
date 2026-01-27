@@ -180,6 +180,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>statestore-committer</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>statestore-lambda</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>

@@ -89,13 +89,13 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                     .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
                             runReporter.getFinishedFields())
                     .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
-                    .showField(query == JobQuery.Type.UNFINISHED, StandardJobRunReporter.FAILURE_REASONS)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
-        }
-        if (query == JobQuery.Type.UNFINISHED) {
-            out.println();
-            out.println("For more information concerning the failure reasons, please consult the more detailed report.");
+
+            if (!statusList.isEmpty()) {
+                out.println();
+                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+            }
         }
     }
 

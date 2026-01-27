@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,13 +25,13 @@ import software.amazon.awscdk.Stack;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.networking.SleeperNetworking;
-import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -56,9 +57,15 @@ class SleeperInstanceStacksPropsIT {
     private final String region = "test-region";
     private final String vpcId = "vpc-12345";
     private final List<String> subnetIds = List.of("subnet-12345");
+    private final Map<String, String> cdkContext = new HashMap<>();
 
     @TempDir
     private Path tempDir;
+
+    @BeforeEach
+    void setUp() {
+        cdkContext.put("propertiesfile", tempDir.resolve("instance.properties").toString());
+    }
 
     @Nested
     @DisplayName("Load user defined properties from local configuration")
@@ -71,7 +78,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = loadInstanceProperties();
 
             // Then
             Properties tagsProperties = properties.getTagsProperties();
@@ -94,7 +101,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = loadInstanceProperties();
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
@@ -107,7 +114,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = loadInstanceProperties();
 
             // Then
             assertThat(loaded.get(VERSION))
@@ -121,11 +128,30 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = loadInstanceProperties();
 
             // Then
             assertThat(loaded.getTags().get("InstanceID"))
                     .matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}$");
+        }
+    }
+
+    @Nested
+    @DisplayName("Set properties from context variables")
+    class SetPropertiesFromContextVariables {
+
+        @Test
+        void shouldSetInstanceIdInContextVariable() throws Exception {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+            cdkContext.put("id", "test-instance");
+
+            // When
+            InstanceProperties loaded = loadInstanceProperties();
+
+            // Then
+            assertThat(loaded.get(ID)).isEqualTo("test-instance");
         }
     }
 
@@ -141,8 +167,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When / Then
-            CdkContext context = cdkContextWithPropertiesFile(tempDir);
-            assertThatThrownBy(() -> readProps(context))
+            assertThatThrownBy(() -> readProps())
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance ID is not valid as part of an S3 bucket name: aa$$aa");
         }
@@ -158,9 +183,8 @@ class SleeperInstanceStacksPropsIT {
             InstanceProperties instanceProperties = createInstancePropertiesWithVersion(getVersion());
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
-            // When/Then
-            assertThatCode(() -> readProps(
-                    cdkContextWithPropertiesFile(tempDir)))
+            // When / Then
+            assertThatCode(() -> readProps())
                     .doesNotThrowAnyException();
         }
 
@@ -170,9 +194,8 @@ class SleeperInstanceStacksPropsIT {
             InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
-            // When/Then
-            var readContext = cdkContextWithPropertiesFile(tempDir);
-            assertThatThrownBy(() -> readProps(readContext))
+            // When / Then
+            assertThatThrownBy(() -> readProps())
                     .isInstanceOf(MismatchedVersionException.class)
                     .hasMessage("Local version " + getVersion() + " does not match deployed version 0.14.0-SNAPSHOT. " +
                             "Please upgrade/downgrade to make these match");
@@ -183,10 +206,10 @@ class SleeperInstanceStacksPropsIT {
             // Given
             InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+            cdkContext.put("skipVersionCheck", "true");
 
             // When/Then
-            assertThatCode(() -> readProps(
-                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
+            assertThatCode(() -> readProps())
                     .doesNotThrowAnyException();
         }
 
@@ -197,18 +220,17 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When/Then
-            assertThatCode(() -> readProps(
-                    cdkContextWithPropertiesFile(tempDir)))
+            assertThatCode(() -> readProps())
                     .doesNotThrowAnyException();
         }
     }
 
-    private InstanceProperties loadInstanceProperties(CdkContext context) {
-        return readProps(context).getInstanceProperties();
+    private InstanceProperties loadInstanceProperties() {
+        return readProps().getInstanceProperties();
     }
 
-    private SleeperInstanceProps readProps(CdkContext context) {
-        SleeperInstanceProps props = SleeperInstanceProps.fromContext(context, null, null);
+    private SleeperInstanceProps readProps() {
+        SleeperInstanceProps props = SleeperInstanceProps.fromContext(cdkContext::get, null, null);
         Stack stack = Stack.Builder.create()
                 .env(Environment.builder()
                         .account(account)
@@ -218,15 +240,6 @@ class SleeperInstanceStacksPropsIT {
         SleeperNetworking networking = SleeperNetworking.createByIds(stack, vpcId, subnetIds);
         props.prepareProperties(stack, networking);
         return props;
-    }
-
-    private static CdkContext cdkContextWithPropertiesFile(Path tempDir) {
-        return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString())::get;
-    }
-
-    private static CdkContext cdkContextWithPropertiesFileAndSkipVersionCheck(Path tempDir) {
-        return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString(),
-                "skipVersionCheck", "true")::get;
     }
 
     private static InstanceProperties createInstancePropertiesWithVersion(String version) {

@@ -17,9 +17,30 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
+import software.amazon.awscdk.services.autoscaling.UpdatePolicy;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InstanceArchitecture;
+import software.amazon.awscdk.services.ec2.InstanceType;
+import software.amazon.awscdk.services.ec2.LaunchTemplate;
+import software.amazon.awscdk.services.ec2.UserData;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.ecr.IRepository;
+import software.amazon.awscdk.services.ecr.Repository;
+import software.amazon.awscdk.services.ecs.AmiHardwareType;
+import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
+import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.Ec2Service;
+import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
+import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
@@ -37,23 +58,32 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
+import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_EVENT_SOURCE_ID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_INSTANCE_TYPE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -79,10 +109,15 @@ public class StateStoreCommitterStack extends NestedStack {
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
-        lambdaToCommitStateStoreUpdates(
+
+        if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue);
+        } else {
+            lambdaToCommitStateStoreUpdates(
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionTracker, ingestTracker);
+        }
         Utils.addTags(this, instanceProperties);
     }
 
@@ -115,6 +150,80 @@ public class StateStoreCommitterStack extends NestedStack {
         queue.grantPurge(policiesStack.getPurgeQueuesPolicyForGrants());
         deadLetters.alarmOnDeadLetters(this, "StateStoreCommitterAlarm", "the state store committer", deadLetterQueue);
         return queue;
+    }
+
+    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks, Queue commitQueue) {
+        String instanceId = instanceProperties.get(ID);
+
+        IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
+            .vpcId(instanceProperties.get(VPC_ID))
+            .build());
+        String clusterName = String.join("-", "sleeper",
+            Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
+        Cluster cluster = Cluster.Builder.create(this, "cluster")
+            .clusterName(clusterName)
+            .vpc(vpc)
+            .build();
+
+        String ec2InstanceType = instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
+        InstanceType instanceType = new InstanceType(ec2InstanceType);
+
+        cluster.addAsgCapacityProvider(AsgCapacityProvider.Builder.create(this, "capacity-provider")
+            .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
+                .launchTemplate(LaunchTemplate.Builder.create(this, "instance-template")
+                    .instanceType(instanceType)
+                    .machineImage(EcsOptimizedImage.amazonLinux2023(lookupAmiHardwareType(instanceType.getArchitecture())))
+                    .requireImdsv2(true)
+                    .userData(UserData.forLinux())
+                    .role(Role.Builder.create(this, "role")
+                        .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2.amazonaws.com"))
+                        .build())
+                    .build())
+                .vpc(vpc)
+                .minCapacity(0)
+                .maxCapacity(1)
+                .desiredCapacity(1)
+                .minHealthyPercentage(0)
+                .maxHealthyPercentage(100)
+                .defaultInstanceWarmup(Duration.seconds(30))
+                .newInstancesProtectedFromScaleIn(false)
+                .updatePolicy(UpdatePolicy.rollingUpdate())
+                .build())
+            .instanceWarmupPeriod(30)
+            .enableManagedTerminationProtection(false)
+            .build());
+
+        IRepository repository = Repository.fromRepositoryName(this, "ecr", DockerDeployment.STATESTORE_COMMITTER.getEcrRepositoryName(this.instanceProperties));
+        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+
+        ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
+
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
+
+        Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
+            .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
+            .build();
+
+        taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
+            .containerName("committer")
+            .image(containerImage)
+            .command(List.of(instanceId, commitQueue.getQueueUrl()))
+            .environment(environmentVariables)
+            .memoryReservationMiB(1024)
+            .logging(Utils.createECSContainerLogDriver(logGroup))
+            .build());
+
+        commitQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        configBucketStack.grantRead(taskDefinition.getTaskRole());
+        tableIndexStack.grantRead(taskDefinition.getTaskRole());
+        stateStoreStacks.grantReadWriteAllFilesAndPartitions(taskDefinition.getTaskRole());
+
+        Ec2Service.Builder.create(this, "service")
+            .cluster(cluster)
+            .taskDefinition(taskDefinition)
+            .desiredCount(1)
+            .build();
     }
 
     private void lambdaToCommitStateStoreUpdates(
@@ -167,4 +276,16 @@ public class StateStoreCommitterStack extends NestedStack {
     public void grantSendCommits(IGrantable grantee) {
         commitQueue.grantSendMessages(grantee);
     }
+
+    private static AmiHardwareType lookupAmiHardwareType(InstanceArchitecture architecture) {
+        switch (architecture) {
+            case ARM_64:
+                return AmiHardwareType.ARM;
+            case X86_64:
+                return AmiHardwareType.STANDARD;
+            default:
+                throw new IllegalArgumentException("Unrecognised architecture: " + architecture);
+        }
+    }
+
 }
