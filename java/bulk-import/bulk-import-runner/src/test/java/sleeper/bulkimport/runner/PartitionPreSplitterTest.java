@@ -67,11 +67,8 @@ public class PartitionPreSplitterTest {
                 .buildTree();
         update(stateStore).initialise(partitionsBefore);
 
-        // And a bulk import job
-        FakeBulkImportContext context = singleFileImportContext();
-
         // When
-        splitter().preSplitPartitionsIfNecessary(tableProperties, partitionsBefore.getAllPartitions(), context);
+        preSplitPartitionsIfNecessary();
 
         // Then
         assertThat(stateStore.getAllPartitions())
@@ -91,19 +88,16 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 50)),
                 new Row(Map.of("key", 75))));
 
-        // And a bulk import job
-        FakeBulkImportContext context = singleFileImportContext();
-
         // When
-        splitter().preSplitPartitionsIfNecessary(tableProperties, partitionsBefore.getAllPartitions(), context);
+        preSplitPartitionsIfNecessary();
 
         // Then
-        assertThat(stateStore.getAllPartitions())
+        assertThat(new PartitionTree(stateStore.getAllPartitions()))
                 .withRepresentation(partitionsRepresentation())
                 .isEqualTo(new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
                         .splitToNewChildren("root", "P1", "P2", 50)
-                        .buildList());
+                        .buildTree());
     }
 
     @Test
@@ -114,6 +108,10 @@ public class PartitionPreSplitterTest {
     @Test
     void shouldRetryWhenPartitionsAreSplitByAnotherProcessWhileWeWereComputingSketches() {
         // TODO
+    }
+
+    private void preSplitPartitionsIfNecessary() {
+        splitter().preSplitPartitionsIfNecessary(tableProperties, stateStore.getAllPartitions(), singleFileImportContext());
     }
 
     private FakeBulkImportContext singleFileImportContext() {
@@ -144,12 +142,12 @@ public class PartitionPreSplitterTest {
     }
 
     private Representation partitionsRepresentation() {
-        return obj -> printPartitions((List<Partition>) obj);
+        return obj -> printPartitions((PartitionTree) obj);
     }
 
-    private String printPartitions(List<Partition> partitions) {
-        return PartitionsPrinter.printPartitions(tableProperties.getSchema(), new PartitionTree(partitions))
-                + "\n\nPartition IDs: " + partitions.stream().map(Partition::getId).toList();
+    private String printPartitions(PartitionTree partitions) {
+        return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitions)
+                + "\n\nPartition IDs: " + partitions.getAllPartitions().stream().map(Partition::getId).toList();
     }
 
 }
