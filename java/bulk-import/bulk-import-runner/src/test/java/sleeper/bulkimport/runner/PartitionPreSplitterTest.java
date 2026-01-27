@@ -30,7 +30,9 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.core.testutils.printers.PartitionsPrinter;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.extend.InsufficientDataForPartitionSplittingException;
@@ -56,6 +58,7 @@ public class PartitionPreSplitterTest {
     private final Schema schema = createSchemaWithKey("key", new IntType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final Map<String, Sketches> partitionIdToSketches = new HashMap<>();
 
@@ -122,8 +125,36 @@ public class PartitionPreSplitterTest {
     }
 
     @Test
-    void shouldRetryWhenPartitionsAreSplitByAnotherProcessWhileWeWereComputingSketches() {
-        // TODO
+    void shouldRetryWhenPartitionsAreSplitByAnotherProcessBeforeWeCommitOurSplit() {
+        // Given we configure to split from one partition to two
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+        // And we provide data to expect a split point at 50
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 25)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 75))));
+        // And we expect the new partition IDs generated in order (see instantiation of driver for how we control this)
+        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "P1", "P2", 50)
+                .buildTree();
+        // And the partition tree will be split by another process just before our split is applied
+        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
+                List.of(partitionsAfter.getPartition("root")),
+                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
+                .synchronousCommit(stateStore));
+
+        // When
+        preSplitPartitionsIfNecessary();
+
+        // Then
+        assertThat(stateStore.getAllPartitions())
+                .withRepresentation(partitionsRepresentation())
+                .isEqualTo(partitionsAfter.getAllPartitions());
     }
 
     @Test
