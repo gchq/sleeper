@@ -51,7 +51,7 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPre
 
 public class PartitionPreSplitterTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = createSchemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key", new IntType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
@@ -59,7 +59,24 @@ public class PartitionPreSplitterTest {
 
     @Test
     void shouldDoNothingWhenEnoughLeafPartitionsArePresent() {
-        // TODO
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "P1", "P2", 50)
+                .buildTree();
+        update(stateStore).initialise(partitionsBefore);
+
+        // And a bulk import job
+        FakeBulkImportContext context = singleFileImportContext();
+
+        // When
+        splitter().preSplitPartitionsIfNecessary(tableProperties, partitionsBefore.getAllPartitions(), context);
+
+        // Then
+        assertThat(stateStore.getAllPartitions())
+                .withRepresentation(partitionsRepresentation())
+                .isEqualTo(partitionsBefore.getAllPartitions());
     }
 
     @Test
@@ -67,7 +84,6 @@ public class PartitionPreSplitterTest {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
         PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
         update(stateStore).initialise(partitionsBefore);
         setPartitionSketchData("root", List.of(
