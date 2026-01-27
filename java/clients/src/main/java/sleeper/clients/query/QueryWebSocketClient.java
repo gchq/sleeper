@@ -41,7 +41,6 @@ public class QueryWebSocketClient {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Adapter adapter;
     private final long timeoutMs;
-    private int numTimesWebSocketClosed = 0;
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
@@ -80,27 +79,6 @@ public class QueryWebSocketClient {
         } catch (RuntimeException e) {
             connection.close();
             throw e;
-        }
-    }
-
-    /**
-     * Run a query over a web socket.
-     *
-     * @param  query                the query to run
-     * @return                      the query results as an interator
-     * @throws InterruptedException if the thread gets interrupted
-     */
-    public QueryWebSocketIterator submitIteratorQuery(Query query) throws InterruptedException {
-        TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketIterator iterator = new QueryWebSocketIterator(timeoutMs, () -> numTimesWebSocketClosed++);
-        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, iterator);
-        Connection connection = adapter.connect(instanceProperties, listener);
-        try {
-            return iterator;
-        } catch (RuntimeException e) {
-            throw e;
-        } finally {
-            connection.close();
         }
     }
 
