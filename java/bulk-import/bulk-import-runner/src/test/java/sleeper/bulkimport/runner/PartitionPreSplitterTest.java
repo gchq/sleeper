@@ -90,10 +90,6 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 25)),
                 new Row(Map.of("key", 50)),
                 new Row(Map.of("key", 75))));
-        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "P1", "P2", 50)
-                .buildTree();
 
         // And a bulk import job
         FakeBulkImportContext context = singleFileImportContext();
@@ -104,7 +100,10 @@ public class PartitionPreSplitterTest {
         // Then
         assertThat(stateStore.getAllPartitions())
                 .withRepresentation(partitionsRepresentation())
-                .isEqualTo(partitionsAfter.getAllPartitions());
+                .isEqualTo(new PartitionsBuilder(tableProperties)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "P1", "P2", 50)
+                        .buildList());
     }
 
     @Test
