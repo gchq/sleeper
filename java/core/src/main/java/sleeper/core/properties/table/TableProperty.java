@@ -626,7 +626,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.table.bulk.import.partition.splitting.attempts")
-            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number of leaf partitions. ")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
             .defaultProperty(DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")

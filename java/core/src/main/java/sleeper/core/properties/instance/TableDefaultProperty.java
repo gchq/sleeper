@@ -204,7 +204,9 @@ public interface TableDefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.bulk.import.partition.splitting.attempts")
-            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number of leaf partitions. ")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
