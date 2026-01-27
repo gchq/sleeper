@@ -62,6 +62,7 @@ public class EmrServerlessBulkImportST {
     @Test
     void shouldBulkImportOneRowWithEmrServerlessDirectly(SleeperDsl sleeper) {
         // Given
+        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,

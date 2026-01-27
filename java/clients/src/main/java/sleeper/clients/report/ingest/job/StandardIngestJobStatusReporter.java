@@ -40,7 +40,6 @@ import java.util.Map;
 
 import static sleeper.clients.report.job.StandardJobRunReporter.printUpdateType;
 import static sleeper.clients.report.job.StandardJobRunReporter.updatePrinters;
-import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 
 /**
@@ -225,9 +224,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             row.value(stateField, run.getStatusType());
             row.value(addedFilesCount, run.getFilesWrittenAndAdded().getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
-            if (run.getStatusType().equals(FAILED)) {
-                row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons());
-            }
+            row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasonsDisplay(30));
         }));
     }
 

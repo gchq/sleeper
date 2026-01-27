@@ -96,4 +96,9 @@ public class AggregatedTaskJobRuns implements JobRunReport {
         }
     }
 
+    @Override
+    public List<String> getFailureReasons() {
+        return List.of();
+    }
+
 }

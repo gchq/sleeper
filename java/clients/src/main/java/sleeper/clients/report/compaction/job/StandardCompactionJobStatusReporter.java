@@ -207,9 +207,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
                 runReporter.writeRunFields(run, row);
-                if (run.getStatusType().equals(CompactionJobStatusType.FAILED)) {
-                    row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons());
-                }
+                row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasonsDisplay(30));
             }));
         }
     }
