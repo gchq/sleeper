@@ -51,7 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
@@ -75,11 +75,6 @@ public class MultiThreadedStateStoreCommitter {
     private StateStoreCommitter committer;
     private PollWithRetries throttlingRetriesConfig;
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
-
-    public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName) {
-        this(s3Client, dynamoClient, sqsClient, configBucketName, null);
-        this.init();
-    }
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
         this.s3Client = s3Client;
@@ -114,15 +109,16 @@ public class MultiThreadedStateStoreCommitter {
      * Apply asynchronous commits from the committer SQS queue.
      */
     public void run() {
-        runUntil(() -> false);
+        runUntil(20, response -> false);
     }
 
     /**
      * Apply asynchronous commits from the committer SQS queue until a particular condition is satisfied.
      *
-     * @param  shouldStopRunning A function that returns true when the committer should stop processing commit requests
+     * @param waitTimeSeconds   the amount of time to wait for a message from the queue
+     * @param shouldStopRunning a function that returns true when the committer should stop processing commit requests
      */
-    public void runUntil(Supplier<Boolean> shouldStopRunning) {
+    public void runUntil(int waitTimeSeconds, Function<ReceiveMessageResponse, Boolean> shouldStopRunning) {
 
         Instant startedAt = Instant.now();
         Instant lastReceivedCommitsAt = Instant.now();
@@ -132,26 +128,31 @@ public class MultiThreadedStateStoreCommitter {
         }
 
         try {
-            while (!shouldStopRunning.get()) {
-                ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+            ReceiveMessageResponse response = null;
+            while (response == null || !shouldStopRunning.apply(response)) {
+                response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                         .queueUrl(qUrl)
                         .maxNumberOfMessages(10)
-                        .waitTimeSeconds(20)
+                        .waitTimeSeconds(waitTimeSeconds)
                         // TODO: Need to deal with commits potentially taking longer than this visibility threshold
                         .visibilityTimeout(15 * 60)
                         .build());
-
-                if (response.hasMessages()) {
-                    lastReceivedCommitsAt = Instant.now();
-                    if (committer == null) {
-                        init();
-                    }
-                }
 
                 LOGGER.info("Received {} messages from queue, have been running for {}, last received commits {} ago",
                         response.messages().size(),
                         LoggedDuration.withShortOutput(startedAt, Instant.now()),
                         LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
+
+                if (!response.hasMessages()) {
+                    continue;
+                }
+                lastReceivedCommitsAt = Instant.now();
+
+                // Only initialise after we receive the first messages, because the instance properties may not have
+                // been written to the config bucket yet when we first start up.
+                if (committer == null) {
+                    init();
+                }
 
                 Map<String, List<StateStoreCommitRequestWithSqsReceipt>> messagesByTableId = response.messages().stream()
                         .map(message -> {
