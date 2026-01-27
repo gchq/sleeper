@@ -40,7 +40,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -240,11 +239,9 @@ public class StateStoreProviderTest {
         void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
             provideMemoryStates(
-                    initMaxMemory(100),
                     jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
                     jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
 
@@ -263,11 +260,9 @@ public class StateStoreProviderTest {
         void shouldNotFreeUpHeapSpaceWhenEnoughIsFreeAlready() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
             provideMemoryStates(
-                    initMaxMemory(100),
                     jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
 
             // When
@@ -285,7 +280,6 @@ public class StateStoreProviderTest {
         void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButCacheIsAlreadyEmpty() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
             fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
@@ -301,7 +295,6 @@ public class StateStoreProviderTest {
         void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButTableIsRequired() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
             fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
@@ -321,12 +314,10 @@ public class StateStoreProviderTest {
         void shouldRemoveOtherTableWhenLeastRecentlyUsedIsRequired() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table1 = createTable("table1", "test-table-1");
             TableProperties table2 = createTable("table2", "test-table-2");
             createStateStores(table1, table2);
             provideMemoryStates(
-                    initMaxMemory(100),
                     jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
                     jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
 
@@ -347,13 +338,11 @@ public class StateStoreProviderTest {
         void shouldRemoveLeastRecentlyUsedButNotOldestTableWhenLeastRecentlyUsedIsRequired() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table1 = createTable("table1", "test-table-1");
             TableProperties table2 = createTable("table2", "test-table-2");
             TableProperties table3 = createTable("table3", "test-table-3");
             createStateStores(table1, table2, table3);
             provideMemoryStates(
-                    initMaxMemory(100),
                     jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
                     jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
 
@@ -401,66 +390,12 @@ public class StateStoreProviderTest {
         void shouldThrowExceptionWhenRequiredFreeSpaceIsGreaterThanMax() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "150");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
-            fixMemoryState(initMaxMemory(100));
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 10, 100));
             StateStoreProvider provider = provider();
 
             // When / Then
             assertThatThrownBy(() -> provider.ensureEnoughHeapSpaceAvailable(Set.of()))
                     .isInstanceOf(IllegalArgumentException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Calculate target amount of memory to keep free")
-    class TargetMemoryToKeepFree {
-
-        @Test
-        void shouldUseMinWhenPercentIsLessSpace() {
-            // Given
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
-            fixMemoryState(initMaxMemory(100)); // 10 percent of 100 is 10
-
-            // When / Then
-            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
-                    .isEqualTo(20);
-        }
-
-        @Test
-        void shouldUsePercentWhenItIsMoreSpaceThanMin() {
-            // Given
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "25");
-            fixMemoryState(initMaxMemory(100)); // 25 percent of 100 is 25
-
-            // When / Then
-            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
-                    .isEqualTo(25);
-        }
-
-        @Test
-        void shouldUseMinMB() {
-            // Given
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "100M");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
-            fixMemoryState(initMaxMemory(500 * 1024 * 1024)); // 10 percent of 500MB is 50MB
-
-            // When / Then
-            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
-                    .isEqualTo(100 * 1024 * 1024);
-        }
-
-        @Test
-        void shouldUsePercentOfMB() {
-            // Given
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "15M");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
-            fixMemoryState(initMaxMemory(500 * 1024 * 1024)); // 10 percent of 500MB is 50MB
-
-            // When / Then
-            assertThat(StateStoreProvider.getMemoryBytesToKeepFree(instanceProperties, memoryProvider))
-                    .isEqualTo(50 * 1024 * 1024);
         }
     }
 
@@ -472,13 +407,11 @@ public class StateStoreProviderTest {
         void shouldGC() {
             // Given
             instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
-            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE, "10");
             TableProperties table = createTable("table", "my-table");
             createStateStores(table);
 
             // And
             memoryProvider = mock(JvmMemoryUse.Provider.class);
-            when(memoryProvider.maxMemory()).thenReturn(100L);
             when(memoryProvider.getMemory()).thenReturn(
                     jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
                     jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
@@ -490,7 +423,6 @@ public class StateStoreProviderTest {
 
             // Then garbage collection is triggered before re-checking memory
             InOrder order = inOrder(memoryProvider);
-            order.verify(memoryProvider).maxMemory();
             order.verify(memoryProvider).getMemory();
             order.verify(memoryProvider).gc();
             order.verify(memoryProvider).getMemory();
@@ -526,10 +458,6 @@ public class StateStoreProviderTest {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
         };
-    }
-
-    private JvmMemoryUse initMaxMemory(long maxMemory) {
-        return new JvmMemoryUse(0, 0, maxMemory);
     }
 
     private JvmMemoryUse jvmAllocatedFreeAndMaxAllocated(long totalMemory, long freeMemory, long maxMemory) {

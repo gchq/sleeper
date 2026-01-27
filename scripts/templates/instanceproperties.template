@@ -230,13 +230,6 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.statestore.provider.min.heap.target.amount=100M
 
-# The percentage of the total heap space that the state store provider should try to keep available,
-# as a minimum, when sizing the cache to the available memory. This will usually only be used in cases
-# where the state store cache is the main use of memory, currently only in a state store committer on
-# the EC2 platform. This affects how many state stores can be cached in memory.
-# (default value shown below, uncomment to set a value)
-# sleeper.statestore.provider.min.heap.target.percentage=1
-
 # This specifies whether point in time recovery is enabled for the DynamoDB state store. This is set
 # on the DynamoDB tables.
 # (default value shown below, uncomment to set a value)

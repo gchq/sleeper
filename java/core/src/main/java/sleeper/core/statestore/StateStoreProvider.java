@@ -33,7 +33,6 @@ import java.util.Queue;
 
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
@@ -56,7 +55,7 @@ public class StateStoreProvider {
     }
 
     public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory, JvmMemoryUse.Provider memoryProvider) {
-        this(stateStoreFactory, memoryProvider, instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), getMemoryBytesToKeepFree(instanceProperties, memoryProvider));
+        this(stateStoreFactory, memoryProvider, instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), instanceProperties.getBytes(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT));
     }
 
     public StateStoreProvider(Factory stateStoreFactory, JvmMemoryUse.Provider memoryProvider, int cacheSize, long memoryBytesToKeepFree) {
@@ -64,19 +63,6 @@ public class StateStoreProvider {
         this.memoryProvider = memoryProvider;
         this.cacheSize = cacheSize;
         this.memoryBytesToKeepFree = memoryBytesToKeepFree;
-    }
-
-    /**
-     * Finds the amount of memory we should keep free when sizing the cache to the available memory.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  memoryProvider     the memory provider to find the maximum memory allocation
-     * @return                    the amount of memory in bytes to keep free
-     */
-    public static long getMemoryBytesToKeepFree(InstanceProperties instanceProperties, JvmMemoryUse.Provider memoryProvider) {
-        long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT);
-        long heapSpacePercToKeepFree = memoryProvider.maxMemory() * instanceProperties.getLong(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_PERCENTAGE) / 100;
-        return Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
     }
 
     /**
