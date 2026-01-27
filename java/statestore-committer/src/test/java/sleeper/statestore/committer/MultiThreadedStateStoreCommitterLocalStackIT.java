@@ -59,29 +59,20 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class MultiThreadedStateStoreCommitterLocalStackIT extends LocalStackTestBase {
 
-    private InstanceProperties instanceProperties;
-    private TablePropertiesStore tablePropertiesStore;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final StateStoreCommitRequestSender commitRequestSender = new SqsFifoStateStoreCommitRequestSender(
+            instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     private final Schema schema = createSchemaWithKey("key", new LongType());
-    private StateStoreCommitRequestSender commitRequestSender;
-    private String commitQ;
+    private String commitQ = createFifoQueueGetUrl();
 
     @BeforeEach
     void setUp() {
-        commitQ = createFifoQueueGetUrl();
-
-        instanceProperties = createTestInstanceProperties();
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, commitQ);
-
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-        tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        commitRequestSender = new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
