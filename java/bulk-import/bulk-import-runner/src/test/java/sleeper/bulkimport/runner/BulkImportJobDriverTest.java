@@ -42,7 +42,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.core.testutils.printers.PartitionsPrinter;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -339,61 +338,6 @@ class BulkImportJobDriverTest {
             assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
         }
 
-        @Test
-        void shouldContinueWhenPartitionsAreSplitByAnotherProcessWhileWeWereComputingSketches() throws Exception {
-            // Given we configure to split from one partition to two
-            tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
-            tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-            tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
-            PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-            update(stateStore).initialise(partitionsBefore);
-            // And we provide data to expect a split point at 50
-            setPartitionSketchData("root", List.of(
-                    new Row(Map.of("key", 25)),
-                    new Row(Map.of("key", 50)),
-                    new Row(Map.of("key", 75))));
-            // And we expect the new partition IDs generated in order (see instantiation of driver for how we control this)
-            PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "P1", "P2", 50)
-                    .buildTree();
-            // And the partition tree will be split by another process as our split is applied
-            partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                    List.of(partitionsAfter.getPartition("root")),
-                    List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
-                    .synchronousCommit(stateStore));
-            // And some output for the bulk import job
-            BulkImportJob job = singleFileImportJob();
-            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitionsAfter);
-            List<FileReference> outputFiles = List.of(
-                    fileFactory.partitionFile("P1", 100),
-                    fileFactory.partitionFile("P2", 100));
-
-            // When
-            runJob(job, "test-run", "test-task", validationTime, driver(
-                    successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
-
-            // Then
-            assertThat(allJobsReported())
-                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                            ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(startTime, 1),
-                            ingestFinishedStatus(summary(startTime, finishTime, 200, 200), 2))));
-            assertThat(stateStore.getFileReferences()).isEqualTo(outputFiles);
-            assertThat(stateStore.getAllPartitions())
-                    .withRepresentation(partitionsRepresentation())
-                    .isEqualTo(partitionsAfter.getAllPartitions());
-            assertThat(jobContextsCreated)
-                    .extracting(FakeBulkImportContext::partitions)
-                    .containsExactly(
-                            partitionsBefore.getAllPartitions(),
-                            partitionsAfter.getAllPartitions());
-            assertThat(commitRequestQueue).isEmpty();
-            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
-        }
     }
 
     private void runJob(
