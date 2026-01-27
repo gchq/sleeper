@@ -59,6 +59,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -623,6 +624,10 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
+    TableProperty BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.table.bulk.import.partition.splitting.attempts")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number of leaf partitions. ")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
             .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)

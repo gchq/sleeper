@@ -1918,6 +1918,11 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.bulk.import.min.leaf.partitions=64
 
+# Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number
+# of leaf partitions. 
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.bulk.import.partition.splitting.attempts=3
+
 # Specifies the minimum total file size required for an ingest job to be batched and sent. An ingest
 # job will be created if the batcher runs while this much data is waiting, and the minimum number of
 # files is also met.
