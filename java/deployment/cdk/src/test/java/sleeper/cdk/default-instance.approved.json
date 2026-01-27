@@ -2096,6 +2096,12 @@
                   "Outputs.TestInstanceCompactionCompactionCommitQueue4935D065Arn"
                 ]
               },
+              "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId": {
+                "Fn::GetAtt": [
+                  "PoliciesNestedStackPoliciesNestedStackResource62C569F8",
+                  "Outputs.TestInstancePoliciesECSC2F932F2GroupId"
+                ]
+              },
               "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref": {
                 "Fn::GetAtt": [
                   "QueryNestedStackQueryNestedStackResource4085691D",
@@ -5086,6 +5092,14 @@
         }
       },
       "Outputs": {
+        "TestInstancePoliciesECSC2F932F2GroupId": {
+          "Value": {
+            "Fn::GetAtt": [
+              "ECSD299DF54",
+              "GroupId"
+            ]
+          }
+        },
         "TestInstancePoliciesAdminRole0994A69EArn": {
           "Value": {
             "Fn::GetAtt": [
@@ -7099,6 +7113,30 @@
             "Roles": [
               {
                 "Ref": "AdminRole38563C57"
+              }
+            ]
+          }
+        },
+        "ECSD299DF54": {
+          "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "ECS security group",
+            "VpcId": "vpc-12345",
+            "SecurityGroupEgress": [
+              {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "Allow all outbound traffic by default",
+                "IpProtocol": "-1"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Policies"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -24495,6 +24533,9 @@
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn": {
           "Type": "String"
         },
+        "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId": {
+          "Type": "String"
+        },
         "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref": {
           "Type": "String"
         },
@@ -25023,6 +25064,10 @@
                   "\nsleeper.vpc\u003dvpc-12345\nsleeper.sqs.table.metrics.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn"
+                  },
+                  "\nsleeper.ecs.security.group\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId"
                   },
                   "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.url\u003d",
                   {
