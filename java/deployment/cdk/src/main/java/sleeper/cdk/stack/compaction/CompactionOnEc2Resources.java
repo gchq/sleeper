@@ -270,7 +270,7 @@ public class CompactionOnEc2Resources {
     private static ISecurityGroup addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
         LOGGER.info("ECS Scaling Group Id: " + instanceProperties.get(ECS_SECURITY_GROUP));
-        return SecurityGroup.fromLookupById(scope, "CompactionScalingSG" + index.getAndIncrement(),
+        return SecurityGroup.fromSecurityGroupId(scope, "CompactionScalingSG" + index.getAndIncrement(),
                 instanceProperties.get(ECS_SECURITY_GROUP));
     }
 
