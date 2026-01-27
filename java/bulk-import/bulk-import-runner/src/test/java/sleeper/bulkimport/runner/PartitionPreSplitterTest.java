@@ -126,6 +126,11 @@ public class PartitionPreSplitterTest {
         // TODO
     }
 
+    @Test
+    void shouldLimitNumberOfRetries() {
+        // TODO
+    }
+
     private void preSplitPartitionsIfNecessary() {
         splitter().preSplitPartitionsIfNecessary(tableProperties, stateStore.getAllPartitions(), singleFileImportContext());
     }
