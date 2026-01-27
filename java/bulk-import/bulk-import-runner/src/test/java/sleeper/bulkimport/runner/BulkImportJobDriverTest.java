@@ -18,7 +18,6 @@ package sleeper.bulkimport.runner;
 
 import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -341,7 +340,6 @@ class BulkImportJobDriverTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldContinueWhenPartitionsAreSplitByAnotherProcessWhileWeWereComputingSketches() throws Exception {
             // Given we configure to split from one partition to two
             tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);

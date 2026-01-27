@@ -37,6 +37,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
@@ -157,18 +158,24 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         PartitionTree tree = new PartitionTree(allPartitions);
         List<Partition> leafPartitions = tree.getLeafPartitions();
         int minLeafPartitions = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
-        if (leafPartitions.size() < minLeafPartitions) {
+        while (leafPartitions.size() < minLeafPartitions) {
             LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
             Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
-                    .createTransaction(tree, partitionIdToSketches)
-                    .synchronousCommit(stateStore);
-            return context.withPartitions(stateStore.getAllPartitions());
-        } else {
-            LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
-            return context;
+            try {
+                ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
+                        .createTransaction(tree, partitionIdToSketches)
+                        .synchronousCommit(stateStore);
+            } catch (StateStoreException sse) {
+                LOGGER.error("Failed to update state store, will retry splitting partition tree.", sse);
+            }
+            allPartitions = stateStore.getAllPartitions();
+            tree = new PartitionTree(allPartitions);
+            leafPartitions = tree.getLeafPartitions();
+            context = context.withPartitions(allPartitions);
         }
+        LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
+        return context;
     }
 
     private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
