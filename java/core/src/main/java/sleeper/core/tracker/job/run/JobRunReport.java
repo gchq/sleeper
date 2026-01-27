@@ -26,11 +26,6 @@ import java.util.List;
 public interface JobRunReport {
 
     /**
-     * Maximum length of the failure reasons within the reports to provide excessive column lengths.
-     */
-    int FAILURE_REASONS_MAX_LENGTH = 30;
-
-    /**
      * Retrieves the ID of the task that ran the job.
      *
      * @return the task ID
@@ -95,5 +90,23 @@ public interface JobRunReport {
      * @return the finished summary, or null if the run has not finished
      */
     JobRunSummary getFinishedSummary();
+
+    /**
+     * Retrieves descriptions of the reasons why the job run failed.
+     *
+     * @return the list of reasons for the failure
+     */
+    List<String> getFailureReasons();
+
+    /**
+     * Generates a string list detailing all the reasons provided why the job run failed. The length of the string
+     * created will be restricted to the given length.
+     *
+     * @param  maxLength the maximum length of the resulting string before it is concatenated
+     * @return           combined list of reasons for failure
+     */
+    default String getFailureReasonsDisplay(int maxLength) {
+        return JobRunFailureReasons.getFailureReasonsDisplay(maxLength, getFailureReasons());
+    }
 
 }
