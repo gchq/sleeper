@@ -33,12 +33,14 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.testutils.printers.PartitionsPrinter;
 import sleeper.sketches.Sketches;
+import sleeper.splitter.core.extend.InsufficientDataForPartitionSplittingException;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -81,8 +83,9 @@ public class PartitionPreSplitterTest {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        PartitionTree partitionsBefore = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-        update(stateStore).initialise(partitionsBefore);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
         setPartitionSketchData("root", List.of(
                 new Row(Map.of("key", 25)),
                 new Row(Map.of("key", 50)),
@@ -102,7 +105,20 @@ public class PartitionPreSplitterTest {
 
     @Test
     void shouldFailWhenNotEnoughDataIsPresent() {
-        // TODO
+        // Given we need 10 rows to split a partition, and we have 3
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 10);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 25)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 75))));
+
+        // When / Then
+        assertThatThrownBy(this::preSplitPartitionsIfNecessary)
+                .isInstanceOf(InsufficientDataForPartitionSplittingException.class);
     }
 
     @Test
