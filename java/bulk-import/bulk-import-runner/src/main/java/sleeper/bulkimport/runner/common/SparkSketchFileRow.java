@@ -30,7 +30,7 @@ import org.apache.spark.sql.types.StructType;
 public record SparkSketchFileRow(String partitionId, byte[] sketchFile) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
-    public static final String FILE_BYTE_ARRAY = "__fileName";
+    public static final String FILE_BYTE_ARRAY = "__sketchByteArray";
 
     /**
      * Reads a Spark row containing a reference to a sketch file.
