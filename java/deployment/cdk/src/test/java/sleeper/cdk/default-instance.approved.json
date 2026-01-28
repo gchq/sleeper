@@ -7120,7 +7120,7 @@
         "ECSD299DF54": {
           "Type": "AWS::EC2::SecurityGroup",
           "Properties": {
-            "GroupDescription": "ECS security group",
+            "GroupDescription": "Security group for ECS tasks and services that don\u0027t need to serve incomming requests.",
             "VpcId": "vpc-12345",
             "SecurityGroupEgress": [
               {
@@ -25065,10 +25065,6 @@
                   {
                     "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn"
                   },
-                  "\nsleeper.ecs.security.group\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId"
-                  },
                   "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Ref"
@@ -25153,7 +25149,11 @@
                   {
                     "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Ref"
                   },
-                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.query.dlq.url\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.ecs.security.group.id\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId"
+                  },
+                  "\nsleeper.query.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Ref"
                   },
