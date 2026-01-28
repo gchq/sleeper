@@ -203,6 +203,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
+
+            if (split.length % 2 != 0) { //Check for even number of tag name and values
+                throw new RuntimeException("Tags element didn't contain an even number of elements." +
+                        "Ensure tag name and value are seperated by a ','");
+            }
+
             for (int i = 0; i < split.length; i += 2) {
                 tags.put(split[i], split[i + 1]);
             }
