@@ -56,6 +56,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy clearInstancePolicy;
     private final ManagedPolicy adminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
+    private SecurityGroup ecsSecurityGroup;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -145,6 +146,10 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
+    public SecurityGroup getEcsSecurityGroup() {
+        return ecsSecurityGroup;
+    }
+
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
                 .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
@@ -201,11 +206,11 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     private void createEcsSecurityGroup(Construct scope, InstanceProperties instanceProperties) {
-        SecurityGroup securityGroup = SecurityGroup.Builder.create(scope, "ECS")
+        ecsSecurityGroup = SecurityGroup.Builder.create(scope, "ECS")
                 .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build()))
-                .description("ECS security group")
+                .description("Security group for ECS tasks and services that don't need to serve incomming requests.")
                 .allowAllOutbound(true)
                 .build();
-        instanceProperties.set(ECS_SECURITY_GROUP, securityGroup.getSecurityGroupId());
+        instanceProperties.set(ECS_SECURITY_GROUP, ecsSecurityGroup.getSecurityGroupId());
     }
 }

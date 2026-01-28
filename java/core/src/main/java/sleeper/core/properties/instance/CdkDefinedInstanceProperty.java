@@ -74,8 +74,8 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Security Groups
-    CdkDefinedInstanceProperty ECS_SECURITY_GROUP = Index.propertyBuilder("sleeper.ecs.security.group")
-            .description("The security group to be used for ECS tasks and services.")
+    CdkDefinedInstanceProperty ECS_SECURITY_GROUP = Index.propertyBuilder("sleeper.ecs.security.group.id")
+            .description("The security group ID to be used for ECS tasks and services.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 

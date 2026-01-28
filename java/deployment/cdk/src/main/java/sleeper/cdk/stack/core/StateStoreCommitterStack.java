@@ -68,7 +68,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
@@ -113,7 +112,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, policiesStack, commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, policiesStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -155,7 +154,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            StateStoreStacks stateStoreStacks, ManagedPoliciesStack policiesStack, Queue commitQueue) {
+            StateStoreStacks stateStoreStacks, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
@@ -178,6 +177,7 @@ public class StateStoreCommitterStack extends NestedStack {
                                 .machineImage(EcsOptimizedImage.amazonLinux2023(lookupAmiHardwareType(instanceType.getArchitecture())))
                                 .requireImdsv2(true)
                                 .userData(UserData.forLinux())
+                                .securityGroup(ecsSecurityGroup)
                                 .role(Role.Builder.create(this, "role")
                                         .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2.amazonaws.com"))
                                         .build())
@@ -191,8 +191,6 @@ public class StateStoreCommitterStack extends NestedStack {
                         .defaultInstanceWarmup(Duration.seconds(30))
                         .newInstancesProtectedFromScaleIn(false)
                         .updatePolicy(UpdatePolicy.rollingUpdate())
-                        .securityGroup(SecurityGroup.fromSecurityGroupId(policiesStack, instanceId,
-                                instanceProperties.get(ECS_SECURITY_GROUP)))
                         .build())
                 .instanceWarmupPeriod(30)
                 .enableManagedTerminationProtection(false)
