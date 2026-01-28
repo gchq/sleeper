@@ -81,6 +81,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         env:
           TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
+          TRIVY_SHOW_SUPPRESSED: true
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: '${{ inputs.imageName }}:test'
