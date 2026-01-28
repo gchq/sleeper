@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
 import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
 import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
 import software.amazon.awscdk.services.ec2.IMachineImage;
-import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.InstanceArchitecture;
 import software.amazon.awscdk.services.ec2.InstanceClass;
@@ -53,7 +52,6 @@ import software.amazon.awscdk.services.iam.InstanceProfile;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.CfnPermission;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.constructs.Construct;
 import software.constructs.IDependable;
 
 import sleeper.cdk.jars.SleeperLambdaCode;
@@ -72,12 +70,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -167,7 +163,7 @@ public class CompactionOnEc2Resources {
                         .build())
                 .instanceProfile(InstanceProfile.Builder.create(stack, "CompactionScalingInstanceProfile").build())
                 .build();
-        scalingLaunchTemplate.addSecurityGroup(addSecurityGroupReferences(stack, instanceProperties));
+
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(stack, "CompactionScalingGroup")
                 .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
@@ -266,12 +262,4 @@ public class CompactionOnEc2Resources {
                 throw new IllegalArgumentException("Unrecognised architecture: " + architecture);
         }
     }
-
-    private static ISecurityGroup addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {
-        AtomicInteger index = new AtomicInteger(1);
-        LOGGER.info("ECS Scaling Group Id: " + instanceProperties.get(ECS_SECURITY_GROUP));
-        return SecurityGroup.fromSecurityGroupId(scope, "CompactionScalingSG" + index.getAndIncrement(),
-                instanceProperties.get(ECS_SECURITY_GROUP));
-    }
-
 }
