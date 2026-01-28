@@ -79,7 +79,7 @@ public class ManagedPoliciesStack extends NestedStack {
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
 
-        createEcsSecurityGroup(this, instanceProperties.get(VPC_ID));
+        createEcsSecurityGroup(this, instanceProperties);
     }
 
     public SleeperInstanceRoles createRoles() {
@@ -201,9 +201,9 @@ public class ManagedPoliciesStack extends NestedStack {
         return role;
     }
 
-    private void createEcsSecurityGroup(Construct scope, String vpcId) {
+    private void createEcsSecurityGroup(Construct scope, InstanceProperties instanceProperties) {
         SecurityGroup securityGroup = SecurityGroup.Builder.create(scope, "ECS")
-                .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
+                .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build()))
                 .description("ECS security group")
                 .allowAllOutbound(true)
                 .build();
