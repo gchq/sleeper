@@ -67,13 +67,26 @@ public class StateStoreProvider {
 
     /**
      * Creates a state store provider with no limit to the number of tables that can be cached. The cache must be
-     * managed explicitly by calling methods on the provider.
+     * managed explicitly by calling methods on the provider. Note that {@link #ensureEnoughHeapSpaceAvailable()} will
+     * not have a target amount of space, so will never free any space.
      *
      * @param  stateStoreFactory the factory to create state store objects
      * @return                   the provider
      */
     public static StateStoreProvider noCacheSizeLimit(Factory stateStoreFactory) {
         return new StateStoreProvider(stateStoreFactory, JvmMemoryUse.getProvider(), -1, -1);
+    }
+
+    /**
+     * Creates a state store provider that only removes cached tables on calls to ensure enough heap space is available.
+     * This must be triggered explicitly by calling {@link #ensureEnoughHeapSpaceAvailable()}.
+     *
+     * @param  instanceProperties the instance properties to configure the minimum heap space
+     * @param  stateStoreFactory  the factory to create state store objects
+     * @return                    the provider
+     */
+    public static StateStoreProvider memoryLimitOnly(InstanceProperties instanceProperties, Factory stateStoreFactory) {
+        return new StateStoreProvider(stateStoreFactory, JvmMemoryUse.getProvider(), -1, instanceProperties.getBytes(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT));
     }
 
     /**

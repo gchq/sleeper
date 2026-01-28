@@ -97,7 +97,7 @@ public class MultiThreadedStateStoreCommitter {
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
 
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoClient);
-        stateStoreProvider = StateStoreProvider.noCacheSizeLimit(stateStoreFactory);
+        stateStoreProvider = StateStoreProvider.memoryLimitOnly(instanceProperties, stateStoreFactory);
         transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         committer = new StateStoreCommitter(
                 tablePropertiesProvider,
