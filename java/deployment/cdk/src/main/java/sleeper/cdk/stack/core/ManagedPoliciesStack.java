@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.stack.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -48,7 +46,6 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ManagedPoliciesStack.class);
     private final InstanceProperties instanceProperties;
     private final ManagedPolicy directIngestPolicy;
     private final ManagedPolicy ingestByQueuePolicy;
@@ -209,7 +206,6 @@ public class ManagedPoliciesStack extends NestedStack {
                 .description("ECS security group")
                 .allowAllOutbound(true)
                 .build();
-        LOGGER.info("Setup ECS Security group with id: " + securityGroup.getSecurityGroupId());
         instanceProperties.set(ECS_SECURITY_GROUP, securityGroup.getSecurityGroupId());
     }
 }

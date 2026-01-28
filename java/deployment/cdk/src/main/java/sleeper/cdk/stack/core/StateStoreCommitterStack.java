@@ -113,7 +113,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue, policiesStack);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, policiesStack, commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -154,8 +154,8 @@ public class StateStoreCommitterStack extends NestedStack {
         return queue;
     }
 
-    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
-            Queue commitQueue, ManagedPoliciesStack policiesStack) {
+    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+            StateStoreStacks stateStoreStacks, ManagedPoliciesStack policiesStack, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()

@@ -337,7 +337,6 @@ public class RunDataProcessingTasks {
     private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
                 .subnets(instanceProperties.getList(SUBNETS))
-                //Read new instance property
                 .securityGroups(instanceProperties.get(ECS_SECURITY_GROUP))
                 .build();
         return NetworkConfiguration.builder()
