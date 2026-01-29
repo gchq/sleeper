@@ -139,18 +139,19 @@ public class MultiThreadedStateStoreCommitter {
                         .visibilityTimeout(15 * 60)
                         .build());
 
+                // Only initialise after we receive the first messages, because the instance properties may not have
+                // been written to the config bucket yet when we first start up.
+                if (response.hasMessages()) {
+                    lastReceivedCommitsAt = Instant.now();
+                    if (committer == null) {
+                        init();
+                    }
+                }
+
                 LOGGER.info("Received {} messages from queue, have been running for {}, last received commits {} ago",
                         response.messages().size(),
                         LoggedDuration.withShortOutput(startedAt, Instant.now()),
                         LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
-
-                lastReceivedCommitsAt = Instant.now();
-
-                // Only initialise after we receive the first messages, because the instance properties may not have
-                // been written to the config bucket yet when we first start up.
-                if (response.hasMessages() && committer == null) {
-                    init();
-                }
 
                 Map<String, List<StateStoreCommitRequestWithSqsReceipt>> messagesByTableId = response.messages().stream()
                         .map(message -> {
