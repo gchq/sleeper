@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 // Slow because it needs to do two CDK deployments, one to add the EMR cluster and one to remove it.
 // Each CDK deployment takes around 20 minutes.
 // If we leave the EMR cluster deployed, the costs for the EMR instances add up to hundreds of pounds quite quickly.
-// With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 rows.
+// With the CDK deployments, the cluster doesn't stay around for very long as it only imports a small number of rows.
 @Slow1
 public class EmrPersistentBulkImportST {
 
