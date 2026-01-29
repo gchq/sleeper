@@ -20,14 +20,22 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
+import sleeper.sketches.Sketches;
+import sleeper.sketches.SketchesSerDe;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
 /**
  * A reference to a sketch file written during a Spark job. Used to calculate split points when pre-splitting
  * partitions.
  *
  * @param partitionId the ID of the Sleeper partition that the sketch file covers
- * @param sketchFile  the sketch file held as a serialised byte array
+ * @param sketchBytes the sketch file held as a serialised byte array
  */
-public record SparkSketchBytesRow(String partitionId, byte[] sketchFile) {
+public record SparkSketchBytesRow(String partitionId, byte[] sketchBytes) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILE_BYTE_ARRAY = "__sketchByteArray";
@@ -48,7 +56,7 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchFile) {
      * @return the Spark row
      */
     public Row toSparkRow() {
-        return RowFactory.create(partitionId, sketchFile);
+        return RowFactory.create(partitionId, sketchBytes);
     }
 
     /**
@@ -62,4 +70,13 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchFile) {
                 .add(FILE_BYTE_ARRAY, DataTypes.BinaryType);
     }
 
+    public Sketches parseBytesAsSketches(SketchesSerDe serDe) {
+        try {
+            try (DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(sketchBytes))) {
+                return serDe.deserialise(dataInputStream);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }
