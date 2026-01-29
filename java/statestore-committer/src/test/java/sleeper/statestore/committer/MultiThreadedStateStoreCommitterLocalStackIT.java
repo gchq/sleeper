@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
-import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -48,7 +47,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -59,85 +59,58 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class MultiThreadedStateStoreCommitterLocalStackIT extends LocalStackTestBase {
 
-    private static final long DEFAULT_TIMEOUT = 60 * 1000;
-
-    private InstanceProperties instanceProperties;
-    private TablePropertiesStore tablePropertiesStore;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final StateStoreCommitRequestSender commitRequestSender = new SqsFifoStateStoreCommitRequestSender(
+            instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     private final Schema schema = createSchemaWithKey("key", new LongType());
-    private StateStoreCommitRequestSender commitRequestSender;
-    private String commitQ;
+    private String commitQ = createFifoQueueGetUrl();
 
     @BeforeEach
     void setUp() {
-        commitQ = createFifoQueueGetUrl();
-
-        instanceProperties = createTestInstanceProperties();
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, commitQ);
-
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-        tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        commitRequestSender = new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Test
-    void shouldWorkWhenSQSQueueUrlProvidedAsArg() throws Exception {
+    void shouldCommitOneTransaction() throws Exception {
+        // Given
         TableProperties table = createTable();
         List<String> expectedFiles = sendAddFilesCommitRequest(table, 5);
 
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucket, commitQ);
-        runCommitterUntilQueueEmptyOrTimeout(committer);
+        // When
+        runCommitterUntilQueueEmpty();
 
+        // Then
         List<String> files = getTableFileNames(table);
         assertThat(files).containsExactlyInAnyOrderElementsOf(expectedFiles);
+    }
+
+    @Test
+    void shouldProcessNoMessages() {
+        // When / Then
+        assertThatCode(() -> runCommitterUntilQueueEmpty())
+                .doesNotThrowAnyException();
     }
 
     @Test
     void shouldFailWhenUnableToGetToSQSQueueUrlProvidedAsArg() {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucket, "wrong-url");
+        // Given
+        commitQ = "wrong-url";
 
-        assertThatExceptionOfType(QueueDoesNotExistException.class)
-            .isThrownBy(() -> committer.run());
-    }
-
-    @Test
-    void shouldWorkWhenSQSQueueUrlObtainedFromInstanceProperties() throws Exception {
-        TableProperties table = createTable();
-        List<String> expectedFiles = sendAddFilesCommitRequest(table, 5);
-
-        runCommitterUntilQueueEmptyOrTimeout();
-
-        List<String> files = getTableFileNames(table);
-        assertThat(files).containsExactlyInAnyOrderElementsOf(expectedFiles);
-    }
-
-    @Test
-    void shouldFailWhenUnableToGetToSQSQueueUrlObtainedFromInstanceProperties() {
-        TableProperties table = createTable();
-        sendAddFilesCommitRequest(table, 5);
-
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, "wrong-url");
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucket);
-
-        assertThatExceptionOfType(QueueDoesNotExistException.class)
-            .isThrownBy(() -> runCommitterUntilQueueEmptyOrTimeout(committer));
+        // When / Then
+        assertThatThrownBy(() -> runCommitterUntilQueueEmpty())
+                .isInstanceOf(QueueDoesNotExistException.class);
     }
 
     @Test
     void shouldProcessCommitsForMultipleTables() throws Exception {
+        // Given
         TableProperties table1 = createTable();
         TableProperties table2 = createTable();
         TableProperties table3 = createTable();
@@ -147,8 +120,10 @@ public class MultiThreadedStateStoreCommitterLocalStackIT extends LocalStackTest
         List<String> table3ExpectedFiles = sendAddFilesCommitRequest(table3, 5);
         table1ExpectedFiles.addAll(sendAddFilesCommitRequest(table1, 5));
 
-        runCommitterUntilQueueEmptyOrTimeout();
+        // When
+        runCommitterUntilQueueEmpty();
 
+        // Then
         List<String> table1Files = getTableFileNames(table1);
         List<String> table2Files = getTableFileNames(table2);
         List<String> table3Files = getTableFileNames(table3);
@@ -191,32 +166,10 @@ public class MultiThreadedStateStoreCommitterLocalStackIT extends LocalStackTest
         return tableProperties;
     }
 
-    private void runCommitterUntilQueueEmptyOrTimeout() throws Exception {
-        runCommitterUntilQueueEmptyOrTimeout(DEFAULT_TIMEOUT);
-    }
-
-    private void runCommitterUntilQueueEmptyOrTimeout(long timeoutInMillis) throws Exception {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucket);
-        runCommitterUntilQueueEmptyOrTimeout(committer, timeoutInMillis);
-    }
-
-    private void runCommitterUntilQueueEmptyOrTimeout(MultiThreadedStateStoreCommitter committer) throws Exception {
-        runCommitterUntilQueueEmptyOrTimeout(committer, DEFAULT_TIMEOUT);
-    }
-
-    private void runCommitterUntilQueueEmptyOrTimeout(MultiThreadedStateStoreCommitter committer, long timeoutInMillis) throws Exception {
-        long startedAt = System.currentTimeMillis();
-        committer.runUntil(() -> getCommitQueueMessageCount() == 0 || System.currentTimeMillis() - startedAt >= timeoutInMillis);
-    }
-
-    private int getCommitQueueMessageCount() {
-        QueueMessageCount counts = QueueMessageCount
-            .withSqsClient(sqsClient)
-            .getQueueMessageCount(commitQ);
-        int totalMessageCount = counts.getApproximateNumberOfMessages() + counts.getApproximateNumberOfMessagesNotVisible();
-        System.err.println("Message Count = " + totalMessageCount);
-        return totalMessageCount;
+    private void runCommitterUntilQueueEmpty() throws Exception {
+        MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(
+                s3Client, dynamoClient, sqsClient, instanceProperties.get(CONFIG_BUCKET), commitQ);
+        committer.runUntil(0, response -> !response.hasMessages());
     }
 
 }

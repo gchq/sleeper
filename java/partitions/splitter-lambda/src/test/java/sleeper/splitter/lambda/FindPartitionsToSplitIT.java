@@ -172,7 +172,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
 
     private FindPartitionsToSplit findPartitionsToSplit() {
         return new FindPartitionsToSplit(instanceProperties,
-                new FixedStateStoreProvider(tableProperties, stateStore),
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
