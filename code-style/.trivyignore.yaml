@@ -1,5 +1,7 @@
 
 vulnerabilities:
-  # No known vulnerabilties.
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
+  - id: CVE-2025-61726
+  - id: CVE-2025-61728
+  - id: CVE-2025-61730
