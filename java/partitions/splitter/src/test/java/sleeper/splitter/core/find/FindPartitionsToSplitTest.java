@@ -197,7 +197,7 @@ public class FindPartitionsToSplitTest {
 
     private List<SplitPartitionJobDefinition> findPartitionsToSplit() throws Exception {
         List<SplitPartitionJobDefinition> jobs = new ArrayList<>();
-        new FindPartitionsToSplit(instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore), jobs::add)
+        new FindPartitionsToSplit(instanceProperties, FixedStateStoreProvider.singleTable(tableProperties, stateStore), jobs::add)
                 .run(tableProperties);
         return jobs;
     }
