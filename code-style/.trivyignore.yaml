@@ -1,8 +1,5 @@
 
 vulnerabilities:
-  # Maven incorrectly includes a test dependency in the jar. See issue https://github.com/gchq/sleeper/issues/6108.
-  - id: CVE-2024-6763
-
-  # AWS Lambda Runtime Interface Emulator uses an old version of Golang, with vulnerabilities in its standard library
-  - id: CVE-2025-61729
-  - id: CVE-2025-61727
+  # No known vulnerabilties.
+  # You can suppress known vulnerabilities here like this:
+  # - id: CVE-2000-12345

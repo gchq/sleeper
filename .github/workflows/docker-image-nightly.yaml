@@ -1,12 +1,11 @@
-name: Nightly Docker Image Tests
+name: Docker Image Tests Nightly
 on:
   workflow_dispatch: # Allow manual running
   schedule:
     - cron: '0 3 * * *'
   pull_request:
     paths:
-      - '.github/workflows/docker-image-tests-nightly.yaml'
-      - '.github/workflows/docker-image-tests.yaml'
+      - '.github/workflows/docker-image-nightly.yaml'
       - '.github/workflows/docker-image-test.yaml'
 
 jobs:
