@@ -21,10 +21,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
@@ -34,10 +34,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
-import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERSISTENT_EMR;
 
 @SystemTest
@@ -63,17 +60,13 @@ public class EmrPersistentBulkImportST {
     }
 
     @Test
-    void shouldBulkImport100Rows(SleeperDsl sleeper) {
+    void shouldPreSplitPartitionTreeAndBulkImport(SleeperDsl sleeper) {
         // Given
-        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
-                .rootFirst("root")
-                .splitToNewChildren("root", "A", "B", "row-50")
-                .buildTree());
-        sleeper.setGeneratorOverrides(overrideField(
-                SystemTestSchema.ROW_KEY_FIELD_NAME,
-                numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(
+                BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
+                PARTITION_SPLIT_MIN_ROWS, "100"));
+        Iterable<Row> rows = sleeper.generateNumberedRows(LongStream.range(0, 10_000));
+        sleeper.sourceFiles().create("test.parquet", rows);
 
         // When
         sleeper.ingest().bulkImportByQueue()
@@ -82,7 +75,10 @@ public class EmrPersistentBulkImportST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
-        assertThat(sleeper.tableFiles().references()).hasSize(2);
+                .containsExactlyElementsOf(rows);
+        assertThat(sleeper.partitioning().tree().getLeafPartitions())
+                .hasSize(8);
+        assertThat(sleeper.tableFiles().references())
+                .hasSize(8);
     }
 }
