@@ -21,7 +21,6 @@ import sleeper.core.schema.Field;
 import sleeper.sketches.Sketches;
 
 import java.util.List;
-import java.util.function.UnaryOperator;
 
 /**
  * Combines multiple sketches together to treat them as a single sketch.
@@ -41,16 +40,6 @@ public class UnionSketchesForSplitting implements SketchesForSplitting {
             union.update(sketch.getQuantilesSketch(field.getName()));
         }
         return new WrappedSketchForSplitting(field, union.getResult());
-    }
-
-    @Override
-    public WrappedSketchesForSplitting splitOnField(Field field, UnaryOperator<WrappedSketchForSplitting> split) {
-        /*
-         * Map<String, WrappedSketchForSplitting> newFieldNameToSketch = new HashMap<>(fieldNameToSketch);
-         * newFieldNameToSketch.put(field.getName(), split.apply(fieldNameToSketch.get(field.getName())));
-         * return new WrappedSketchesForSplitting(newFieldNameToSketch);
-         */
-        return null;
     }
 
 }

@@ -48,7 +48,15 @@ public class WrappedSketchesForSplitting implements SketchesForSplitting {
         return fieldNameToSketch.get(rowKeyField.getName());
     }
 
-    @Override
+    /**
+     * Creates a view of a limited range of one of the sketches. This can be used when a partition has been split, to
+     * derive sketches for the new child partitions.
+     *
+     * @param  field the field the partition was split on
+     * @param  split how to derive the new sketch for the field from the old parent partition's sketch (e.g. get the
+     *               left or right side of the split)
+     * @return       the new sketches
+     */
     public WrappedSketchesForSplitting splitOnField(Field field, UnaryOperator<WrappedSketchForSplitting> split) {
         Map<String, WrappedSketchForSplitting> newFieldNameToSketch = new HashMap<>(fieldNameToSketch);
         newFieldNameToSketch.put(field.getName(), split.apply(fieldNameToSketch.get(field.getName())));
