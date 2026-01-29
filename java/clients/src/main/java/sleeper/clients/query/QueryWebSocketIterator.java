@@ -21,7 +21,6 @@ import sleeper.clients.query.exception.WebSocketTimeoutException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +36,8 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
     private final long timeoutMilliseconds;
     private final Runnable closeWebSocket;
     private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
+    private List<Row> rows;
+    private int index = 0;
 
     public QueryWebSocketIterator(long timeoutMilliseconds, Runnable closeWebSocket) {
         this.timeoutMilliseconds = timeoutMilliseconds;
@@ -45,7 +46,7 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public boolean hasNext() {
-        return !getRowList().isEmpty();
+        return index <= (getRowList().size() - 1);
     }
 
     @Override
@@ -53,7 +54,9 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return getRowList().remove(0);
+        Row row = getRowList().get(index);
+        index++;
+        return row;
     }
 
     @Override
@@ -68,26 +71,27 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public void handleResults(List<Row> results) {
-        List<Row> rows = new ArrayList<>(results);
-        future.complete(rows);
+        future.complete(results);
     }
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     private List<Row> getRowList() {
-        try {
-            if (timeoutMilliseconds >= 0) {
-                return future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS);
-            } else {
-                return future.get();
+        if (rows == null) {
+            try {
+                if (timeoutMilliseconds >= 0) {
+                    rows = future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS);
+                } else {
+                    rows = future.get();
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(ie);
+            } catch (ExecutionException ee) {
+                throw (RuntimeException) ee.getCause();
+            } catch (TimeoutException e) {
+                throw new WebSocketTimeoutException(timeoutMilliseconds, e);
             }
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(ie);
-        } catch (ExecutionException ee) {
-            throw (RuntimeException) ee.getCause();
-        } catch (TimeoutException e) {
-            throw new WebSocketTimeoutException(timeoutMilliseconds, e);
         }
-
+        return rows;
     }
 }
