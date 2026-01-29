@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
+import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
@@ -22,14 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportSparkContext;
-import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
-import sleeper.bulkimport.runner.common.SparkSketchRow;
-import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.SketchesSerDe;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -50,37 +52,48 @@ public class GenerateSketchesDriver {
      */
     public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportSparkContext input) {
         LOGGER.info("Generating sketches...");
-        Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
-        Dataset<Row> sketchFiles = partitioned.mapPartitions(
-                new WriteSketchesFile(
+        Dataset<Row> sketchFiles = input.getRows().mapPartitions(
+                new GenerateSketches(
                         input.getInstanceProperties(), input.getTableProperties(),
-                        input.getHadoopConf(), input.getPartitionsBroadcast()),
-                ExpressionEncoder.apply(SparkSketchRow.createSchema()));
-        SketchesStore sketchesStore = new HadoopSketchesStore(input.getHadoopConf());
-        return sketchFiles.collectAsList().stream()
-                .map(SparkSketchRow::from)
-                .collect(toMap(
-                        SparkSketchRow::partitionId,
-                        row -> sketchesStore.loadFileSketches(row.filename(), input.getSchema())));
-    }
-
-    /**
-     * Reads through all the input data in a bulk import job, and builds a sketch of the data in each Sleeper partition.
-     *
-     * @param  input the context of the bulk import
-     * @return       a map from Sleeper partition ID to a sketch of the data in that partition
-     */
-    public static Map<String, Sketches> generatePartitionIdToSketchesRedo(BulkImportSparkContext input) {
-        LOGGER.info("Generating sketches...");
-        Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
-        Dataset<Row> sketchFiles = partitioned.mapPartitions(
-                new WriteSketchesFile(
-                        input.getInstanceProperties(), input.getTableProperties(),
-                        input.getHadoopConf(), input.getPartitionsBroadcast()),
-                ExpressionEncoder.apply(SparkSketchRow.createSchema()));
+                        input.getPartitionsBroadcast()),
+                ExpressionEncoder.apply(SparkSketchBytesRow.createSchema()));
+        Schema schema = input.getTableProperties().getSchema();
+        SketchesSerDe serDe = new SketchesSerDe(schema);
+        Map<String, SketchesBuilder> partitionIdToBuilder = new HashMap<>();
         sketchFiles.collectAsList().stream()
                 .map(SparkSketchBytesRow::from)
-                .toList();
-        return null;
+                .forEach(row -> {
+                    Sketches sketches = serDe.fromBytes(row.sketchBytes());
+                    SketchesBuilder builder = partitionIdToBuilder.computeIfAbsent(
+                            row.partitionId(), id -> new SketchesBuilder(schema));
+                    builder.add(sketches);
+                });
+        return partitionIdToBuilder.entrySet().stream()
+                .collect(toMap(Entry::getKey, entry -> entry.getValue().build()));
+    }
+
+    private static class SketchesBuilder {
+        private final Schema schema;
+        private final Map<String, ItemsUnion<Object>> fieldNameToUnion;
+
+        SketchesBuilder(Schema schema) {
+            this.schema = schema;
+            this.fieldNameToUnion = schema.getRowKeyFields().stream()
+                    .collect(toMap(
+                            Field::getName,
+                            field -> Sketches.createUnion(field.getType())));
+        }
+
+        void add(Sketches sketches) {
+            for (Field field : schema.getRowKeyFields()) {
+                ItemsUnion<Object> union = fieldNameToUnion.get(field.getName());
+                union.update(sketches.getQuantilesSketch(field.getName()));
+            }
+        }
+
+        Sketches build() {
+            return new Sketches(schema, fieldNameToUnion.entrySet().stream()
+                    .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
+        }
     }
 }
