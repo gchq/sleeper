@@ -32,7 +32,6 @@ import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IngestToStateStoreDsl {
 
@@ -58,7 +57,7 @@ public class IngestToStateStoreDsl {
 
     public IngestToStateStoreDsl addFileOnPartition(
             String name, String partitionId, Row... rows) {
-        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, Stream.of(rows));
+        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, List.of(rows).iterator());
         addFiles(List.of(FileReference.builder()
                 .filename(ingestSource.getFilePath(name))
                 .partitionId(partitionId)

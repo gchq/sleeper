@@ -43,22 +43,25 @@ public class EmrServerlessBulkImportST {
     }
 
     @Test
-    void shouldBulkImportOneRowWithEmrServerlessByQueue(SleeperDsl sleeper) {
+    void shouldPreSplitPartitionTreeAndBulkImportWithEmrServerlessByQueue(SleeperDsl sleeper) {
         // Given
-        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        sleeper.updateTableProperties(Map.of(
+                BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
+                PARTITION_SPLIT_MIN_ROWS, "100"));
+        Iterable<Row> rows = sleeper.generateNumberedRows(LongStream.range(0, 10_000));
+        sleeper.sourceFiles().create("file.parquet", rows);
 
         // When
-        sleeper.sourceFiles().create("file.parquet", row);
         sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactly(row);
+                .containsExactlyElementsOf(rows);
+        assertThat(sleeper.partitioning().tree().getLeafPartitions())
+                .hasSize(8);
+        assertThat(sleeper.tableFiles().references())
+                .hasSize(8);
     }
 
     @Test
@@ -78,26 +81,5 @@ public class EmrServerlessBulkImportST {
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
-    }
-
-    @Test
-    void shouldPreSplitPartitionTreeBasedOnBulkImportInputData(SleeperDsl sleeper) {
-        // Given
-        sleeper.updateTableProperties(Map.of(
-                BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
-                PARTITION_SPLIT_MIN_ROWS, "1000"));
-        sleeper.sourceFiles().createWithNumberedRows("file.parquet",
-                LongStream.range(0, 100_000));
-
-        // When
-        sleeper.ingest().bulkImportByQueue()
-                .sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
-
-        // Then
-        assertThat(sleeper.partitioning().tree().getLeafPartitions())
-                .hasSize(8);
-        assertThat(sleeper.tableFiles().references())
-                .hasSize(8);
     }
 }
