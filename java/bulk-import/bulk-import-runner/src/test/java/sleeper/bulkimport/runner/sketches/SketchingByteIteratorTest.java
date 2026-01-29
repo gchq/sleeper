@@ -16,10 +16,12 @@
 package sleeper.bulkimport.runner.sketches;
 
 import org.apache.spark.sql.RowFactory;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -41,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class SketchingByteIteratorTest {
 
@@ -57,6 +60,25 @@ public class SketchingByteIteratorTest {
         // When / Then
         assertThat(applySketchingIterator(input))
                 .containsExactly(new Result("root", SketchesDeciles.from(tableProperties, input)));
+    }
+
+    @Disabled
+    @Test
+    void shouldBuildSketchesWhenGivenMultiplePartions() {
+        // Given
+        List<Row> input = List.of(
+                new Row(Map.of("key", 456)),
+                new Row(Map.of("key", 789)));
+
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 600)
+                .buildTree());
+
+        // When / Then
+        assertThat(applySketchingIterator(input))
+                .containsExactly(new Result("L", SketchesDeciles.from(tableProperties, input)),
+                        new Result("R", SketchesDeciles.from(tableProperties, input)));
     }
 
     private List<Result> applySketchingIterator(List<Row> input) {
