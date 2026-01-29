@@ -29,7 +29,9 @@ import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.SketchesSerDe;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * An iterator that writes a single data sketch for all the input data. This takes any number of rows, adds them to a
@@ -43,6 +45,7 @@ public class SketchByteWritingterator implements Iterator<Row> {
     private final Schema schema;
     private final SparkRowMapper rowMapper;
     private final PartitionTree partitionTree;
+    private Iterator<Row> results;
 
     public SketchByteWritingterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
         this.input = input;
@@ -54,30 +57,46 @@ public class SketchByteWritingterator implements Iterator<Row> {
 
     @Override
     public boolean hasNext() {
-        return input.hasNext();
+        if (results == null) {
+            createSketches();
+        }
+        return results.hasNext();
     }
 
     @Override
     public Row next() {
-        Sketches sketches = Sketches.from(schema);
-        SketchesSerDe serDe = new SketchesSerDe(schema);
-        Partition partition = null;
+        if (results == null) {
+            createSketches();
+        }
+        return results.next();
+    }
+
+    private void createSketches() {
+        Map<String, Sketches> partitionIdToSketches = new HashMap<>();
         int numRows = 0;
         while (input.hasNext()) {
             Row row = input.next();
             sleeper.core.row.Row sleeperRow = rowMapper.toSleeperRow(row);
-            if (partition == null) {
-                partition = partitionTree.getLeafPartition(schema, sleeperRow.getRowKeys(schema));
+            Partition partition = partitionTree.getLeafPartition(schema, sleeperRow.getRowKeys(schema));
+            Sketches sketches = partitionIdToSketches.computeIfAbsent(partition.getId(), id -> {
                 LOGGER.info("Found data for partition {}", partition.getId());
-            }
+                return Sketches.from(schema);
+            });
             sketches.update(sleeperRow);
             numRows++;
             if (numRows % 1_000_000L == 0) {
                 LOGGER.info("Read {} rows", numRows);
             }
         }
-        LOGGER.info("Writing sketches file for partition {}", partition.getId());
-        return new SparkSketchBytesRow(partition.getId(), serDe.toBytes(sketches)).toSparkRow();
+        setResults(partitionIdToSketches);
+    }
+
+    private void setResults(Map<String, Sketches> partitionIdToSketches) {
+        SketchesSerDe serDe = new SketchesSerDe(schema);
+        results = partitionIdToSketches.entrySet().stream()
+                .map(entry -> new SparkSketchBytesRow(entry.getKey(), serDe.toBytes(entry.getValue())))
+                .map(SparkSketchBytesRow::toSparkRow)
+                .iterator();
     }
 
 }

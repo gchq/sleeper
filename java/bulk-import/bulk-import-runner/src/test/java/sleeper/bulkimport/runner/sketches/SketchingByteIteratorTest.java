@@ -16,7 +16,6 @@
 package sleeper.bulkimport.runner.sketches;
 
 import org.apache.spark.sql.RowFactory;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
@@ -62,7 +61,6 @@ public class SketchingByteIteratorTest {
                 .containsExactly(new Result("root", SketchesDeciles.from(tableProperties, input)));
     }
 
-    @Disabled
     @Test
     void shouldBuildSketchesWhenGivenMultiplePartions() {
         // Given
@@ -77,8 +75,11 @@ public class SketchingByteIteratorTest {
 
         // When / Then
         assertThat(applySketchingIterator(input))
-                .containsExactly(new Result("L", SketchesDeciles.from(tableProperties, input)),
-                        new Result("R", SketchesDeciles.from(tableProperties, input)));
+                .containsExactlyInAnyOrder(
+                        new Result("L", SketchesDeciles.from(tableProperties, List.of(
+                                new Row(Map.of("key", 456))))),
+                        new Result("R", SketchesDeciles.from(tableProperties, List.of(
+                                new Row(Map.of("key", 789))))));
     }
 
     private List<Result> applySketchingIterator(List<Row> input) {
