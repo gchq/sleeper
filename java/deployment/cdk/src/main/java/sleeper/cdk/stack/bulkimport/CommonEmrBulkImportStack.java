@@ -89,7 +89,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
-        coreStacks.grantReadWritePartitions(role);
+        coreStacks.grantReadWritePartitions(role); // The partition tree can be extended if there aren't enough partitions to do a bulk import
         ebsKey.grant(role, KMS_GRANTS);
 
         // The role needs to be able to access the user's jars
