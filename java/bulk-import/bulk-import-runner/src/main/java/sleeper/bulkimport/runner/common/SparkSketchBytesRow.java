@@ -38,8 +38,8 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchFile) {
      * @param  sparkRow the Spark row
      * @return          the reference to the sketch file held in the row
      */
-    public static SparkSketchRow from(Row sparkRow) {
-        return new SparkSketchRow(sparkRow.getString(0), sparkRow.getString(1));
+    public static SparkSketchBytesRow from(Row sparkRow) {
+        return new SparkSketchBytesRow(sparkRow.getString(0), (byte[]) sparkRow.get(1));
     }
 
     /**
@@ -59,7 +59,7 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchFile) {
     public static StructType createSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
-                .add(FILE_BYTE_ARRAY, DataTypes.createArrayType(DataTypes.ByteType));
+                .add(FILE_BYTE_ARRAY, DataTypes.BinaryType);
     }
 
 }
