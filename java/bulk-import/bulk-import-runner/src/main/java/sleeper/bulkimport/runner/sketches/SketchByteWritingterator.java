@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +24,10 @@ import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.SketchesSerDe;
 
 import java.util.Iterator;
 
@@ -41,14 +40,12 @@ public class SketchByteWritingterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SketchByteWritingterator.class);
 
     private final Iterator<Row> input;
-    private final InstanceProperties instanceProperties;
     private final Schema schema;
     private final SparkRowMapper rowMapper;
     private final PartitionTree partitionTree;
 
-    public SketchByteWritingterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf, PartitionTree partitionTree) {
+    public SketchByteWritingterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
         this.input = input;
-        this.instanceProperties = instanceProperties;
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
         this.partitionTree = partitionTree;
@@ -63,6 +60,7 @@ public class SketchByteWritingterator implements Iterator<Row> {
     @Override
     public Row next() {
         Sketches sketches = Sketches.from(schema);
+        SketchesSerDe serDe = new SketchesSerDe(schema);
         Partition partition = null;
         int numRows = 0;
         while (input.hasNext()) {
@@ -78,10 +76,8 @@ public class SketchByteWritingterator implements Iterator<Row> {
                 LOGGER.info("Read {} rows", numRows);
             }
         }
-        //String filename = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(BULK_IMPORT_BUCKET) + "/sketches/" + UUID.randomUUID().toString() + ".sketches";
-        byte[] sketchesFile = null;
         LOGGER.info("Writing sketches file for partition {}", partition.getId());
-        return new SparkSketchBytesRow(partition.getId(), sketchesFile).toSparkRow();
+        return new SparkSketchBytesRow(partition.getId(), serDe.toBytes(sketches)).toSparkRow();
     }
 
 }

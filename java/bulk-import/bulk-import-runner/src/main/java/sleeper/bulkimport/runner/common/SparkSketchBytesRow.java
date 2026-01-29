@@ -20,14 +20,6 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.sketches.Sketches;
-import sleeper.sketches.SketchesSerDe;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
 /**
  * A reference to a sketch file written during a Spark job. Used to calculate split points when pre-splitting
  * partitions.
@@ -68,15 +60,5 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchBytes) {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILE_BYTE_ARRAY, DataTypes.BinaryType);
-    }
-
-    public Sketches parseBytesAsSketches(SketchesSerDe serDe) {
-        try {
-            try (DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(sketchBytes))) {
-                return serDe.deserialise(dataInputStream);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

@@ -15,9 +15,7 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.RowFactory;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
@@ -50,7 +48,6 @@ public class SketchingByteIteratorTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
-    @Disabled
     @Test
     void shouldBuildOneSketchWithOneRow() {
         // Given
@@ -65,12 +62,12 @@ public class SketchingByteIteratorTest {
     private List<Result> applySketchingIterator(List<Row> input) {
         SketchesSerDe serDe = new SketchesSerDe(tableProperties.getSchema());
 
-        SketchWritingIterator iterator = new SketchWritingIterator(
-                toSparkRowIterator(input), instanceProperties, tableProperties, new Configuration(), new PartitionTree(stateStore.getAllPartitions()));
+        SketchByteWritingterator iterator = new SketchByteWritingterator(
+                toSparkRowIterator(input), tableProperties, new PartitionTree(stateStore.getAllPartitions()));
         List<Result> results = new ArrayList<>();
         while (iterator.hasNext()) {
             SparkSketchBytesRow sketchByteRow = SparkSketchBytesRow.from(iterator.next());
-            Sketches sketches = sketchByteRow.parseBytesAsSketches(serDe);
+            Sketches sketches = serDe.fromBytes(sketchByteRow.sketchBytes());
             results.add(new Result(sketchByteRow.partitionId(), SketchesDeciles.from(sketches)));
         }
         return results;
