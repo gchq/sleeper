@@ -52,7 +52,7 @@ public class SketchByteWritingterator implements Iterator<Row> {
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
         this.partitionTree = partitionTree;
-        LOGGER.info("Initialised SketchWritingAsFileIterator");
+        LOGGER.info("Initialised sketch writing iterator");
     }
 
     @Override
