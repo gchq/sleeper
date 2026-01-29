@@ -55,7 +55,12 @@ public class PartitionPreSplitter<C extends BulkImportContext<C>> {
         int numberOfAttempts = tableProperties.getInt(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS);
         int attempts = 1;
 
-        while (leafPartitions.size() < minLeafPartitions && attempts <= numberOfAttempts) {
+        while (leafPartitions.size() < minLeafPartitions) {
+
+            if (attempts > numberOfAttempts) {
+                throw new TooManyAttemptsPartitionSplitterException("Partition split attempts " + attempts + " exceeds allowed number of attempts " + numberOfAttempts);
+            }
+
             LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
             Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

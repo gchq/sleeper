@@ -44,6 +44,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -159,7 +160,39 @@ public class PartitionPreSplitterTest {
 
     @Test
     void shouldLimitNumberOfRetries() {
-        // TODO
+
+        // Given we configure to split from one partition to two
+        tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 1);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+
+        // And we provide data to expect a split point at 50
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 15)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 25)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 55)),
+                new Row(Map.of("key", 60)),
+                new Row(Map.of("key", 75))));
+        // And we expect the new partition IDs generated in order (see instantiation of driver for how we control this)
+        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "P1", "P2", 50)
+                .buildTree();
+        // And the partition tree will be split by another process just before our split is applied
+        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
+                List.of(partitionsAfter.getPartition("root")),
+                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
+                .synchronousCommit(stateStore));
+
+        // When/Then
+        assertThatThrownBy(this::preSplitPartitionsIfNecessary)
+                .isInstanceOf(TooManyAttemptsPartitionSplitterException.class);
+
     }
 
     private void preSplitPartitionsIfNecessary() {
