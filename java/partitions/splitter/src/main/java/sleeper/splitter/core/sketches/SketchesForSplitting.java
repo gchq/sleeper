@@ -18,12 +18,13 @@ package sleeper.splitter.core.sketches;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.function.UnaryOperator;
+
 /**
  * Finds split points during partition splitting based on sketches. We avoid referencing the sketches directly so that
  * we can split a sketch into two while still reading the original sketch, when extending a partition tree over multiple
  * levels.
  */
-@FunctionalInterface
 public interface SketchesForSplitting {
 
     /**
@@ -45,5 +46,16 @@ public interface SketchesForSplitting {
         Field firstRowKeyField = schema.getRowKeyFields().get(0);
         return getSketch(firstRowKeyField).getNumberOfRows();
     }
+
+    /**
+     * Creates a view of a limited range of one of the sketches. This can be used when a partition has been split, to
+     * derive sketches for the new child partitions.
+     *
+     * @param  field the field the partition was split on
+     * @param  split how to derive the new sketch for the field from the old parent partition's sketch (e.g. get the
+     *               left or right side of the split)
+     * @return       the new sketches
+     */
+    WrappedSketchesForSplitting splitOnField(Field field, UnaryOperator<WrappedSketchForSplitting> split);
 
 }

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.common.HadoopSketchesStore;
+import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
 import sleeper.sketches.Sketches;
@@ -63,4 +64,23 @@ public class GenerateSketchesDriver {
                         row -> sketchesStore.loadFileSketches(row.filename(), input.getSchema())));
     }
 
+    /**
+     * Reads through all the input data in a bulk import job, and builds a sketch of the data in each Sleeper partition.
+     *
+     * @param  input the context of the bulk import
+     * @return       a map from Sleeper partition ID to a sketch of the data in that partition
+     */
+    public static Map<String, Sketches> generatePartitionIdToSketchesRedo(BulkImportSparkContext input) {
+        LOGGER.info("Generating sketches...");
+        Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
+        Dataset<Row> sketchFiles = partitioned.mapPartitions(
+                new WriteSketchesFile(
+                        input.getInstanceProperties(), input.getTableProperties(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()),
+                ExpressionEncoder.apply(SparkSketchRow.createSchema()));
+        sketchFiles.collectAsList().stream()
+                .map(SparkSketchBytesRow::from)
+                .toList();
+        return null;
+    }
 }
