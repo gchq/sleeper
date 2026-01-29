@@ -276,7 +276,7 @@ public class SleeperCoreStacks {
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
-    public void grantReadWritePartitionTransactionLog(IGrantable grantee) {
+    public void grantReadWritePartitions(IGrantable grantee) {
         stateStoreStacks.grantReadWritePartitions(grantee);
     }
 

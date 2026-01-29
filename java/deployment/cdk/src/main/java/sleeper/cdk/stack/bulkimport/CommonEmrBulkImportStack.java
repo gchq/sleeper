@@ -89,7 +89,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         coreStacks.grantIngest(role);
-        coreStacks.grantReadWritePartitionTransactionLog(role);
+        coreStacks.grantReadWritePartitions(role);
         ebsKey.grant(role, KMS_GRANTS);
 
         // The role needs to be able to access the user's jars
