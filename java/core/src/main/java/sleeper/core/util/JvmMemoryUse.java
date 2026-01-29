@@ -84,11 +84,20 @@ public record JvmMemoryUse(long totalMemory, long freeMemory, long maxMemory) {
 
     @Override
     public final String toString() {
-        return "JvmMemoryUse{" +
-                "totalMemory='" + FileUtils.byteCountToDisplaySize(totalMemory) + '\'' +
-                ", freeMemory='" + FileUtils.byteCountToDisplaySize(freeMemory) + '\'' +
-                ", maxMemory='" + FileUtils.byteCountToDisplaySize(maxMemory) + '\'' +
-                '}';
+        StringBuilder builder = new StringBuilder()
+                .append(FileUtils.byteCountToDisplaySize(totalMemory))
+                .append(" allocated to JVM, ")
+                .append(FileUtils.byteCountToDisplaySize(freeMemory))
+                .append(" free in JVM");
+        if (isMaxMemoryKnown()) {
+            builder.append(", maximum ")
+                    .append(FileUtils.byteCountToDisplaySize(maxMemory))
+                    .append(" may be allocated to JVM, total available unused memory ")
+                    .append(FileUtils.byteCountToDisplaySize(availableMemory()));
+        } else {
+            builder.append(", further memory may be allocated, no known limit");
+        }
+        return builder.toString();
     }
 
     /**
