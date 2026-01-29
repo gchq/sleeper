@@ -46,7 +46,7 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @Override
     public boolean hasNext() {
-        return index <= (getRowList().size() - 1);
+        return index < (getRowList().size());
     }
 
     @Override
@@ -76,21 +76,22 @@ public class QueryWebSocketIterator implements CloseableIterator<Row>, QueryWebS
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     private List<Row> getRowList() {
-        if (rows == null) {
-            try {
-                if (timeoutMilliseconds >= 0) {
-                    rows = future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS);
-                } else {
-                    rows = future.get();
-                }
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(ie);
-            } catch (ExecutionException ee) {
-                throw (RuntimeException) ee.getCause();
-            } catch (TimeoutException e) {
-                throw new WebSocketTimeoutException(timeoutMilliseconds, e);
+        if (rows != null) {
+            return rows;
+        }
+        try {
+            if (timeoutMilliseconds >= 0) {
+                rows = future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS);
+            } else {
+                rows = future.get();
             }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ie);
+        } catch (ExecutionException ee) {
+            throw (RuntimeException) ee.getCause();
+        } catch (TimeoutException e) {
+            throw new WebSocketTimeoutException(timeoutMilliseconds, e);
         }
         return rows;
     }
