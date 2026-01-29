@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS;
 
 public class PartitionPreSplitter<C extends BulkImportContext<C>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PartitionPreSplitter.class);
@@ -51,7 +52,10 @@ public class PartitionPreSplitter<C extends BulkImportContext<C>> {
         PartitionTree tree = new PartitionTree(allPartitions);
         List<Partition> leafPartitions = tree.getLeafPartitions();
         int minLeafPartitions = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
-        while (leafPartitions.size() < minLeafPartitions) {
+        int numberOfAttempts = tableProperties.getInt(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS);
+        int attempts = 1;
+
+        while (leafPartitions.size() < minLeafPartitions && attempts <= numberOfAttempts) {
             LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
             Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -66,7 +70,9 @@ public class PartitionPreSplitter<C extends BulkImportContext<C>> {
             tree = new PartitionTree(allPartitions);
             leafPartitions = tree.getLeafPartitions();
             context = context.withPartitions(allPartitions);
+            attempts++;
         }
+
         LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
         return context;
     }
