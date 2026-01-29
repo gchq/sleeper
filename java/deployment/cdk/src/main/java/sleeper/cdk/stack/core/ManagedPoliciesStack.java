@@ -16,9 +16,6 @@
 package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ec2.SecurityGroup;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -39,10 +36,8 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -56,7 +51,6 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy clearInstancePolicy;
     private final ManagedPolicy adminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
-    private SecurityGroup ecsSecurityGroup;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -78,8 +72,6 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = createManagedPolicy("ReadIngestSources");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
-
-        createEcsSecurityGroup(this, instanceProperties);
     }
 
     public SleeperInstanceRoles createRoles() {
@@ -146,10 +138,6 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
-    public SecurityGroup getEcsSecurityGroup() {
-        return ecsSecurityGroup;
-    }
-
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
                 .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
@@ -203,14 +191,5 @@ public class ManagedPoliciesStack extends NestedStack {
         directIngestPolicy.attachToRole(role);
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, role.getRoleArn());
         return role;
-    }
-
-    private void createEcsSecurityGroup(Construct scope, InstanceProperties instanceProperties) {
-        ecsSecurityGroup = SecurityGroup.Builder.create(scope, "ECS")
-                .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build()))
-                .description("Security group for ECS tasks and services that do not need to serve incomming requests.")
-                .allowAllOutbound(true)
-                .build();
-        instanceProperties.set(ECS_SECURITY_GROUP, ecsSecurityGroup.getSecurityGroupId());
     }
 }

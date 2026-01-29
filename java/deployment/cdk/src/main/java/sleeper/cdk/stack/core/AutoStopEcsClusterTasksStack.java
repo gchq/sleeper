@@ -20,6 +20,9 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
@@ -38,6 +41,9 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+
 /**
  * Stops ECS Cluster tasks for the CloudFormation stack.
  */
@@ -45,16 +51,19 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     private IFunction lambda;
     private Provider provider;
+    private SecurityGroup ecsSecurityGroup;
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
             LoggingStack loggingStack) {
         super(scope, id);
+        createEcsSecurityGroup(this, instanceProperties);
         createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
         super(scope, id);
+        createEcsSecurityGroup(this, instanceProperties);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
         ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
@@ -131,4 +140,16 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         return customResource;
     }
 
+    public SecurityGroup getEcsSecurityGroup() {
+        return ecsSecurityGroup;
+    }
+
+    private void createEcsSecurityGroup(Construct scope, InstanceProperties instanceProperties) {
+        ecsSecurityGroup = SecurityGroup.Builder.create(scope, "ECS")
+                .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build()))
+                .description("Security group for ECS tasks and services that do not need to serve incomming requests.")
+                .allowAllOutbound(true)
+                .build();
+        instanceProperties.set(ECS_SECURITY_GROUP, ecsSecurityGroup.getSecurityGroupId());
+    }
 }

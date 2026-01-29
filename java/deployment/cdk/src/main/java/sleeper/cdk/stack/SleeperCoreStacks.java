@@ -150,7 +150,7 @@ public class SleeperCoreStacks {
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
-                policiesStack, deadLetters);
+                policiesStack, autoStopEcsStack, deadLetters);
 
         SleeperCoreStacks stacks = new SleeperCoreStacks(networking, loggingStack, deadLetters,
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,

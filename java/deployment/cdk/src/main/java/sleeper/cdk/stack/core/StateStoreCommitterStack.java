@@ -103,6 +103,7 @@ public class StateStoreCommitterStack extends NestedStack {
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -112,7 +113,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, policiesStack.getEcsSecurityGroup(), commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, autoStopEcsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
