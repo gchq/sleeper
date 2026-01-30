@@ -98,7 +98,7 @@ public class IngestRowsLocalStackITBase extends LocalStackTestBase {
         return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(ingestLocalFiles)
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .stateStoreProvider(FixedStateStoreProvider.singleTable(tableProperties, stateStore))
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();

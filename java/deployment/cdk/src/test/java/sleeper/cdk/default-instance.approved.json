@@ -13140,6 +13140,24 @@
                 },
                 {
                   "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
                     "kms:Encrypt",
                     "kms:Decrypt",
                     "kms:ReEncrypt*",
@@ -14563,6 +14581,24 @@
                   "Effect": "Allow",
                   "Resource": {
                     "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestTaskStatusTable7BA7D53BArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
                   }
                 },
                 {

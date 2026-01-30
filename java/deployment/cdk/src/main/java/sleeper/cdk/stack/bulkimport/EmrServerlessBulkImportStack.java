@@ -213,6 +213,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         bulkImportBucketStack.getImportBucket().grantReadWrite(role);
         coreStacks.grantIngest(role);
+        coreStacks.grantReadWritePartitions(role); // The partition tree can be extended if there aren't enough partitions to do a bulk import
         jarsBucket.grantRead(role);
         return role;
     }

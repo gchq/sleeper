@@ -276,6 +276,10 @@ public class SleeperCoreStacks {
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
+    public void grantReadWritePartitions(IGrantable grantee) {
+        stateStoreStacks.grantReadWritePartitions(grantee);
+    }
+
     public void grantCreateCompactionJobs(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);

@@ -60,11 +60,12 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query);
+        QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
+        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
             Instant startTime = Instant.now();
-            return listener.getQueryFuture()
+            return future
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());

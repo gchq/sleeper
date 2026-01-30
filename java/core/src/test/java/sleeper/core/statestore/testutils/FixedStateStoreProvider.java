@@ -30,11 +30,20 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * Test helper to implement state store provider with fixed state stores. Replaces StateStoreFactory with
  * pre-built state store instances.
  */
-public class FixedStateStoreProvider extends StateStoreProvider {
-    private static final int DEFAULT_STATESTORE_CACHE_SIZE = 10;
+public class FixedStateStoreProvider {
 
-    public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
-        super(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+    private FixedStateStoreProvider() {
+    }
+
+    /**
+     * Creates a state store provider that will only load a particular table.
+     *
+     * @param  singleTableProperties the table properties
+     * @param  stateStore            the state store
+     * @return                       the provider
+     */
+    public static StateStoreProvider singleTable(TableProperties singleTableProperties, StateStore stateStore) {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
             TableStatus requestedTable = tableProperties.getStatus();
             if (!Objects.equals(requestedTable, singleTableProperties.getStatus())) {
                 throw new IllegalArgumentException("Table not found: " + requestedTable);
@@ -50,7 +59,7 @@ public class FixedStateStoreProvider extends StateStoreProvider {
      * @return                     the provider
      */
     public static StateStoreProvider byTableId(Map<String, StateStore> stateStoreByTableId) {
-        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
             String tableId = tableProperties.get(TABLE_ID);
             if (!stateStoreByTableId.containsKey(tableId)) {
                 throw new IllegalArgumentException("Table not found by ID: " + tableId);
@@ -66,7 +75,7 @@ public class FixedStateStoreProvider extends StateStoreProvider {
      * @return                       the provider
      */
     public static StateStoreProvider byTableName(Map<String, StateStore> stateStoreByTableName) {
-        return new StateStoreProvider(DEFAULT_STATESTORE_CACHE_SIZE, tableProperties -> {
+        return StateStoreProvider.noCacheSizeLimit(tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
             if (!stateStoreByTableName.containsKey(tableName)) {
                 throw new IllegalArgumentException("Table not found by name: " + tableName);

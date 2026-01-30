@@ -18,20 +18,28 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.util.JvmMemoryUse;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -43,6 +51,7 @@ public class StateStoreProviderTest {
     private final Schema schema = createSchemaWithKey("key");
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
     private final List<String> tablesLoaded = new ArrayList<>();
+    private JvmMemoryUse.Provider memoryProvider = () -> new JvmMemoryUse(0, 0, Long.MAX_VALUE);
 
     @Test
     void shouldCacheStateStore() {
@@ -126,6 +135,33 @@ public class StateStoreProviderTest {
                     "table-id-2",
                     "table-id-3");
         }
+
+        @Test
+        void shouldRemoveLeastRecentlyUsedWhenOldestHasBeenUsedMoreRecently() {
+            // Given
+            instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+            TableProperties table1 = createTable("table-id-1", "test-table-1");
+            TableProperties table2 = createTable("table-id-2", "test-table-2");
+            TableProperties table3 = createTable("table-id-3", "test-table-3");
+            createStateStores(table1, table2, table3);
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table1);
+            // Cache size has been reached, oldest state store will be removed from cache
+            provider.getStateStore(table3);
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly(
+                    "table-id-1",
+                    "table-id-2",
+                    "table-id-3",
+                    "table-id-2");
+        }
     }
 
     @Nested
@@ -195,6 +231,205 @@ public class StateStoreProviderTest {
         }
     }
 
+    @Nested
+    @DisplayName("Free up heap space")
+    class FreeUpHeapSpace {
+
+        @Test
+        void shouldFreeUpHeapSpaceByRemovingATableFromTheCache() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            provideMemoryStates(
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table", "table");
+            assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldNotFreeUpHeapSpaceWhenEnoughIsFreeAlready() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            provideMemoryStates(
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table");
+            assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButCacheIsAlreadyEmpty() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
+
+            // When
+            boolean success = provider().ensureEnoughHeapSpaceAvailable(Set.of());
+
+            // Then
+            assertThat(success).isFalse();
+        }
+
+        @Test
+        void shouldNotFreeUpHeapSpaceWhenTooMuchIsUsedButTableIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 5, 100)); // 15 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table"));
+            provider.getStateStore(table);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table");
+            assertThat(success).isFalse();
+        }
+
+        @Test
+        void shouldRemoveOtherTableWhenLeastRecentlyUsedIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            createStateStores(table1, table2);
+            provideMemoryStates(
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table2");
+            assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldRemoveLeastRecentlyUsedButNotOldestTableWhenLeastRecentlyUsedIsRequired() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+            provideMemoryStates(
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+            provider.getStateStore(table2);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of("table1"));
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table3", "table3");
+            assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldNotRemoveFromCacheWithNoSizeLimit() {
+            // Given
+            TableProperties table1 = createTable("table1", "test-table-1");
+            TableProperties table2 = createTable("table2", "test-table-2");
+            TableProperties table3 = createTable("table3", "test-table-3");
+            createStateStores(table1, table2, table3);
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(100, 0, 100));
+
+            // When
+            StateStoreProvider provider = StateStoreProvider.noCacheSizeLimit(factory());
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+            boolean success = provider.ensureEnoughHeapSpaceAvailable(Set.of());
+            provider.getStateStore(table1);
+            provider.getStateStore(table2);
+            provider.getStateStore(table3);
+
+            // Then
+            assertThat(tablesLoaded).containsExactly("table1", "table2", "table3");
+            assertThat(success).isTrue();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenRequiredFreeSpaceIsGreaterThanMax() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "150");
+            fixMemoryState(jvmAllocatedFreeAndMaxAllocated(90, 10, 100));
+            StateStoreProvider provider = provider();
+
+            // When / Then
+            assertThatThrownBy(() -> provider.ensureEnoughHeapSpaceAvailable(Set.of()))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Collect garbage to free memory")
+    class FreeMemoryWithGC {
+
+        @Test
+        void shouldGC() {
+            // Given
+            instanceProperties.set(STATESTORE_PROVIDER_MIN_FREE_HEAP_TARGET_AMOUNT, "20");
+            TableProperties table = createTable("table", "my-table");
+            createStateStores(table);
+
+            // And
+            memoryProvider = mock(JvmMemoryUse.Provider.class);
+            when(memoryProvider.getMemory()).thenReturn(
+                    jvmAllocatedFreeAndMaxAllocated(90, 5, 100), // 15 total free memory
+                    jvmAllocatedFreeAndMaxAllocated(90, 15, 100)); // 25 total free memory
+
+            // When
+            StateStoreProvider provider = provider();
+            provider.getStateStore(table);
+            provider.ensureEnoughHeapSpaceAvailable(Set.of());
+
+            // Then garbage collection is triggered before re-checking memory
+            InOrder order = inOrder(memoryProvider);
+            order.verify(memoryProvider).getMemory();
+            order.verify(memoryProvider).gc();
+            order.verify(memoryProvider).getMemory();
+            order.verifyNoMoreInteractions();
+        }
+    }
+
     private TableProperties createTable(String tableId, String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
@@ -215,9 +450,25 @@ public class StateStoreProviderTest {
     }
 
     private StateStoreProvider provider() {
-        return new StateStoreProvider(instanceProperties, tableProperties -> {
+        return new StateStoreProvider(instanceProperties, factory(), memoryProvider);
+    }
+
+    private StateStoreProvider.Factory factory() {
+        return tableProperties -> {
             tablesLoaded.add(tableProperties.get(TABLE_ID));
             return tableIdToStateStore.get(tableProperties.get(TABLE_ID));
-        });
+        };
+    }
+
+    private JvmMemoryUse jvmAllocatedFreeAndMaxAllocated(long totalMemory, long freeMemory, long maxMemory) {
+        return new JvmMemoryUse(totalMemory, freeMemory, maxMemory);
+    }
+
+    private void provideMemoryStates(JvmMemoryUse... states) {
+        memoryProvider = List.of(states).iterator()::next;
+    }
+
+    private void fixMemoryState(JvmMemoryUse state) {
+        memoryProvider = () -> state;
     }
 }

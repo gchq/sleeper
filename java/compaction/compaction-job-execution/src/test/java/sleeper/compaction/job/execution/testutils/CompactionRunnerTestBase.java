@@ -102,7 +102,7 @@ public class CompactionRunnerTestBase {
     private CompactionTaskTestHelper compactionTaskTestHelper() {
         return new CompactionTaskTestHelper(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), jobTracker);
     }
 
     protected RowsProcessed getRowsProcessed(CompactionJob job) {
@@ -123,7 +123,7 @@ public class CompactionRunnerTestBase {
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(localDir)
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .stateStoreProvider(FixedStateStoreProvider.singleTable(tableProperties, stateStore))
                 .instanceProperties(instanceProperties);
         config.accept(builder);
         IngestResult result = builder.build().ingestFromRowIterator(tableProperties, rows.iterator());
