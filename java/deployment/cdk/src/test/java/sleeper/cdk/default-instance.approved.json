@@ -4906,7 +4906,7 @@
         "ECSD299DF54": {
           "Type": "AWS::EC2::SecurityGroup",
           "Properties": {
-            "GroupDescription": "Security group for ECS tasks and services that do not need to serve incomming requests.",
+            "GroupDescription": "Security group for ECS tasks and services that do not need to serve incoming requests.",
             "VpcId": "vpc-12345",
             "SecurityGroupEgress": [
               {

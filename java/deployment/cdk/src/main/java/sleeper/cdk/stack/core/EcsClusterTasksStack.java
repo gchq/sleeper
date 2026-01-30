@@ -147,7 +147,7 @@ public class EcsClusterTasksStack extends NestedStack {
     private void createEcsSecurityGroup(Construct scope, InstanceProperties instanceProperties) {
         ecsSecurityGroup = SecurityGroup.Builder.create(scope, "ECS")
                 .vpc(Vpc.fromLookup(scope, "vpc", VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build()))
-                .description("Security group for ECS tasks and services that do not need to serve incomming requests.")
+                .description("Security group for ECS tasks and services that do not need to serve incoming requests.")
                 .allowAllOutbound(true)
                 .build();
         instanceProperties.set(ECS_SECURITY_GROUP, ecsSecurityGroup.getSecurityGroupId());
