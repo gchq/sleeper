@@ -2018,6 +2018,12 @@
                   "Outputs.TestInstanceGarbageCollectorGCJobQueueD56E334DArn"
                 ]
               },
+              "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+                "Fn::GetAtt": [
+                  "AutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource98C0EF32",
+                  "Outputs.TestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
+                ]
+              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -2094,12 +2100,6 @@
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
                   "Outputs.TestInstanceCompactionCompactionCommitQueue4935D065Arn"
-                ]
-              },
-              "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId": {
-                "Fn::GetAtt": [
-                  "PoliciesNestedStackPoliciesNestedStackResource62C569F8",
-                  "Outputs.TestInstancePoliciesECSC2F932F2GroupId"
                 ]
               },
               "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref": {
@@ -4699,6 +4699,14 @@
               "Arn"
             ]
           }
+        },
+        "TestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+          "Value": {
+            "Fn::GetAtt": [
+              "ECSD299DF54",
+              "GroupId"
+            ]
+          }
         }
       },
       "Resources": {
@@ -4883,6 +4891,30 @@
               "S3Bucket": "sleeper-test-instance-jars",
               "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
+        "ECSD299DF54": {
+          "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "Security group for ECS tasks and services that do not need to serve incomming requests.",
+            "VpcId": "vpc-12345",
+            "SecurityGroupEgress": [
+              {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "Allow all outbound traffic by default",
+                "IpProtocol": "-1"
+              }
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -5092,14 +5124,6 @@
         }
       },
       "Outputs": {
-        "TestInstancePoliciesECSC2F932F2GroupId": {
-          "Value": {
-            "Fn::GetAtt": [
-              "ECSD299DF54",
-              "GroupId"
-            ]
-          }
-        },
         "TestInstancePoliciesAdminRole0994A69EArn": {
           "Value": {
             "Fn::GetAtt": [
@@ -7113,30 +7137,6 @@
             "Roles": [
               {
                 "Ref": "AdminRole38563C57"
-              }
-            ]
-          }
-        },
-        "ECSD299DF54": {
-          "Type": "AWS::EC2::SecurityGroup",
-          "Properties": {
-            "GroupDescription": "Security group for ECS tasks and services that don\u0027t need to serve incomming requests.",
-            "VpcId": "vpc-12345",
-            "SecurityGroupEgress": [
-              {
-                "CidrIp": "0.0.0.0/0",
-                "Description": "Allow all outbound traffic by default",
-                "IpProtocol": "-1"
-              }
-            ],
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "Policies"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
               }
             ]
           }
@@ -24530,6 +24530,9 @@
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn": {
           "Type": "String"
         },
+        "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+          "Type": "String"
+        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn": {
           "Type": "String"
         },
@@ -24567,9 +24570,6 @@
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn": {
-          "Type": "String"
-        },
-        "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId": {
           "Type": "String"
         },
         "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref": {
@@ -25187,7 +25187,7 @@
                   },
                   "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.ecs.security.group.id\u003d",
                   {
-                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesECSC2F932F2GroupId"
+                    "Ref": "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
                   },
                   "\nsleeper.query.dlq.url\u003d",
                   {
