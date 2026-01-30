@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
-import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
@@ -49,12 +49,12 @@ public class SystemTestStandaloneApp extends Stack {
         AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties,
                 jars);
 
-        AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties,
+        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties,
                 jars);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars, autoDeleteS3ObjectsStack);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTestCluster", properties, networking, bucketStack, autoStopEcsClusterTasksStack);
+            new SystemTestClusterStack(this, "SystemTestCluster", properties, networking, bucketStack, ecsClusterTasksStack);
         }
         new SystemTestPropertiesStack(this, "SystemTestProperties", properties, bucketStack, jars);
     }
