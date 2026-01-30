@@ -171,16 +171,12 @@ public class SleeperDsl {
         context.instance().setGeneratorOverrides(overrides);
     }
 
-    public GenerateNumberedRows numberedRows() {
+    public GenerateNumberedRows generateNumberedRows() {
         return context.instance().numberedRows();
     }
 
-    public Iterable<Row> generateNumberedRows(LongStream numbers) {
-        return context.instance().numberedRows().iterableFrom(numbers);
-    }
-
-    public Iterable<Row> generateNumberedRows(Schema schema, LongStream numbers) {
-        return context.instance().numberedRows(schema).iterableFrom(numbers);
+    public GenerateNumberedRows generateNumberedRows(Schema schema) {
+        return context.instance().numberedRows(schema);
     }
 
     public RowNumbers scrambleNumberedRows(LongStream longStream) {
