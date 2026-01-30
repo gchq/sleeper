@@ -26,7 +26,6 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -48,7 +47,7 @@ public class EmrBulkImportST {
         sleeper.updateTableProperties(Map.of(
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
                 PARTITION_SPLIT_MIN_ROWS, "100"));
-        Iterable<Row> rows = sleeper.generateNumberedRows(LongStream.range(0, 10_000));
+        Iterable<Row> rows = sleeper.generateNumberedRows().iterableOverRange(0, 10_000);
         sleeper.sourceFiles().create("file.parquet", rows);
 
         // When

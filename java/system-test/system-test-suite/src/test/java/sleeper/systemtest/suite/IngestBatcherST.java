@@ -71,7 +71,7 @@ public class IngestBatcherST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
@@ -99,7 +99,7 @@ public class IngestBatcherST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -122,7 +122,7 @@ public class IngestBatcherST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

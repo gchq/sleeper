@@ -55,7 +55,7 @@ public class PythonIngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -73,7 +73,7 @@ public class PythonIngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 200));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -91,7 +91,7 @@ public class PythonIngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 200));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }
