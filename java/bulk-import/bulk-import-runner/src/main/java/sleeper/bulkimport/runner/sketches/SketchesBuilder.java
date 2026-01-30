@@ -50,4 +50,8 @@ public class SketchesBuilder {
         return new Sketches(schema, fieldNameToUnion.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
     }
+
+    public Map<String, ItemsUnion<Object>> getFieldNameToUnion() {
+        return fieldNameToUnion;
+    }
 }
