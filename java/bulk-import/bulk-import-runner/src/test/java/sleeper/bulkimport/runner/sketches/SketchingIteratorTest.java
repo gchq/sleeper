@@ -18,7 +18,7 @@ package sleeper.bulkimport.runner.sketches;
 import org.apache.spark.sql.RowFactory;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
+import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,7 +44,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class SketchingByteIteratorTest {
+public class SketchingIteratorTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
@@ -85,11 +85,11 @@ public class SketchingByteIteratorTest {
     private List<Result> applySketchingIterator(List<Row> input) {
         SketchesSerDe serDe = new SketchesSerDe(tableProperties.getSchema());
 
-        SketchByteWritingterator iterator = new SketchByteWritingterator(
+        SketchWritingterator iterator = new SketchWritingterator(
                 toSparkRowIterator(input), tableProperties, new PartitionTree(stateStore.getAllPartitions()));
         List<Result> results = new ArrayList<>();
         while (iterator.hasNext()) {
-            SparkSketchBytesRow sketchByteRow = SparkSketchBytesRow.from(iterator.next());
+            SparkSketchRow sketchByteRow = SparkSketchRow.from(iterator.next());
             Sketches sketches = serDe.fromBytes(sketchByteRow.sketchBytes());
             results.add(new Result(sketchByteRow.partitionId(), SketchesDeciles.from(sketches)));
         }

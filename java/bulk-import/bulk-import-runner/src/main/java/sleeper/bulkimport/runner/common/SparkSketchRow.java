@@ -27,7 +27,7 @@ import org.apache.spark.sql.types.StructType;
  * @param partitionId the ID of the Sleeper partition that the sketch file covers
  * @param sketchBytes the sketch file held as a serialised byte array
  */
-public record SparkSketchBytesRow(String partitionId, byte[] sketchBytes) {
+public record SparkSketchRow(String partitionId, byte[] sketchBytes) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILE_BYTE_ARRAY = "__sketchByteArray";
@@ -38,8 +38,8 @@ public record SparkSketchBytesRow(String partitionId, byte[] sketchBytes) {
      * @param  sparkRow the Spark row
      * @return          the reference to the sketch file held in the row
      */
-    public static SparkSketchBytesRow from(Row sparkRow) {
-        return new SparkSketchBytesRow(sparkRow.getString(0), (byte[]) sparkRow.get(1));
+    public static SparkSketchRow from(Row sparkRow) {
+        return new SparkSketchRow(sparkRow.getString(0), (byte[]) sparkRow.get(1));
     }
 
     /**

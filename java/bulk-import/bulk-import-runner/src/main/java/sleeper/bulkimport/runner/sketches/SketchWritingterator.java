@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.common.SparkRowMapper;
-import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
+import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -37,8 +37,8 @@ import java.util.Map;
  * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
  * can be read with {@link SparkSketchByteRow}.
  */
-public class SketchByteWritingterator implements Iterator<Row> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SketchByteWritingterator.class);
+public class SketchWritingterator implements Iterator<Row> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SketchWritingterator.class);
 
     private final Iterator<Row> input;
     private final Schema schema;
@@ -46,7 +46,7 @@ public class SketchByteWritingterator implements Iterator<Row> {
     private final PartitionTree partitionTree;
     private Iterator<Row> results;
 
-    public SketchByteWritingterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
+    public SketchWritingterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
         this.input = input;
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
@@ -93,8 +93,8 @@ public class SketchByteWritingterator implements Iterator<Row> {
     private void setResults(Map<String, Sketches> partitionIdToSketches) {
         SketchesSerDe serDe = new SketchesSerDe(schema);
         results = partitionIdToSketches.entrySet().stream()
-                .map(entry -> new SparkSketchBytesRow(entry.getKey(), serDe.toBytes(entry.getValue())))
-                .map(SparkSketchBytesRow::toSparkRow)
+                .map(entry -> new SparkSketchRow(entry.getKey(), serDe.toBytes(entry.getValue())))
+                .map(SparkSketchRow::toSparkRow)
                 .iterator();
     }
 

@@ -43,10 +43,10 @@ public class GenerateSketches implements MapPartitionsFunction<Row, Row> {
     }
 
     @Override
-    public SketchByteWritingterator call(Iterator<Row> input) throws Exception {
+    public SketchWritingterator call(Iterator<Row> input) throws Exception {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
         PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
-        return new SketchByteWritingterator(input, tableProperties, partitionTree);
+        return new SketchWritingterator(input, tableProperties, partitionTree);
     }
 }

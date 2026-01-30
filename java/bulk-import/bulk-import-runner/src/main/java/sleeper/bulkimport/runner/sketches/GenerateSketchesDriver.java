@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportSparkContext;
-import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
+import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.SketchesSerDe;
@@ -54,12 +54,12 @@ public class GenerateSketchesDriver {
                 new GenerateSketches(
                         input.getInstanceProperties(), input.getTableProperties(),
                         input.getPartitionsBroadcast()),
-                ExpressionEncoder.apply(SparkSketchBytesRow.createSchema()));
+                ExpressionEncoder.apply(SparkSketchRow.createSchema()));
         Schema schema = input.getTableProperties().getSchema();
         SketchesSerDe serDe = new SketchesSerDe(schema);
         Map<String, SketchesBuilder> partitionIdToBuilder = new HashMap<>();
         sketchFiles.collectAsList().stream()
-                .map(SparkSketchBytesRow::from)
+                .map(SparkSketchRow::from)
                 .forEach(row -> {
                     Sketches sketches = serDe.fromBytes(row.sketchBytes());
                     SketchesBuilder builder = partitionIdToBuilder.computeIfAbsent(
