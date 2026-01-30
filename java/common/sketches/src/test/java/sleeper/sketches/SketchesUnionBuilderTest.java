@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.runner.sketches;
+package sleeper.sketches;
 
 import org.apache.datasketches.quantiles.ItemsUnion;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.sketches.Sketches;
 
 import java.util.Map;
 
@@ -29,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 
-public class SketchesBuilderTest {
+public class SketchesUnionBuilderTest {
 
     @Test
     void shouldUnionTwoSketchFilesTogether() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        SketchesBuilder builder = new SketchesBuilder(schema);
+        SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
 
         sketches.update(new Row(Map.of("key", 123)));
@@ -54,7 +53,7 @@ public class SketchesBuilderTest {
     void shouldUnionSketchesWithDifferentKeys() {
         // Given
         Schema schema = createSchemaWithMultipleKeys("alpha", new IntType(), "beta", new IntType());
-        SketchesBuilder builder = new SketchesBuilder(schema);
+        SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
 
         sketches.update(new Row(Map.of("alpha", 12)));

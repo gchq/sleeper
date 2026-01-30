@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.runner.sketches;
+package sleeper.sketches;
 
 import org.apache.datasketches.quantiles.ItemsUnion;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.sketches.Sketches;
 
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toMap;
 
-public class SketchesBuilder {
+public class SketchesUnionBuilder {
 
     private final Schema schema;
     private final Map<String, ItemsUnion<Object>> fieldNameToUnion;
 
-    SketchesBuilder(Schema schema) {
+    public SketchesUnionBuilder(Schema schema) {
         this.schema = schema;
         this.fieldNameToUnion = schema.getRowKeyFields().stream()
                 .collect(toMap(
@@ -39,14 +38,14 @@ public class SketchesBuilder {
                         field -> Sketches.createUnion(field.getType())));
     }
 
-    void add(Sketches sketches) {
+    public void add(Sketches sketches) {
         for (Field field : schema.getRowKeyFields()) {
             ItemsUnion<Object> union = fieldNameToUnion.get(field.getName());
             union.update(sketches.getQuantilesSketch(field.getName()));
         }
     }
 
-    Sketches build() {
+    public Sketches build() {
         return new Sketches(schema, fieldNameToUnion.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
     }

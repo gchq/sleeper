@@ -26,6 +26,7 @@ import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.SketchesSerDe;
+import sleeper.sketches.SketchesUnionBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,13 +58,13 @@ public class GenerateSketchesDriver {
                 ExpressionEncoder.apply(SparkSketchRow.createSchema()));
         Schema schema = input.getTableProperties().getSchema();
         SketchesSerDe serDe = new SketchesSerDe(schema);
-        Map<String, SketchesBuilder> partitionIdToBuilder = new HashMap<>();
+        Map<String, SketchesUnionBuilder> partitionIdToBuilder = new HashMap<>();
         sketchFiles.collectAsList().stream()
                 .map(SparkSketchRow::from)
                 .forEach(row -> {
                     Sketches sketches = serDe.fromBytes(row.sketchBytes());
-                    SketchesBuilder builder = partitionIdToBuilder.computeIfAbsent(
-                            row.partitionId(), id -> new SketchesBuilder(schema));
+                    SketchesUnionBuilder builder = partitionIdToBuilder.computeIfAbsent(
+                            row.partitionId(), id -> new SketchesUnionBuilder(schema));
                     builder.add(sketches);
                 });
         return partitionIdToBuilder.entrySet().stream()
