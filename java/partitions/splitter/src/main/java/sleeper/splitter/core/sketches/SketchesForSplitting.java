@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
  * we can split a sketch into two while still reading the original sketch, when extending a partition tree over multiple
  * levels.
  */
+@FunctionalInterface
 public interface SketchesForSplitting {
 
     /**
