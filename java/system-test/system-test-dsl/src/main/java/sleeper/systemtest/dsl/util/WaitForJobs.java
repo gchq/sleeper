@@ -182,7 +182,7 @@ public class WaitForJobs {
     }
 
     @FunctionalInterface
-    private interface TaskTracker {
+    public interface TaskTracker {
         boolean hasRunningTasks();
 
         static TaskTracker forIngest(IngestTaskTracker tracker) {

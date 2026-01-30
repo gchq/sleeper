@@ -28,6 +28,12 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.systemtest.dsl.util.WaitForJobs.JobTracker;
+import sleeper.systemtest.dsl.util.WaitForJobs.TaskTracker;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -39,10 +45,31 @@ public class WaitForJobsTest {
     IngestTaskTracker ingestTaskTracker = new InMemoryIngestTaskTracker();
     CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     CompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
+    List<Duration> foundSleeps = new ArrayList<>();
 
     @Test
     void shouldWaitForSuccessfulIngest() {
         // TODO
+    }
+
+    private WaitForJobs waitForIngestJobs() {
+        return new WaitForJobs(() -> instanceProperties, "ingest",
+                properties -> JobTracker.forIngest(tablePropertiesStore.streamAllTables().toList(), ingestJobTracker),
+                properties -> TaskTracker.forIngest(ingestTaskTracker),
+                pollDriver());
+    }
+
+    private WaitForJobs waitForCompactionJobs() {
+        return new WaitForJobs(() -> instanceProperties, "compaction",
+                properties -> JobTracker.forCompaction(tablePropertiesStore.streamAllTables().toList(), compactionJobTracker),
+                properties -> TaskTracker.forCompaction(compactionTaskTracker),
+                pollDriver());
+    }
+
+    private PollWithRetriesDriver pollDriver() {
+        return poll -> poll.toBuilder()
+                .sleepInInterval(millis -> foundSleeps.add(Duration.ofMillis(millis)))
+                .build();
     }
 
 }
