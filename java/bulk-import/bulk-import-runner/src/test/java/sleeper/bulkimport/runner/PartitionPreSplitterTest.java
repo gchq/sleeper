@@ -222,7 +222,7 @@ public class PartitionPreSplitterTest {
     private PartitionPreSplitter<FakeBulkImportContext> splitter() {
         return new PartitionPreSplitter<>(
                 context -> partitionIdToSketches,
-                new FixedStateStoreProvider(tableProperties, stateStore),
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 supplyNumberedIdsWithPrefix("P"));
     }
 
