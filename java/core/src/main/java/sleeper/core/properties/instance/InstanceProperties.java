@@ -205,7 +205,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
             String[] split = csvTags.split(",");
 
             if (split.length % 2 != 0) { //Check for even number of tag name and values
-                throw new RuntimeException("Tags element didn't contain an even number of elements." +
+                throw new IllegalArgumentException("Tags element didn't contain an even number of elements." +
                         " Ensure each tag name and value are seperated by a comma.");
             }
 
