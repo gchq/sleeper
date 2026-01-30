@@ -29,6 +29,11 @@ import java.util.List;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
+/**
+ * Generates a sketch of all input data, and outputs a single row per partition that contains that a sketch.
+ *
+ * @see SketchingIterator
+ */
 public class GenerateSketches implements MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1211201891202603297L;
 
