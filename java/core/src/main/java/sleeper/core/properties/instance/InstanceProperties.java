@@ -206,7 +206,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
             if (split.length % 2 != 0) { //Check for even number of tag name and values
                 throw new RuntimeException("Tags element didn't contain an even number of elements." +
-                        "Ensure tag name and value are seperated by a ','");
+                        " Ensure each tag name and value are seperated by a comma.");
             }
 
             for (int i = 0; i < split.length; i += 2) {
