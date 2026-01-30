@@ -200,7 +200,7 @@ public class StateStoreWaitForFilesTest {
     private StateStoreWaitForFilesTestHelper waiter() {
         return new StateStoreWaitForFilesTestHelper(
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 CompactionJobTracker.NONE, waiter, Instant::now);
     }
 

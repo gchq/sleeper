@@ -18,6 +18,7 @@ use arrow::util::pretty::print_batches;
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
+use env_logger::Env;
 use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
@@ -81,7 +82,7 @@ async fn main() -> color_eyre::Result<()> {
     setup_panic!();
 
     // Install and configure environment logger
-    env_logger::builder()
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format(|buf, record| {
             writeln!(
                 buf,
@@ -94,7 +95,6 @@ async fn main() -> color_eyre::Result<()> {
             )
         })
         .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
-        .filter_level(log::LevelFilter::Info)
         .format_target(false)
         .init();
 
