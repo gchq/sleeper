@@ -21,6 +21,7 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.LongStream;
 
@@ -50,11 +51,11 @@ public class SourceFilesDsl {
     }
 
     public SourceFilesDsl createWithNumberedRows(String filename, LongStream numbers) {
-        return create(filename, instance.numberedRows().iterableFrom(numbers));
+        return create(filename, instance.numberedRows().iteratorFrom(numbers));
     }
 
     public SourceFilesDsl createWithNumberedRows(Schema schema, String filename, LongStream numbers) {
-        return create(schema, filename, instance.numberedRows(schema).iterableFrom(numbers));
+        return create(schema, filename, instance.numberedRows(schema).iteratorFrom(numbers));
     }
 
     public SourceFilesDsl create(String filename, Row... rows) {
@@ -62,12 +63,16 @@ public class SourceFilesDsl {
     }
 
     public SourceFilesDsl create(String filename, Iterable<Row> rows) {
-        context.writeFile(driver, filename, sourceFolder, writeSketches, rows.iterator());
+        return create(filename, rows.iterator());
+    }
+
+    private SourceFilesDsl create(String filename, Iterator<Row> rows) {
+        context.writeFile(driver, filename, sourceFolder, writeSketches, rows);
         return this;
     }
 
-    private SourceFilesDsl create(Schema schema, String filename, Iterable<Row> rows) {
-        context.writeFile(driver, schema, filename, sourceFolder, writeSketches, rows.iterator());
+    private SourceFilesDsl create(Schema schema, String filename, Iterator<Row> rows) {
+        context.writeFile(driver, schema, filename, sourceFolder, writeSketches, rows);
         return this;
     }
 }

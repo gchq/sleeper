@@ -59,10 +59,6 @@ public class GenerateNumberedRows {
         return streamFrom(numbers).iterator();
     }
 
-    public Iterable<Row> iterableFrom(LongStream numbers) {
-        return () -> iteratorFrom(numbers);
-    }
-
     public Iterable<Row> iterableFrom(Supplier<LongStream> numbers) {
         return () -> iteratorFrom(numbers.get());
     }
