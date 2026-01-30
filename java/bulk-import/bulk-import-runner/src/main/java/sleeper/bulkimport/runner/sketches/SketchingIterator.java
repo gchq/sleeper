@@ -35,7 +35,7 @@ import java.util.Map;
 /**
  * An iterator that writes a single data sketch for all the input data. This takes any number of rows, adds them to a
  * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
- * can be read with {@link SparkSketchByteRow}.
+ * can be read with {@link SparkSketchRow}.
  */
 public class SketchingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SketchingIterator.class);
