@@ -44,7 +44,7 @@ public class WaitForJobs {
     private final Function<InstanceProperties, TaskTracker> getTaskTracker;
     private final PollWithRetriesDriver pollDriver;
 
-    private WaitForJobs(
+    WaitForJobs(
             Supplier<InstanceProperties> getInstanceProperties, String typeDescription,
             Function<InstanceProperties, JobTracker> getJobTracker,
             Function<InstanceProperties, TaskTracker> getTaskTracker,
