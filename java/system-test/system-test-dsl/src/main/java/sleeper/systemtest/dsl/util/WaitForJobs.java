@@ -89,12 +89,12 @@ public class WaitForJobs {
     }
 
     public void waitForJobs(Collection<String> jobIds) {
-        waitForJobs(jobIds, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
+        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
         waitForJobs(jobIds, pollUntilJobsFinished,
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
     }
 
     public void waitForJobs(
@@ -104,7 +104,7 @@ public class WaitForJobs {
         TaskTracker taskTracker = getTaskTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to finish: {}", typeDescription, jobIds.size());
         try {
-            pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
+            pollDriver.poll(pollUntilJobsFinished).pollUntil("jobs are finished", () -> {
                 WaitForJobsStatus status = jobTracker.getStatus(jobIds);
                 LOGGER.info("Status of {} jobs: {}", typeDescription, status);
                 if (status.areAllJobsFinished()) {
@@ -141,7 +141,7 @@ public class WaitForJobs {
 
     private void waitForJobsToCommit(Supplier<WaitForJobsStatus> getStatus, PollWithRetries pollUntilJobsCommit) {
         try {
-            pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
+            pollDriver.poll(pollUntilJobsCommit).pollUntil("jobs are committed", () -> {
                 WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
                 return status.areAllJobsFinished();
