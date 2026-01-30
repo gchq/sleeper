@@ -2018,6 +2018,12 @@
                   "Outputs.TestInstanceGarbageCollectorGCJobQueueD56E334DArn"
                 ]
               },
+              "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+                "Fn::GetAtt": [
+                  "AutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource98C0EF32",
+                  "Outputs.TestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
+                ]
+              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -4693,6 +4699,14 @@
               "Arn"
             ]
           }
+        },
+        "TestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+          "Value": {
+            "Fn::GetAtt": [
+              "ECSD299DF54",
+              "GroupId"
+            ]
+          }
         }
       },
       "Resources": {
@@ -4877,6 +4891,30 @@
               "S3Bucket": "sleeper-test-instance-jars",
               "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "AutoStopEcsClusterTasks"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
+        "ECSD299DF54": {
+          "Type": "AWS::EC2::SecurityGroup",
+          "Properties": {
+            "GroupDescription": "Security group for ECS tasks and services that do not need to serve incoming requests.",
+            "VpcId": "vpc-12345",
+            "SecurityGroupEgress": [
+              {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "Allow all outbound traffic by default",
+                "IpProtocol": "-1"
+              }
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -13102,6 +13140,24 @@
                 },
                 {
                   "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
                     "kms:Encrypt",
                     "kms:Decrypt",
                     "kms:ReEncrypt*",
@@ -14525,6 +14581,24 @@
                   "Effect": "Allow",
                   "Resource": {
                     "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestTaskStatusTable7BA7D53BArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
                   }
                 },
                 {
@@ -24456,6 +24530,9 @@
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn": {
           "Type": "String"
         },
+        "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId": {
+          "Type": "String"
+        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn": {
           "Type": "String"
         },
@@ -25108,7 +25185,11 @@
                   {
                     "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Ref"
                   },
-                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.query.dlq.url\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.ecs.security.group.id\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
+                  },
+                  "\nsleeper.query.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Ref"
                   },

@@ -32,7 +32,7 @@ use datafusion::{
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
-use log::info;
+use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
@@ -73,7 +73,7 @@ pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionE
         usize::try_from(total_input_size / MAX_PART_COUNT)
             .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
-    info!(
+    debug!(
         "Use upload buffer of {} bytes.",
         upload_size.to_formatted_string(&Locale::en)
     );

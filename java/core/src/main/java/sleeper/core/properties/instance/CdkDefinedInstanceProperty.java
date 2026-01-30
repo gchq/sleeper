@@ -73,6 +73,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    // Security Groups
+    CdkDefinedInstanceProperty ECS_SECURITY_GROUP = Index.propertyBuilder("sleeper.ecs.security.group.id")
+            .description("The security group ID to be used for ECS tasks and services.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Data
     CdkDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
             .description("The S3 bucket name used to store table data.")

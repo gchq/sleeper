@@ -40,8 +40,8 @@ import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
-import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
@@ -81,7 +81,7 @@ public class SleeperCoreStacks {
     private final IngestTrackerResources ingestTracker;
     private final CompactionTrackerResources compactionTracker;
     private final AutoDeleteS3ObjectsStack autoDeleteS3Stack;
-    private final AutoStopEcsClusterTasksStack autoStopEcsStack;
+    private final EcsClusterTasksStack ecsClusterTasksStack;
     private SleeperInstanceRoles roles;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
@@ -93,7 +93,7 @@ public class SleeperCoreStacks {
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             AutoDeleteS3ObjectsStack autoDeleteS3Stack,
-            AutoStopEcsClusterTasksStack autoStopEcsStack) {
+            EcsClusterTasksStack ecsClusterTasksStack) {
         this.networking = networking;
         this.loggingStack = loggingStack;
         this.deadLetters = deadLetters;
@@ -106,7 +106,7 @@ public class SleeperCoreStacks {
         this.ingestTracker = ingestTracker;
         this.compactionTracker = compactionTracker;
         this.autoDeleteS3Stack = autoDeleteS3Stack;
-        this.autoStopEcsStack = autoStopEcsStack;
+        this.ecsClusterTasksStack = ecsClusterTasksStack;
     }
 
     public static SleeperCoreStacks create(Stack stack, SleeperInstanceProps props) {
@@ -132,7 +132,7 @@ public class SleeperCoreStacks {
                 new TopicStack(scope, "Topic", instanceProperties));
 
         // Custom resource providers
-        AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
 
         // Stacks for tables
@@ -150,11 +150,11 @@ public class SleeperCoreStacks {
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
-                policiesStack, deadLetters);
+                policiesStack, ecsClusterTasksStack, deadLetters);
 
         SleeperCoreStacks stacks = new SleeperCoreStacks(networking, loggingStack, deadLetters,
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
-                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
+                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, ecsClusterTasksStack);
 
         // Table state store maintenance
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
@@ -236,11 +236,11 @@ public class SleeperCoreStacks {
     }
 
     public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
-        autoStopEcsStack.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(scope, cluster, taskCreator);
+        ecsClusterTasksStack.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(scope, cluster, taskCreator);
     }
 
-    public AutoStopEcsClusterTasksStack getAutoStopEcsStack() {
-        return autoStopEcsStack;
+    public EcsClusterTasksStack getEcsClusterTasksStack() {
+        return ecsClusterTasksStack;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
@@ -274,6 +274,10 @@ public class SleeperCoreStacks {
         stateStoreStacks.grantReadWriteUnreferencedFiles(grantee);
         dataStack.grantReadDelete(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
+    }
+
+    public void grantReadWritePartitions(IGrantable grantee) {
+        stateStoreStacks.grantReadWritePartitions(grantee);
     }
 
     public void grantCreateCompactionJobs(IGrantable grantee) {

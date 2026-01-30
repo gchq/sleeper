@@ -18,7 +18,7 @@
  */
 use async_trait::async_trait;
 use futures::stream::BoxStream;
-use log::info;
+use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
@@ -127,7 +127,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                         .checked_sub(get_range.start)
                         .expect("Get range length is negative");
                     stats.get_bytes_read += len;
-                    info!(
+                    debug!(
                         "{} GET request on {}/{} byte range {} to {} = {} bytes",
                         self.prefix,
                         self.path_prefix,
@@ -138,7 +138,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                     );
                 }
                 Some(GetRange::Offset(start_pos)) => {
-                    info!(
+                    debug!(
                         "{} GET request on {}/{} for byte {} to EOF",
                         self.prefix,
                         self.path_prefix,
@@ -147,7 +147,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                     );
                 }
                 Some(GetRange::Suffix(pos)) => {
-                    info!(
+                    debug!(
                         "{} GET request on {}/{} for last {} bytes of object",
                         self.prefix,
                         self.path_prefix,
@@ -156,7 +156,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                     );
                 }
                 None => {
-                    info!(
+                    debug!(
                         "{} GET request on {}/{} for complete file range",
                         self.prefix, self.path_prefix, location
                     );
@@ -167,7 +167,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-        info!(
+        debug!(
             "{} HEAD request {}/{}",
             self.prefix, self.path_prefix, location
         );
@@ -179,7 +179,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
-        info!(
+        debug!(
             "{} LIST request {}/{:?}",
             self.prefix, self.path_prefix, prefix
         );
@@ -204,7 +204,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         payload: PutPayload,
         opts: PutOptions,
     ) -> Result<PutResult> {
-        info!(
+        debug!(
             "{} PUT request to {}/{} of {} bytes",
             self.prefix,
             self.path_prefix,
@@ -219,7 +219,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         location: &Path,
         opts: PutMultipartOptions,
     ) -> Result<Box<dyn MultipartUpload>> {
-        info!(
+        debug!(
             "{} PUT MULTIPART request to {}/{}",
             self.prefix, self.path_prefix, location
         );
@@ -255,7 +255,7 @@ impl LoggingMultipartUpload {
 
 impl MultipartUpload for LoggingMultipartUpload {
     fn put_part(&mut self, data: PutPayload) -> UploadPart {
-        info!(
+        debug!(
             "{} multipart PUT to {} of {} bytes",
             self.prefix,
             self.path,
@@ -271,7 +271,7 @@ impl MultipartUpload for LoggingMultipartUpload {
         'life0: 'async_trait,
         Self: 'async_trait,
     {
-        info!("multipart to {} COMPLETE", self.path);
+        debug!("multipart to {} COMPLETE", self.path);
         self.inner.complete()
     }
 
@@ -412,7 +412,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST GET request on memory://test_file byte range 1 to 5 = 4 bytes"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
             assert_eq!(
                 captured_logs[2].body,
                 "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET requests and requested a total of 4 bytes (range bounded)"
@@ -440,7 +440,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST GET request on memory://test_file byte range 1 to 5 = 4 bytes"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
         });
 
         Ok(())
@@ -467,7 +467,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST GET request on memory://test_file for byte 3 to EOF"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
         });
 
         Ok(())
@@ -494,7 +494,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST GET request on memory://test_file for last 3 bytes of object"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
         });
 
         Ok(())
@@ -518,7 +518,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST GET request on memory://test_file for complete file range"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
         });
 
         Ok(())
@@ -541,7 +541,7 @@ mod tests {
                 captured_logs[1].body,
                 "TEST HEAD request memory://test_file"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
         });
 
         Ok(())
@@ -564,7 +564,7 @@ mod tests {
                 captured_logs[0].body,
                 "TEST LIST request memory://Some(Path { raw: \"foo\" })"
             );
-            assert_eq!(captured_logs[0].level, Level::Info);
+            assert_eq!(captured_logs[0].level, Level::Debug);
         });
 
         Ok(())
@@ -588,7 +588,7 @@ mod tests {
                 captured_logs[0].body,
                 "TEST PUT request to memory://test_file of 3 bytes"
             );
-            assert_eq!(captured_logs[0].level, Level::Info);
+            assert_eq!(captured_logs[0].level, Level::Debug);
         });
 
         Ok(())
@@ -614,27 +614,27 @@ mod tests {
                 captured_logs[0].body,
                 "TEST PUT MULTIPART request to memory://test_file"
             );
-            assert_eq!(captured_logs[0].level, Level::Info);
+            assert_eq!(captured_logs[0].level, Level::Debug);
             assert_eq!(
                 captured_logs[1].body,
                 "TEST multipart PUT to memory://test_file of 3 bytes"
             );
-            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[1].level, Level::Debug);
             assert_eq!(
                 captured_logs[2].body,
                 "TEST multipart PUT to memory://test_file of 4 bytes"
             );
-            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[2].level, Level::Debug);
             assert_eq!(
                 captured_logs[3].body,
                 "TEST multipart PUT to memory://test_file of 5 bytes"
             );
-            assert_eq!(captured_logs[3].level, Level::Info);
+            assert_eq!(captured_logs[3].level, Level::Debug);
             assert_eq!(
                 captured_logs[4].body,
                 "multipart to memory://test_file COMPLETE"
             );
-            assert_eq!(captured_logs[4].level, Level::Info);
+            assert_eq!(captured_logs[4].level, Level::Debug);
         });
 
         let retrieved_data = String::from_utf8(

@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.query.exception;
+package sleeper.clients.query;
 
-public class WebSocketException extends RuntimeException {
-    public WebSocketException(String message) {
-        this(message, null);
-    }
+import sleeper.core.row.Row;
 
-    public WebSocketException(String message, Exception cause) {
-        super(message, cause);
-    }
+import java.util.List;
+
+public interface QueryWebSocketHandler {
+
+    void handleException(RuntimeException e);
+
+    void handleResults(List<Row> results);
 }

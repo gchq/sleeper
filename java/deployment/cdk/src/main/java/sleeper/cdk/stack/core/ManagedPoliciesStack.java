@@ -41,7 +41,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
-
     private final InstanceProperties instanceProperties;
     private final ManagedPolicy directIngestPolicy;
     private final ManagedPolicy ingestByQueuePolicy;
