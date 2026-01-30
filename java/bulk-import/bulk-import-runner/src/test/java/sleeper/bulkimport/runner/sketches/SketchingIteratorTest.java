@@ -85,7 +85,7 @@ public class SketchingIteratorTest {
     private List<Result> applySketchingIterator(List<Row> input) {
         SketchesSerDe serDe = new SketchesSerDe(tableProperties.getSchema());
 
-        SketchWritingterator iterator = new SketchWritingterator(
+        SketchingIterator iterator = new SketchingIterator(
                 toSparkRowIterator(input), tableProperties, new PartitionTree(stateStore.getAllPartitions()));
         List<Result> results = new ArrayList<>();
         while (iterator.hasNext()) {

@@ -37,8 +37,8 @@ import java.util.Map;
  * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
  * can be read with {@link SparkSketchByteRow}.
  */
-public class SketchWritingterator implements Iterator<Row> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SketchWritingterator.class);
+public class SketchingIterator implements Iterator<Row> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SketchingIterator.class);
 
     private final Iterator<Row> input;
     private final Schema schema;
@@ -46,7 +46,7 @@ public class SketchWritingterator implements Iterator<Row> {
     private final PartitionTree partitionTree;
     private Iterator<Row> results;
 
-    public SketchWritingterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
+    public SketchingIterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
         this.input = input;
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
