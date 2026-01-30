@@ -21,16 +21,16 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
 /**
- * A reference to a sketch file written during a Spark job. Used to calculate split points when pre-splitting
+ * A reference to a sketch written during a Spark job. Used to calculate split points when pre-splitting
  * partitions.
  *
  * @param partitionId the ID of the Sleeper partition that the sketch file covers
- * @param sketchBytes the sketch file held as a serialised byte array
+ * @param sketchBytes the sketch held as a serialised byte array
  */
 public record SparkSketchRow(String partitionId, byte[] sketchBytes) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
-    public static final String FILE_BYTE_ARRAY = "__sketchByteArray";
+    public static final String SKETCH_BYTE_ARRAY = "__sketchByteArray";
 
     /**
      * Reads a Spark row containing a reference to a sketch file.
@@ -59,6 +59,6 @@ public record SparkSketchRow(String partitionId, byte[] sketchBytes) {
     public static StructType createSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
-                .add(FILE_BYTE_ARRAY, DataTypes.BinaryType);
+                .add(SKETCH_BYTE_ARRAY, DataTypes.BinaryType);
     }
 }
