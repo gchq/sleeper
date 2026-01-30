@@ -12,6 +12,12 @@ then there will be 100,000 writes to S3 (in fact, there might be more if the fil
 of `sleeper.ingest.max.local.rows`). Using the bulk import method, there will only be 100 writes to S3 (assuming that
 the 1000 files are all imported in the same bulk import job).
 
+Note that bulk import requires a minimum number of partitions, set in the table
+property `sleeper.table.bulk.import.min.leaf.partitions`, documented [here](properties/table/bulk_import.md). If too few
+partitions are present, then when a bulk import job is submitted the partitions will be split automatically, based on
+the data in the bulk import job. This will assume that the job's data is a representative sample for the table. You can
+take control over this by pre-splitting the table as described [here](../usage/tables.md#pre-split-partitions).
+
 Note that it is vital that a table's partitions are split based on a representative sample of data. Bulk import requires
 a minimum number of partitions, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
 documented [here](properties/table/bulk_import.md). If the table is not pre-split as
