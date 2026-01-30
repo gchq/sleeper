@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.query.exception;
+package sleeper.clients.query;
 
-public class WebSocketException extends RuntimeException {
-    public WebSocketException(String message) {
-        this(message, null);
+import sleeper.core.row.Row;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+public class QueryWebSocketFuture<T> extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
+
+    @Override
+    public void handleException(RuntimeException e) {
+        this.completeExceptionally(e);
     }
 
-    public WebSocketException(String message, Exception cause) {
-        super(message, cause);
+    @Override
+    public void handleResults(List<Row> results) {
+        this.complete(results);
     }
+
 }

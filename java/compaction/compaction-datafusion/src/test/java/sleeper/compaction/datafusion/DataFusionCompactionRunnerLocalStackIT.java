@@ -118,7 +118,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private CompactionTaskTestHelper compactionTaskTestHelper() {
         return new CompactionTaskTestHelper(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), jobTracker);
     }
 
     private RowsProcessed getRowsProcessed(CompactionJob job) {

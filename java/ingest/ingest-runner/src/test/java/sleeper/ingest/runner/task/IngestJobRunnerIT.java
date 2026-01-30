@@ -323,7 +323,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private IngestJobRunner ingestJobRunner(StateStore stateStore) throws Exception {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+        StateStoreProvider stateStoreProvider = FixedStateStoreProvider.singleTable(tableProperties, stateStore);
         return new IngestJobRunner(
                 ObjectFactory.noUserJars(),
                 instanceProperties,

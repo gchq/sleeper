@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class QueryWebSocketListener {
@@ -47,13 +46,14 @@ public class QueryWebSocketListener {
     private final QueryWebSocketMessageSerDe serDe;
     private final QuerySerDe querySerDe;
     private final Query query;
-    private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
+    private final QueryWebSocketHandler handler;
     private Connection connection;
 
-    public QueryWebSocketListener(Schema schema, Query query) {
+    public QueryWebSocketListener(Schema schema, Query query, QueryWebSocketHandler handler) {
         this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
         this.querySerDe = new QuerySerDe(schema);
         this.query = query;
+        this.handler = handler;
     }
 
     public void onOpen(Connection connection) {
@@ -70,7 +70,7 @@ public class QueryWebSocketListener {
         try {
             message = serDe.fromJson(json);
         } catch (RuntimeException e) {
-            future.completeExceptionally(e);
+            handler.handleException(e);
             close();
             return;
         }
@@ -84,33 +84,29 @@ public class QueryWebSocketListener {
         } else if (message.getMessage() == QueryWebSocketMessageType.completed) {
             handleCompleted(message);
         } else {
-            future.completeExceptionally(new WebSocketErrorException("Unrecognised message type: " + message.getMessage()));
+            handler.handleException(new WebSocketErrorException("Unrecognised message type: " + message.getMessage()));
             close();
         }
 
         if (outstandingQueryIds.isEmpty()) {
-            future.complete(getResults());
+            handler.handleResults(getResults());
             close();
         }
     }
 
     public void onClose(String reason) {
         LOGGER.info("Disconnected from WebSocket API: {}", reason);
-        future.completeExceptionally(new WebSocketClosedException(reason));
+        handler.handleException(new WebSocketClosedException(reason));
     }
 
     public void onError(Exception error) {
-        future.completeExceptionally(new WebSocketErrorException(error));
+        handler.handleException(new WebSocketErrorException(error));
         close();
-    }
-
-    public CompletableFuture<List<Row>> getQueryFuture() {
-        return future;
     }
 
     private void handleError(QueryWebSocketMessage message) {
         outstandingQueryIds.remove(message.getQueryId());
-        future.completeExceptionally(new WebSocketErrorException(message.getError()));
+        handler.handleException(new WebSocketErrorException(message.getError()));
         close();
     }
 

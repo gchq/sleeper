@@ -1107,7 +1107,7 @@ public class LeafPartitionRowRetrieverImplIT {
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(tempDir, null).toString())
                 .instanceProperties(instanceProperties)
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .stateStoreProvider(FixedStateStoreProvider.singleTable(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
                 .build();
         factory.ingestFromRowIterator(tableProperties, rows.iterator());
