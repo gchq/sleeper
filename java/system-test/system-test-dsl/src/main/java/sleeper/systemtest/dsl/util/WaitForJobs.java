@@ -38,18 +38,18 @@ import java.util.stream.Stream;
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
 
-    private final SystemTestInstanceContext instance;
+    private final Supplier<InstanceProperties> getInstanceProperties;
     private final String typeDescription;
     private final Function<InstanceProperties, JobTracker> getJobTracker;
     private final Function<InstanceProperties, TaskTracker> getTaskTracker;
     private final PollWithRetriesDriver pollDriver;
 
     private WaitForJobs(
-            SystemTestInstanceContext instance, String typeDescription,
+            Supplier<InstanceProperties> getInstanceProperties, String typeDescription,
             Function<InstanceProperties, JobTracker> getJobTracker,
             Function<InstanceProperties, TaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        this.instance = instance;
+        this.getInstanceProperties = getInstanceProperties;
         this.typeDescription = typeDescription;
         this.getJobTracker = getJobTracker;
         this.getTaskTracker = getTaskTracker;
@@ -61,7 +61,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "ingest",
+        return new WaitForJobs(instance::getInstanceProperties, "ingest",
                 properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
@@ -71,7 +71,7 @@ public class WaitForJobs {
             SystemTestInstanceContext instance,
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "bulk import",
+        return new WaitForJobs(instance::getInstanceProperties, "bulk import",
                 properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
@@ -82,7 +82,7 @@ public class WaitForJobs {
             Function<InstanceProperties, CompactionJobTracker> getJobTracker,
             Function<InstanceProperties, CompactionTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "compaction",
+        return new WaitForJobs(instance::getInstanceProperties, "compaction",
                 properties -> JobTracker.forCompaction(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
@@ -99,7 +99,7 @@ public class WaitForJobs {
 
     public void waitForJobs(
             Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         TaskTracker taskTracker = getTaskTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to finish: {}", typeDescription, jobIds.size());
@@ -126,14 +126,14 @@ public class WaitForJobs {
 
     public void waitForJobsToCommit(
             Collection<String> jobIds, PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to commit: {}", typeDescription, jobIds.size());
         waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
     }
 
     public void waitForAllJobsToCommit(PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for all {} jobs to commit", typeDescription);
         waitForJobsToCommit(() -> jobTracker.getAllJobsStatus(), pollUntilJobsCommit);
