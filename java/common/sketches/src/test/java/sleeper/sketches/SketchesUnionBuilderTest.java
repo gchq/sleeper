@@ -15,63 +15,69 @@
  */
 package sleeper.sketches;
 
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.sketches.testutils.SketchesDeciles;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 
 public class SketchesUnionBuilderTest {
 
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+
     @Test
     void shouldUnionTwoSketchFilesTogether() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
+        List<Row> rowData = List.of(
+                new Row(Map.of("key", 123)),
+                new Row(Map.of("key", 456)));
 
-        sketches.update(new Row(Map.of("key", 123)));
-        sketches.update(new Row(Map.of("key", 456)));
+        rowData.forEach(presentRow -> sketches.update(presentRow));
 
         // When
         builder.add(sketches);
 
         // Then
-        ItemsUnion<Object> keyUnion = builder.getFieldNameToUnion().get("key");
-        assertThat(keyUnion.getResult().getMinValue()).isEqualTo(123L);
-        assertThat(keyUnion.getResult().getMaxValue()).isEqualTo(456L);
+        assertThat(SketchesDeciles.from(builder.build()))
+                .isEqualTo(SketchesDeciles.from(tableProperties, rowData));
     }
 
     @Test
     void shouldUnionSketchesWithDifferentKeys() {
         // Given
         Schema schema = createSchemaWithMultipleKeys("alpha", new IntType(), "beta", new IntType());
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
 
-        sketches.update(new Row(Map.of("alpha", 12)));
-        sketches.update(new Row(Map.of("alpha", 34)));
-        sketches.update(new Row(Map.of("beta", 56)));
-        sketches.update(new Row(Map.of("beta", 78)));
+        List<Row> rowData = List.of(new Row(Map.of("alpha", 12)),
+                new Row(Map.of("beta", 56)),
+                new Row(Map.of("alpha", 34)),
+                new Row(Map.of("beta", 78)));
+
+        rowData.forEach(presentRow -> sketches.update(presentRow));
 
         // When
         builder.add(sketches);
 
-        // Then
-        ItemsUnion<Object> alphaUnion = builder.getFieldNameToUnion().get("alpha");
-        assertThat(alphaUnion.getResult().getMinValue()).isEqualTo(12L);
-        assertThat(alphaUnion.getResult().getMaxValue()).isEqualTo(34L);
-
-        ItemsUnion<Object> betaUnion = builder.getFieldNameToUnion().get("beta");
-        assertThat(betaUnion.getResult().getMinValue()).isEqualTo(56L);
-        assertThat(betaUnion.getResult().getMaxValue()).isEqualTo(78L);
-
+        //Then
+        assertThat(SketchesDeciles.from(builder.build()))
+                .isEqualTo(SketchesDeciles.from(tableProperties, rowData));
     }
 }

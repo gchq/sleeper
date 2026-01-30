@@ -25,6 +25,9 @@ import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Creates union of sketches.
+ */
 public class SketchesUnionBuilder {
 
     private final Schema schema;
@@ -38,6 +41,12 @@ public class SketchesUnionBuilder {
                         field -> Sketches.createUnion(field.getType())));
     }
 
+    /**
+     * Updates existing unions with any new sketches provide that match on the key field.
+     *
+     * @param sketches sketches to add
+     *
+     */
     public void add(Sketches sketches) {
         for (Field field : schema.getRowKeyFields()) {
             ItemsUnion<Object> union = fieldNameToUnion.get(field.getName());
@@ -45,12 +54,13 @@ public class SketchesUnionBuilder {
         }
     }
 
+    /**
+     * Creates sketches object from the mapped unions for use a single reference point.
+     *
+     * @return sketches
+     */
     public Sketches build() {
         return new Sketches(schema, fieldNameToUnion.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
-    }
-
-    public Map<String, ItemsUnion<Object>> getFieldNameToUnion() {
-        return fieldNameToUnion;
     }
 }
