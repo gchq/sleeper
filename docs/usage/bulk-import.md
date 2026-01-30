@@ -12,10 +12,12 @@ then there will be 100,000 writes to S3 (in fact, there might be more if the fil
 of `sleeper.ingest.max.local.rows`). Using the bulk import method, there will only be 100 writes to S3 (assuming that
 the 1000 files are all imported in the same bulk import job).
 
-Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../usage/tables.md#pre-split-partitions)). Bulk import jobs will be refused unless there are a
-minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
-documented [here](properties/table/bulk_import.md).
+Note that it is vital that a table's partitions are split based on a representative sample of data. Bulk import requires
+a minimum number of partitions, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
+documented [here](properties/table/bulk_import.md). If the table is not pre-split as
+described [here](../usage/tables.md#pre-split-partitions), or if too few partitions are present, then when
+a bulk import job is submitted the partitions will be split automatically, based on the data in the bulk import job.
+This will assume that the job's data is a representative sample for the table.
 
 Files to be ingested must be accessible to the EMR cluster, and to the lambda that receives the job to submit to the
 cluster. See the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
