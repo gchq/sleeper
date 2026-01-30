@@ -93,7 +93,7 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.33.4</protobuf.version>
+        <protobuf.version>4.33.5</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
