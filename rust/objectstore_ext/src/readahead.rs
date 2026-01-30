@@ -343,7 +343,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .underlying_gets
             .lock()
             .expect("ReadaheadStore lock poisoned") += 1;
-        info!(
+        debug!(
             "ReadaheadStore GET request to {}/{location}",
             self.path_prefix
         );

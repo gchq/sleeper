@@ -11,6 +11,7 @@ env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
   TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
+  TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
   setup:

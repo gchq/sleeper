@@ -237,7 +237,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
 
     private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
         return new GarbageCollector(deleteFiles, instanceProperties,
-                new FixedStateStoreProvider(tableProperties, stateStore),
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 

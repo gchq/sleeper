@@ -26,3 +26,6 @@ vulnerabilities:
   # Golang stdlib
   - id: CVE-2025-61729
   - id: CVE-2025-61727
+
+  # AWS CLI wheel
+  - id: CVE-2026-24049

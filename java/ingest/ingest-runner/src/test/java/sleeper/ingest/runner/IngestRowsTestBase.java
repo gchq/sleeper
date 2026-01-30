@@ -90,7 +90,7 @@ public class IngestRowsTestBase {
 
     private IngestFactory createIngestFactory(StateStore stateStore) {
         return IngestRowsTestDataHelper.createIngestFactory(inputFolderName,
-                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), instanceProperties);
     }
 
     protected static List<Row> readRows(FileReference fileReference, Schema schema) throws Exception {

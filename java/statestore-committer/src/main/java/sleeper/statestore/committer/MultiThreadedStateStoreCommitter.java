@@ -16,8 +16,6 @@
 package sleeper.statestore.committer;
 
 import com.google.common.collect.Streams;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -50,19 +48,16 @@ import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT;
-import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE;
 
 /**
  * Applies asynchronous commits to state stores in a manner optimised for multi core execution environments.
@@ -80,14 +75,7 @@ public class MultiThreadedStateStoreCommitter {
     private StateStoreProvider stateStoreProvider;
     private StateStoreCommitter committer;
     private PollWithRetries throttlingRetriesConfig;
-    private long heapSpaceToKeepFree;
-    private LinkedList<String> processedTableOrder = new LinkedList<>();
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
-
-    public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName) {
-        this(s3Client, dynamoClient, sqsClient, configBucketName, null);
-        this.init();
-    }
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
         this.s3Client = s3Client;
@@ -105,25 +93,11 @@ public class MultiThreadedStateStoreCommitter {
             qUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         }
 
-        long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT);
-        long heapSpacePercToKeepFree = (Runtime.getRuntime().maxMemory() / 100) * instanceProperties.getLong(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE);
-        heapSpaceToKeepFree = Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
-
-        if (heapSpaceToKeepFree > Runtime.getRuntime().maxMemory()) {
-            throw new IllegalArgumentException("This state store committer has been configured to keep at least " +
-                    FileUtils.byteCountToDisplaySize(heapSpaceToKeepFree) +
-                    " of heap available, but the maximum allowed heap size is only " +
-                    FileUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory()) +
-                    "!");
-        }
-        LOGGER.info("Will aim to keep {} of heap space available for use",
-                FileUtils.byteCountToDisplaySize(heapSpaceToKeepFree));
-
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
 
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoClient);
-        stateStoreProvider = StateStoreProvider.noCacheSizeLimit(stateStoreFactory);
+        stateStoreProvider = StateStoreProvider.memoryLimitOnly(instanceProperties, stateStoreFactory);
         transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         committer = new StateStoreCommitter(
                 tablePropertiesProvider,
@@ -134,21 +108,18 @@ public class MultiThreadedStateStoreCommitter {
 
     /**
      * Apply asynchronous commits from the committer SQS queue.
-     *
-     * @throws Exception Error
      */
-    public void run() throws Exception {
-        runUntil(() -> false);
+    public void run() {
+        runUntil(20, response -> false);
     }
 
     /**
      * Apply asynchronous commits from the committer SQS queue until a particular condition is satisfied.
      *
-     * @param  shouldStopRunning A function that returns true when the committer should stop processing commit requests
-     * @throws Exception         Error
+     * @param waitTimeSeconds   the amount of time to wait for a message from the queue
+     * @param shouldStopRunning a function that returns true when the committer should stop processing commit requests
      */
-    public void runUntil(Supplier<Boolean> shouldStopRunning) throws Exception {
-        Exception err = null;
+    public void runUntil(int waitTimeSeconds, Function<ReceiveMessageResponse, Boolean> shouldStopRunning) {
 
         Instant startedAt = Instant.now();
         Instant lastReceivedCommitsAt = Instant.now();
@@ -158,15 +129,18 @@ public class MultiThreadedStateStoreCommitter {
         }
 
         try {
-            while (!shouldStopRunning.get()) {
-                ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+            ReceiveMessageResponse response = null;
+            while (response == null || !shouldStopRunning.apply(response)) {
+                response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                         .queueUrl(qUrl)
                         .maxNumberOfMessages(10)
-                        .waitTimeSeconds(20)
+                        .waitTimeSeconds(waitTimeSeconds)
                         // TODO: Need to deal with commits potentially taking longer than this visibility threshold
                         .visibilityTimeout(15 * 60)
                         .build());
 
+                // Only initialise after we receive the first messages, because the instance properties may not have
+                // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
                     lastReceivedCommitsAt = Instant.now();
                     if (committer == null) {
@@ -212,68 +186,33 @@ public class MultiThreadedStateStoreCommitter {
                     });
 
                     tableFutures.put(tableId, task);
-                    processedTableOrder.remove(tableId);
-                    processedTableOrder.add(tableId);
                 });
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
-            err = e;
+            throw e;
         } finally {
             long pendingTaskCount = tableFutures.values().stream().filter(task -> !task.isDone()).count();
             if (pendingTaskCount > 0) {
                 LOGGER.info("Requests for {} tables are still being processed, waiting for them to finish...", pendingTaskCount);
             }
-            tableFutures.values().stream().map(task -> task.join()).collect(Collectors.toList());
+            tableFutures.values().stream().forEach(CompletableFuture::join);
             LOGGER.info("All pending requests have been actioned");
-            if (err != null) {
-                throw err;
-            }
         }
     }
 
-    @SuppressFBWarnings("DM_GC")
-    private void ensureEnoughHeapSpaceAvailable(Set<String> requiredTableIds) {
-        LOGGER.debug("UsedMem: {} FreeMem: {} HeapSize: {} MaxMem: {}",
-                FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()),
-                FileUtils.byteCountToDisplaySize(Runtime.getRuntime().freeMemory()),
-                FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory()),
-                FileUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory()));
-
-        long availableMemory =
-                // Amount of heap space not currently in use
-                Runtime.getRuntime().freeMemory() +
-                // How much extra space the heap is allowed to grow to use
-                        Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
-
-        while (availableMemory < heapSpaceToKeepFree) {
-            LOGGER.info("Removing old state stores from cache as limited memory available: {}", FileUtils.byteCountToDisplaySize(availableMemory));
-
-            // Find a state store that we can remove from the in-mem cache that we haven't used for a while
-            Optional<String> tableIdToUncache = processedTableOrder.stream().filter(tableId -> {
-                // Don't remove a state store from the cache that we are about to use!
-                return !requiredTableIds.contains(tableId) &&
-                // Only remove a state store that we have finished using
-                        tableFutures.get(tableId).isDone();
-            }).findFirst();
-
-            if (tableIdToUncache.isPresent()) {
-                LOGGER.info("Removing state store for table {} from cache", tableIdToUncache.get());
-                stateStoreProvider.removeStateStoreFromCache(tableIdToUncache.get());
-                processedTableOrder.remove(tableIdToUncache.get());
-            } else {
-                LOGGER.error("Couldn't find any candidate state stores to remove from memory. All must currently be in use, will wait and try again...");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+    private void ensureEnoughHeapSpaceAvailable(Set<String> tableIds) {
+        if (stateStoreProvider == null) {
+            return;
+        }
+        while (!stateStoreProvider.ensureEnoughHeapSpaceAvailable(tableIds)) {
+            LOGGER.error("Couldn't find any candidate state stores to remove from memory. All must currently be in use, will wait and try again...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
-
-            System.gc();
-
-            availableMemory = Runtime.getRuntime().freeMemory() + Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
-            LOGGER.info("Memory now available: {}", FileUtils.byteCountToDisplaySize(availableMemory));
         }
     }
 
@@ -283,7 +222,7 @@ public class MultiThreadedStateStoreCommitter {
 
         committer.applyBatch(
                 operation -> DynamoDBUtils.retryOnThrottlingException(throttlingRetriesConfig, operation),
-                requestsWithHandle.stream().map(StateStoreCommitRequestWithSqsReceipt::getHandle).collect(Collectors.toList()));
+                requestsWithHandle.stream().map(StateStoreCommitRequestWithSqsReceipt::getHandle).toList());
 
         Map<Boolean, List<StateStoreCommitRequestWithSqsReceipt>> requestResults = requestsWithHandle.stream().collect(Collectors.partitioningBy(StateStoreCommitRequestWithSqsReceipt::failed));
         List<StateStoreCommitRequestWithSqsReceipt> failedRequests = requestResults.get(true);
@@ -291,15 +230,16 @@ public class MultiThreadedStateStoreCommitter {
 
         if (successfulRequests.size() > 0) {
             LOGGER.debug("Deleting {} requests for table {} as they have been successfully applied", successfulRequests.size(), tableId);
-            DeleteMessageBatchResponse deleteResponse = sqsClient.deleteMessageBatch(DeleteMessageBatchRequest.builder()
-                    .queueUrl(qUrl)
-                    .entries(
-                            Streams.mapWithIndex(successfulRequests.stream(), (request, index) -> DeleteMessageBatchRequestEntry.builder()
-                                    .id(request.getCommitRequest().getTableId() + "-" + index)
-                                    .receiptHandle(request.getSqsReceipt())
-                                    .build())
-                                    .collect(Collectors.toList()))
-                    .build());
+            DeleteMessageBatchResponse deleteResponse = sqsClient.deleteMessageBatch(
+                    DeleteMessageBatchRequest.builder()
+                            .queueUrl(qUrl)
+                            .entries(Streams.mapWithIndex(successfulRequests.stream(),
+                                    (request, index) -> DeleteMessageBatchRequestEntry.builder()
+                                            .id(request.getCommitRequest().getTableId() + "-" + index)
+                                            .receiptHandle(request.getSqsReceipt())
+                                            .build())
+                                    .toList())
+                            .build());
 
             if (!deleteResponse.failed().isEmpty()) {
                 LOGGER.error("Failed to delete {} requests for table {} from SQS queue! Successfully deleted {} requests: {}",
@@ -319,27 +259,30 @@ public class MultiThreadedStateStoreCommitter {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
 
-            ChangeMessageVisibilityBatchResponse changeVisibilityResponse = sqsClient.changeMessageVisibilityBatch(ChangeMessageVisibilityBatchRequest.builder()
-                    .queueUrl(qUrl)
-                    .entries(
-                            Streams.mapWithIndex(failedRequests.stream(), (request, index) -> ChangeMessageVisibilityBatchRequestEntry.builder()
-                                    .id(request.getCommitRequest().getTableId() + "-" + index)
-                                    .receiptHandle(request.getSqsReceipt())
-                                    .visibilityTimeout(0)
-                                    .build())
-                                    .collect(Collectors.toList()))
-                    .build());
+            ChangeMessageVisibilityBatchResponse changeVisibilityResponse = sqsClient.changeMessageVisibilityBatch(
+                    ChangeMessageVisibilityBatchRequest.builder()
+                            .queueUrl(qUrl)
+                            .entries(Streams.mapWithIndex(failedRequests.stream(),
+                                    (request, index) -> ChangeMessageVisibilityBatchRequestEntry.builder()
+                                            .id(request.getCommitRequest().getTableId() + "-" + index)
+                                            .receiptHandle(request.getSqsReceipt())
+                                            .visibilityTimeout(0)
+                                            .build())
+                                    .toList())
+                            .build());
 
             if (!changeVisibilityResponse.failed().isEmpty()) {
-                LOGGER.error("Failed to change visibility of {} requests for table {} in SQS queue! (successfully change visibility of {} requests):\n{}",
+                LOGGER.error("Failed to change visibility of {} requests for table {} in SQS queue! (successfully changed visibility of {} requests):\n{}",
                         changeVisibilityResponse.failed().size(),
                         tableId,
                         changeVisibilityResponse.successful().size(),
-                        String.join("\n", changeVisibilityResponse.failed().stream()
+                        changeVisibilityResponse.failed().stream()
                                 .map(failedRequest -> failedRequest.toString())
-                                .collect(Collectors.toList())));
+                                .collect(joining("\n")));
             } else {
                 LOGGER.debug("Successfully changed visibility of {} requests for table {} in SQS queue", changeVisibilityResponse.successful().size(), tableId);
             }
@@ -353,7 +296,7 @@ public class MultiThreadedStateStoreCommitter {
     }
 
     /**
-     * TODO: Explain why this is required.
+     * Tracks whether a state store commit requests succeeded or failed, so that we can report this to SQS.
      */
     private static class StateStoreCommitRequestWithSqsReceipt {
 
