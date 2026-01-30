@@ -77,7 +77,7 @@ public class EksBulkImportST {
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
                 PARTITION_SPLIT_MIN_ROWS, "100"));
         Iterable<Row> rows = sleeper.generateNumberedRows().iterableOverRange(0, 10_000);
-        sleeper.sourceFiles().create("file.parquet", rows);
+        sleeper.sourceFiles().create("test.parquet", rows);
 
         // When
         sleeper.ingest().bulkImportByQueue()
