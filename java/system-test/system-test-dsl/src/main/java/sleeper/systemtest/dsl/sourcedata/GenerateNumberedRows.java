@@ -70,6 +70,10 @@ public class GenerateNumberedRows {
         return iterableFrom(() -> LongStream.range(startInclusive, endExclusive));
     }
 
+    public Iterable<Row> iterableOverRangeClosed(long startInclusive, long endInclusive) {
+        return iterableFrom(() -> LongStream.rangeClosed(startInclusive, endInclusive));
+    }
+
     public Iterable<Row> iterableOverNumbers(long... numbers) {
         return iterableFrom(() -> LongStream.of(numbers));
     }

@@ -225,7 +225,7 @@ public class GenerateNumberedRowsTest {
         Schema schema = createSchemaWithKey("key", new IntType());
 
         // When
-        Iterable<Row> iterable = GenerateNumberedRows.from(schema).iterableOverRange(1, 3);
+        Iterable<Row> iterable = GenerateNumberedRows.from(schema).iterableOverRangeClosed(1, 3);
 
         // Then
         List<Row> expected = List.of(
