@@ -37,7 +37,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.networking.SleeperNetworking;
-import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -63,7 +63,7 @@ public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestStandaloneProperties properties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties, properties, properties.toInstancePropertiesForCdkUtils(), networking, bucketStack, autoStopEcsClusterTasksStack);
         Tags.of(this).add("DeploymentStack", id);
@@ -71,7 +71,7 @@ public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestProperties properties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties.testPropertiesOnly(), properties::set, properties, networking, bucketStack, autoStopEcsClusterTasksStack);
         Utils.addTags(this, properties);
@@ -80,7 +80,7 @@ public class SystemTestClusterStack extends NestedStack {
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
             InstanceProperties instanceProperties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // ECS cluster for tasks to write data

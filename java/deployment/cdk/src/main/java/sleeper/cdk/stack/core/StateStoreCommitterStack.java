@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.InstanceArchitecture;
 import software.amazon.awscdk.services.ec2.InstanceType;
 import software.amazon.awscdk.services.ec2.LaunchTemplate;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -102,6 +103,7 @@ public class StateStoreCommitterStack extends NestedStack {
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
+            EcsClusterTasksStack ecsClusterTasksStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -111,12 +113,12 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
-                loggingStack, policiesStack, lambdaCode,
-                configBucketStack, tableIndexStack, stateStoreStacks,
-                compactionTracker, ingestTracker);
+                    loggingStack, policiesStack, lambdaCode,
+                    configBucketStack, tableIndexStack, stateStoreStacks,
+                    compactionTracker, ingestTracker);
         }
         Utils.addTags(this, instanceProperties);
     }
@@ -152,46 +154,48 @@ public class StateStoreCommitterStack extends NestedStack {
         return queue;
     }
 
-    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks, Queue commitQueue) {
+    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+            StateStoreStacks stateStoreStacks, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
-            .vpcId(instanceProperties.get(VPC_ID))
-            .build());
+                .vpcId(instanceProperties.get(VPC_ID))
+                .build());
         String clusterName = String.join("-", "sleeper",
-            Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
+                Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
         Cluster cluster = Cluster.Builder.create(this, "cluster")
-            .clusterName(clusterName)
-            .vpc(vpc)
-            .build();
+                .clusterName(clusterName)
+                .vpc(vpc)
+                .build();
 
         String ec2InstanceType = instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
         InstanceType instanceType = new InstanceType(ec2InstanceType);
 
         cluster.addAsgCapacityProvider(AsgCapacityProvider.Builder.create(this, "capacity-provider")
-            .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
-                .launchTemplate(LaunchTemplate.Builder.create(this, "instance-template")
-                    .instanceType(instanceType)
-                    .machineImage(EcsOptimizedImage.amazonLinux2023(lookupAmiHardwareType(instanceType.getArchitecture())))
-                    .requireImdsv2(true)
-                    .userData(UserData.forLinux())
-                    .role(Role.Builder.create(this, "role")
-                        .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2.amazonaws.com"))
+                .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
+                        .launchTemplate(LaunchTemplate.Builder.create(this, "instance-template")
+                                .instanceType(instanceType)
+                                .machineImage(EcsOptimizedImage.amazonLinux2023(lookupAmiHardwareType(instanceType.getArchitecture())))
+                                .requireImdsv2(true)
+                                .userData(UserData.forLinux())
+                                .securityGroup(ecsSecurityGroup)
+                                .role(Role.Builder.create(this, "role")
+                                        .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2.amazonaws.com"))
+                                        .build())
+                                .build())
+                        .vpc(vpc)
+                        .minCapacity(0)
+                        .maxCapacity(1)
+                        .desiredCapacity(1)
+                        .minHealthyPercentage(0)
+                        .maxHealthyPercentage(100)
+                        .defaultInstanceWarmup(Duration.seconds(30))
+                        .newInstancesProtectedFromScaleIn(false)
+                        .updatePolicy(UpdatePolicy.rollingUpdate())
                         .build())
-                    .build())
-                .vpc(vpc)
-                .minCapacity(0)
-                .maxCapacity(1)
-                .desiredCapacity(1)
-                .minHealthyPercentage(0)
-                .maxHealthyPercentage(100)
-                .defaultInstanceWarmup(Duration.seconds(30))
-                .newInstancesProtectedFromScaleIn(false)
-                .updatePolicy(UpdatePolicy.rollingUpdate())
-                .build())
-            .instanceWarmupPeriod(30)
-            .enableManagedTerminationProtection(false)
-            .build());
+                .instanceWarmupPeriod(30)
+                .enableManagedTerminationProtection(false)
+                .build());
 
         IRepository repository = Repository.fromRepositoryName(this, "ecr", DockerDeployment.STATESTORE_COMMITTER.getEcrRepositoryName(this.instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
@@ -202,17 +206,17 @@ public class StateStoreCommitterStack extends NestedStack {
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
-            .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
-            .build();
+                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
+                .build();
 
         taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
-            .containerName("committer")
-            .image(containerImage)
-            .command(List.of(instanceId, commitQueue.getQueueUrl()))
-            .environment(environmentVariables)
-            .memoryReservationMiB(1024)
-            .logging(Utils.createECSContainerLogDriver(logGroup))
-            .build());
+                .containerName("committer")
+                .image(containerImage)
+                .command(List.of(instanceId, commitQueue.getQueueUrl()))
+                .environment(environmentVariables)
+                .memoryReservationMiB(1024)
+                .logging(Utils.createECSContainerLogDriver(logGroup))
+                .build());
 
         commitQueue.grantConsumeMessages(taskDefinition.getTaskRole());
         configBucketStack.grantRead(taskDefinition.getTaskRole());
@@ -220,10 +224,10 @@ public class StateStoreCommitterStack extends NestedStack {
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(taskDefinition.getTaskRole());
 
         Ec2Service.Builder.create(this, "service")
-            .cluster(cluster)
-            .taskDefinition(taskDefinition)
-            .desiredCount(1)
-            .build();
+                .cluster(cluster)
+                .taskDefinition(taskDefinition)
+                .desiredCount(1)
+                .build();
     }
 
     private void lambdaToCommitStateStoreUpdates(

@@ -72,7 +72,7 @@ public class SystemTestApp extends Stack {
 
         // Stack for writing random data
         if (instanceProperties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTest", instanceProperties, networking, bucketStack, coreStacks.getAutoStopEcsStack());
+            new SystemTestClusterStack(this, "SystemTest", instanceProperties, networking, bucketStack, coreStacks.getEcsClusterTasksStack());
         }
 
         // Delay writing properties to include data generation cluster
