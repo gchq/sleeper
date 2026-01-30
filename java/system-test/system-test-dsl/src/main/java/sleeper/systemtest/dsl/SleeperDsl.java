@@ -183,6 +183,14 @@ public class SleeperDsl {
         return context.instance().numberedRows(schema).iterableFrom(numbers);
     }
 
+    public GenerateNumberedRows generateNumberedRows() {
+        return context.instance().numberedRows();
+    }
+
+    public GenerateNumberedRows generateNumberedRows(Schema schema) {
+        return context.instance().numberedRows(schema);
+    }
+
     public RowNumbers scrambleNumberedRows(LongStream longStream) {
         return RowNumbers.scrambleNumberedRows(longStream);
     }

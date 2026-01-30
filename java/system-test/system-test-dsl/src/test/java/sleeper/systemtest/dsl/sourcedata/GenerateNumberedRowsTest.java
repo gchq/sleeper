@@ -28,7 +28,6 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -224,10 +223,9 @@ public class GenerateNumberedRowsTest {
     void shouldIterateThroughRowsTwiceWithSameIterable() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        Supplier<LongStream> numbers = () -> LongStream.rangeClosed(1, 3);
 
         // When
-        Iterable<Row> iterable = GenerateNumberedRows.from(schema).iterableFrom(numbers);
+        Iterable<Row> iterable = GenerateNumberedRows.from(schema).iterableFromRange(1, 3);
 
         // Then
         List<Row> expected = List.of(
