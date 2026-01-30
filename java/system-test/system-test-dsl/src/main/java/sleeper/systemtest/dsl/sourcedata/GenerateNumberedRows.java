@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -59,6 +60,10 @@ public class GenerateNumberedRows {
 
     public Iterable<Row> iterableFrom(LongStream numbers) {
         return () -> iteratorFrom(numbers);
+    }
+
+    public Iterable<Row> iterableFrom(Supplier<LongStream> numbers) {
+        return () -> iteratorFrom(numbers.get());
     }
 
     public Row generateRow(long number) {

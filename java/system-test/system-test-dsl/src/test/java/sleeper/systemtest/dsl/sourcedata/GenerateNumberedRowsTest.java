@@ -26,10 +26,13 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.applyFormat;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -208,5 +211,23 @@ public class GenerateNumberedRowsTest {
                                 "rowkey", "rowkey-12345",
                                 "sortkey", "sortkey-12345",
                                 "value", "A value 12345")));
+    }
+
+    @Test
+    void shouldIterateThroughRowsTwiceWithSameIterable() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new IntType());
+        Supplier<LongStream> numbers = () -> LongStream.rangeClosed(1, 3);
+
+        // When
+        Iterable<Row> iterable = GenerateNumberedRows.from(schema).iterableFrom(numbers);
+
+        // Then
+        List<Row> expected = List.of(
+                new Row(Map.of("key", 1)),
+                new Row(Map.of("key", 2)),
+                new Row(Map.of("key", 3)));
+        assertThat(iterable).containsExactlyElementsOf(expected);
+        assertThat(iterable).containsExactlyElementsOf(expected);
     }
 }
