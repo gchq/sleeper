@@ -66,8 +66,12 @@ public class GenerateNumberedRows {
         return () -> iteratorFrom(numbers.get());
     }
 
-    public Iterable<Row> iterableFromRange(int startInclusive, int endExclusive) {
+    public Iterable<Row> iterableOverRange(long startInclusive, long endExclusive) {
         return iterableFrom(() -> LongStream.range(startInclusive, endExclusive));
+    }
+
+    public Iterable<Row> iterableOverNumbers(long... numbers) {
+        return iterableFrom(() -> LongStream.of(numbers));
     }
 
     public Row generateRow(long number) {

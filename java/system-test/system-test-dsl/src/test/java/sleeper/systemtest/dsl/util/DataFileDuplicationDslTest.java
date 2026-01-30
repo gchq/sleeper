@@ -56,7 +56,8 @@ public class DataFileDuplicationDslTest {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(3);
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 1, 1, 2, 2, 2, 3, 3, 3)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverNumbers(1, 1, 1, 2, 2, 2, 3, 3, 3));
     }
 
     @Test
@@ -76,7 +77,8 @@ public class DataFileDuplicationDslTest {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(2);
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 1, 2, 2, 3, 3, 4, 4)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverNumbers(1, 1, 2, 2, 3, 3, 4, 4));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(2),
                         "has two finished jobs")
@@ -111,7 +113,8 @@ public class DataFileDuplicationDslTest {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(4);
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 1, 2, 2, 6, 6, 7, 7)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverNumbers(1, 1, 2, 2, 6, 6, 7, 7));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(4),
                         "has 4 finished jobs")
