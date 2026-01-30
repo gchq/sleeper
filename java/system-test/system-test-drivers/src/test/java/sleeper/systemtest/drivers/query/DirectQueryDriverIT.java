@@ -46,7 +46,7 @@ public class DirectQueryDriverIT {
 
         // When / Then
         assertThat(sleeper.directQuery().allRowsInTable()).containsExactlyElementsOf(
-                sleeper.generateNumberedRows().iterableOverNumbers(1, 2, 3));
+                sleeper.generateNumberedRows().iterableOver(1, 2, 3));
     }
 
 }

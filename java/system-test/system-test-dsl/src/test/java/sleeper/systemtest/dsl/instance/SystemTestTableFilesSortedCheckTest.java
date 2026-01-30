@@ -63,8 +63,8 @@ public class SystemTestTableFilesSortedCheckTest {
                 .first().satisfies(file -> {
                     assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                             .isEqualTo(SortedRowsCheck.outOfOrderAt(3,
-                                    sleeper.numberedRows().generateRow(3),
-                                    sleeper.numberedRows().generateRow(2)));
+                                    sleeper.generateNumberedRows().row(3),
+                                    sleeper.generateNumberedRows().row(2)));
                 });
     }
 

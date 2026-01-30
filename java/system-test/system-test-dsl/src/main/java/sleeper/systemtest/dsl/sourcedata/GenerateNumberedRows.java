@@ -20,6 +20,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class GenerateNumberedRows {
     }
 
     public Stream<Row> streamFrom(LongStream numbers) {
-        return numbers.mapToObj(this::generateRow);
+        return numbers.mapToObj(this::row);
     }
 
     public Iterator<Row> iteratorFrom(LongStream numbers) {
@@ -74,11 +75,15 @@ public class GenerateNumberedRows {
         return iterableFrom(() -> LongStream.rangeClosed(startInclusive, endInclusive));
     }
 
-    public Iterable<Row> iterableOverNumbers(long... numbers) {
+    public Iterable<Row> iterableOver(long... numbers) {
         return iterableFrom(() -> LongStream.of(numbers));
     }
 
-    public Row generateRow(long number) {
+    public Iterable<Row> iterableOver(Collection<Long> numbers) {
+        return iterableFrom(() -> numbers.stream().mapToLong(n -> n));
+    }
+
+    public Row row(long number) {
         return new Row(mapForNumber(number));
     }
 

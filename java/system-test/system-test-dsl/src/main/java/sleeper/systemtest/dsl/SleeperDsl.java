@@ -171,10 +171,6 @@ public class SleeperDsl {
         context.instance().setGeneratorOverrides(overrides);
     }
 
-    public GenerateNumberedRows numberedRows() {
-        return context.instance().numberedRows();
-    }
-
     public GenerateNumberedRows generateNumberedRows() {
         return context.instance().numberedRows();
     }
