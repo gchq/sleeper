@@ -357,7 +357,7 @@ class BulkImportJobDriverTest {
         return new BulkImportJobDriver<>(
                 FakeBulkImportContext.creator(jobContextsCreated, jobContextsClosed), dataSketcher(), sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore),
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 tracker, commitRequestQueue::add, timeSupplier, supplyNumberedIdsWithPrefix("P"));
     }
 

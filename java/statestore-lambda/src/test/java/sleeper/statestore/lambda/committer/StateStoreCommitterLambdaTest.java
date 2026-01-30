@@ -125,7 +125,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStoreCommitterLambda lambda() {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore());
+        StateStoreProvider stateStoreProvider = FixedStateStoreProvider.singleTable(tableProperties, stateStore());
         return new StateStoreCommitterLambda(
                 tablePropertiesProvider, stateStoreProvider,
                 serDe(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());

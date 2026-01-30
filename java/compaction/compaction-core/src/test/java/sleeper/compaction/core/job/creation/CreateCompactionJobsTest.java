@@ -513,7 +513,7 @@ public class CreateCompactionJobsTest {
     private CreateCompactionJobs jobCreator(
             GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
-                instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 new CreateCompactionJobBatches(instanceProperties, createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add, generateBatchId, timeSupplier),
                 ObjectFactory.noUserJars(), generateJobId, random);
     }
