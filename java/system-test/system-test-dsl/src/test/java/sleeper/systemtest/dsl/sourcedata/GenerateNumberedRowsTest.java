@@ -54,7 +54,8 @@ public class GenerateNumberedRowsTest {
                 .build();
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema).iterableFrom(LongStream.of(1, Long.MAX_VALUE)))
+        assertThat(GenerateNumberedRows.from(schema)
+                .iterableFrom(() -> LongStream.of(1, Long.MAX_VALUE)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", "row-0000000000000000001",
@@ -76,7 +77,8 @@ public class GenerateNumberedRowsTest {
                 .build();
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRows.from(schema)
+                .iterableFrom(() -> LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", 1,
@@ -98,7 +100,8 @@ public class GenerateNumberedRowsTest {
                 .build();
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRows.from(schema)
+                .iterableFrom(() -> LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", 1L,
@@ -120,7 +123,8 @@ public class GenerateNumberedRowsTest {
                 .build();
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRows.from(schema)
+                .iterableFrom(() -> LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
@@ -143,7 +147,8 @@ public class GenerateNumberedRowsTest {
         GenerateNumberedValueOverrides overrides = overrideKeyAndFieldType(ROW, StringType.class, numberStringAndZeroPadTo(3));
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema, overrides).iterableFrom(LongStream.of(1, 999)))
+        assertThat(GenerateNumberedRows.from(schema, overrides)
+                .iterableFrom(() -> LongStream.of(1, 999)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", "001",
@@ -172,7 +177,8 @@ public class GenerateNumberedRowsTest {
                         numberStringAndZeroPadTo(3).then(addPrefix("Custom value "))));
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema, overrides).iterableFrom(LongStream.of(1, 999)))
+        assertThat(GenerateNumberedRows.from(schema, overrides)
+                .iterableFrom(() -> LongStream.of(1, 999)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", "customrow-001",
@@ -201,7 +207,8 @@ public class GenerateNumberedRowsTest {
                         numberStringAndZeroPadTo(5).then(addPrefix("A value "))));
 
         // When/Then
-        assertThat(GenerateNumberedRows.from(schema, overrides).iterableFrom(LongStream.of(1, 12345)))
+        assertThat(GenerateNumberedRows.from(schema, overrides)
+                .iterableFrom(() -> LongStream.of(1, 12345)))
                 .containsExactly(
                         new Row(Map.of(
                                 "rowkey", "rowkey-00001",
