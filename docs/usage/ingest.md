@@ -40,8 +40,9 @@ Note that bulk import requires a minimum number of partitions, and by default a 
 is set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
 documented [here](properties/table/bulk_import.md). If too few partitions are present, then when a bulk import job is
 submitted the partitions will be split automatically, based on the data in the bulk import job. This will assume that
-the job's data is a representative sample for the table. You can take control over this by pre-splitting the table as
-described [here](../usage/tables.md#pre-split-partitions).
+the job's data is a representative sample for the table. If multiple bulk import jobs are submitted simultaneously, they
+will attempt to pre-split separately, which can waste compute resources. You can take control over this by pre-splitting
+the table as described [here](../usage/tables.md#pre-split-partitions).
 
 The ingest batcher uses bulk import by default.
 
