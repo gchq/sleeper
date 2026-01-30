@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportSparkContext;
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.SketchesSerDe;
@@ -70,30 +68,5 @@ public class GenerateSketchesDriver {
                 });
         return partitionIdToBuilder.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().build()));
-    }
-
-    private static class SketchesBuilder {
-        private final Schema schema;
-        private final Map<String, ItemsUnion<Object>> fieldNameToUnion;
-
-        SketchesBuilder(Schema schema) {
-            this.schema = schema;
-            this.fieldNameToUnion = schema.getRowKeyFields().stream()
-                    .collect(toMap(
-                            Field::getName,
-                            field -> Sketches.createUnion(field.getType())));
-        }
-
-        void add(Sketches sketches) {
-            for (Field field : schema.getRowKeyFields()) {
-                ItemsUnion<Object> union = fieldNameToUnion.get(field.getName());
-                union.update(sketches.getQuantilesSketch(field.getName()));
-            }
-        }
-
-        Sketches build() {
-            return new Sketches(schema, fieldNameToUnion.entrySet().stream()
-                    .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
-        }
     }
 }

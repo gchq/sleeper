@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.common.SparkRowMapper;
 import sleeper.bulkimport.runner.common.SparkSketchBytesRow;
-import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -36,7 +35,7 @@ import java.util.Map;
 /**
  * An iterator that writes a single data sketch for all the input data. This takes any number of rows, adds them to a
  * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
- * can be read with {@link SparkSketchRow}.
+ * can be read with {@link SparkSketchByteRow}.
  */
 public class SketchByteWritingterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SketchByteWritingterator.class);
