@@ -36,10 +36,14 @@ documented [here](properties/instance/user/ingest.md). You can use
 the [administration client](../usage-guide.md#sleeper-administration-client) to find and set the values of these
 properties.
 
-For bulk import it is also vital that a table is pre-split first ([see here](../usage/tables.md#pre-split-partitions)).
-Bulk import jobs will be refused unless there are a minimum number of partitions defined, set in the table
-property `sleeper.table.bulk.import.min.leaf.partitions`, documented [here](properties/table/bulk_import.md). By default
-the ingest batcher also requires this, as it uses bulk import by default.
+Note that bulk import requires a minimum number of partitions, and by default a table starts with just one. The minimum
+is set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
+documented [here](properties/table/bulk_import.md). If too few partitions are present, then when a bulk import job is
+submitted the partitions will be split automatically, based on the data in the bulk import job. This will assume that
+the job's data is a representative sample for the table. You can take control over this by pre-splitting the table as
+described [here](../usage/tables.md#pre-split-partitions).
+
+The ingest batcher uses bulk import by default.
 
 ### Ingest with scripts
 

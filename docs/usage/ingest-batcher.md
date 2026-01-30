@@ -8,11 +8,11 @@ This is deployed when `IngestBatcherStack` is in the list of optional stacks in 
 `sleeper.optional.stacks`.
 
 By default this will use bulk import on EMR Serverless. Note that bulk import requires a minimum number of partitions,
-set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
-documented [here](properties/table/bulk_import.md). If too few partitions are present, then when a bulk import job is
-submitted the partitions will be split automatically, based on the data in the bulk import job. This will assume that
-the job's data is a representative sample for the table. You can take control over this by pre-splitting the table as
-described [here](../usage/tables.md#pre-split-partitions).
+and by default a table starts with just one. The minimum is set in the table
+property `sleeper.table.bulk.import.min.leaf.partitions`, documented [here](properties/table/bulk_import.md). If too few
+partitions are present, then when a bulk import job is submitted the partitions will be split automatically, based on
+the data in the bulk import job. This will assume that the job's data is a representative sample for the table. You can
+take control over this by pre-splitting the table as described [here](../usage/tables.md#pre-split-partitions).
 
 Files to be ingested must be accessible to the ingest system you will use, and to the ingest batcher as well in order to
 expand directories and check the size of files. See the [ingest guide](ingest.md#prepare-files) for how to prepare your
