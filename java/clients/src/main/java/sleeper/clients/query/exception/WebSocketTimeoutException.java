@@ -15,12 +15,10 @@
  */
 package sleeper.clients.query.exception;
 
-public class WebSocketException extends RuntimeException {
-    public WebSocketException(String message) {
-        this(message, null);
+public class WebSocketTimeoutException extends WebSocketException {
+
+    public WebSocketTimeoutException(long timeoutMilliseconds, Exception cause) {
+        super("Timed out waiting " + timeoutMilliseconds + "ms for response from web socket", cause);
     }
 
-    public WebSocketException(String message, Exception cause) {
-        super(message, cause);
-    }
 }

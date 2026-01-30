@@ -93,7 +93,7 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.33.4</protobuf.version>
+        <protobuf.version>4.33.5</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.41.17</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.18</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -149,7 +149,7 @@
         <aws-lambda-java-runtime-interface-client.version>2.9.0</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.9.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
-        <commons-codec.version>1.20.0</commons-codec.version>
+        <commons-codec.version>1.21.0</commons-codec.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-configuration.version>2.13.0</commons-configuration.version>
         <commons-compress.version>1.28.0</commons-compress.version>
@@ -226,7 +226,7 @@
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>26.6.0</approvaltests.version>
+        <approvaltests.version>26.6.1</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
