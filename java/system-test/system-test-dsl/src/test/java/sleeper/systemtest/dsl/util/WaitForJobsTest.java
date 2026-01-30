@@ -18,7 +18,8 @@ package sleeper.systemtest.dsl.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -29,13 +30,11 @@ import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class WaitForJobsTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
     IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
     IngestTaskTracker ingestTaskTracker = new InMemoryIngestTaskTracker();
     CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
