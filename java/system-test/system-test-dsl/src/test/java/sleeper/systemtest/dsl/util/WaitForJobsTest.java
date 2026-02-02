@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -238,7 +237,6 @@ public class WaitForJobsTest {
     class FailOnFirstJobFailure {
 
         @Test
-        @Disabled("TODO")
         void shouldFailImmediatelyWhenJobFails() {
             // Given
             TableProperties table = createTable("test");
@@ -249,10 +247,14 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job"),
-                    PollWithRetries.immediateRetries(3)))
-                    .isInstanceOf(PollWithRetries.TimedOutException.class);
-            assertThat(foundSleeps).hasSize(3);
+            assertThatThrownBy(() -> forIngest().waitForJobsNoRetries(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(1);
+        }
+
+        @Test
+        void shouldFailImmediatelyWhenJobFailsToCommit() {
+            // TODO
         }
     }
 
@@ -365,7 +367,9 @@ public class WaitForJobsTest {
     private void doOnSleep(Runnable... runnables) {
         Iterator<Runnable> iterator = List.of(runnables).iterator();
         sleeper = millis -> {
-            iterator.next().run();
+            if (iterator.hasNext()) {
+                iterator.next().run();
+            }
             recordSleep(millis);
         };
     }

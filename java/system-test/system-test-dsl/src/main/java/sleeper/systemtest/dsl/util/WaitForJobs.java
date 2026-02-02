@@ -99,6 +99,16 @@ public class WaitForJobs {
 
     public void waitForJobs(
             Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
+        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, true);
+    }
+
+    public void waitForJobsNoRetries(Collection<String> jobIds) {
+        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)), false);
+    }
+
+    private void waitForJobs(
+            Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit, boolean allowRetries) {
         InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         TaskTracker taskTracker = getTaskTracker.apply(properties);
@@ -109,6 +119,9 @@ public class WaitForJobs {
                 LOGGER.info("Status of {} jobs: {}", typeDescription, status);
                 if (status.areAllJobsFinished()) {
                     return true;
+                }
+                if (!allowRetries && status.didAnyFail()) {
+                    throw new JobFailedException(status);
                 }
                 if (taskTracker.hasRunningTasks()) {
                     return false;
@@ -191,6 +204,12 @@ public class WaitForJobs {
 
         static TaskTracker forCompaction(CompactionTaskTracker tracker) {
             return () -> !tracker.getTasksInProgress().isEmpty();
+        }
+    }
+
+    public static class JobFailedException extends RuntimeException {
+        public JobFailedException(WaitForJobsStatus status) {
+            super("Found a failed job: " + status);
         }
     }
 }

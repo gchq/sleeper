@@ -92,6 +92,10 @@ public class WaitForJobsStatus {
         return numUnfinished == 0;
     }
 
+    public boolean didAnyFail() {
+        return failureReasons != null && !failureReasons.isEmpty();
+    }
+
     public String toString() {
         return GSON.toJson(this);
     }
