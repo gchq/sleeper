@@ -35,12 +35,12 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 public class SketchesUnionBuilderTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
+    Schema schema = createSchemaWithKey("key", new IntType());
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     @Test
     void shouldBuildWhenProvidedWithOnlyOneSketch() {
         // Given
-        Schema schema = createSchemaWithKey("key", new IntType());
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
         sketches.update(new Row(Map.of("key", 12)));
@@ -60,8 +60,6 @@ public class SketchesUnionBuilderTest {
     @Test
     void shouldUnionTwoSketchesTogether() {
         // Given
-        Schema schema = createSchemaWithKey("key", new IntType());
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches firstSketches = Sketches.from(schema);
         firstSketches.update(new Row(Map.of("key", 123)));
