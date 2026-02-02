@@ -191,7 +191,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.11</pty4j.version>
+        <pty4j.version>0.13.12</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.83</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
