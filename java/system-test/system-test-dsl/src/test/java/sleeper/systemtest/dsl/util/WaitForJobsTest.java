@@ -15,6 +15,9 @@
  */
 package sleeper.systemtest.dsl.util;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -23,12 +26,15 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.ThreadSleep;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.systemtest.dsl.util.WaitForJobs.JobTracker;
@@ -42,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -52,6 +59,7 @@ import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFil
 
 public class WaitForJobsTest {
 
+    private static final String TASK_ID = "test-task";
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
     IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
@@ -61,41 +69,97 @@ public class WaitForJobsTest {
     Instant startTime = Instant.parse("2025-02-02T00:00:00Z");
     List<Duration> foundSleeps = new ArrayList<>();
     ThreadSleep sleeper = this::recordSleep;
+    Iterator<Runnable> onSleepIterator;
 
-    @Test
-    void shouldWaitForSuccessfulIngest() {
-        // Given
-        TableProperties table = createTable("test");
-        IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
-        trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
-        doOnSleep(() -> {
-            trackIngestFinishedWithStartTimeAndRunId(job, startTime, "test-run");
-        });
-
-        // When
-        forIngest().waitForJobs(List.of("test-job"));
-
-        // Then
-        assertThat(foundSleeps).hasSize(1);
+    @BeforeEach
+    void setUp() {
+        ingestTaskTracker.taskStarted(IngestTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
+        compactionTaskTracker.taskStarted(CompactionTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
     }
 
-    @Test
-    void shouldWaitForSuccessfulCompaction() {
-        // Given
-        TableProperties table = createTable("test");
-        CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
-        trackCompactionCreatedAtTime(job, startTime);
-        doOnSleep(() -> {
-            trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
-        }, () -> {
-            trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, startTime, "test-run");
-        });
+    @Nested
+    @DisplayName("Wait for success")
+    class SuccessfulJobs {
 
-        // When
-        forCompaction().waitForJobs(List.of("test-job"));
+        @Test
+        void shouldWaitForSuccessfulIngest() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+            });
 
-        // Then
-        assertThat(foundSleeps).hasSize(2);
+            // When
+            forIngest().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(1);
+        }
+
+        @Test
+        void shouldWaitForSuccessfulCompaction() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            trackCompactionCreatedAtTime(job, startTime);
+            doOnSleep(() -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, startTime, "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(2);
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle failures")
+    class FailedJobs {
+
+        @Test
+        void shouldFailWhenJobNeverCompletes() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+        }
+
+        @Test
+        void shouldWaitForRetryWhenJobFails() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackIngestStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(3), "retry-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3)))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+            assertThat(onSleepIterator).isExhausted();
+        }
     }
 
     private IngestJob createIngestWithIdAndFiles(TableProperties table, String jobId, String... filenames) {
@@ -113,12 +177,17 @@ public class WaitForJobsTest {
 
     private void trackIngestStartedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
         ingestJobTracker.jobStarted(job.startedEventBuilder(startTime)
-                .taskId("test-task").jobRunId(runId).build());
+                .taskId(TASK_ID).jobRunId(runId).build());
     }
 
     private void trackIngestFinishedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
         ingestJobTracker.jobFinished(job.finishedEventBuilder(summary(startTime, Duration.ofMinutes(1), 100, 100))
-                .taskId("test-task").jobRunId(runId).numFilesWrittenByJob(1).build());
+                .taskId(TASK_ID).jobRunId(runId).numFilesWrittenByJob(1).build());
+    }
+
+    private void trackIngestFailedWithFailureTimeAndRunId(IngestJob job, Instant failureTime, String runId) {
+        ingestJobTracker.jobFailed(job.failedEventBuilder(failureTime).jobRunId(runId).taskId(TASK_ID)
+                .failureReasons(List.of("Some failure")).build());
     }
 
     private void trackCompactionCreatedAtTime(CompactionJob job, Instant createdTime) {
@@ -128,20 +197,20 @@ public class WaitForJobsTest {
 
     private void trackCompactionStartedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
         compactionJobTracker.fixUpdateTime(startTime);
-        compactionJobTracker.jobStarted(job.startedEventBuilder(startTime).taskId("test-task").jobRunId(runId).build());
+        compactionJobTracker.jobStarted(job.startedEventBuilder(startTime).taskId(TASK_ID).jobRunId(runId).build());
     }
 
     private void trackCompactionFinishedAndCommittedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
         compactionJobTracker.fixUpdateTime(startTime);
         compactionJobTracker.jobFinished(job.finishedEventBuilder(
                 summary(startTime, Duration.ofMinutes(1), 100L, 100L))
-                .taskId("test-task").jobRunId(runId).build());
+                .taskId(TASK_ID).jobRunId(runId).build());
         Instant commitTime = startTime.plus(61, ChronoUnit.SECONDS);
         compactionJobTracker.fixUpdateTime(commitTime);
-        compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId("test-task").jobRunId(runId).build());
+        compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(TASK_ID).jobRunId(runId).build());
     }
 
-    private Instant afterNMinutes(long n) {
+    private Instant afterMinutes(long n) {
         return startTime.plus(n, ChronoUnit.MINUTES);
     }
 
@@ -168,9 +237,9 @@ public class WaitForJobsTest {
     }
 
     private void doOnSleep(Runnable... runnables) {
-        Iterator<Runnable> iterator = List.of(runnables).iterator();
+        onSleepIterator = List.of(runnables).iterator();
         sleeper = millis -> {
-            iterator.next().run();
+            onSleepIterator.next().run();
             recordSleep(millis);
         };
     }
