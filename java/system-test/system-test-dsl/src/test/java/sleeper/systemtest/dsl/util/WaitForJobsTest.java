@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -230,6 +231,56 @@ public class WaitForJobsTest {
             // Then
             assertThat(foundSleeps).hasSize(3);
         }
+
+        @Test
+        void shouldNotWaitForFailedCommitToRetry() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(4);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldWaitForRetryToCommit() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(4), "retry-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(6);
+        }
     }
 
     @Nested
@@ -254,7 +305,24 @@ public class WaitForJobsTest {
 
         @Test
         void shouldFailImmediatelyWhenJobFailsToCommit() {
-            // TODO
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobsNoRetries(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(4);
         }
     }
 
@@ -312,6 +380,11 @@ public class WaitForJobsTest {
     private void trackCompactionCommittedWithTimeAndRunId(CompactionJob job, Instant commitTime, String runId) {
         compactionJobTracker.fixUpdateTime(commitTime);
         compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackCompactionFailedWithTimeAndRunId(CompactionJob job, Instant failureTime, String runId) {
+        compactionJobTracker.fixUpdateTime(failureTime);
+        compactionJobTracker.jobFailed(job.failedEventBuilder(failureTime).taskId(TASK_ID).jobRunId(runId).failureReasons(List.of("Some failure")).build());
     }
 
     private void trackCompactionTaskStarted() {

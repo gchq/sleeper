@@ -157,6 +157,9 @@ public class WaitForJobs {
             pollDriver.poll(pollUntilJobsCommit).pollUntil("jobs are committed", () -> {
                 WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
+                if (status.didAnyFail()) {
+                    throw new JobFailedException(status);
+                }
                 return status.areAllJobsFinished();
             });
         } catch (InterruptedException e) {
