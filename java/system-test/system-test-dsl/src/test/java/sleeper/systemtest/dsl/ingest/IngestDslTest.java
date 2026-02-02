@@ -95,7 +95,8 @@ public class IngestDslTest {
 
         // Then
         assertThat(new HashSet<>(sleeper.directQuery().allRowsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
+                .isEqualTo(setFrom(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 100_000)));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1_000);
     }

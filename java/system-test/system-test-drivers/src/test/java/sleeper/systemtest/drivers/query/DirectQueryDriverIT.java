@@ -45,8 +45,8 @@ public class DirectQueryDriverIT {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
         // When / Then
-        assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 2, 3)));
+        assertThat(sleeper.directQuery().allRowsInTable()).containsExactlyElementsOf(
+                sleeper.generateNumberedRows().iterableOver(1, 2, 3));
     }
 
 }

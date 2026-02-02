@@ -103,8 +103,9 @@ public class CompactionST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
-                        LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableFrom(
+                        () -> LongStream.range(0, 100)
+                                .flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
@@ -150,8 +151,9 @@ public class CompactionST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
-                        LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableFrom(
+                        () -> LongStream.range(0, 100)
+                                .flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));

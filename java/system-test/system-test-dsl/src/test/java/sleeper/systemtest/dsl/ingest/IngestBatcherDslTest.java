@@ -66,7 +66,8 @@ public class IngestBatcherDslTest {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
