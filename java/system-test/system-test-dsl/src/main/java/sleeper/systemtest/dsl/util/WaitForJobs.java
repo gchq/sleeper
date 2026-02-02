@@ -103,11 +103,15 @@ public class WaitForJobs {
         waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, false);
     }
 
-    public void waitForJobsAllowRetries(Collection<String> jobIds) {
-        waitForJobsAllowRetries(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    public void waitForJobsAllowingRetries(Collection<String> jobIds) {
+        waitForJobsAllowingRetries(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
     }
 
-    public void waitForJobsAllowRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
+    public void waitForJobsAllowingRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
+        waitForJobsAllowingRetries(jobIds, pollUntilJobsFinished, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    }
+
+    public void waitForJobsAllowingRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
         waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, true);
     }
 

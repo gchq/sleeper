@@ -204,7 +204,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forIngest().waitForJobsAllowRetries(List.of("test-job"),
+            assertThatThrownBy(() -> forIngest().waitForJobsAllowingRetries(List.of("test-job"),
                     PollWithRetries.immediateRetries(3), PollWithRetries.immediateRetries(3)))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(foundSleeps).hasSize(3);
@@ -225,7 +225,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forIngest().waitForJobsAllowRetries(List.of("test-job"));
+            forIngest().waitForJobsAllowingRetries(List.of("test-job"));
 
             // Then
             assertThat(foundSleeps).hasSize(3);
@@ -248,7 +248,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forCompaction().waitForJobsAllowRetries(List.of("test-job")))
+            assertThatThrownBy(() -> forCompaction().waitForJobsAllowingRetries(List.of("test-job")))
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(4);
         }
@@ -274,7 +274,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forCompaction().waitForJobsAllowRetries(List.of("test-job"));
+            forCompaction().waitForJobsAllowingRetries(List.of("test-job"));
 
             // Then
             assertThat(foundSleeps).hasSize(6);
@@ -306,7 +306,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forCompaction().waitForJobsAllowRetries(List.of("job-1", "job-2"));
+            forCompaction().waitForJobsAllowingRetries(List.of("job-1", "job-2"));
 
             // Then
             assertThat(foundSleeps).hasSize(6);
