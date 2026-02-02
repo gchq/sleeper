@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
@@ -67,20 +68,14 @@ public class WaitForJobsTest {
     IngestTaskTracker ingestTaskTracker = new InMemoryIngestTaskTracker();
     InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     CompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
-    Instant startTime = Instant.parse("2025-02-02T00:00:00Z");
+    Instant startTime = Instant.parse("2026-02-02T00:00:00Z");
     List<Duration> foundSleeps = new ArrayList<>();
     ThreadSleep sleeper = this::recordSleep;
 
     @BeforeEach
     void setUp() {
-        ingestTaskTracker.taskStarted(IngestTaskStatus.builder()
-                .taskId(TASK_ID)
-                .startTime(startTime)
-                .build());
-        compactionTaskTracker.taskStarted(CompactionTaskStatus.builder()
-                .taskId(TASK_ID)
-                .startTime(startTime)
-                .build());
+        trackIngestTaskStarted();
+        trackCompactionTaskStarted();
     }
 
     @Nested
@@ -135,6 +130,59 @@ public class WaitForJobsTest {
             // When / Then
             assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Wait for job to be committed to the state store")
+    class WaitForCommit {
+
+        @Test
+        void shouldWaitForJobToCommit() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(4);
+        }
+
+        @Test
+        void shouldUseSeparateCommitPollingAfterTaskFinishes() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3),
+                    PollWithRetries.immediateRetries(2));
+
+            // Then
+            assertThat(foundSleeps).hasSize(5);
         }
     }
 
@@ -247,13 +295,45 @@ public class WaitForJobsTest {
     }
 
     private void trackCompactionFinishedAndCommittedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        trackCompactionFinishedWithStartTimeAndRunId(job, startTime, runId);
+        Instant commitTime = startTime.plus(61, ChronoUnit.SECONDS);
+        trackCompactionCommittedWithTimeAndRunId(job, commitTime, runId);
+    }
+
+    private void trackCompactionFinishedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
         compactionJobTracker.fixUpdateTime(startTime);
         compactionJobTracker.jobFinished(job.finishedEventBuilder(
                 summary(startTime, Duration.ofMinutes(1), 100L, 100L))
                 .taskId(TASK_ID).jobRunId(runId).build());
-        Instant commitTime = startTime.plus(61, ChronoUnit.SECONDS);
+    }
+
+    private void trackCompactionCommittedWithTimeAndRunId(CompactionJob job, Instant commitTime, String runId) {
         compactionJobTracker.fixUpdateTime(commitTime);
         compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackCompactionTaskStarted() {
+        compactionTaskTracker.taskStarted(CompactionTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
+    }
+
+    private void trackCompactionTaskFinished(Instant finishTime) {
+        compactionTaskTracker.taskFinished(CompactionTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .finishedStatus(CompactionTaskFinishedStatus.builder()
+                        .finish(finishTime)
+                        .build())
+                .build());
+    }
+
+    private void trackIngestTaskStarted() {
+        ingestTaskTracker.taskStarted(IngestTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
     }
 
     private Instant afterMinutes(long n) {
