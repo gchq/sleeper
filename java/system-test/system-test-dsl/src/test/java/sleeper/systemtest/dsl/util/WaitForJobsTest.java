@@ -354,6 +354,26 @@ public class WaitForJobsTest {
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(4);
         }
+
+        @Test
+        void shouldFailWhenJobFailedAndRetriedBetweenPolls() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "failed-run");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(1), "failed-run");
+                trackCompactionStartedWithStartTimeAndRunId(job, afterMinutes(1), "retry-run");
+                trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, afterMinutes(1), "retry-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobsNoRetries(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(2);
+        }
     }
 
     private IngestJob createIngestWithIdAndFiles(TableProperties table, String jobId, String... filenames) {

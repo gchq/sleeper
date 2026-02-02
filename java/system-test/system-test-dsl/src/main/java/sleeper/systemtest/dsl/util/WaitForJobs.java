@@ -117,11 +117,11 @@ public class WaitForJobs {
             pollDriver.poll(pollUntilJobsFinished).pollUntil("jobs are finished", () -> {
                 WaitForJobsStatus status = jobTracker.getStatus(jobIds);
                 LOGGER.info("Status of {} jobs: {}", typeDescription, status);
+                if (!allowRetries && status.areAnyFailureReasonsPresent()) {
+                    throw new JobFailedException(status);
+                }
                 if (status.areAllJobsFinished()) {
                     return true;
-                }
-                if (!allowRetries && status.didAnyFail()) {
-                    throw new JobFailedException(status);
                 }
                 if (taskTracker.hasRunningTasks()) {
                     return false;
@@ -157,7 +157,7 @@ public class WaitForJobs {
             pollDriver.poll(pollUntilJobsCommit).pollUntil("jobs are committed", () -> {
                 WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
-                if (!status.areAnyCommitting() && status.didAnyFail()) {
+                if (!status.areAnyCommitting() && status.areAnyInFailedStatus()) {
                     throw new JobFailedException(status);
                 }
                 return status.areAllJobsFinished();

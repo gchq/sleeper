@@ -92,8 +92,12 @@ public class WaitForJobsStatus {
         return numUnfinished == 0;
     }
 
-    public boolean didAnyFail() {
+    public boolean areAnyFailureReasonsPresent() {
         return failureReasons != null && !failureReasons.isEmpty();
+    }
+
+    public boolean areAnyInFailedStatus() {
+        return countByFurthestStatus.containsKey("FAILED");
     }
 
     public boolean areAnyCommitting() {
@@ -201,9 +205,11 @@ public class WaitForJobsStatus {
                         firstInProgressStartTime = startTime;
                         longestInProgressDuration = Duration.between(startTime, now);
                     }
-                    addFailureReasons(run.getFailureReasons());
                 }
                 numUnfinished++;
+            }
+            for (T run : runsLatestFirst) {
+                addFailureReasons(run.getFailureReasons());
             }
             countByFurthestStatus.compute(status.furthestStatusType,
                     (key, value) -> value == null ? 1 : value + 1);
