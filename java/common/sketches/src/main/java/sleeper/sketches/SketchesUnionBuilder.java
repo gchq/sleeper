@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Creates union of sketches.
+ * Creates sketches from a union of a number of other sketches.
  */
 public class SketchesUnionBuilder {
 
