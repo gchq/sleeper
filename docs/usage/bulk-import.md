@@ -20,13 +20,6 @@ the job's data is a representative sample for the table. If multiple bulk import
 will attempt to pre-split separately, which can waste compute resources. You can take control over this by pre-splitting
 the table as described [here](../usage/tables.md#pre-split-partitions).
 
-Note that it is vital that a table's partitions are split based on a representative sample of data. Bulk import requires
-a minimum number of partitions, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
-documented [here](properties/table/bulk_import.md). If the table is not pre-split as
-described [here](../usage/tables.md#pre-split-partitions), or if too few partitions are present, then when
-a bulk import job is submitted the partitions will be split automatically, based on the data in the bulk import job.
-This will assume that the job's data is a representative sample for the table.
-
 Files to be ingested must be accessible to the EMR cluster, and to the lambda that receives the job to submit to the
 cluster. See the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
 
