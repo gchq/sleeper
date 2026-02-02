@@ -31,53 +31,52 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 
 public class SketchesUnionBuilderTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @Test
-    void shouldUnionTwoSketchFilesTogether() {
+    void shouldBuildWhenProvidedWithOnlyOneSketch() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
         Sketches sketches = Sketches.from(schema);
-        List<Row> rowData = List.of(
-                new Row(Map.of("key", 123)),
-                new Row(Map.of("key", 456)));
-
-        rowData.forEach(presentRow -> sketches.update(presentRow));
+        sketches.update(new Row(Map.of("key", 12)));
+        sketches.update(new Row(Map.of("key", 34)));
+        sketches.update(new Row(Map.of("key", 56)));
 
         // When
         builder.add(sketches);
-
         // Then
         assertThat(SketchesDeciles.from(builder.build()))
-                .isEqualTo(SketchesDeciles.from(tableProperties, rowData));
+                .isEqualTo(SketchesDeciles.from(tableProperties, List.of(
+                        new Row(Map.of("key", 12)),
+                        new Row(Map.of("key", 34)),
+                        new Row(Map.of("key", 56)))));
     }
 
     @Test
-    void shouldUnionSketchesWithDifferentKeys() {
+    void shouldUnionTwoSketchesTogether() {
         // Given
-        Schema schema = createSchemaWithMultipleKeys("alpha", new IntType(), "beta", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         SketchesUnionBuilder builder = new SketchesUnionBuilder(schema);
-        Sketches sketches = Sketches.from(schema);
+        Sketches firstSketches = Sketches.from(schema);
+        firstSketches.update(new Row(Map.of("key", 123)));
 
-        List<Row> rowData = List.of(new Row(Map.of("alpha", 12)),
-                new Row(Map.of("beta", 56)),
-                new Row(Map.of("alpha", 34)),
-                new Row(Map.of("beta", 78)));
-
-        rowData.forEach(presentRow -> sketches.update(presentRow));
+        Sketches secondSketches = Sketches.from(schema);
+        secondSketches.update(new Row(Map.of("key", 456)));
 
         // When
-        builder.add(sketches);
+        builder.add(firstSketches);
+        builder.add(secondSketches);
 
-        //Then
+        // Then
         assertThat(SketchesDeciles.from(builder.build()))
-                .isEqualTo(SketchesDeciles.from(tableProperties, rowData));
+                .isEqualTo(SketchesDeciles.from(tableProperties, List.of(
+                        new Row(Map.of("key", 123)),
+                        new Row(Map.of("key", 456)))));
     }
 }
