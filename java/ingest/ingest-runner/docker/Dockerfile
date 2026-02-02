@@ -13,7 +13,7 @@
 # limitations under the License.
 FROM ubuntu:24.04
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y  --no-install-recommends \
     ca-certificates \
     curl \
     gnupg && rm -rf /var/lib/apt/lists/*
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
     | tee /etc/apt/sources.list.d/corretto.list > /dev/null
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     java-17-amazon-corretto-jdk \
     && rm -rf /var/lib/apt/lists/*
 
