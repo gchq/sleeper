@@ -30,7 +30,7 @@ import java.util.List;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
- * Generates a sketch of all input data, and outputs a single row per partition that contains that a sketch.
+ * Generates a sketch of all input data, and outputs a single row per partition that contains that sketch.
  *
  * @see SketchingIterator
  */

@@ -42,10 +42,10 @@ public class SketchesUnionBuilder {
     }
 
     /**
-     * Updates existing unions with any new sketches provide that match on the key field.
+     * Adds sketches into the union. The sketches must include an item sketch for each row key in the Sleeper table
+     * schema.
      *
-     * @param sketches sketches to add
-     *
+     * @param sketches the sketches to add
      */
     public void add(Sketches sketches) {
         for (Field field : schema.getRowKeyFields()) {
@@ -55,7 +55,7 @@ public class SketchesUnionBuilder {
     }
 
     /**
-     * Creates sketches object from the mapped unions for use a single reference point.
+     * Gathers the results of the union into a sketches object.
      *
      * @return sketches
      */
