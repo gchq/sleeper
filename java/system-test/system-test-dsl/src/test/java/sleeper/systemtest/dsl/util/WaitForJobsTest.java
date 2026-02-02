@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -255,8 +254,7 @@ public class WaitForJobsTest {
         }
 
         @Test
-        @Disabled("TODO")
-        void shouldWaitForRetryToCommit() {
+        void shouldWaitForCommitAfterRetry() {
             // Given
             TableProperties table = createTable("test");
             CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
@@ -277,6 +275,38 @@ public class WaitForJobsTest {
 
             // When
             forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(6);
+        }
+
+        @Test
+        void shouldWaitForCommitAfterOtherJobRetried() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job1 = createCompactionWithIdAndFiles(table, "job-1", "test1.parquet");
+            CompactionJob job2 = createCompactionWithIdAndFiles(table, "job-2", "test2.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job1, startTime);
+                trackCompactionCreatedAtTime(job2, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job1, afterMinutes(1), "job-1-failed");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job1, afterMinutes(2), "job-1-failed");
+                trackCompactionStartedWithStartTimeAndRunId(job1, afterMinutes(2), "job-1-passed");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job1, afterMinutes(2), "job-1-passed");
+                trackCompactionCommittedWithTimeAndRunId(job1, afterMinutes(3), "job-1-passed");
+                trackCompactionStartedWithStartTimeAndRunId(job2, afterMinutes(3), "job-2-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job2, afterMinutes(3), "job-2-run");
+                trackCompactionTaskFinished(afterMinutes(4));
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job2, afterMinutes(5), "job-2-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("job-1", "job-2"));
 
             // Then
             assertThat(foundSleeps).hasSize(6);

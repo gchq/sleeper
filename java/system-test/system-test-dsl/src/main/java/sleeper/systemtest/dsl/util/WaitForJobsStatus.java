@@ -96,6 +96,10 @@ public class WaitForJobsStatus {
         return failureReasons != null && !failureReasons.isEmpty();
     }
 
+    public boolean areAnyCommitting() {
+        return countByFurthestStatus.containsKey("UNCOMMITTED");
+    }
+
     public String toString() {
         return GSON.toJson(this);
     }
