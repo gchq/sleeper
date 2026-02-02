@@ -32,10 +32,10 @@ public record SparkSketchRow(String partitionId, byte[] sketchBytes) {
     public static final String SKETCH_BYTE_ARRAY = "__sketchByteArray";
 
     /**
-     * Reads a Spark row containing a reference to a sketch.
+     * Reads a Spark row containing a sketch.
      *
      * @param  sparkRow the Spark row
-     * @return          the reference to the sketch held in the row
+     * @return          the parsed row
      */
     public static SparkSketchRow from(Row sparkRow) {
         return new SparkSketchRow(sparkRow.getString(0), (byte[]) sparkRow.get(1));
