@@ -57,7 +57,7 @@ public class SketchesUnionBuilder {
     /**
      * Gathers the results of the union into a sketches object.
      *
-     * @return sketches
+     * @return the sketches
      */
     public Sketches build() {
         return new Sketches(schema, fieldNameToUnion.entrySet().stream()
