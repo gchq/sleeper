@@ -161,7 +161,7 @@ public class PartitionPreSplitterTest {
     @Test
     void shouldLimitNumberOfRetries() {
 
-        // Given we configure to split from one partition to two
+        // Given we configure to split from one partition to four
         tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 1);
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
@@ -169,7 +169,7 @@ public class PartitionPreSplitterTest {
                 .singlePartition("root")
                 .buildTree());
 
-        // And we provide data to expect a split point at 50
+        // And we provide enough data for split points to extend the tree to 4 leaf partitions
         setPartitionSketchData("root", List.of(
                 new Row(Map.of("key", 15)),
                 new Row(Map.of("key", 20)),
@@ -178,12 +178,11 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 55)),
                 new Row(Map.of("key", 60)),
                 new Row(Map.of("key", 75))));
-        // And we expect the new partition IDs generated in order (see instantiation of driver for how we control this)
+        // And the partition tree will be split by another process just before our split is applied
         PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
                 .splitToNewChildren("root", "P1", "P2", 50)
                 .buildTree();
-        // And the partition tree will be split by another process just before our split is applied
         partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
                 List.of(partitionsAfter.getPartition("root")),
                 List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
