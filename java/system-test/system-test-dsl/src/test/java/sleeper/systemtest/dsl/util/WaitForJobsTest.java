@@ -69,7 +69,6 @@ public class WaitForJobsTest {
     Instant startTime = Instant.parse("2025-02-02T00:00:00Z");
     List<Duration> foundSleeps = new ArrayList<>();
     ThreadSleep sleeper = this::recordSleep;
-    Iterator<Runnable> onSleepIterator;
 
     @BeforeEach
     void setUp() {
@@ -141,7 +140,7 @@ public class WaitForJobsTest {
         }
 
         @Test
-        void shouldWaitForRetryWhenJobFails() {
+        void shouldFailAfterJobRetries() {
             // Given
             TableProperties table = createTable("test");
             IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
@@ -158,7 +157,28 @@ public class WaitForJobsTest {
             assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job"),
                     PollWithRetries.immediateRetries(3)))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
-            assertThat(onSleepIterator).isExhausted();
+            assertThat(foundSleeps).hasSize(3);
+        }
+
+        @Test
+        void shouldWaitAfterJobRetries() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackIngestStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackIngestFinishedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            });
+
+            // When
+            forIngest().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(3);
         }
     }
 
@@ -237,9 +257,9 @@ public class WaitForJobsTest {
     }
 
     private void doOnSleep(Runnable... runnables) {
-        onSleepIterator = List.of(runnables).iterator();
+        Iterator<Runnable> iterator = List.of(runnables).iterator();
         sleeper = millis -> {
-            onSleepIterator.next().run();
+            iterator.next().run();
             recordSleep(millis);
         };
     }
