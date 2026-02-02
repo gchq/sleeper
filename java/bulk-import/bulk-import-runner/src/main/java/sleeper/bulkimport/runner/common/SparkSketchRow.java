@@ -21,8 +21,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
 /**
- * A spark row containing a sketch created during a Spark job. Used to calculate split points when pre-splitting
- * partitions.
+ * A Spark row containing a data sketch. Used to calculate split points when pre-splitting partitions.
  *
  * @param partitionId the ID of the Sleeper partition that the sketch covers
  * @param sketchBytes the sketch held as a serialised byte array
