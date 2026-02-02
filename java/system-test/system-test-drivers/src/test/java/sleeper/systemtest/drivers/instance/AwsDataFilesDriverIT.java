@@ -64,9 +64,8 @@ public class AwsDataFilesDriverIT {
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
                     try (CloseableIterator<Row> iterator = sleeper.getRows(file)) {
-                        assertThat(iterator)
-                                .toIterable()
-                                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 3, 2)));
+                        assertThat(iterator).toIterable().containsExactlyElementsOf(
+                                sleeper.generateNumberedRows().iterableOver(1, 3, 2));
                     }
                 });
     }

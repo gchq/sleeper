@@ -21,25 +21,24 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
 /**
- * A reference to a sketch file written during a Spark job. Used to calculate split points when pre-splitting
- * partitions.
+ * A Spark row containing a data sketch. Used to calculate split points when pre-splitting partitions.
  *
- * @param partitionId the ID of the Sleeper partition that the sketch file covers
- * @param filename    the full Hadoop path to the sketch file in S3
+ * @param partitionId the ID of the Sleeper partition that the sketch covers
+ * @param sketchBytes the sketch held as a serialised byte array
  */
-public record SparkSketchRow(String partitionId, String filename) {
+public record SparkSketchRow(String partitionId, byte[] sketchBytes) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
-    public static final String FILENAME_FIELD_NAME = "__fileName";
+    public static final String SKETCH_BYTE_ARRAY = "__sketchByteArray";
 
     /**
-     * Reads a Spark row containing a reference to a sketch file.
+     * Reads a Spark row containing a sketch.
      *
      * @param  sparkRow the Spark row
-     * @return          the reference to the sketch file held in the row
+     * @return          the parsed row
      */
     public static SparkSketchRow from(Row sparkRow) {
-        return new SparkSketchRow(sparkRow.getString(0), sparkRow.getString(1));
+        return new SparkSketchRow(sparkRow.getString(0), (byte[]) sparkRow.get(1));
     }
 
     /**
@@ -48,7 +47,7 @@ public record SparkSketchRow(String partitionId, String filename) {
      * @return the Spark row
      */
     public Row toSparkRow() {
-        return RowFactory.create(partitionId, filename);
+        return RowFactory.create(partitionId, sketchBytes);
     }
 
     /**
@@ -59,7 +58,6 @@ public record SparkSketchRow(String partitionId, String filename) {
     public static StructType createSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
-                .add(FILENAME_FIELD_NAME, DataTypes.StringType);
+                .add(SKETCH_BYTE_ARRAY, DataTypes.BinaryType);
     }
-
 }

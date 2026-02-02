@@ -88,7 +88,7 @@ public class GarbageCollectionTest {
 
         // Then
         assertThat(new HashSet<>(sleeper.query().byQueue().allRowsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
+                .isEqualTo(setFrom(sleeper.generateNumberedRows().iterableOverRange(0, 100_000)));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
             assertThat(files.streamFileReferences()).hasSize(200);
