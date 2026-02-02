@@ -15,80 +15,87 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.bulkimport.runner.common.SparkRowMapper;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.SketchesSerDe;
 
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.UUID;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import java.util.Map;
 
 /**
  * An iterator that writes a single data sketch for all the input data. This takes any number of rows, adds them to a
  * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
  * can be read with {@link SparkSketchRow}.
  */
-public class SketchWritingIterator implements Iterator<Row> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SketchWritingIterator.class);
+public class SketchingIterator implements Iterator<Row> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SketchingIterator.class);
 
     private final Iterator<Row> input;
-    private final InstanceProperties instanceProperties;
     private final Schema schema;
     private final SparkRowMapper rowMapper;
     private final PartitionTree partitionTree;
-    private final SketchesStore sketchesStore;
+    private Iterator<Row> results;
 
-    public SketchWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf, PartitionTree partitionTree) {
+    public SketchingIterator(Iterator<Row> input, TableProperties tableProperties, PartitionTree partitionTree) {
         this.input = input;
-        this.instanceProperties = instanceProperties;
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
         this.partitionTree = partitionTree;
-        this.sketchesStore = new HadoopSketchesStore(conf);
-        LOGGER.info("Initialised SketchWritingIterator");
+        LOGGER.info("Initialised sketch writing iterator");
     }
 
     @Override
     public boolean hasNext() {
-        return input.hasNext();
+        if (results == null) {
+            createSketches();
+        }
+        return results.hasNext();
     }
 
     @Override
     public Row next() {
-        Sketches sketches = Sketches.from(schema);
-        Partition partition = null;
+        if (results == null) {
+            createSketches();
+        }
+        return results.next();
+    }
+
+    private void createSketches() {
+        Map<String, Sketches> partitionIdToSketches = new HashMap<>();
         int numRows = 0;
         while (input.hasNext()) {
             Row row = input.next();
             sleeper.core.row.Row sleeperRow = rowMapper.toSleeperRow(row);
-            if (partition == null) {
-                partition = partitionTree.getLeafPartition(schema, sleeperRow.getRowKeys(schema));
+            Partition partition = partitionTree.getLeafPartition(schema, sleeperRow.getRowKeys(schema));
+            Sketches sketches = partitionIdToSketches.computeIfAbsent(partition.getId(), id -> {
                 LOGGER.info("Found data for partition {}", partition.getId());
-            }
+                return Sketches.from(schema);
+            });
             sketches.update(sleeperRow);
             numRows++;
             if (numRows % 1_000_000L == 0) {
                 LOGGER.info("Read {} rows", numRows);
             }
         }
-        String filename = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(BULK_IMPORT_BUCKET) + "/sketches/" + UUID.randomUUID().toString() + ".sketches";
-        LOGGER.info("Writing sketches file for partition {}", partition.getId());
-        sketchesStore.saveFileSketches(filename, schema, sketches);
-        return new SparkSketchRow(partition.getId(), filename).toSparkRow();
+        setResults(partitionIdToSketches);
+    }
+
+    private void setResults(Map<String, Sketches> partitionIdToSketches) {
+        SketchesSerDe serDe = new SketchesSerDe(schema);
+        results = partitionIdToSketches.entrySet().stream()
+                .map(entry -> new SparkSketchRow(entry.getKey(), serDe.toBytes(entry.getValue())))
+                .map(SparkSketchRow::toSparkRow)
+                .iterator();
     }
 
 }
