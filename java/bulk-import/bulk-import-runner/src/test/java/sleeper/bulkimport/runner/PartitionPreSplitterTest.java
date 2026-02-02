@@ -191,6 +191,69 @@ public class PartitionPreSplitterTest {
         // When/Then
         assertThatThrownBy(this::preSplitPartitionsIfNecessary)
                 .isInstanceOf(TooManyAttemptsPartitionSplitterException.class);
+    }
+
+    @Test
+    void shouldRetrySplit() {
+
+        // Given we configure to split from one partition to four
+        //tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 2);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+
+        // And we provide enough data for split points to extend the tree to 4 leaf partitions
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 25)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 75))));
+
+        // And the partition tree will be split by another process just before our split is applied
+        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50)
+                .buildTree();
+        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
+                List.of(partitionsAfter.getPartition("root")),
+                List.of(partitionsAfter.getPartition("L"), partitionsAfter.getPartition("R")))
+                .synchronousCommit(stateStore));
+
+        // When
+        preSplitPartitionsIfNecessary();
+
+        // And we provide enough data for split points to extend the tree to 4 leaf partitions
+        // setPartitionSketchData("root", List.of(
+        //         new Row(Map.of("key", 15)),
+        //         new Row(Map.of("key", 20)),
+        //         new Row(Map.of("key", 25)),
+        //         new Row(Map.of("key", 50)),
+        //         new Row(Map.of("key", 55)),
+        //         new Row(Map.of("key", 60)),
+        //         new Row(Map.of("key", 75))));
+
+        // // And the partition tree will be split by another process just before our split is applied
+        // PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+        //         .rootFirst("root")
+        //         .splitToNewChildren("root", "L", "R", 50)
+        //         .splitToNewChildren("L", "L1", "L2", 20)
+        //         .splitToNewChildren("R", "R1", "R2", 60)
+        //         .buildTree();
+        // partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
+        //         List.of(partitionsAfter.getPartition("root")),
+        //         List.of(partitionsAfter.getPartition("L"), partitionsAfter.getPartition("R")))
+        //         .synchronousCommit(stateStore));
+        // partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
+        //         List.of(partitionsAfter.getPartition("L"), partitionsAfter.getPartition("R")),
+        //         List.of(partitionsAfter.getPartition("L1"), partitionsAfter.getPartition("L2"),
+        //                 partitionsAfter.getPartition("R1"), partitionsAfter.getPartition("R2")))
+        //         .synchronousCommit(stateStore));
+
+        // Then
+        assertThat(stateStore.getAllPartitions())
+                .withRepresentation(partitionsRepresentation())
+                .isEqualTo(partitionsAfter.getAllPartitions());
 
     }
 
@@ -226,7 +289,28 @@ public class PartitionPreSplitterTest {
     }
 
     private Representation partitionsRepresentation() {
-        return obj -> printPartitions((PartitionTree) obj);
+        return obj -> {
+            PartitionTree partitionTree;
+
+            // Check if we already have a tree
+            if (obj instanceof PartitionTree tree) {
+                partitionTree = tree;
+            }
+            // Check if it's a list of partitions
+            else if (obj instanceof List<?> list) {
+                // Check if the list does contain Partition objects
+                if (!list.isEmpty() && !(list.get(0) instanceof Partition)) {
+                    throw new IllegalArgumentException("List does not contain Partition objects");
+                }
+                @SuppressWarnings("unchecked")
+                List<Partition> partitions = (List<Partition>) list;
+                partitionTree = new PartitionTree(partitions);
+            } else {
+                throw new IllegalArgumentException("Object is not a PartitionTree or List<Partition>");
+            }
+
+            return printPartitions(partitionTree);
+        };
     }
 
     private String printPartitions(PartitionTree partitions) {
