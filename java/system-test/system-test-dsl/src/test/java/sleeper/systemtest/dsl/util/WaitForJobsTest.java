@@ -83,8 +83,8 @@ public class WaitForJobsTest {
     }
 
     @Nested
-    @DisplayName("Wait for success")
-    class SuccessfulJobs {
+    @DisplayName("Wait for job to succeed")
+    class WaitForJob {
 
         @Test
         void shouldWaitForSuccessfulIngest() {
@@ -121,11 +121,6 @@ public class WaitForJobsTest {
             // Then
             assertThat(foundSleeps).hasSize(2);
         }
-    }
-
-    @Nested
-    @DisplayName("Handle failures")
-    class FailedJobs {
 
         @Test
         void shouldFailWhenJobNeverCompletes() {
@@ -138,6 +133,11 @@ public class WaitForJobsTest {
             assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
         }
+    }
+
+    @Nested
+    @DisplayName("Wait for job retries")
+    class WaitForJobRetries {
 
         @Test
         void shouldFailAfterJobRetries() {
