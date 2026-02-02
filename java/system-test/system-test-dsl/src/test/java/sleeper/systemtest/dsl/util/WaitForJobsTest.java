@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -91,8 +92,9 @@ public class WaitForJobsTest {
             // Given
             TableProperties table = createTable("test");
             IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
-            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
             doOnSleep(() -> {
+                trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
                 trackIngestFinishedWithStartTimeAndRunId(job, startTime, "test-run");
             });
 
@@ -100,7 +102,7 @@ public class WaitForJobsTest {
             forIngest().waitForJobs(List.of("test-job"));
 
             // Then
-            assertThat(foundSleeps).hasSize(1);
+            assertThat(foundSleeps).hasSize(2);
         }
 
         @Test
@@ -108,8 +110,9 @@ public class WaitForJobsTest {
             // Given
             TableProperties table = createTable("test");
             CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
-            trackCompactionCreatedAtTime(job, startTime);
             doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
                 trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
             }, () -> {
                 trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, startTime, "test-run");
@@ -119,7 +122,7 @@ public class WaitForJobsTest {
             forCompaction().waitForJobs(List.of("test-job"));
 
             // Then
-            assertThat(foundSleeps).hasSize(2);
+            assertThat(foundSleeps).hasSize(3);
         }
 
         @Test
@@ -178,6 +181,29 @@ public class WaitForJobsTest {
             forIngest().waitForJobs(List.of("test-job"));
 
             // Then
+            assertThat(foundSleeps).hasSize(3);
+        }
+    }
+
+    @Nested
+    @DisplayName("Fail immediately on first job failure")
+    class FailOnFirstJobFailure {
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailImmediatelyWhenJobFails() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3)))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(foundSleeps).hasSize(3);
         }
     }
