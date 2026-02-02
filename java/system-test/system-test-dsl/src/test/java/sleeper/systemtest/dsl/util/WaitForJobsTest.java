@@ -17,11 +17,11 @@ package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,7 +56,7 @@ public class WaitForJobsTest {
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
     IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
     IngestTaskTracker ingestTaskTracker = new InMemoryIngestTaskTracker();
-    CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
+    InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     CompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
     Instant startTime = Instant.parse("2025-02-02T00:00:00Z");
     List<Duration> foundSleeps = new ArrayList<>();
@@ -65,12 +66,10 @@ public class WaitForJobsTest {
     void shouldWaitForSuccessfulIngest() {
         // Given
         TableProperties table = createTable("test");
-        IngestJob job = createJobWithIdAndFiles(table, "test-job", "test.parquet");
-        ingestJobTracker.jobStarted(job.startedEventBuilder(startTime)
-                .taskId("test-task").jobRunId("test-run").build());
+        IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+        trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
         doOnSleep(() -> {
-            ingestJobTracker.jobFinished(job.finishedEventBuilder(summary(startTime, Duration.ofMinutes(1), 100, 100))
-                    .taskId("test-task").jobRunId("test-run").numFilesWrittenByJob(1).build());
+            trackIngestFinishedWithStartTimeAndRunId(job, startTime, "test-run");
         });
 
         // When
@@ -78,6 +77,72 @@ public class WaitForJobsTest {
 
         // Then
         assertThat(foundSleeps).hasSize(1);
+    }
+
+    @Test
+    void shouldWaitForSuccessfulCompaction() {
+        // Given
+        TableProperties table = createTable("test");
+        CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+        trackCompactionCreatedAtTime(job, startTime);
+        doOnSleep(() -> {
+            trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+        }, () -> {
+            trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, startTime, "test-run");
+        });
+
+        // When
+        forCompaction().waitForJobs(List.of("test-job"));
+
+        // Then
+        assertThat(foundSleeps).hasSize(2);
+    }
+
+    private IngestJob createIngestWithIdAndFiles(TableProperties table, String jobId, String... filenames) {
+        return createJobWithTableAndFiles(jobId, table.getStatus(), filenames);
+    }
+
+    private CompactionJob createCompactionWithIdAndFiles(TableProperties table, String id, String... files) {
+        return CompactionJob.builder()
+                .tableId(table.get(TABLE_ID))
+                .jobId(id)
+                .inputFiles(List.of(files))
+                .outputFile(id + "/outputFile")
+                .partitionId(id + "-partition").build();
+    }
+
+    private void trackIngestStartedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
+        ingestJobTracker.jobStarted(job.startedEventBuilder(startTime)
+                .taskId("test-task").jobRunId(runId).build());
+    }
+
+    private void trackIngestFinishedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
+        ingestJobTracker.jobFinished(job.finishedEventBuilder(summary(startTime, Duration.ofMinutes(1), 100, 100))
+                .taskId("test-task").jobRunId(runId).numFilesWrittenByJob(1).build());
+    }
+
+    private void trackCompactionCreatedAtTime(CompactionJob job, Instant createdTime) {
+        compactionJobTracker.fixUpdateTime(createdTime);
+        compactionJobTracker.jobCreated(job.createCreatedEvent());
+    }
+
+    private void trackCompactionStartedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        compactionJobTracker.fixUpdateTime(startTime);
+        compactionJobTracker.jobStarted(job.startedEventBuilder(startTime).taskId("test-task").jobRunId(runId).build());
+    }
+
+    private void trackCompactionFinishedAndCommittedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        compactionJobTracker.fixUpdateTime(startTime);
+        compactionJobTracker.jobFinished(job.finishedEventBuilder(
+                summary(startTime, Duration.ofMinutes(1), 100L, 100L))
+                .taskId("test-task").jobRunId(runId).build());
+        Instant commitTime = startTime.plus(61, ChronoUnit.SECONDS);
+        compactionJobTracker.fixUpdateTime(commitTime);
+        compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId("test-task").jobRunId(runId).build());
+    }
+
+    private Instant afterNMinutes(long n) {
+        return startTime.plus(n, ChronoUnit.MINUTES);
     }
 
     private WaitForJobs forIngest() {
@@ -103,18 +168,11 @@ public class WaitForJobsTest {
     }
 
     private void doOnSleep(Runnable... runnables) {
+        Iterator<Runnable> iterator = List.of(runnables).iterator();
         sleeper = millis -> {
-            List.of(runnables).forEach(Runnable::run);
+            iterator.next().run();
             recordSleep(millis);
         };
-    }
-
-    private IngestJob createJobWithIdAndFiles(TableProperties table, String jobId, String... filenames) {
-        return createJobWithTableAndFiles(jobId, table.getStatus(), filenames);
-    }
-
-    private Instant afterNMinutes(long n) {
-        return startTime.plus(n, ChronoUnit.MINUTES);
     }
 
     private PollWithRetriesDriver pollDriver() {
