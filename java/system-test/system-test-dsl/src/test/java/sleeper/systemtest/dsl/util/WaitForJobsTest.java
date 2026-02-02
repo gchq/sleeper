@@ -204,8 +204,8 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job"),
-                    PollWithRetries.immediateRetries(3)))
+            assertThatThrownBy(() -> forIngest().waitForJobsAllowRetries(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3), PollWithRetries.immediateRetries(3)))
                     .isInstanceOf(PollWithRetries.TimedOutException.class);
             assertThat(foundSleeps).hasSize(3);
         }
@@ -225,7 +225,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forIngest().waitForJobs(List.of("test-job"));
+            forIngest().waitForJobsAllowRetries(List.of("test-job"));
 
             // Then
             assertThat(foundSleeps).hasSize(3);
@@ -248,7 +248,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
+            assertThatThrownBy(() -> forCompaction().waitForJobsAllowRetries(List.of("test-job")))
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(4);
         }
@@ -274,7 +274,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forCompaction().waitForJobs(List.of("test-job"));
+            forCompaction().waitForJobsAllowRetries(List.of("test-job"));
 
             // Then
             assertThat(foundSleeps).hasSize(6);
@@ -306,7 +306,7 @@ public class WaitForJobsTest {
             });
 
             // When
-            forCompaction().waitForJobs(List.of("job-1", "job-2"));
+            forCompaction().waitForJobsAllowRetries(List.of("job-1", "job-2"));
 
             // Then
             assertThat(foundSleeps).hasSize(6);
@@ -328,7 +328,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forIngest().waitForJobsNoRetries(List.of("test-job")))
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(1);
         }
@@ -350,7 +350,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forCompaction().waitForJobsNoRetries(List.of("test-job")))
+            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(4);
         }
@@ -370,7 +370,7 @@ public class WaitForJobsTest {
             });
 
             // When / Then
-            assertThatThrownBy(() -> forCompaction().waitForJobsNoRetries(List.of("test-job")))
+            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
                     .isInstanceOf(WaitForJobs.JobFailedException.class);
             assertThat(foundSleeps).hasSize(2);
         }

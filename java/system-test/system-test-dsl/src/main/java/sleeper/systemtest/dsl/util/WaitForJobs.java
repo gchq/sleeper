@@ -37,6 +37,8 @@ import java.util.stream.Stream;
 
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
+    private static final PollWithRetries DEFAULT_POLL_UNTIL_JOBS_FINISHED = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10));
+    private static final PollWithRetries DEFAULT_POLL_UNTIL_JOBS_COMMIT = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30));
 
     private final Supplier<InstanceProperties> getInstanceProperties;
     private final String typeDescription;
@@ -89,22 +91,24 @@ public class WaitForJobs {
     }
 
     public void waitForJobs(Collection<String> jobIds) {
-        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
+        waitForJobs(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
-        waitForJobs(jobIds, pollUntilJobsFinished,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
+        waitForJobs(jobIds, pollUntilJobsFinished, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
     }
 
     public void waitForJobs(
             Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
-        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, true);
+        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, false);
     }
 
-    public void waitForJobsNoRetries(Collection<String> jobIds) {
-        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)),
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)), false);
+    public void waitForJobsAllowRetries(Collection<String> jobIds) {
+        waitForJobsAllowRetries(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    }
+
+    public void waitForJobsAllowRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
+        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, true);
     }
 
     private void waitForJobs(
