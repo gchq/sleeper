@@ -32,9 +32,12 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +46,26 @@ public class SketchesSerDe {
 
     public SketchesSerDe(Schema schema) {
         this.schema = schema;
+    }
+
+    public Sketches fromBytes(byte[] bytes) {
+        try {
+            try (DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(bytes))) {
+                return deserialise(dataInputStream);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public byte[] toBytes(Sketches sketches) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try {
+            serialise(sketches, new DataOutputStream(output));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return output.toByteArray();
     }
 
     public void serialise(Sketches sketches, DataOutputStream dos) throws IOException {

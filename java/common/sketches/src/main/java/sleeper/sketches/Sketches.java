@@ -58,6 +58,10 @@ public class Sketches {
         return (ItemsSketch<T>) ItemsSketch.getInstance(k, createComparator(type));
     }
 
+    public static <T> ItemsUnion<T> createUnion(Type type) {
+        return createUnion(type, 16384);
+    }
+
     public static <T> ItemsUnion<T> createUnion(Type type, int maxK) {
         return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, createComparator(type));
     }

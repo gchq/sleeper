@@ -22,13 +22,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportSparkContext;
-import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
-import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
+import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.SketchesSerDe;
+import sleeper.sketches.SketchesUnionBuilder;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -49,18 +51,23 @@ public class GenerateSketchesDriver {
      */
     public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportSparkContext input) {
         LOGGER.info("Generating sketches...");
-        Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
-        Dataset<Row> sketchFiles = partitioned.mapPartitions(
-                new WriteSketchesFile(
+        Dataset<Row> sketchFiles = input.getRows().mapPartitions(
+                new GenerateSketches(
                         input.getInstanceProperties(), input.getTableProperties(),
-                        input.getHadoopConf(), input.getPartitionsBroadcast()),
+                        input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(SparkSketchRow.createSchema()));
-        SketchesStore sketchesStore = new HadoopSketchesStore(input.getHadoopConf());
-        return sketchFiles.collectAsList().stream()
+        Schema schema = input.getTableProperties().getSchema();
+        SketchesSerDe serDe = new SketchesSerDe(schema);
+        Map<String, SketchesUnionBuilder> partitionIdToBuilder = new HashMap<>();
+        sketchFiles.collectAsList().stream()
                 .map(SparkSketchRow::from)
-                .collect(toMap(
-                        SparkSketchRow::partitionId,
-                        row -> sketchesStore.loadFileSketches(row.filename(), input.getSchema())));
+                .forEach(row -> {
+                    Sketches sketches = serDe.fromBytes(row.sketchBytes());
+                    SketchesUnionBuilder builder = partitionIdToBuilder.computeIfAbsent(
+                            row.partitionId(), id -> new SketchesUnionBuilder(schema));
+                    builder.add(sketches);
+                });
+        return partitionIdToBuilder.entrySet().stream()
+                .collect(toMap(Entry::getKey, entry -> entry.getValue().build()));
     }
-
 }

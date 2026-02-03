@@ -35,7 +35,7 @@ public class UnionSketchesForSplitting implements SketchesForSplitting {
 
     @Override
     public SketchForSplitting getSketch(Field field) {
-        ItemsUnion<Object> union = Sketches.createUnion(field.getType(), 16384);
+        ItemsUnion<Object> union = Sketches.createUnion(field.getType());
         for (Sketches sketch : sketches) {
             union.update(sketch.getQuantilesSketch(field.getName()));
         }
