@@ -1775,7 +1775,8 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.parquet.query.column.index.enabled=false
 
-# The size of the row group in the Parquet files (default is 8MiB).
+# Maximum number of bytes to write in a Parquet row group (default is 8MiB). This property is NOT used
+# by DataFusion data engine.
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.rowgroup.size=8388608
 
@@ -1823,6 +1824,10 @@ sleeper.subnets=set-automatically
 # the data.
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.parquet.writer.version=v2
+
+# Maximum number of rows to write in a Parquet row group.
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.parquet.rowgroup.rows.max=1000000
 
 # The number of attempts to make when applying a transaction to the state store. This default can be
 # overridden by a table property.

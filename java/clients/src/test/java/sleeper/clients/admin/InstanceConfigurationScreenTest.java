@@ -622,7 +622,9 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .contains("Found changes to properties:\n" +
                             "\n" +
                             "sleeper.table.rowgroup.size\n" +
-                            "The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                            "Maximum number of bytes to write in a Parquet row group " +
+                            "(defaults to value set in instance\n" +
+                            "properties). This property is NOT used by DataFusion data engine.\n" +
                             "Unset before, default value: 8388608\n" +
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
