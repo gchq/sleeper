@@ -178,6 +178,7 @@ public final class EksBulkImportStack extends NestedStack {
         List.of(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
+        coreStacks.grantReadWritePartitions(sparkServiceAccount.getRole());
 
         StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());

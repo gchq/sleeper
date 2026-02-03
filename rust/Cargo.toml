@@ -34,14 +34,14 @@ aws-types = { version = "1.3.11" }                   # for Region
 bytes = { version = "1.11.0" }                      # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.23.1" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.43" }                     # Log helper
-clap = { version = "4.5.55" }                       # Cmd line args processing
+clap = { version = "4.5.56" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
 datafusion = { version = "52.1.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
-git2 = { version = "0.20.3" }                       # Interact with version control
+git2 = { version = "0.20.4" }                       # Interact with version control
 human-panic = { version = "2.0.6" }                 # Readable panic messages
 libc = { version = "0.2.180" }                      # FFI type support
 log = { version = "0.4.29" }                        # Standard logging framework

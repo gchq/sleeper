@@ -15,11 +15,9 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
-import org.apache.spark.util.SerializableConfiguration;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -32,32 +30,28 @@ import java.util.List;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
- * Generates a sketch of all input data, and outputs a single row per partition referencing a file that contains that
- * sketch.
+ * Generates a sketch of all input data, and outputs a single row per partition that contains that sketch.
  *
- * @see SketchWritingIterator
+ * @see SketchingIterator
  */
-public class WriteSketchesFile implements MapPartitionsFunction<Row, Row> {
+public class GenerateSketches implements MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1211201891202603297L;
 
     private final String instancePropertiesStr;
     private final String tablePropertiesStr;
-    private final SerializableConfiguration serializableConf;
     private final Broadcast<List<Partition>> broadcastPartitions;
 
-    public WriteSketchesFile(InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf, Broadcast<List<Partition>> broadcastPartitions) {
+    public GenerateSketches(InstanceProperties instanceProperties, TableProperties tableProperties, Broadcast<List<Partition>> broadcastPartitions) {
         this.instancePropertiesStr = instanceProperties.saveAsString();
         this.tablePropertiesStr = tableProperties.saveAsString();
-        this.serializableConf = new SerializableConfiguration(conf);
         this.broadcastPartitions = broadcastPartitions;
     }
 
     @Override
-    public SketchWritingIterator call(Iterator<Row> input) throws Exception {
+    public SketchingIterator call(Iterator<Row> input) throws Exception {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
         PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
-        return new SketchWritingIterator(input, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
+        return new SketchingIterator(input, tableProperties, partitionTree);
     }
-
 }

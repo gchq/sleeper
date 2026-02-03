@@ -36,7 +36,6 @@ public interface PollWithRetriesDriver {
         return poll -> poll.toBuilder()
                 .sleepInInterval(millis -> { // Do not really wait
                 }).build();
-
     }
 
 }

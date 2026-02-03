@@ -57,11 +57,6 @@ public interface SystemTestProperty extends InstanceProperty {
             .defaultValue("30")
             .validationPredicate(SleeperPropertyValueUtils::isValidLogRetention)
             .runCdkDeployWhenChanged(true).build();
-    SystemTestProperty SYSTEM_TEST_ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.systemtest.standalone.ecs.security.groups")
-            .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks, " +
-                    "for Sleeper instances deployed against a standalone system test deployment.")
-            .validationPredicate(value -> SleeperPropertyValueUtils.isListWithMaxSize(value, 5))
-            .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
             .description("The image in ECR used for writing random data to the system")
             .validationPredicate(Objects::nonNull)

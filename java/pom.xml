@@ -123,13 +123,13 @@
         <roaringbitmap.version>1.3.0</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.26</logback.version>
+        <logback.version>1.5.27</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.41.18</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.20</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -183,7 +183,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.46.0</google.errorprone.version>
-        <cdk.version>2.236.0</cdk.version>
+        <cdk.version>2.237.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.5</constructs.version>
         <jsii.version>1.126.0</jsii.version>
@@ -191,7 +191,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.11</pty4j.version>
+        <pty4j.version>0.13.12</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.83</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
@@ -252,7 +252,7 @@
         <shade.plugin.version>3.6.1</shade.plugin.version>
         <assembly.plugin.version>3.8.0</assembly.plugin.version>
         <jar.plugin.version>3.5.0</jar.plugin.version>
-        <compiler.plugin.version>3.14.1</compiler.plugin.version>
+        <compiler.plugin.version>3.15.0</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.8</spotbugs.version>

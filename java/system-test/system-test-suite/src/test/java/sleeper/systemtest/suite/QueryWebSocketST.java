@@ -51,7 +51,7 @@ public class QueryWebSocketST {
         // When/Then
         assertThat(sleeper.query().webSocket()
                 .allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class QueryWebSocketST {
         assertThat(sleeper.query().webSocket()
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20")))
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 20));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class QueryWebSocketST {
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-30"),
                         range("row-20", "row-40")))
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 40)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 40));
     }
 
     @Test
@@ -98,8 +98,10 @@ public class QueryWebSocketST {
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20"),
                         range("row-30", "row-40")))
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.concat(
-                        LongStream.range(10, 20), LongStream.range(30, 40))));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableFrom(
+                        () -> LongStream.concat(
+                                LongStream.range(10, 20),
+                                LongStream.range(30, 40))));
     }
 
     @Test
@@ -120,6 +122,6 @@ public class QueryWebSocketST {
 
         // When/Then
         assertThat(sleeper.query().webSocket().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 3000)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 3000));
     }
 }

@@ -65,7 +65,8 @@ public class PartitionSplittingTest {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 100));
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
         AllReferencesToAllFiles files = sleeper.tableFiles().all();

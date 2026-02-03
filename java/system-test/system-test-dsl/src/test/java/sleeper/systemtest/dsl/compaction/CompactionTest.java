@@ -91,8 +91,9 @@ public class CompactionTest {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
-                        LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableFrom(
+                        () -> LongStream.range(0, 100)
+                                .flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
         assertThat(files.getFilesWithReferences())

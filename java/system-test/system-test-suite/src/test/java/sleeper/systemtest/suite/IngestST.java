@@ -57,7 +57,8 @@ public class IngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 100));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -76,7 +77,8 @@ public class IngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -97,7 +99,8 @@ public class IngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
@@ -115,7 +118,8 @@ public class IngestST {
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 20000)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 20000));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1)
                 .matches(files -> numberOfRowsIn(files) == 20_000L,

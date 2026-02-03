@@ -26,10 +26,10 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
@@ -46,11 +46,11 @@ public class IngestSourceFilesContext {
         this.instance = instance;
     }
 
-    public void writeFile(IngestSourceFilesDriver driver, String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
+    public void writeFile(IngestSourceFilesDriver driver, String filename, SourceFilesFolder folder, boolean writeSketches, Iterator<Row> rows) {
         writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, folder, writeSketches, rows);
     }
 
-    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
+    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, SourceFilesFolder folder, boolean writeSketches, Iterator<Row> rows) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -59,9 +59,9 @@ public class IngestSourceFilesContext {
 
     private void writeFile(
             IngestSourceFilesDriver driver, InstanceProperties instanceProperties, TableProperties tableProperties,
-            String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
+            String filename, SourceFilesFolder folder, boolean writeSketches, Iterator<Row> rows) {
         String path = instance.getInstanceProperties().get(FILE_SYSTEM) + folder.generateFilePathNoFs(filename);
-        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, rows.iterator());
+        driver.writeFile(instanceProperties, tableProperties, path, writeSketches, rows);
         filenameToPath.put(filename, path);
         lastFolder = folder;
         LOGGER.info("Wrote source file {}, path: {}", filename, path);
