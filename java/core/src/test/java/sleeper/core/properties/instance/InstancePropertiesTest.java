@@ -58,6 +58,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -248,6 +249,28 @@ class InstancePropertiesTest {
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
                 .hasMessageContaining("-62");
+    }
+
+    @Test
+    void shouldCreateInstancePropertiesFineWithInvalidTags() {
+        // Given / When
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
+                loadProperties("sleeper.tags=key=value"));
+
+        // Then
+        assertThat(instanceProperties.get(TAGS)).isEqualTo("key=value");
+    }
+
+    @Test
+    void shouldFailValidationForInstancePropertiesWithInvalidTags() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(TAGS, "key=value");
+
+        // When /  Then
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessage("Property sleeper.tags was invalid. It was \"key=value\".");
     }
 
     private static InstanceProperties getSleeperProperties() {

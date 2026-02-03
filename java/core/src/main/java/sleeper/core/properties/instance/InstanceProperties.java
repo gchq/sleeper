@@ -204,13 +204,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
 
-            if (split.length % 2 != 0) { //Check for even number of tag name and values
-                throw new IllegalArgumentException("Tags element didn't contain an even number of elements." +
-                        " Ensure each tag name and value are seperated by a comma.");
-            }
-
             for (int i = 0; i < split.length; i += 2) {
-                tags.put(split[i], split[i + 1]);
+                //Get value for tag if exists
+                String value = i + 1 < split.length ? split[i + 1] : "";
+                tags.put(split[i], value);
             }
         }
         return tags;

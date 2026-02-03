@@ -341,6 +341,17 @@ public class SleeperPropertyValueUtils {
         return values.size() <= maxSize;
     }
 
+    /**
+     * Checks if a property value is a comma-separated list with a matching number of key and value pairs.
+     *
+     * @param  input the value
+     * @return       true if the value meets the requirement
+     */
+    public static boolean isListInKeyValueFormat(String input) {
+        List<String> values = SleeperPropertyValueUtils.readList(input);
+        return values.size() % 2 == 0; //Expect even ammount of items when in key-value format
+    }
+
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {
         try {
             return check.test(Integer.parseInt(string));
