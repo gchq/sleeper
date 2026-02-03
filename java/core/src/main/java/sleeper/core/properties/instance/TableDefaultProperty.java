@@ -40,7 +40,8 @@ public interface TableDefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.table.rowgroup.size")
-            .description("The size of the row group in the Parquet files (default is 8MiB).")
+            .description("Maximum number of bytes to write in a Parquet row group (default is 8MiB). " +
+                    "This property is NOT used by DataFusion data engine.")
             .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PAGE_SIZE = Index.propertyBuilder("sleeper.default.table.page.size")
@@ -88,13 +89,17 @@ public interface TableDefaultProperty {
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-
     UserDefinedInstanceProperty DEFAULT_PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.default.table.parquet.writer.version")
             .description("Used to set parquet.writer.version, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
                     "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
             .defaultValue("v2")
             .validationPredicate(List.of("v1", "v2")::contains)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_PARQUET_ROWGROUP_ROWS = Index.propertyBuilder("sleeper.default.table.parquet.rowgroup.rows.max")
+            .description("Maximum number of rows to write in a Parquet row group.")
+            .defaultValue("1000000")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.statestore.transactionlog.add.transaction.max.attempts")
             .description("The number of attempts to make when applying a transaction to the state store. " +

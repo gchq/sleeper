@@ -72,6 +72,7 @@ public class ParquetRowWriterFactory {
         return new Builder(path, tableProperties.getSchema())
                 .withCompressionCodec(tableProperties.get(COMPRESSION_CODEC))
                 .withRowGroupSize(tableProperties.getLong(ROW_GROUP_SIZE))
+                .withRowGroupRowCountLimit(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS))
                 .withPageSize(tableProperties.getInt(PAGE_SIZE))
                 .withDictionaryEncodingForRowKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS))
                 .withDictionaryEncodingForSortKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS))
