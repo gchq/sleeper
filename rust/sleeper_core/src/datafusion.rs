@@ -102,7 +102,7 @@ impl<'a> SleeperOperations<'a> {
             self.config.input_files().len(),
         );
         // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
-        cfg.options_mut().execution.parquet.enable_page_index = false;
+        cfg.options_mut().execution.parquet.enable_page_index = self.config.read_page_indexes();
         // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;

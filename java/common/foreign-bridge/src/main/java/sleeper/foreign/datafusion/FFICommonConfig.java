@@ -49,6 +49,8 @@ public class FFICommonConfig extends Struct {
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Whether we should use readahead when reading from S3. */
     public final Struct.Boolean use_readahead_store = new Struct.Boolean();
+    /** Whether Parquet page indexes should be read. */
+    public final Struct.Boolean read_page_indexes=new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Specifies if sketch output is enabled. Can only be used with file output. */

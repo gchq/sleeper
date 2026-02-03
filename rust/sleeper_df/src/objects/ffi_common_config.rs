@@ -43,6 +43,7 @@ pub struct FFICommonConfig {
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
     pub use_readahead_store: bool,
+    pub read_page_indexes: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
     pub row_key_cols_len: usize,
@@ -153,6 +154,7 @@ impl FFICommonConfig {
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
+            .read_page_indexes(self.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
