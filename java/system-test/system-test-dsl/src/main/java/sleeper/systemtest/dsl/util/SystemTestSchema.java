@@ -16,10 +16,15 @@
 
 package sleeper.systemtest.dsl.util;
 
+import sleeper.core.row.Row;
+import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SystemTestSchema {
     private SystemTestSchema() {
@@ -33,4 +38,10 @@ public class SystemTestSchema {
             .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
             .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
+
+    public static List<Row> sorted(List<Row> rows) {
+        List<Row> sorted = new ArrayList<>(rows);
+        sorted.sort(new RowComparator(DEFAULT_SCHEMA));
+        return sorted;
+    }
 }
