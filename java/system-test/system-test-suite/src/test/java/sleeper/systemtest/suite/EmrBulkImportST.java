@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.row.Row;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -55,7 +56,7 @@ public class EmrBulkImportST {
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
-        assertThat(sleeper.directQuery().allRowsInTable())
+        assertThat(SystemTestSchema.sorted(sleeper.directQuery().allRowsInTable()))
                 .containsExactlyElementsOf(rows);
         assertThat(sleeper.partitioning().tree().getLeafPartitions())
                 .hasSize(8);
