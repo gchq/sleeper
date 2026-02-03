@@ -221,7 +221,7 @@ public class MultiThreadedStateStoreCommitter {
         }
     }
 
-    private boolean processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
+    private void processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
         Instant startedAt = Instant.now();
         LOGGER.info("Processing {} requests for table: {} ...", requests.size(), tableId);
         applyBatchOfCommits(retryOnThrottling, stateStore, requests);
@@ -230,7 +230,6 @@ public class MultiThreadedStateStoreCommitter {
                 requests.size(),
                 tableId,
                 LoggedDuration.withShortOutput(startedAt, Instant.now()));
-        return true;
     }
 
     /**
