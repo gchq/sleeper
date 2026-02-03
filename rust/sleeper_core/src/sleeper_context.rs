@@ -29,6 +29,9 @@ pub struct SleeperContext {
     inner: Mutex<RuntimeEnv>,
 }
 
+/// The maximum size of DataFusion's file metadata cache.
+pub const METADATA_CACHE_SIZE: usize = 128 * 1024 * 1024;
+
 impl SleeperContext {
     /// Retrieves a runtime environment for `DataFusion` to work with.
     ///
@@ -47,6 +50,7 @@ impl SleeperContext {
                 .with_object_store_registry(
                     RuntimeEnvBuilder::default().object_store_registry.clone(),
                 )
+                .with_metadata_cache_limit(METADATA_CACHE_SIZE)
                 .build()?,
         ))
     }
