@@ -39,6 +39,7 @@ import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FO
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_ROW_GROUP_SIZE_ROWS;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
