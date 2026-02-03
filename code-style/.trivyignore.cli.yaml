@@ -29,3 +29,6 @@ vulnerabilities:
 
   # AWS CLI wheel
   - id: CVE-2026-24049
+
+  # NPM CLI Tar
+  - id: CVE-2026-24842
