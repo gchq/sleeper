@@ -38,6 +38,7 @@ import sleeper.splitter.core.extend.InsufficientDataForPartitionSplittingExcepti
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -157,41 +158,6 @@ public class PartitionPreSplitterTest {
     }
 
     @Test
-    void shouldLimitNumberOfRetries() {
-
-        // Given we configure to split from one partition to four
-        tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 1);
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
-        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
-                .singlePartition("root")
-                .buildTree());
-
-        // And we provide enough data for split points to extend the tree to 4 leaf partitions
-        setPartitionSketchData("root", List.of(
-                new Row(Map.of("key", 15)),
-                new Row(Map.of("key", 20)),
-                new Row(Map.of("key", 25)),
-                new Row(Map.of("key", 50)),
-                new Row(Map.of("key", 55)),
-                new Row(Map.of("key", 60)),
-                new Row(Map.of("key", 75))));
-        // And the partition tree will be split by another process just before our split is applied
-        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "P1", "P2", 50)
-                .buildTree();
-        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                List.of(partitionsAfter.getPartition("root")),
-                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
-                .synchronousCommit(stateStore));
-
-        // When/Then
-        assertThatThrownBy(this::preSplitPartitionsIfNecessary)
-                .isInstanceOf(TooManyAttemptsPartitionSplitterException.class);
-    }
-
-    @Test
     void shouldExtendNewTreeWhenPartitionsAreSplitByAnotherProcessBeforeWeCommitOurSplit() {
 
         // Given we configure to split from one partition to four
@@ -246,6 +212,91 @@ public class PartitionPreSplitterTest {
                         .buildTree());
     }
 
+    @Test
+    void shouldNotRetryWithOneAttempt() {
+
+        // Given we configure to split from one partition to four, with a maximum of one attempt
+        tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 1);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+
+        // And we provide enough data for split points to extend the tree to 4 leaf partitions
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 15)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 25)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 55)),
+                new Row(Map.of("key", 60)),
+                new Row(Map.of("key", 75))));
+
+        // And the partition tree will be split by another process just before our split is applied
+        partitionsLogStore.atStartOfNextAddTransaction(() -> commitTransactionWithUpdatedAndNew(
+                new PartitionsBuilder(tableProperties)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", 50)
+                        .buildTree(),
+                List.of("root"),
+                List.of("L", "R")));
+
+        // When / Then
+        assertThatThrownBy(this::preSplitPartitionsIfNecessary)
+                .isInstanceOf(TooManyAttemptsPartitionSplitterException.class);
+    }
+
+    @Test
+    void shouldNotRetryWithTwoAttempts() {
+
+        // Given we configure to split from one partition to eight, with a maximum of 2 attempts
+        tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 2);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 8);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .singlePartition("root")
+                .buildTree());
+
+        // And we provide enough data for split points to extend the tree to 8 leaf partitions
+        setPartitionSketchData("root", rowsFromRangeClosed(1, 24));
+
+        // And we provide the same sketch data for the intermediate partitions that will be created in conflict with this split
+        setPartitionSketchData("L", rowsFromRangeClosed(1, 12));
+        setPartitionSketchData("R", rowsFromRangeClosed(13, 24));
+        setPartitionSketchData("LL", rowsFromRangeClosed(1, 6));
+        setPartitionSketchData("LR", rowsFromRangeClosed(7, 12));
+        setPartitionSketchData("RL", rowsFromRangeClosed(13, 18));
+        setPartitionSketchData("RR", rowsFromRangeClosed(19, 24));
+
+        // And the partition tree will be split by another process just before our first two split attempts are applied
+        partitionsLogStore.atStartOfNextAddTransactions(List.of(
+                () -> commitTransactionWithUpdatedAndNew(
+                        new PartitionsBuilder(tableProperties)
+                                .rootFirst("root")
+                                .splitToNewChildren("root", "L", "R", 13)
+                                .buildTree(),
+                        List.of("root"), List.of("L", "R")),
+                () -> commitTransactionWithUpdatedAndNew(
+                        new PartitionsBuilder(tableProperties)
+                                .rootFirst("root")
+                                .splitToNewChildren("root", "L", "R", 13)
+                                .splitToNewChildren("L", "LL", "LR", 7)
+                                .splitToNewChildren("R", "RL", "RR", 19)
+                                .buildTree(),
+                        List.of("L", "R"), List.of("LL", "LR", "RL", "RR"))));
+
+        // When / Then
+        assertThatThrownBy(this::preSplitPartitionsIfNecessary)
+                .isInstanceOf(TooManyAttemptsPartitionSplitterException.class);
+    }
+
+    private List<Row> rowsFromRangeClosed(int min, int max) {
+        return IntStream.rangeClosed(min, max)
+                .mapToObj(i -> new Row(Map.of("key", i)))
+                .toList();
+    }
+
     private void preSplitPartitionsIfNecessary() {
         splitter().preSplitPartitionsIfNecessary(tableProperties, stateStore.getAllPartitions(), singleFileImportContext());
     }
@@ -254,6 +305,13 @@ public class PartitionPreSplitterTest {
         return new FakeBulkImportContext(tableProperties, stateStore.getAllPartitions(), singleFileImportJob(), c -> {
         }, c -> {
         });
+    }
+
+    private void commitTransactionWithUpdatedAndNew(PartitionTree partitions, List<String> updatedIds, List<String> newIds) {
+        new ExtendPartitionTreeTransaction(
+                updatedIds.stream().map(partitions::getPartition).toList(),
+                newIds.stream().map(partitions::getPartition).toList())
+                .synchronousCommit(stateStore);
     }
 
     private BulkImportJob singleFileImportJob() {
