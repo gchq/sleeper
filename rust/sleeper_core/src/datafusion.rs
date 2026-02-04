@@ -90,7 +90,7 @@ impl<'a> SleeperOperations<'a> {
 
     /// Sets as many parameters as possible from the given input data.
     ///
-    pub async fn apply_config(
+    pub fn apply_config(
         &self,
         mut cfg: SessionConfig,
         object_metas: &[ObjectMeta],
@@ -186,19 +186,16 @@ impl<'a> SleeperOperations<'a> {
         // Pre-populate cache for Parquet metadata. We only do this if page index fetching is disabled, otherwise
         // let the `DataFusion`'s caching mechanism fetch the page indexes.
         if !self.config.read_page_indexes() {
-            prepopulate_metadata_cache(
-                ctx,
-                self.config.input_files(),
-                metas,
-                ctx.state_ref()
-                    .read()
-                    .config()
-                    .options()
-                    .execution
-                    .parquet
-                    .metadata_size_hint,
-            )
-            .await?;
+            let metadata_size_hint = ctx
+                .state_ref()
+                .read()
+                .config()
+                .options()
+                .execution
+                .parquet
+                .metadata_size_hint;
+            prepopulate_metadata_cache(ctx, self.config.input_files(), metas, metadata_size_hint)
+                .await?;
         }
         // Read Parquet files and apply sort order
         let frame = ctx

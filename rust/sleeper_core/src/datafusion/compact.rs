@@ -106,9 +106,7 @@ async fn build_compaction_dataframe<'a>(
     runtime: Arc<RuntimeEnv>,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let object_metas = retrieve_object_metas(ops.config.input_files(), store_factory).await?;
-    let sf = ops
-        .apply_config(SessionConfig::new(), &object_metas)
-        .await?;
+    let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
     let ctx = ops.configure_context(
         SessionContext::new_with_config_rt(sf, runtime),
         store_factory,

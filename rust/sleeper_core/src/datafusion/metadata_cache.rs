@@ -47,7 +47,9 @@ async fn load_metadata(
     meta: ObjectMeta,
     metadata_size_hint: Option<usize>,
 ) -> Result<bool, DataFusionError> {
-    Ok(if !cache.contains_key(&meta) {
+    Ok(if cache.contains_key(&meta) {
+        false
+    } else {
         debug!("Pre-fetching {} to metadata cache", meta.location);
         let metadata = ParquetMetaDataReader::new()
             .with_prefetch_hint(metadata_size_hint)
@@ -60,14 +62,12 @@ async fn load_metadata(
             Arc::new(CachedParquetMetaData::new(Arc::new(metadata))),
         );
         true
-    } else {
-        false
     })
 }
 
 struct UrlWrap<'a>(&'a Url);
 
-impl<'a> AsRef<Url> for UrlWrap<'a> {
+impl AsRef<Url> for UrlWrap<'_> {
     fn as_ref(&self) -> &Url {
         self.0
     }
