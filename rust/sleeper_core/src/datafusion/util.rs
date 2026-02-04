@@ -610,7 +610,7 @@ mod tests {
         let metadata_size = calculate_metadata_size_hint(size);
 
         // Then
-        assert_eq!(metadata_size, 536870);
+        assert_eq!(metadata_size, 536_870);
     }
 
     #[test]
