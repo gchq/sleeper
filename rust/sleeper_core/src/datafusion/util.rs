@@ -47,7 +47,7 @@ pub const MAX_PART_COUNT: u64 = 5000;
 /// The fraction of total file size to estimate for Parquet metadata. This errs
 /// on the larger side. We will bound this between a minimum of 512KiB and maximum
 /// of 10MiB.
-pub const META_DATA_SIZE_FRACTION: f64 = 0.0005;
+pub const META_DATA_SIZE_FRACTION: f64 = 0.0001;
 const _: () = assert!(
     0f64 <= META_DATA_SIZE_FRACTION && META_DATA_SIZE_FRACTION <= 1f64,
     "META_DATA_SIZE_FRACTION out of range"
