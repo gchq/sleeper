@@ -258,7 +258,7 @@ class InstancePropertiesTest {
                 loadProperties("sleeper.tags=key=value"));
 
         // Then
-        assertThat(instanceProperties.get(TAGS)).isEqualTo("key=value");
+        assertThat(instanceProperties.getTags()).isEqualTo(Map.of("key=value", ""));
     }
 
     @Test
