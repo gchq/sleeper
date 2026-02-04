@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.41.20</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.21</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -143,7 +143,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.42.2</aws-crt.version>
+        <aws-crt.version>0.43.0</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.9.0</aws-lambda-java-runtime-interface-client.version>
@@ -183,7 +183,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.46.0</google.errorprone.version>
-        <cdk.version>2.237.0</cdk.version>
+        <cdk.version>2.237.1</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.5</constructs.version>
         <jsii.version>1.126.0</jsii.version>
