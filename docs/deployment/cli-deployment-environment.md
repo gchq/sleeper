@@ -55,7 +55,9 @@ sleeper environment deploy <environment-id>
 ```
 
 [See below](#managing-environments) for options for this command. By default this will deploy a fresh VPC and EC2,
-either of which may be omitted.
+either of which may be omitted. The default security group for this fresh VPC will deny all incoming and outgoing traffic.
+Sleeper is also configured to not use the default security group for the VPC and instead uses custom defined ones when relevant.
+An example of this is with the ECS_SECURITY_GROUP.
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your

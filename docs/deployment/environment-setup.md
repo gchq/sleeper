@@ -99,15 +99,10 @@ To deploy Sleeper, you'll need a VPC that meets certain requirements. You'll als
 to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use the Sleeper CLI to create
 both of these, see the documentation for the [Sleeper CLI deployment environment](cli-deployment-environment.md).
 
-The default security group for the VPC will deny all incomming and outgoing traffic. Security groups in Sleeper
-are also configured to not use the default security group for the VPC. An example of this is with the ECS_SECURITY_GROUP
-which is configured [here](../../java/deployment/cdk/src/main/java/sleeper/cdk/stack/core/EcsClusterTasksStack.java#L147)
-and is used in a deployment [here](../../java/common/common-task/src/main/java/sleeper/common/task/RunIngestTasks.java#L105)
-
 If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
 multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
 VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway endpoint for S3, deployment of a Sleeper
-instance will fail in the CDK.
+instance will fail in the CDK. Note that Sleeper will not use the default security group of the VPC.
 
 If you prefer to use your own EC2, it should run on an x86_64 architecture, with Bash and Docker, and have enough
 resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
