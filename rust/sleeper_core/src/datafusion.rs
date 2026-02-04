@@ -21,6 +21,7 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
+        metadata_cache::prepopulate_metadata_cache,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
@@ -47,6 +48,8 @@ use datafusion::{
     },
 };
 use log::{debug, info, warn};
+use num_format::{Locale, ToFormattedString};
+use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
@@ -56,6 +59,7 @@ mod compact;
 mod config;
 mod filter_aggregation_config;
 mod leaf_partition_query;
+mod metadata_cache;
 mod metrics;
 pub mod output;
 mod region;
@@ -89,7 +93,7 @@ impl<'a> SleeperOperations<'a> {
     pub async fn apply_config(
         &self,
         mut cfg: SessionConfig,
-        store_factory: &ObjectStoreFactory,
+        object_metas: &[ObjectMeta],
     ) -> Result<SessionConfig, DataFusionError> {
         if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
             // Java's Arrow FFI layer can't handle view types, so expand them at output
@@ -106,13 +110,13 @@ impl<'a> SleeperOperations<'a> {
         // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;
-        let (total_input_size, largest_file) =
-            retrieve_input_size(self.config.input_files(), store_factory)
-                .await
-                .inspect_err(|e| warn!("Error getting input file sizes {e}"))?;
+        let (total_input_size, largest_file) = retrieve_input_size(object_metas);
         // Set metadata size hint to scaled value
         let metadata_size_hint = calculate_metadata_size_hint(largest_file);
-        debug!("Set metadata_size_hint to {metadata_size_hint}");
+        debug!(
+            "Set metadata_size_hint to {}",
+            metadata_size_hint.to_formatted_string(&Locale::en)
+        );
         cfg.options_mut().execution.parquet.metadata_size_hint = Some(
             usize::try_from(metadata_size_hint)
                 .map_err(|e| DataFusionError::External(Box::new(e)))?,
@@ -167,6 +171,7 @@ impl<'a> SleeperOperations<'a> {
     pub async fn create_initial_partitioned_read(
         &self,
         ctx: &SessionContext,
+        metas: &[ObjectMeta],
     ) -> Result<DataFrame, DataFusionError> {
         let po = if self.config.input_files_sorted() {
             let sort_order = self.create_sort_order();
@@ -178,6 +183,23 @@ impl<'a> SleeperOperations<'a> {
             );
             ParquetReadOptions::default()
         };
+        // Pre-populate cache for Parquet metadata. We only do this if page index fetching is disabled, otherwise
+        // let the `DataFusion`'s caching mechanism fetch the page indexes.
+        if !self.config.read_page_indexes() {
+            prepopulate_metadata_cache(
+                ctx,
+                self.config.input_files(),
+                metas,
+                ctx.state_ref()
+                    .read()
+                    .config()
+                    .options()
+                    .execution
+                    .parquet
+                    .metadata_size_hint,
+            )
+            .await?;
+        }
         // Read Parquet files and apply sort order
         let frame = ctx
             .read_parquet(self.config.input_files().clone(), po)

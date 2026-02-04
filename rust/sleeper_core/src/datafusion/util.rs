@@ -34,6 +34,7 @@ use datafusion::{
 };
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
+use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
@@ -147,29 +148,38 @@ pub fn register_store(
     Ok(())
 }
 
-/// Calculate the total size of all `input_paths` objects.
-///
-/// # Returns
-/// A tuple of (total input size, largest single file).
+/// Retrieves the [`ObjectMeta`]s for each URL passed.
 ///
 /// # Errors
-/// Fails if we can't obtain the size of the input files from the object store.
-pub async fn retrieve_input_size(
+/// Fails if we can't retrieve object data from an object store.
+pub async fn retrieve_object_metas(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<(u64, u64), DataFusionError> {
-    let mut total_input = 0u64;
-    let mut largest_file = 0u64;
+) -> Result<Vec<ObjectMeta>, DataFusionError> {
+    let mut metas = Vec::new();
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
-        let size = store.head(&p.into()).await?.size;
+        metas.push(store.head(&p.into()).await?);
+    }
+    Ok(metas)
+}
+
+/// Calculate the total size of all `input_paths` object metas.
+///
+/// # Returns
+/// A tuple of (total input size, largest single file).
+pub fn retrieve_input_size(inputs: &[ObjectMeta]) -> (u64, u64) {
+    let mut total_input = 0u64;
+    let mut largest_file = 0u64;
+    for input in inputs {
+        let size = input.size;
         total_input += size;
         largest_file = std::cmp::max(largest_file, size);
     }
-    Ok((total_input, largest_file))
+    (total_input, largest_file)
 }
 
 /// Searches down a physical plan and removes the top most [`CoalescePartitionsExec`] stage.
