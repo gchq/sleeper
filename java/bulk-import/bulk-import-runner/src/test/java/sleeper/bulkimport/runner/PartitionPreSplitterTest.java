@@ -16,7 +16,6 @@
 package sleeper.bulkimport.runner;
 
 import org.assertj.core.presentation.Representation;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -127,7 +126,7 @@ public class PartitionPreSplitterTest {
     }
 
     @Test
-    void shouldRetryWhenPartitionsAreSplitByAnotherProcessBeforeWeCommitOurSplit() {
+    void shouldAcceptNewTreeWhenPartitionsAreSplitByAnotherProcessBeforeWeCommitOurSplit() {
         // Given we configure to split from one partition to two
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
@@ -195,12 +194,10 @@ public class PartitionPreSplitterTest {
     }
 
     @Test
-    @Disabled
-    void shouldRetrySplit() {
+    void shouldExtendNewTreeWhenPartitionsAreSplitByAnotherProcessBeforeWeCommitOurSplit() {
 
         // Given we configure to split from one partition to four
-        //tableProperties.setNumber(BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS, 2);
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 4);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
         update(stateStore).initialise(new PartitionsBuilder(tableProperties)
                 .singlePartition("root")
@@ -208,47 +205,47 @@ public class PartitionPreSplitterTest {
 
         // And we provide enough data for split points to extend the tree to 4 leaf partitions
         setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 15)),
+                new Row(Map.of("key", 20)),
                 new Row(Map.of("key", 25)),
                 new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 55)),
+                new Row(Map.of("key", 60)),
                 new Row(Map.of("key", 75))));
 
-        setPartitionSketchData("P1", List.of(
-                new Row(Map.of("key", 10)),
-                new Row(Map.of("key", 25)),
-                new Row(Map.of("key", 40))));
-        setPartitionSketchData("P2", List.of(
+        // And we provide the same sketch data for the intermediate partitions that will be created in conflict with this split
+        setPartitionSketchData("L", List.of(
+                new Row(Map.of("key", 15)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 25))));
+        setPartitionSketchData("R", List.of(
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 55)),
                 new Row(Map.of("key", 60)),
-                new Row(Map.of("key", 70)),
-                new Row(Map.of("key", 75)),
-                new Row(Map.of("key", 80)),
-                new Row(Map.of("key", 90))));
+                new Row(Map.of("key", 75))));
 
         // And the partition tree will be split by another process just before our split is applied
-        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+        PartitionTree partitionsFromOtherProcess = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
-                .splitToNewChildren("root", "P1", "P2", 50)
-                .splitToNewChildren("P1", "P3", "P4", 25)
-                .splitToNewChildren("P2", "P5", "P6", 60)
+                .splitToNewChildren("root", "L", "R", 50)
                 .buildTree();
-
         partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                List.of(partitionsAfter.getPartition("root")),
-                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
-                .synchronousCommit(stateStore));
-        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")),
-                List.of(partitionsAfter.getPartition("P3"), partitionsAfter.getPartition("P4"),
-                        partitionsAfter.getPartition("P5"), partitionsAfter.getPartition("P6")))
+                List.of(partitionsFromOtherProcess.getPartition("root")),
+                List.of(partitionsFromOtherProcess.getPartition("L"), partitionsFromOtherProcess.getPartition("R")))
                 .synchronousCommit(stateStore));
 
         // When
         preSplitPartitionsIfNecessary();
 
         // Then
-        assertThat(stateStore.getAllPartitions())
+        assertThat(new PartitionTree(stateStore.getAllPartitions()))
                 .withRepresentation(partitionsRepresentation())
-                .isEqualTo(partitionsAfter.getAllPartitions());
-
+                .isEqualTo(new PartitionsBuilder(tableProperties)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", 50)
+                        .splitToNewChildren("L", "P9", "P10", 20)
+                        .splitToNewChildren("R", "P7", "P8", 60)
+                        .buildTree());
     }
 
     private void preSplitPartitionsIfNecessary() {
@@ -307,7 +304,7 @@ public class PartitionPreSplitterTest {
 
     private String printPartitions(PartitionTree partitions) {
         return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitions)
-                + "\n\nPartition IDs: " + partitions.getAllPartitions().stream().map(Partition::getId).toList();
+                + "\n\nPartition IDs: " + partitions.traverseLeavesFirst().map(Partition::getId).toList();
     }
 
 }
