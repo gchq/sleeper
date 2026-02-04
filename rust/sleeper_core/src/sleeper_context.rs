@@ -29,7 +29,7 @@ pub struct SleeperContext {
     inner: Mutex<RuntimeEnv>,
 }
 
-/// The maximum size of DataFusion's file metadata cache.
+/// The maximum size of `DataFusion`'s file metadata cache.
 pub const METADATA_CACHE_SIZE: usize = 128 * 1024 * 1024;
 
 impl SleeperContext {

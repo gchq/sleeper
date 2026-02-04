@@ -90,6 +90,11 @@ pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionE
 
 /// Calculate the metadata size hint to use based on the largest file size. This value will be clamped
 /// between 512KiB and 10MiB.
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 pub fn calculate_metadata_size_hint(largest_file: u64) -> u64 {
     ((largest_file as f64 * META_DATA_SIZE_FRACTION) as u64).clamp(512 * 1024, 10 * 1024 * 1024)
 }
@@ -327,7 +332,7 @@ mod tests {
             sorts::sort_preserving_merge::SortPreservingMergeExec,
         },
     };
-    use std::{collections::HashMap, sync::Arc, u64};
+    use std::{collections::HashMap, sync::Arc};
 
     #[test]
     fn should_cast_numeric_columns() -> Result<(), Error> {

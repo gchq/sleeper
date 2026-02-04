@@ -112,7 +112,7 @@ impl<'a> SleeperOperations<'a> {
                 .inspect_err(|e| warn!("Error getting input file sizes {e}"))?;
         // Set metadata size hint to scaled value
         let metadata_size_hint = calculate_metadata_size_hint(largest_file);
-        debug!("Set metadata_size_hint to {}", metadata_size_hint);
+        debug!("Set metadata_size_hint to {metadata_size_hint}");
         cfg.options_mut().execution.parquet.metadata_size_hint = Some(
             usize::try_from(metadata_size_hint)
                 .map_err(|e| DataFusionError::External(Box::new(e)))?,
