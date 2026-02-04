@@ -137,8 +137,7 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile))
-                .map(SleeperTableConfiguration::properties);
+        return Stream.of(loadOnlyTableFromPropertiesFileNoValidation(instanceProperties, instancePropertiesFile));
     }
 
     /**
