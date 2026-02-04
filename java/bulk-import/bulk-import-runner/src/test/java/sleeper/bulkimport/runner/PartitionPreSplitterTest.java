@@ -137,16 +137,15 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 25)),
                 new Row(Map.of("key", 50)),
                 new Row(Map.of("key", 75))));
-        // And we expect the new partition IDs generated in order (see instantiation of driver for how we control this)
-        PartitionTree partitionsAfter = new PartitionsBuilder(tableProperties)
+        // And the partition tree will be extended by another process just before our split is applied
+        PartitionTree partitionsFromOtherProcess = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
-                .splitToNewChildren("root", "P1", "P2", 50)
+                .splitToNewChildren("root", "L", "R", 50)
                 .buildTree();
-        // And the partition tree will be split by another process just before our split is applied
-        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                List.of(partitionsAfter.getPartition("root")),
-                List.of(partitionsAfter.getPartition("P1"), partitionsAfter.getPartition("P2")))
-                .synchronousCommit(stateStore));
+        partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
+                partitionsFromOtherProcess,
+                List.of("root"),
+                List.of("L", "R")));
 
         // When
         preSplitPartitionsIfNecessary();
@@ -154,7 +153,7 @@ public class PartitionPreSplitterTest {
         // Then
         assertThat(stateStore.getAllPartitions())
                 .withRepresentation(PartitionsPrinter.representation(tableProperties))
-                .isEqualTo(partitionsAfter.getAllPartitions());
+                .isEqualTo(partitionsFromOtherProcess.getAllPartitions());
     }
 
     @Test
@@ -188,15 +187,14 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 60)),
                 new Row(Map.of("key", 75))));
 
-        // And the partition tree will be split by another process just before our split is applied
-        PartitionTree partitionsFromOtherProcess = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .buildTree();
-        partitionsLogStore.atStartOfNextAddTransaction(() -> new ExtendPartitionTreeTransaction(
-                List.of(partitionsFromOtherProcess.getPartition("root")),
-                List.of(partitionsFromOtherProcess.getPartition("L"), partitionsFromOtherProcess.getPartition("R")))
-                .synchronousCommit(stateStore));
+        // And the partition tree will be extended by another process just before our split is applied
+        partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
+                new PartitionsBuilder(tableProperties)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", 50)
+                        .buildTree(),
+                List.of("root"),
+                List.of("L", "R")));
 
         // When
         preSplitPartitionsIfNecessary();
@@ -233,8 +231,8 @@ public class PartitionPreSplitterTest {
                 new Row(Map.of("key", 60)),
                 new Row(Map.of("key", 75))));
 
-        // And the partition tree will be split by another process just before our split is applied
-        partitionsLogStore.atStartOfNextAddTransaction(() -> commitTransactionWithUpdatedAndNew(
+        // And the partition tree will be extended by another process just before our split is applied
+        partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
                 new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", 50)
@@ -269,15 +267,15 @@ public class PartitionPreSplitterTest {
         setPartitionSketchData("RL", rowsFromRangeClosed(13, 18));
         setPartitionSketchData("RR", rowsFromRangeClosed(19, 24));
 
-        // And the partition tree will be split by another process just before our first two split attempts are applied
+        // And the partition tree will be extended by another process just before our first two split attempts are applied
         partitionsLogStore.atStartOfNextAddTransactions(List.of(
-                () -> commitTransactionWithUpdatedAndNew(
+                () -> extendPartitionTreeWithUpdatedAndNew(
                         new PartitionsBuilder(tableProperties)
                                 .rootFirst("root")
                                 .splitToNewChildren("root", "L", "R", 13)
                                 .buildTree(),
                         List.of("root"), List.of("L", "R")),
-                () -> commitTransactionWithUpdatedAndNew(
+                () -> extendPartitionTreeWithUpdatedAndNew(
                         new PartitionsBuilder(tableProperties)
                                 .rootFirst("root")
                                 .splitToNewChildren("root", "L", "R", 13)
@@ -307,7 +305,7 @@ public class PartitionPreSplitterTest {
         });
     }
 
-    private void commitTransactionWithUpdatedAndNew(PartitionTree partitions, List<String> updatedIds, List<String> newIds) {
+    private void extendPartitionTreeWithUpdatedAndNew(PartitionTree partitions, List<String> updatedIds, List<String> newIds) {
         new ExtendPartitionTreeTransaction(
                 updatedIds.stream().map(partitions::getPartition).toList(),
                 newIds.stream().map(partitions::getPartition).toList())
