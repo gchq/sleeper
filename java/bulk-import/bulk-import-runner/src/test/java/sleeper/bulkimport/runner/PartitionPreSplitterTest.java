@@ -144,8 +144,7 @@ public class PartitionPreSplitterTest {
                 .buildTree();
         partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
                 partitionsFromOtherProcess,
-                List.of("root"),
-                List.of("L", "R")));
+                List.of("root"), List.of("L", "R")));
 
         // When
         preSplitPartitionsIfNecessary();
@@ -167,34 +166,19 @@ public class PartitionPreSplitterTest {
                 .buildTree());
 
         // And we provide enough data for split points to extend the tree to 4 leaf partitions
-        setPartitionSketchData("root", List.of(
-                new Row(Map.of("key", 15)),
-                new Row(Map.of("key", 20)),
-                new Row(Map.of("key", 25)),
-                new Row(Map.of("key", 50)),
-                new Row(Map.of("key", 55)),
-                new Row(Map.of("key", 60)),
-                new Row(Map.of("key", 75))));
+        setPartitionSketchData("root", rowsFromRangeClosed(1, 12));
 
         // And we provide the same sketch data for the intermediate partitions that will be created in conflict with this split
-        setPartitionSketchData("L", List.of(
-                new Row(Map.of("key", 15)),
-                new Row(Map.of("key", 20)),
-                new Row(Map.of("key", 25))));
-        setPartitionSketchData("R", List.of(
-                new Row(Map.of("key", 50)),
-                new Row(Map.of("key", 55)),
-                new Row(Map.of("key", 60)),
-                new Row(Map.of("key", 75))));
+        setPartitionSketchData("L", rowsFromRangeClosed(1, 6));
+        setPartitionSketchData("R", rowsFromRangeClosed(7, 12));
 
         // And the partition tree will be extended by another process just before our split is applied
         partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
                 new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 50)
+                        .splitToNewChildren("root", "L", "R", 7)
                         .buildTree(),
-                List.of("root"),
-                List.of("L", "R")));
+                List.of("root"), List.of("L", "R")));
 
         // When
         preSplitPartitionsIfNecessary();
@@ -204,9 +188,9 @@ public class PartitionPreSplitterTest {
                 .withRepresentation(PartitionsPrinter.representation(tableProperties))
                 .isEqualTo(new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 50)
-                        .splitToNewChildren("L", "P9", "P10", 20)
-                        .splitToNewChildren("R", "P7", "P8", 60)
+                        .splitToNewChildren("root", "L", "R", 7)
+                        .splitToNewChildren("L", "P7", "P8", 4)
+                        .splitToNewChildren("R", "P9", "P10", 10)
                         .buildTree());
     }
 
@@ -222,23 +206,15 @@ public class PartitionPreSplitterTest {
                 .buildTree());
 
         // And we provide enough data for split points to extend the tree to 4 leaf partitions
-        setPartitionSketchData("root", List.of(
-                new Row(Map.of("key", 15)),
-                new Row(Map.of("key", 20)),
-                new Row(Map.of("key", 25)),
-                new Row(Map.of("key", 50)),
-                new Row(Map.of("key", 55)),
-                new Row(Map.of("key", 60)),
-                new Row(Map.of("key", 75))));
+        setPartitionSketchData("root", rowsFromRangeClosed(1, 12));
 
         // And the partition tree will be extended by another process just before our split is applied
         partitionsLogStore.atStartOfNextAddTransaction(() -> extendPartitionTreeWithUpdatedAndNew(
                 new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 50)
+                        .splitToNewChildren("root", "L", "R", 6)
                         .buildTree(),
-                List.of("root"),
-                List.of("L", "R")));
+                List.of("root"), List.of("L", "R")));
 
         // When / Then
         assertThatThrownBy(this::preSplitPartitionsIfNecessary)
