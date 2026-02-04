@@ -25,8 +25,8 @@ use crate::{
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            add_numeric_casts, apply_full_sort_ordering, calculate_upload_size,
-            check_for_sort_exec, output_partition_count, register_store,
+            add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
+            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
@@ -46,7 +46,7 @@ use datafusion::{
         ExecutionPlan, expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
     },
 };
-use log::{info, warn};
+use log::{debug, info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
@@ -106,6 +106,17 @@ impl<'a> SleeperOperations<'a> {
         // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;
+        let (total_input_size, largest_file) =
+            retrieve_input_size(self.config.input_files(), store_factory)
+                .await
+                .inspect_err(|e| warn!("Error getting input file sizes {e}"))?;
+        // Set metadata size hint to scaled value
+        let metadata_size_hint = calculate_metadata_size_hint(largest_file);
+        debug!("Set metadata_size_hint to {}", metadata_size_hint);
+        cfg.options_mut().execution.parquet.metadata_size_hint = Some(
+            usize::try_from(metadata_size_hint)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?,
+        );
         // Set upload size if outputting to a file
         if let OutputType::File {
             output_file: _,
@@ -113,12 +124,8 @@ impl<'a> SleeperOperations<'a> {
             opts: parquet_options,
         } = self.config.output()
         {
-            let total_input_size = retrieve_input_size(self.config.input_files(), store_factory)
-                .await
-                .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
             cfg.options_mut().execution.objectstore_writer_buffer_size =
                 calculate_upload_size(total_input_size)?;
-
             // Create Parquet configuration object based on requested output
             let configurer = ParquetWriterConfigurer { parquet_options };
             cfg = configurer.apply_parquet_config(cfg);

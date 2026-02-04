@@ -43,6 +43,14 @@ use crate::datafusion::{cast_udf::CastUDF, metrics::RowCounts};
 /// Maximum number of file upload parts to generate. Implementation will
 /// try to match this, but may not get there exactly.
 pub const MAX_PART_COUNT: u64 = 5000;
+/// The fraction of total file size to estimate for Parquet metadata. This errs
+/// on the larger side. We will bound this between a minimum of 512KiB and maximum
+/// of 10MiB.
+pub const META_DATA_SIZE_FRACTION: f64 = 0.0005;
+const _: () = assert!(
+    0f64 <= META_DATA_SIZE_FRACTION && META_DATA_SIZE_FRACTION <= 1f64,
+    "META_DATA_SIZE_FRACTION out of range"
+);
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -78,6 +86,12 @@ pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionE
         upload_size.to_formatted_string(&Locale::en)
     );
     Ok(upload_size)
+}
+
+/// Calculate the metadata size hint to use based on the largest file size. This value will be clamped
+/// between 512KiB and 10MiB.
+pub fn calculate_metadata_size_hint(largest_file: u64) -> u64 {
+    ((largest_file as f64 * META_DATA_SIZE_FRACTION) as u64).clamp(512 * 1024, 10 * 1024 * 1024)
 }
 
 /// Checks if a physical plan contains a `SortExec` stage.
@@ -130,21 +144,27 @@ pub fn register_store(
 
 /// Calculate the total size of all `input_paths` objects.
 ///
+/// # Returns
+/// A tuple of (total input size, largest single file).
+///
 /// # Errors
 /// Fails if we can't obtain the size of the input files from the object store.
 pub async fn retrieve_input_size(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<u64, DataFusionError> {
+) -> Result<(u64, u64), DataFusionError> {
     let mut total_input = 0u64;
+    let mut largest_file = 0u64;
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
-        total_input += store.head(&p.into()).await?.size;
+        let size = store.head(&p.into()).await?.size;
+        total_input += size;
+        largest_file = std::cmp::max(largest_file, size);
     }
-    Ok(total_input)
+    Ok((total_input, largest_file))
 }
 
 /// Searches down a physical plan and removes the top most [`CoalescePartitionsExec`] stage.
@@ -288,7 +308,8 @@ pub fn add_numeric_casts(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::util::{
-        add_numeric_casts, apply_full_sort_ordering, remove_coalesce_physical_stage,
+        add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
+        remove_coalesce_physical_stage,
     };
     use arrow::{
         array::RecordBatch,
@@ -306,7 +327,7 @@ mod tests {
             sorts::sort_preserving_merge::SortPreservingMergeExec,
         },
     };
-    use std::{collections::HashMap, sync::Arc};
+    use std::{collections::HashMap, sync::Arc, u64};
 
     #[test]
     fn should_cast_numeric_columns() -> Result<(), Error> {
@@ -539,5 +560,64 @@ mod tests {
             "Not all SortPreservingMergeExecs modified"
         );
         Ok(())
+    }
+
+    #[test]
+    fn should_report_minimum_metadata_size() {
+        // Given
+        let size = 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 512 * 1024);
+    }
+
+    #[test]
+    fn should_report_minimum_metadata_size_from_scaled() {
+        // Given
+        let size = 500 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 512 * 1024);
+    }
+
+    #[test]
+    fn should_report_valid_metadata_size() {
+        // Given
+        let size = 5 * 1024 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 2_684_354);
+    }
+
+    #[test]
+    fn should_report_maximum_metadata_size_from_scaled() {
+        // Given
+        let size = 60 * 1024 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 10 * 1024 * 1024);
+    }
+    #[test]
+    fn should_report_maximum_metadata_size() {
+        // Given
+        let size = u64::MAX;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 10 * 1024 * 1024);
     }
 }
