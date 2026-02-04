@@ -15,11 +15,9 @@
  */
 package sleeper.bulkimport.runner;
 
-import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -78,7 +76,7 @@ public class PartitionPreSplitterTest {
 
         // Then
         assertThat(stateStore.getAllPartitions())
-                .withRepresentation(partitionsRepresentation())
+                .withRepresentation(PartitionsPrinter.representation(tableProperties))
                 .isEqualTo(partitionsBefore.getAllPartitions());
     }
 
@@ -100,7 +98,7 @@ public class PartitionPreSplitterTest {
 
         // Then
         assertThat(new PartitionTree(stateStore.getAllPartitions()))
-                .withRepresentation(partitionsRepresentation())
+                .withRepresentation(PartitionsPrinter.representation(tableProperties))
                 .isEqualTo(new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
                         .splitToNewChildren("root", "P1", "P2", 50)
@@ -154,7 +152,7 @@ public class PartitionPreSplitterTest {
 
         // Then
         assertThat(stateStore.getAllPartitions())
-                .withRepresentation(partitionsRepresentation())
+                .withRepresentation(PartitionsPrinter.representation(tableProperties))
                 .isEqualTo(partitionsAfter.getAllPartitions());
     }
 
@@ -239,7 +237,7 @@ public class PartitionPreSplitterTest {
 
         // Then
         assertThat(new PartitionTree(stateStore.getAllPartitions()))
-                .withRepresentation(partitionsRepresentation())
+                .withRepresentation(PartitionsPrinter.representation(tableProperties))
                 .isEqualTo(new PartitionsBuilder(tableProperties)
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", 50)
@@ -277,34 +275,6 @@ public class PartitionPreSplitterTest {
                 context -> partitionIdToSketches,
                 FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 supplyNumberedIdsWithPrefix("P"));
-    }
-
-    private Representation partitionsRepresentation() {
-        return obj -> {
-            PartitionTree partitionTree;
-
-            // Check if we already have a tree
-            if (obj instanceof PartitionTree tree) {
-                partitionTree = tree;
-            } else if (obj instanceof List<?> list) {
-                // Check if the list does contain Partition objects
-                if (!list.isEmpty() && !(list.get(0) instanceof Partition)) {
-                    throw new IllegalArgumentException("List does not contain Partition objects");
-                }
-                @SuppressWarnings("unchecked")
-                List<Partition> partitions = (List<Partition>) list;
-                partitionTree = new PartitionTree(partitions);
-            } else {
-                throw new IllegalArgumentException("Object is not a PartitionTree or List<Partition>");
-            }
-
-            return printPartitions(partitionTree);
-        };
-    }
-
-    private String printPartitions(PartitionTree partitions) {
-        return PartitionsPrinter.printPartitions(tableProperties.getSchema(), partitions)
-                + "\n\nPartition IDs: " + partitions.traverseLeavesFirst().map(Partition::getId).toList();
     }
 
 }

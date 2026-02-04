@@ -16,14 +16,12 @@
 
 package sleeper.bulkimport.runner;
 
-import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -85,7 +83,6 @@ class BulkImportJobDriverTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
-    private final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
@@ -292,7 +289,7 @@ class BulkImportJobDriverTest {
                             ingestFinishedStatus(summary(startTime, finishTime, 200, 200), 2))));
             assertThat(stateStore.getFileReferences()).isEqualTo(outputFiles);
             assertThat(stateStore.getAllPartitions())
-                    .withRepresentation(partitionsRepresentation())
+                    .withRepresentation(PartitionsPrinter.representation(tableProperties))
                     .isEqualTo(partitionsAfter.getAllPartitions());
             assertThat(jobContextsCreated)
                     .extracting(FakeBulkImportContext::partitions)
@@ -379,15 +376,6 @@ class BulkImportJobDriverTest {
         return context -> {
             throw e;
         };
-    }
-
-    private Representation partitionsRepresentation() {
-        return obj -> printPartitions((List<Partition>) obj);
-    }
-
-    private String printPartitions(List<Partition> partitions) {
-        return PartitionsPrinter.printPartitions(tableProperties.getSchema(), new PartitionTree(partitions))
-                + "\n\nPartition IDs: " + partitions.stream().map(Partition::getId).toList();
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
