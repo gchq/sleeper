@@ -47,8 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
-import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.systemtest.configuration.SystemTestConstants.SYSTEM_TEST_CONTAINER;
@@ -109,7 +109,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .build();
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
                 .subnets(instanceProperties.getList(SUBNETS))
-                .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
+                .securityGroups(instanceProperties.get(ECS_SECURITY_GROUP))
                 .build();
         NetworkConfiguration networkConfiguration = NetworkConfiguration.builder()
                 .awsvpcConfiguration(vpcConfiguration)

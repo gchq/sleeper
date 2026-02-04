@@ -86,6 +86,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_ROWGROUP_ROWS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
@@ -238,7 +239,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
-            .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
+            .description("Maximum number of bytes to write in a Parquet row group " +
+                    "(defaults to value set in instance properties). " +
+                    "This property is NOT used by DataFusion data engine.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.page.size")
@@ -287,6 +290,10 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
             .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
             .description("Used during Parquet queries to determine whether the column indexes are used.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_ROW_GROUP_SIZE_ROWS = Index.propertyBuilder("sleeper.table.parquet.rowgroup.rows.max")
+            .description("Maximum number of rows to write in a Parquet row group.")
+            .defaultProperty(DEFAULT_PARQUET_ROWGROUP_ROWS)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(ROW_GROUP_SIZE)

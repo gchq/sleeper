@@ -26,10 +26,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.sketches.testutils.SketchesDeciles;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -197,14 +193,10 @@ public class SketchesSerDeTest {
     }
 
     private static byte[] serialise(Sketches sketches, Schema schema) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        new SketchesSerDe(schema).serialise(sketches, dos);
-        return baos.toByteArray();
+        return new SketchesSerDe(schema).toBytes(sketches);
     }
 
     private static Sketches deserialise(byte[] bytes, Schema schema) throws Exception {
-        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
-        return new SketchesSerDe(schema).deserialise(dis);
+        return new SketchesSerDe(schema).fromBytes(bytes);
     }
 }

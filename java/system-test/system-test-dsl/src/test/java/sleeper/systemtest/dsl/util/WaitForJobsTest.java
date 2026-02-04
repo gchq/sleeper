@@ -1,0 +1,510 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.systemtest.dsl.util;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.ThreadSleep;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.systemtest.dsl.util.WaitForJobs.JobTracker;
+import sleeper.systemtest.dsl.util.WaitForJobs.TaskTracker;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
+
+public class WaitForJobsTest {
+
+    private static final String TASK_ID = "test-task";
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
+    IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
+    IngestTaskTracker ingestTaskTracker = new InMemoryIngestTaskTracker();
+    InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
+    CompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
+    Instant startTime = Instant.parse("2026-02-02T00:00:00Z");
+    List<Duration> foundSleeps = new ArrayList<>();
+    ThreadSleep sleeper = this::recordSleep;
+
+    @BeforeEach
+    void setUp() {
+        trackIngestTaskStarted();
+        trackCompactionTaskStarted();
+    }
+
+    @Nested
+    @DisplayName("Wait for job to succeed")
+    class WaitForJob {
+
+        @Test
+        void shouldWaitForSuccessfulIngest() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackIngestFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+            });
+
+            // When
+            forIngest().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(2);
+        }
+
+        @Test
+        void shouldWaitForSuccessfulCompaction() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, startTime, "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(3);
+        }
+
+        @Test
+        void shouldFailWhenJobNeverCompletes() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Wait for job to be committed to the state store")
+    class WaitForCommit {
+
+        @Test
+        void shouldWaitForJobToCommit() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(4);
+        }
+
+        @Test
+        void shouldUseSeparateCommitPollingAfterTaskFinishes() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When
+            forCompaction().waitForJobs(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3),
+                    PollWithRetries.immediateRetries(2));
+
+            // Then
+            assertThat(foundSleeps).hasSize(5);
+        }
+    }
+
+    @Nested
+    @DisplayName("Wait for job retries")
+    class WaitForJobRetries {
+
+        @Test
+        void shouldFailAfterJobRetries() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackIngestStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(3), "retry-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobsAllowingRetries(List.of("test-job"),
+                    PollWithRetries.immediateRetries(3), PollWithRetries.immediateRetries(3)))
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+            assertThat(foundSleeps).hasSize(3);
+        }
+
+        @Test
+        void shouldWaitAfterJobRetries() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackIngestStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackIngestFinishedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            });
+
+            // When
+            forIngest().waitForJobsAllowingRetries(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(3);
+        }
+
+        @Test
+        void shouldNotWaitForFailedCommitToRetry() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobsAllowingRetries(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(4);
+        }
+
+        @Test
+        void shouldWaitForCommitAfterRetry() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(1), "test-run");
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, afterMinutes(2), "retry-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job, afterMinutes(4), "retry-run");
+            });
+
+            // When
+            forCompaction().waitForJobsAllowingRetries(List.of("test-job"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(6);
+        }
+
+        @Test
+        void shouldWaitForCommitAfterOtherJobRetried() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job1 = createCompactionWithIdAndFiles(table, "job-1", "test1.parquet");
+            CompactionJob job2 = createCompactionWithIdAndFiles(table, "job-2", "test2.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job1, startTime);
+                trackCompactionCreatedAtTime(job2, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job1, afterMinutes(1), "job-1-failed");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job1, afterMinutes(2), "job-1-failed");
+                trackCompactionStartedWithStartTimeAndRunId(job1, afterMinutes(2), "job-1-passed");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job1, afterMinutes(2), "job-1-passed");
+                trackCompactionCommittedWithTimeAndRunId(job1, afterMinutes(3), "job-1-passed");
+                trackCompactionStartedWithStartTimeAndRunId(job2, afterMinutes(3), "job-2-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job2, afterMinutes(3), "job-2-run");
+                trackCompactionTaskFinished(afterMinutes(4));
+            }, () -> {
+                trackCompactionCommittedWithTimeAndRunId(job2, afterMinutes(5), "job-2-run");
+            });
+
+            // When
+            forCompaction().waitForJobsAllowingRetries(List.of("job-1", "job-2"));
+
+            // Then
+            assertThat(foundSleeps).hasSize(6);
+        }
+    }
+
+    @Nested
+    @DisplayName("Fail immediately on first job failure")
+    class FailOnFirstJobFailure {
+
+        @Test
+        void shouldFailImmediatelyWhenJobFails() {
+            // Given
+            TableProperties table = createTable("test");
+            IngestJob job = createIngestWithIdAndFiles(table, "test-job", "test.parquet");
+            trackIngestStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            doOnSleep(() -> {
+                trackIngestFailedWithFailureTimeAndRunId(job, afterMinutes(1), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forIngest().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(1);
+        }
+
+        @Test
+        void shouldFailImmediatelyWhenJobFailsToCommit() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+            }, () -> {
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "test-run");
+            }, () -> {
+                trackCompactionFinishedWithStartTimeAndRunId(job, startTime, "test-run");
+                trackCompactionTaskFinished(afterMinutes(2));
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(3), "test-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(4);
+        }
+
+        @Test
+        void shouldFailWhenJobFailedAndRetriedBetweenPolls() {
+            // Given
+            TableProperties table = createTable("test");
+            CompactionJob job = createCompactionWithIdAndFiles(table, "test-job", "test.parquet");
+            doOnSleep(() -> {
+                trackCompactionCreatedAtTime(job, startTime);
+                trackCompactionStartedWithStartTimeAndRunId(job, startTime, "failed-run");
+            }, () -> {
+                trackCompactionFailedWithTimeAndRunId(job, afterMinutes(1), "failed-run");
+                trackCompactionStartedWithStartTimeAndRunId(job, afterMinutes(1), "retry-run");
+                trackCompactionFinishedAndCommittedWithStartTimeAndRunId(job, afterMinutes(1), "retry-run");
+            });
+
+            // When / Then
+            assertThatThrownBy(() -> forCompaction().waitForJobs(List.of("test-job")))
+                    .isInstanceOf(WaitForJobs.JobFailedException.class);
+            assertThat(foundSleeps).hasSize(2);
+        }
+    }
+
+    private IngestJob createIngestWithIdAndFiles(TableProperties table, String jobId, String... filenames) {
+        return createJobWithTableAndFiles(jobId, table.getStatus(), filenames);
+    }
+
+    private CompactionJob createCompactionWithIdAndFiles(TableProperties table, String id, String... files) {
+        return CompactionJob.builder()
+                .tableId(table.get(TABLE_ID))
+                .jobId(id)
+                .inputFiles(List.of(files))
+                .outputFile(id + "/outputFile")
+                .partitionId(id + "-partition").build();
+    }
+
+    private void trackIngestStartedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
+        ingestJobTracker.jobStarted(job.startedEventBuilder(startTime)
+                .taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackIngestFinishedWithStartTimeAndRunId(IngestJob job, Instant startTime, String runId) {
+        ingestJobTracker.jobFinished(job.finishedEventBuilder(summary(startTime, Duration.ofMinutes(1), 100, 100))
+                .taskId(TASK_ID).jobRunId(runId).numFilesWrittenByJob(1).build());
+    }
+
+    private void trackIngestFailedWithFailureTimeAndRunId(IngestJob job, Instant failureTime, String runId) {
+        ingestJobTracker.jobFailed(job.failedEventBuilder(failureTime).jobRunId(runId).taskId(TASK_ID)
+                .failureReasons(List.of("Some failure")).build());
+    }
+
+    private void trackCompactionCreatedAtTime(CompactionJob job, Instant createdTime) {
+        compactionJobTracker.fixUpdateTime(createdTime);
+        compactionJobTracker.jobCreated(job.createCreatedEvent());
+    }
+
+    private void trackCompactionStartedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        compactionJobTracker.fixUpdateTime(startTime);
+        compactionJobTracker.jobStarted(job.startedEventBuilder(startTime).taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackCompactionFinishedAndCommittedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        trackCompactionFinishedWithStartTimeAndRunId(job, startTime, runId);
+        Instant commitTime = startTime.plus(61, ChronoUnit.SECONDS);
+        trackCompactionCommittedWithTimeAndRunId(job, commitTime, runId);
+    }
+
+    private void trackCompactionFinishedWithStartTimeAndRunId(CompactionJob job, Instant startTime, String runId) {
+        compactionJobTracker.fixUpdateTime(startTime);
+        compactionJobTracker.jobFinished(job.finishedEventBuilder(
+                summary(startTime, Duration.ofMinutes(1), 100L, 100L))
+                .taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackCompactionCommittedWithTimeAndRunId(CompactionJob job, Instant commitTime, String runId) {
+        compactionJobTracker.fixUpdateTime(commitTime);
+        compactionJobTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(TASK_ID).jobRunId(runId).build());
+    }
+
+    private void trackCompactionFailedWithTimeAndRunId(CompactionJob job, Instant failureTime, String runId) {
+        compactionJobTracker.fixUpdateTime(failureTime);
+        compactionJobTracker.jobFailed(job.failedEventBuilder(failureTime).taskId(TASK_ID).jobRunId(runId).failureReasons(List.of("Some failure")).build());
+    }
+
+    private void trackCompactionTaskStarted() {
+        compactionTaskTracker.taskStarted(CompactionTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
+    }
+
+    private void trackCompactionTaskFinished(Instant finishTime) {
+        compactionTaskTracker.taskFinished(CompactionTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .finishedStatus(CompactionTaskFinishedStatus.builder()
+                        .finish(finishTime)
+                        .build())
+                .build());
+    }
+
+    private void trackIngestTaskStarted() {
+        ingestTaskTracker.taskStarted(IngestTaskStatus.builder()
+                .taskId(TASK_ID)
+                .startTime(startTime)
+                .build());
+    }
+
+    private Instant afterMinutes(long n) {
+        return startTime.plus(n, ChronoUnit.MINUTES);
+    }
+
+    private WaitForJobs forIngest() {
+        return new WaitForJobs(() -> instanceProperties, "ingest",
+                properties -> JobTracker.forIngest(tablePropertiesStore.streamAllTables().toList(), ingestJobTracker),
+                properties -> TaskTracker.forIngest(ingestTaskTracker),
+                pollDriver());
+    }
+
+    private WaitForJobs forCompaction() {
+        return new WaitForJobs(() -> instanceProperties, "compaction",
+                properties -> JobTracker.forCompaction(tablePropertiesStore.streamAllTables().toList(), compactionJobTracker),
+                properties -> TaskTracker.forCompaction(compactionTaskTracker),
+                pollDriver());
+    }
+
+    private TableProperties createTable(String name) {
+        TableProperties properties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+        properties.set(TABLE_ID, name);
+        properties.set(TABLE_NAME, name);
+        tablePropertiesStore.createTable(properties);
+        return properties;
+    }
+
+    private void doOnSleep(Runnable... runnables) {
+        Iterator<Runnable> iterator = List.of(runnables).iterator();
+        sleeper = millis -> {
+            if (iterator.hasNext()) {
+                iterator.next().run();
+            }
+            recordSleep(millis);
+        };
+    }
+
+    private PollWithRetriesDriver pollDriver() {
+        return poll -> poll.toBuilder()
+                .sleepInInterval(sleeper)
+                .build();
+    }
+
+    private void recordSleep(long millis) {
+        foundSleeps.add(Duration.ofMillis(millis));
+    }
+
+}
