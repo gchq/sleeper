@@ -610,13 +610,13 @@ mod tests {
         let metadata_size = calculate_metadata_size_hint(size);
 
         // Then
-        assert_eq!(metadata_size, 2_684_354);
+        assert_eq!(metadata_size, 536870);
     }
 
     #[test]
     fn should_report_maximum_metadata_size_from_scaled() {
         // Given
-        let size = 60 * 1024 * 1024 * 1024;
+        let size = 300 * 1024 * 1024 * 1024;
 
         // When
         let metadata_size = calculate_metadata_size_hint(size);
