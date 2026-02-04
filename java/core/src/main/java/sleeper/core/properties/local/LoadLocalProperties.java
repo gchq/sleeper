@@ -179,32 +179,44 @@ public class LoadLocalProperties {
      * @param  propertiesFile     the path to the table properties file
      * @return                    the table configuration
      */
-    public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+    public static TableProperties loadOnlyTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         Path folder = propertiesFile.getParent();
         if (folder == null) {
             throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
         }
         Path schemaPath = folder.resolve("schema.json");
-        Path splitPointsPath = folder.resolve("splits.txt");
         try {
             Properties properties = loadProperties(propertiesFile);
             if (Files.exists(schemaPath)) {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-            if (tableProperties.getSchema() == null) {
-                return new SleeperTableConfiguration(tableProperties, List.of());
-            }
-            List<Object> splitPoints = List.of();
-            if (Files.exists(splitPointsPath)) {
-                splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
-            }
-            List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
-            return new SleeperTableConfiguration(tableProperties, initialPartitions);
+            return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /**
+     * Loads table configuration from a properties file, with no validation. Looks for associated files in the same
+     * folder.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  propertiesFile     the path to the table properties file
+     * @return                    the table configuration
+     */
+    public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+        TableProperties tableProperties = loadOnlyTableFromPropertiesFileNoValidation(instanceProperties, propertiesFile);
+        Path splitPointsPath = propertiesFile.getParent().resolve("splits.txt");
+        if (tableProperties.getSchema() == null) {
+            return new SleeperTableConfiguration(tableProperties, List.of());
+        }
+        List<Object> splitPoints = List.of();
+        if (Files.exists(splitPointsPath)) {
+            splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
+        }
+        List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+        return new SleeperTableConfiguration(tableProperties, initialPartitions);
     }
 
     private static SleeperTableConfiguration readTablePropertiesFolderOrNull(
