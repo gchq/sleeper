@@ -113,7 +113,8 @@ sleeper.table.name=changeme
 
 ## The following table properties relate to the storage of data inside a table.
 
-# The size of the row group in the Parquet files - defaults to the value in the instance properties.
+# Maximum number of bytes to write in a Parquet row group (defaults to value set in instance
+# properties). This property is NOT used by DataFusion data engine.
 # (default value shown below, uncomment to set a value)
 # sleeper.table.rowgroup.size=8388608
 
@@ -160,6 +161,10 @@ sleeper.table.name=changeme
 # Used during Parquet queries to determine whether the column indexes are used.
 # (default value shown below, uncomment to set a value)
 # sleeper.table.parquet.query.column.index.enabled=false
+
+# Maximum number of rows to write in a Parquet row group.
+# (default value shown below, uncomment to set a value)
+# sleeper.table.parquet.rowgroup.rows.max=1000000
 
 # The S3 readahead range - defaults to the row group size.
 # (default value shown below, uncomment to set a value)
@@ -499,7 +504,7 @@ sleeper.table.name=changeme
 # Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
 # minimum has not been reached, bulk import jobs will refuse to start
 # (default value shown below, uncomment to set a value)
-# sleeper.table.bulk.import.min.leaf.partitions=64
+# sleeper.table.bulk.import.min.leaf.partitions=256
 
 # If true, bulk import will add files via requests sent to the state store committer lambda
 # asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
