@@ -172,12 +172,11 @@ public class LoadLocalProperties {
     }
 
     /**
-     * Loads table configuration from a properties file, with no validation. Looks for associated files in the same
-     * folder.
+     * Loads table properties from a properties file, with no validation. Looks for associated files in the same folder.
      *
      * @param  instanceProperties the instance properties
      * @param  propertiesFile     the path to the table properties file
-     * @return                    the table configuration
+     * @return                    the table properties
      */
     public static TableProperties loadOnlyTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         Path folder = propertiesFile.getParent();
