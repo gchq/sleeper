@@ -259,7 +259,8 @@ public class MultiThreadedStateStoreCommitter {
     /**
      * Applies a state store commit request.
      *
-     * @param request the commit request
+     * @param stateStore state store of the Sleeper table that the commit request should be applied to
+     * @param request    the commit request
      */
     private void applyCommit(StateStore stateStore, StateStoreCommitRequestWithSqsReceipt request) throws StateStoreException {
         stateStore.addTransaction(
