@@ -39,6 +39,11 @@ import sleeper.query.core.rowretrieval.RowRetrievalException;
 import java.io.IOException;
 import java.util.Optional;
 
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_INDEX_ENABLED;
+
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
  *
