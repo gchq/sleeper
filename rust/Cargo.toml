@@ -28,7 +28,7 @@ authors = ["GCHQ"]
 arrow = { version = "57.2.0" }                      # Batch of reading from Parquet files
 assert_cmd = { version = "2.1.2" }                 # CLI interface testing
 async-trait = { version = "0.1.89" }
-aws-config = { version = "1.8.12" }                  # Credential loading
+aws-config = { version = "1.8.13" }                  # Credential loading
 aws-credential-types = { version = "1.2.11" }        # Credential provider types
 aws-types = { version = "1.3.11" }                   # for Region
 bytes = { version = "1.11.1" }                      # Byte buffer for S3 uploading
