@@ -208,7 +208,13 @@ public interface TableDefaultProperty {
             .defaultValue("256")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.bulk.import.partition.splitting.attempts")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.default.table.ingest.batcher.job.min.size")
             .description("Specifies the minimum total file size required for an ingest job to be batched and sent. " +
                     "An ingest job will be created if the batcher runs while this much data is waiting, and the " +
