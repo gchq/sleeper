@@ -16,7 +16,8 @@ FROM ubuntu:24.04
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
-    gnupg && rm -rf /var/lib/apt/lists/*
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Amazon Corretto JDK
 RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
