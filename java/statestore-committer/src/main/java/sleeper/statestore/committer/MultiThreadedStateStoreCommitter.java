@@ -169,8 +169,8 @@ public class MultiThreadedStateStoreCommitter {
 
                 commitRequestsByTableId.entrySet().forEach(tableCommitRequests -> {
                     String tableId = tableCommitRequests.getKey();
-                    List<StateStoreCommitRequestWithSqsReceipt> requestsWithHandle = tableCommitRequests.getValue();
-                    LOGGER.info("Received {} requests for table: {}", requestsWithHandle.size(), tableId);
+                    List<StateStoreCommitRequestWithSqsReceipt> requests = tableCommitRequests.getValue();
+                    LOGGER.info("Received {} requests for table: {}", requests.size(), tableId);
 
                     // Wait until processing of previous commits for this table has finished
                     if (tableFutures.containsKey(tableId)) {
@@ -186,7 +186,7 @@ public class MultiThreadedStateStoreCommitter {
 
                     // Apply the commits for each table on a separate thread
                     CompletableFuture<Instant> task = CompletableFuture.supplyAsync(() -> {
-                        processCommitRequestsForTable(tableId, stateStore, requestsWithHandle);
+                        processCommitRequestsForTable(tableId, stateStore, requests);
                         return Instant.now();
                     });
 
