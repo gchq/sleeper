@@ -149,7 +149,10 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directory);
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directory).map(table -> {
+            table.validate();
+            return table;
+        });
     }
 
     /**
