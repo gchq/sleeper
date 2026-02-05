@@ -1,12 +1,13 @@
 //! Pre-populates `DataFusion`'s file metadata cache. The behaviour of `DataFusion`'s cache is that it will always
-//! pre-fetch the Parquet page indexes (column and offset indexes)regardless of the configuration settings.
+//! pre-fetch the Parquet page indexes (column and offset indexes) regardless of the configuration settings.
 //! This is usually desirable, but not for most range queries, where very large Parquet files can have 10's of MiB of
 //! page indexes. Retrieving those for a range query adds significant latency in retrieving them from S3 and ultimately
 //! slows down a query.
 //!
-//! Since we can't disable the behaviour we want in `DataFusion` we take the approach of prepopulating the cache
+//! Since we can't disable reading page indexes in `DataFusion`s caching, we take the approach of prepopulating the cache
 //! with the metadata from the Parquet files we are going to read, but do so explicitly without the page indexes
-//! loaded.
+//! loaded. Therefore, when DF metadata caching code checks to see if cached metadata is available for a specific file,
+//! it will find the metadata is already cached so will not attempt a further read (thus avoiding reading page indexes).
 /*
 * Copyright 2022-2026 Crown Copyright
 *
