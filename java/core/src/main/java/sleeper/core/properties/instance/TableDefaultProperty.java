@@ -101,7 +101,7 @@ public interface TableDefaultProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PARQUET_ROWGROUP_ROWS = Index.propertyBuilder("sleeper.default.table.parquet.rowgroup.rows.max")
             .description("Maximum number of rows to write in a Parquet row group.")
-            .defaultValue("1000000")
+            .defaultValue("100000")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.statestore.transactionlog.add.transaction.max.attempts")

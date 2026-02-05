@@ -1831,7 +1831,7 @@ sleeper.subnets=set-automatically
 
 # Maximum number of rows to write in a Parquet row group.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.parquet.rowgroup.rows.max=1000000
+# sleeper.default.table.parquet.rowgroup.rows.max=100000
 
 # The number of attempts to make when applying a transaction to the state store. This default can be
 # overridden by a table property.
