@@ -204,7 +204,8 @@ public class LoadLocalProperties {
      */
     public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         TableProperties tableProperties = loadOnlyTableFromPropertiesFileNoValidation(instanceProperties, propertiesFile);
-        Path splitPointsPath = propertiesFile.getParent().resolve("splits.txt");
+        Path folder = propertiesFile.getParent();
+        Path splitPointsPath = folder.resolve("splits.txt");
         if (tableProperties.getSchema() == null) {
             return new SleeperTableConfiguration(tableProperties, List.of());
         }
