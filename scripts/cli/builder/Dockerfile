@@ -15,7 +15,7 @@
 ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     java-21-amazon-corretto-jdk \
     maven \
     git \
