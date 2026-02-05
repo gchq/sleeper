@@ -49,6 +49,7 @@ public class NetworkingDeployment {
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(3)
                 .natGateways(1)
+                .restrictDefaultSecurityGroup(true)
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
                                 .subnetType(SubnetType.PUBLIC)
