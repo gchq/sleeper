@@ -15,7 +15,7 @@
 ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     ssh \
     jq \
     && rm -rf /var/lib/apt/lists/* \
