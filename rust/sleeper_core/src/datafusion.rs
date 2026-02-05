@@ -109,6 +109,11 @@ impl<'a> SleeperOperations<'a> {
         // for completeness, since DF's cached Parquet metadata reader will read the page indexes regardless. When
         // reading large Parquet files (50's GiB+) the page indexes alone can be 50 MiB+ which can add latency to Sleeper
         // query time, for very little benefit (especially in range queries).
+        //
+        // We workaround the issue by prepopulating the DataFusion file metadata cache before any DF work starts. This
+        // can be seen below in [`create_initial_partitioned_read()`]. If reading of page indexes is disabled in our
+        // configuration settings, we will prepopulate the cache. Implementation is in [`crate::datafusion::metadata_cache`]
+        // module.
         cfg.options_mut().execution.parquet.enable_page_index = self.config.read_page_indexes();
         // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
         // together in wrong order.
