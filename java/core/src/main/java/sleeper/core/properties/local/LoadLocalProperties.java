@@ -137,8 +137,7 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile))
-                .map(SleeperTableConfiguration::properties);
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
     }
 
     /**
@@ -150,11 +149,10 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
-                .map(table -> {
-                    table.validate();
-                    return table.properties();
-                });
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directory).map(table -> {
+            table.validate();
+            return table;
+        });
     }
 
     /**
@@ -164,11 +162,36 @@ public class LoadLocalProperties {
      * @param  directory          the directory
      * @return                    the table configurations found
      */
-    public static Stream<SleeperTableConfiguration> loadTablesFromDirectoryNoValidation(
+    public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
                 .filter(Objects::nonNull);
+    }
+
+    /**
+     * Loads table properties from a properties file, with no validation. Looks for associated files in the same folder.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  propertiesFile     the path to the table properties file
+     * @return                    the table properties
+     */
+    public static TableProperties loadTablePropertiesFromFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+        Path folder = propertiesFile.getParent();
+        if (folder == null) {
+            throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
+        }
+        Path schemaPath = folder.resolve("schema.json");
+        try {
+            Properties properties = loadProperties(propertiesFile);
+            if (Files.exists(schemaPath)) {
+                String schemaString = Files.readString(schemaPath);
+                properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
+            }
+            return new TableProperties(instanceProperties, properties);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -180,40 +203,30 @@ public class LoadLocalProperties {
      * @return                    the table configuration
      */
     public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+        TableProperties tableProperties = loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesFile);
         Path folder = propertiesFile.getParent();
         if (folder == null) {
             throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
         }
-        Path schemaPath = folder.resolve("schema.json");
         Path splitPointsPath = folder.resolve("splits.txt");
-        try {
-            Properties properties = loadProperties(propertiesFile);
-            if (Files.exists(schemaPath)) {
-                String schemaString = Files.readString(schemaPath);
-                properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
-            }
-            TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-            if (tableProperties.getSchema() == null) {
-                return new SleeperTableConfiguration(tableProperties, List.of());
-            }
-            List<Object> splitPoints = List.of();
-            if (Files.exists(splitPointsPath)) {
-                splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
-            }
-            List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
-            return new SleeperTableConfiguration(tableProperties, initialPartitions);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        if (tableProperties.getSchema() == null) {
+            return new SleeperTableConfiguration(tableProperties, List.of());
         }
+        List<Object> splitPoints = List.of();
+        if (Files.exists(splitPointsPath)) {
+            splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
+        }
+        List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+        return new SleeperTableConfiguration(tableProperties, initialPartitions);
     }
 
-    private static SleeperTableConfiguration readTablePropertiesFolderOrNull(
+    private static TableProperties readTablePropertiesFolderOrNull(
             InstanceProperties instanceProperties, Path folder) {
         Path propertiesPath = folder.resolve("table.properties");
         if (!Files.exists(propertiesPath)) {
             return null;
         }
-        return loadTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath);
+        return loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesPath);
     }
 
     private static Path directoryOf(Path filePath) {

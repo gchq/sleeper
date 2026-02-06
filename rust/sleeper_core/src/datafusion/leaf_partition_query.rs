@@ -21,7 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        util::explain_plan,
+        util::{explain_plan, retrieve_object_metas},
     },
 };
 #[cfg(doc)]
@@ -198,14 +198,16 @@ impl<'a> LeafPartitionQuery<'a> {
         &self,
         ops: &'a SleeperOperations<'a>,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        let sf = ops
-            .apply_config(SessionConfig::new(), self.store_factory)
-            .await?;
+        let object_metas =
+            retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
+        let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
         let ctx = ops.configure_context(
             SessionContext::new_with_config_rt(sf, self.runtime.clone()),
             self.store_factory,
         )?;
-        let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
+        let mut frame = ops
+            .create_initial_partitioned_read(&ctx, &object_metas)
+            .await?;
         frame = self.apply_query_regions(frame)?;
         frame = ops.apply_user_filters(frame)?;
         frame = ops.apply_general_sort(frame)?;

@@ -112,6 +112,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
+        // Reading page indexes are not useful for compactions
+        params.read_page_indexes.set(false);
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);

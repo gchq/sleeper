@@ -35,7 +35,10 @@ import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEn
  */
 public interface TableDefaultProperty {
     UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.table.parquet.query.column.index.enabled")
-            .description("Default used during Parquet queries to determine whether the column indexes are used.")
+            .description("Used during Sleeper queries to determine whether the column/offset indexes (also known as page indexes) are read from Parquet files. " +
+                    "For some queries, e.g. single/few row lookups this can improve performance by enabling more aggressive pruning. On range " +
+                    "queries, especially on large tables this can harm performance, since readers will read the extra index data before " +
+                    "returning results, but with little benefit from pruning.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
@@ -98,7 +101,7 @@ public interface TableDefaultProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PARQUET_ROWGROUP_ROWS = Index.propertyBuilder("sleeper.default.table.parquet.rowgroup.rows.max")
             .description("Maximum number of rows to write in a Parquet row group.")
-            .defaultValue("1000000")
+            .defaultValue("100000")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.statestore.transactionlog.add.transaction.max.attempts")
@@ -208,7 +211,13 @@ public interface TableDefaultProperty {
             .defaultValue("256")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.default.table.bulk.import.partition.splitting.attempts")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.default.table.ingest.batcher.job.min.size")
             .description("Specifies the minimum total file size required for an ingest job to be batched and sent. " +
                     "An ingest job will be created if the batcher runs while this much data is waiting, and the " +

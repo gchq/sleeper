@@ -59,6 +59,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -288,7 +289,10 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
             .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
-            .description("Used during Parquet queries to determine whether the column indexes are used.")
+            .description("Used during Sleeper queries to determine whether the column/offset indexes (also known as page indexes) are read from Parquet files. " +
+                    "For some queries, e.g. single/few row lookups this can improve performance by enabling more aggressive pruning. On range " +
+                    "queries, especially on large tables this can harm performance, since readers will read the extra index data before " +
+                    "returning results, but with little benefit from pruning.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_ROW_GROUP_SIZE_ROWS = Index.propertyBuilder("sleeper.table.parquet.rowgroup.rows.max")
             .description("Maximum number of rows to write in a Parquet row group.")
@@ -630,6 +634,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
+    TableProperty BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.table.bulk.import.partition.splitting.attempts")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
             .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)

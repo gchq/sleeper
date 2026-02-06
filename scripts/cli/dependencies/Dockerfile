@@ -53,7 +53,9 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesourc
     | tee /etc/apt/sources.list.d/nodesource.list > /dev/null
 RUN apt-get update && apt-get install -y \
     nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g npm \
+    && npm cache clean --force
 
 # Install AWS CDK CLI
 RUN npm install -g aws-cdk
