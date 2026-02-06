@@ -64,7 +64,8 @@ public class UploadArtefacts {
                         CommandOption.shortOption('i', "id"),
                         CommandOption.longOption("extra-images"),
                         CommandOption.longFlag("create-builder"),
-                        CommandOption.longFlag("create-deployment")))
+                        CommandOption.longFlag("create-deployment"),
+                        CommandOption.longFlag("overwrite-existing")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
@@ -93,7 +94,11 @@ public class UploadArtefacts {
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
-                        "flag, this tool will deploy a new artefacts CDK deployment for you.")
+                        "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
+                        "\n" +
+                        "--overwrite-existing\n" +
+                        "By default, images are only uploaded if they do not already exist for this version of " +
+                        "Sleeper. This flag disables that check.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
@@ -108,7 +113,8 @@ public class UploadArtefacts {
                                 .map(StackDockerImage::dockerBuildImage).toList())
                         .orElse(List.of()),
                 arguments.isFlagSetWithDefault("create-builder", true),
-                arguments.isFlagSetWithDefault("create-deployment", false)));
+                arguments.isFlagSetWithDefault("create-deployment", false),
+                arguments.isFlagSetWithDefault("overwrite-existing", false)));
 
         String deploymentId;
         String jarsBucket;
@@ -154,13 +160,15 @@ public class UploadArtefacts {
             uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                     .ecrPrefix(ecrPrefix)
                     .images(images)
-                    .build().withExtraImages(args.extraImages()));
+                    .extraImages(args.extraImages())
+                    .overwriteExistingTag(args.overwriteExisting())
+                    .build());
         }
     }
 
     public record Arguments(
             Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
-            List<StackDockerImage> extraImages, boolean createMultiplatformBuilder, boolean createDeployment) {
+            List<StackDockerImage> extraImages, boolean createMultiplatformBuilder, boolean createDeployment, boolean overwriteExisting) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
