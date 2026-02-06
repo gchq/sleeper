@@ -110,7 +110,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
         -->
-        <kotlin.version>2.3.0</kotlin.version>
+        <kotlin.version>2.3.10</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.41.21</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.23</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -166,7 +166,7 @@
         <jline.version>3.30.6</jline.version>
         <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-6</zstd-jni.version>
+        <zstd-jni.version>1.5.7-7</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -182,7 +182,7 @@
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
-        <google.errorprone.version>2.46.0</google.errorprone.version>
+        <google.errorprone.version>2.47.0</google.errorprone.version>
         <cdk.version>2.237.1</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.5</constructs.version>
@@ -202,9 +202,9 @@
         <!-- This is not managed for the whole project as it conflicts with Trino. -->
         <jersey.build.version>4.0.0</jersey.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.9.Final</netty.version>
+        <netty.version>4.2.10.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.74.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.75.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -226,7 +226,7 @@
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>26.6.1</approvaltests.version>
+        <approvaltests.version>26.7.0</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
