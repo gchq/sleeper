@@ -5,14 +5,12 @@ This section documents some of the improvements that we plan to make to Sleeper.
 
 The following improvements are actively being worked on:
 
-- https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 - https://github.com/gchq/sleeper/issues/5781 Easier CDK-focused deployment.
-- https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
 
 The following are likely to be worked on in the near future:
 
-- https://github.com/gchq/sleeper/issues/6116 Review networking setup for security groups, VPC.
-- https://github.com/gchq/sleeper/issues/5091 Optional long running state store committer.
+- https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
+- https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
 - https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
 - https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
 
