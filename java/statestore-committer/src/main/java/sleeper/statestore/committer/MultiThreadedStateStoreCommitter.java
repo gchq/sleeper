@@ -60,6 +60,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
@@ -165,7 +166,12 @@ public class MultiThreadedStateStoreCommitter {
                         .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
 
                 // Try to make sure there is going to be enough heap space available to process these commits
-                ensureEnoughHeapSpaceAvailable(commitRequestsByTableId.keySet());
+                Set<String> stateStoresToKeepInCache = tableFutures.entrySet().stream()
+                        .filter(tableFuture -> !tableFuture.getValue().isDone())
+                        .map(tableFuture -> tableFuture.getKey())
+                        .collect(toSet());
+                stateStoresToKeepInCache.addAll(commitRequestsByTableId.keySet());
+                ensureEnoughHeapSpaceAvailable(stateStoresToKeepInCache);
 
                 commitRequestsByTableId.entrySet().forEach(tableCommitRequests -> {
                     String tableId = tableCommitRequests.getKey();
