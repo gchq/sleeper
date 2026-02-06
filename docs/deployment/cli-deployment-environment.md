@@ -18,7 +18,7 @@ security setup, and you may wish to avoid deploying an EC2 with admin access to 
 
 The VPC is deployed with a default security group that will deny all incoming and outgoing traffic.
 Sleeper is also configured to not use the default security group for the VPC and instead uses custom defined ones when relevant.
-An example of this is with the [ECS Security Group](../usage/properties/instance/cdk/common.md#L12).
+An example of this is with the [sleeper.ecs.security.group.id](../usage/properties/instance/cdk/common.md#L12) property.
 
 For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
