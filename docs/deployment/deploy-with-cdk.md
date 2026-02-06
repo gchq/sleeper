@@ -135,6 +135,9 @@ cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
     -c id=$INSTANCE_ID -c propertiesfile=$INSTANCE_PROPERTIES \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
+# Write some random data
+java -cp "$SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar" \
+ sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS "$INSTANCE_ID" system-test
 ```
 
 #### Tear down
