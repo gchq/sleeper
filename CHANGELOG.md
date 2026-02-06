@@ -38,6 +38,7 @@ Bugfixes:
 - When reinitialising a table that contained data, the underlying data files were not deleted.
 - Reasons that an ingest or compaction job failed were not always shown in reports.
 - EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
+- The admin client crashed when invalid tags were configured for the Sleeper instance.
 
 
 ## Version 0.34.1
