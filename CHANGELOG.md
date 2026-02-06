@@ -31,13 +31,13 @@ Deployment:
 - Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
 
 Bugfixes:
-- DataFusion data engine could only apply aggregations when they were specified in order of the table schema.
-- EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
-- Configured tags are now correctly added to resources deployed as part of a Sleeper instance.
-- When reinitialising a table that contained data, the underlying data files were not deleted.
-- A bug in the CDK meant deployment failed when changing the minimum capacity of a bulk import persistent EMR cluster.
-- Reasons that an ingest or compaction job failed were not always shown in reports.
+- DataFusion data engine failed when aggregations were specified that did not match the order of the table schema.
+- Tags configured for an instance are now correctly added to the instance by the CDK.
 - Removed confusing logs about constructing a partition tree when reading table configuration, e.g. when the CDK starts.
+- A bug in the CDK meant changing the minimum capacity of a bulk import persistent EMR cluster caused deployment to fail.
+- When reinitialising a table that contained data, the underlying data files were not deleted.
+- Reasons that an ingest or compaction job failed were not always shown in reports.
+- EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
 
 
 ## Version 0.34.1
