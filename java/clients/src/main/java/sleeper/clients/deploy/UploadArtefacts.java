@@ -84,8 +84,8 @@ public class UploadArtefacts {
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
                         "--extra-images\n" +
-                        "A comma-separated list of extra Docker images to upload. We will assume these are in the\n" +
-                        "same location as the other Docker images, and are not multiplatform." +
+                        "A comma-separated list of extra Docker images to upload. We will assume these are in the" +
+                        "same location as the other Docker images, and are not multiplatform.\n" +
                         "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
