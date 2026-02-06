@@ -103,11 +103,16 @@ CDK apps used by the automated scripts. The following commands will deploy a Sle
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" \
+    -c id=$INSTANCE_ID -c propertiesfile=$INSTANCE_PROPERTIES \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -117,11 +122,16 @@ If you'd like to include data generation for system tests, use the system test C
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
+cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
+    -c id=$INSTANCE_ID -c propertiesfile=$INSTANCE_PROPERTIES \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 ```
 
 #### Tear down
@@ -132,10 +142,10 @@ CLI. You may need to delete the Sleeper instance before deleting the artefacts u
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
-ID=my-instance-id
+INSTANCE_ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
-cdk destroy --all -c id=$ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
