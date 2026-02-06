@@ -16,6 +16,10 @@ in which case the EC2 will not be needed to deploy Sleeper.
 The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
 security setup, and you may wish to avoid deploying an EC2 with admin access to a production AWS account.
 
+The VPC is deployed with a default security group that will deny all incoming and outgoing traffic.
+Sleeper is also configured to not use the default security group for the VPC and instead uses custom defined ones when relevant.
+An example of this is with the [ECS Security Group](../usage/properties/instance/cdk/common.md#L12).
+
 For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
 ### Authentication
@@ -55,9 +59,7 @@ sleeper environment deploy <environment-id>
 ```
 
 [See below](#managing-environments) for options for this command. By default this will deploy a fresh VPC and EC2,
-either of which may be omitted. The default security group for this fresh VPC will deny all incoming and outgoing traffic.
-Sleeper is also configured to not use the default security group for the VPC and instead uses custom defined ones when relevant.
-An example of this is with the ECS_SECURITY_GROUP.
+either of which may be omitted.
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
