@@ -253,7 +253,7 @@ class InstancePropertiesTest {
                 .hasMessageContaining("-62");
     }
 
-    @ParameterizedTest(name = "Invalid Tags: {0}")
+    @ParameterizedTest(name = "Create with invalid Tags: {0}")
     @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
     void shouldCreateInstancePropertiesFineWithInvalidTags(String tags) {
         // Given / When
@@ -265,7 +265,7 @@ class InstancePropertiesTest {
         assertThat(instanceProperties.getTags()).isEqualTo(Map.of());
     }
 
-    @ParameterizedTest(name = "Invalid Tags: {0}")
+    @ParameterizedTest(name = "Fail validation with invalid Tags: {0}")
     @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
     void shouldFailValidationForInstancePropertiesWithInvalidTags(String tags) {
         // Given
