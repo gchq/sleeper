@@ -63,6 +63,9 @@ public class UploadDockerImagesToEcr {
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
+        if (request.isOverwriteExistingTag()) {
+            return true;
+        }
         String repository = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
         if (repositoryChecker.versionExistsInRepository(repository, uploader.getVersion())) {
             LOGGER.info("ECR repository {} already contains version {}",

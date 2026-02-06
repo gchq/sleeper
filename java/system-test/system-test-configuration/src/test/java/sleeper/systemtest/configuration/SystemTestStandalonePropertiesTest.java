@@ -24,7 +24,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 class SystemTestStandalonePropertiesTest {
 
@@ -71,7 +70,6 @@ class SystemTestStandalonePropertiesTest {
     private SystemTestStandaloneProperties validStandaloneProperties() {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties(createTestInstanceProperties().getProperties());
         properties.setNumber(NUMBER_OF_ROWS_PER_INGEST, 12);
-        properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;
     }
 }
