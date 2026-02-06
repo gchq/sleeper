@@ -18,11 +18,16 @@ package sleeper.clients.report.filestatus;
 
 import sleeper.core.statestore.FileReference;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collector;
 
 /**
  * Statistics on the numbers of file references per partition in a Sleeper table.
@@ -30,13 +35,18 @@ import java.util.TreeMap;
 public class FileReferencesStats {
     private final Integer minReferences;
     private final Integer maxReferences;
-    private final Double averageReferences;
+    private final Double meanReferences;
+    private final Double medianReferences;
+    private final Integer modalReferences;
+
     private final Integer totalReferences;
 
-    private FileReferencesStats(Integer minReferences, Integer maxReferences, Double averageReferences, Integer totalReferences) {
+    private FileReferencesStats(Integer minReferences, Integer maxReferences, Double meanReferences, Double medianReferences, Integer modalReferences, Integer totalReferences) {
         this.minReferences = minReferences;
         this.maxReferences = maxReferences;
-        this.averageReferences = averageReferences;
+        this.meanReferences = meanReferences;
+        this.medianReferences = medianReferences;
+        this.modalReferences = modalReferences;
         this.totalReferences = totalReferences;
     }
 
@@ -59,8 +69,10 @@ public class FileReferencesStats {
         Integer max = null;
         int total = 0;
         int count = 0;
+        Map<Integer, Integer> frequencyCounts = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : partitionIdToFiles.entrySet()) {
             int size = entry.getValue().size();
+            frequencyCounts.merge(size, 1, Integer::sum);
             if (null == min) {
                 min = size;
             } else if (size < min) {
@@ -73,15 +85,40 @@ public class FileReferencesStats {
             }
             total += size;
             count++;
+
         }
-        return new FileReferencesStats(min, max, average(total, count), references.size());
+        return new FileReferencesStats(min, max, mean(total, count), median(frequencyCounts), mode(frequencyCounts), references.size());
     }
 
-    private static Double average(int total, int count) {
+    private static Double mean(int total, int count) {
         if (count == 0) {
             return null;
         } else {
             return total / (double) count;
+        }
+    }
+
+    private static Integer mode(Map<Integer, Integer> frequencyCounts) {
+        return frequencyCounts.entrySet().stream().max(Comparator.comparingInt(Map.Entry<Integer, Integer>::getValue)).map(Map.Entry::getKey).orElse(null);
+    }
+
+    private static Double median(Map<Integer, Integer> frequencyCounts) {
+        if (frequencyCounts.isEmpty()) {
+            return null;
+        }
+        List<Integer> flatCounts = frequencyCounts.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<Integer, Integer>::getKey)).collect(Collector.of(ArrayList::new, (container, entry) -> {
+            for (int i = 0; i < entry.getValue(); i++) {
+                container.add(entry.getKey());
+            }
+        }, (left, right) -> {
+            left.addAll(right);
+            return left;
+        }, Collector.Characteristics.IDENTITY_FINISH));
+        int len = flatCounts.size();
+        if (len % 2 == 1) {
+            return Double.valueOf(flatCounts.get(len / 2));
+        } else {
+            return (flatCounts.get(len / 2 - 1) + flatCounts.get(len / 2)) / 2.0;
         }
     }
 
@@ -93,8 +130,16 @@ public class FileReferencesStats {
         return maxReferences;
     }
 
-    public Double getAverageReferences() {
-        return averageReferences;
+    public Double getMeanReferences() {
+        return meanReferences;
+    }
+
+    public Double getMedianReferences() {
+        return medianReferences;
+    }
+
+    public Integer getModalReferences() {
+        return modalReferences;
     }
 
     public Integer getTotalReferences() {

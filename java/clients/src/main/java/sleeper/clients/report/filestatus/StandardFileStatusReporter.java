@@ -66,11 +66,14 @@ public class StandardFileStatusReporter implements FileStatusReporter {
 
     private void printPartitionStats(FileReferencesStats partitions, String type) {
         if (partitions.getTotalReferences() > 0) {
-            out.println("Number of file references in " + type + " partitions:" +
-                    " min = " + partitions.getMinReferences() +
-                    ", max = " + partitions.getMaxReferences() +
-                    ", average = " + partitions.getAverageReferences() +
-                    ", total = " + partitions.getTotalReferences());
+            out.format("Number of file references in %s partitions: min = %d, max = %d, mean = %.5f, median = %.5f, mode = %d, total = %s%n",
+                    type,
+                    partitions.getMinReferences(),
+                    partitions.getMaxReferences(),
+                    partitions.getMeanReferences(),
+                    partitions.getMedianReferences(),
+                    partitions.getModalReferences(),
+                    partitions.getTotalReferences());
         } else {
             out.println("Number of file references in " + type + " partitions: 0");
         }
