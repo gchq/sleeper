@@ -33,6 +33,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -61,6 +62,7 @@ public class UploadArtefacts {
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
+                        CommandOption.longOption("extra-images"),
                         CommandOption.longFlag("create-builder"),
                         CommandOption.longFlag("create-deployment")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
@@ -80,6 +82,10 @@ public class UploadArtefacts {
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
+                        "--extra-images\n" +
+                        "A comma-separated list of extra Docker images to upload. We will assume these are in the\n" +
+                        "same location as the other Docker images, and are not multiplatform." +
+                        "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
                         "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
@@ -97,6 +103,10 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
+                arguments.getOptionalString("extra-images")
+                        .map(string -> SleeperPropertyValueUtils.readList(string).stream()
+                                .map(StackDockerImage::dockerBuildImage).toList())
+                        .orElse(List.of()),
                 arguments.isFlagSetWithDefault("create-builder", true),
                 arguments.isFlagSetWithDefault("create-deployment", false)));
 
@@ -144,13 +154,13 @@ public class UploadArtefacts {
             uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                     .ecrPrefix(ecrPrefix)
                     .images(images)
-                    .build());
+                    .build().withExtraImages(args.extraImages()));
         }
     }
 
     public record Arguments(
             Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
-            boolean createMultiplatformBuilder, boolean createDeployment) {
+            List<StackDockerImage> extraImages, boolean createMultiplatformBuilder, boolean createDeployment) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
