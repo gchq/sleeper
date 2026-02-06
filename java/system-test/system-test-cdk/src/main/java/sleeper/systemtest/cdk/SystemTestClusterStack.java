@@ -43,6 +43,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
+import sleeper.systemtest.configuration.SystemTestDockerRepository;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -50,12 +51,10 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
@@ -113,7 +112,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestTaskDefinitionFamily", taskDefinitionFamilyOutputProps);
 
-        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", systemTestRepoName(properties, instanceProperties));
+        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", SystemTestDockerRepository.getRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
@@ -138,13 +137,5 @@ public class SystemTestClusterStack extends NestedStack {
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
                 .build());
-    }
-
-    private static String systemTestRepoName(SystemTestPropertyValues properties, InstanceProperties instanceProperties) {
-        String value = properties.get(SYSTEM_TEST_REPO);
-        if (value == null) {
-            value = instanceProperties.get(ARTEFACTS_DEPLOYMENT_ID) + "/system-test";
-        }
-        return value;
     }
 }
