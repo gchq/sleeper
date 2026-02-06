@@ -99,7 +99,7 @@ public class UploadArtefacts {
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getOptionalString("properties")
                         .map(Path::of)
-                        .map(LoadLocalProperties::loadInstanceProperties)
+                        .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
