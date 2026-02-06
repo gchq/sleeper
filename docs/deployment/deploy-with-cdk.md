@@ -132,8 +132,8 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" \
     -c id=$INSTANCE_ID -c extraEcrImages=system-test
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --extra-images system-test
-cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
-    -c id=$INSTANCE_ID -c propertiesfile=$INSTANCE_PROPERTIES \
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SystemTestApp" \
+    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 # Write some random data
 java -cp "$SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar" \
