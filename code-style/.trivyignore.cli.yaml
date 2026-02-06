@@ -26,9 +26,13 @@ vulnerabilities:
   # Golang stdlib
   - id: CVE-2025-61729
   - id: CVE-2025-61727
-
   # AWS CLI wheel
   - id: CVE-2026-24049
-
   # NPM CLI Tar
   - id: CVE-2026-24842
+
+
+  # Dependencies of the latest version of Docker:
+
+  # Golang stdlib
+  - id: CVE-2025-68121

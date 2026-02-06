@@ -7,3 +7,4 @@ vulnerabilities:
   - id: CVE-2025-61726
   - id: CVE-2025-61728
   - id: CVE-2025-61730
+  - id: CVE-2025-68121
