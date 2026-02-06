@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor --yes -o /etc/apt/keyrings/trivy.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"  \
     | tee /etc/apt/sources.list.d/trivy.list > /dev/null
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     trivy \
     && rm -rf /var/lib/apt/lists/*
 
