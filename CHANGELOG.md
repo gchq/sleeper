@@ -16,6 +16,7 @@ store.
 Bulk import:
 - When a bulk import job is submitted to a Sleeper table with too few partitions, they are pre-split automatically.
   - This assumes the data in the bulk import job is representative of the table as a whole.
+  - Increased the default value of [`sleeper.default.table.bulk.import.min.leaf.partitions`](docs/usage/properties/instance/user/table_property_defaults.md) to 256.
 
 State store:
 - An experimental high throughput version of the state store committer is now available.
@@ -28,6 +29,8 @@ Configuration:
 - Added [`sleeper.table.parquet.rowgroup.rows.max`](docs/usage/properties/table/data_storage.md) to set the maximum Parquet row group size for the DataFusion data engine.
 
 Deployment:
+- ECS tasks and services now use their own security group, rather than the default security group for the VPC.
+- Restricted permissions on default security group in environment deployed by Sleeper CLI.
 - Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
 
 Bugfixes:
