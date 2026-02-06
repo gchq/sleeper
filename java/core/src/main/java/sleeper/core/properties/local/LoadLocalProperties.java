@@ -176,7 +176,7 @@ public class LoadLocalProperties {
      * @param  propertiesFile     the path to the table properties file
      * @return                    the table properties
      */
-    public static TableProperties loadOnlyTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+    public static TableProperties loadTablePropertiesFromFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         Path folder = propertiesFile.getParent();
         if (folder == null) {
             throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
@@ -203,7 +203,7 @@ public class LoadLocalProperties {
      * @return                    the table configuration
      */
     public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
-        TableProperties tableProperties = loadOnlyTableFromPropertiesFileNoValidation(instanceProperties, propertiesFile);
+        TableProperties tableProperties = loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesFile);
         Path folder = propertiesFile.getParent();
         if (folder == null) {
             throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
@@ -226,7 +226,7 @@ public class LoadLocalProperties {
         if (!Files.exists(propertiesPath)) {
             return null;
         }
-        return loadOnlyTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath);
+        return loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesPath);
     }
 
     private static Path directoryOf(Path filePath) {
