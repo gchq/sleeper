@@ -17,6 +17,8 @@ package sleeper.core.properties.instance;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 
@@ -58,6 +60,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -248,6 +251,31 @@ class InstancePropertiesTest {
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
                 .hasMessageContaining("-62");
+    }
+
+    @ParameterizedTest(name = "Create with invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldCreateInstancePropertiesFineWithInvalidTags(String tags) {
+        // Given / When
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
+                loadProperties("sleeper.tags=" + tags));
+
+        // Then
+        assertThat(instanceProperties.get(TAGS)).isEqualTo(tags);
+        assertThat(instanceProperties.getTags()).isEqualTo(Map.of());
+    }
+
+    @ParameterizedTest(name = "Fail validation with invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldFailValidationForInstancePropertiesWithInvalidTags(String tags) {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(TAGS, tags);
+
+        // When /  Then
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
     }
 
     private static InstanceProperties getSleeperProperties() {
