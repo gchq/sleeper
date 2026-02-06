@@ -17,6 +17,8 @@ package sleeper.core.properties.instance;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 
@@ -251,27 +253,29 @@ class InstancePropertiesTest {
                 .hasMessageContaining("-62");
     }
 
-    @Test
-    void shouldCreateInstancePropertiesFineWithInvalidTags() {
+    @ParameterizedTest(name = "Invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldCreateInstancePropertiesFineWithInvalidTags(String tags) {
         // Given / When
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
-                loadProperties("sleeper.tags=key=value"));
+                loadProperties("sleeper.tags=" + tags));
 
         // Then
-        assertThat(instanceProperties.get(TAGS)).isEqualTo("key=value");
-        assertThat(instanceProperties.getTags()).isEqualTo(Map.of("key=value", ""));
+        assertThat(instanceProperties.get(TAGS)).isEqualTo(tags);
+        assertThat(instanceProperties.getTags()).isEqualTo(Map.of());
     }
 
-    @Test
-    void shouldFailValidationForInstancePropertiesWithInvalidTags() {
+    @ParameterizedTest(name = "Invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldFailValidationForInstancePropertiesWithInvalidTags(String tags) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(TAGS, "key=value");
+        properties.set(TAGS, tags);
 
         // When /  Then
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessage("Property sleeper.tags was invalid. It was \"key=value\".");
+                .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
     }
 
     private static InstanceProperties getSleeperProperties() {

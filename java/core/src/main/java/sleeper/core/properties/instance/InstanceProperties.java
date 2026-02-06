@@ -203,11 +203,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
-
-            for (int i = 0; i < split.length; i += 2) {
-                //Get value for tag if exists
-                String value = i + 1 < split.length ? split[i + 1] : "";
-                tags.put(split[i], value);
+            if (split.length % 2 == 0) { //Ensure matching number of keys and values
+                for (int i = 0; i < split.length; i += 2) {
+                    tags.put(split[i], split[i + 1]);
+                }
             }
         }
         return tags;
