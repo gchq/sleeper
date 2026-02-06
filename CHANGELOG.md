@@ -6,6 +6,40 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.35.0
+
+### 6th February, 2026
+
+This includes automation of pre-splitting table partitions in bulk import, and a high throughput committer for the state
+store.
+
+Bulk import:
+- When a bulk import job is submitted to a Sleeper table with too few partitions, they are pre-split automatically.
+  - This assumes the data in the bulk import job is representative of the table as a whole.
+
+State store:
+- An experimental high throughput version of the state store committer is now available.
+  - This is a single persistent EC2 instance that listens for all messages from the commit queue.
+  - Can handle many Sleeper tables at much higher throughput than the default lambda version.
+  - Can be chosen with the instance property [`sleeper.statestore.committer.platform`](docs/usage/properties/instance/user/table_state.md).
+
+Configuration:
+- Instance properties that are default values for table properties were renamed to start with `sleeper.default.table`.
+- Added [`sleeper.table.parquet.rowgroup.rows.max`](docs/usage/properties/table/data_storage.md) to set the maximum Parquet row group size for the DataFusion data engine.
+
+Deployment:
+- Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
+
+Bugfixes:
+- DataFusion data engine could only apply aggregations when they were specified in order of the table schema.
+- EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
+- Configured tags are now correctly added to resources deployed as part of a Sleeper instance.
+- When reinitialising a table that contained data, the underlying data files were not deleted.
+- A bug in the CDK meant deployment failed when changing the minimum capacity of a bulk import persistent EMR cluster.
+- Reasons that an ingest or compaction job failed were not always shown in reports.
+- Removed confusing logs about constructing a partition tree when reading table configuration, e.g. when the CDK starts.
+
+
 ## Version 0.34.1
 
 ### 9th December, 2025
