@@ -23,4 +23,4 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.ListTablesReport "$@"
+java --add-opens=java.base/java.nio=ALL-UNNAMED -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.ListTablesReport "$@"
