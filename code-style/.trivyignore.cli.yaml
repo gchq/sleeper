@@ -36,3 +36,6 @@ vulnerabilities:
 
   # Golang stdlib
   - id: CVE-2025-68121
+  - id: CVE-2025-61726
+  - id: CVE-2025-61728
+  - id: CVE-2025-61730
