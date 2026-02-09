@@ -41,6 +41,7 @@ import java.util.Properties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -128,6 +129,10 @@ public class SleeperInstanceProps {
         String instanceId = context.tryGetContext("id");
         if (instanceId != null) {
             configuration.getInstanceProperties().set(ID, instanceId);
+        }
+        String artefactsId = context.tryGetContext("artefactsId");
+        if (artefactsId != null) {
+            configuration.getInstanceProperties().set(ARTEFACTS_DEPLOYMENT_ID, artefactsId);
         }
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())

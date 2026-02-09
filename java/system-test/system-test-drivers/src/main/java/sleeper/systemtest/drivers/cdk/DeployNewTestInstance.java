@@ -36,7 +36,6 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
 
@@ -64,7 +63,6 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(ID, args[2]);
             config.getInstanceProperties().set(VPC_ID, args[3]);
             config.getInstanceProperties().set(SUBNETS, args[4]);
-            config.getInstanceProperties().set(SYSTEM_TEST_REPO, args[2] + "/system-test");
             DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
                     .deployInstanceConfiguration(config)
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
