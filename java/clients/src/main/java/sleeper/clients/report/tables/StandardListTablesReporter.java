@@ -38,7 +38,7 @@ public class StandardListTablesReporter implements ListTablesReporter {
     @Override
     public void report(Stream<TableStatus> tables) {
         tables.forEach(table -> {
-            out.format("name = \"%s\", id = \"%s\"%n", table.getTableName(), table.getTableUniqueId());
+            out.format("\"%s\"\t\"%s\"%n", table.getTableName(), table.getTableUniqueId());
         });
     }
 }

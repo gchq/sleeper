@@ -20,7 +20,9 @@ import sleeper.clients.api.SleeperClient;
 import sleeper.clients.report.tables.JsonListTablesReporter;
 import sleeper.clients.report.tables.ListTablesReporter;
 import sleeper.clients.report.tables.StandardListTablesReporter;
+import sleeper.core.table.TableStatus;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -51,7 +53,7 @@ public class ListTablesReport {
      * Creates a report.
      */
     public void run() {
-        reporter.report(client.streamAllTables());
+        reporter.report(client.streamAllTables().sorted(Comparator.comparing(TableStatus::getTableName)));
     }
 
     public static void main(String[] args) {
