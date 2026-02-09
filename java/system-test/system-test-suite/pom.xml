@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.35.0-SNAPSHOT</version>
+        <version>0.35.0</version>
     </parent>
 
     <artifactId>system-test-suite</artifactId>
