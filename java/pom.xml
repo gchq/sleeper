@@ -172,7 +172,7 @@
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.58.0</opentelemetry.version>
+        <opentelemetry.version>1.59.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.4</zookeeper.version>
