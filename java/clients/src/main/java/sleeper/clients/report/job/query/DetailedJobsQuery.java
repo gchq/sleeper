@@ -26,6 +26,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * A query to generate a detailed report on specific jobs, against a job tracker.
+ */
 public class DetailedJobsQuery implements JobQuery {
 
     private final List<String> jobIds;
@@ -56,6 +59,12 @@ public class DetailedJobsQuery implements JobQuery {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Reads a command line parameter that sets which jobs should be included in a detailed report.
+     *
+     * @param  queryParameters the job IDs separated by commas
+     * @return                 the query for a detailed report on those jobs
+     */
     public static JobQuery fromParameters(String queryParameters) {
         if ("".equals(queryParameters)) {
             return null;

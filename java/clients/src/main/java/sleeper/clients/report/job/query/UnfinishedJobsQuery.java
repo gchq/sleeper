@@ -23,6 +23,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
 
+/**
+ * A query to generate a report on jobs in a job tracker that have not yet finished.
+ */
 public class UnfinishedJobsQuery implements JobQuery {
     private final String tableId;
 

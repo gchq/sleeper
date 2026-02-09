@@ -194,6 +194,25 @@ public class Range {
         return hash;
     }
 
+    /**
+     * Determines if the contents of the Range are matches canonically.
+     * For checking if objects are exact matches please use equalsExact.
+     *
+     * @param  obj comparison object
+     * @return     if contents are equal
+     */
+    public boolean equalsCanonicalised(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        Range canonSource = RangeCanonicaliser.canonicaliseRange(this);
+        Range canonCompare = RangeCanonicaliser.canonicaliseRange((Range) obj);
+        return canonSource.equals(canonCompare);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -242,7 +261,16 @@ public class Range {
 
     @Override
     public String toString() {
-        return "Range{" + "field=" + field + ", min=" + min + ", minInclusive=" + minInclusive + ", max=" + max + ", maxInclusive=" + maxInclusive + '}';
+        return "Range{" + "field=" + field + ", min='" + adjustIfNullCharacterPresent(min) + "', minInclusive=" + minInclusive + ", max='" + adjustIfNullCharacterPresent(max) + "', maxInclusive="
+                + maxInclusive + '}';
+    }
+
+    private String adjustIfNullCharacterPresent(Object obj) {
+        if (obj instanceof String) {
+            return obj.toString().replaceAll("\u0000", "\\\\u0000");
+        } else {
+            return Objects.toString(obj);
+        }
     }
 
     /**

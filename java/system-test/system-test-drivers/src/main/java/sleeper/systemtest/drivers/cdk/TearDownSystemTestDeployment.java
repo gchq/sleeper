@@ -17,23 +17,23 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
 
 public class TearDownSystemTestDeployment {
     public static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTestDeployment.class);
 
-    private final TearDownClients clients;
+    private final CloudFormationClient cloudFormationClient;
     private final String deploymentId;
 
-    private TearDownSystemTestDeployment(TearDownClients clients, String deploymentId) {
-        this.clients = clients;
+    private TearDownSystemTestDeployment(CloudFormationClient cloudFormationClient, String deploymentId) {
+        this.cloudFormationClient = cloudFormationClient;
         this.deploymentId = deploymentId;
     }
 
-    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, String deploymentId) {
-        return new TearDownSystemTestDeployment(clients, deploymentId);
+    public static TearDownSystemTestDeployment fromDeploymentId(CloudFormationClient cloudFormationClient, String deploymentId) {
+        return new TearDownSystemTestDeployment(cloudFormationClient, deploymentId);
     }
 
     public void deleteStack() {
@@ -47,18 +47,18 @@ public class TearDownSystemTestDeployment {
     private void deleteStack(String stackName) {
         LOGGER.info("Deleting system test CloudFormation stack: {}", stackName);
         try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
+            cloudFormationClient.deleteStack(builder -> builder.stackName(stackName));
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
     }
 
     public void waitForStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), deploymentId).pollUntilFinished();
+        WaitForStackToDelete.from(cloudFormationClient, deploymentId).pollUntilFinished();
     }
 
     public void waitForArtefactsStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
+        WaitForStackToDelete.from(cloudFormationClient, artefactsStackName()).pollUntilFinished();
     }
 
     private String artefactsStackName() {

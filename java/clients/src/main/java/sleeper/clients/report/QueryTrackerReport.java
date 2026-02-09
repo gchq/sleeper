@@ -37,6 +37,9 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of queries made against tables in a Sleeper instance.
+ */
 public class QueryTrackerReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
     private static final Map<String, QueryTrackerReporter> REPORTERS = new HashMap<>();
@@ -62,6 +65,9 @@ public class QueryTrackerReport {
         this.reporter = reporter;
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
         reporter.report(queryType, queryType.run(queryTrackerStore));
     }

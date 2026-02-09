@@ -21,8 +21,18 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.List;
 
+/**
+ * Creates reports on the status of compaction jobs. The format and output destination can vary based on the
+ * implementation.
+ */
 public interface CompactionJobStatusReporter {
 
+    /**
+     * Writes a report on the status of compaction jobs.
+     *
+     * @param jobStatusList the status updates retrieved from the job tracker
+     * @param queryType     the type of query made for the report
+     */
     void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType);
 
 }

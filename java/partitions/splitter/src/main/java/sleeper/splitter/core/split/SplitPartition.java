@@ -26,11 +26,12 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.sketches.store.SketchesStore;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
+import sleeper.splitter.core.sketches.UnionSketchesForSplitting;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -77,16 +78,10 @@ public class SplitPartition {
     }
 
     private Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, List<String> fileNames) {
-        FindPartitionSplitPoint findSplitPoint = FindPartitionSplitPoint.loadSketches(schema, fileNames, sketchesStore);
-        return IntStream.range(0, schema.getRowKeyFields().size())
-                .mapToObj(dimension -> findSplitPoint.splitPointForDimension(dimension)
-                        .map(splitPoint -> resultFactory().splitPartition(partition, splitPoint, dimension)))
-                .flatMap(Optional::stream)
-                .findFirst();
-    }
-
-    private SplitPartitionResultFactory resultFactory() {
-        return new SplitPartitionResultFactory(schema, idSupplier);
+        SketchesForSplitting sketches = new UnionSketchesForSplitting(fileNames.stream()
+                .map(filename -> sketchesStore.loadFileSketches(filename, schema))
+                .toList());
+        return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, sketches, idSupplier);
     }
 
     private void apply(SplitPartitionResult result) {

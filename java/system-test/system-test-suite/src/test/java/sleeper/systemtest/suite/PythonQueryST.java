@@ -58,7 +58,7 @@ public class PythonQueryST {
                         "row-0000000000000000001",
                         "row-0000000000000000002")
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.rangeClosed(1, 2)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRangeClosed(1, 2));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class PythonQueryST {
                         "row-0000000000000000010",
                         "row-0000000000000000020")
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 20));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class PythonQueryST {
                         "row-0000000000000000010", true,
                         "row-0000000000000000020", true)
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.rangeClosed(10, 20)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRangeClosed(10, 20));
     }
 
     @Test

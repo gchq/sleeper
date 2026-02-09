@@ -33,6 +33,9 @@ import java.util.List;
 
 import static sleeper.clients.report.job.JsonJobRunReporter.jobRunsJsonSerializer;
 
+/**
+ * Creates reports in JSON format on the status of compaction jobs.
+ */
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())

@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.34.1</version>
+        <version>0.35.0</version>
     </parent>
 
     <artifactId>system-test-data-generation</artifactId>
@@ -66,6 +66,22 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- We set this to test scope explicitly to avoid what appears to be a bug in Maven. -->
+            <!-- This is only included as a transitive dependency of WireMock, which is a test dependency, but -->
+            <!-- Maven was setting this as a compile dependency. We singled out this dependency specifically because -->
+            <!-- of a CVE associated with it. -->
+            <!-- See issues https://github.com/gchq/sleeper/issues/6108, https://github.com/gchq/sleeper/issues/6452 -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <scope>test</scope>
+                <version>${jetty.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

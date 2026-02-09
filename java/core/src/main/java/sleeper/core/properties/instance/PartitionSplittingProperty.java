@@ -91,10 +91,30 @@ public interface PartitionSplittingProperty {
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.default.partition.splitting.threshold")
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.default.table.partition.splitting.threshold")
             .description("This is the default value of the partition splitting threshold. Partitions with more than the following " +
                     "number of rows in will be split. This value can be overridden on a per-table basis.")
             .defaultValue("1000000000")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_MIN_ROWS = Index.propertyBuilder("sleeper.default.table.partition.splitting.min.rows")
+            .description("When expanding the partition tree explicitly, this is the default for how many rows are " +
+                    "required in the input data to be able to split a partition. This will be used when " +
+                    "pre-splitting partitions.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. The bulk import job must contain at least " +
+                    "this much data per new split point.")
+            .defaultValue("1000")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT = Index.propertyBuilder("sleeper.default.table.partition.splitting.min.distribution.percent")
+            .description("When expanding the partition tree explicitly, this is the default for a minimum percentage " +
+                    "of the expected number of rows to split a partition assuming an even distribution of rows.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. For each current leaf partition, we make " +
+                    "a sketch of the data from the job that's in that partition. We divide the number of rows in the " +
+                    "job's input data by the current number of leaf partitions, to get the expected rows per " +
+                    "partition. If this propery is set to 10, then any partition with less than 10% of the expected " +
+                    "rows per partition will be ignored when extending the partition tree.")
+            .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

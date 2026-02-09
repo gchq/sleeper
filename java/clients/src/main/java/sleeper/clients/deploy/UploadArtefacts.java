@@ -33,6 +33,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -61,8 +62,10 @@ public class UploadArtefacts {
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
+                        CommandOption.longOption("extra-images"),
                         CommandOption.longFlag("create-builder"),
-                        CommandOption.longFlag("create-deployment")))
+                        CommandOption.longFlag("create-deployment"),
+                        CommandOption.longFlag("overwrite-existing")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
@@ -73,12 +76,16 @@ public class UploadArtefacts {
                         "deployment.\n" +
                         "\n" +
                         "--properties, -p\n" +
-                        "An instance properties file to read configuration from. The artefacts deployment ID will be " +
-                        "read from this file, defaulting to the instance ID. Docker images that are not required to " +
-                        "deploy this instance will not be uploaded.\n" +
+                        "An instance properties file to read configuration from. If you do not also set the " +
+                        "artefacts deployment ID, it will be read from this file, defaulting to the instance ID. " +
+                        "Docker images that are not required to deploy this instance will not be uploaded.\n" +
                         "\n" +
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
+                        "\n" +
+                        "--extra-images\n" +
+                        "A comma-separated list of extra Docker images to upload. We will assume these are in the" +
+                        "same location as the other Docker images, and are not multiplatform.\n" +
                         "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
@@ -87,24 +94,36 @@ public class UploadArtefacts {
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
-                        "flag, this tool will deploy a new artefacts CDK deployment for you.")
+                        "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
+                        "\n" +
+                        "--overwrite-existing\n" +
+                        "By default, images are only uploaded if they do not already exist for this version of " +
+                        "Sleeper. This flag disables that check.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getOptionalString("properties")
                         .map(Path::of)
-                        .map(LoadLocalProperties::loadInstanceProperties)
+                        .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
+                arguments.getOptionalString("extra-images")
+                        .map(string -> SleeperPropertyValueUtils.readList(string).stream()
+                                .map(StackDockerImage::dockerBuildImage).toList())
+                        .orElse(List.of()),
                 arguments.isFlagSetWithDefault("create-builder", true),
-                arguments.isFlagSetWithDefault("create-deployment", false)));
+                arguments.isFlagSetWithDefault("create-deployment", false),
+                arguments.isFlagSetWithDefault("overwrite-existing", false)));
 
         String deploymentId;
         String jarsBucket;
         String ecrPrefix;
         List<StackDockerImage> images;
         if (args.instanceProperties() != null) {
+            if (args.deploymentId() != null) {
+                args.instanceProperties().set(ARTEFACTS_DEPLOYMENT_ID, args.deploymentId());
+            }
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
@@ -141,13 +160,15 @@ public class UploadArtefacts {
             uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                     .ecrPrefix(ecrPrefix)
                     .images(images)
+                    .extraImages(args.extraImages())
+                    .overwriteExistingTag(args.overwriteExisting())
                     .build());
         }
     }
 
     public record Arguments(
             Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
-            boolean createMultiplatformBuilder, boolean createDeployment) {
+            List<StackDockerImage> extraImages, boolean createMultiplatformBuilder, boolean createDeployment, boolean overwriteExisting) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {

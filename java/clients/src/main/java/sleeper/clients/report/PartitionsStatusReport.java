@@ -27,8 +27,7 @@ import sleeper.splitter.core.status.PartitionsStatus;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * A utility class to report information about the partitions in the system and
- * their status.
+ * Creates reports on the partitions in a Sleeper table.
  */
 public class PartitionsStatusReport {
     private final StateStore store;
@@ -41,6 +40,9 @@ public class PartitionsStatusReport {
         this.reporter = reporter;
     }
 
+    /**
+     * Creates and writes a report.
+     */
     public void run() {
         reporter.report(PartitionsStatus.from(tableProperties, store));
     }

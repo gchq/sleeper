@@ -26,14 +26,37 @@ import java.util.Map;
 
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
 
+/**
+ * Helpers for tests to create reports on ingest and bulk import jobs based on the job tracker.
+ */
 public class IngestJobStatusReporterTestHelper {
     private IngestJobStatusReporterTestHelper() {
     }
 
+    /**
+     * Creates a report in standard, human readable format, on the status of ingest and bulk import jobs based on state
+     * retrieved from the job tracker.
+     *
+     * @param  query         the type of query used to create the report
+     * @param  statusList    the job statuses retrieved from the tracker
+     * @param  numberInQueue the number of jobs in the standard ingest job queue
+     * @return               the report as a human readable string
+     */
     public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         return getStandardReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
+    /**
+     * Creates a report in standard, human readable format, on the status of ingest and bulk import jobs based on state
+     * retrieved from the job tracker.
+     *
+     * @param  query                  the type of query used to create the report
+     * @param  statusList             the job statuses retrieved from the tracker
+     * @param  numberInQueue          the number of jobs in the standard ingest job queue
+     * @param  persistentEmrStepCount a map from status of an EMR step, to the number of steps in that status in the
+     *                                persistent EMR cluster
+     * @return                        the report as a human readable string
+     */
     public static String getStandardReport(
             JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
@@ -43,10 +66,30 @@ public class IngestJobStatusReporterTestHelper {
         return output.toString();
     }
 
+    /**
+     * Creates a report in JSON format, on the status of ingest and bulk import jobs based on state retrieved from the
+     * job tracker.
+     *
+     * @param  query         the type of query used to create the report
+     * @param  statusList    the job statuses retrieved from the tracker
+     * @param  numberInQueue the number of jobs in the standard ingest job queue
+     * @return               the report as a human readable string
+     */
     public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         return getJsonReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
+    /**
+     * Creates a report in JSON format, on the status of ingest and bulk import jobs based on state retrieved from the
+     * job tracker.
+     *
+     * @param  query                  the type of query used to create the report
+     * @param  statusList             the job statuses retrieved from the tracker
+     * @param  numberInQueue          the number of jobs in the standard ingest job queue
+     * @param  persistentEmrStepCount a map from status of an EMR step, to the number of steps in that status in the
+     *                                persistent EMR cluster
+     * @return                        the report as a human readable string
+     */
     public static String getJsonReport(
             JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {

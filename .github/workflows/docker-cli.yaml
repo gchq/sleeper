@@ -10,6 +10,8 @@ env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
+  TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
   setup:
@@ -24,9 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
       - name: Plan build
@@ -36,7 +38,7 @@ jobs:
             "${{ github.repository_owner }}" \
             "${{ github.ref }}"
       - name: Build Docker dependencies
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./scripts/cli/dependencies
           push: true
@@ -49,10 +51,18 @@ jobs:
             build-url=${{ env.BUILD_URL }}
       - name: Pull dependencies image from registry
         run: docker pull ${{ env.DEPENDENCIES_IMAGE }}
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.DEPENDENCIES_IMAGE }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          version: latest
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dependencies-image
           path: /tmp/dependencies-image.tar
@@ -75,6 +85,7 @@ jobs:
       packageName: ${{ needs.setup.outputs.builderPackage }}
       platforms: ${{ needs.setup.outputs.platforms }}
       buildUrl: ${{ needs.setup.outputs.buildUrl }}
+      runTrivy: false # The builder image is too big, Trivy runs out of disk space in the GitHub Actions runner
   environment:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml

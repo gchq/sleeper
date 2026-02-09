@@ -18,8 +18,8 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
 import sleeper.core.util.LoggedDuration;
 
@@ -40,7 +40,7 @@ public class TearDownMavenSystemTest {
 
     public static void tearDown(
             Path scriptsDir, List<String> shortIds, List<String> shortInstanceNames, List<String> standaloneInstanceIds,
-            TearDownClients clients) throws IOException, InterruptedException {
+            CloudFormationClient cloudFormationClient) throws IOException, InterruptedException {
         List<String> instanceIds = shortIds.stream()
                 .flatMap(shortId -> shortInstanceNames.stream()
                         .map(shortInstanceName -> shortId + "-" + shortInstanceName))
@@ -52,13 +52,13 @@ public class TearDownMavenSystemTest {
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
         List<TearDownSystemTestDeployment> tearDownSystemTestDeployments = shortIds.stream()
-                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(clients, deploymentId))
+                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(cloudFormationClient, deploymentId))
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownMavenInstances = instanceIds.stream()
-                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).cloudFormationClient(cloudFormationClient).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownStandaloneInstances = standaloneInstanceIds.stream()
-                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).cloudFormationClient(cloudFormationClient).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
 
@@ -102,6 +102,8 @@ public class TearDownMavenSystemTest {
         List<String> standaloneInstanceIds = optionalArgument(args, 3)
                 .map(names -> List.of(names.split(",")))
                 .orElse(List.of());
-        TearDownClients.withDefaults(clients -> tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds, clients));
+        try (CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
+            tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds, cloudFormationClient);
+        }
     }
 }

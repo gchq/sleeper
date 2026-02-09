@@ -37,12 +37,13 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.networking.SleeperNetworking;
-import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
+import sleeper.systemtest.configuration.SystemTestDockerRepository;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -54,7 +55,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
@@ -63,7 +63,7 @@ public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestStandaloneProperties properties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties, properties, properties.toInstancePropertiesForCdkUtils(), networking, bucketStack, autoStopEcsClusterTasksStack);
         Tags.of(this).add("DeploymentStack", id);
@@ -71,16 +71,16 @@ public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestProperties properties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties.testPropertiesOnly(), properties::set, properties, networking, bucketStack, autoStopEcsClusterTasksStack);
-        Utils.addStackTagIfSet(this, properties);
+        Utils.addTags(this, properties);
     }
 
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
             InstanceProperties instanceProperties, SleeperNetworking networking,
-            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // ECS cluster for tasks to write data
@@ -112,7 +112,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestTaskDefinitionFamily", taskDefinitionFamilyOutputProps);
 
-        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", properties.get(SYSTEM_TEST_REPO));
+        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", SystemTestDockerRepository.getRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");

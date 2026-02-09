@@ -63,9 +63,9 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_R
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
@@ -280,8 +280,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).containsSubsequence(
                     "sleeper.optional.stacks",
-                    "sleeper.default.page.size",
-                    "sleeper.default.compression.codec");
+                    "sleeper.default.table.page.size",
+                    "sleeper.default.table.compression.codec");
         }
 
         @Test
@@ -366,7 +366,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
-                    "sleeper.default.parquet.columnindex.truncate.length\n" +
+                    "sleeper.default.table.parquet.columnindex.truncate.length\n" +
                     "Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
                     "The length in bytes to truncate binary values in a column index.\n" +
@@ -375,7 +375,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "sleeper.default.parquet.columnindex.truncate.length\n" +
+                    "sleeper.default.table.parquet.columnindex.truncate.length\n" +
                     "\n"));
         }
 
@@ -622,7 +622,9 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .contains("Found changes to properties:\n" +
                             "\n" +
                             "sleeper.table.rowgroup.size\n" +
-                            "The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                            "Maximum number of bytes to write in a Parquet row group " +
+                            "(defaults to value set in instance\n" +
+                            "properties). This property is NOT used by DataFusion data engine.\n" +
                             "Unset before, default value: 8388608\n" +
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
@@ -697,9 +699,9 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
-            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            before.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
             TableProperties after = TableProperties.copyOf(before);
-            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
+            after.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
 
             // When
             String output = runClient()

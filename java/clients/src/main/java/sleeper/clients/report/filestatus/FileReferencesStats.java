@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * Statistics on the numbers of file references per partition in a Sleeper table.
+ */
 public class FileReferencesStats {
     private final Integer minReferences;
     private final Integer maxReferences;
@@ -37,6 +40,12 @@ public class FileReferencesStats {
         this.totalReferences = totalReferences;
     }
 
+    /**
+     * Computes statistics on the numbers of file references per partition.
+     *
+     * @param  references the file references
+     * @return            the statistics
+     */
     public static FileReferencesStats from(Collection<FileReference> references) {
         Map<String, Set<String>> partitionIdToFiles = new TreeMap<>();
         references.forEach(reference -> {

@@ -13,20 +13,22 @@
 # limitations under the License.
 FROM ubuntu:24.04
 
-# Install Amazon Corretto JDK
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
-    gnupg && rm -rf /var/lib/apt/lists/*
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Amazon Corretto JDK
 RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
     | tee /etc/apt/sources.list.d/corretto.list > /dev/null
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     java-17-amazon-corretto-jdk \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Lambda Runtime Interface Emulator
-RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.29/aws-lambda-rie && \
+RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.31/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
 

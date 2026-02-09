@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
@@ -66,9 +67,11 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
+        String account = stsClient.getCallerIdentity().account();
+        instanceProperties.set(ACCOUNT, account);
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
-        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
-        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-direct");
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-by-queue");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));

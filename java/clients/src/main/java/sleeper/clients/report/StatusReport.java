@@ -41,8 +41,8 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * A utility class to report information about the partitions, the files, the
- * jobs, and the compaction tasks in the system.
+ * Creates reports on the partitions, files and compactions in a Sleeper table, as well as tasks that run those
+ * compaction jobs, and dead letters in the Sleeper instance.
  */
 public class StatusReport {
     private final InstanceProperties instanceProperties;

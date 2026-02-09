@@ -95,6 +95,10 @@ Logback (ch.qos.logback:logback-*:1.*)
 - Eclipse Public License 1.0
 - GNU Lesser General Public License, version 2.1
 
+Log4J (org.apache.logging.log4j:log4j-*:2.*)
+
+- Apache License, Version 2.0
+
 Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
@@ -251,7 +255,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.*)
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:6.*, org.junit.platform:junit-platform-suite:6.*, org.junit.vintage:junit-vintage-engine:6.* - Trino needs the vintage engine)
+JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
 
 - Eclipse Public License 1.0
 
@@ -424,7 +428,7 @@ Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 The file java/core/src/main/java/sleeper/core/schema/type/ByteArray.java contains code that is heavily based on
 ByteArray from the Facebook JCommon Collections library, licensed under the Apache License, Version 2.0.
 
-The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
+The file java/common/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
 
 
@@ -653,3 +657,6 @@ docker/build-push-action (https://github.com/marketplace/actions/build-and-push-
 
 - Apache License, Version 2.0
 
+aquasecurity/trivy-action (https://github.com/marketplace/actions/aqua-security-trivy)
+
+- Apache License, Version 2.0

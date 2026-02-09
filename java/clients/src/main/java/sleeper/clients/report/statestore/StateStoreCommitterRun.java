@@ -24,6 +24,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/**
+ * Parsed logs from a run/invocation of the state store committer.
+ */
 public class StateStoreCommitterRun {
 
     private final String logStream;
@@ -42,6 +45,12 @@ public class StateStoreCommitterRun {
         return new Builder();
     }
 
+    /**
+     * Computes the number of transactions committed per second in this invocation. Divides the number of transactions
+     * committed by the time spent in the invocation.
+     *
+     * @return the number of commits per second
+     */
     public double computeRequestsPerSecond() {
         Instant startTime = getStartTime();
         if (startTime == null) {
@@ -69,14 +78,14 @@ public class StateStoreCommitterRun {
         return logStream;
     }
 
-    public Instant getStartTime() {
+    private Instant getStartTime() {
         if (start == null) {
             return null;
         }
         return start.getTimeInCommitter();
     }
 
-    public Instant getFinishTime() {
+    private Instant getFinishTime() {
         if (finish == null) {
             return null;
         }
@@ -87,6 +96,11 @@ public class StateStoreCommitterRun {
         return commits;
     }
 
+    /**
+     * Streams through the log entries in this invocation of the state store committer.
+     *
+     * @return a stream of all log entries
+     */
     public Stream<StateStoreCommitterLogEntry> entries() {
         return Stream.of(
                 Optional.ofNullable(start).stream(),
@@ -117,6 +131,9 @@ public class StateStoreCommitterRun {
         return "StateStoreCommitterRun{logStream=" + logStream + ", start=" + start + ", finish=" + finish + ", commits=" + commits + "}";
     }
 
+    /**
+     * A builder for a run/invocation of the state store committer.
+     */
     public static class Builder {
         private String logStream;
         private StateStoreCommitterRunStarted start;
@@ -126,26 +143,56 @@ public class StateStoreCommitterRun {
         private Builder() {
         }
 
+        /**
+         * Sets the name of the log stream that was produced by this invocation.
+         *
+         * @param  logStream the log stream name
+         * @return           this builder
+         */
         public Builder logStream(String logStream) {
             this.logStream = logStream;
             return this;
         }
 
+        /**
+         * Sets the log entry at the start of the state store committer invocation.
+         *
+         * @param  start the log entry recording that the state store committer started
+         * @return       this builder
+         */
         public Builder start(StateStoreCommitterRunStarted start) {
             this.start = start;
             return this;
         }
 
+        /**
+         * Sets the log entry at the end of the state store committer invocation.
+         *
+         * @param  finish the log entry recording that the state store committer finished
+         * @return        this builder
+         */
         public Builder finish(StateStoreCommitterRunFinished finish) {
             this.finish = finish;
             return this;
         }
 
+        /**
+         * Sets the log entries for transaction commits during the state store committer invocation.
+         *
+         * @param  commits the log entries for transactions committed
+         * @return         this builder
+         */
         public Builder commits(List<StateStoreCommitSummary> commits) {
             this.commits = commits;
             return this;
         }
 
+        /**
+         * Adds a log entry for a transaction commit during the state store committer invocation.
+         *
+         * @param  commit the log entry
+         * @return        this builder
+         */
         public Builder commit(StateStoreCommitSummary commit) {
             commits.add(commit);
             return this;

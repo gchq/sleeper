@@ -38,6 +38,11 @@
       "source": "${localEnv:HOME}/.ssh",
       "target": "/home/sleeper/.ssh",
       "type": "bind"
+    },
+    {
+      "source": "${localEnv:HOME}/.cache",
+      "target": "/home/sleeper/.cache",
+      "type": "bind"
     }
   ],
   "containerEnv": {

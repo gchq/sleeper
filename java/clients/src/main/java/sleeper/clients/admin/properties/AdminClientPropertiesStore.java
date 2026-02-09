@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -58,11 +57,11 @@ public class AdminClientPropertiesStore {
     private final Path generatedDirectory;
 
     public AdminClientPropertiesStore(
-            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk,
-            Path generatedDirectory, UploadDockerImagesToEcr uploadDockerImages) {
+            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk, Path generatedDirectory,
+            UploadDockerImagesToEcr uploadDockerImages, DockerImageConfiguration dockerImageConfiguration) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
-        this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
+        this.dockerImageConfiguration = dockerImageConfiguration;
         this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
@@ -97,10 +96,7 @@ public class AdminClientPropertiesStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
-                Optional<UploadDockerImagesToEcrRequest> dockerUploadOpt = UploadDockerImagesToEcrRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
-                if (dockerUploadOpt.isPresent()) {
-                    uploadDockerImages.upload(dockerUploadOpt.get());
-                }
+                uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {

@@ -35,7 +35,7 @@ pub fn unpack_aws_config(
 /// Contains the FFI compatible configuration data for AWS.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIAwsConfig {

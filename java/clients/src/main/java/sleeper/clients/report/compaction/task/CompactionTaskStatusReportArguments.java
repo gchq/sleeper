@@ -19,6 +19,9 @@ import java.io.PrintStream;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
+/**
+ * Command line arguments to create a report on compaction tasks.
+ */
 public class CompactionTaskStatusReportArguments {
 
     private final String instanceId;
@@ -32,6 +35,13 @@ public class CompactionTaskStatusReportArguments {
         this.query = query;
     }
 
+    /**
+     * Reads command line arguments to create a report on compaction tasks.
+     *
+     * @param  args                     the arguments
+     * @return                          the parsed arguments
+     * @throws IllegalArgumentException if the arguments could not be read
+     */
     public static CompactionTaskStatusReportArguments fromArgs(String... args) {
         if (args.length < 1 || args.length > 3) {
             throw new IllegalArgumentException("Wrong number of arguments");
@@ -45,6 +55,11 @@ public class CompactionTaskStatusReportArguments {
         return new CompactionTaskStatusReportArguments(args[0], reporter, query);
     }
 
+    /**
+     * Prints the usage message to explain what arguments can be given.
+     *
+     * @param out the output to write to
+     */
     public static void printUsage(PrintStream out) {
         out.println("Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
                 "Query types are:\n" +

@@ -24,9 +24,16 @@ on:
       buildUrl:
         required: true
         type: string
+      runTrivy:
+        default: true
+        required: false
+        type: boolean
 
 env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
+  TEMP_IMAGE: localhost:5000/sleeper-temp:current
+  TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
+  TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
   build:
@@ -53,7 +60,7 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v5
         with:
           path: java/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -66,36 +73,57 @@ jobs:
         if: inputs.mavenCmd != 'none'
         run: ${{ inputs.mavenCmd }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
       - name: Download artifacts from previous workflows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
+        with:
+          name: dependencies-image
       - name: Load dependencies image
-        run: docker load --input dependencies-image/dependencies-image.tar
+        run: docker load --input dependencies-image.tar
+      - name: Delete tarball
+        run: rm dependencies-image.tar
       - name: Expose dependencies image to Docker Buildx via local registry
         run: docker push ${{ env.DEPENDENCIES_IMAGE }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ${{ inputs.context }}
-          push: ${{ inputs.pushImages }}
+          push: true
           sbom: false
           provenance: false
-          tags: ${{ inputs.pushTag }}
+          tags: ${{ env.TEMP_IMAGE }}
           platforms: ${{ inputs.platforms }}
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ inputs.buildUrl }}
+      - name: Pull image from registry
+        run: docker pull ${{ env.TEMP_IMAGE }}
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        if: ${{ inputs.runTrivy }}
+        with:
+          image-ref: ${{ env.TEMP_IMAGE }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          version: latest
+      - name: Retag image for GitHub
+        if: ${{ inputs.pushImages }}
+        run: docker tag ${{ env.TEMP_IMAGE }} ${{ inputs.pushTag }}
+      - name: Push image to GitHub
+        if: ${{ inputs.pushImages }}
+        run: docker push ${{ inputs.pushTag }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build

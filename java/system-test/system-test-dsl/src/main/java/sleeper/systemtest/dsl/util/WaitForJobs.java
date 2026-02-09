@@ -27,32 +27,31 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.util.WaitForJobsStatus.JobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
+    private static final PollWithRetries DEFAULT_POLL_UNTIL_JOBS_FINISHED = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10));
+    private static final PollWithRetries DEFAULT_POLL_UNTIL_JOBS_COMMIT = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30));
 
-    private final SystemTestInstanceContext instance;
+    private final Supplier<InstanceProperties> getInstanceProperties;
     private final String typeDescription;
     private final Function<InstanceProperties, JobTracker> getJobTracker;
     private final Function<InstanceProperties, TaskTracker> getTaskTracker;
     private final PollWithRetriesDriver pollDriver;
 
-    private WaitForJobs(
-            SystemTestInstanceContext instance, String typeDescription,
+    WaitForJobs(
+            Supplier<InstanceProperties> getInstanceProperties, String typeDescription,
             Function<InstanceProperties, JobTracker> getJobTracker,
             Function<InstanceProperties, TaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        this.instance = instance;
+        this.getInstanceProperties = getInstanceProperties;
         this.typeDescription = typeDescription;
         this.getJobTracker = getJobTracker;
         this.getTaskTracker = getTaskTracker;
@@ -64,7 +63,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "ingest",
+        return new WaitForJobs(instance::getInstanceProperties, "ingest",
                 properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
@@ -74,7 +73,7 @@ public class WaitForJobs {
             SystemTestInstanceContext instance,
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "bulk import",
+        return new WaitForJobs(instance::getInstanceProperties, "bulk import",
                 properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
@@ -85,31 +84,50 @@ public class WaitForJobs {
             Function<InstanceProperties, CompactionJobTracker> getJobTracker,
             Function<InstanceProperties, CompactionTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
-        return new WaitForJobs(instance, "compaction",
+        return new WaitForJobs(instance::getInstanceProperties, "compaction",
                 properties -> JobTracker.forCompaction(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
     }
 
     public void waitForJobs(Collection<String> jobIds) {
-        waitForJobs(jobIds, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
+        waitForJobs(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
-        waitForJobs(jobIds, pollUntilJobsFinished,
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30)));
+        waitForJobs(jobIds, pollUntilJobsFinished, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
     }
 
     public void waitForJobs(
             Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, false);
+    }
+
+    public void waitForJobsAllowingRetries(Collection<String> jobIds) {
+        waitForJobsAllowingRetries(jobIds, DEFAULT_POLL_UNTIL_JOBS_FINISHED, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    }
+
+    public void waitForJobsAllowingRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished) {
+        waitForJobsAllowingRetries(jobIds, pollUntilJobsFinished, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    }
+
+    public void waitForJobsAllowingRetries(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
+        waitForJobs(jobIds, pollUntilJobsFinished, pollUntilJobsCommit, true);
+    }
+
+    private void waitForJobs(
+            Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit, boolean allowRetries) {
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         TaskTracker taskTracker = getTaskTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to finish: {}", typeDescription, jobIds.size());
         try {
-            pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
+            pollDriver.poll(pollUntilJobsFinished).pollUntil("jobs are finished", () -> {
                 WaitForJobsStatus status = jobTracker.getStatus(jobIds);
                 LOGGER.info("Status of {} jobs: {}", typeDescription, status);
+                if (!allowRetries && status.areAnyFailureReasonsPresent()) {
+                    throw new JobFailedException(status);
+                }
                 if (status.areAllJobsFinished()) {
                     return true;
                 }
@@ -129,14 +147,14 @@ public class WaitForJobs {
 
     public void waitForJobsToCommit(
             Collection<String> jobIds, PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to commit: {}", typeDescription, jobIds.size());
         waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
     }
 
     public void waitForAllJobsToCommit(PollWithRetries pollUntilJobsCommit) {
-        InstanceProperties properties = instance.getInstanceProperties();
+        InstanceProperties properties = getInstanceProperties.get();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for all {} jobs to commit", typeDescription);
         waitForJobsToCommit(() -> jobTracker.getAllJobsStatus(), pollUntilJobsCommit);
@@ -144,9 +162,12 @@ public class WaitForJobs {
 
     private void waitForJobsToCommit(Supplier<WaitForJobsStatus> getStatus, PollWithRetries pollUntilJobsCommit) {
         try {
-            pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
+            pollDriver.poll(pollUntilJobsCommit).pollUntil("jobs are committed", () -> {
                 WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
+                if (!status.areAnyCommitting() && status.areAnyInFailedStatus()) {
+                    throw new JobFailedException(status);
+                }
                 return status.areAllJobsFinished();
             });
         } catch (InterruptedException e) {
@@ -164,7 +185,7 @@ public class WaitForJobs {
         }
 
         default WaitForJobsStatus getAllJobsStatus(Instant now) {
-            return WaitForJobsStatus.fromJobs(streamAllJobsInTest(), now);
+            return WaitForJobsStatus.atTime(now).report(streamAllJobsInTest()).build();
         }
 
         default WaitForJobsStatus getStatus(Collection<String> jobIds) {
@@ -172,10 +193,7 @@ public class WaitForJobs {
         }
 
         default WaitForJobsStatus getStatus(Collection<String> jobIds, Instant now) {
-            Set<String> jobIdsSet = new HashSet<>(jobIds);
-            Stream<JobStatus<?>> statuses = streamAllJobsInTest()
-                    .filter(job -> jobIdsSet.contains(job.getJobId()));
-            return WaitForJobsStatus.fromJobs(statuses, jobIds.size(), now);
+            return WaitForJobsStatus.atTime(now).reportById(jobIds, streamAllJobsInTest()).build();
         }
 
         static JobTracker forIngest(Collection<TableProperties> tables, IngestJobTracker tracker) {
@@ -188,7 +206,7 @@ public class WaitForJobs {
     }
 
     @FunctionalInterface
-    private interface TaskTracker {
+    public interface TaskTracker {
         boolean hasRunningTasks();
 
         static TaskTracker forIngest(IngestTaskTracker tracker) {
@@ -197,6 +215,12 @@ public class WaitForJobs {
 
         static TaskTracker forCompaction(CompactionTaskTracker tracker) {
             return () -> !tracker.getTasksInProgress().isEmpty();
+        }
+    }
+
+    public static class JobFailedException extends RuntimeException {
+        public JobFailedException(WaitForJobsStatus status) {
+            super("Found a failed job: " + status);
         }
     }
 }

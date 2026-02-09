@@ -20,20 +20,13 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.BulkImportJobInput;
-import sleeper.bulkimport.runner.SparkFileReferenceRow;
-import sleeper.bulkimport.runner.StructTypeFactory;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.bulkimport.runner.rdd.WriteParquetFile;
-import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +38,6 @@ import java.util.stream.Collectors;
  */
 public class BulkImportDataframeLocalSortDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);
-    private static final String PARTITION_FIELD_NAME = "__partition";
 
     private BulkImportDataframeLocalSortDriver() {
     }
@@ -54,26 +46,11 @@ public class BulkImportDataframeLocalSortDriver {
         BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
-        Schema schema = input.schema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
-
-        int numLeafPartitions = (int) input.broadcastedPartitions().value()
-                .stream().filter(Partition::isLeafPartition).count();
-        LOGGER.info("There are {} leaf partitions", numLeafPartitions);
-
-        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
-                new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
-                ExpressionEncoder.apply(schemaWithPartitionField));
-        LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
-
-        Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
-                .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+    public static Dataset<Row> createFileReferences(BulkImportSparkContext input) {
+        Dataset<Row> repartitionedData = RepartitionRowsBySleeperPartition.repartition(input);
         LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
 
-        Column[] sortColumns = Lists.newArrayList(schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
+        Column[] sortColumns = Lists.newArrayList(input.getSchema().getRowKeyFieldNames(), input.getSchema().getSortKeyFieldNames())
                 .stream()
                 .flatMap(Collection::stream)
                 .map(Column::new)
@@ -87,15 +64,9 @@ public class BulkImportDataframeLocalSortDriver {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFile(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf(), input.broadcastedPartitions()),
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
-    }
-
-    private static StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
 }

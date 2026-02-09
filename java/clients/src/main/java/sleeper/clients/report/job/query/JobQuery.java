@@ -26,14 +26,45 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A query to generate a report based on jobs in a job tracker. Different types of query can include jobs based on their
+ * status or other parameters.
+ */
 public interface JobQuery {
 
+    /**
+     * Retrieves compaction jobs matching this query.
+     *
+     * @param  tracker the job tracker
+     * @return         the jobs
+     */
     List<CompactionJobStatus> run(CompactionJobTracker tracker);
 
+    /**
+     * Retrieves ingest jobs matching this query.
+     *
+     * @param  tracker the job tracker
+     * @return         the jobs
+     */
     List<IngestJobStatus> run(IngestJobTracker tracker);
 
+    /**
+     * Retrieves the type of this query.
+     *
+     * @return the query type
+     */
     Type getType();
 
+    /**
+     * Creates a query for jobs based on parameters. To allow the PROMPT query type,
+     * use {@link #fromParametersOrPrompt()}.
+     *
+     * @param  table           the Sleeper table to generate a report for
+     * @param  queryType       the type of query to run
+     * @param  queryParameters the parameters for the query, if required
+     * @param  clock           the clock to find the current time
+     * @return                 the query
+     */
     static JobQuery from(TableStatus table, Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
@@ -54,11 +85,32 @@ public interface JobQuery {
         }
     }
 
+    /**
+     * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
+     *
+     * @param  table           the Sleeper table to generate a report for
+     * @param  queryType       the type of query to run
+     * @param  queryParameters the parameters for the query, if required
+     * @param  clock           the clock to find the current time
+     * @param  input           the console to read from for the PROMPT query type
+     * @return                 the query
+     */
     static JobQuery fromParametersOrPrompt(
             TableStatus table, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
         return fromParametersOrPrompt(table, queryType, queryParameters, clock, input, Map.of());
     }
 
+    /**
+     * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
+     *
+     * @param  table           the Sleeper table to generate a report for
+     * @param  queryType       the type of query to run
+     * @param  queryParameters the parameters for the query, if required
+     * @param  clock           the clock to find the current time
+     * @param  input           the console to read from for the PROMPT query type
+     * @param  extraQueryTypes the
+     * @return                 the query
+     */
     static JobQuery fromParametersOrPrompt(
             TableStatus table, Type queryType, String queryParameters, Clock clock,
             ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
@@ -68,6 +120,9 @@ public interface JobQuery {
         return from(table, queryType, queryParameters, clock);
     }
 
+    /**
+     * The type of a query for jobs to include in a report.
+     */
     enum Type {
         PROMPT,
         ALL,

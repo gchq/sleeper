@@ -39,6 +39,9 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on files submitted to the ingest batcher.
+ */
 public class IngestBatcherReport {
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
 
@@ -47,6 +50,9 @@ public class IngestBatcherReport {
         QUERY_TYPES.put("-p", BatcherQuery.Type.PENDING);
     }
 
+    /**
+     * The type of the report output.
+     */
     enum ReporterType {
         JSON,
         STANDARD
@@ -68,6 +74,9 @@ public class IngestBatcherReport {
         this.tableProvider = tableProvider;
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
         if (query == null) {
             return;

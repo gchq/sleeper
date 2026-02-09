@@ -1,0 +1,14 @@
+name: Docker Image Cache
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  build:
+    uses: ./.github/workflows/docker-image-tests.yaml
+    with:
+      dockerOptions: --cache-to type=gha,mode=max --cache-from type=gha

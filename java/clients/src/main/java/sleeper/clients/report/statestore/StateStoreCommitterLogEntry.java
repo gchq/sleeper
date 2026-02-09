@@ -17,7 +17,15 @@ package sleeper.clients.report.statestore;
 
 import java.time.Instant;
 
+/**
+ * An entry in the logs of the state store committer. This is parsed from a log line queried from Amazon CloudWatch.
+ */
 public interface StateStoreCommitterLogEntry extends LogEntry {
 
+    /**
+     * Retrieves the time of the log entry as it was recorded in the state store committer.
+     *
+     * @return the time recorded in the committer
+     */
     Instant getTimeInCommitter();
 }

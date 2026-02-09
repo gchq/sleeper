@@ -328,7 +328,7 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), tracker,
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), tracker,
                 readBatch(), sendJobs(), 1, deleteBatch,
                 returnRequest(), pendingDeadLetterQueue::add, times.iterator()::next);
     }

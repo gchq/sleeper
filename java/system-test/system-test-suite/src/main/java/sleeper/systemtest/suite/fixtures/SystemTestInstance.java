@@ -73,7 +73,6 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.model.OptionalStack.CompactionStack;
@@ -122,7 +121,6 @@ public class SystemTestInstance {
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
-        properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.setTags(Map.of(
                 "Environment", "DEV",
                 "Product", "Sleeper",

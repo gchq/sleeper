@@ -22,8 +22,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.InMemoryEcrRepositories;
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -37,27 +42,31 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackClients;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdk cdk = mock(InvokeCdk.class);
-    protected final UploadDockerImagesToEcr uploadDockerImages = mock(UploadDockerImagesToEcr.class);
+    protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
+    protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
+    protected DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(List.of(), List.of());
 
     @TempDir
     protected Path tempDir;
 
     @Override
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
-        AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImages,
+        AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImagesToEcr(), dockerImageConfiguration,
                 out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
     }
 
@@ -66,12 +75,25 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImages);
+        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImagesToEcr(), dockerImageConfiguration);
+    }
+
+    private UploadDockerImagesToEcr uploadDockerImagesToEcr() {
+        return new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .deployConfig(DeployConfiguration.fromLocalBuild())
+                        .commandRunner(recordCommandsRun(dockerCommandsThatRan))
+                        .copyFile((source, target) -> {
+                        })
+                        .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                        .version(version)
+                        .build(),
+                ecrClient, account, region);
     }
 
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
-        instanceId = instanceProperties.get(ID);
+        super.setInstanceProperties(instanceProperties);
         LocalStackTestBase.createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);

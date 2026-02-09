@@ -68,9 +68,12 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 
 ### Pre-split partitions
 
-Before you create a Sleeper table, it is worthwhile to pre-split partitions for the table. If you do not do this, your
-state store will be initialised with a single root partition. Note that pre-splitting a table is important for any
-large-scale use of Sleeper, and is essential for running bulk import jobs.
+Before you create a Sleeper table, consider pre-splitting partitions for the table. If you do not do this, your state
+store will be initialised with a single root partition. When a bulk import is submitted, the system will pre-split the
+partitions automatically to a minimum number, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
+documented [here](properties/table/bulk_import.md). That will assume the bulk import job contains a representative
+sample of data. If multiple bulk import jobs are submitted simultaneously, they will attempt to pre-split separately,
+which can waste compute resources. It is often worthwhile to pre-split the table yourself.
 
 One way to do this is by taking a sample of your data to generate a split points file:
 
@@ -164,5 +167,5 @@ will not run for offline tables:
 - Partition splitting
 - State store snapshot creation/deletion
 - State store transaction deletion
-- Garbage collection, unless the instance property `sleeper.gc.offline.enabled` is set to `true`
-- Table metrics computation, unless the instance property `sleeper.metrics.offline.enabled` is set to `true`
+- Garbage collection, unless the instance property `sleeper.run.gc.offline` is set to `true`
+- Table metrics computation, unless the instance property `sleeper.run.table.metrics.offline` is set to `true`

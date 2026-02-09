@@ -1,4 +1,4 @@
-name: Rust Nightly
+name: Rust Cache
 on:
   workflow_dispatch: # Allow manual running to refresh/check cache
   schedule: # Planned execution once per day
@@ -6,6 +6,9 @@ on:
   pull_request:
     paths:
       - '.github/workflows/rust-cache.yaml'
+  push:
+    branches:
+      - develop
 
 env:
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"

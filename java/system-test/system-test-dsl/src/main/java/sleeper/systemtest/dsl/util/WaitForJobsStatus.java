@@ -35,9 +35,12 @@ import sleeper.core.util.GsonConfig;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -54,6 +57,7 @@ public class WaitForJobsStatus {
             .create();
 
     private final Map<String, Integer> countByFurthestStatus;
+    private final List<String> failureReasons;
     private final Integer numUnstarted;
     private final int numUnfinished;
     private final Instant firstInProgressStartTime;
@@ -61,30 +65,15 @@ public class WaitForJobsStatus {
 
     private WaitForJobsStatus(Builder builder) {
         countByFurthestStatus = builder.countByFurthestStatus;
+        failureReasons = builder.failureReasons.isEmpty() ? null : builder.failureReasons;
         numUnstarted = builder.numUnstarted;
         numUnfinished = builder.numUnfinished;
         firstInProgressStartTime = builder.firstInProgressStartTime;
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus fromJobs(
-            Stream<JobStatus<?>> jobs, int numJobs, Instant now) {
-        Builder builder = new Builder(now);
-        jobs.forEach(builder::addJob);
-        builder.reportRemainingHaveNoStatus(numJobs);
-        return builder.build();
-    }
-
-    public static WaitForJobsStatus fromJobs(
-            Stream<JobStatus<?>> jobs, Instant now) {
-        Builder builder = new Builder(now);
-        AtomicInteger numJobs = new AtomicInteger();
-        jobs.forEach(job -> {
-            numJobs.incrementAndGet();
-            builder.addJob(job);
-        });
-        builder.reportRemainingHaveNoStatus(numJobs.get());
-        return builder.build();
+    public static Builder atTime(Instant now) {
+        return new Builder(now);
     }
 
     public static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, Collection<TableProperties> tables) {
@@ -101,6 +90,18 @@ public class WaitForJobsStatus {
 
     public boolean areAllJobsFinished() {
         return numUnfinished == 0;
+    }
+
+    public boolean areAnyFailureReasonsPresent() {
+        return failureReasons != null && !failureReasons.isEmpty();
+    }
+
+    public boolean areAnyInFailedStatus() {
+        return countByFurthestStatus.containsKey("FAILED");
+    }
+
+    public boolean areAnyCommitting() {
+        return countByFurthestStatus.containsKey("UNCOMMITTED");
     }
 
     public String toString() {
@@ -149,6 +150,8 @@ public class WaitForJobsStatus {
 
     public static final class Builder {
         private final Map<String, Integer> countByFurthestStatus = new TreeMap<>();
+        private final List<String> failureReasons = new ArrayList<>();
+        private int maxFailureReasons = 10;
         private Integer numUnstarted;
         private int numUnfinished;
         private Instant firstInProgressStartTime;
@@ -159,7 +162,35 @@ public class WaitForJobsStatus {
             this.now = now;
         }
 
-        public <T extends JobRunReport> void addJob(JobStatus<T> status) {
+        public Builder maxFailureReasons(int maxFailureReasons) {
+            this.maxFailureReasons = maxFailureReasons;
+            return this;
+        }
+
+        public Builder reportById(Collection<String> jobIds, Stream<JobStatus<?>> jobs) {
+            Set<String> jobIdsSet = new HashSet<>(jobIds);
+            Stream<JobStatus<?>> statuses = jobs
+                    .filter(job -> jobIdsSet.contains(job.getJobId()));
+            return reportSized(jobIds.size(), statuses);
+        }
+
+        public Builder report(Stream<JobStatus<?>> jobs) {
+            AtomicInteger numJobs = new AtomicInteger();
+            jobs.forEach(job -> {
+                numJobs.incrementAndGet();
+                addJob(job);
+            });
+            reportRemainingHaveNoStatus(numJobs.get());
+            return this;
+        }
+
+        private Builder reportSized(int numJobs, Stream<JobStatus<?>> jobs) {
+            jobs.forEach(this::addJob);
+            reportRemainingHaveNoStatus(numJobs);
+            return this;
+        }
+
+        private <T extends JobRunReport> void addJob(JobStatus<T> status) {
             List<T> runsLatestFirst = status.runsLatestFirst;
             if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
@@ -177,11 +208,23 @@ public class WaitForJobsStatus {
                 }
                 numUnfinished++;
             }
+            for (T run : runsLatestFirst) {
+                addFailureReasons(run.getFailureReasons());
+            }
             countByFurthestStatus.compute(status.furthestStatusType,
                     (key, value) -> value == null ? 1 : value + 1);
         }
 
-        public void reportRemainingHaveNoStatus(int numJobs) {
+        private void addFailureReasons(List<String> runFailureReasons) {
+            int prevCount = failureReasons.size();
+            if (prevCount >= maxFailureReasons) {
+                return;
+            }
+            int addCount = Math.min(maxFailureReasons - prevCount, runFailureReasons.size());
+            failureReasons.addAll(runFailureReasons.subList(0, addCount));
+        }
+
+        private void reportRemainingHaveNoStatus(int numJobs) {
             int totalReported = countByFurthestStatus.values().stream().mapToInt(count -> count).sum();
             int numUnreported = numJobs - totalReported;
             if (numUnreported > 0) {

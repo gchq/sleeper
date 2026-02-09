@@ -61,7 +61,7 @@ public class SystemTestBucketStack extends NestedStack {
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
         bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, autoDeleteS3ObjectsStack);
-        Utils.addStackTagIfSet(this, properties);
+        Utils.addTags(this, properties);
     }
 
     private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, SleeperJarsInBucket jars,

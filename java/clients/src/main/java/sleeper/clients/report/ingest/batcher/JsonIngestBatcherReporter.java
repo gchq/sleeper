@@ -29,6 +29,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Creates reports in JSON format on the status of files tracked by the ingest batcher.
+ */
 public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     private final PrintStream out;
 

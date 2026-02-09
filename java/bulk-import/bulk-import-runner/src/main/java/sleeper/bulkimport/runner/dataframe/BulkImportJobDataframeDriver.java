@@ -27,9 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.BulkImportJobInput;
-import sleeper.bulkimport.runner.SparkFileReferenceRow;
-import sleeper.bulkimport.runner.StructTypeFactory;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
+import sleeper.bulkimport.runner.common.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -52,18 +52,18 @@ public class BulkImportJobDataframeDriver {
         BulkImportJobDriver.start(args, BulkImportJobDataframeDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
-        Schema schema = input.schema();
+    public static Dataset<Row> createFileReferences(BulkImportSparkContext input) {
+        Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) input.broadcastedPartitions().value()
+        int numLeafPartitions = (int) input.getPartitionsBroadcast().value()
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
-                new AddPartitionFunction(schemaAsString, input.broadcastedPartitions()),
+        Dataset<Row> dataWithPartition = input.getRows().mapPartitions(
+                new AddPartitionFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
@@ -80,9 +80,9 @@ public class BulkImportJobDataframeDriver {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFiles(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf()),
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf()),
                 ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 

@@ -46,6 +46,10 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of ingest and bulk import jobs. Takes a {@link JobQuery} and outputs information about
+ * the jobs matching that query.
+ */
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
     private static final Map<String, IngestJobStatusReporter> REPORTERS = new HashMap<>();
@@ -86,6 +90,9 @@ public class IngestJobStatusReport {
         this.persistentEmrStepCount = persistentEmrStepCount;
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
         if (query == null) {
             return;

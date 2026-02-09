@@ -32,8 +32,10 @@ for the CDK deployment, or pass in an instance properties file for an instance t
 deployment. In the latter case, Docker images will only be uploaded if they are required with your instance
 configuration. Run `uploadArtefacts.sh --help` for details.
 
-By default, the artefacts deployment ID should match the instance ID. Alternatively, you can set the deployment ID in
-the instance property [`sleeper.artefacts.deployment`](../usage/properties/instance/user/common.md).
+If your artefacts deployment ID is different from the instance ID, you can set the deployment ID in the instance
+property [`sleeper.artefacts.deployment`](../usage/properties/instance/user/common.md). If you prefer to avoid setting
+the instance ID or deployment ID in your properties file, you can pass arguments for both the path to the properties
+file, and the deployment ID.
 
 Here's an example with a CDK command to create an artefacts deployment, and a call to the script to upload all artefacts
 to that deployment:
@@ -95,19 +97,24 @@ SleeperInstance.createAsNestedStack(stack, "MyInstance",
 
 To deploy a Sleeper instance to AWS with the CDK, you need an [instance configuration](instance-configuration.md) and
 a [suitable environment](environment-setup.md). The artefacts will need to be uploaded as described in the section
-above. You can either use the instance ID as the deployment ID for the artefacts, or you can point to your artefacts
-deployment with the instance property `sleeper.artefacts.deployment`.
+above. You can either use the instance ID as the deployment ID for the artefacts, or you can set the deployment ID in
+the CDK context variable `artefactsId`, or the instance property `sleeper.artefacts.deployment`.
 
 You can use the same CDK apps used by the automated scripts, or your own CDK configuration. We'll give examples with the
 CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance:
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" \
+    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -117,11 +124,21 @@ If you'd like to include data generation for system tests, use the system test C
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
+cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" \
+    -c id=$INSTANCE_ID -c extraEcrImages=system-test
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --extra-images system-test
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SystemTestApp" \
+    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
+# Write some random data
+"$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID system-test
+java -cp "$SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar" \
+    sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS $INSTANCE_ID system-test
 ```
 
 #### Tear down
@@ -132,10 +149,10 @@ CLI. You may need to delete the Sleeper instance before deleting the artefacts u
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
-ID=my-instance-id
+INSTANCE_ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
-cdk destroy --all -c id=$ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```

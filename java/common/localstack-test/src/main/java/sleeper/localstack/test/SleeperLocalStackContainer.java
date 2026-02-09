@@ -32,7 +32,7 @@ import java.net.UnknownHostException;
  */
 public class SleeperLocalStackContainer {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalStackContainer.class);
-    public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.2";
+    public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.11";
 
     private SleeperLocalStackContainer() {
     }

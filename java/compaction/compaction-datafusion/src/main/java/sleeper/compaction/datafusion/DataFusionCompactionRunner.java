@@ -47,14 +47,13 @@ import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FO
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_ROW_GROUP_SIZE_ROWS;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 @SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
-    /** Maximum number of rows in a Parquet row group. */
-    public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
@@ -113,12 +112,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
+        // Reading page indexes are not useful for compactions
+        params.read_page_indexes.set(false);
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);
-        params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
+        params.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
         params.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));

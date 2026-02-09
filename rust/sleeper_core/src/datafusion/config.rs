@@ -17,7 +17,7 @@
 */
 use crate::{CommonConfig, SleeperParquetOptions};
 use datafusion::{
-    common::DFSchema,
+    common::{DFSchema, parquet_config::DFParquetWriterVersion},
     config::TableParquetOptions,
     execution::config::SessionConfig,
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
@@ -98,10 +98,10 @@ impl ParquetWriterConfigurer<'_> {
     }
 
     /// Convert a Sleeper Parquet version to one `DataFusion` understands.
-    fn get_parquet_writer_version(&self) -> String {
+    fn get_parquet_writer_version(&self) -> DFParquetWriterVersion {
         match self.parquet_options.writer_version.to_lowercase().as_str() {
-            "v1" => "1.0".into(),
-            "v2" => "2.0".into(),
+            "v1" => DFParquetWriterVersion::V1_0,
+            "v2" => DFParquetWriterVersion::V2_0,
             x => {
                 error!("Parquet writer version invalid {x}, valid values: v1, v2");
                 unimplemented!("Parquet writer version invalid {x}, valid values: v1, v2");

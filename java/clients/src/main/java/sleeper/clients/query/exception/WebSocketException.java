@@ -15,7 +15,7 @@
  */
 package sleeper.clients.query.exception;
 
-public class WebSocketException extends Exception {
+public class WebSocketException extends RuntimeException {
     public WebSocketException(String message) {
         this(message, null);
     }

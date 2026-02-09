@@ -11,9 +11,10 @@ on:
       - 'java/pom.xml'
       - 'java/query/pom.xml'
       - 'java/compaction/pom.xml'
+      - 'java/common/pom.xml'
       - 'java/query/query-datafusion/**'
       - 'java/compaction/compaction-datafusion/**'
-      - 'java/foreign-bridge/**'
+      - 'java/common/foreign-bridge/**'
       - 'java/query/query-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/statestore/**'
@@ -23,12 +24,12 @@ on:
       - 'java/ingest/ingest-core/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/example-iterators/**'
-      - 'java/parquet/**'
+      - 'java/common/parquet/**'
       - 'java/compaction/compaction-core/**'
-      - 'java/sketches/**'
+      - 'java/common/sketches/**'
       - 'java/common/localstack-test/**'
       - 'java/core/**'
-      - 'java/arrow/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:

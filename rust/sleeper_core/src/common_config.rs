@@ -37,6 +37,8 @@ pub struct CommonConfig<'a> {
     input_files_sorted: bool,
     /// Should we use readahead when reading from S3?
     use_readahead_store: bool,
+    /// Should Parquet page indexes be read?
+    read_page_indexes: bool,
     /// Names of row-key fields
     row_key_cols: Vec<String>,
     /// Names of sort-key fields
@@ -80,6 +82,10 @@ impl CommonConfig<'_> {
 
     pub(crate) fn input_files(&self) -> &Vec<Url> {
         &self.input_files
+    }
+
+    pub(crate) fn read_page_indexes(&self) -> bool {
+        self.read_page_indexes
     }
 
     pub(crate) fn input_files_sorted(&self) -> bool {
@@ -135,6 +141,7 @@ pub struct CommonConfigBuilder<'a> {
     input_files: Vec<Url>,
     input_files_sorted: bool,
     use_readahead_store: bool,
+    read_page_indexes: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
@@ -150,6 +157,7 @@ impl Default for CommonConfigBuilder<'_> {
             input_files: Vec::default(),
             input_files_sorted: true,
             use_readahead_store: true,
+            read_page_indexes: false,
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
             region: SleeperRegion::default(),
@@ -187,6 +195,12 @@ impl<'a> CommonConfigBuilder<'a> {
     #[must_use]
     pub fn use_readahead_store(mut self, use_readahead_store: bool) -> Self {
         self.use_readahead_store = use_readahead_store;
+        self
+    }
+
+    #[must_use]
+    pub fn read_page_indexes(mut self, read_page_indexes: bool) -> Self {
+        self.read_page_indexes = read_page_indexes;
         self
     }
 
@@ -241,6 +255,7 @@ impl<'a> CommonConfigBuilder<'a> {
             input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
             use_readahead_store: self.use_readahead_store,
+            read_page_indexes: self.read_page_indexes,
             row_key_cols: self.row_key_cols,
             sort_key_cols: self.sort_key_cols,
             region: self.region,

@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 import static java.util.function.Function.identity;
 
 /**
- * Collects information about files within Sleeper for reporting. Produces a {@link TableFilesStatus} data structure.
- * This is currently used by {@link FileStatusReporter} implementations that present this data to the user.
+ * Collects information about files in a Sleeper table for reporting. Produces a {@link TableFilesStatus} data
+ * structure.
  */
 public class FileStatusCollector {
     private final StateStore stateStore;
@@ -36,6 +36,13 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
+    /**
+     * Retrieves data from the state store and produces a report on the status of files.
+     *
+     * @param  maxNumberOFilesWithNoReferencesToCount the maximum number of files that have no references to include in
+     *                                                the report
+     * @return                                        the report
+     */
     public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) {
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();

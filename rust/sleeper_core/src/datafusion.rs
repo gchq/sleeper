@@ -21,15 +21,17 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
+        metadata_cache::prepopulate_metadata_cache,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            add_numeric_casts, apply_full_sort_ordering, calculate_upload_size,
-            check_for_sort_exec, output_partition_count, register_store,
+            add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
+            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
+    filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
@@ -45,7 +47,9 @@ use datafusion::{
         ExecutionPlan, expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
     },
 };
-use log::{info, warn};
+use log::{debug, info, warn};
+use num_format::{Locale, ToFormattedString};
+use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
@@ -55,6 +59,7 @@ mod compact;
 mod config;
 mod filter_aggregation_config;
 mod leaf_partition_query;
+mod metadata_cache;
 mod metrics;
 pub mod output;
 mod region;
@@ -85,10 +90,10 @@ impl<'a> SleeperOperations<'a> {
 
     /// Sets as many parameters as possible from the given input data.
     ///
-    pub async fn apply_config(
+    pub fn apply_config(
         &self,
         mut cfg: SessionConfig,
-        store_factory: &ObjectStoreFactory,
+        object_metas: &[ObjectMeta],
     ) -> Result<SessionConfig, DataFusionError> {
         if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
             // Java's Arrow FFI layer can't handle view types, so expand them at output
@@ -100,11 +105,30 @@ impl<'a> SleeperOperations<'a> {
             cfg.options().execution.target_partitions,
             self.config.input_files().len(),
         );
-        // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
-        cfg.options_mut().execution.parquet.enable_page_index = false;
+        // Set `DataFusion`s configuration setting for reading page indexes from Parquet files. We set this partially
+        // for completeness, since DF's cached Parquet metadata reader will read the page indexes regardless. When
+        // reading large Parquet files (50's GiB+) the page indexes alone can be 50 MiB+ which can add latency to Sleeper
+        // query time, for very little benefit (especially in range queries).
+        //
+        // We workaround the issue by prepopulating the DataFusion file metadata cache before any DF work starts. This
+        // can be seen below in [`create_initial_partitioned_read()`]. If reading of page indexes is disabled in our
+        // configuration settings, we will prepopulate the cache. Implementation is in [`crate::datafusion::metadata_cache`]
+        // module.
+        cfg.options_mut().execution.parquet.enable_page_index = self.config.read_page_indexes();
         // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;
+        let (total_input_size, largest_file) = retrieve_input_size(object_metas);
+        // Set metadata size hint to scaled value
+        let metadata_size_hint = calculate_metadata_size_hint(largest_file);
+        debug!(
+            "Set metadata_size_hint to {}",
+            metadata_size_hint.to_formatted_string(&Locale::en)
+        );
+        cfg.options_mut().execution.parquet.metadata_size_hint = Some(
+            usize::try_from(metadata_size_hint)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?,
+        );
         // Set upload size if outputting to a file
         if let OutputType::File {
             output_file: _,
@@ -112,12 +136,8 @@ impl<'a> SleeperOperations<'a> {
             opts: parquet_options,
         } = self.config.output()
         {
-            let total_input_size = retrieve_input_size(self.config.input_files(), store_factory)
-                .await
-                .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
             cfg.options_mut().execution.objectstore_writer_buffer_size =
                 calculate_upload_size(total_input_size)?;
-
             // Create Parquet configuration object based on requested output
             let configurer = ParquetWriterConfigurer { parquet_options };
             cfg = configurer.apply_parquet_config(cfg);
@@ -159,6 +179,7 @@ impl<'a> SleeperOperations<'a> {
     pub async fn create_initial_partitioned_read(
         &self,
         ctx: &SessionContext,
+        metas: &[ObjectMeta],
     ) -> Result<DataFrame, DataFusionError> {
         let po = if self.config.input_files_sorted() {
             let sort_order = self.create_sort_order();
@@ -170,6 +191,24 @@ impl<'a> SleeperOperations<'a> {
             );
             ParquetReadOptions::default()
         };
+        // As `DataFusion`s cached Parquet metadata reader will read (and therefore cache) page indexes
+        // https://docs.rs/datafusion/latest/datafusion/datasource/physical_plan/parquet/metadata/struct.DFParquetMetadata.html
+        // then if the read_page_indexes is true, we don't need to take any other action. If read_page_indexes is false,
+        // then we need to take action to prepopulate DF's metadata cache. We read the Parquet metadata without page indexes
+        // and put it in the cache. Therefore, when DF runs the query, it will already see the metadata in the cache and
+        // will not attempt to do so itself.
+        if !self.config.read_page_indexes() {
+            let metadata_size_hint = ctx
+                .state_ref()
+                .read()
+                .config()
+                .options()
+                .execution
+                .parquet
+                .metadata_size_hint;
+            prepopulate_metadata_cache(ctx, self.config.input_files(), metas, metadata_size_hint)
+                .await?;
+        }
         // Read Parquet files and apply sort order
         let frame = ctx
             .read_parquet(self.config.input_files().clone(), po)
@@ -226,14 +265,15 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key fields specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        let aggregates = self.config.aggregates();
+        let unsorted_aggregates = self.config.aggregates();
+        let aggregates = sort_aggregates_by_schema(unsorted_aggregates, frame.schema());
         if aggregates.is_empty() {
             return Ok(frame);
         }
         info!("Applying Sleeper aggregation: {aggregates:?}");
         let orig_schema = frame.schema().clone();
         let group_by_cols = self.config.sorting_columns();
-        validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+        validate_aggregations(&group_by_cols, frame.schema(), &aggregates)?;
 
         let aggregation_expressions = aggregates
             .iter()
@@ -395,5 +435,97 @@ impl<'a> SleeperOperations<'a> {
 impl std::fmt::Display for SleeperOperations<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.config)
+    }
+}
+
+/// Sort aggregate expressions according to position in schema.
+#[must_use]
+fn sort_aggregates_by_schema(aggregates: &[Aggregate], schema: &DFSchema) -> Vec<Aggregate> {
+    let mut sorted_aggregates = aggregates.to_vec();
+    sorted_aggregates.sort_by_key(|e| schema.index_of_column_by_name(None, &e.column));
+    sorted_aggregates
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        datafusion::sort_aggregates_by_schema, filter_aggregation_config::aggregate::Aggregate,
+    };
+    use color_eyre::eyre::Result;
+    use datafusion::dataframe;
+
+    #[test]
+    fn should_not_change_sorted_order() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("sum(col1),min(col2)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("sum(col1),min(col2)")?);
+        Ok(())
+    }
+
+    #[test]
+    fn should_not_change_sorted_order_all_columns() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("sum(col1),min(col2),max(col3)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(
+            result,
+            Aggregate::parse_config("sum(col1),min(col2),max(col3)")?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_reorder_incorrect_order() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("min(col2),sum(col1)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("sum(col1),min(col2)")?);
+        Ok(())
+    }
+
+    #[test]
+    fn should_handle_single_col() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("min(col2)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("min(col2)")?);
+        Ok(())
     }
 }

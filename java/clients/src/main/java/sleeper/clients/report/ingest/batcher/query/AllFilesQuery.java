@@ -22,6 +22,9 @@ import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
+/**
+ * A query to retrieve all file tracking information from the ingest batcher store.
+ */
 public class AllFilesQuery implements BatcherQuery {
 
     @Override

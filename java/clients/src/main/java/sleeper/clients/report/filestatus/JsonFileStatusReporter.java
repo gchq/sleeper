@@ -53,7 +53,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
         out.println(gson.toJson(status));
     }
 
-    public static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
+    private static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
         return (files, type, context) -> createAllFileReferencesJson(files, context);
     }
 

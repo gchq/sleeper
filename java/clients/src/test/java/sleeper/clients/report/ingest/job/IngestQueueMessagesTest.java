@@ -32,6 +32,7 @@ import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.
 import static sleeper.common.task.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -60,11 +61,13 @@ class IngestQueueMessagesTest {
         instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "emr-queue");
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, "persistent-emr-queue");
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, "eks-queue");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "emr-serverless-queue");
         QueueMessageCount.Client client = InMemoryQueueMessageCounts.from(Map.of(
                 "ingest-queue", approximateNumberVisibleAndNotVisible(1, 2),
                 "emr-queue", approximateNumberVisibleAndNotVisible(3, 4),
                 "persistent-emr-queue", approximateNumberVisibleAndNotVisible(5, 6),
-                "eks-queue", approximateNumberVisibleAndNotVisible(7, 8)));
+                "eks-queue", approximateNumberVisibleAndNotVisible(7, 8),
+                "emr-serverless-queue", approximateNumberVisibleAndNotVisible(9, 10)));
 
         // When / Then
         assertThat(IngestQueueMessages.from(instanceProperties, client))
@@ -73,6 +76,7 @@ class IngestQueueMessagesTest {
                         .emrMessages(3)
                         .persistentEmrMessages(5)
                         .eksMessages(7)
+                        .emrServerlessMessages(9)
                         .build());
     }
 
@@ -83,11 +87,12 @@ class IngestQueueMessagesTest {
                 .emrMessages(2)
                 .persistentEmrMessages(3)
                 .eksMessages(4)
+                .emrServerlessMessages(5)
                 .build();
 
         // When / Then
         assertThat(messages.getTotalMessages())
-                .isEqualTo(10);
+                .isEqualTo(15);
     }
 
     @Test
@@ -174,6 +179,21 @@ class IngestQueueMessagesTest {
         }
 
         @Test
+        void shouldReportMessagesWhenOnlyBulkImportEmrServerlessQueueIsDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder().emrServerlessMessages(10).build();
+
+            // When
+            ToStringConsoleOutput out = new ToStringConsoleOutput();
+            messages.print(out.getPrintStream());
+
+            // Then
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in EMR serverless queue (excluded from report): 10\n" +
+                    "Total jobs waiting across all queues: 10\n");
+        }
+
+        @Test
         void shouldReportMessagesWhenAllQueuesAreDeployed() {
             // Given
             IngestQueueMessages messages = IngestQueueMessages.builder()
@@ -181,6 +201,7 @@ class IngestQueueMessagesTest {
                     .emrMessages(2)
                     .persistentEmrMessages(3)
                     .eksMessages(4)
+                    .emrServerlessMessages(5)
                     .build();
 
             // When
@@ -193,7 +214,8 @@ class IngestQueueMessagesTest {
                     "Jobs waiting in EMR queue (excluded from report): 2\n" +
                     "Jobs waiting in persistent EMR queue (excluded from report): 3\n" +
                     "Jobs waiting in EKS queue (excluded from report): 4\n" +
-                    "Total jobs waiting across all queues: 10\n");
+                    "Jobs waiting in EMR serverless queue (excluded from report): 5\n" +
+                    "Total jobs waiting across all queues: 15\n");
         }
 
         @Test

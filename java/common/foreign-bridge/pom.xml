@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022-2025 Crown Copyright
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>common</artifactId>
+        <groupId>sleeper</groupId>
+        <version>0.35.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>foreign-bridge</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>${spotbugs.version}</version>
+        </dependency>
+        <!-- Native code loading and linking -->
+        <dependency>
+            <groupId>com.github.jnr</groupId>
+            <artifactId>jnr-ffi</artifactId>
+            <version>${jnr.ffi.version}</version>
+        </dependency>
+        <!-- JAR extraction -->
+        <dependency>
+            <groupId>org.scijava</groupId>
+            <artifactId>native-lib-loader</artifactId>
+            <version>${scijava.native.version}</version>
+        </dependency>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- Resources plugin to copy all built native libs into JAR file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${resources.plugin.version}</version>
+                <goals>
+                    <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.outputDirectory}/natives/</outputDirectory>
+                    <resources>
+                        <resource>
+                            <directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
+                            <includes>
+                                <include>*/release/*.dylib</include>
+                                <include>*/release/*.dll</include>
+                                <include>*/release/*.so</include>
+                                <include>*/debug/*.dylib</include>
+                                <include>*/debug/*.dll</include>
+                                <include>*/debug/*.so</include>
+                            </includes>
+                            <filtering>false</filtering>
+                        </resource>
+                    </resources>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <activation>
+                <property>
+                    <name>skipRust</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <id>rust</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec.plugin.version}</version>
+                        <executions>
+                            <!-- You need one execution per cross target you are building. Make sure
+                            you add
+                            the appropriate resources plugin execution below! -->
+                            <execution>
+                                <id>Invoke Rust Cargo build (Linux x86_64)</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>x86_64</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>Invoke Rust Cargo build (Linux Aarch64)</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>aarch64</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

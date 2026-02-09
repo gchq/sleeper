@@ -5,6 +5,16 @@ on:
       - '.github/workflows/java-status.yaml'
       - '.github/config/chunks.yaml'
       - 'java/**'
+      # Check generated files are not edited directly
+      - 'examples/**'
+      - 'scripts/templates/**'
+      - 'docs/usage/properties/**'
+  push:
+    branches:
+      - develop
+  workflow_dispatch: # Allow manual running to refresh/check cache
+  schedule:
+    - cron: '0 1 * * *'
 
 jobs:
   build:
@@ -16,8 +26,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      - name: Restore cache of Maven dependencies
+        uses: actions/cache/restore@v5
+        id: restore-cache
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -45,7 +56,7 @@ jobs:
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.notices.CheckNotices \
             -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
             -Dexec.args="$NOTICES_FILE $MAVEN_PROJECT"
-      - name: Validate properties templates are up to date
+      - name: Validate generated files and documentation are up to date
         working-directory: ./java
         run: |
           PROJECT_ROOT=$(cd .. && pwd)
@@ -63,3 +74,9 @@ jobs:
             git status --verbose --verbose
             exit 1
           fi
+      - name: Cache Maven dependencies
+        uses: actions/cache/save@v5
+        if: ${{ always() && github.ref_name == 'develop' }}
+        with:
+          path: ${{ runner.temp }}/.m2/repository
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}

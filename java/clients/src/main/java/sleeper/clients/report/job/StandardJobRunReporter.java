@@ -37,6 +37,10 @@ import java.util.function.Function;
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
+/**
+ * A helper to create standard output for reports on job runs based on a job tracker. Used for both ingest job and
+ * compaction job reporting. This can be used to write a table of job runs, or detailed descriptions.
+ */
 public class StandardJobRunReporter {
 
     public static final TableFieldDefinition TASK_ID = TableFieldDefinition.field("TASK_ID");
@@ -47,25 +51,37 @@ public class StandardJobRunReporter {
     public static final TableFieldDefinition ROWS_WRITTEN = TableFieldDefinition.numeric("ROWS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
-    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE REASONS");
+    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE_REASONS");
 
     private final PrintStream out;
 
+    /**
+     * Creates a builder to add the standard job run fields to a given table. This can be used to add your own fields
+     * to the table writer to combine with the standard fields in a given order.
+     *
+     * @param  tableBuilder the builder for a writer for the table
+     * @return              the builder for the job run reporter
+     */
     public static Builder withTable(TableWriterFactory.Builder tableBuilder) {
         return new Builder(tableBuilder);
     }
 
-    public StandardJobRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
-        this(out);
-        tableBuilder.addFields(
-                TASK_ID, START_TIME, FINISH_TIME, DURATION,
-                ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
-    }
-
+    /**
+     * Creates a reporter to write to a given output.
+     *
+     * @param out the output
+     */
     public StandardJobRunReporter(PrintStream out) {
         this.out = out;
     }
 
+    /**
+     * Populates values for the standard job run fields in a row of the table. This can be combined with your own code
+     * to set values for other fields as well.
+     *
+     * @param run     the job run to be written to the table row
+     * @param builder the builder for the table row
+     */
     public void writeRunFields(JobRunReport run, TableRow.Builder builder) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
@@ -82,6 +98,15 @@ public class StandardJobRunReporter {
         }
     }
 
+    /**
+     * Prints a detailed description of a job run. Allows customisation of how individual job status updates are
+     * printed, by setting update printers, e.g. with {@link #updatePrinters()}, {@link #printUpdateType()},
+     * {@link #printUpdateTypeInRun()}. Specified printers will be combined with the default, so it is not necessary to
+     * handle update types common to all job runs.
+     *
+     * @param run           the job run to print
+     * @param updatePrinter the update printer to print individual job status updates in the run
+     */
     public void printProcessJobRunWithUpdatePrinter(JobRunReport run, UpdatePrinter updatePrinter) {
         printProcessJobRun(run, updatePrinters(updatePrinter, defaultUpdatePrinter()));
     }
@@ -104,6 +129,17 @@ public class StandardJobRunReporter {
         }
     }
 
+    /**
+     * Creates an update printer to print job status updates of a certain type, including information about the run it
+     * occurred in. This will be used for any status update of this type. Can be combined with other update printers
+     * with {@link #updatePrinters()}.
+     *
+     * @param  <T>     the status update type
+     * @param  type    the status update type
+     * @param  printer the method to print the update to the report, taking the run the update happened in as well as
+     *                 the update
+     * @return         the update printer
+     */
     public static <T extends JobStatusUpdate> UpdatePrinter printUpdateTypeInRun(Class<T> type, BiConsumer<JobRunReport, T> printer) {
         return (run, update) -> {
             if (type.isInstance(update)) {
@@ -115,10 +151,26 @@ public class StandardJobRunReporter {
         };
     }
 
+    /**
+     * Creates an update printer to print job status updates of a certain type. This will be used for any status update
+     * of this type. Can be combined with other update printers with {@link #updatePrinters()}.
+     *
+     * @param  <T>     the status update type
+     * @param  type    the status update type
+     * @param  printer the method to print the update to the report
+     * @return         the update printer
+     */
     public static <T extends JobStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
         return printUpdateTypeInRun(type, (run, update) -> printer.accept(update));
     }
 
+    /**
+     * Creates an update printer that combines other update printers together. Uses the first printer that can process a
+     * given job status update.
+     *
+     * @param  printers the update printers to combine
+     * @return          the update printer
+     */
     public static UpdatePrinter updatePrinters(UpdatePrinter... printers) {
         return (run, update) -> {
             for (UpdatePrinter printer : printers) {
@@ -130,16 +182,28 @@ public class StandardJobRunReporter {
         };
     }
 
+    /**
+     * An update printer that prints job status updates to a standard report. Can be combined with other update printers
+     * to handle different update types, see {@link #updatePrinters()}.
+     */
     public interface UpdatePrinter {
+
+        /**
+         * Prints a job status update to a report.
+         *
+         * @param  run    the run that the job status occurred in
+         * @param  update the job status update to print
+         * @return        true if the update was printed, false if the printer cannot handle this update
+         */
         boolean print(JobRunReport run, JobStatusUpdate update);
     }
 
-    public void printProcessStarted(JobRunStartedUpdate update) {
+    private void printProcessStarted(JobRunStartedUpdate update) {
         out.printf("Start time: %s%n", update.getStartTime());
         out.printf("Start update time: %s%n", update.getUpdateTime());
     }
 
-    public void printProcessFinished(JobRunReport run, JobRunEndUpdate update) {
+    private void printProcessFinished(JobRunReport run, JobRunEndUpdate update) {
         JobRunSummary summary = run.getFinishedSummary();
         out.printf("Finish time: %s%n", summary.getFinishTime());
         out.printf("Finish update time: %s%n", update.getUpdateTime());
@@ -159,11 +223,7 @@ public class StandardJobRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
-    }
-
-    public List<TableFieldDefinition> getUnfinishedFields() {
-        return Arrays.asList(FAILURE_REASONS);
+        return Arrays.asList(DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     private static String getDurationString(JobRunSummary summary) {
@@ -186,6 +246,12 @@ public class StandardJobRunReporter {
         return formatDecimal2dp(summary.getRowsWrittenPerSecond());
     }
 
+    /**
+     * Formats a duration to be included in a standard report.
+     *
+     * @param  duration the duration
+     * @return          the formatted string
+     */
     public static String formatDurationString(Duration duration) {
         return duration.toString()
                 .substring(2)
@@ -193,6 +259,16 @@ public class StandardJobRunReporter {
                 .toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Retrieves a value if a given object is not null. This is usually used when setting the value of a field in a
+     * table, to set the field to null if the object is null.
+     *
+     * @param  <I>    the type of object containing the value to retrieve
+     * @param  <O>    the type of the value to retrieve
+     * @param  object the object containing the value to retrieve
+     * @param  getter a method to retrieve the value from the object
+     * @return        the value, or null if the object was null
+     */
     public static <I, O> O getOrNull(I object, Function<I, O> getter) {
         if (object == null) {
             return null;
@@ -200,18 +276,32 @@ public class StandardJobRunReporter {
         return getter.apply(object);
     }
 
+    /**
+     * A builder to add the standard job run fields to a given table. This can be combined with your own code
+     * to set values for other fields as well.
+     */
     public static class Builder {
         private TableWriterFactory.Builder tableBuilder;
 
-        public Builder(TableWriterFactory.Builder tableBuilder) {
+        private Builder(TableWriterFactory.Builder tableBuilder) {
             this.tableBuilder = tableBuilder;
         }
 
+        /**
+         * Adds the standard fields for progress of a job run.
+         *
+         * @return this builder
+         */
         public Builder addProgressFields() {
             tableBuilder.addFields(TASK_ID, START_TIME, FINISH_TIME);
             return this;
         }
 
+        /**
+         * Adds the standard fields for the results of a job run.
+         *
+         * @return this builder
+         */
         public Builder addResultsFields() {
             tableBuilder.addFields(DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
             return this;

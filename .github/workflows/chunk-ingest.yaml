@@ -22,16 +22,17 @@ on:
       - 'java/bulk-import/bulk-import-runner/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-task/**'
+      - 'java/partitions/splitter/**'
+      - 'java/common/parquet/**'
+      - 'java/common/arrow/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/parquet/**'
-      - 'java/common/localstack-test/**'
-      - 'java/sketches/**'
       - 'java/example-iterators/**'
+      - 'java/common/sketches/**'
       - 'java/core/**'
-      - 'java/arrow/**'
+      - 'java/common/localstack-test/**'
 
 jobs:
   chunk-workflow:

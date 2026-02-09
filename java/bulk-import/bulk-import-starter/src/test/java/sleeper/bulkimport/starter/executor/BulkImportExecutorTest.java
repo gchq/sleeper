@@ -17,7 +17,6 @@ package sleeper.bulkimport.starter.executor;
 
 import com.google.common.collect.Lists;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,7 +44,6 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -71,11 +69,6 @@ class BulkImportExecutorTest {
     private final List<String> jobRunIdsOfJobsInBucket = new ArrayList<>();
     private final List<BulkImportJob> jobsRun = new ArrayList<>();
     private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
-
-    @BeforeEach
-    void setup() {
-        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-    }
 
     @Nested
     @DisplayName("Failing validation")
@@ -166,26 +159,6 @@ class BulkImportExecutorTest {
                     .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
-        }
-
-        @Test
-        void shouldFailValidationIfMinimumPartitionCountNotReached() {
-            // Given
-            tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
-            BulkImportJob myJob = jobForTable()
-                    .id("my-job")
-                    .files(Lists.newArrayList("file1.parquet"))
-                    .build();
-            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
-
-            // When
-            executor(atTime(validationTime)).runJob(myJob);
-
-            // Then
-            assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                    .containsExactly(ingestJobStatus(myJob.toIngestJob(),
-                            rejectedRun(myJob.toIngestJob(), validationTime,
-                                    "The minimum partition count was not reached")));
         }
     }
 

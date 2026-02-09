@@ -40,9 +40,12 @@ import java.util.Map;
 
 import static sleeper.clients.report.job.StandardJobRunReporter.printUpdateType;
 import static sleeper.clients.report.job.StandardJobRunReporter.updatePrinters;
-import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 
+/**
+ * Creates reports in human-readable string format on the status of ingest and bulk import jobs. Depending on the report
+ * query type, this produces either a table, or a detailed report for each job run.
+ */
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
     private final TableField stateField;
@@ -65,7 +68,10 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
-        runReporter = new StandardJobRunReporter(out, tableFactoryBuilder);
+        runReporter = StandardJobRunReporter.withTable(tableFactoryBuilder)
+                .addProgressFields()
+                .addResultsFields()
+                .build(out);
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -82,13 +88,13 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                     .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
                             runReporter.getFinishedFields())
                     .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
-                    .showField(query == JobQuery.Type.UNFINISHED, StandardJobRunReporter.FAILURE_REASONS)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
-        }
-        if (query == JobQuery.Type.UNFINISHED) {
-            out.println();
-            out.println("For more information concerning the failure reasons, please consult the more detailed report.");
+
+            if (!statusList.isEmpty()) {
+                out.println();
+                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+            }
         }
     }
 
@@ -218,9 +224,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             row.value(stateField, run.getStatusType());
             row.value(addedFilesCount, run.getFilesWrittenAndAdded().getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
-            if (run.getStatusType().equals(FAILED)) {
-                row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons());
-            }
+            row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasonsDisplay(30));
         }));
     }
 

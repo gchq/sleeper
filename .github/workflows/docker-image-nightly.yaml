@@ -1,0 +1,105 @@
+name: Docker Image Tests Nightly
+on:
+  workflow_dispatch: # Allow manual running
+  schedule:
+    - cron: '0 3 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/docker-image-nightly.yaml'
+      - '.github/workflows/docker-image-test.yaml'
+
+jobs:
+  ingest:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: ingest
+  bulk-import-runner:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: bulk-import-runner
+      trivyIgnore: code-style/.trivyignore.spark.yaml
+  compaction-job-execution:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: compaction-job-execution
+      testClassNames: CompactionTaskDockerImageST
+  bulk-export-task-execution:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: bulk-export-task-execution
+  athena-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: athena-lambda
+      isLambda: true
+  bulk-import-starter-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: bulk-import-starter-lambda
+      isLambda: true
+  bulk-export-planner:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: bulk-export-planner
+      isLambda: true
+  bulk-export-task-creator:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: bulk-export-task-creator
+      isLambda: true
+  ingest-task-creator-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: ingest-task-creator-lambda
+      isLambda: true
+  ingest-batcher-submitter-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: ingest-batcher-submitter-lambda
+      isLambda: true
+  ingest-batcher-job-creator-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: ingest-batcher-job-creator-lambda
+      isLambda: true
+  garbage-collector-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: garbage-collector-lambda
+      isLambda: true
+  compaction-job-creator-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: compaction-job-creator-lambda
+      isLambda: true
+  compaction-task-creator-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: compaction-task-creator-lambda
+      isLambda: true
+  partition-splitter-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: partition-splitter-lambda
+      isLambda: true
+  query-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: query-lambda
+      isLambda: true
+      testClassNames: QueryLambdaDockerImageST
+  custom-resources-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: custom-resources-lambda
+      isLambda: true
+  metrics-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: metrics-lambda
+      isLambda: true
+  statestore-lambda:
+    uses: ./.github/workflows/docker-image-test.yaml
+    with:
+      imageName: statestore-lambda
+      isLambda: true

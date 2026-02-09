@@ -21,6 +21,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +29,13 @@ import java.util.List;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
-import static sleeper.clients.util.command.Command.command;
-import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class DockerImagesTestBase {
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
+            DockerDeployment.builder()
+                    .deploymentName("statestore-committer")
+                    .committerPlatform(StateStoreCommitterPlatform.EC2)
+                    .build(),
             DockerDeployment.builder()
                     .deploymentName("ingest")
                     .optionalStack(OptionalStack.IngestStack)
@@ -100,37 +103,9 @@ public class DockerImagesTestBase {
         return new DockerImageConfiguration(List.of(), LAMBDA_HANDLERS);
     }
 
-    protected CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
-    }
-
-    protected CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "--provenance=false", "-t", tag, dockerDirectory));
-    }
-
-    protected CommandPipeline pullImageCommand(String tag) {
-        return pipeline(command("docker", "pull", tag));
-    }
-
-    protected CommandPipeline tagImageCommand(String sourceTag, String targetTag) {
-        return pipeline(command("docker", "tag", sourceTag, targetTag));
-    }
-
-    protected CommandPipeline pushImageCommand(String tag) {
-        return pipeline(command("docker", "push", tag));
-    }
-
-    protected CommandPipeline removeOldBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "rm", "sleeper"));
-    }
-
-    protected CommandPipeline createNewBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
-    }
-
-    protected CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--push", dockerDirectory));
+    protected DockerImageConfiguration optionalLambdasImageConfig() {
+        return new DockerImageConfiguration(List.of(),
+                LAMBDA_HANDLERS.stream().filter(lambda -> !lambda.getOptionalStacks().isEmpty()).toList());
     }
 
 }

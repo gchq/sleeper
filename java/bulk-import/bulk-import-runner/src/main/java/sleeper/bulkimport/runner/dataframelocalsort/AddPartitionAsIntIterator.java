@@ -18,8 +18,8 @@ package sleeper.bulkimport.runner.dataframelocalsort;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 
+import sleeper.bulkimport.runner.common.PartitionNumbers;
 import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 
@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Adds an integer ID to each row iterated over, identifying which Sleeper partition it belongs to. Each Sleeper
@@ -50,21 +47,7 @@ public class AddPartitionAsIntIterator implements Iterator<Row> {
         this.input = input;
         this.schema = schema;
         this.partitionTree = partitionTree;
-
-        // Sort the leaf partitions by id so that we can create a mapping from partition id to
-        // int in a way that is consistent across multiple calls to this function across different
-        // executors in the same Spark job.
-        SortedSet<String> sortedLeafPartitionIds = new TreeSet<>();
-        this.partitionTree.getAllPartitions().stream()
-                .filter(Partition::isLeafPartition)
-                .map(Partition::getId)
-                .forEach(sortedLeafPartitionIds::add);
-        this.partitionIdToInt = new TreeMap<>();
-        int i = 0;
-        for (String leafPartitionId : sortedLeafPartitionIds) {
-            partitionIdToInt.put(leafPartitionId, i);
-            i++;
-        }
+        this.partitionIdToInt = PartitionNumbers.getPartitionIdToInt(partitionTree);
     }
 
     @Override

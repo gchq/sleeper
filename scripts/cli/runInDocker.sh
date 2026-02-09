@@ -46,6 +46,7 @@ run_in_docker() {
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
     -v "$HOME/.ssh:$HOME_IN_IMAGE/.ssh"
+    -v "$HOME/.cache:$HOME_IN_IMAGE/.cache"
     -e "IN_CLI_CONTAINER=true"
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY

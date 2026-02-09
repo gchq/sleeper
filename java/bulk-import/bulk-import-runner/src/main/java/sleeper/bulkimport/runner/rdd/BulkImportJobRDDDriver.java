@@ -22,8 +22,8 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 
 import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.BulkImportJobInput;
-import sleeper.bulkimport.runner.SparkFileReferenceRow;
+import sleeper.bulkimport.runner.BulkImportSparkContext;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -38,20 +38,20 @@ public class BulkImportJobRDDDriver {
         BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
-        Schema schema = input.tableProperties().getSchema();
+    public static Dataset<Row> createFileReferences(BulkImportSparkContext input) {
+        Schema schema = input.getTableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        JavaRDD<Row> rdd = input.rows().javaRDD()
+        JavaRDD<Row> rdd = input.getRows().javaRDD()
                 .mapToPair(new ExtractKeyFunction(
                         schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
                 .repartitionAndSortWithinPartitions(
-                        new SleeperPartitioner(schemaAsString, input.broadcastedPartitions()),
+                        new SleeperPartitioner(schemaAsString, input.getPartitionsBroadcast()),
                         new WrappedKeyComparator(schemaAsString))
                 .map(tuple -> tuple._2)
                 .mapPartitions(new WriteParquetFile(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf(), input.broadcastedPartitions()));
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
         return session.createDataset(rdd.rdd(), ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));

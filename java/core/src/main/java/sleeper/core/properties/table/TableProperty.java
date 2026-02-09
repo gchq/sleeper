@@ -30,7 +30,8 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -49,6 +50,8 @@ import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
@@ -56,6 +59,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
@@ -66,7 +70,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
@@ -83,6 +86,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_ROWGROUP_ROWS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
@@ -141,7 +145,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .setBySleeper(false).build();
     TableProperty SCHEMA = Index.propertyBuilder("sleeper.table.schema")
             .validationPredicate(Objects::nonNull)
-            .description("The schema representing the structure of this table.")
+            .description("The schema representing the structure of this table. This should be set in a separate " +
+                    "schema.json file, and cannot be edited once the table has been created.\n" +
+                    "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for further details.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false)
             .includedInTemplate(false).build();
@@ -201,6 +207,27 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Partitions in this table with more than the following number of rows in will be split.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
+    TableProperty PARTITION_SPLIT_MIN_ROWS = Index.propertyBuilder("sleeper.table.partition.splitting.min.rows")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_MIN_ROWS)
+            .description("When expanding the partition tree explicitly, this many rows are required in the input " +
+                    "data to be able to split a partition. This will be used when pre-splitting partitions.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. The bulk import job must contain at least " +
+                    "this much data per new split point.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    TableProperty PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT = Index.propertyBuilder("sleeper.table.partition.splitting.min.distribution.percent")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT)
+            .description("When expanding the partition tree explicitly, this is the minimum percentage of the " +
+                    "expected number of rows to split a partition assuming an even distribution of rows.\n" +
+                    "For example, during bulk import when there are too few leaf partitions, the partition tree will " +
+                    "be extended based on the data in the bulk import job. For each current leaf partition, we make " +
+                    "a sketch of the data from the job that's in that partition. We divide the number of rows in the " +
+                    "job's input data by the current number of leaf partitions, to get the expected rows per " +
+                    "partition. If this propery is set to 10, then any partition with less than 10% of the expected " +
+                    "rows per partition will be ignored when extending the partition tree.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
             .defaultPropertyWithBehaviour(DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
             .description("If true, partition splits will be applied via asynchronous requests sent to the state " +
@@ -212,7 +239,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
-            .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
+            .description("Maximum number of bytes to write in a Parquet row group " +
+                    "(defaults to value set in instance properties). " +
+                    "This property is NOT used by DataFusion data engine.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.page.size")
@@ -260,7 +289,14 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
             .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
-            .description("Used during Parquet queries to determine whether the column indexes are used.")
+            .description("Used during Sleeper queries to determine whether the column/offset indexes (also known as page indexes) are read from Parquet files. " +
+                    "For some queries, e.g. single/few row lookups this can improve performance by enabling more aggressive pruning. On range " +
+                    "queries, especially on large tables this can harm performance, since readers will read the extra index data before " +
+                    "returning results, but with little benefit from pruning.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_ROW_GROUP_SIZE_ROWS = Index.propertyBuilder("sleeper.table.parquet.rowgroup.rows.max")
+            .description("Maximum number of rows to write in a Parquet row group.")
+            .defaultProperty(DEFAULT_PARQUET_ROWGROUP_ROWS)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(ROW_GROUP_SIZE)
@@ -289,14 +325,23 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
-            .defaultProperty(RETAIN_DATA_AFTER_TABLE_REMOVAL)
+    TableProperty RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.table.retain.after.removal")
+            .defaultProperty(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL)
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
                     "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
                     "If this is false, it will delete all data associated with the table when the table is removed.\n" +
                     "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
                     "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.table.reuse.existing")
+            .defaultProperty(DEFAULT_TABLE_REUSE_EXISTING)
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
@@ -513,12 +558,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "sleeper.table.statestore.transactionlog.delete.behind.snapshot.min.age\n")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.statestore.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
@@ -595,6 +634,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
+    TableProperty BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS = Index.propertyBuilder("sleeper.table.bulk.import.partition.splitting.attempts")
+            .description("Specifies the number of times bulk import tries to create leaf partitions to meet the " +
+                    "minimum number of leaf partitions. This will be retried if another process splits the same " +
+                    "partitions at the same time.")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PARTITION_SPLITTING_ATTEMPTS)
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
     TableProperty BULK_IMPORT_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.bulk.import.job.files.commit.async")
             .defaultPropertyWithBehaviour(DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)

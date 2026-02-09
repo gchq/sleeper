@@ -166,4 +166,11 @@ class TablePropertiesTest {
         assertThat(tableProperties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
     }
+
+    @Test
+    void shouldNameTablePropertiesConsistently() {
+        assertThat(TableProperty.getAll())
+                .extracting(TableProperty::getPropertyName)
+                .allSatisfy(name -> assertThat(name).startsWith("sleeper.table."));
+    }
 }

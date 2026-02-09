@@ -9,7 +9,14 @@ on:
         required: false
         type: boolean
       testClassNames:
-        required: true
+        required: false
+        type: string
+      dockerOptions:
+        required: false
+        type: string
+      trivyIgnore:
+        default: code-style/.trivyignore.yaml
+        required: false
         type: string
 
 env:
@@ -33,18 +40,19 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/checkout@v4
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
+          name: sleeper
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'corretto'
       - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v5
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -60,7 +68,24 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }}
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load
+      - name: Delete build output to free disk space
+        run: |
+          rm -rf ./scripts/docker
+          rm -rf ./scripts/jars
+          docker buildx rm --force sleeper
       - name: Docker image tests
         working-directory: ./java
+        if: ${{ inputs.testClassNames != '' }}
         run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+      - name: Run Trivy vulnerability scanner
+        env:
+          TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
+          TRIVY_SHOW_SUPPRESSED: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: '${{ inputs.imageName }}:test'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          version: latest

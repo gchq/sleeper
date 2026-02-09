@@ -38,8 +38,7 @@ import java.util.Map;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * A utility class to report information about the files in the system and their
- * status.
+ * Creates reports on the files in a Sleeper table.
  */
 public class FilesStatusReport {
     private final int maxNumberOfFilesWithNoReferencesToCount;
@@ -81,8 +80,11 @@ public class FilesStatusReport {
         return FILE_STATUS_REPORTERS.get(outputType);
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
-        TableFilesStatus tableStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
+        TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(tableStatus, verbose);
     }
 

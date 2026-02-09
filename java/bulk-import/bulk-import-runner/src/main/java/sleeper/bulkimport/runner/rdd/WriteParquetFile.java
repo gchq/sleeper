@@ -22,7 +22,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
-import sleeper.bulkimport.runner.HadoopSketchesStore;
+import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;

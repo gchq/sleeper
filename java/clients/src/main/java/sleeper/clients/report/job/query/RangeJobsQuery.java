@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
+/**
+ * A query to generate a report from a job tracker, for jobs that occurred in a given time period.
+ */
 public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
@@ -63,6 +66,16 @@ public class RangeJobsQuery implements JobQuery {
         return Type.RANGE;
     }
 
+    /**
+     * Reads a command line parameter that sets the time period for a query. Takes the start and end of the period in
+     * the format yyyyMMddHHmmss, separated by a comma.
+     *
+     * @param  table           the Sleeper table to be queried
+     * @param  queryParameters the start and end of the period as strings separated by a comma, or null for the default
+     *                         period
+     * @param  clock           a clock to get the current time (can be fixed for testing)
+     * @return                 a query to report on all jobs in the given time period
+     */
     public static JobQuery fromParameters(TableStatus table, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
@@ -76,6 +89,15 @@ public class RangeJobsQuery implements JobQuery {
         }
     }
 
+    /**
+     * Prompts the user to set the time period for a query. Will ask for the start and end times as separate prompts in
+     * the format yyyyMMddHHmmss.
+     *
+     * @param  table the Sleeper table to be queried
+     * @param  in    the console to prompt the user
+     * @param  clock a clock to get the current time (can be fixed for testing)
+     * @return       a query to report on all jobs in the given time period
+     */
     public static JobQuery prompt(TableStatus table, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);

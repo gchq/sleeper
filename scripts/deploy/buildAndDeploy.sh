@@ -16,15 +16,18 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <table-name>"
+if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-instance-properties-file> <optional-deploy-paused-flag>"
   exit 1
 fi
 
 INSTANCE_ID=$1
 VPC=$2
 SUBNET=$3
-TABLE_NAME=$4
+
+INSTANCE_PROPERTIES="${4:-$INSTANCE_PROPERTIES}"
+DEPLOY_PAUSED="${5:-$DEPLOY_PAUSED}"
+
 
 echo "-------------------------------------------------------------------------------"
 echo "Running Build & Deploy"
@@ -32,8 +35,9 @@ echo "--------------------------------------------------------------------------
 echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "VPC: ${VPC}"
 echo "SUBNET:${SUBNET}"
-echo "TABLE_NAME: ${TABLE_NAME}"
+echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
+echo "DEPLOY_PAUSED: ${DEPLOY_PAUSED}"
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
 "$SCRIPTS_DIR/build/build.sh"
-"$SCRIPTS_DIR/deploy/deployNew.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" "$TABLE_NAME"
+"$SCRIPTS_DIR/deploy/deployNew.sh" "$@"

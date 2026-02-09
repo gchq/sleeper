@@ -1,0 +1,50 @@
+
+vulnerabilities:
+  # Dependencies of latest version of Rust code (only cargo-audit is installed):
+
+  # tracing-subscriber
+  - id: CVE-2025-58160
+  # idna
+  - id: CVE-2024-12224
+  # pyo3
+  - id: GHSA-pph8-gcv7-4qj5
+  # tokio
+  - id: CVE-2023-22466
+  - id: GHSA-4q83-7cq4-p6wg
+  - id: GHSA-rr8g-9fpq-6wmg
+  # slab
+  - id: CVE-2025-55159
+  # bumpalo
+  - id: GHSA-f85w-wvc7-crwc
+  # anstream
+  - id: GHSA-2rxc-gjrp-vjhx
+
+  # Dependencies of the latest version of Trivy dependency scanner:
+
+  # github.com/sigstore/timestamp-authority
+  - id: CVE-2025-66564
+  # Golang stdlib
+  - id: CVE-2025-61729
+  - id: CVE-2025-61727
+  # AWS CLI wheel
+  - id: CVE-2026-24049
+  # NPM CLI Tar
+  - id: CVE-2026-24842
+
+
+  # Dependencies of the latest version of Docker:
+
+  # Golang stdlib
+  - id: CVE-2025-68121
+  - id: CVE-2025-61726
+  - id: CVE-2025-61728
+  - id: CVE-2025-61730
+  # github.com/sigstore/rekor
+  - id: CVE-2026-23831
+  - id: CVE-2026-24117
+  # github.com/sigstore/sigstore
+  - id: CVE-2026-24137
+  # github.com/theupdateframework/go-tuf/v2
+  - id: CVE-2026-23991
+  - id: CVE-2026-23992
+  - id: CVE-2026-24686

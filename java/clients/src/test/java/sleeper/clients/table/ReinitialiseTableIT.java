@@ -39,9 +39,16 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -49,10 +56,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -70,6 +77,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_2 = "for_ingest/file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_1 = "partition-root/file1.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_2 = "partition-1/file2.parquet";
+    private static final String FILE_SHOULD_BE_DELETED_3 = "partition-2/file3.parquet";
     private static final String SPLIT_PARTITION_STRING_1 = "alpha";
     private static final String SPLIT_PARTITION_STRING_2 = "beta";
 
@@ -123,7 +133,40 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
         assertThat(stateStore.getAllPartitions()).hasSize(3);
         assertThat(stateStore.getLeafPartitions()).hasSize(2);
-        assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
+        assertOnlyExpectedObjectsHaveBeenDeleted();
+    }
+
+    @Test
+    public void shouldNotDeleteTransationFilesAndSnapshots() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        //Store Transaction
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
+        S3TransactionBodyStore s3TransactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), 0);
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        String transactionObjectKey = s3TransactionBodyStore.storeIfTooBig(tableProperties.get(TABLE_ID), transaction).getBodyKey().orElseThrow();
+        //Store Snapshot
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+
+        // When
+        reinitialiseTable(tableProperties);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+        assertThat(stateStore.getAllPartitions()).hasSize(3);
+        assertThat(stateStore.getLeafPartitions()).hasSize(2);
+
+        List<String> list = new ArrayList<>();
+        list.add(transactionObjectKey);
+        LatestSnapshots snapshot = new DynamoDBTransactionLogSnapshotMetadataStore(
+                instanceProperties, tableProperties, dynamoClient).getLatestSnapshots();
+        list.add(snapshot.getFilesSnapshot().get().getObjectKey());
+        list.add(snapshot.getPartitionsSnapshot().get().getObjectKey());
+        assertOnlyExpectedObjectsHaveBeenDeleted(list);
     }
 
     @Test
@@ -142,7 +185,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertThat(stateStore.getAllPartitions()).hasSize(1);
         assertThat(stateStore.getLeafPartitions()).hasSize(1);
 
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        assertOnlyExpectedObjectsHaveBeenDeleted();
     }
 
     @Test
@@ -167,7 +210,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                 .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        assertOnlyExpectedObjectsHaveBeenDeleted();
     }
 
     @Test
@@ -192,25 +235,20 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                 .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        assertOnlyExpectedObjectsHaveBeenDeleted();
     }
 
-    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
-        String tableId = tableProperties.get(TABLE_ID);
-        assertThat(listDataBucketObjectKeys())
-                .containsExactlyInAnyOrder(
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+    private void assertOnlyExpectedObjectsHaveBeenDeleted() {
+        assertOnlyExpectedObjectsHaveBeenDeleted(new ArrayList<>());
     }
 
-    private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
+    private void assertOnlyExpectedObjectsHaveBeenDeleted(List<String> objectKeys) {
         String tableId = tableProperties.get(TABLE_ID);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2);
+        objectKeys.add(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
         assertThat(listDataBucketObjectKeys())
-                .containsExactlyInAnyOrder(
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+                .containsExactlyInAnyOrder(objectKeys.toArray(new String[0]));
     }
 
     private List<String> listDataBucketObjectKeys() {
@@ -254,13 +292,16 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private void saveTableDataFiles() {
         String dataBucket = instanceProperties.get(DATA_BUCKET);
         String tableId = tableProperties.get(TABLE_ID);
+        RequestBody requestBody = RequestBody.fromString("some-content");
 
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-root/file1.parquet"), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-1/file2.parquet"), RequestBody.fromString("some-content"));
-        s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/partition-2/file3.parquet"), RequestBody.fromString("some-content"));
+        for (String file : List.of(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3)) {
+            s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + file), requestBody);
+        }
+
+        for (String file : List.of(FILE_SHOULD_BE_DELETED_1, FILE_SHOULD_BE_DELETED_2, FILE_SHOULD_BE_DELETED_3)) {
+            s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + file), requestBody);
+            s3Client.putObject(request -> request.bucket(dataBucket).key(tableId + "/" + file.replace(".parquet", ".sketches")), requestBody);
+        }
     }
 
     private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
@@ -278,13 +319,10 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = createTempDirectory(tempDir, null).toString();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        String file3 = folderName + "/file3.parquet";
-
-        FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
-        FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
+        String tableId = tableProperties.get(TABLE_ID);
+        String dataBucket = instanceProperties.get(DATA_BUCKET);
+        FileReference fileReference1 = createFileReference("s3a://" + dataBucket + "/" + tableId + "/" + FILE_SHOULD_BE_DELETED_1, rootPartition.getId());
+        FileReference fileReference2 = createFileReference(dataBucket + "/" + tableId + "/" + FILE_SHOULD_BE_DELETED_2, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -299,7 +337,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         update(stateStore).addFilesWithReferences(List.of(
                 fileWithReferences(List.of(fileReference1)),
                 fileWithReferences(List.of(fileReference2)),
-                fileWithNoReferences(file3)));
+                fileWithNoReferences(dataBucket + "/" + tableId + "/" + FILE_SHOULD_BE_DELETED_3)));
     }
 
     private FileReference createFileReference(String filename, String partitionId) {
