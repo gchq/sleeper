@@ -32,6 +32,7 @@ Deployment:
 - ECS tasks and services now use their own security group, rather than the default security group for the VPC.
 - Restricted permissions on default security group in environment deployed by Sleeper CLI.
 - Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
+- Improvements to workflow deploying an instance directly with the CDK CLI (see [documentation](docs/deployment/deploy-with-cdk.md#using-the-cdk-cli)).
 
 Bugfixes:
 - DataFusion data engine failed when aggregations were specified that did not match the order of the table schema.
