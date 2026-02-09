@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.35.0
 
-### 6th February, 2026
+### 9th February, 2026
 
 This includes automation of pre-splitting table partitions in bulk import, and a high throughput committer for the state
 store.
