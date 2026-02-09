@@ -37,16 +37,18 @@ public class FileReferencesStats {
     private final Integer maxReferences;
     private final Double meanReferences;
     private final Double medianReferences;
-    private final Integer modalReferences;
-
+    private final Double percentile90;
+    private final Double percentile99;
     private final Integer totalReferences;
 
-    private FileReferencesStats(Integer minReferences, Integer maxReferences, Double meanReferences, Double medianReferences, Integer modalReferences, Integer totalReferences) {
+    private FileReferencesStats(Integer minReferences, Integer maxReferences, Double meanReferences,
+            Double medianReferences, Double percentile90, Double percentile99, Integer totalReferences) {
         this.minReferences = minReferences;
         this.maxReferences = maxReferences;
         this.meanReferences = meanReferences;
         this.medianReferences = medianReferences;
-        this.modalReferences = modalReferences;
+        this.percentile90 = percentile90;
+        this.percentile99 = percentile99;
         this.totalReferences = totalReferences;
     }
 
@@ -87,7 +89,29 @@ public class FileReferencesStats {
             count++;
 
         }
-        return new FileReferencesStats(min, max, mean(total, count), median(frequencyCounts), mode(frequencyCounts), references.size());
+        return new FileReferencesStats(min, max, mean(total, count), median(frequencyCounts),
+                percentile(frequencyCounts, 0.90d), percentile(frequencyCounts, 0.99d), references.size());
+    }
+
+    private static Double percentile(Map<Integer, Integer> frequencyCounts, double percentile) {
+        if (percentile < 0 || percentile > 100) {
+            throw new IllegalArgumentException("percentile must be in range [0, 100]: " + percentile);
+        }
+        if (frequencyCounts.isEmpty()) {
+            return null;
+        }
+        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
+        double index = percentile * (flatCounts.size() - 1);
+
+        int lowerIndex = (int) Math.floor(index);
+        int upperIndex = (int) Math.ceil(index);
+        if (lowerIndex == upperIndex) {
+            return flatCounts.get(lowerIndex).doubleValue();
+        }
+
+        double lowerValue = flatCounts.get(lowerIndex);
+        double upperValue = flatCounts.get(upperIndex);
+        return lowerValue + (index - lowerIndex) * (upperValue - lowerValue);
     }
 
     private static Double mean(int total, int count) {
@@ -98,22 +122,24 @@ public class FileReferencesStats {
         }
     }
 
-    private static Integer mode(Map<Integer, Integer> frequencyCounts) {
-        return frequencyCounts.entrySet().stream().max(Comparator.comparingInt(Map.Entry<Integer, Integer>::getValue)).map(Map.Entry::getKey).orElse(null);
+    private static List<Integer> toFlatCounts(Map<Integer, Integer> frequencyCounts) {
+        List<Integer> flatCounts = frequencyCounts.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<Integer, Integer>::getKey))
+                .collect(Collector.of(ArrayList::new, (container, entry) -> {
+                    for (int i = 0; i < entry.getValue(); i++) {
+                        container.add(entry.getKey());
+                    }
+                }, (left, right) -> {
+                    left.addAll(right);
+                    return left;
+                }, Collector.Characteristics.IDENTITY_FINISH));
+        return flatCounts;
     }
 
     private static Double median(Map<Integer, Integer> frequencyCounts) {
         if (frequencyCounts.isEmpty()) {
             return null;
         }
-        List<Integer> flatCounts = frequencyCounts.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<Integer, Integer>::getKey)).collect(Collector.of(ArrayList::new, (container, entry) -> {
-            for (int i = 0; i < entry.getValue(); i++) {
-                container.add(entry.getKey());
-            }
-        }, (left, right) -> {
-            left.addAll(right);
-            return left;
-        }, Collector.Characteristics.IDENTITY_FINISH));
+        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
         int len = flatCounts.size();
         if (len % 2 == 1) {
             return Double.valueOf(flatCounts.get(len / 2));
@@ -138,8 +164,22 @@ public class FileReferencesStats {
         return medianReferences;
     }
 
-    public Integer getModalReferences() {
-        return modalReferences;
+    /**
+     * 90th percentile value from datasketches.
+     *
+     * @return 90th percentile
+     */
+    public Double get90thPercentile() {
+        return percentile90;
+    }
+
+    /**
+     * 99th percentile value from datasketches.
+     *
+     * @return 99th percentile
+     */
+    public Double get99thPercentile() {
+        return percentile99;
     }
 
     public Integer getTotalReferences() {

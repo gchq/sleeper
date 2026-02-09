@@ -62,6 +62,7 @@ public class CVSFileStatusReporter implements FileStatusReporter {
         appendToOutputDataList(fileReferencesStats.getMinReferences());
         appendToOutputDataList(fileReferencesStats.getMeanReferences());
         appendToOutputDataList(fileReferencesStats.getMedianReferences());
-        appendToOutputDataList(fileReferencesStats.getModalReferences());
+        appendToOutputDataList(fileReferencesStats.get90thPercentile());
+        appendToOutputDataList(fileReferencesStats.get99thPercentile());
     }
 }

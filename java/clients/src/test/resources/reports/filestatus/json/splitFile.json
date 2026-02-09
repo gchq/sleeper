@@ -28,7 +28,8 @@
         "maxReferences": 2,
         "meanReferences": 1.5,
         "medianReferences": 1.5,
-        "modalReferences": 1,
+        "percentile90": 1.9,
+        "percentile99": 1.99,
         "totalReferences": 3
       },
       "nonLeafPartitions": {
@@ -36,7 +37,8 @@
         "maxReferences": 1,
         "meanReferences": 1.0,
         "medianReferences": 1.0,
-        "modalReferences": 1,
+        "percentile90": 1.0,
+        "percentile99": 1.0,
         "totalReferences": 1
       }
     }
