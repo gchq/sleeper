@@ -33,7 +33,6 @@ import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
-import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -134,7 +133,6 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 CheckVersionExistsInEcr.withEcrClient(ecr), parameters.getAccount(), parameters.getRegion());
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
-                .version(SleeperVersion.getVersion())
                 .images(List.of(SYSTEM_TEST_IMAGE))
                 .build());
     }

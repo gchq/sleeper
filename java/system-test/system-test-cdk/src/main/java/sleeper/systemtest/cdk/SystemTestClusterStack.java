@@ -43,6 +43,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
+import sleeper.systemtest.configuration.SystemTestDockerRepository;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -54,7 +55,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
@@ -112,7 +112,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestTaskDefinitionFamily", taskDefinitionFamilyOutputProps);
 
-        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", properties.get(SYSTEM_TEST_REPO));
+        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", SystemTestDockerRepository.getRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
