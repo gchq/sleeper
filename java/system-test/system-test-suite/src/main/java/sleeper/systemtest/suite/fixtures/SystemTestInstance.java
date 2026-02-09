@@ -269,7 +269,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createEcsStatestoreConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, List.of());
+        properties.setList(OPTIONAL_STACKS, List.of());
         properties.set(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.EC2.toString());
         setSystemTestTags(properties, "ecsStatestore", "Sleeper Maven system test instance with ECS state store");
         return createInstanceConfiguration(properties);
