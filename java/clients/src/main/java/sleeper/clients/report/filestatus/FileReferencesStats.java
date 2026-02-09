@@ -102,7 +102,6 @@ public class FileReferencesStats {
         }
         List<Integer> flatCounts = toFlatCounts(frequencyCounts);
         double index = percentile * (flatCounts.size() - 1);
-
         int lowerIndex = (int) Math.floor(index);
         int upperIndex = (int) Math.ceil(index);
         if (lowerIndex == upperIndex) {
