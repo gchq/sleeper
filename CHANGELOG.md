@@ -24,6 +24,9 @@ State store:
   - Can handle many Sleeper tables at much higher throughput than the default lambda version.
   - Can be chosen with the instance property [`sleeper.statestore.committer.platform`](docs/usage/properties/instance/user/table_state.md).
 
+Spark:
+- Initial version of using Spark to query a Sleeper table
+
 Configuration:
 - Instance properties that are default values for table properties were renamed to start with `sleeper.default.table`.
 - Added [`sleeper.table.parquet.rowgroup.rows.max`](docs/usage/properties/table/data_storage.md) to set the maximum Parquet row group size for the DataFusion data engine.
