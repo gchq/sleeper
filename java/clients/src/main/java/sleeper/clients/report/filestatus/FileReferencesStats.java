@@ -94,6 +94,16 @@ public class FileReferencesStats {
                 percentile(flatCounts, 0.90d), percentile(flatCounts, 0.99d), references.size());
     }
 
+    /**
+     * Calculates the pth percentile of a dataset.
+     *
+     * The dataset must already be sorted, otherwise results are unspecified.
+     *
+     * @param  flatCounts               sorted list of data points
+     * @param  percentile               percentile to calculate
+     * @return                          percentile value or <code>null</code> if dataset is empty
+     * @throws IllegalArgumentException if percentile is not in range [0,1]
+     */
     public static Double percentile(List<Integer> flatCounts, double percentile) {
         if (percentile < 0 || percentile > 1) {
             throw new IllegalArgumentException("percentile must be in range [0, 1]: " + percentile);
@@ -113,6 +123,13 @@ public class FileReferencesStats {
         return lowerValue + (index - lowerIndex) * (upperValue - lowerValue);
     }
 
+    /**
+     * Calculate arithmetic mean.
+     *
+     * @param  total sum of elements in dataset
+     * @param  count population size
+     * @return       mean or <code>null</code> if count is 0
+     */
     public static Double mean(int total, int count) {
         if (count == 0) {
             return null;
@@ -134,6 +151,12 @@ public class FileReferencesStats {
         return flatCounts;
     }
 
+    /**
+     * Calculates the median value of a dataset.
+     *
+     * @param  flatCounts sorted list of data points
+     * @return            population median or <code>null</code> if set is empty
+     */
     public static Double median(List<Integer> flatCounts) {
         if (flatCounts.isEmpty()) {
             return null;
