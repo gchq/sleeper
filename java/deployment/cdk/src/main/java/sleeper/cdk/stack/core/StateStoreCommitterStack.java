@@ -113,7 +113,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, policiesStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -154,7 +154,7 @@ public class StateStoreCommitterStack extends NestedStack {
         return queue;
     }
 
-    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ManagedPoliciesStack policiesStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
@@ -202,6 +202,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
+        logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
