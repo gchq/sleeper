@@ -243,7 +243,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createCompactionOnEC2Configuration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
+        properties.setList(OPTIONAL_STACKS, List.of());
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         setSystemTestTags(properties, "compactionOnEc2", "Sleeper Maven system test compaction on EC2");
         return createInstanceConfiguration(properties);
