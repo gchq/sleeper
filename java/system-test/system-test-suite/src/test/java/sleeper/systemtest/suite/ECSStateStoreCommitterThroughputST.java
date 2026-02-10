@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -54,8 +54,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTOR
 @Execution(SAME_THREAD)
 public class ECSStateStoreCommitterThroughputST {
 
-    @BeforeAll
-    public static void setUp(SleeperDsl sleeper) {
+    @BeforeEach
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
     }
 
