@@ -94,7 +94,7 @@ public class FileReferencesStats {
                 percentile(flatCounts, 0.90d), percentile(flatCounts, 0.99d), references.size());
     }
 
-    private static Double percentile(List<Integer> flatCounts, double percentile) {
+    public static Double percentile(List<Integer> flatCounts, double percentile) {
         if (percentile < 0 || percentile > 1) {
             throw new IllegalArgumentException("percentile must be in range [0, 1]: " + percentile);
         }
@@ -113,7 +113,7 @@ public class FileReferencesStats {
         return lowerValue + (index - lowerIndex) * (upperValue - lowerValue);
     }
 
-    private static Double mean(int total, int count) {
+    public static Double mean(int total, int count) {
         if (count == 0) {
             return null;
         } else {
@@ -134,7 +134,7 @@ public class FileReferencesStats {
         return flatCounts;
     }
 
-    private static Double median(List<Integer> flatCounts) {
+    public static Double median(List<Integer> flatCounts) {
         if (flatCounts.isEmpty()) {
             return null;
         }
