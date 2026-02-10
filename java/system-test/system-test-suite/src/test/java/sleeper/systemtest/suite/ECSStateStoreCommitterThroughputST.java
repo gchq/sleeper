@@ -55,7 +55,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTOR
 public class ECSStateStoreCommitterThroughputST {
 
     @BeforeAll
-    void setUp(SleeperDsl sleeper) {
+    public static void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
     }
 
