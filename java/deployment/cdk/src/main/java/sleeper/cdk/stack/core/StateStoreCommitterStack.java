@@ -202,6 +202,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
+        logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
         logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
