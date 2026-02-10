@@ -89,18 +89,18 @@ public class FileReferencesStats {
             count++;
 
         }
-        return new FileReferencesStats(min, max, mean(total, count), median(frequencyCounts),
-                percentile(frequencyCounts, 0.90d), percentile(frequencyCounts, 0.99d), references.size());
+        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
+        return new FileReferencesStats(min, max, mean(total, count), median(flatCounts),
+                percentile(flatCounts, 0.90d), percentile(flatCounts, 0.99d), references.size());
     }
 
-    private static Double percentile(Map<Integer, Integer> frequencyCounts, double percentile) {
-        if (percentile < 0 || percentile > 100) {
-            throw new IllegalArgumentException("percentile must be in range [0, 100]: " + percentile);
+    private static Double percentile(List<Integer> flatCounts, double percentile) {
+        if (percentile < 0 || percentile > 1) {
+            throw new IllegalArgumentException("percentile must be in range [0, 1]: " + percentile);
         }
-        if (frequencyCounts.isEmpty()) {
+        if (flatCounts.isEmpty()) {
             return null;
         }
-        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
         double index = percentile * (flatCounts.size() - 1);
         int lowerIndex = (int) Math.floor(index);
         int upperIndex = (int) Math.ceil(index);
@@ -134,11 +134,10 @@ public class FileReferencesStats {
         return flatCounts;
     }
 
-    private static Double median(Map<Integer, Integer> frequencyCounts) {
-        if (frequencyCounts.isEmpty()) {
+    private static Double median(List<Integer> flatCounts) {
+        if (flatCounts.isEmpty()) {
             return null;
         }
-        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
         int len = flatCounts.size();
         if (len % 2 == 1) {
             return Double.valueOf(flatCounts.get(len / 2));
