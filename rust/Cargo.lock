@@ -19,7 +19,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aggregator_udfs"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "datafusion",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "apps"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "assert_cmd",
@@ -2110,7 +2110,7 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "filter_udfs"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "datafusion",
@@ -2873,9 +2873,9 @@ checksum = "2c4a545a15244c7d945065b5d392b2d2d7f21526fba56ce51467b06ed445e8f7"
 
 [[package]]
 name = "libc"
-version = "0.2.180"
+version = "0.2.181"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcc35a38544a891a5f7c865aca548a982ccb3b8650a5b06d0fd33a10283c56fc"
+checksum = "459427e2af2b9c839b132acb702a1c654d95e10f8c326bfc2ad11310e458b1c5"
 
 [[package]]
 name = "libgit2-sys"
@@ -3216,7 +3216,7 @@ dependencies = [
 
 [[package]]
 name = "objectstore_ext"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "async-trait",
  "aws-config",
@@ -3733,7 +3733,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",
@@ -4033,7 +4033,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "sleeper_core"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
  "arrow",
@@ -4065,7 +4065,7 @@ dependencies = [
 
 [[package]]
 name = "sleeper_df"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "aws-types",
@@ -4201,9 +4201,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.24.0"
+version = "3.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c"
+checksum = "0136791f7c95b1f6dd99f9cc786b91bb81c3800b639b3478e561ddb7be95e5f1"
 dependencies = [
  "fastrand",
  "getrandom 0.3.4",
@@ -4251,7 +4251,7 @@ dependencies = [
 
 [[package]]
 name = "test_util"
-version = "0.35.0"
+version = "0.35.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "bytes",
