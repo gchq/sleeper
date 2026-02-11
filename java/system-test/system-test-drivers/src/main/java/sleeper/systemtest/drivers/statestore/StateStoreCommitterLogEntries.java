@@ -57,6 +57,7 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
         LOGGER.info("Test2 - runs size: {}", runs.size());
         Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
         LOGGER.info("Test3 - runs map size: {}", runsByTableId.size());
+        LOGGER.info("Test4 - runs map: {}", runsByTableId.toString());
         return tableIds.stream()
                 .collect(toMap(id -> id, tableId -> {
                     List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
