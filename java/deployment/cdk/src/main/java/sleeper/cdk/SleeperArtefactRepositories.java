@@ -44,9 +44,9 @@ import java.util.List;
  * Sleeper instance. The artefacts need to be uploaded as a separate step after deploying this, but before deploying a
  * Sleeper instance that requires those artefacts.
  */
-public class SleeperArtefacts {
+public class SleeperArtefactRepositories {
 
-    private SleeperArtefacts() {
+    private SleeperArtefactRepositories() {
     }
 
     /**
