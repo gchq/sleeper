@@ -28,6 +28,7 @@ import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Expensive1;
 
@@ -40,6 +41,7 @@ import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEA
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.dsl.query.QueryRange.range;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
@@ -70,7 +72,7 @@ public class CompactionVeryLargeST {
         // Given a table set to compact in batches of 40 files
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                DATA_ENGINE, DataEngine.DATAFUSION.toString(),
+                DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL.toString(),
                 COMPACTION_FILES_BATCH_SIZE, "40",
                 // We've disabled readahead temporarily until the following bug is resolved:
                 // https://github.com/gchq/sleeper/issues/5777
@@ -105,5 +107,19 @@ public class CompactionVeryLargeST {
                 .first().satisfies(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
+        // And first query can be slower during warm-up
+        assertThat(sleeper.query().webSocket()
+                .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
+                .satisfies(results -> {
+                    assertThat(results.rows()).hasSizeBetween(3000, 5000);
+                    assertThat(results.duration()).isLessThan(Duration.ofSeconds(10));
+                });
+        // And second query should be faster
+        assertThat(sleeper.query().webSocket()
+                .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
+                .satisfies(results -> {
+                    assertThat(results.rows()).hasSizeBetween(3000, 5000);
+                    assertThat(results.duration()).isLessThan(Duration.ofSeconds(2));
+                });
     }
 }
