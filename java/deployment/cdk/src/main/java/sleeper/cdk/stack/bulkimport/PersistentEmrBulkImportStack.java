@@ -171,7 +171,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 throw new IllegalArgumentException(String.format("Max must be > than min for EMR managed scaling, %s = %d, %s = %d",
                         BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY.getPropertyName(),
                         minEmrCapacity,
-                        BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY,
+                        BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName(),
                         maxEmrCapacity));
             }
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
