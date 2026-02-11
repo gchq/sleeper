@@ -107,14 +107,14 @@ public class CompactionVeryLargeST {
                 .first().satisfies(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
-        // And first query can be slower during warm-up
+        // And the first query can be slower during warm-up
         assertThat(sleeper.query().webSocket()
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
                     assertThat(results.rows()).hasSizeBetween(3000, 5000);
                     assertThat(results.duration()).isLessThan(Duration.ofSeconds(10));
                 });
-        // And second query should be faster
+        // And the second query should be faster
         assertThat(sleeper.query().webSocket()
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
