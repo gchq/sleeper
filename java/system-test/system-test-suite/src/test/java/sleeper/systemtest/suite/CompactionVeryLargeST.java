@@ -111,14 +111,14 @@ public class CompactionVeryLargeST {
         assertThat(sleeper.query().webSocket()
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
-                    assertThat(results.rows()).hasSizeBetween(3000, 5000);
+                    assertThat(results.rows()).hasSizeBetween(30000, 50000);
                     assertThat(results.duration()).isLessThan(Duration.ofSeconds(10));
                 });
         // And the second query should be faster
         assertThat(sleeper.query().webSocket()
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
-                    assertThat(results.rows()).hasSizeBetween(3000, 5000);
+                    assertThat(results.rows()).hasSizeBetween(30000, 50000);
                     assertThat(results.duration()).isLessThan(Duration.ofSeconds(2));
                 });
     }
