@@ -15,9 +15,15 @@
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
 
+RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
+    g++-x86-64-linux-gnu \
+    libc6-dev-amd64-cross \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN rustup target add x86_64-unknown-linux-gnu
 RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
 
+ENV RUSTFLAGS="-Clinker=x86_64-linux-gnu-gcc"
 ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu"
 ENV SCCACHE_C_CUSTOM_CACHE_BUSTER="x86_64"
 ENV SCCACHE_GHA_VERSION="x86_64"
