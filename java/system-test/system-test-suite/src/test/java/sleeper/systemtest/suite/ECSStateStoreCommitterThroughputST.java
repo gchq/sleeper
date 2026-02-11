@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 
@@ -25,7 +24,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow2;
+import sleeper.systemtest.suite.testutil.parallel.Slow3;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,18 +49,14 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTORE;
 
 @SystemTest
-@Slow2
+@Slow3
 @Execution(SAME_THREAD)
 public class ECSStateStoreCommitterThroughputST {
-
-    @BeforeEach
-    void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
-    }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
@@ -82,6 +77,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
@@ -102,6 +98,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
@@ -124,6 +121,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceNoTables(ECS_STATESTORE);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
@@ -149,6 +147,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -178,6 +177,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -217,6 +217,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -255,6 +256,7 @@ public class ECSStateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperDsl sleeper) throws Exception {
         // Given
+        sleeper.connectToInstanceNoTables(ECS_STATESTORE);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
