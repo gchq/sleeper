@@ -36,7 +36,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;

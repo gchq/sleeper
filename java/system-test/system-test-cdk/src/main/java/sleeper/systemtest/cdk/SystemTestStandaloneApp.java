@@ -23,7 +23,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.EcsClusterTasksStack;

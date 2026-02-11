@@ -24,7 +24,7 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 

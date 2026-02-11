@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.artefacts;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 

@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;

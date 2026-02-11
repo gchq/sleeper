@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;

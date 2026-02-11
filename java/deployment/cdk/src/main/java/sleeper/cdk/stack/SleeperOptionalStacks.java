@@ -18,7 +18,7 @@ package sleeper.cdk.stack;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;

@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;

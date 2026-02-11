@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarsInBucket;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
