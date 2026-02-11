@@ -24,7 +24,7 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -74,7 +74,7 @@ public class SleeperInstanceIT {
         return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
     }
 
-    private SleeperJarsInBucket jarsInBucket() {
-        return SleeperJarsInBucket.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
+    private SleeperJarVersionIdsCache jarsInBucket() {
+        return SleeperJarVersionIdsCache.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
     }
 }

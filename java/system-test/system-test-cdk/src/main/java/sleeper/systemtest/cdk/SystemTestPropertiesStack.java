@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -44,7 +44,7 @@ public class SystemTestPropertiesStack extends NestedStack {
 
     public SystemTestPropertiesStack(
             Construct scope, String id, SystemTestStandaloneProperties systemTestProperties,
-            SystemTestBucketStack bucketStack, SleeperJarsInBucket jars) {
+            SystemTestBucketStack bucketStack, SleeperJarVersionIdsCache jars) {
         super(scope, id);
 
         String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);

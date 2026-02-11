@@ -30,7 +30,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -53,7 +53,7 @@ public class EcsClusterTasksStack extends NestedStack {
     private Provider provider;
     private SecurityGroup ecsSecurityGroup;
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars,
             LoggingStack loggingStack) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
@@ -61,7 +61,7 @@ public class EcsClusterTasksStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
@@ -70,7 +70,7 @@ public class EcsClusterTasksStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");

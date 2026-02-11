@@ -33,7 +33,7 @@ import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -78,7 +78,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            SleeperJarVersionIdsCache jars,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             SleeperCoreStacks coreStacks) {

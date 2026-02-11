@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -45,7 +45,7 @@ public class SystemTestBucketStack extends NestedStack {
 
     private final IBucket bucket;
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, SleeperJarsInBucket jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, SleeperJarVersionIdsCache jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
@@ -53,7 +53,7 @@ public class SystemTestBucketStack extends NestedStack {
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, SleeperJarsInBucket jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, SleeperJarVersionIdsCache jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         String bucketName = String.join("-", "sleeper", properties.get(ID),
@@ -64,7 +64,7 @@ public class SystemTestBucketStack extends NestedStack {
         Utils.addTags(this, properties);
     }
 
-    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
+    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars,
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)

@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -53,7 +53,7 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final SleeperJarsInBucket jars;
+    private final SleeperJarVersionIdsCache jars;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
     private final boolean validateProperties;
@@ -97,7 +97,7 @@ public class SleeperInstanceProps {
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .jars(SleeperJarsInBucket.from(s3Client, instanceProperties))
+                .jars(SleeperJarVersionIdsCache.from(s3Client, instanceProperties))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
@@ -179,7 +179,7 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperJarsInBucket getJars() {
+    public SleeperJarVersionIdsCache getJars() {
         return jars;
     }
 
@@ -193,7 +193,7 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperJarsInBucket jars;
+        private SleeperJarVersionIdsCache jars;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
@@ -224,7 +224,7 @@ public class SleeperInstanceProps {
          * @param  jars the jars
          * @return      this builder
          */
-        public Builder jars(SleeperJarsInBucket jars) {
+        public Builder jars(SleeperJarVersionIdsCache jars) {
             this.jars = jars;
             return this;
         }

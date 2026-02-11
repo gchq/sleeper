@@ -40,9 +40,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 public class SleeperArtefactsFromProperties implements SleeperArtefacts {
 
     private final InstanceProperties instanceProperties;
-    private final SleeperJarsInBucket jars;
+    private final SleeperJarVersionIdsCache jars;
 
-    public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
+    public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
         this.instanceProperties = instanceProperties;
         this.jars = jars;
     }

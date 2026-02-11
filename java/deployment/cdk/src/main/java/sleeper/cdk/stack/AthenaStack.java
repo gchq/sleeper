@@ -33,7 +33,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -57,7 +57,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 public class AthenaStack extends NestedStack {
 
     public AthenaStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");

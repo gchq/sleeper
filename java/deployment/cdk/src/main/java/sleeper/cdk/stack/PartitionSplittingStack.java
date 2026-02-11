@@ -31,7 +31,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -81,7 +81,7 @@ public class PartitionSplittingStack extends NestedStack {
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperJarsInBucket jars = props.getJars();
+        SleeperJarVersionIdsCache jars = props.getJars();
 
         // Jars bucket
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");

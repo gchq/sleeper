@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -45,14 +45,14 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
     private IFunction lambda;
     private Provider provider;
 
-    public AutoStopEmrServerlessApplicationStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
+    public AutoStopEmrServerlessApplicationStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars,
             LoggingStack loggingStack) {
         super(scope, id);
         createLambda(instanceProperties, jars, loggingStack);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack) {
+    private void createLambda(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, LoggingStack loggingStack) {
 
         // Jars bucket
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");

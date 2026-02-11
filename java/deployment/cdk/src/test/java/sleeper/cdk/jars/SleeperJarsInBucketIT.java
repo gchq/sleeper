@@ -23,7 +23,7 @@ import software.amazon.awscdk.assertions.Template;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -70,7 +70,7 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
     @Test
     void shouldIncludeVersionNumberInFilenameWhenPropertyIsSetAfterJarsConstruction() {
         // Given
-        SleeperJarsInBucket jars = jars();
+        SleeperJarVersionIdsCache jars = jars();
         String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
         LambdaJar jar = LambdaJar.builder()
                 .filenameFormat("test-%s.jar")
@@ -89,7 +89,7 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
     @Test
     void shouldIncludeVersionNumberInLambdaCodeWhenSetAfterJarsConstruction() {
         // Given
-        SleeperJarsInBucket jars = jars();
+        SleeperJarVersionIdsCache jars = jars();
         String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
         LambdaJar jar = LambdaJar.builder()
                 .filenameFormat("test-%s.jar")
@@ -126,7 +126,7 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
         return properties;
     }
 
-    private SleeperJarsInBucket jars() {
-        return SleeperJarsInBucket.from(s3Client, instanceProperties);
+    private SleeperJarVersionIdsCache jars() {
+        return SleeperJarVersionIdsCache.from(s3Client, instanceProperties);
     }
 }

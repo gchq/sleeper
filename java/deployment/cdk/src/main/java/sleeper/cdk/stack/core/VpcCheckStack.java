@@ -28,7 +28,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -45,7 +45,7 @@ public class VpcCheckStack extends NestedStack {
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public VpcCheckStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, SleeperNetworking networking, LoggingStack logging) {
+            SleeperJarVersionIdsCache jars, SleeperNetworking networking, LoggingStack logging) {
         super(scope, id);
 
         // Jars bucket

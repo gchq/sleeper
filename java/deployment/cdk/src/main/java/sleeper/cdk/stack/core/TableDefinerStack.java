@@ -23,7 +23,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class TableDefinerStack extends NestedStack {
 
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket

@@ -35,7 +35,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -76,7 +76,7 @@ public class BulkExportStack extends NestedStack {
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperJarsInBucket jars = props.getJars();
+        SleeperJarVersionIdsCache jars = props.getJars();
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",

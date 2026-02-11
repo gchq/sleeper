@@ -29,7 +29,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -97,13 +97,13 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            Queue jobQueue, SleeperJarsInBucket jars, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
+            Queue jobQueue, SleeperJarVersionIdsCache jars, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
         return createJobStarterFunction(jobQueue, jars, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(
-            Queue jobQueue, SleeperJarsInBucket jars, IBucket importBucket, LogGroupRef logGroupRef,
+            Queue jobQueue, SleeperJarVersionIdsCache jars, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);

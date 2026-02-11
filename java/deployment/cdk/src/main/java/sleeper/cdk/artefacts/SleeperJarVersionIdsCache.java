@@ -38,25 +38,25 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * deployment will be done against a specific version of each jar. It will only check the bucket once for each jar, and
  * you can reuse the same object for multiple Sleeper instances.
  */
-public class SleeperJarsInBucket {
+public class SleeperJarVersionIdsCache {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarVersionIdsCache.class);
 
     private final GetVersionId getVersionId;
     private final InstanceProperties instanceProperties;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private SleeperJarsInBucket(GetVersionId getVersionId, InstanceProperties instanceProperties) {
+    private SleeperJarVersionIdsCache(GetVersionId getVersionId, InstanceProperties instanceProperties) {
         this.getVersionId = getVersionId;
         this.instanceProperties = instanceProperties;
     }
 
-    public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
+    public static SleeperJarVersionIdsCache from(S3Client s3, InstanceProperties instanceProperties) {
         return from(GetVersionId.fromJarsBucket(s3, instanceProperties), instanceProperties);
     }
 
-    public static SleeperJarsInBucket from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
-        return new SleeperJarsInBucket(getVersionId, instanceProperties);
+    public static SleeperJarVersionIdsCache from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
+        return new SleeperJarVersionIdsCache(getVersionId, instanceProperties);
     }
 
     public IBucket createJarsBucketReference(Construct scope, String id) {

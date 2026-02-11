@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -45,14 +45,14 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     private IFunction lambda;
     private Provider provider;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, LoggingStack loggingStack) {
         super(scope, id);
         createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
     // This is for a standalone system test deployment, where there is no Sleeper instance and the LoggingStack is not used.
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
         super(scope, id);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS, instanceProperties);
         ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER, instanceProperties);
@@ -60,7 +60,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createLambda(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
         IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
