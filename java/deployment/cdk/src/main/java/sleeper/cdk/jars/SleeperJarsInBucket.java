@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
+import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -63,7 +64,7 @@ public class SleeperJarsInBucket {
     }
 
     public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
-        return new SleeperLambdaCode(this, instanceProperties, bucketConstruct);
+        return SleeperLambdaCode.from(instanceProperties, new SleeperArtefactsFromProperties(instanceProperties, this), bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {
