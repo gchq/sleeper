@@ -220,6 +220,22 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
                     .isEqualTo(tableProperties);
         }
+
+        @Test
+        public void shouldRenameTableSuccessfully() throws IOException {
+            //Given
+            tableProperties.set(TABLE_NAME, "old-table-name");
+            callLambda(CREATE, tableProperties);
+
+            tableProperties.set(TABLE_NAME, "new-table-name");
+
+            //When
+            callLambda(UPDATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
+        }
     }
 
     @Nested

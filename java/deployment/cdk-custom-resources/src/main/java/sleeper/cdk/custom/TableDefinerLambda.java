@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -85,8 +86,7 @@ public class TableDefinerLambda {
                 break;
             case "Update":
                 LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                tableProperties.validate();
-                tablePropertiesStore.save(tableProperties);
+                updateTable(tableProperties, tablePropertiesStore);
                 break;
             case "Delete":
                 deleteTable(tableProperties, tablePropertiesStore);
@@ -158,4 +158,25 @@ public class TableDefinerLambda {
             tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
         }
     }
+
+    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
+        Optional<TableStatus> existingOpt = tablePropertiesStore.getExistingStatus(tableProperties);
+        String tableId = tableProperties.get(TABLE_ID);
+        String tableName = tableProperties.get(TABLE_NAME);
+        TableProperties oldTableProperties;
+
+        if (tableId.isEmpty()) {
+            oldTableProperties = tablePropertiesStore.loadByName(tableName);
+        } else {
+            oldTableProperties = tablePropertiesStore.loadById(tableId);
+        }
+
+        if (!oldTableProperties.get(TABLE_NAME).equals(tableName)) {
+            tableProperties.set(TABLE_NAME, tableName);
+        }
+
+        tableProperties.validate();
+        tablePropertiesStore.updateTable(existingOpt.get(), tableProperties);
+    }
+
 }

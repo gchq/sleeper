@@ -175,7 +175,13 @@ public class TablePropertiesStore {
         }
     }
 
-    private Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
+    /**
+     * Get the existing table status.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the table status
+     */
+    public Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
         if (tableProperties.isSet(TABLE_ID)) {
             return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
         } else {
@@ -183,7 +189,13 @@ public class TablePropertiesStore {
         }
     }
 
-    private void updateTable(TableStatus existing, TableProperties tableProperties) {
+    /**
+     * Update a Sleeper table.
+     *
+     * @param existing        the existing table status
+     * @param tableProperties the table properties
+     */
+    public void updateTable(TableStatus existing, TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
         if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
