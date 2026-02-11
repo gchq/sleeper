@@ -22,7 +22,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 
