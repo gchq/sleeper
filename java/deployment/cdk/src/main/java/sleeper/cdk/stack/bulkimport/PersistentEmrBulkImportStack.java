@@ -39,6 +39,7 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,9 +166,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .collect(Collectors.toList()));
 
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
-            int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
-            int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-            PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity,maxEmrCapacity);
+            int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
+            int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+            PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")

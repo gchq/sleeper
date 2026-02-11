@@ -17,6 +17,9 @@ package sleeper.core.properties.model;
 
 /**
  * Stores information about the EMR managed scaling parameters for persistent EMR bulk import stacks.
+ *
+ * @param minCapacityUnits minimum number of EMR core/task workers
+ * @param maxCapacityUnits maximum number of EMR core/task workers
  */
 public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCapacityUnits) {
 
@@ -26,11 +29,11 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
      * @return true if parameters are valid
      */
     public boolean isValid() {
-        return (minCapacityUnits > 0) &&
-                (maxCapacityUnits > 0) &&
-                (minCapacityUnits <= 2000) &&
-                (maxCapacityUnits <= 2000) &&
-                (minCapacityUnits < maxCapacityUnits);
+        return minCapacityUnits > 0 &&
+                maxCapacityUnits > 0 &&
+                minCapacityUnits <= 2000 &&
+                maxCapacityUnits <= 2000 &&
+                minCapacityUnits < maxCapacityUnits;
     }
 
     /**
@@ -46,4 +49,4 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
         }
         return Math.min(maximumCoreCapacityUnits, maxCapacityUnits);
     }
-};
+}
