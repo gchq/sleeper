@@ -20,6 +20,7 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
+import sleeper.cdk.artefacts.SleeperArtefactRepositories;
 import sleeper.cdk.util.CdkContext;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 

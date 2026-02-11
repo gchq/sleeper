@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.artefacts;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
