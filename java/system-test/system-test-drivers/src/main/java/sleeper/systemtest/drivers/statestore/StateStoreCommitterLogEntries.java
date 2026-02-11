@@ -15,6 +15,9 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.clients.report.statestore.StateStoreCommitSummary;
 import sleeper.clients.report.statestore.StateStoreCommitterLogEntry;
 import sleeper.clients.report.statestore.StateStoreCommitterRequestsPerSecond;
@@ -31,7 +34,7 @@ import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toMap;
 
 public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
-
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterLogEntries.class);
     private final List<StateStoreCommitterLogEntry> logs;
 
     public StateStoreCommitterLogEntries(List<StateStoreCommitterLogEntry> logs) {
@@ -49,8 +52,11 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
 
     @Override
     public Map<String, Double> computeOverallCommitsPerSecondByTableId(Set<String> tableIds) {
+        LOGGER.info("Test1 - logs size: {}", logs.size());
         List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+        LOGGER.info("Test2 - runs size: {}", runs.size());
         Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
+        LOGGER.info("Test3 - runs map size: {}", runsByTableId.size());
         return tableIds.stream()
                 .collect(toMap(id -> id, tableId -> {
                     List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
