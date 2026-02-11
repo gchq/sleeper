@@ -67,7 +67,7 @@ public class StateStoreDSl {
         return commitsPerSecond;
     }
 
-    public Map<String, Double> commitsPerSecondByTable() {
+public Map<String, Double> commitsPerSecondByTable()
         Map<String, Double> byTableId = commitsPerSecondByTableId();
         SystemTestInstanceContext instance = context.instance();
         return instance.streamTableProperties()
