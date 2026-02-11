@@ -27,6 +27,8 @@ import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 public class QueryTypeDsl {
 
+    private static final UnaryOperator<QueryDsl> DEFAULT_QUERY_TYPE = query -> query.direct();
+
     private final Map<TableProperty, String> tableProperties;
     private final UnaryOperator<QueryDsl> setQueryType;
 
@@ -46,7 +48,7 @@ public class QueryTypeDsl {
 
     public static class Builder {
         private Map<TableProperty, String> tableProperties = new HashMap<>();
-        private UnaryOperator<QueryDsl> setQueryType = query -> query.direct();
+        private UnaryOperator<QueryDsl> setQueryType = DEFAULT_QUERY_TYPE;
 
         private Builder() {
         }
