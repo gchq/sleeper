@@ -6,8 +6,8 @@ Number of files: 2
 Number of files with references: 2
 Number of files with no references, which will be garbage collected: 0
 Number of references to files: 2
-Number of file references in leaf partitions: min = 1, max = 1, average = 1.0, total = 1
-Number of file references in non-leaf partitions: min = 1, max = 1, average = 1.0, total = 1
+Number of file references in leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 1
+Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 1
 Number of rows referenced in partitions: 100M (100,000,003)
 Number of rows in non-leaf partitions: 50M (50,000,002)
 Number of rows in leaf partitions: 50M (50,000,001)
