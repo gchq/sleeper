@@ -92,6 +92,8 @@ import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_P
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
@@ -278,6 +280,18 @@ class InstancePropertiesTest {
                 .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
     }
 
+    @Test
+    public void shouldFailValidationForInvalidEMRManagedScalingBounds() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "15");
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "10");
+
+        // When / Then
+        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY.getPropertyName()));
+    }
+
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");
@@ -346,6 +360,8 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 100_000_000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 20);
 
         return instanceProperties;
     }

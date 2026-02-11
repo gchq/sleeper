@@ -89,7 +89,7 @@ public interface PersistentEMRProperty {
                     "instance types, as each type will count for a certain number of units. By default the units are " +
                     "the number of instances.\n" +
                     "If managed scaling is not used then the cluster will be of fixed size, with a number of " +
-                    "instances equal to this value.")
+                    "instances equal to this value. This value must be in the range [0, 2000].")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -100,7 +100,8 @@ public interface PersistentEMRProperty {
                     "This is measured in instance fleet capacity units. These are declared alongside the requested " +
                     "instance types, as each type will count for a certain number of units. By default the units are " +
                     "the number of instances.\n" +
-                    "This value is only used if managed scaling is used.")
+                    "This value is only used if managed scaling is used. This value must be in the range [0, 2000] and greater than\n" +
+                    "the minimum capacity.")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)

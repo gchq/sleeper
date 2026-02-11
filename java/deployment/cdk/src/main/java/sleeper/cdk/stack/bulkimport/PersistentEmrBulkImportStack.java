@@ -165,21 +165,15 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .collect(Collectors.toList()));
 
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
-            int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
-            int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-            if (maxEmrCapacity <= minEmrCapacity) {
-                throw new IllegalArgumentException(String.format("Max must be > than min for EMR managed scaling, %s = %d, %s = %d",
-                        BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY.getPropertyName(),
-                        minEmrCapacity,
-                        BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName(),
-                        maxEmrCapacity));
-            }
+            int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
+            int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+            PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity,maxEmrCapacity);
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")
-                            .minimumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
+                            .minimumCapacityUnits(minEmrCapacity)
                             .maximumCapacityUnits(maxEmrCapacity)
-                            .maximumCoreCapacityUnits(Math.min(3, maxEmrCapacity))
+                            .maximumCoreCapacityUnits(bounds.boundMaxCoreCapacityUnits(3))
                             .build())
                     .build();
             propsBuilder.managedScalingPolicy(scalingPolicy);

@@ -18,7 +18,9 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 
 /**
  * Contains values of the properties to configure an instance of Sleeper.
@@ -68,6 +72,22 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.resetAndValidate(properties);
         return instanceProperties;
+    }
+
+    /**
+     * Overridden to check EMR managed scaling bounds are correct.
+     */
+    @Override
+    public void validate(SleeperPropertiesValidationReporter reporter) {
+        super.validate(reporter);
+
+        int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
+        int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
+        if (!bounds.isValid()) {
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, get(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY));
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, get(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY));
+        }
     }
 
     /**
