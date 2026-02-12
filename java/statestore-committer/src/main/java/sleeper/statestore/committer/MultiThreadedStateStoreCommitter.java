@@ -229,12 +229,12 @@ public class MultiThreadedStateStoreCommitter {
 
     private void processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
         Instant startedAt = Instant.now();
-        LOGGER.info("Lambda started at {}", startedAt);
+        LOGGER.info("State store committer process started at {}", startedAt);
         LOGGER.info("Processing {} requests for table: {} ...", startedAt, requests.size(), tableId);
         applyBatchOfCommits(retryOnThrottling, stateStore, requests);
         reportCommitOutcomesToSqs(tableId, requests);
         Instant finishTime = Instant.now();
-        LOGGER.info("Lambda finished at {} (ran for {})",
+        LOGGER.info("State store committer process finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startedAt, finishTime));
         LOGGER.info("Finished applying batch of {} commit requests for table {} in {}",
                 requests.size(),

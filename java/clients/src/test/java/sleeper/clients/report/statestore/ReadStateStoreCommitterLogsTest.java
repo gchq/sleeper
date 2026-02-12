@@ -30,7 +30,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLambdaStarted() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
 
         // When / Then
@@ -41,7 +41,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLambdaFinished() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process finished at 2024-08-13T12:13:00Z (ran for 1 minute)\n";
         Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
 
         // When / Then
@@ -73,7 +73,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLogWithFieldsInReverseOrder() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
         List<ResultField> entry = List.of(
                 messageField(message),
@@ -88,7 +88,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadLogWithExtraFields() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
         List<ResultField> entry = List.of(
                 ResultField.builder().field("@extraField").value("some value").build(),
@@ -107,7 +107,7 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadTimestampFromString() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         List<ResultField> entry = List.of(
                 messageField(message),
                 timestampField("2024-08-13 12:12:30.123"),

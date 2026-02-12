@@ -37,8 +37,8 @@ public class ReadStateStoreCommitterLogs {
     public static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS");
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at ([^\\s]+)|" + // Lambda started message type
-            "Lambda finished at ([^\\s]+) |" + // Lambda finished message type
+            "State store committer process started at ([^\\s]+)|" + // Lambda started message type
+            "State store committer process finished at ([^\\s]+) |" + // Lambda finished message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     /**
