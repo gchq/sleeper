@@ -25,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.query.QueryTypeDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
@@ -42,6 +43,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
  * we can't test them fully without deploying an Amazon API Gateway. Direct and SQS queries have more coverage through
  * integration tests, so their system test coverage here is more basic.
  */
+@SystemTest
 public class QueryST {
     @TempDir
     private Path tempDir;
