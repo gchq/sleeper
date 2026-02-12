@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
 import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
@@ -101,6 +102,7 @@ public class SleeperInstanceProps {
         return builder()
                 .instanceProperties(instanceProperties)
                 .jars(SleeperJarVersionIdsCache.from(s3Client, instanceProperties))
+                .artefacts(new SleeperArtefactsFromProperties(instanceProperties, SleeperJarVersionIdsCache.from(s3Client, instanceProperties)))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
