@@ -36,6 +36,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
@@ -122,8 +123,9 @@ public class SleeperCoreStacks {
         InstanceProperties instanceProperties = props.getInstanceProperties();
 
         SleeperJarVersionIdsCache jars = props.getJars();
+        SleeperArtefacts artefacts = props.getArtefacts();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcCheckStack(scope, "Vpc", instanceProperties, props, networking, loggingStack);
+            new VpcCheckStack(scope, "Vpc", instanceProperties, artefacts, networking, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");

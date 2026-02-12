@@ -86,7 +86,7 @@ public class PartitionSplittingStack extends NestedStack {
         partitionSplittingJobQueue = createJobQueues(instanceProperties, coreStacks);
 
         // Partition splitting code
-        SleeperLambdaCode lambdaCode = props.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, props.getArtefacts());
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         // Lambda to batch tables and put requests on the batch SQS queue, to be consumed by FindPartitionsToSplit

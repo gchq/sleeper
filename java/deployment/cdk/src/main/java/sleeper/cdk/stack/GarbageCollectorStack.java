@@ -64,7 +64,7 @@ public class GarbageCollectorStack extends NestedStack {
         InstanceProperties instanceProperties = props.getInstanceProperties();
 
         // Garbage collector code
-        SleeperLambdaCode lambdaCode = props.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, props.getArtefacts());
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");

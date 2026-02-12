@@ -16,8 +16,6 @@
 package sleeper.cdk;
 
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
@@ -25,7 +23,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
-import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -47,7 +44,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
@@ -192,18 +188,6 @@ public class SleeperInstanceProps {
 
     public SleeperArtefacts getArtefacts() {
         return artefacts;
-    }
-
-    public SleeperLambdaCode lambdaCode(Construct scope) {
-        return lambdaCode(createJarsBucketReference(scope, "LambdaCodeBucket"));
-    }
-
-    private SleeperLambdaCode lambdaCode(IBucket jarsBucket) {
-        return SleeperLambdaCode.from(instanceProperties, artefacts, jarsBucket);
-    }
-
-    private IBucket createJarsBucketReference(Construct scope, String id) {
-        return Bucket.fromBucketName(scope, id, instanceProperties.get(JARS_BUCKET));
     }
 
     public boolean isDeployPaused() {
