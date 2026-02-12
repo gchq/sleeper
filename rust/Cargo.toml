@@ -34,12 +34,12 @@ aws-types = { version = "1.3.11" }                   # for Region
 bytes = { version = "1.11.1" }                      # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.23.1" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.43" }                     # Log helper
-clap = { version = "4.5.57" }                       # Cmd line args processing
+clap = { version = "4.5.58" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
 datafusion = { version = "52.1.0" }
-env_logger = { version = "0.11.8" }                 # Standard logging to stderr
+env_logger = { version = "0.11.9" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.4" }                       # Interact with version control
 human-panic = { version = "2.0.6" }                 # Readable panic messages
@@ -50,7 +50,7 @@ num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types
 object_store = { version = "0.12.4" }               # Remote cloud storage access
 owo-colors = { version = "4.2.3" }                  # Colourised output
-predicates = { version = "3.1.3" }                  # Test assertions
+predicates = { version = "3.1.4" }                  # Test assertions
 rand = { version = "0.10.0" }                        # Random number generation
 regex = { version = "1.12.3" }                      # Regular expressions
 serde_json = { version = "1.0.149" }                # Process metadata JSON
