@@ -39,7 +39,7 @@ color-eyre = { version = "0.6.5" }                  # Colourised version of `any
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
 datafusion = { version = "52.1.0" }
-env_logger = { version = "0.11.8" }                 # Standard logging to stderr
+env_logger = { version = "0.11.9" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.4" }                       # Interact with version control
 human-panic = { version = "2.0.6" }                 # Readable panic messages
