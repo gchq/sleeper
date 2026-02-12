@@ -24,6 +24,7 @@ public class DataFusionAwsConfig {
     private final String endpoint;
     private final String accessKey;
     private final String secretKey;
+    private final String sessionToken;
     private final boolean allowHttp;
 
     private DataFusionAwsConfig(Builder builder) {
@@ -31,6 +32,7 @@ public class DataFusionAwsConfig {
         endpoint = builder.endpoint;
         accessKey = builder.accessKey;
         secretKey = builder.secretKey;
+        sessionToken = builder.sessionToken;
         allowHttp = builder.allowHttp;
     }
 
@@ -81,6 +83,7 @@ public class DataFusionAwsConfig {
         config.endpoint.set(endpoint == null ? "" : endpoint);
         config.access_key.set(accessKey);
         config.secret_key.set(secretKey);
+        config.session_token.set(sessionToken == null ? "" : sessionToken);
         config.allow_http.set(allowHttp);
         return config;
     }
@@ -93,6 +96,7 @@ public class DataFusionAwsConfig {
         private String endpoint;
         private String accessKey;
         private String secretKey;
+        private String sessionToken;
         private boolean allowHttp;
 
         private Builder() {
@@ -139,6 +143,17 @@ public class DataFusionAwsConfig {
          */
         public Builder secretKey(String secretKey) {
             this.secretKey = secretKey;
+            return this;
+        }
+
+        /**
+         * Sets the session token.
+         *
+         * @param  sessionToken the session token
+         * @return              the builder for chaining
+         */
+        public Builder sessionToken(String sessionToken) {
+            this.sessionToken = sessionToken;
             return this;
         }
 
