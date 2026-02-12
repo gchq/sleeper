@@ -73,6 +73,7 @@ public class StateStoreCommitterRun {
 
     private Optional<Instant> getFinishTimeOrLastCommitTime() {
         Instant finishTime = getFinishTime();
+        LOGGER.info("Test 7.5 - Finishtime {}", finishTime);
         if (finishTime != null) {
             return Optional.of(finishTime);
         }
