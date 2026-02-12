@@ -50,7 +50,7 @@ num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types
 object_store = { version = "0.12.4" }               # Remote cloud storage access
 owo-colors = { version = "4.2.3" }                  # Colourised output
-predicates = { version = "3.1.3" }                  # Test assertions
+predicates = { version = "3.1.4" }                  # Test assertions
 rand = { version = "0.10.0" }                        # Random number generation
 regex = { version = "1.12.3" }                      # Regular expressions
 serde_json = { version = "1.0.149" }                # Process metadata JSON
