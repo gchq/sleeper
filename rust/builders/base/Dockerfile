@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     # Sleeper Rust build-time dependencies
     build-essential libssl-dev \
     # Clang installation dependencies
-    lsb-release wget gnupg \
+    lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang 20
