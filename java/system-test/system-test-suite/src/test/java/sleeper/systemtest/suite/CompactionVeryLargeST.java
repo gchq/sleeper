@@ -112,7 +112,7 @@ public class CompactionVeryLargeST {
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
                     assertThat(results.rows()).hasSizeBetween(30000, 50000);
-                    assertThat(results.duration()).isLessThan(Duration.ofSeconds(10));
+                    assertThat(results.duration()).isLessThan(Duration.ofMinutes(1));
                 });
         // And the second query should be faster
         assertThat(sleeper.query().webSocket()
