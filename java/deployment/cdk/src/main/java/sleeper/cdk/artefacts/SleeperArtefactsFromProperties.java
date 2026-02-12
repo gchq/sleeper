@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.core.deploy.DockerDeployment;
@@ -45,6 +46,11 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
     public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
         this.instanceProperties = instanceProperties;
         this.jars = jars;
+    }
+
+    public static SleeperArtefactsFromProperties from(S3Client s3Client, InstanceProperties instanceProperties) {
+        return new SleeperArtefactsFromProperties(instanceProperties,
+                SleeperJarVersionIdsCache.from(s3Client, instanceProperties));
     }
 
     @Override

@@ -102,7 +102,7 @@ public class SleeperInstanceProps {
         return builder()
                 .instanceProperties(instanceProperties)
                 .jars(SleeperJarVersionIdsCache.from(s3Client, instanceProperties))
-                .artefacts(new SleeperArtefactsFromProperties(instanceProperties, SleeperJarVersionIdsCache.from(s3Client, instanceProperties)))
+                .artefacts(SleeperArtefactsFromProperties.from(s3Client, instanceProperties))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 

@@ -27,10 +27,9 @@ import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -53,28 +52,25 @@ public class EcsClusterTasksStack extends NestedStack {
     private Provider provider;
     private SecurityGroup ecsSecurityGroup;
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars,
-            LoggingStack loggingStack) {
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, LoggingStack loggingStack) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
-        createAutoStopLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
+        createAutoStopLambda(instanceProperties, artefacts, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
         ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
-        createAutoStopLambda(instanceProperties, jars, logGroup, providerLogGroup);
+        createAutoStopLambda(instanceProperties, artefacts, logGroup, providerLogGroup);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
-        // Jars bucket
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, artefacts);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");

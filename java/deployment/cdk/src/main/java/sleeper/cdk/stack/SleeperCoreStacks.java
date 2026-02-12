@@ -114,7 +114,7 @@ public class SleeperCoreStacks {
         SleeperNetworking networking = props.getNetworkingProvider().getNetworking(stack);
         props.prepareProperties(stack, networking);
         LoggingStack loggingStack = new LoggingStack(stack, "Logging", props.getInstanceProperties());
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(stack, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(stack, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getArtefacts(), loggingStack);
         return create(stack, props, networking, loggingStack, autoDeleteS3Stack);
     }
 
@@ -134,7 +134,7 @@ public class SleeperCoreStacks {
                 new TopicStack(scope, "Topic", instanceProperties));
 
         // Custom resource providers
-        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, artefacts, loggingStack);
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
 
         // Stacks for tables

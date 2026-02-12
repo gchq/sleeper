@@ -22,11 +22,9 @@ import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.LogGroup;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -37,19 +35,16 @@ import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestPropertiesStack extends NestedStack {
 
     public SystemTestPropertiesStack(
             Construct scope, String id, SystemTestStandaloneProperties systemTestProperties,
-            SystemTestBucketStack bucketStack, SleeperJarVersionIdsCache jars) {
+            SystemTestBucketStack bucketStack, SleeperArtefacts artefacts) {
         super(scope, id);
 
-        String jarsBucketName = systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, systemTestProperties.toInstancePropertiesForCdkUtils(), artefacts);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
