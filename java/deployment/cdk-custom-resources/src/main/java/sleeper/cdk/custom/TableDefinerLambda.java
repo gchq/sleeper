@@ -163,15 +163,15 @@ public class TableDefinerLambda {
         Optional<TableStatus> existingOpt = tablePropertiesStore.getExistingStatus(tableProperties);
         String tableId = tableProperties.get(TABLE_ID);
         String tableName = tableProperties.get(TABLE_NAME);
-        TableProperties oldTableProperties;
+        TableProperties existingTableProperties;
 
         if (tableId.isEmpty()) {
-            oldTableProperties = tablePropertiesStore.loadByName(tableName);
+            existingTableProperties = tablePropertiesStore.loadByName(tableName);
         } else {
-            oldTableProperties = tablePropertiesStore.loadById(tableId);
+            existingTableProperties = tablePropertiesStore.loadById(tableId);
         }
 
-        if (!oldTableProperties.get(TABLE_NAME).equals(tableName)) {
+        if (!existingTableProperties.get(TABLE_NAME).equals(tableName)) {
             tableProperties.set(TABLE_NAME, tableName);
         }
 
