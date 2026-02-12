@@ -17,7 +17,6 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -130,7 +129,8 @@ public class QueryWebSocketST {
     // We established an appropriate number of rows for this by roughly checking the payload size produced in
     // QueryWebSocketMessageSerDeTest and comparing against the AWS docs:
     // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
-    @Test
+    @ParameterizedTest
+    @MethodSource("queryTypes")
     void shouldRunQueryReturningTooManyRowsForOneWebSocketMessage(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given we have a number of rows that will break API Gateway's limit on payload size
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 3000));
