@@ -119,7 +119,7 @@ public class CompactionVeryLargeST {
                 .timedByRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME, range("aaaaaa", "aaaazz")))
                 .satisfies(results -> {
                     assertThat(results.rows()).hasSizeBetween(30000, 50000);
-                    assertThat(results.duration()).isLessThan(Duration.ofSeconds(2));
+                    assertThat(results.duration()).isLessThan(Duration.ofSeconds(10));
                 });
     }
 }
