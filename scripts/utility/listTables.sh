@@ -1,4 +1,5 @@
-# Copyright 2022-2025 Crown Copyright
+#!/usr/bin/env bash
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rust:1.93-bookworm
+set -e
+unset CDPATH
 
-RUN apt-get update && apt-get install -y \
-    # Sleeper Rust build-time dependencies
-    build-essential libssl-dev \
-    # Clang installation dependencies
-    lsb-release wget software-properties-common gnupg \
-    && rm -rf /var/lib/apt/lists/*
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-# Install Clang 20
-RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
-    && rm -rf /var/lib/apt/lists/*
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
 
-ENV CC=clang-20
-ENV CXX=clang++-20
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-WORKDIR /workspace
+java --add-opens=java.base/java.nio=ALL-UNNAMED -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.ListTablesReport "$@"
