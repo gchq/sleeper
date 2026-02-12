@@ -57,10 +57,15 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
         LOGGER.info("Test2 - runs size: {}", runs.size());
         Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
         LOGGER.info("Test3 - runs map size: {}", runsByTableId.size());
-        LOGGER.info("Test4 - runs map: {}", runsByTableId.toString());
         return tableIds.stream()
                 .collect(toMap(id -> id, tableId -> {
+                    LOGGER.info("Test4 - tableId {}", tableId);
                     List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
+                    LOGGER.info("Test5 - tableRuns {}", tableRuns.size());
+                    long matchingCommits = tableRuns.stream()
+                            .filter(run -> !run.getCommits().isEmpty())
+                            .count();
+                    LOGGER.info("Test6 - Matching Commits {}", matchingCommits);
                     return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondInRuns(tableRuns);
                 }));
     }
