@@ -96,7 +96,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("State store committer process started {}", startTime);
+        LOGGER.info("State store committer process started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<RequestHandle> requests = getRequestHandlesWithFailureTracking(event,
                 failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
