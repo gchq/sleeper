@@ -15,6 +15,22 @@
  */
 package sleeper.cdk.artefacts;
 
-public interface SleeperArtefacts extends SleeperLambdaImages, SleeperLambdaJars, SleeperEcsImages, SleeperDockerImageNames {
+import software.constructs.Construct;
+
+import sleeper.cdk.lambda.SleeperLambdaCode;
+
+/**
+ * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
+ * ECR.
+ */
+public interface SleeperArtefacts extends SleeperLambdaImages, SleeperLambdaJars {
+
+    /**
+     * Creates a helper to deploy lambdas using these deployment artefacts.
+     *
+     * @param  scope the scope you want to deploy lambas in
+     * @return       the helper
+     */
+    SleeperLambdaCode lambdaCode(Construct scope);
 
 }

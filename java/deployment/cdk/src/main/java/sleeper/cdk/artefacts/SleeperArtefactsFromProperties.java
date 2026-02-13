@@ -21,10 +21,12 @@ import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
+import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -33,12 +35,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
  * that is passed to SleeperInstance.
  */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts {
+public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperEcsImages, SleeperDockerImageNames {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJarVersionIdsCache jars;
@@ -66,6 +69,12 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
     @Override
     public Code jarCode(IBucket jarsBucket, LambdaJar jar) {
         return Code.fromBucket(jarsBucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
+    }
+
+    @Override
+    public SleeperLambdaCode lambdaCode(Construct scope) {
+        IBucket bucket = Bucket.fromBucketName(scope, "LambdaCodeBucket", instanceProperties.get(JARS_BUCKET));
+        return new SleeperLambdaCode(instanceProperties, this, this, bucket);
     }
 
     @Override

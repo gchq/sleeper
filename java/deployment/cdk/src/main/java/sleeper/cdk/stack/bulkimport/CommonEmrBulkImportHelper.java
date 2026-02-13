@@ -96,7 +96,7 @@ public class CommonEmrBulkImportHelper {
 
     public IFunction createJobStarterFunction(
             Queue jobQueue, SleeperArtefacts artefacts, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(scope, instanceProperties, artefacts);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(scope);
         return createJobStarterFunction(jobQueue, lambdaCode, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
