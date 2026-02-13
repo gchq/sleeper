@@ -29,7 +29,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
- * Finds jars to deploy lambda functions. This will finds the latest version of each jar in a versioned S3 bucket. The
+ * Finds jars to deploy lambda functions. Looks up the latest version of each jar in a versioned S3 bucket. The
  * deployment will be done against a specific version of each jar. It will only check the bucket once for each jar, and
  * you can reuse the same object for multiple Sleeper instances.
  */
