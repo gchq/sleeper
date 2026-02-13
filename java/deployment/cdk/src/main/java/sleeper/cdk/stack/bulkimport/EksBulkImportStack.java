@@ -118,7 +118,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper", instanceId, "bulk-import-eks-starter");
 

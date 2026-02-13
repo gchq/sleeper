@@ -62,7 +62,7 @@ public class AthenaStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "spill-bucket");

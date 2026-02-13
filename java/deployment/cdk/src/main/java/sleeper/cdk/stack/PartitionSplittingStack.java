@@ -79,7 +79,7 @@ public class PartitionSplittingStack extends NestedStack {
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         // Create queue for batching tables

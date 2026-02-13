@@ -59,7 +59,7 @@ public class CompactionStack extends NestedStack {
         //   then it creates more tasks).
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getInstanceProperties().get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
         jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);
 

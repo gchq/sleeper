@@ -92,7 +92,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         createEmrServerlessApplication(instanceProperties, coreStacks, autoStopEmrServerlessApplicationStack);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);

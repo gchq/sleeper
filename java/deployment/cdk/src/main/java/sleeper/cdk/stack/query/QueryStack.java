@@ -92,7 +92,7 @@ public class QueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");

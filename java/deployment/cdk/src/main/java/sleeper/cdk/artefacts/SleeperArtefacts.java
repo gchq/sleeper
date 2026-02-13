@@ -31,6 +31,6 @@ public interface SleeperArtefacts extends SleeperLambdaImages, SleeperLambdaJars
      * @param  scope the scope you want to deploy lambas in
      * @return       the helper
      */
-    SleeperLambdaCode lambdaCode(Construct scope);
+    SleeperLambdaCode lambdaCodeAtScope(Construct scope);
 
 }

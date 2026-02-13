@@ -47,7 +47,7 @@ public class VpcCheckStack extends NestedStack {
             SleeperArtefacts artefacts, SleeperNetworking networking, LoggingStack logging) {
         super(scope, id);
 
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "vpc-check");

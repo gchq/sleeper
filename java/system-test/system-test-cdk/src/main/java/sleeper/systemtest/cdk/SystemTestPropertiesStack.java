@@ -44,7 +44,7 @@ public class SystemTestPropertiesStack extends NestedStack {
             SystemTestBucketStack bucketStack, SleeperArtefacts artefacts) {
         super(scope, id);
 
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());

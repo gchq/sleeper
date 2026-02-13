@@ -72,7 +72,7 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
     }
 
     @Override
-    public SleeperLambdaCode lambdaCode(Construct scope) {
+    public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
         IBucket bucket = Bucket.fromBucketName(scope, "LambdaCodeBucket", instanceProperties.get(JARS_BUCKET));
         return new SleeperLambdaCode(instanceProperties, this, this, bucket);
     }
