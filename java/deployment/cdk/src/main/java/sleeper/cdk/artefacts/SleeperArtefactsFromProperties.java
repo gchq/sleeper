@@ -45,16 +45,16 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class SleeperArtefactsFromProperties implements SleeperArtefacts {
 
     private final InstanceProperties instanceProperties;
-    private final SleeperJarVersionIdsCache jars;
+    private final SleeperJarVersionIdProvider jars;
 
-    public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarVersionIdsCache jars) {
+    public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
         this.instanceProperties = instanceProperties;
         this.jars = jars;
     }
 
     public static SleeperArtefactsFromProperties from(S3Client s3Client, InstanceProperties instanceProperties) {
         return new SleeperArtefactsFromProperties(instanceProperties,
-                SleeperJarVersionIdsCache.from(s3Client, instanceProperties));
+                SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
     }
 
     @Override

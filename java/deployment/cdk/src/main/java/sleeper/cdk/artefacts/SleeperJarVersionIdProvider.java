@@ -33,19 +33,19 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * deployment will be done against a specific version of each jar. It will only check the bucket once for each jar, and
  * you can reuse the same object for multiple Sleeper instances.
  */
-public class SleeperJarVersionIdsCache {
+public class SleeperJarVersionIdProvider {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarVersionIdsCache.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarVersionIdProvider.class);
 
     private final GetVersionId getVersionId;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    public SleeperJarVersionIdsCache(GetVersionId getVersionId) {
+    public SleeperJarVersionIdProvider(GetVersionId getVersionId) {
         this.getVersionId = getVersionId;
     }
 
-    public static SleeperJarVersionIdsCache from(S3Client s3, InstanceProperties instanceProperties) {
-        return new SleeperJarVersionIdsCache(GetVersionId.fromJarsBucket(s3, instanceProperties));
+    public static SleeperJarVersionIdProvider from(S3Client s3, InstanceProperties instanceProperties) {
+        return new SleeperJarVersionIdProvider(GetVersionId.fromJarsBucket(s3, instanceProperties));
     }
 
     public String getLatestVersionId(LambdaJar jar) {

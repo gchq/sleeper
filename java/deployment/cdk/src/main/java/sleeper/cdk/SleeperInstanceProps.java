@@ -23,7 +23,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
+import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -226,7 +226,7 @@ public class SleeperInstanceProps {
          * @param  jars the jars
          * @return      this builder
          */
-        public Builder jars(SleeperJarVersionIdsCache jars) {
+        public Builder jars(SleeperJarVersionIdProvider jars) {
             return this;
         }
 
