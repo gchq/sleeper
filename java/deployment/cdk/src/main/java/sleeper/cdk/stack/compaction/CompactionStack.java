@@ -16,15 +16,17 @@
 package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
+
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * Deploys the resources needed to create and execute compaction jobs. This is done by delegating
@@ -56,10 +58,8 @@ public class CompactionStack extends NestedStack {
         //   and if there are not enough (i.e. there is a backlog on the queue
         //   then it creates more tasks).
 
-        // Jars bucket
-        SleeperJarVersionIdsCache jars = props.getJars();
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getInstanceProperties().get(JARS_BUCKET));
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.from(props.getInstanceProperties(), props.getArtefacts(), jarsBucket);
 
         jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);
 

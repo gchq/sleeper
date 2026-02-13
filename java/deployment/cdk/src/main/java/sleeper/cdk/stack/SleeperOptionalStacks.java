@@ -68,7 +68,7 @@ public class SleeperOptionalStacks {
 
         BulkImportBucketStack bulkImportBucketStack = null;
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(scope, "BulkImportBucket", instanceProperties, coreStacks, jars);
+            bulkImportBucketStack = new BulkImportBucketStack(scope, "BulkImportBucket", instanceProperties, coreStacks);
         }
         CommonEmrBulkImportStack emrBulkImportCommonStack = null;
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
@@ -80,7 +80,7 @@ public class SleeperOptionalStacks {
         EmrServerlessBulkImportStack emrServerlessBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EmrServerlessBulkImportStack)) {
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessStack = new AutoStopEmrServerlessApplicationStack(
-                    scope, "AutoStopEmrServerlessApplication", instanceProperties, jars, coreStacks.getLoggingStack());
+                    scope, "AutoStopEmrServerlessApplication", instanceProperties, artefacts, coreStacks.getLoggingStack());
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(scope, "BulkImportEMRServerless",
                     instanceProperties, artefacts,
                     bulkImportBucketStack,
@@ -116,7 +116,7 @@ public class SleeperOptionalStacks {
         EksBulkImportStack eksBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
             eksBulkImportStack = new EksBulkImportStack(scope, "BulkImportEKS",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     coreStacks);
         }
@@ -149,7 +149,7 @@ public class SleeperOptionalStacks {
             queryQueueStack = new QueryQueueStack(scope, "QueryQueue",
                     instanceProperties, coreStacks);
             queryStack = new QueryStack(scope, "Query",
-                    instanceProperties, jars, coreStacks,
+                    instanceProperties, artefacts, coreStacks,
                     queryQueueStack);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
