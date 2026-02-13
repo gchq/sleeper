@@ -132,6 +132,6 @@ public class SleeperJarVersionIdsCacheIT extends LocalStackTestBase {
 
     private SleeperLambdaCode lambdaCode(Stack stack) {
         SleeperArtefacts artefacts = new SleeperArtefactsFromProperties(instanceProperties, jars());
-        return SleeperLambdaCode.atScope(stack, instanceProperties, artefacts);
+        return artefacts.lambdaCode(stack);
     }
 }

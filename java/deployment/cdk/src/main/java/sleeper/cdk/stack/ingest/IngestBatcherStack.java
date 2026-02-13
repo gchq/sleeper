@@ -120,7 +120,7 @@ public class IngestBatcherStack extends NestedStack {
                 .build();
 
         // Lambdas to receive submitted files and create batches
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, props.getInstanceProperties(), props.getArtefacts());
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");

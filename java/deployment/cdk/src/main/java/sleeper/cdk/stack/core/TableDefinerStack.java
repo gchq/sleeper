@@ -41,7 +41,7 @@ public class TableDefinerStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, artefacts);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "table-definer");

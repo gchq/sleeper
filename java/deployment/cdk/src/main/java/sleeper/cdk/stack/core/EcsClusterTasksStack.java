@@ -70,7 +70,7 @@ public class EcsClusterTasksStack extends NestedStack {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
     private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, artefacts);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");

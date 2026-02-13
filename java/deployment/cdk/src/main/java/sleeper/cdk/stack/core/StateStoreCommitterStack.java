@@ -106,7 +106,7 @@ public class StateStoreCommitterStack extends NestedStack {
             TrackDeadLetters deadLetters) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, artefacts);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 

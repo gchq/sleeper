@@ -57,7 +57,7 @@ public final class WebSocketQueryStack extends NestedStack {
             SleeperArtefacts artefacts, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, artefacts);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCode(this);
         setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
         Utils.addTags(this, instanceProperties);
     }

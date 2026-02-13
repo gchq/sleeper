@@ -104,7 +104,7 @@ public class IngestStack extends NestedStack {
         //  - A lambda that stops task when a delete cluster event is triggered.
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.from(instanceProperties, props.getArtefacts(), jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
 
         ingestJobQueue = sqsQueueForIngestJobs(coreStacks);
         Cluster cluster = ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);

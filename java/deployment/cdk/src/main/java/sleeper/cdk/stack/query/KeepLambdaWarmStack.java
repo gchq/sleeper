@@ -61,7 +61,7 @@ public class KeepLambdaWarmStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, instanceProperties, props.getArtefacts());
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
 
         // Keep lambda warm function
         IFunction handler = lambdaCode.buildFunction(this, LambdaHandler.KEEP_QUERY_WARM, "WarmQueryExecutorLambda", builder -> builder

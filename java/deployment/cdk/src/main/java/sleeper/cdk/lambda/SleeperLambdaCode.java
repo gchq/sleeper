@@ -19,11 +19,9 @@ import software.amazon.awscdk.services.lambda.DockerImageFunction;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperLambdaImages;
 import sleeper.cdk.artefacts.SleeperLambdaJars;
 import sleeper.core.deploy.LambdaHandler;
@@ -32,7 +30,6 @@ import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.function.Consumer;
 
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 public class SleeperLambdaCode {
@@ -47,14 +44,6 @@ public class SleeperLambdaCode {
         this.jars = jars;
         this.images = images;
         this.bucket = bucket;
-    }
-
-    public static SleeperLambdaCode from(InstanceProperties instanceProperties, SleeperArtefacts artefacts, IBucket jarsBucket) {
-        return new SleeperLambdaCode(instanceProperties, artefacts, artefacts, jarsBucket);
-    }
-
-    public static SleeperLambdaCode atScope(Construct scope, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
-        return from(instanceProperties, artefacts, Bucket.fromBucketName(scope, "LambdaCodeBucket", instanceProperties.get(JARS_BUCKET)));
     }
 
     public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {

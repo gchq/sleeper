@@ -70,7 +70,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.atScope(this, props.getInstanceProperties(), props.getArtefacts());
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCode(this);
         createSnapshotCreationLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
         createSnapshotDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
         Utils.addTags(this, props.getInstanceProperties());
