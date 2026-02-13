@@ -16,7 +16,6 @@
 package sleeper.cdk.artefacts;
 
 import software.amazon.awscdk.services.ecs.ContainerImage;
-import software.constructs.Construct;
 
 import sleeper.core.deploy.DockerDeployment;
 
@@ -29,11 +28,9 @@ public interface SleeperEcsImages {
      * Retrieves a reference to a Docker image. The scope and ID can be used in case it is necessary to create a new
      * construct to refer to the image.
      *
-     * @param  scope      the scope to add the reference to if necessary
      * @param  deployment which deployment we want the Docker image for
-     * @param  id         the ID for a construct for the reference if necessary
      * @return            the reference to the Docker image
      */
-    ContainerImage containerImage(Construct scope, DockerDeployment deployment, String id);
+    ContainerImage containerImage(DockerDeployment deployment);
 
 }

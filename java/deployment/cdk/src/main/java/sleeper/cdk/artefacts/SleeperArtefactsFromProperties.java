@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
  * that is passed to SleeperInstance.
  */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperEcsImages, SleeperDockerImageNames {
+public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperDockerImageNames {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJarVersionIdsCache jars;
@@ -60,6 +60,14 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
     @Override
     public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
         return new SleeperLambdaCode(scope, instanceProperties, lambdaJars(scope), lambdaImages(scope));
+    }
+
+    public SleeperEcsImages ecsImagesAtScope(Construct scope) {
+        Map<String, IRepository> deploymentNameToRepository = new HashMap<>();
+        return deployment -> ContainerImage.fromEcrRepository(
+                deploymentNameToRepository.computeIfAbsent(deployment.getDeploymentName(),
+                        imageName -> createRepositoryReference(scope, deployment)),
+                instanceProperties.get(VERSION));
     }
 
     private SleeperLambdaJars lambdaJars(Construct scope) {
@@ -83,10 +91,9 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
         return Repository.fromRepositoryName(scope, id, jar.getEcrRepositoryName(instanceProperties));
     }
 
-    @Override
-    public ContainerImage containerImage(Construct scope, DockerDeployment deployment, String id) {
-        IRepository repository = Repository.fromRepositoryName(scope, id, deployment.getEcrRepositoryName(instanceProperties));
-        return ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+    private IRepository createRepositoryReference(Construct scope, DockerDeployment deployment) {
+        String id = deployment.getDeploymentName() + "-repository";
+        return Repository.fromRepositoryName(scope, id, deployment.getEcrRepositoryName(instanceProperties));
     }
 
     @Override
