@@ -310,6 +310,7 @@ pub struct AwsConfig {
     pub endpoint: String,
     pub access_key: String,
     pub secret_key: String,
+    pub session_token: Option<String>,
     pub allow_http: bool,
 }
 
@@ -319,7 +320,11 @@ impl AwsConfig {
     /// Credentials are extracted from the given configuration object.
     #[must_use]
     fn to_s3_config(&self) -> AmazonS3Builder {
-        let creds = Credentials::from_keys(&self.access_key, &self.secret_key, None);
+        let creds = Credentials::from_keys(
+            &self.access_key,
+            &self.secret_key,
+            self.session_token.clone(),
+        );
         let region = Region::new(String::from(&self.region));
         let mut builder = config_for_s3_module(&creds, &region);
         if !self.endpoint.is_empty() {
