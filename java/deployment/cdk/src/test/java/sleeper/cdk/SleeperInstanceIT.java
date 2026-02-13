@@ -69,7 +69,6 @@ public class SleeperInstanceIT {
         SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
                 .instanceProperties(instanceProperties)
                 .version("1.2.3")
-                .jars(jarVersionIdsCache())
                 .artefacts(new SleeperArtefactsFromProperties(instanceProperties, jarVersionIdsCache()))
                 .skipCheckingVersionMatchesProperties(true)
                 .build();

@@ -17,12 +17,8 @@ package sleeper.cdk.artefacts;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.constructs.Construct;
 
-import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -57,14 +53,6 @@ public class SleeperJarVersionIdsCache {
 
     public static SleeperJarVersionIdsCache from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
         return new SleeperJarVersionIdsCache(getVersionId, instanceProperties);
-    }
-
-    public IBucket createJarsBucketReference(Construct scope, String id) {
-        return Bucket.fromBucketName(scope, id, instanceProperties.get(JARS_BUCKET));
-    }
-
-    public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
-        return SleeperLambdaCode.from(instanceProperties, new SleeperArtefactsFromProperties(instanceProperties, this), bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {

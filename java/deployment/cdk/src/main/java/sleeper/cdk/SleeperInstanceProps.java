@@ -55,7 +55,6 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final SleeperJarVersionIdsCache jars;
     private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
@@ -65,7 +64,6 @@ public class SleeperInstanceProps {
     private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
-        jars = builder.jars;
         artefacts = builder.artefacts;
         networkingProvider = builder.networkingProvider;
         version = builder.version;
@@ -101,7 +99,6 @@ public class SleeperInstanceProps {
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .jars(SleeperJarVersionIdsCache.from(s3Client, instanceProperties))
                 .artefacts(SleeperArtefactsFromProperties.from(s3Client, instanceProperties))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
@@ -184,10 +181,6 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperJarVersionIdsCache getJars() {
-        return jars;
-    }
-
     public SleeperArtefacts getArtefacts() {
         return artefacts;
     }
@@ -202,7 +195,6 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperJarVersionIdsCache jars;
         private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
@@ -235,7 +227,6 @@ public class SleeperInstanceProps {
          * @return      this builder
          */
         public Builder jars(SleeperJarVersionIdsCache jars) {
-            this.jars = jars;
             return this;
         }
 
@@ -372,7 +363,7 @@ public class SleeperInstanceProps {
         public SleeperInstanceProps build() {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
-            Objects.requireNonNull(jars, "jars must not be null");
+            Objects.requireNonNull(artefacts, "artefacts must not be null");
 
             Properties tagsProperties = instanceProperties.getTagsProperties();
             tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));

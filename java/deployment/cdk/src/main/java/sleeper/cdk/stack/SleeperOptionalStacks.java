@@ -19,7 +19,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
@@ -53,7 +52,6 @@ public class SleeperOptionalStacks {
     public static void create(
             Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperJarVersionIdsCache jars = props.getJars();
         SleeperArtefacts artefacts = props.getArtefacts();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
@@ -153,9 +151,8 @@ public class SleeperOptionalStacks {
                     queryQueueStack);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
-                new WebSocketQueryStack(scope,
-                        "WebSocketQuery",
-                        instanceProperties, jars,
+                new WebSocketQueryStack(scope, "WebSocketQuery",
+                        instanceProperties, artefacts,
                         coreStacks, queryQueueStack, queryStack);
             }
         }

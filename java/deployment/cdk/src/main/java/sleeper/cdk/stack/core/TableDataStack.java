@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -38,7 +37,7 @@ public class TableDataStack extends NestedStack {
 
     public TableDataStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack, SleeperJarVersionIdsCache jars) {
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);

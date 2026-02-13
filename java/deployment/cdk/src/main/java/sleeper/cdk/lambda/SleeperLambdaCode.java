@@ -42,7 +42,7 @@ public class SleeperLambdaCode {
     private final SleeperLambdaImages images;
     private final IBucket bucket;
 
-    private SleeperLambdaCode(InstanceProperties instanceProperties, SleeperLambdaJars jars, SleeperLambdaImages images, IBucket bucket) {
+    public SleeperLambdaCode(InstanceProperties instanceProperties, SleeperLambdaJars jars, SleeperLambdaImages images, IBucket bucket) {
         this.instanceProperties = instanceProperties;
         this.jars = jars;
         this.images = images;

@@ -37,7 +37,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
@@ -121,9 +120,8 @@ public class SleeperCoreStacks {
     public static SleeperCoreStacks create(
             Construct scope, SleeperInstanceProps props, SleeperNetworking networking, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-
-        SleeperJarVersionIdsCache jars = props.getJars();
         SleeperArtefacts artefacts = props.getArtefacts();
+
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             new VpcCheckStack(scope, "Vpc", instanceProperties, artefacts, networking, loggingStack);
         } else {
@@ -138,7 +136,7 @@ public class SleeperCoreStacks {
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
 
         // Stacks for tables
-        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 scope, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
@@ -146,10 +144,10 @@ public class SleeperCoreStacks {
                 scope, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
                 scope, "CompactionTracker", instanceProperties, policiesStack);
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack);
         TableIndexStack tableIndexStack = new TableIndexStack(scope, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(scope, "StateStoreCommitter",
-                instanceProperties, jars,
+                instanceProperties, artefacts,
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, ecsClusterTasksStack, deadLetters);
