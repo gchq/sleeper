@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -61,11 +62,12 @@ public class CompactionStack extends NestedStack {
         //   then it creates more tasks).
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getInstanceProperties().get(JARS_BUCKET));
+        SleeperEcsImages ecsImages = props.getArtefacts().ecsImagesAtScope(this);
         SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
         jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);
 
-        new CompactionTaskResources(this, props, lambdaCode, jarsBucket, jobResources, coreStacks);
+        new CompactionTaskResources(this, props, ecsImages, lambdaCode, jarsBucket, jobResources, coreStacks);
 
         Utils.addTags(this, props.getInstanceProperties());
     }

@@ -35,6 +35,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -92,6 +93,7 @@ public class BulkExportStack extends NestedStack {
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
+        SleeperEcsImages ecsImages = props.getArtefacts().ecsImagesAtScope(this);
 
         IFunction bulkExportLambda = lambdaCode.buildFunction(LambdaHandler.BULK_EXPORT_PLANNER, "BulkExportPlanner",
                 builder -> builder
@@ -131,7 +133,7 @@ public class BulkExportStack extends NestedStack {
 
         IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
         new BulkExportTaskResources(this,
-                props, coreStacks, lambdaCode, jarsBucket,
+                props, coreStacks, ecsImages, lambdaCode, jarsBucket,
                 leafPartitionQueuesQ, exportResultsBucket);
     }
 

@@ -20,8 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.ContainerInsights;
@@ -40,6 +38,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -59,7 +58,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -83,6 +81,7 @@ public class CompactionTaskResources {
 
     public CompactionTaskResources(Stack stack,
             SleeperInstanceProps props,
+            SleeperEcsImages ecsImages,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             CompactionJobResources jobResources,
@@ -92,7 +91,7 @@ public class CompactionTaskResources {
         this.props = props;
         this.instanceProperties = props.getInstanceProperties();
 
-        Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
+        Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, ecsImages, lambdaCode, jobResources);
         IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
         coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
 
@@ -100,7 +99,8 @@ public class CompactionTaskResources {
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
     }
 
-    private Cluster ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
+    private Cluster ecsClusterForCompactionTasks(
+            SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperEcsImages ecsImages, SleeperLambdaCode lambdaCode, CompactionJobResources jobResources) {
         String clusterName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-cluster");
         Cluster cluster = Cluster.Builder
@@ -111,9 +111,7 @@ public class CompactionTaskResources {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
-                DockerDeployment.COMPACTION.getEcrRepositoryName(instanceProperties));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+        ContainerImage containerImage = ecsImages.containerImage(DockerDeployment.COMPACTION);
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
@@ -125,7 +123,7 @@ public class CompactionTaskResources {
                     .createTaskDefinition(containerImage, environmentVariables);
         } else {
             taskDefinition = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks)
-                    .createTaskDefinition(cluster, coreStacks.getVpc(), taskCreatorJar, containerImage, environmentVariables);
+                    .createTaskDefinition(cluster, coreStacks.getVpc(), lambdaCode, containerImage, environmentVariables);
         }
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());

@@ -28,8 +28,6 @@ import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.AmiHardwareType;
 import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
 import software.amazon.awscdk.services.ecs.Cluster;
@@ -53,6 +51,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -75,7 +74,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
@@ -109,11 +107,12 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
+        SleeperEcsImages ecsImages = artefacts.ecsImagesAtScope(this);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsImages, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -154,8 +153,9 @@ public class StateStoreCommitterStack extends NestedStack {
         return queue;
     }
 
-    private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-            StateStoreStacks stateStoreStacks, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
+    private void ecsTaskToCommitStateStoreUpdates(
+            LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+            StateStoreStacks stateStoreStacks, SleeperEcsImages ecsImages, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
@@ -197,8 +197,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .enableManagedTerminationProtection(false)
                 .build());
 
-        IRepository repository = Repository.fromRepositoryName(this, "ecr", DockerDeployment.STATESTORE_COMMITTER.getEcrRepositoryName(this.instanceProperties));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+        ContainerImage containerImage = ecsImages.containerImage(DockerDeployment.STATESTORE_COMMITTER);
 
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
 

@@ -20,8 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
@@ -42,6 +40,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -64,7 +63,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
@@ -104,10 +102,11 @@ public class IngestStack extends NestedStack {
         //  - A lambda that stops task when a delete cluster event is triggered.
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        SleeperEcsImages ecsImages = props.getArtefacts().ecsImagesAtScope(this);
         SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
         ingestJobQueue = sqsQueueForIngestJobs(coreStacks);
-        Cluster cluster = ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
+        Cluster cluster = ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, ecsImages, lambdaCode);
         IFunction taskCreator = lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
         coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(this, cluster, taskCreator);
 
@@ -166,6 +165,7 @@ public class IngestStack extends NestedStack {
             IBucket jarsBucket,
             SleeperCoreStacks coreStacks,
             Queue ingestJobQueue,
+            SleeperEcsImages ecsImages,
             SleeperLambdaCode lambdaCode) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -186,9 +186,7 @@ public class IngestStack extends NestedStack {
                 .build();
         instanceProperties.set(INGEST_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
 
-        IRepository repository = Repository.fromRepositoryName(this,
-                "ECR-ingest", DockerDeployment.INGEST.getEcrRepositoryName(instanceProperties));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+        ContainerImage containerImage = ecsImages.containerImage(DockerDeployment.INGEST);
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
