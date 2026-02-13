@@ -23,7 +23,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
-import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -213,20 +212,6 @@ public class SleeperInstanceProps {
          */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        /**
-         * Sets how to find jars to deploy lambda functions. This is required.
-         * <p>
-         * This will be used to find the latest version of each jar in a versioned S3 bucket. The deployment will be
-         * done against a specific version of each jar. It will only check the bucket once for each jar, and you can
-         * reuse the same object for multiple Sleeper instances.
-         *
-         * @param  jars the jars
-         * @return      this builder
-         */
-        public Builder jars(SleeperJarVersionIdProvider jars) {
             return this;
         }
 
