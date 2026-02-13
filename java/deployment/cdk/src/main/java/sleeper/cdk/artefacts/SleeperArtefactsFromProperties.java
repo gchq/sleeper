@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
  * that is passed to SleeperInstance.
  */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperDockerImageNames {
+public class SleeperArtefactsFromProperties implements SleeperArtefacts {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJarVersionIdsCache jars;
@@ -70,6 +70,10 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
                 instanceProperties.get(VERSION));
     }
 
+    public String imageName(DockerDeployment deployment) {
+        return deployment.getDockerImageName(instanceProperties);
+    }
+
     private SleeperLambdaJars lambdaJars(Construct scope) {
         IBucket bucket = Bucket.fromBucketName(scope, "LambdaJarsBucket", instanceProperties.get(JARS_BUCKET));
         return jar -> Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
@@ -94,11 +98,6 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
     private IRepository createRepositoryReference(Construct scope, DockerDeployment deployment) {
         String id = deployment.getDeploymentName() + "-repository";
         return Repository.fromRepositoryName(scope, id, deployment.getEcrRepositoryName(instanceProperties));
-    }
-
-    @Override
-    public String imageName(DockerDeployment deployment) {
-        return deployment.getDockerImageName(instanceProperties);
     }
 
 }
