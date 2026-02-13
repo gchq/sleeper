@@ -61,7 +61,6 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
@@ -170,8 +169,8 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")
-                            .minimumCapacityUnits(minEmrCapacity)
-                            .maximumCapacityUnits(maxEmrCapacity)
+                            .minimumCapacityUnits(bounds.minCapacityUnits())
+                            .maximumCapacityUnits(bounds.maxCapacityUnits())
                             .maximumCoreCapacityUnits(bounds.boundMaxCoreCapacityUnits(3))
                             .build())
                     .build();

@@ -289,7 +289,7 @@ class InstancePropertiesTest {
 
         // When / Then
         assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY.getPropertyName()));
+                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
     }
 
     private static InstanceProperties getSleeperProperties() {
