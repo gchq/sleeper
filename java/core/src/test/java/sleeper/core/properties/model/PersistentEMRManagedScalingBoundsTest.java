@@ -17,104 +17,87 @@ package sleeper.core.properties.model;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class PersistentEMRManagedScalingBoundsTest {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @Test
     public void shouldValidateFalseMinLessZero() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, -5);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isFalse();
+        // When / Then
+        assertThatThrownBy(() -> instanceProperties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("-5");
     }
 
     @Test
     public void shouldValidateFalseMaxLessZero() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 5);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, -5);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isFalse();
+        // When / Then
+        assertThatThrownBy(() -> instanceProperties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("-5");
     }
 
     @Test
     public void shouldValidateFalseMinGreater2k() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 2001);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 2005);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isFalse();
+        // When / Then
+        assertThatThrownBy(() -> instanceProperties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("2001");
     }
 
     @Test
     public void shouldValidateFalseMaxGreater2k() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 100);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 2005);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isFalse();
+        // When / Then
+        assertThatThrownBy(() -> instanceProperties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("2005");
     }
 
     @Test
     public void shouldValidateFalseMinGreaterMax() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isFalse();
+        // When / Then
+        assertThatThrownBy(() -> instanceProperties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("5");
     }
 
     @Test
     public void shouldValidateTrue() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 1);
         instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
-        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
-        // When
-        boolean valid = bounds.isValid();
-
-        // Then
-        assertThat(valid).isTrue();
+        // When / Then
+        instanceProperties.validate();
     }
 
     @Test

@@ -29,19 +29,6 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCapacityUnits) {
 
     /**
-     * Determines if the given parameters are valid.
-     *
-     * @return true if parameters are valid
-     */
-    public boolean isValid() {
-        return minCapacityUnits > 0 &&
-                maxCapacityUnits > 0 &&
-                minCapacityUnits <= 2000 &&
-                maxCapacityUnits <= 2000 &&
-                minCapacityUnits < maxCapacityUnits;
-    }
-
-    /**
      * Find the upper bound for EMR maximum core capacity units based on the EMR managed scaling bounds.
      *
      * @param  maximumCoreCapacityUnits the proposed value for maximum core capacity units
