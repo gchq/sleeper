@@ -76,6 +76,6 @@ public class SleeperInstanceIT {
     }
 
     private SleeperJarVersionIdsCache jarVersionIdsCache() {
-        return SleeperJarVersionIdsCache.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
+        return new SleeperJarVersionIdsCache(jar -> jar.getArtifactId() + "-test-version");
     }
 }

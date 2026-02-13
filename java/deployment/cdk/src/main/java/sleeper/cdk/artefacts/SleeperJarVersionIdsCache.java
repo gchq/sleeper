@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
@@ -39,28 +38,18 @@ public class SleeperJarVersionIdsCache {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarVersionIdsCache.class);
 
     private final GetVersionId getVersionId;
-    private final InstanceProperties instanceProperties;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private SleeperJarVersionIdsCache(GetVersionId getVersionId, InstanceProperties instanceProperties) {
+    public SleeperJarVersionIdsCache(GetVersionId getVersionId) {
         this.getVersionId = getVersionId;
-        this.instanceProperties = instanceProperties;
     }
 
     public static SleeperJarVersionIdsCache from(S3Client s3, InstanceProperties instanceProperties) {
-        return from(GetVersionId.fromJarsBucket(s3, instanceProperties), instanceProperties);
-    }
-
-    public static SleeperJarVersionIdsCache from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
-        return new SleeperJarVersionIdsCache(getVersionId, instanceProperties);
+        return new SleeperJarVersionIdsCache(GetVersionId.fromJarsBucket(s3, instanceProperties));
     }
 
     public String getLatestVersionId(LambdaJar jar) {
         return latestVersionIdByJar.computeIfAbsent(jar, getVersionId::getVersionId);
-    }
-
-    public String getRepositoryName(LambdaJar jar) {
-        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + jar.getImageName();
     }
 
     /**

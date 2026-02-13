@@ -16,7 +16,6 @@
 package sleeper.cdk.artefacts;
 
 import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.s3.IBucket;
 
 import sleeper.core.deploy.LambdaJar;
 
@@ -30,9 +29,8 @@ public interface SleeperLambdaJars {
     /**
      * Retrieves a reference to a fat jar in the jars bucket.
      *
-     * @param  jarsBucket a reference to the jars bucket in the scope of the current stack
-     * @param  jar        which jar we want to reference
-     * @return            the reference to the jar
+     * @param  jar which jar we want to reference
+     * @return     the reference to the jar
      */
-    Code jarCode(IBucket jarsBucket, LambdaJar jar);
+    Code jarCode(LambdaJar jar);
 }

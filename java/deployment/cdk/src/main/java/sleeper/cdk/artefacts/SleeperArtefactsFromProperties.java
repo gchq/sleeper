@@ -28,11 +28,12 @@ import software.constructs.Construct;
 
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.DockerDeployment;
-import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -41,7 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
  * that is passed to SleeperInstance.
  */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperLambdaImages, SleeperLambdaJars, SleeperEcsImages, SleeperDockerImageNames {
+public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperEcsImages, SleeperDockerImageNames {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJarVersionIdsCache jars;
@@ -57,24 +58,29 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts, Sleeper
     }
 
     @Override
-    public DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
-        return DockerImageCode.fromEcr(
-                Repository.fromRepositoryName(scope, id + "Repository", jars.getRepositoryName(handler.getJar())),
+    public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
+        return new SleeperLambdaCode(scope, instanceProperties, lambdaJars(scope), lambdaImages(scope));
+    }
+
+    private SleeperLambdaJars lambdaJars(Construct scope) {
+        IBucket bucket = Bucket.fromBucketName(scope, "LambdaJarsBucket", instanceProperties.get(JARS_BUCKET));
+        return jar -> Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
+    }
+
+    private SleeperLambdaImages lambdaImages(Construct scope) {
+        Map<String, IRepository> imageNameToRepository = new HashMap<>();
+        return handler -> DockerImageCode.fromEcr(
+                imageNameToRepository.computeIfAbsent(handler.getJar().getImageName(),
+                        imageName -> createRepositoryReference(scope, handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
                         .tagOrDigest(instanceProperties.get(VERSION))
                         .build());
     }
 
-    @Override
-    public Code jarCode(IBucket jarsBucket, LambdaJar jar) {
-        return Code.fromBucket(jarsBucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
-    }
-
-    @Override
-    public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
-        IBucket bucket = Bucket.fromBucketName(scope, "LambdaCodeBucket", instanceProperties.get(JARS_BUCKET));
-        return new SleeperLambdaCode(instanceProperties, this, this, bucket);
+    private IRepository createRepositoryReference(Construct scope, LambdaJar jar) {
+        String id = jar.getImageName() + "-repository";
+        return Repository.fromRepositoryName(scope, id, jar.getEcrRepositoryName(instanceProperties));
     }
 
     @Override
