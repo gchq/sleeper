@@ -73,7 +73,7 @@ public class GarbageCollectorStack extends NestedStack {
         Duration handlerTimeout = Duration.seconds(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS));
 
         // Garbage collector function
-        IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR_TRIGGER, "GarbageCollectorTrigger", builder -> builder
+        IFunction triggerFunction = lambdaCode.buildFunction(LambdaHandler.GARBAGE_COLLECTOR_TRIGGER, "GarbageCollectorTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -81,7 +81,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR_TRIGGER)));
-        IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
+        IFunction handlerFunction = lambdaCode.buildFunction(LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state store looking for files that need deleting and delete them")
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))

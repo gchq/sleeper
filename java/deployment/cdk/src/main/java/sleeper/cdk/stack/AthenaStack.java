@@ -107,7 +107,7 @@ public class AthenaStack extends NestedStack {
         env.put("spill_bucket", spillBucket.getBucketName());
         env.put("kms_key_id", spillMasterKey.getKeyId());
 
-        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
+        IFunction athenaCompositeHandler = lambdaCode.buildFunction(handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY))
                 .timeout(Duration.seconds(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS)))

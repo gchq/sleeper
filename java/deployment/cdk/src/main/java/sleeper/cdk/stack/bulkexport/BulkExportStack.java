@@ -93,8 +93,7 @@ public class BulkExportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
-        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER,
-                "BulkExportPlanner",
+        IFunction bulkExportLambda = lambdaCode.buildFunction(LambdaHandler.BULK_EXPORT_PLANNER, "BulkExportPlanner",
                 builder -> builder
                         .functionName(functionName)
                         .description("Sends a message to export for a leaf partition")

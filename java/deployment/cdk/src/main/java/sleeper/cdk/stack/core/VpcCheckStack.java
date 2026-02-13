@@ -52,7 +52,7 @@ public class VpcCheckStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "vpc-check");
 
-        IFunction vpcCheckLambda = lambdaCode.buildFunction(this, LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
+        IFunction vpcCheckLambda = lambdaCode.buildFunction(LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")

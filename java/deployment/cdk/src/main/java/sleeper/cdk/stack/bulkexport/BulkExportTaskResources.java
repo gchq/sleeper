@@ -89,7 +89,7 @@ public class BulkExportTaskResources {
                 instanceId, "bulk-export-tasks-creator");
 
         IFunction handler = lambdaCode.buildFunction(
-                stack, LambdaHandler.BULK_EXPORT_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
+                LambdaHandler.BULK_EXPORT_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
                         .functionName(functionName)
                         .description("If there are leaf partition bulk export jobs on queue create tasks to run them")
                         .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))

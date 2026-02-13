@@ -129,7 +129,7 @@ public class IngestBatcherStack extends NestedStack {
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
-        IFunction submitterLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
+        IFunction submitterLambda = lambdaCode.buildFunction(LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
@@ -146,7 +146,7 @@ public class IngestBatcherStack extends NestedStack {
         coreStacks.grantReadTableDataBucket(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
-        IFunction jobCreatorLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_JOB_CREATOR, "IngestBatcherJobCreationLambda", builder -> builder
+        IFunction jobCreatorLambda = lambdaCode.buildFunction(LambdaHandler.INGEST_BATCHER_JOB_CREATOR, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB))

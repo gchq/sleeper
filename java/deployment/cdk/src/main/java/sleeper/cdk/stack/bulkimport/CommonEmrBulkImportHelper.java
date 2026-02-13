@@ -110,7 +110,7 @@ public class CommonEmrBulkImportHelper {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-import", platform.toString(), "start");
 
-        IFunction function = lambdaCode.buildFunction(scope, LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
+        IFunction function = lambdaCode.buildFunction(LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + platform + " bulk import jobs")
                 .memorySize(instanceProperties.getInt(BULK_IMPORT_STARTER_LAMBDA_MEMORY))

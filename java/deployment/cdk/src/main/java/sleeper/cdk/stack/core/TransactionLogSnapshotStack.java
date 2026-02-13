@@ -84,7 +84,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
         String creationFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation");
-        IFunction snapshotCreationTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
+        IFunction snapshotCreationTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -92,7 +92,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_SNAPSHOT_CREATION_TRIGGER)));
-        IFunction snapshotCreationLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
+        IFunction snapshotCreationLambda = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -149,7 +149,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion");
-        IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
+        IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -157,7 +157,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_SNAPSHOT_DELETION_TRIGGER)));
-        IFunction snapshotDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
+        IFunction snapshotDeletionLambda = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

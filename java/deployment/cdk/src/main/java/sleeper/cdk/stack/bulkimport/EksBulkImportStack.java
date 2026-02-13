@@ -122,7 +122,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         String functionName = String.join("-", "sleeper", instanceId, "bulk-import-eks-starter");
 
-        IFunction bulkImportJobStarter = lambdaCode.buildFunction(this, LambdaHandler.BULK_IMPORT_STARTER, "BulkImportEKSJobStarter", builder -> builder
+        IFunction bulkImportJobStarter = lambdaCode.buildFunction(LambdaHandler.BULK_IMPORT_STARTER, "BulkImportEKSJobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(instanceProperties.getInt(BULK_IMPORT_STARTER_LAMBDA_MEMORY))

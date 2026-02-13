@@ -48,7 +48,7 @@ public class TableDefinerStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "table-definer");
 
-        IFunction tableDefinerLambda = lambdaCode.buildFunction(this, LambdaHandler.TABLE_DEFINER, "TableDefinerLambda", builder -> builder
+        IFunction tableDefinerLambda = lambdaCode.buildFunction(LambdaHandler.TABLE_DEFINER, "TableDefinerLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

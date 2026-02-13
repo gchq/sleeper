@@ -67,7 +67,7 @@ public final class WebSocketQueryStack extends NestedStack {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
-        IFunction webSocketApiHandler = lambdaCode.buildFunction(this, LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
+        IFunction webSocketApiHandler = lambdaCode.buildFunction(LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .environment(env)

@@ -123,7 +123,7 @@ public class QueryStack extends NestedStack {
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
@@ -166,7 +166,7 @@ public class QueryStack extends NestedStack {
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
                 .functionName(leafQueryFunctionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to execute the query")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))

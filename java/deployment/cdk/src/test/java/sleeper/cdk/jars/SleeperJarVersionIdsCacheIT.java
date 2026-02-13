@@ -106,8 +106,7 @@ public class SleeperJarVersionIdsCacheIT extends LocalStackTestBase {
         instanceProperties.set(VERSION, "0.1.2");
 
         // When
-        lambdaCode(stack).buildFunction(stack, handler, "Function",
-                builder -> builder.functionName("test-function"));
+        lambdaCode(stack).buildFunction(handler, "Function", builder -> builder.functionName("test-function"));
 
         // Then
         assertThat(Template.fromStack(stack).findResources("AWS::Lambda::Function"))

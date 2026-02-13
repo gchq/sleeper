@@ -170,7 +170,7 @@ public class PartitionSplittingStack extends NestedStack {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         String triggerFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");
-        IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
+        IFunction triggerFunction = lambdaCode.buildFunction(LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform partition splitting for and puts them on a queue to be processed")
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -198,7 +198,7 @@ public class PartitionSplittingStack extends NestedStack {
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-find-to-split");
-        IFunction findPartitionsToSplitLambda = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT, "FindPartitionsToSplitLambda", builder -> builder
+        IFunction findPartitionsToSplitLambda = lambdaCode.buildFunction(LambdaHandler.FIND_PARTITIONS_TO_SPLIT, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state stores of the provided tables looking for partitions that need splitting")
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
@@ -222,7 +222,7 @@ public class PartitionSplittingStack extends NestedStack {
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
         Integer concurrency = instanceProperties.getIntOrNull(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
-        IFunction splitPartitionLambda = lambdaCode.buildFunction(this, LambdaHandler.SPLIT_PARTITION, "SplitPartitionLambda", builder -> builder
+        IFunction splitPartitionLambda = lambdaCode.buildFunction(LambdaHandler.SPLIT_PARTITION, "SplitPartitionLambda", builder -> builder
                 .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")
                 .memorySize(instanceProperties.getInt(SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB))

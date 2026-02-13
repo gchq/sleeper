@@ -181,7 +181,7 @@ public class CompactionJobResources {
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-handler");
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
-        IFunction triggerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR_TRIGGER, "CompactionJobsCreationTrigger", builder -> builder
+        IFunction triggerFunction = lambdaCode.buildFunction(LambdaHandler.COMPACTION_JOB_CREATOR_TRIGGER, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Create batches of online tables and send requests to create compaction jobs for those batches")
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
@@ -190,7 +190,7 @@ public class CompactionJobResources {
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_TRIGGER)));
 
-        IFunction handlerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR, "CompactionJobsCreationHandler", builder -> builder
+        IFunction handlerFunction = lambdaCode.buildFunction(LambdaHandler.COMPACTION_JOB_CREATOR, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state stores of the provided tables looking for compaction jobs to create")
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
@@ -239,7 +239,7 @@ public class CompactionJobResources {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
 
-        IFunction function = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_DISPATCHER, "CompactionJobDispatcher", builder -> builder
+        IFunction function = lambdaCode.buildFunction(LambdaHandler.COMPACTION_JOB_DISPATCHER, "CompactionJobDispatcher", builder -> builder
                 .functionName(functionName)
                 .description("Sends batches of compaction jobs created by the job creation lambda")
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB))
@@ -321,7 +321,7 @@ public class CompactionJobResources {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
 
-        IFunction function = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_COMMIT_BATCHER, "CompactionCommitBatcher", builder -> builder
+        IFunction function = lambdaCode.buildFunction(LambdaHandler.COMPACTION_COMMIT_BATCHER, "CompactionCommitBatcher", builder -> builder
                 .functionName(functionName)
                 .description("Gathers up compaction commits and combines them into a larger update to the state store. " +
                         "Used when committing compaction jobs asynchronously.")

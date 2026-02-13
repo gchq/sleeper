@@ -48,7 +48,7 @@ public class PropertiesStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "properties-writer");
 
-        IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
+        IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

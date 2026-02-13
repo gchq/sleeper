@@ -227,7 +227,7 @@ public class IngestStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "ingest-create-tasks");
 
-        IFunction handler = lambdaCode.buildFunction(this, LambdaHandler.INGEST_TASK_CREATOR, "IngestTasksCreator", builder -> builder
+        IFunction handler = lambdaCode.buildFunction(LambdaHandler.INGEST_TASK_CREATOR, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))

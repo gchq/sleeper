@@ -241,7 +241,7 @@ public class StateStoreCommitterStack extends NestedStack {
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 
-        IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder
+        IFunction handlerFunction = lambdaCode.buildFunction(LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))

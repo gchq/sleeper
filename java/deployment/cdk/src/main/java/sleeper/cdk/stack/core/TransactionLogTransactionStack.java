@@ -81,7 +81,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion");
-        IFunction transactionDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
+        IFunction transactionDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log transactions for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -89,7 +89,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_DELETION_TRIGGER)));
-        IFunction transactionDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
+        IFunction transactionDeletionLambda = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -144,7 +144,7 @@ public class TransactionLogTransactionStack extends NestedStack {
             InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
                 .functionName(functionName)
                 .description("Follows the state store transaction log to trigger updates, e.g. to job trackers")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

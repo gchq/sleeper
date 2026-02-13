@@ -64,7 +64,7 @@ public class TableMetricsStack extends NestedStack {
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
         String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");
         // Metrics generation and publishing
-        IFunction tableMetricsTrigger = lambdaCode.buildFunction(this, LambdaHandler.METRICS_TRIGGER, "MetricsTrigger", builder -> builder
+        IFunction tableMetricsTrigger = lambdaCode.buildFunction(LambdaHandler.METRICS_TRIGGER, "MetricsTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to calculate metrics for and puts them on a queue to be published")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -72,7 +72,7 @@ public class TableMetricsStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_TRIGGER)));
-        IFunction tableMetricsPublisher = lambdaCode.buildFunction(this, LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
+        IFunction tableMetricsPublisher = lambdaCode.buildFunction(LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

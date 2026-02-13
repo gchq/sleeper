@@ -198,7 +198,7 @@ public class CompactionOnEc2Resources {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-custom-termination");
 
-        IFunction handler = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_TASK_TERMINATOR, "CompactionTerminator", builder -> builder
+        IFunction handler = lambdaCode.buildFunction(LambdaHandler.COMPACTION_TASK_TERMINATOR, "CompactionTerminator", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)

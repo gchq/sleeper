@@ -45,7 +45,7 @@ public class SleeperLambdaCode {
         this.images = images;
     }
 
-    public IVersion buildFunction(Construct a, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
+    public IVersion buildFunction(LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
         LambdaDeployType deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
         LambdaBuilder builder;
