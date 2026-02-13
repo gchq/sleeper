@@ -43,6 +43,7 @@ pub struct FFIAwsConfig {
     pub endpoint: *const c_char,
     pub access_key: *const c_char,
     pub secret_key: *const c_char,
+    pub session_token: *const c_char,
     pub allow_http: bool,
 }
 
@@ -67,6 +68,7 @@ impl TryFrom<&FFIAwsConfig> for AwsConfig {
             endpoint: unpack_string(value.endpoint)?,
             access_key: unpack_string(value.access_key)?,
             secret_key: unpack_string(value.secret_key)?,
+            session_token: Some(unpack_string(value.session_token)?).filter(|s| !s.is_empty()),
             allow_http: value.allow_http,
         })
     }
