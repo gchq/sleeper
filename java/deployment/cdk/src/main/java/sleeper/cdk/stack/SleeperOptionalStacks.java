@@ -82,7 +82,7 @@ public class SleeperOptionalStacks {
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessStack = new AutoStopEmrServerlessApplicationStack(
                     scope, "AutoStopEmrServerlessApplication", instanceProperties, jars, coreStacks.getLoggingStack());
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(scope, "BulkImportEMRServerless",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     coreStacks,
                     autoStopEmrServerlessStack);

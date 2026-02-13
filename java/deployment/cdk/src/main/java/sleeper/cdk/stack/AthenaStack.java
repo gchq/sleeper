@@ -61,7 +61,7 @@ public class AthenaStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = SleeperLambdaCode.from(instanceProperties, artefacts, jarsBucket);
 
         String bucketName = String.join("-", "sleeper",
