@@ -49,7 +49,6 @@ import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
-import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.cdk.stack.core.TableIndexStack;
 import sleeper.cdk.stack.core.TopicStack;
 import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
@@ -75,7 +74,6 @@ public class SleeperCoreStacks {
     private final TrackDeadLetters deadLetters;
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
-    private final TableDefinerStack tableDefinerStack;
     private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
@@ -89,7 +87,7 @@ public class SleeperCoreStacks {
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     private SleeperCoreStacks(
             SleeperNetworking networking, LoggingStack loggingStack, TrackDeadLetters deadLetters,
-            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, TableDefinerStack tableDefinerStack,
+            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,
@@ -101,7 +99,6 @@ public class SleeperCoreStacks {
         this.deadLetters = deadLetters;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
-        this.tableDefinerStack = tableDefinerStack;
         this.policiesStack = policiesStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
@@ -149,8 +146,6 @@ public class SleeperCoreStacks {
                 scope, "CompactionTracker", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(scope, "TableIndex", instanceProperties, policiesStack);
-        //TODO Sort out the null declaration at end of line
-        TableDefinerStack tableDefinerStack = new TableDefinerStack(scope, "TableDefiner", instanceProperties, jars, null);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(scope, "StateStoreCommitter",
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
@@ -158,7 +153,7 @@ public class SleeperCoreStacks {
                 policiesStack, ecsClusterTasksStack, deadLetters);
 
         SleeperCoreStacks stacks = new SleeperCoreStacks(networking, loggingStack, deadLetters,
-                configBucketStack, tableIndexStack, tableDefinerStack, policiesStack, stateStoreStacks, dataStack,
+                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, ecsClusterTasksStack);
 
         // Table state store maintenance
