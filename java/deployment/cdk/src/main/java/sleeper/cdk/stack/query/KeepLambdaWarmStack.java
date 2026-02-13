@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.query;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -48,6 +49,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_WARM_LAMBDA_E
  * a lambda {@link Function} to create the queries that are placed on the Query {@link Queue} for processing.
  * This will trigger the query lambdas thus keeping them warm.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class KeepLambdaWarmStack extends NestedStack {
 
     public KeepLambdaWarmStack(

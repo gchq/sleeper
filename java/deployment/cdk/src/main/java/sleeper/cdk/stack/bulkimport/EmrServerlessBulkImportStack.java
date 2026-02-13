@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
@@ -79,6 +80,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
  * sent to. A message arriving on this queue triggers a lambda. That lambda creates an EMR Serverless job that
  * executes the bulk import job and then terminates.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class EmrServerlessBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 

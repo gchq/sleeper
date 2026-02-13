@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
@@ -35,6 +36,7 @@ import java.util.Map;
 /**
  * The table definer stack is used to create, update and delete Sleeper tables using a custom resource.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableDefinerStack extends NestedStack {
 
     public TableDefinerStack(

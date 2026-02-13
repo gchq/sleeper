@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -59,6 +60,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,

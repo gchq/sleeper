@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.compaction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -34,6 +35,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * and to {@link CompactionTaskResources} which creates resources that run compaction tasks that
  * process compaction jobs.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
     public static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";

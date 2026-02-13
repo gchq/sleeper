@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -56,6 +57,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
  * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
  * ready for garbage collection after a compaction job.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(

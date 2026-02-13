@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -67,6 +68,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
  * Deploys resources to perform partition splitting. A CloudWatch rule will periodically trigger to check every Sleeper
  * table for partitions that need splitting, and split them.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class PartitionSplittingStack extends NestedStack {
     public static final String PARTITION_SPLITTING_QUEUE_URL = "PartitionSplittingQueueUrl";
     public static final String PARTITION_SPLITTING_DLQ_URL = "PartitionSplittingDLQUrl";

@@ -71,7 +71,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_QUEUE
  * Deploys resources to run queries. This consists of lambda {@link Function}s to
  * process them and {@link Queue}s to take queries and post results.
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class QueryStack extends NestedStack {
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";

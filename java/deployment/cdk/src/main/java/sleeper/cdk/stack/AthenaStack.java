@@ -54,7 +54,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUN
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class AthenaStack extends NestedStack {
 
     public AthenaStack(

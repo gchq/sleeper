@@ -75,7 +75,7 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATI
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class IngestStack extends NestedStack {
     public static final String INGEST_STACK_QUEUE_NAME = "IngestStackQueueNameKey";
     public static final String INGEST_STACK_QUEUE_URL = "IngestStackQueueUrlKey";
