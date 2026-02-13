@@ -71,11 +71,6 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
                 instanceProperties.get(VERSION));
     }
 
-    @Override
-    public String imageName(DockerDeployment deployment) {
-        return deployment.getDockerImageName(instanceProperties);
-    }
-
     private SleeperLambdaJars lambdaJars(Construct scope) {
         IBucket bucket = Bucket.fromBucketName(scope, "LambdaJarsBucket", instanceProperties.get(JARS_BUCKET));
         return jar -> Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
