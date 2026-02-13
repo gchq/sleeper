@@ -166,9 +166,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .collect(Collectors.toList()));
 
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
-            int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
-            int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-            PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
+            PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")

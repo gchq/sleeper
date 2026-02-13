@@ -17,15 +17,23 @@ package sleeper.core.properties.model;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class PersistentEMRManagedScalingBoundsTest {
 
     @Test
     public void shouldValidateFalseMinLessZero() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(-5, 5);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, -5);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();
@@ -37,7 +45,10 @@ public class PersistentEMRManagedScalingBoundsTest {
     @Test
     public void shouldValidateFalseMaxLessZero() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(5, -5);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 5);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, -5);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();
@@ -49,7 +60,10 @@ public class PersistentEMRManagedScalingBoundsTest {
     @Test
     public void shouldValidateFalseMinGreater2k() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(2001, 2005);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 2001);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 2005);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();
@@ -61,7 +75,10 @@ public class PersistentEMRManagedScalingBoundsTest {
     @Test
     public void shouldValidateFalseMaxGreater2k() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(100, 2005);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 100);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 2005);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();
@@ -73,7 +90,10 @@ public class PersistentEMRManagedScalingBoundsTest {
     @Test
     public void shouldValidateFalseMinGreaterMax() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(10, 5);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();
@@ -85,7 +105,10 @@ public class PersistentEMRManagedScalingBoundsTest {
     @Test
     public void shouldValidateTrue() {
         // Given
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(1, 5);
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 1);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+        PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
 
         // When
         boolean valid = bounds.isValid();

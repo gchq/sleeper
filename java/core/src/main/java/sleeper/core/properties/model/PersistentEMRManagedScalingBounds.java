@@ -15,6 +15,11 @@
  */
 package sleeper.core.properties.model;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+
 /**
  * Stores information about the EMR managed scaling parameters for persistent EMR bulk import stacks.
  *
@@ -48,5 +53,17 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
             throw new IllegalArgumentException("maximumCoreCapacityUnits must be > 0");
         }
         return Math.min(maximumCoreCapacityUnits, maxCapacityUnits);
+    }
+
+    /**
+     * Creates EMR managed scaling bounds from instance properties.
+     *
+     * @param  instanceProperties Sleeper instance properties
+     * @return                    scaling bounds for EMR
+     */
+    public static PersistentEMRManagedScalingBounds createManagedScalingBounds(InstanceProperties instanceProperties) {
+        int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
+        int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+        return new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
     }
 }

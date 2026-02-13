@@ -20,7 +20,6 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -80,13 +79,11 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     @Override
     public void validate(SleeperPropertiesValidationReporter reporter) {
         super.validate(reporter);
-
+        // Validate EMR managed scaling max is greater than min
         int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
         int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-        PersistentEMRManagedScalingBounds bounds = new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
-        if (!bounds.isValid()) {
-            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, get(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY));
-            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, get(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY));
+        if (maxEmrCapacity <= minEmrCapacity) {
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, String.valueOf(maxEmrCapacity));
         }
     }
 
