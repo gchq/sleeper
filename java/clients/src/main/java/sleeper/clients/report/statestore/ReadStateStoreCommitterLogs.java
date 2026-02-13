@@ -44,6 +44,7 @@ public class ReadStateStoreCommitterLogs {
     /**
      * Constants to refer to capture groups in the regular expression above.
      */
+
     private static class CapturingGroups {
         private static final int START_TIME = 1;
         private static final int FINISH_TIME = 2;
