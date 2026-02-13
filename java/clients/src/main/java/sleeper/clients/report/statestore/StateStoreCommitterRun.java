@@ -58,7 +58,6 @@ public class StateStoreCommitterRun {
         Instant startTime = getStartTime();
         LOGGER.info("Test 7 - StartTime {}", startTime);
         if (startTime == null) {
-            commits.stream().forEach(sum -> LOGGER.info("TestSum: {}", sum));
             return 0.0;
         }
         Duration duration = Duration.between(startTime, getFinishTimeOrLastCommitTime().orElse(startTime));
