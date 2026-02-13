@@ -69,13 +69,13 @@ public class SleeperInstanceIT {
         SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
                 .instanceProperties(instanceProperties)
                 .version("1.2.3")
-                .artefacts(new SleeperArtefactsFromProperties(instanceProperties, jarVersionIdsCache()))
+                .artefacts(new SleeperArtefactsFromProperties(instanceProperties, jarVersionIds()))
                 .skipCheckingVersionMatchesProperties(true)
                 .build();
         return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
     }
 
-    private SleeperJarVersionIdProvider jarVersionIdsCache() {
+    private SleeperJarVersionIdProvider jarVersionIds() {
         return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     }
 }
