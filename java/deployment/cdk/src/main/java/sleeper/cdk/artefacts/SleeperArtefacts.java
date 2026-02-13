@@ -23,7 +23,7 @@ import sleeper.cdk.lambda.SleeperLambdaCode;
  * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
  * ECR.
  */
-public interface SleeperArtefacts extends SleeperLambdaImages, SleeperLambdaJars {
+public interface SleeperArtefacts {
 
     /**
      * Creates a helper to deploy lambdas using these deployment artefacts.

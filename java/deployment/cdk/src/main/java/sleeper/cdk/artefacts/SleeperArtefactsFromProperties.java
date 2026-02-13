@@ -41,7 +41,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
  * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
  * that is passed to SleeperInstance.
  */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperEcsImages, SleeperDockerImageNames {
+public class SleeperArtefactsFromProperties implements SleeperArtefacts, SleeperLambdaImages, SleeperLambdaJars, SleeperEcsImages, SleeperDockerImageNames {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJarVersionIdsCache jars;
