@@ -18,6 +18,7 @@ package sleeper.cdk.artefacts;
 import software.constructs.Construct;
 
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.core.deploy.DockerDeployment;
 
 /**
  * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
@@ -28,9 +29,24 @@ public interface SleeperArtefacts {
     /**
      * Creates a helper to deploy lambdas using these deployment artefacts.
      *
-     * @param  scope the scope you want to deploy lambas in
+     * @param  scope the scope you want to deploy in
      * @return       the helper
      */
     SleeperLambdaCode lambdaCodeAtScope(Construct scope);
 
+    /**
+     * Creates a helper to deploy containers in ECS.
+     *
+     * @param  scope the scope you want to deploy in
+     * @return       the helper
+     */
+    SleeperEcsImages ecsImagesAtScope(Construct scope);
+
+    /**
+     * Retrieves the Docker image name for a deployment. Includes the ECR repository URL and the tag.
+     *
+     * @param  deployment which deployment we want the Docker image for
+     * @return            the Docker image name
+     */
+    String imageName(DockerDeployment deployment);
 }

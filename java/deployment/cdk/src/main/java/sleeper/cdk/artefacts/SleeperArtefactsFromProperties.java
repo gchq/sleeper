@@ -62,6 +62,7 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
         return new SleeperLambdaCode(scope, instanceProperties, lambdaJars(scope), lambdaImages(scope));
     }
 
+    @Override
     public SleeperEcsImages ecsImagesAtScope(Construct scope) {
         Map<String, IRepository> deploymentNameToRepository = new HashMap<>();
         return deployment -> ContainerImage.fromEcrRepository(
@@ -70,6 +71,7 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
                 instanceProperties.get(VERSION));
     }
 
+    @Override
     public String imageName(DockerDeployment deployment) {
         return deployment.getDockerImageName(instanceProperties);
     }
