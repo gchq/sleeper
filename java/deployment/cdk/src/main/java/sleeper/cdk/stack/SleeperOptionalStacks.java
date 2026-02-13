@@ -96,7 +96,7 @@ public class SleeperOptionalStacks {
         EmrBulkImportStack emrBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
             emrBulkImportStack = new EmrBulkImportStack(scope, "BulkImportEMR",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks);
@@ -106,7 +106,7 @@ public class SleeperOptionalStacks {
         PersistentEmrBulkImportStack persistentEmrBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(scope, "BulkImportPersistentEMR",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks);
