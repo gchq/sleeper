@@ -78,7 +78,7 @@ public class QueryStateStoreCommitterLogs {
                 .endTime(endTime.getEpochSecond())
                 .limit(limit)
                 .queryString("fields @timestamp, @message, @logStream " +
-                        "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
+                        "| filter @message like /State store committer process (started|finished) at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
         return waitForQuery(queryId)
