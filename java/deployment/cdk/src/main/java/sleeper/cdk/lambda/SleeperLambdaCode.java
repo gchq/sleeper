@@ -83,4 +83,8 @@ public class SleeperLambdaCode {
         // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
         return function.getCurrentVersion();
     }
+
+    public IBucket getJarsBucket() {
+        return bucket;
+    }
 }

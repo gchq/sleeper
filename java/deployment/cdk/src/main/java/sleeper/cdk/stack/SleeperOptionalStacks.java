@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperJarVersionIdsCache;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -53,6 +54,7 @@ public class SleeperOptionalStacks {
             Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         SleeperJarVersionIdsCache jars = props.getJars();
+        SleeperArtefacts artefacts = props.getArtefacts();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
@@ -61,7 +63,7 @@ public class SleeperOptionalStacks {
         }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(scope, "Athena", instanceProperties, jars, coreStacks);
+            new AthenaStack(scope, "Athena", instanceProperties, artefacts, coreStacks);
         }
 
         BulkImportBucketStack bulkImportBucketStack = null;
