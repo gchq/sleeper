@@ -199,7 +199,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
-                List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+                List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack, OptionalStack.WebSocketQueryStack));
         properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_EC2_TYPE, "t4g.xlarge");

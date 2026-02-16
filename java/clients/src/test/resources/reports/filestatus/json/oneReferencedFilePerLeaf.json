@@ -26,7 +26,10 @@
       "leafPartitions": {
         "minReferences": 1,
         "maxReferences": 1,
-        "averageReferences": 1.0,
+        "meanReferences": 1.0,
+        "medianReferences": 1.0,
+        "percentile90":1.0,
+        "percentile99":1.0,
         "totalReferences": 8
       },
       "nonLeafPartitions": {

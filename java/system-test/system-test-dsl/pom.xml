@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.35.0-SNAPSHOT</version>
+        <version>0.35.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>system-test-dsl</artifactId>
@@ -143,6 +143,11 @@
         <dependency>
             <groupId>com.approvaltests</groupId>
             <artifactId>approvaltests</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
