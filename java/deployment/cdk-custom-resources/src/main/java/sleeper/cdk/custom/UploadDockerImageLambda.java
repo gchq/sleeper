@@ -15,6 +15,14 @@
  */
 package sleeper.cdk.custom;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+
+import java.io.IOException;
+
 public class UploadDockerImageLambda {
+
+    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
+    }
 
 }
