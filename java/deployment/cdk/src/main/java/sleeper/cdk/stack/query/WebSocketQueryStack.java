@@ -34,11 +34,10 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -54,14 +53,11 @@ public final class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
 
-    public WebSocketQueryStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+    public WebSocketQueryStack(Construct scope, String id, InstanceProperties instanceProperties,
+            SleeperArtefacts artefacts, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
         Utils.addTags(this, instanceProperties);
     }
@@ -71,7 +67,7 @@ public final class WebSocketQueryStack extends NestedStack {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
-        IFunction webSocketApiHandler = lambdaCode.buildFunction(this, LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
+        IFunction webSocketApiHandler = lambdaCode.buildFunction(LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .environment(env)

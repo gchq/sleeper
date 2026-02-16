@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.lambda;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.lambda.Function;
