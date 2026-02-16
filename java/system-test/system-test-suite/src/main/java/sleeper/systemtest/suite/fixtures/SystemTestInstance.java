@@ -143,7 +143,7 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "2");
         properties.set(METRICS_TABLE_BATCH_SIZE, "2");
         properties.setNumber(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 1);
         properties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 1);
