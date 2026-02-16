@@ -45,8 +45,8 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -61,6 +61,7 @@ import java.util.Objects;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
@@ -70,7 +71,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_QUEUE
  * Deploys resources to run queries. This consists of lambda {@link Function}s to
  * process them and {@link Queue}s to take queries and post results.
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class QueryStack extends NestedStack {
     public static final String LEAF_PARTITION_QUERY_QUEUE_NAME = "LeafPartitionQueryQueueName";
     public static final String LEAF_PARTITION_QUERY_QUEUE_URL = "LeafPartitionQueryQueueUrl";
@@ -85,13 +86,13 @@ public class QueryStack extends NestedStack {
     public QueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            SleeperArtefacts artefacts,
             SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);
 
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
@@ -122,7 +123,7 @@ public class QueryStack extends NestedStack {
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
@@ -165,7 +166,7 @@ public class QueryStack extends NestedStack {
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
                 .functionName(leafQueryFunctionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to execute the query")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))

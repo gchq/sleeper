@@ -20,8 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.ContainerInsights;
@@ -38,7 +36,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperEcsImages;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -58,7 +57,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_E
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 
@@ -73,12 +71,13 @@ public class BulkExportTaskResources {
 
     public BulkExportTaskResources(
             Stack stack, SleeperInstanceProps props, SleeperCoreStacks coreStacks,
-            SleeperLambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
+            SleeperEcsImages ecsImages, SleeperLambdaCode lambdaCode,
+            IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.stack = stack;
         this.props = props;
         this.instanceProperties = props.getInstanceProperties();
         this.jobsQueue = jobsQueue;
-        Cluster cluster = ecsClusterForBulkExportTasks(coreStacks, jarsBucket, resultsBucket);
+        Cluster cluster = ecsClusterForBulkExportTasks(coreStacks, ecsImages, jarsBucket, resultsBucket);
         IFunction taskCreator = lambdaToCreateTasks(coreStacks, lambdaCode);
         coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
     }
@@ -89,7 +88,7 @@ public class BulkExportTaskResources {
                 instanceId, "bulk-export-tasks-creator");
 
         IFunction handler = lambdaCode.buildFunction(
-                stack, LambdaHandler.BULK_EXPORT_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
+                LambdaHandler.BULK_EXPORT_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
                         .functionName(functionName)
                         .description("If there are leaf partition bulk export jobs on queue create tasks to run them")
                         .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -130,7 +129,7 @@ public class BulkExportTaskResources {
     }
 
     private Cluster ecsClusterForBulkExportTasks(
-            SleeperCoreStacks coreStacks, IBucket jarsBucket, IBucket resultsBucket) {
+            SleeperCoreStacks coreStacks, SleeperEcsImages ecsImages, IBucket jarsBucket, IBucket resultsBucket) {
         String clusterName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-export-cluster");
         Cluster cluster = Cluster.Builder
@@ -141,9 +140,7 @@ public class BulkExportTaskResources {
                 .build();
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 
-        IRepository repository = Repository.fromRepositoryName(stack, "BE-ECR1",
-                DockerDeployment.BULK_EXPORT.getEcrRepositoryName(instanceProperties));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
+        ContainerImage containerImage = ecsImages.containerImage(DockerDeployment.BULK_EXPORT);
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));

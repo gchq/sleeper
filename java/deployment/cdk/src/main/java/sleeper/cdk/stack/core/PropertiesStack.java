@@ -15,16 +15,15 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -34,25 +33,22 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class PropertiesStack extends NestedStack {
 
     public PropertiesStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "properties-writer");
 
-        IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
+        IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

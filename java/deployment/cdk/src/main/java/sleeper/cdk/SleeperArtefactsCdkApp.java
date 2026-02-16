@@ -20,6 +20,7 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
+import sleeper.cdk.artefacts.SleeperArtefactRepositories;
 import sleeper.cdk.util.CdkContext;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
@@ -28,7 +29,7 @@ import java.util.List;
 /**
  * A CDK app to deploy AWS resources that will hold artefacts used to deploy Sleeper.
  *
- * @see SleeperArtefacts
+ * @see SleeperArtefactRepositories
  */
 public class SleeperArtefactsCdkApp {
 
@@ -49,7 +50,7 @@ public class SleeperArtefactsCdkApp {
             throw new IllegalArgumentException("ID for artefacts deployment not found in context. Please set \"id\".");
         }
         List<String> extraEcrImages = SleeperPropertyValueUtils.readList(context.tryGetContext("extraEcrImages"));
-        SleeperArtefacts.createAsRootStack(app, "SleeperArtefacts",
+        SleeperArtefactRepositories.createAsRootStack(app, "SleeperArtefacts",
                 StackProps.builder()
                         .stackName(deploymentId + "-artefacts")
                         .env(environment)

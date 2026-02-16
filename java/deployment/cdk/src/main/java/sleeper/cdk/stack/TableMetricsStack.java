@@ -16,6 +16,7 @@
 
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -25,14 +26,12 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -48,25 +47,24 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
         String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");
         // Metrics generation and publishing
-        IFunction tableMetricsTrigger = lambdaCode.buildFunction(this, LambdaHandler.METRICS_TRIGGER, "MetricsTrigger", builder -> builder
+        IFunction tableMetricsTrigger = lambdaCode.buildFunction(LambdaHandler.METRICS_TRIGGER, "MetricsTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to calculate metrics for and puts them on a queue to be published")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -74,7 +72,7 @@ public class TableMetricsStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_TRIGGER)));
-        IFunction tableMetricsPublisher = lambdaCode.buildFunction(this, LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
+        IFunction tableMetricsPublisher = lambdaCode.buildFunction(LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

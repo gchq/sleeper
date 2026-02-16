@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
@@ -40,8 +41,8 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -79,6 +80,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
  * sent to. A message arriving on this queue triggers a lambda. That lambda creates an EMR Serverless job that
  * executes the bulk import job and then terminates.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class EmrServerlessBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
@@ -86,13 +88,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            SleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack,
             SleeperCoreStacks coreStacks,
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         super(scope, id);
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         createEmrServerlessApplication(instanceProperties, coreStacks, autoStopEmrServerlessApplicationStack);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);

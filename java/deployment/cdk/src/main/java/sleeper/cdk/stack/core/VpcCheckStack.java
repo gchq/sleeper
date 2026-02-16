@@ -25,11 +25,10 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -45,17 +44,15 @@ public class VpcCheckStack extends NestedStack {
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public VpcCheckStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, SleeperNetworking networking, LoggingStack logging) {
+            SleeperArtefacts artefacts, SleeperNetworking networking, LoggingStack logging) {
         super(scope, id);
 
-        // Jars bucket
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "vpc-check");
 
-        IFunction vpcCheckLambda = lambdaCode.buildFunction(this, LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
+        IFunction vpcCheckLambda = lambdaCode.buildFunction(LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
