@@ -18,7 +18,6 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.Jib;
-import com.google.cloud.tools.jib.api.LogEvent;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import com.google.cloud.tools.jib.event.EventHandlers;
 import com.google.cloud.tools.jib.http.FailoverHttpClient;
@@ -32,6 +31,8 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
+import sleeper.cdk.custom.jib.JibEvents;
 
 import java.util.Map;
 
@@ -47,6 +48,9 @@ public class UploadDockerImageLambdaIT {
 
     @Container
     public GenericContainer<?> destination = createDockerRegistryContainer();
+
+    // TODO
+    // - Output uploaded image digest
 
     @Test
     void shouldCopyDockerImageOnCreate() throws Exception {
@@ -68,8 +72,29 @@ public class UploadDockerImageLambdaIT {
     }
 
     @Test
-    void shouldCopyNewDockerImageOnUpdate() {
-        // TODO
+    void shouldCopyNewDockerImageOnUpdate() throws Exception {
+        // Given
+        copyImage("busybox", imageNameInRegistry(destination, "test:old"));
+        copyImage("busybox", imageNameInRegistry(source, "test:new"));
+
+        // When
+        handleEvent(CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Update")
+                .withResourceProperties(Map.of(
+                        "source", imageNameInRegistry(source, "test:new"),
+                        "target", imageNameInRegistry(destination, "test:new")))
+                .withOldResourceProperties(Map.of(
+                        "source", imageNameInRegistry(source, "test:old"),
+                        "target", imageNameInRegistry(destination, "test:old")))
+                .build());
+
+        // Then
+        assertThat(registryClient(destination, "test").pullManifest("new"))
+                .extracting(ManifestAndDigest::getManifest)
+                .isInstanceOf(V22ManifestTemplate.class);
+        assertThat(registryClient(destination, "test").pullManifest("old"))
+                .extracting(ManifestAndDigest::getManifest)
+                .isInstanceOf(V22ManifestTemplate.class);
     }
 
     @Test
@@ -88,8 +113,7 @@ public class UploadDockerImageLambdaIT {
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
-        Jib.from(baseImage).containerize(Containerizer.to(RegistryImage.named(target))
-                .addEventHandler(LogEvent.class, event -> LOGGER.info("From Jib: {}", event))
+        Jib.from(baseImage).containerize(JibEvents.logEvents(LOGGER, Containerizer.to(RegistryImage.named(target)))
                 .setAllowInsecureRegistries(true));
     }
 
@@ -100,13 +124,11 @@ public class UploadDockerImageLambdaIT {
     private static GenericContainer<?> createDockerRegistryContainer() {
         return new GenericContainer<>(DockerImageName.parse("registry"))
                 .withExposedPorts(5000)
-                .withLogConsumer(outputFrame -> LOGGER.info("From registry: {}", outputFrame.getUtf8StringWithoutLineEnding()));
+                .withLogConsumer(outputFrame -> LOGGER.info("From Docker registry: {}", outputFrame.getUtf8StringWithoutLineEnding()));
     }
 
     private static RegistryClient registryClient(GenericContainer<?> container, String name) {
-        EventHandlers eventHandlers = EventHandlers.builder()
-                .add(LogEvent.class, event -> LOGGER.info("From Jib: {}", event))
-                .build();
+        EventHandlers eventHandlers = JibEvents.createEventHandlers(LOGGER);
         String serverUrl = container.getHost() + ":" + container.getFirstMappedPort();
         FailoverHttpClient httpClient = new FailoverHttpClient(true, true, eventHandlers::dispatch);
         return RegistryClient.factory(eventHandlers, serverUrl, name, httpClient).newRegistryClient();

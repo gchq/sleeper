@@ -26,8 +26,11 @@ import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.cdk.custom.jib.JibEvents;
+
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 public class UploadDockerImageLambda {
@@ -50,7 +53,7 @@ public class UploadDockerImageLambda {
     public void handleEvent(
             CloudFormationCustomResourceEvent event,
             Context context) throws InvalidImageReferenceException, InterruptedException, RegistryException, IOException, CacheDirectoryCreationException, ExecutionException {
-        if (!event.getRequestType().equals("Create")) {
+        if (!Set.of("Create", "Update").contains(event.getRequestType())) {
             return;
         }
 
@@ -58,10 +61,11 @@ public class UploadDockerImageLambda {
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
 
-        Jib.from(RegistryImage.named(source)).containerize(
-                Containerizer.to(RegistryImage.named(target))
-                        .addEventHandler(jibEvent -> LOGGER.info("From Jib: {}", jibEvent))
-                        .setAllowInsecureRegistries(allowInsecureRegistries));
+        Containerizer containerizer = Containerizer.to(RegistryImage.named(target))
+                .setAllowInsecureRegistries(allowInsecureRegistries);
+        containerizer = JibEvents.logEvents(LOGGER, containerizer);
+
+        Jib.from(RegistryImage.named(source)).containerize(containerizer);
     }
 
 }
