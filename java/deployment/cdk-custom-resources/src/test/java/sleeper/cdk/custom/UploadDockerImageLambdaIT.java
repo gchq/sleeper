@@ -22,9 +22,9 @@ import com.google.cloud.tools.jib.api.LogEvent;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import com.google.cloud.tools.jib.event.EventHandlers;
 import com.google.cloud.tools.jib.http.FailoverHttpClient;
+import com.google.cloud.tools.jib.image.json.V22ManifestTemplate;
 import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +33,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @Testcontainers
 public class UploadDockerImageLambdaIT {
@@ -49,20 +49,42 @@ public class UploadDockerImageLambdaIT {
     public GenericContainer<?> destination = createDockerRegistryContainer();
 
     @Test
-    @Disabled("TODO")
-    void shouldCopyDockerImage() throws Exception {
+    void shouldCopyDockerImageOnCreate() throws Exception {
         // Given
         copyImage("busybox", imageNameInRegistry(source, "test"));
 
         // When
-        callLambdaWithSourceAndTarget(
-                imageNameInRegistry(source, "test"),
-                imageNameInRegistry(destination, "test"));
+        handleEvent(CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", imageNameInRegistry(source, "test"),
+                        "target", imageNameInRegistry(destination, "test")))
+                .build());
 
         // Then
         assertThat(registryClient(destination, "test").pullManifest("latest"))
                 .extracting(ManifestAndDigest::getManifest)
-                .isInstanceOf(Integer.class);
+                .isInstanceOf(V22ManifestTemplate.class);
+    }
+
+    @Test
+    void shouldCopyNewDockerImageOnUpdate() {
+        // TODO
+    }
+
+    @Test
+    void shouldDoNothingOnDelete() {
+        // Given
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(Map.of(
+                        "source", imageNameInRegistry(source, "test"),
+                        "target", imageNameInRegistry(destination, "test")))
+                .build();
+
+        // When / Then
+        assertThatCode(() -> handleEvent(event))
+                .doesNotThrowAnyException();
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
@@ -90,18 +112,12 @@ public class UploadDockerImageLambdaIT {
         return RegistryClient.factory(eventHandlers, serverUrl, name, httpClient).newRegistryClient();
     }
 
-    private void callLambdaWithSourceAndTarget(String source, String target) throws IOException {
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Create")
-                .withResourceProperties(Map.of(
-                        "source", source,
-                        "target", target))
-                .build();
+    private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
         lambda().handleEvent(event, null);
     }
 
     private UploadDockerImageLambda lambda() {
-        return new UploadDockerImageLambda();
+        return UploadDockerImageLambda.allowInsecureRegistries();
     }
 
 }
