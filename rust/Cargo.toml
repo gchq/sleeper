@@ -43,7 +43,7 @@ env_logger = { version = "0.11.9" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.4" }                       # Interact with version control
 human-panic = { version = "2.0.6" }                 # Readable panic messages
-libc = { version = "0.2.181" }                      # FFI type support
+libc = { version = "0.2.182" }                      # FFI type support
 log = { version = "0.4.29" }                        # Standard logging framework
 nohash = { version = "0.2.0" }                      # No-op hashing for integral types
 num-format = { version = "0.4.4" }                  # Nicely formatted numbers
