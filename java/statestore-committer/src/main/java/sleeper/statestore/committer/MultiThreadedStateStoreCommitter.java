@@ -81,6 +81,7 @@ public class MultiThreadedStateStoreCommitter {
     private StateStoreProvider stateStoreProvider;
     private RetryOnThrottling retryOnThrottling;
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
+    private boolean recievedNewTasks = false;
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
         this.s3Client = s3Client;
@@ -145,6 +146,10 @@ public class MultiThreadedStateStoreCommitter {
                 // Only initialise after we receive the first messages, because the instance properties may not have
                 // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
+                    if (!recievedNewTasks) {
+                        LOGGER.info("State store committer process started at {}", Instant.now());
+                        recievedNewTasks = true;
+                    }
                     lastReceivedCommitsAt = Instant.now();
                     if (stateStoreProvider == null) {
                         init();
@@ -198,6 +203,8 @@ public class MultiThreadedStateStoreCommitter {
 
                     tableFutures.put(tableId, task);
                 });
+
+                logMessageIfAllTasksCompleted();
             }
         } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
@@ -209,6 +216,13 @@ public class MultiThreadedStateStoreCommitter {
             }
             tableFutures.values().stream().forEach(CompletableFuture::join);
             LOGGER.info("All pending requests have been actioned");
+        }
+    }
+
+    private void logMessageIfAllTasksCompleted() {
+        if (recievedNewTasks && tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
+            LOGGER.info("State store committer process finished at {}", Instant.now());
+            recievedNewTasks = false;
         }
     }
 
@@ -229,12 +243,12 @@ public class MultiThreadedStateStoreCommitter {
 
     private void processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
         Instant startedAt = Instant.now();
-        LOGGER.info("State store committer process started at {} for table {} with {} requests", startedAt, tableId, requests.size());
+        LOGGER.info("Started batch of {} state store commits for table {} at {}", requests.size(), tableId, startedAt);
         applyBatchOfCommits(retryOnThrottling, stateStore, requests);
         reportCommitOutcomesToSqs(tableId, requests);
         Instant finishTime = Instant.now();
-        LOGGER.info("State store committer process finished at {} (ran for {} and applied batch of {} commit requests for table {})",
-                finishTime, LoggedDuration.withFullOutput(startedAt, finishTime), requests.size(), tableId);
+        LOGGER.info("Finished batch of {} state store commits for table {} at {} (ran for {})",
+                requests.size(), tableId, finishTime, LoggedDuration.withFullOutput(startedAt, finishTime));
     }
 
     /**
