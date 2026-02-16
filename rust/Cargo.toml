@@ -40,7 +40,7 @@ cxx = { version = "1.0.194" }                       # Exception handling for Rus
 cxx-build = { version = "1.0.192" }
 datafusion = { version = "52.1.0" }
 env_logger = { version = "0.11.9" }                 # Standard logging to stderr
-futures = { version = "0.3.31" }                    # Async processing
+futures = { version = "0.3.32" }                    # Async processing
 git2 = { version = "0.20.4" }                       # Interact with version control
 human-panic = { version = "2.0.6" }                 # Readable panic messages
 libc = { version = "0.2.182" }                      # FFI type support
