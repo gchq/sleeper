@@ -51,6 +51,7 @@ public class UploadDockerImageLambdaIT {
 
     // TODO
     // - Output uploaded image digest
+    // - Authentication for ECR
 
     @Test
     void shouldCopyDockerImageOnCreate() throws Exception {
