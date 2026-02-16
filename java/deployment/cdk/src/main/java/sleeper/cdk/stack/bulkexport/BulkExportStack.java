@@ -35,8 +35,8 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperEcsImages;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -56,9 +56,9 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LA
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_QUEUE_URL = "BulkExportQueueUrl";
     public static final String BULK_EXPORT_QUEUE_NAME = "BulkExportQueueName";
@@ -76,7 +76,6 @@ public class BulkExportStack extends NestedStack {
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperJarsInBucket jars = props.getJars();
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
@@ -92,11 +91,11 @@ public class BulkExportStack extends NestedStack {
         Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
         setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
+        SleeperEcsImages ecsImages = props.getArtefacts().ecsImagesAtScope(this);
 
-        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER,
-                "BulkExportPlanner",
+        IFunction bulkExportLambda = lambdaCode.buildFunction(LambdaHandler.BULK_EXPORT_PLANNER, "BulkExportPlanner",
                 builder -> builder
                         .functionName(functionName)
                         .description("Sends a message to export for a leaf partition")
@@ -134,7 +133,7 @@ public class BulkExportStack extends NestedStack {
 
         IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
         new BulkExportTaskResources(this,
-                props, coreStacks, lambdaCode, jarsBucket,
+                props, coreStacks, ecsImages, lambdaCode, jarsBucket,
                 leafPartitionQueuesQ, exportResultsBucket);
     }
 

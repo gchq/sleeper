@@ -23,7 +23,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -47,7 +47,7 @@ public class EmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            SleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             SleeperCoreStacks coreStacks) {
@@ -58,7 +58,7 @@ public class EmrBulkImportStack extends NestedStack {
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                bulkImportJobQueue, artefacts, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_NON_PERSISTENT_START, commonEmrStack);
 
         configureJobStarterFunction(instanceProperties, jobStarter);

@@ -15,16 +15,20 @@
  */
 package sleeper.cdk.stack.compaction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperEcsImages;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
+
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * Deploys the resources needed to create and execute compaction jobs. This is done by delegating
@@ -32,6 +36,7 @@ import sleeper.cdk.util.Utils;
  * and to {@link CompactionTaskResources} which creates resources that run compaction tasks that
  * process compaction jobs.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
     public static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";
@@ -56,14 +61,13 @@ public class CompactionStack extends NestedStack {
         //   and if there are not enough (i.e. there is a backlog on the queue
         //   then it creates more tasks).
 
-        // Jars bucket
-        SleeperJarsInBucket jars = props.getJars();
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getInstanceProperties().get(JARS_BUCKET));
+        SleeperEcsImages ecsImages = props.getArtefacts().ecsImagesAtScope(this);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
         jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);
 
-        new CompactionTaskResources(this, props, lambdaCode, jarsBucket, jobResources, coreStacks);
+        new CompactionTaskResources(this, props, ecsImages, lambdaCode, jarsBucket, jobResources, coreStacks);
 
         Utils.addTags(this, props.getInstanceProperties());
     }

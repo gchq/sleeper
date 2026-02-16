@@ -20,14 +20,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.assertions.Template;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
+import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
@@ -36,7 +40,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class SleeperJarsInBucketIT extends LocalStackTestBase {
+public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
@@ -68,7 +72,7 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
     @Test
     void shouldIncludeVersionNumberInFilenameWhenPropertyIsSetAfterJarsConstruction() {
         // Given
-        SleeperJarsInBucket jars = jars();
+        SleeperJarVersionIdProvider jars = jars();
         String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
         LambdaJar jar = LambdaJar.builder()
                 .filenameFormat("test-%s.jar")
@@ -87,8 +91,7 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
     @Test
     void shouldIncludeVersionNumberInLambdaCodeWhenSetAfterJarsConstruction() {
         // Given
-        SleeperJarsInBucket jars = jars();
-        String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
+        String objectVersionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
         LambdaJar jar = LambdaJar.builder()
                 .filenameFormat("test-%s.jar")
                 .imageName("test-lambda")
@@ -100,22 +103,20 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
                 .core().build();
 
         Stack stack = new Stack();
-        IBucket bucket = jars.createJarsBucketReference(stack, versionId);
-        SleeperLambdaCode code = jars.lambdaCode(bucket);
-
         instanceProperties.set(VERSION, "0.1.2");
 
         // When
-        code.buildFunction(stack, handler, "Function",
-                builder -> builder.functionName("test-function"));
+        lambdaCode(stack).buildFunction(handler, "Function", builder -> builder.functionName("test-function"));
 
         // Then
         assertThat(Template.fromStack(stack).findResources("AWS::Lambda::Function"))
                 .extractingFromEntries(Entry::getValue).singleElement().asInstanceOf(InstanceOfAssertFactories.MAP)
                 .extractingByKey("Properties", InstanceOfAssertFactories.MAP)
                 .extractingByKey("Code", InstanceOfAssertFactories.MAP)
-                .extractingByKey("S3Key", InstanceOfAssertFactories.STRING)
-                .isEqualTo("test-0.1.2.jar");
+                .isEqualTo(Map.of(
+                        "S3Bucket", bucketName,
+                        "S3Key", "test-0.1.2.jar",
+                        "S3ObjectVersion", objectVersionId));
     }
 
     private InstanceProperties createInstanceProperties() {
@@ -124,7 +125,12 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
         return properties;
     }
 
-    private SleeperJarsInBucket jars() {
-        return SleeperJarsInBucket.from(s3Client, instanceProperties);
+    private SleeperJarVersionIdProvider jars() {
+        return SleeperJarVersionIdProvider.from(s3Client, instanceProperties);
+    }
+
+    private SleeperLambdaCode lambdaCode(Stack stack) {
+        SleeperArtefacts artefacts = new SleeperArtefactsFromProperties(instanceProperties, jars());
+        return artefacts.lambdaCodeAtScope(stack);
     }
 }

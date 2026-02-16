@@ -36,7 +36,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
@@ -113,17 +113,17 @@ public class SleeperCoreStacks {
         SleeperNetworking networking = props.getNetworkingProvider().getNetworking(stack);
         props.prepareProperties(stack, networking);
         LoggingStack loggingStack = new LoggingStack(stack, "Logging", props.getInstanceProperties());
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(stack, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(stack, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getArtefacts(), loggingStack);
         return create(stack, props, networking, loggingStack, autoDeleteS3Stack);
     }
 
     public static SleeperCoreStacks create(
             Construct scope, SleeperInstanceProps props, SleeperNetworking networking, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperArtefacts artefacts = props.getArtefacts();
 
-        SleeperJarsInBucket jars = props.getJars();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, networking, loggingStack);
+            new VpcCheckStack(scope, "Vpc", instanceProperties, artefacts, networking, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
@@ -132,11 +132,11 @@ public class SleeperCoreStacks {
                 new TopicStack(scope, "Topic", instanceProperties));
 
         // Custom resource providers
-        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        EcsClusterTasksStack ecsClusterTasksStack = new EcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, artefacts, loggingStack);
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
 
         // Stacks for tables
-        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 scope, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
@@ -144,10 +144,10 @@ public class SleeperCoreStacks {
                 scope, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
                 scope, "CompactionTracker", instanceProperties, policiesStack);
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack);
         TableIndexStack tableIndexStack = new TableIndexStack(scope, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(scope, "StateStoreCommitter",
-                instanceProperties, jars,
+                instanceProperties, artefacts,
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, ecsClusterTasksStack, deadLetters);

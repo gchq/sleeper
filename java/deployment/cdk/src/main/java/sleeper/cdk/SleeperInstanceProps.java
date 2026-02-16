@@ -21,7 +21,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -53,7 +54,7 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final SleeperJarsInBucket jars;
+    private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
     private final boolean validateProperties;
@@ -62,7 +63,7 @@ public class SleeperInstanceProps {
     private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
-        jars = builder.jars;
+        artefacts = builder.artefacts;
         networkingProvider = builder.networkingProvider;
         version = builder.version;
         validateProperties = builder.validateProperties;
@@ -97,7 +98,7 @@ public class SleeperInstanceProps {
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .jars(SleeperJarsInBucket.from(s3Client, instanceProperties))
+                .artefacts(SleeperArtefactsFromProperties.from(s3Client, instanceProperties))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
@@ -179,8 +180,8 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperJarsInBucket getJars() {
-        return jars;
+    public SleeperArtefacts getArtefacts() {
+        return artefacts;
     }
 
     public boolean isDeployPaused() {
@@ -193,7 +194,7 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperJarsInBucket jars;
+        private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
@@ -215,17 +216,15 @@ public class SleeperInstanceProps {
         }
 
         /**
-         * Sets how to find jars to deploy lambda functions. This is required.
+         * Sets how to find artefacts to deploy in the instance. This is required.
          * <p>
-         * This will be used to find the latest version of each jar in a versioned S3 bucket. The deployment will be
-         * done against a specific version of each jar. It will only check the bucket once for each jar, and you can
-         * reuse the same object for multiple Sleeper instances.
+         * This will be used for jars to deploy to AWS Lambda, and for Docker images to deploy to ECS and others.
          *
-         * @param  jars the jars
-         * @return      this builder
+         * @param  artefacts the artefacts
+         * @return           this builder
          */
-        public Builder jars(SleeperJarsInBucket jars) {
-            this.jars = jars;
+        public Builder artefacts(SleeperArtefacts artefacts) {
+            this.artefacts = artefacts;
             return this;
         }
 
@@ -349,7 +348,7 @@ public class SleeperInstanceProps {
         public SleeperInstanceProps build() {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
-            Objects.requireNonNull(jars, "jars must not be null");
+            Objects.requireNonNull(artefacts, "artefacts must not be null");
 
             Properties tagsProperties = instanceProperties.getTagsProperties();
             tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));
