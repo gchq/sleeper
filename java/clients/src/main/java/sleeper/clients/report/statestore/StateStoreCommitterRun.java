@@ -15,9 +15,6 @@
  */
 package sleeper.clients.report.statestore;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,7 +28,7 @@ import java.util.stream.Stream;
  * Parsed logs from a run/invocation of the state store committer.
  */
 public class StateStoreCommitterRun {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterRun.class);
+
     private final String logStream;
     private final StateStoreCommitterRunStarted start;
     private final StateStoreCommitterRunFinished finish;
@@ -56,14 +53,11 @@ public class StateStoreCommitterRun {
      */
     public double computeRequestsPerSecond() {
         Instant startTime = getStartTime();
-        LOGGER.info("Test 7 - StartTime {}", startTime);
         if (startTime == null) {
             return 0.0;
         }
         Duration duration = Duration.between(startTime, getFinishTimeOrLastCommitTime().orElse(startTime));
-        LOGGER.info("Test 8 - duration {}", duration);
         double seconds = duration.toMillis() / 1000.0;
-        LOGGER.info("Test 9 - seconds {}", seconds);
         if (seconds <= 0.0) {
             return 0.0;
         }
@@ -72,7 +66,6 @@ public class StateStoreCommitterRun {
 
     private Optional<Instant> getFinishTimeOrLastCommitTime() {
         Instant finishTime = getFinishTime();
-        LOGGER.info("Test 7.5 - Finishtime {}", finishTime);
         if (finishTime != null) {
             return Optional.of(finishTime);
         }
