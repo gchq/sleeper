@@ -81,7 +81,7 @@ public class MultiThreadedStateStoreCommitter {
     private StateStoreProvider stateStoreProvider;
     private RetryOnThrottling retryOnThrottling;
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
-    private boolean recievedNewTasks = false;
+    private boolean isProcessingTasks = false;
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
         this.s3Client = s3Client;
@@ -146,9 +146,9 @@ public class MultiThreadedStateStoreCommitter {
                 // Only initialise after we receive the first messages, because the instance properties may not have
                 // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
-                    if (!recievedNewTasks) {
+                    if (!isProcessingTasks) {
                         LOGGER.info("State store committer process started at {}", Instant.now());
-                        recievedNewTasks = true;
+                        isProcessingTasks = true;
                     }
                     lastReceivedCommitsAt = Instant.now();
                     if (stateStoreProvider == null) {
@@ -220,10 +220,10 @@ public class MultiThreadedStateStoreCommitter {
     }
 
     private void logMessageIfAllTasksCompleted() {
-        //If I have received new tasks AND all tasks have completed
-        if (recievedNewTasks && !tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
+        //If committer has received new tasks AND all tasks have completed
+        if (isProcessingTasks && !tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
             LOGGER.info("State store committer process finished at {}", Instant.now());
-            recievedNewTasks = false;
+            isProcessingTasks = false;
         }
     }
 
