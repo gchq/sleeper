@@ -355,6 +355,11 @@
                 <version>${aws-lambda-powertools.version}</version>
             </dependency>
             <dependency>
+                <groupId>software.amazon.lambda</groupId>
+                <artifactId>powertools-cloudformation</artifactId>
+                <version>${aws-lambda-powertools.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>auth</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>

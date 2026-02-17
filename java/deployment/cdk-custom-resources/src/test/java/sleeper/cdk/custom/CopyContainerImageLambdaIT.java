@@ -16,6 +16,9 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent.CloudFormationCustomResourceEventBuilder;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
@@ -24,7 +27,7 @@ import com.google.cloud.tools.jib.http.FailoverHttpClient;
 import com.google.cloud.tools.jib.image.json.V22ManifestTemplate;
 import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
-import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +37,24 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.cdk.custom.containers.JibEvents;
+import sleeper.cdk.custom.testutil.FakeLambdaContext;
 
 import java.util.Map;
-import java.util.regex.Pattern;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
+@WireMockTest
 public class CopyContainerImageLambdaIT {
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambdaIT.class);
 
@@ -50,13 +64,18 @@ public class CopyContainerImageLambdaIT {
     @Container
     public GenericContainer<?> destination = createDockerRegistryContainer();
 
+    @BeforeEach
+    void setUp() {
+        stubFor(put("/report-response").willReturn(aResponse().withStatus(200)));
+    }
+
     @Test
-    void shouldCopyDockerImageOnCreate() throws Exception {
+    void shouldCopyDockerImageOnCreate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        copyImage("busybox", imageNameInRegistry(source, "test"));
+        copyImage("scratch", imageNameInRegistry(source, "test"));
 
         // When
-        Map<String, Object> output = handleEvent(CloudFormationCustomResourceEvent.builder()
+        handleEvent(event(runtimeInfo)
                 .withRequestType("Create")
                 .withResourceProperties(Map.of(
                         "source", imageNameInRegistry(source, "test"),
@@ -64,23 +83,22 @@ public class CopyContainerImageLambdaIT {
                 .build());
 
         // Then
-        assertThat(output)
-                .extractingByKey("Data", InstanceOfAssertFactories.MAP)
-                .extractingByKey("digest", InstanceOfAssertFactories.STRING)
-                .matches(Pattern.compile("sha256:[a-z0-9]+"));
         assertThat(registryClient(destination, "test").pullManifest("latest"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
+        verify(putRequestedFor(urlEqualTo("/report-response"))
+                .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
+                        .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
     }
 
     @Test
-    void shouldCopyNewDockerImageOnUpdate() throws Exception {
+    void shouldCopyNewDockerImageOnUpdate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        copyImage("busybox", imageNameInRegistry(destination, "test:old"));
-        copyImage("busybox", imageNameInRegistry(source, "test:new"));
+        copyImage("scratch", imageNameInRegistry(destination, "test:old"));
+        copyImage("scratch", imageNameInRegistry(source, "test:new"));
 
         // When
-        Map<String, Object> output = handleEvent(CloudFormationCustomResourceEvent.builder()
+        handleEvent(event(runtimeInfo)
                 .withRequestType("Update")
                 .withResourceProperties(Map.of(
                         "source", imageNameInRegistry(source, "test:new"),
@@ -91,33 +109,30 @@ public class CopyContainerImageLambdaIT {
                 .build());
 
         // Then
-        assertThat(output)
-                .extractingByKey("Data", InstanceOfAssertFactories.MAP)
-                .extractingByKey("digest", InstanceOfAssertFactories.STRING)
-                .matches(Pattern.compile("sha256:[a-z0-9]+"));
         assertThat(registryClient(destination, "test").pullManifest("new"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
         assertThat(registryClient(destination, "test").pullManifest("old"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
+        verify(putRequestedFor(urlEqualTo("/report-response"))
+                .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
+                        .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
     }
 
     @Test
-    void shouldDoNothingOnDelete() throws Exception {
-        // Given
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+    void shouldDoNothingOnDelete(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // When
+        handleEvent(event(runtimeInfo)
                 .withRequestType("Delete")
                 .withResourceProperties(Map.of(
                         "source", imageNameInRegistry(source, "test"),
                         "target", imageNameInRegistry(destination, "test")))
-                .build();
-
-        // When
-        Map<String, Object> output = handleEvent(event);
+                .build());
 
         // Then
-        assertThat(output).isEmpty();
+        verify(putRequestedFor(urlEqualTo("/report-response"))
+                .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", false, true)));
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
@@ -142,12 +157,19 @@ public class CopyContainerImageLambdaIT {
         return RegistryClient.factory(eventHandlers, serverUrl, name, httpClient).newRegistryClient();
     }
 
-    private Map<String, Object> handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
-        return lambda().handleEvent(event, null);
+    private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
+        lambda().handleRequest(event, new FakeLambdaContext());
+    }
+
+    private CloudFormationCustomResourceEventBuilder event(WireMockRuntimeInfo runtimeInfo) {
+        return CloudFormationCustomResourceEvent.builder()
+                .withResponseUrl(runtimeInfo.getHttpBaseUrl() + "/report-response");
     }
 
     private CopyContainerImageLambda lambda() {
-        return CopyContainerImageLambda.builder().allowInsecureRegistries(true).build();
+        return CopyContainerImageLambda.builder()
+                .allowInsecureRegistries(true)
+                .build();
     }
 
 }

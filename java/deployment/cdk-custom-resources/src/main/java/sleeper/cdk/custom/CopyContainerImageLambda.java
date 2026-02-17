@@ -28,16 +28,19 @@ import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
+import software.amazon.lambda.powertools.cloudformation.Response;
+import software.amazon.lambda.powertools.cloudformation.Response.Status;
 
 import sleeper.cdk.custom.containers.EcrCredentialRetriever;
 import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class CopyContainerImageLambda {
+public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambda.class);
 
     private final boolean allowInsecureRegistries;
@@ -58,21 +61,41 @@ public class CopyContainerImageLambda {
         return new Builder();
     }
 
-    public Map<String, Object> handleEvent(
-            CloudFormationCustomResourceEvent event,
-            Context context) throws InvalidImageReferenceException, InterruptedException, RegistryException, IOException, CacheDirectoryCreationException, ExecutionException {
-        if (!Set.of("Create", "Update").contains(event.getRequestType())) {
-            return Map.of();
-        }
+    @Override
+    protected Response create(CloudFormationCustomResourceEvent event, Context context) {
+        return copyImage(event);
+    }
 
+    @Override
+    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
+        return copyImage(event);
+    }
+
+    @Override
+    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
+        return Response.success(event.getPhysicalResourceId());
+    }
+
+    private Response copyImage(CloudFormationCustomResourceEvent event) {
         Map<String, Object> properties = event.getResourceProperties();
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
 
-        JibContainer container = Jib.from(registryImage(source, sourceCredentialRetriever))
-                .containerize(configure(Containerizer.to(registryImage(target, targetCredentialRetriever))));
-
-        return Map.of("Data", Map.of("digest", container.getDigest().toString()));
+        try {
+            JibContainer container = Jib.from(registryImage(source, sourceCredentialRetriever))
+                    .containerize(configure(Containerizer.to(registryImage(target, targetCredentialRetriever))));
+            return Response.builder()
+                    .status(Status.SUCCESS)
+                    .value(Map.of("digest", container.getDigest().toString()))
+                    .build();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static RegistryImage registryImage(String imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
