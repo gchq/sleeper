@@ -18,7 +18,6 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -108,6 +107,19 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
         resourceProperties.put("splitPoints", splitPoints);
 
+        handleEvent(type, resourceProperties);
+    }
+
+    private void callLambda(String type, TableProperties tableProperties, String splitPoints, TableProperties existingTableProperties) throws IOException {
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        resourceProperties.put("splitPoints", splitPoints);
+        resourceProperties.put("existingTableProperties", existingTableProperties.saveAsString());
+
+        handleEvent(type, resourceProperties);
+    }
+
+    private void handleEvent(String type, HashMap<String, Object> resourceProperties) throws IOException {
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType(type)
                 .withResourceProperties(resourceProperties)
@@ -206,7 +218,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Nested
-    @Disabled("TODO")
     class TableDefinerLambdaUpdateIT {
 
         @Test
@@ -230,10 +241,11 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             tableProperties.set(TABLE_NAME, "old-table-name");
             callLambda(CREATE, tableProperties);
 
+            TableProperties existingTableProperties = TableProperties.copyOf(tableProperties);
             tableProperties.set(TABLE_NAME, "new-table-name");
 
             //When
-            callLambda(UPDATE, tableProperties);
+            callLambda(UPDATE, tableProperties, "", existingTableProperties);
 
             //Then
             assertThat(propertiesStore.streamAllTables()).singleElement()

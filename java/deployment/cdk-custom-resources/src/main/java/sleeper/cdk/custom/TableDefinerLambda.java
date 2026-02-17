@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -86,7 +85,7 @@ public class TableDefinerLambda {
                 break;
             case "Update":
                 LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                updateTable(tableProperties, tablePropertiesStore);
+                updateTable(tableProperties, tablePropertiesStore, resourceProperties);
                 break;
             case "Delete":
                 deleteTable(tableProperties, tablePropertiesStore);
@@ -159,24 +158,18 @@ public class TableDefinerLambda {
         }
     }
 
-    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
-        Optional<TableStatus> existingOpt = tablePropertiesStore.getExistingStatus(tableProperties);
-        String tableId = tableProperties.get(TABLE_ID);
-        String tableName = tableProperties.get(TABLE_NAME);
-        TableProperties existingTableProperties;
-
-        if (tableId.isEmpty()) {
-            existingTableProperties = tablePropertiesStore.loadByName(tableName);
-        } else {
-            existingTableProperties = tablePropertiesStore.loadById(tableId);
-        }
-
-        if (!existingTableProperties.get(TABLE_NAME).equals(tableName)) {
-            tableProperties.set(TABLE_NAME, tableName);
-        }
-
+    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> resourceProperties) throws IOException {
         tableProperties.validate();
-        tablePropertiesStore.updateTable(existingOpt.get(), tableProperties);
+        if (resourceProperties.containsKey("existingTableProperties")) {
+            Properties properties = new Properties();
+            properties.load(new StringReader((String) resourceProperties.get("existingTableProperties")));
+            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
+            TableProperties existingTableProperties = new TableProperties(instanceProperties, properties);
+            TableStatus existingOpt = tablePropertiesStore.getExistingStatus(existingTableProperties).get();
+            tablePropertiesStore.updateTable(existingOpt, tableProperties);
+        } else {
+            tablePropertiesStore.save(tableProperties);
+        }
     }
 
 }
