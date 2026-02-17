@@ -41,7 +41,7 @@ public class ReadStateStoreCommitterLogs {
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "State store committer process started at ([^\\s]+)|" + // Lambda started message type
-            "State store committer process finished at ([^\\s]+) |" + // Lambda finished message type
+            "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     /**
