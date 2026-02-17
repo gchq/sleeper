@@ -184,6 +184,7 @@
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.47.0</google.errorprone.version>
         <google.http-client.version>2.1.0</google.http-client.version>
+        <google.grpc.version>1.79.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.238.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
@@ -1096,6 +1097,11 @@
                 <version>${google.http-client.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-context</artifactId>
+                <version>${google.grpc.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.j2objc</groupId>
                 <artifactId>j2objc-annotations</artifactId>
                 <version>${google.j2objc.version}</version>
@@ -1259,6 +1265,11 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient4</artifactId>
+                <version>${httpclient4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
                 <version>${httpclient4.version}</version>
             </dependency>
             <dependency>

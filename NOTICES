@@ -163,7 +163,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
 
 - Apache License, Version 2.0
 
@@ -296,6 +296,10 @@ Jib (com.google.cloud.tools:jib-*:0.*)
 - Apache License, Version 2.0
 
 Google HTTP Client Library For Java (com.google.http-client:google-http-client:2.*)
+
+- Apache License, Version 2.0
+
+gRPC (io.grpc:grpc-context:1.*)
 
 - Apache License, Version 2.0
 
