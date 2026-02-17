@@ -23,6 +23,7 @@ jobs:
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
+      dockerOptions: --cache-to type=gha,mode=max
   bulk-export-task-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
@@ -88,6 +89,7 @@ jobs:
       imageName: query-lambda
       isLambda: true
       testClassNames: QueryLambdaDockerImageST
+      dockerOptions: --cache-to type=gha,mode=max
   custom-resources-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
