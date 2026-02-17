@@ -28,6 +28,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -252,6 +253,21 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                     .extracting(table -> withoutTableId(table))
                     .isEqualTo(tableProperties);
         }
+
+        @Test
+        public void shouldFailTableValidation() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+
+            tableProperties.set(TABLE_ONLINE, "connected");
+
+            //When/Then
+            assertThatThrownBy(() -> callLambda(UPDATE, tableProperties))
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .hasMessage("Property sleeper.table.online was invalid. It was \"connected\".");
+
+        }
+
     }
 
     @Nested
