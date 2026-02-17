@@ -151,7 +151,7 @@ public class UploadDockerImageLambdaIT {
     }
 
     private UploadDockerImageLambda lambda() {
-        return UploadDockerImageLambda.allowInsecureRegistries();
+        return UploadDockerImageLambda.builder().allowInsecureRegistries(true).build();
     }
 
 }

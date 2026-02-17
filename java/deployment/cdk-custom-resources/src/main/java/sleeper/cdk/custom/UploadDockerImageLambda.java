@@ -34,7 +34,6 @@ import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -42,19 +41,21 @@ public class UploadDockerImageLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImageLambda.class);
 
     private final boolean allowInsecureRegistries;
+    private final CredentialRetriever sourceCredentialRetriever;
     private final CredentialRetriever targetCredentialRetriever;
 
     public UploadDockerImageLambda() {
-        this(false, new EcrCredentialRetriever(EcrClient.create()));
+        this(builder().targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create())));
     }
 
-    private UploadDockerImageLambda(boolean allowInsecureRegistries, CredentialRetriever targetCredentialRetriever) {
-        this.allowInsecureRegistries = allowInsecureRegistries;
-        this.targetCredentialRetriever = targetCredentialRetriever;
+    protected UploadDockerImageLambda(Builder builder) {
+        allowInsecureRegistries = builder.allowInsecureRegistries;
+        sourceCredentialRetriever = builder.sourceCredentialRetriever;
+        targetCredentialRetriever = builder.targetCredentialRetriever;
     }
 
-    public static UploadDockerImageLambda allowInsecureRegistries() {
-        return new UploadDockerImageLambda(true, Optional::empty);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public Map<String, Object> handleEvent(
@@ -68,15 +69,42 @@ public class UploadDockerImageLambda {
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
 
-        Containerizer containerizer = Containerizer.to(
-                RegistryImage.named(target)
-                        .addCredentialRetriever(targetCredentialRetriever))
-                .setAllowInsecureRegistries(allowInsecureRegistries);
-        containerizer = JibEvents.logEvents(LOGGER, containerizer);
+        RegistryImage sourceRegistry = RegistryImage.named(source).addCredentialRetriever(sourceCredentialRetriever);
+        RegistryImage targetRegistry = RegistryImage.named(target).addCredentialRetriever(targetCredentialRetriever);
 
-        JibContainer container = Jib.from(RegistryImage.named(source)).containerize(containerizer);
+        JibContainer container = Jib.from(sourceRegistry)
+                .containerize(configure(Containerizer.to(targetRegistry)));
 
         return Map.of("Data", Map.of("digest", container.getDigest().toString()));
+    }
+
+    private Containerizer configure(Containerizer containerizer) {
+        return JibEvents.logEvents(LOGGER, containerizer.setAllowInsecureRegistries(allowInsecureRegistries));
+    }
+
+    public static class Builder {
+        private boolean allowInsecureRegistries;
+        private CredentialRetriever sourceCredentialRetriever;
+        private CredentialRetriever targetCredentialRetriever;
+
+        public Builder allowInsecureRegistries(boolean allowInsecureRegistries) {
+            this.allowInsecureRegistries = allowInsecureRegistries;
+            return this;
+        }
+
+        public Builder sourceCredentialRetriever(CredentialRetriever sourceCredentialRetriever) {
+            this.sourceCredentialRetriever = sourceCredentialRetriever;
+            return this;
+        }
+
+        public Builder targetCredentialRetriever(CredentialRetriever targetCredentialRetriever) {
+            this.targetCredentialRetriever = targetCredentialRetriever;
+            return this;
+        }
+
+        public UploadDockerImageLambda build() {
+            return new UploadDockerImageLambda(this);
+        }
     }
 
 }
