@@ -110,7 +110,7 @@ jobs:
       - name: Pull image from registry
         run: docker pull ${{ env.TEMP_IMAGE }}
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         if: ${{ inputs.runTrivy }}
         with:
           image-ref: ${{ env.TEMP_IMAGE }}
