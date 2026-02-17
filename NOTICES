@@ -291,6 +291,14 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.*, org.bouncycastle:bcutil-jdk1
 
 - Bouncy Castle License
 
+Jib (com.google.cloud.tools:jib-*:0.*)
+
+- Apache License, Version 2.0
+
+Docker Java (com.github.docker-java:docker-java-*:3.*)
+
+- Apache License, Version 2.0
+
 Testcontainers (org.testcontainers:*:2.*)
 
 - MIT License
