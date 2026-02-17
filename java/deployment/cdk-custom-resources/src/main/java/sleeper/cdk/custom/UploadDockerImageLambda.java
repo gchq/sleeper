@@ -28,7 +28,7 @@ import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.cdk.custom.jib.JibEvents;
+import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
 import java.util.Map;

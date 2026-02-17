@@ -33,7 +33,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.cdk.custom.jib.JibEvents;
+import sleeper.cdk.custom.containers.JibEvents;
 
 import java.util.Map;
 import java.util.regex.Pattern;
