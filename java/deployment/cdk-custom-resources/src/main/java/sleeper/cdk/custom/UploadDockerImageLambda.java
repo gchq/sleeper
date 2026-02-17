@@ -69,13 +69,18 @@ public class UploadDockerImageLambda {
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
 
-        RegistryImage sourceRegistry = RegistryImage.named(source).addCredentialRetriever(sourceCredentialRetriever);
-        RegistryImage targetRegistry = RegistryImage.named(target).addCredentialRetriever(targetCredentialRetriever);
-
-        JibContainer container = Jib.from(sourceRegistry)
-                .containerize(configure(Containerizer.to(targetRegistry)));
+        JibContainer container = Jib.from(registryImage(source, sourceCredentialRetriever))
+                .containerize(configure(Containerizer.to(registryImage(target, targetCredentialRetriever))));
 
         return Map.of("Data", Map.of("digest", container.getDigest().toString()));
+    }
+
+    private static RegistryImage registryImage(String imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
+        RegistryImage image = RegistryImage.named(imageName);
+        if (credentialRetriever != null) {
+            image.addCredentialRetriever(credentialRetriever);
+        }
+        return image;
     }
 
     private Containerizer configure(Containerizer containerizer) {
