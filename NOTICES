@@ -295,6 +295,14 @@ Jib (com.google.cloud.tools:jib-*:0.*)
 
 - Apache License, Version 2.0
 
+Google HTTP Client Library For Java (com.google.http-client:google-http-client:2.*)
+
+- Apache License, Version 2.0
+
+Google J2ObjC (com.google.j2objc:j2objc-annotations:3.*)
+
+- Apache License, Version 2.0
+
 Docker Java (com.github.docker-java:docker-java-*:3.*)
 
 - Apache License, Version 2.0

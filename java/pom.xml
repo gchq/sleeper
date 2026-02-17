@@ -183,6 +183,8 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.47.0</google.errorprone.version>
+        <google.http-client.version>2.1.0</google.http-client.version>
+        <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.238.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.5</constructs.version>
@@ -1087,6 +1089,16 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${google.errorprone.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>${google.http-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+                <version>${google.j2objc.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
