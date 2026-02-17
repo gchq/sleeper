@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -25,12 +26,10 @@ import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -41,26 +40,22 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.removalPolicy;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-
 /**
  * The table definer stack is used to create, update and delete Sleeper tables using a custom resource.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableDefinerStack extends NestedStack {
 
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "table-definer");
 
-        IFunction tableDefinerLambda = lambdaCode.buildFunction(this, LambdaHandler.TABLE_DEFINER, "TableDefinerLambda", builder -> builder
+        IFunction tableDefinerLambda = lambdaCode.buildFunction(LambdaHandler.TABLE_DEFINER, "TableDefinerLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

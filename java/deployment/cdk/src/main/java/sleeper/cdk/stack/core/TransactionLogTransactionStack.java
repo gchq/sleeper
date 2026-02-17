@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -26,13 +27,12 @@ import software.amazon.awscdk.services.lambda.MetricsConfig;
 import software.amazon.awscdk.services.lambda.StartingPosition;
 import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.TrackDeadLetters;
@@ -60,6 +60,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,
@@ -67,8 +68,7 @@ public class TransactionLogTransactionStack extends NestedStack {
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters trackDeadLetters) {
         super(scope, id);
-        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
         createFunctionToFollowTransactionLog(props.getInstanceProperties(), lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, trackDeadLetters);
         Utils.addTags(this, props.getInstanceProperties());
@@ -81,7 +81,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion");
-        IFunction transactionDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
+        IFunction transactionDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log transactions for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -89,7 +89,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_DELETION_TRIGGER)));
-        IFunction transactionDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
+        IFunction transactionDeletionLambda = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_DELETION, "TransactionLogTransactionDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -144,7 +144,7 @@ public class TransactionLogTransactionStack extends NestedStack {
             InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
                 .functionName(functionName)
                 .description("Follows the state store transaction log to trigger updates, e.g. to job trackers")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

@@ -23,11 +23,10 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -45,23 +44,21 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
     private IFunction lambda;
     private Provider provider;
 
-    public AutoStopEmrServerlessApplicationStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
+    public AutoStopEmrServerlessApplicationStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts,
             LoggingStack loggingStack) {
         super(scope, id);
-        createLambda(instanceProperties, jars, loggingStack);
+        createLambda(instanceProperties, artefacts, loggingStack);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack) {
+    private void createLambda(InstanceProperties instanceProperties, SleeperArtefacts artefacts, LoggingStack loggingStack) {
 
-        // Jars bucket
-        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-emr-serverless");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_EMR_SERVERLESS_APPLICATION, "Lambda", builder -> builder
+        lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_STOP_EMR_SERVERLESS_APPLICATION, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))

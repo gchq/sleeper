@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.artefacts;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.constructs.Construct;
 
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -29,49 +26,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
- * Finds jars to deploy lambda functions. This will finds the latest version of each jar in a versioned S3 bucket. The
+ * Finds jars to deploy lambda functions. Looks up the latest version of each jar in a versioned S3 bucket. The
  * deployment will be done against a specific version of each jar. It will only check the bucket once for each jar, and
  * you can reuse the same object for multiple Sleeper instances.
  */
-public class SleeperJarsInBucket {
+public class SleeperJarVersionIdProvider {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarVersionIdProvider.class);
 
     private final GetVersionId getVersionId;
-    private final InstanceProperties instanceProperties;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private SleeperJarsInBucket(GetVersionId getVersionId, InstanceProperties instanceProperties) {
+    public SleeperJarVersionIdProvider(GetVersionId getVersionId) {
         this.getVersionId = getVersionId;
-        this.instanceProperties = instanceProperties;
     }
 
-    public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
-        return from(GetVersionId.fromJarsBucket(s3, instanceProperties), instanceProperties);
-    }
-
-    public static SleeperJarsInBucket from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
-        return new SleeperJarsInBucket(getVersionId, instanceProperties);
-    }
-
-    public IBucket createJarsBucketReference(Construct scope, String id) {
-        return Bucket.fromBucketName(scope, id, instanceProperties.get(JARS_BUCKET));
-    }
-
-    public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
-        return new SleeperLambdaCode(this, instanceProperties, bucketConstruct);
+    public static SleeperJarVersionIdProvider from(S3Client s3, InstanceProperties instanceProperties) {
+        return new SleeperJarVersionIdProvider(GetVersionId.fromJarsBucket(s3, instanceProperties));
     }
 
     public String getLatestVersionId(LambdaJar jar) {
         return latestVersionIdByJar.computeIfAbsent(jar, getVersionId::getVersionId);
-    }
-
-    public String getRepositoryName(LambdaJar jar) {
-        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + jar.getImageName();
     }
 
     /**

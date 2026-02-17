@@ -22,15 +22,14 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -44,7 +43,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class CommonEmrBulkImportHelper {
 
@@ -97,17 +95,10 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            Queue jobQueue, SleeperJarsInBucket jars, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
-        return createJobStarterFunction(jobQueue, jars, importBucket, logGroupRef,
+            Queue jobQueue, SleeperArtefacts artefacts, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(scope);
+        return createJobStarterFunction(jobQueue, lambdaCode, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
-    }
-
-    public IFunction createJobStarterFunction(
-            Queue jobQueue, SleeperJarsInBucket jars, IBucket importBucket, LogGroupRef logGroupRef,
-            List<IRole> passRoles) {
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        return createJobStarterFunction(jobQueue, lambdaCode, importBucket, logGroupRef, passRoles);
     }
 
     public IFunction createJobStarterFunction(
@@ -119,7 +110,7 @@ public class CommonEmrBulkImportHelper {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-import", platform.toString(), "start");
 
-        IFunction function = lambdaCode.buildFunction(scope, LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
+        IFunction function = lambdaCode.buildFunction(LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + platform + " bulk import jobs")
                 .memorySize(instanceProperties.getInt(BULK_IMPORT_STARTER_LAMBDA_MEMORY))

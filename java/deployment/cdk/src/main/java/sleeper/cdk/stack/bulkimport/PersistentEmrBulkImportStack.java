@@ -33,12 +33,13 @@ import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,7 +61,6 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
@@ -78,7 +78,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            SleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             SleeperCoreStacks coreStacks) {
@@ -88,7 +88,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                bulkImportJobQueue, artefacts, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, coreStacks, importBucketStack.getImportBucket(), commonEmrStack);
@@ -165,12 +165,13 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .collect(Collectors.toList()));
 
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
+            PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")
-                            .minimumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
-                            .maximumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY))
-                            .maximumCoreCapacityUnits(3)
+                            .minimumCapacityUnits(bounds.minCapacityUnits())
+                            .maximumCapacityUnits(bounds.maxCapacityUnits())
+                            .maximumCoreCapacityUnits(bounds.boundMaxCoreCapacityUnits(3))
                             .build())
                     .build();
             propsBuilder.managedScalingPolicy(scalingPolicy);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.artefacts;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -44,9 +44,9 @@ import java.util.List;
  * Sleeper instance. The artefacts need to be uploaded as a separate step after deploying this, but before deploying a
  * Sleeper instance that requires those artefacts.
  */
-public class SleeperArtefacts {
+public class SleeperArtefactRepositories {
 
-    private SleeperArtefacts() {
+    private SleeperArtefactRepositories() {
     }
 
     /**
