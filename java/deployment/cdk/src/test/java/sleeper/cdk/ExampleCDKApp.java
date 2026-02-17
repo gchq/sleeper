@@ -36,6 +36,10 @@ public class ExampleCDKApp {
     }
 
     public static void main(String[] args) {
+        createCDKApp();
+    }
+
+    public static App createCDKApp() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -61,6 +65,7 @@ public class ExampleCDKApp {
 
             app.synth();
         }
+        return app;
     }
 
 }
