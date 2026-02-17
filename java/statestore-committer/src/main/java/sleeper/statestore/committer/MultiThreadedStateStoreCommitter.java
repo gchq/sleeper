@@ -220,7 +220,8 @@ public class MultiThreadedStateStoreCommitter {
     }
 
     private void logMessageIfAllTasksCompleted() {
-        if (recievedNewTasks && tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
+        //If I have received new tasks AND all tasks have completed
+        if (recievedNewTasks && !tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
             LOGGER.info("State store committer process finished at {}", Instant.now());
             recievedNewTasks = false;
         }
