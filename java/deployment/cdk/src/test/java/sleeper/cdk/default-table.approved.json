@@ -1,0 +1,40 @@
+{
+  "StackIdToTemplate": {
+    "TestTable": {
+      "Parameters": {
+        "BootstrapVersion": {
+          "Type": "AWS::SSM::Parameter::Value\u003cString\u003e",
+          "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+          "Default": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "Rules": {
+        "CheckBootstrapVersion": {
+          "Assertions": [
+            {
+              "Assert": {
+                "Fn::Not": [
+                  {
+                    "Fn::Contains": [
+                      [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5"
+                      ],
+                      {
+                        "Ref": "BootstrapVersion"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "AssertDescription": "CDK bootstrap stack version 6 required. Please run \u0027cdk bootstrap\u0027 with a recent version of the CDK CLI."
+            }
+          ]
+        }
+      }
+    }
+  }
+}
