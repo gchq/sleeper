@@ -132,7 +132,7 @@ public class CopyContainerImageLambdaIT {
 
         // Then
         verify(putRequestedFor(urlEqualTo("/report-response"))
-                .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", false, true)));
+                .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", true, true)));
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
