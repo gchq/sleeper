@@ -24,6 +24,7 @@ import com.google.cloud.tools.jib.http.FailoverHttpClient;
 import com.google.cloud.tools.jib.image.json.V22ManifestTemplate;
 import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +36,9 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.cdk.custom.jib.JibEvents;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 @Testcontainers
 public class UploadDockerImageLambdaIT {
@@ -59,7 +60,7 @@ public class UploadDockerImageLambdaIT {
         copyImage("busybox", imageNameInRegistry(source, "test"));
 
         // When
-        handleEvent(CloudFormationCustomResourceEvent.builder()
+        Map<String, Object> output = handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(Map.of(
                         "source", imageNameInRegistry(source, "test"),
@@ -67,6 +68,10 @@ public class UploadDockerImageLambdaIT {
                 .build());
 
         // Then
+        assertThat(output)
+                .extractingByKey("Data", InstanceOfAssertFactories.MAP)
+                .extractingByKey("digest", InstanceOfAssertFactories.STRING)
+                .matches(Pattern.compile("sha256:[a-z0-9]+"));
         assertThat(registryClient(destination, "test").pullManifest("latest"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
@@ -79,7 +84,7 @@ public class UploadDockerImageLambdaIT {
         copyImage("busybox", imageNameInRegistry(source, "test:new"));
 
         // When
-        handleEvent(CloudFormationCustomResourceEvent.builder()
+        Map<String, Object> output = handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Update")
                 .withResourceProperties(Map.of(
                         "source", imageNameInRegistry(source, "test:new"),
@@ -90,6 +95,10 @@ public class UploadDockerImageLambdaIT {
                 .build());
 
         // Then
+        assertThat(output)
+                .extractingByKey("Data", InstanceOfAssertFactories.MAP)
+                .extractingByKey("digest", InstanceOfAssertFactories.STRING)
+                .matches(Pattern.compile("sha256:[a-z0-9]+"));
         assertThat(registryClient(destination, "test").pullManifest("new"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
@@ -99,7 +108,7 @@ public class UploadDockerImageLambdaIT {
     }
 
     @Test
-    void shouldDoNothingOnDelete() {
+    void shouldDoNothingOnDelete() throws Exception {
         // Given
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Delete")
@@ -108,9 +117,11 @@ public class UploadDockerImageLambdaIT {
                         "target", imageNameInRegistry(destination, "test")))
                 .build();
 
-        // When / Then
-        assertThatCode(() -> handleEvent(event))
-                .doesNotThrowAnyException();
+        // When
+        Map<String, Object> output = handleEvent(event);
+
+        // Then
+        assertThat(output).isEmpty();
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
@@ -135,8 +146,8 @@ public class UploadDockerImageLambdaIT {
         return RegistryClient.factory(eventHandlers, serverUrl, name, httpClient).newRegistryClient();
     }
 
-    private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
-        lambda().handleEvent(event, null);
+    private Map<String, Object> handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
+        return lambda().handleEvent(event, null);
     }
 
     private UploadDockerImageLambda lambda() {

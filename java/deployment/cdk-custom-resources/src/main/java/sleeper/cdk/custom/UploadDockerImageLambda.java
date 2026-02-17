@@ -19,8 +19,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.google.cloud.tools.jib.api.CacheDirectoryCreationException;
 import com.google.cloud.tools.jib.api.Containerizer;
+import com.google.cloud.tools.jib.api.CredentialRetriever;
 import com.google.cloud.tools.jib.api.InvalidImageReferenceException;
 import com.google.cloud.tools.jib.api.Jib;
+import com.google.cloud.tools.jib.api.JibContainer;
 import com.google.cloud.tools.jib.api.RegistryException;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ import sleeper.cdk.custom.jib.JibEvents;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -37,35 +40,41 @@ public class UploadDockerImageLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImageLambda.class);
 
     private final boolean allowInsecureRegistries;
+    private final CredentialRetriever targetCredentialRetriever;
 
     public UploadDockerImageLambda() {
-        this(false);
+        this(false, Optional::empty);
     }
 
-    private UploadDockerImageLambda(boolean allowInsecureRegistries) {
+    private UploadDockerImageLambda(boolean allowInsecureRegistries, CredentialRetriever targetCredentialRetriever) {
         this.allowInsecureRegistries = allowInsecureRegistries;
+        this.targetCredentialRetriever = targetCredentialRetriever;
     }
 
     public static UploadDockerImageLambda allowInsecureRegistries() {
-        return new UploadDockerImageLambda(true);
+        return new UploadDockerImageLambda(true, Optional::empty);
     }
 
-    public void handleEvent(
+    public Map<String, Object> handleEvent(
             CloudFormationCustomResourceEvent event,
             Context context) throws InvalidImageReferenceException, InterruptedException, RegistryException, IOException, CacheDirectoryCreationException, ExecutionException {
         if (!Set.of("Create", "Update").contains(event.getRequestType())) {
-            return;
+            return Map.of();
         }
 
         Map<String, Object> properties = event.getResourceProperties();
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
 
-        Containerizer containerizer = Containerizer.to(RegistryImage.named(target))
+        Containerizer containerizer = Containerizer.to(
+                RegistryImage.named(target)
+                        .addCredentialRetriever(targetCredentialRetriever))
                 .setAllowInsecureRegistries(allowInsecureRegistries);
         containerizer = JibEvents.logEvents(LOGGER, containerizer);
 
-        Jib.from(RegistryImage.named(source)).containerize(containerizer);
+        JibContainer container = Jib.from(RegistryImage.named(source)).containerize(containerizer);
+
+        return Map.of("Data", Map.of("digest", container.getDigest().toString()));
     }
 
 }
