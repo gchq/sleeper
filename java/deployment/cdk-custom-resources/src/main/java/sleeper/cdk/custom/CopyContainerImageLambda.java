@@ -37,18 +37,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class UploadDockerImageLambda {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImageLambda.class);
+public class CopyContainerImageLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambda.class);
 
     private final boolean allowInsecureRegistries;
     private final CredentialRetriever sourceCredentialRetriever;
     private final CredentialRetriever targetCredentialRetriever;
 
-    public UploadDockerImageLambda() {
+    public CopyContainerImageLambda() {
         this(builder().targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create())));
     }
 
-    protected UploadDockerImageLambda(Builder builder) {
+    protected CopyContainerImageLambda(Builder builder) {
         allowInsecureRegistries = builder.allowInsecureRegistries;
         sourceCredentialRetriever = builder.sourceCredentialRetriever;
         targetCredentialRetriever = builder.targetCredentialRetriever;
@@ -107,8 +107,8 @@ public class UploadDockerImageLambda {
             return this;
         }
 
-        public UploadDockerImageLambda build() {
-            return new UploadDockerImageLambda(this);
+        public CopyContainerImageLambda build() {
+            return new CopyContainerImageLambda(this);
         }
     }
 

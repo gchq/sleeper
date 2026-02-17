@@ -41,8 +41,8 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public class UploadDockerImageLambdaIT {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImageLambdaIT.class);
+public class CopyContainerImageLambdaIT {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambdaIT.class);
 
     @Container
     public GenericContainer<?> source = createDockerRegistryContainer();
@@ -146,8 +146,8 @@ public class UploadDockerImageLambdaIT {
         return lambda().handleEvent(event, null);
     }
 
-    private UploadDockerImageLambda lambda() {
-        return UploadDockerImageLambda.builder().allowInsecureRegistries(true).build();
+    private CopyContainerImageLambda lambda() {
+        return CopyContainerImageLambda.builder().allowInsecureRegistries(true).build();
     }
 
 }
