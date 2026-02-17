@@ -37,6 +37,14 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTORE;
 
