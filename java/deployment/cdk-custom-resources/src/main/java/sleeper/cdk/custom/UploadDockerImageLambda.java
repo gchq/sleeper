@@ -27,7 +27,9 @@ import com.google.cloud.tools.jib.api.RegistryException;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
 
+import sleeper.cdk.custom.containers.EcrCredentialRetriever;
 import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ public class UploadDockerImageLambda {
     private final CredentialRetriever targetCredentialRetriever;
 
     public UploadDockerImageLambda() {
-        this(false, Optional::empty);
+        this(false, new EcrCredentialRetriever(EcrClient.create()));
     }
 
     private UploadDockerImageLambda(boolean allowInsecureRegistries, CredentialRetriever targetCredentialRetriever) {
