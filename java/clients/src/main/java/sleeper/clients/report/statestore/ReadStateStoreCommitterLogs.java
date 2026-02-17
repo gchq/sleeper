@@ -15,6 +15,8 @@
  */
 package sleeper.clients.report.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
@@ -30,6 +32,7 @@ import java.util.regex.Pattern;
  * Parses individual log messages from the state store comitter.
  */
 public class ReadStateStoreCommitterLogs {
+    public static final Logger LOGGER = LoggerFactory.getLogger(ReadStateStoreCommitterLogs.class);
 
     private ReadStateStoreCommitterLogs() {
     }
@@ -59,6 +62,7 @@ public class ReadStateStoreCommitterLogs {
     private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
+            LOGGER.info("Couldn't match: {}", message);
             return null;
         }
         // The pattern can only match one type of log message at a time.
@@ -78,6 +82,7 @@ public class ReadStateStoreCommitterLogs {
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
             return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
         }
+        LOGGER.info("Match found but no group: {}", message);
         return null;
     }
 
