@@ -18,13 +18,7 @@ package sleeper.cdk.stack.core;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.dynamodb.Attribute;
-import software.amazon.awscdk.services.dynamodb.AttributeType;
-import software.amazon.awscdk.services.dynamodb.BillingMode;
-import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
-import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
@@ -33,7 +27,6 @@ import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
-import sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
@@ -78,34 +71,5 @@ public class TableDefinerStack extends NestedStack {
                 .build();
 
         Utils.addTags(this, instanceProperties);
-    }
-
-    // TODO Implement method and expand name
-    public void createTable(String tableId, String tableName, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
-
-        final Table createsTable;
-        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-
-        createsTable = Table.Builder
-                .create(this, "SleeperTableCreator")
-                //.tableName(DynamoDBCompactionJobTracker.jobUpdatesTableName(instanceId))
-                .removalPolicy(removalPolicy)
-                .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(Attribute.builder()
-                        //.name(DynamoDBCompactionJobTracker.TABLE_ID)
-                        .type(AttributeType.STRING)
-                        .build())
-                .sortKey(Attribute.builder()
-                        //.name(DynamoDBCompactionJobTracker.JOB_ID_AND_UPDATE)
-                        .type(AttributeType.STRING)
-                        .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
-                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
-                        .build())
-                .build();
-
-        createsTable.grantReadData(policiesStack.getReportingPolicyForGrants());
-
     }
 }
