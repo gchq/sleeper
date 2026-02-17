@@ -50,10 +50,6 @@ public class UploadDockerImageLambdaIT {
     @Container
     public GenericContainer<?> destination = createDockerRegistryContainer();
 
-    // TODO
-    // - Output uploaded image digest
-    // - Authentication for ECR
-
     @Test
     void shouldCopyDockerImageOnCreate() throws Exception {
         // Given
