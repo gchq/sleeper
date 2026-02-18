@@ -40,8 +40,9 @@ public class ReadStateStoreCommitterLogs {
     public static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS");
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "State store committer process started at ([^\\s]+)|" + // Lambda started message type
+            "State store committer process started at ([^\\s]+)|" + // State store process started message type
             "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
+            "Finished state store commits batch at ([^\\s]+)|" + //EC2 batch finish message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     /**
@@ -51,9 +52,10 @@ public class ReadStateStoreCommitterLogs {
     private static class CapturingGroups {
         private static final int START_TIME = 1;
         private static final int FINISH_TIME = 2;
-        private static final int TABLE_ID = 3;
-        private static final int TYPE = 4;
-        private static final int COMMIT_TIME = 5;
+        private static final int BATCH_FINISH_TIME = 3;
+        private static final int TABLE_ID = 4;
+        private static final int TYPE = 5;
+        private static final int COMMIT_TIME = 6;
 
         private CapturingGroups() {
         }
@@ -75,6 +77,11 @@ public class ReadStateStoreCommitterLogs {
         String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
         if (finishTime != null) {
             return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
+        }
+        String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
+        if (batchFinishTime != null) {
+            LOGGER.info("Matched batch!");
+            return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
         }
         String tableId = matcher.group(CapturingGroups.TABLE_ID);
         if (tableId != null) {

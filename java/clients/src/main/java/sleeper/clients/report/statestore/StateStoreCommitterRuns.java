@@ -98,6 +98,11 @@ public class StateStoreCommitterRuns {
                     builder = newRun(entry);
                 }
                 builder.commit((StateStoreCommitSummary) entry);
+            } else if (entry instanceof StateStoreCommitterRunBatchFinished) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.batchFinished((StateStoreCommitterRunFinished) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);

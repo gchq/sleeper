@@ -204,7 +204,7 @@ public class MultiThreadedStateStoreCommitter {
                     tableFutures.put(tableId, task);
                 });
 
-                logMessageIfAllTasksCompleted();
+                checkIfAllCurrentTasksComplete();
             }
         } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
@@ -219,10 +219,9 @@ public class MultiThreadedStateStoreCommitter {
         }
     }
 
-    private void logMessageIfAllTasksCompleted() {
+    private void checkIfAllCurrentTasksComplete() {
         //If committer has received new tasks AND all tasks have completed
         if (isProcessingTasks && !tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
-            LOGGER.info("State store committer process finished at {}", Instant.now());
             isProcessingTasks = false;
         }
     }
@@ -248,7 +247,7 @@ public class MultiThreadedStateStoreCommitter {
         applyBatchOfCommits(retryOnThrottling, stateStore, requests);
         reportCommitOutcomesToSqs(tableId, requests);
         Instant finishTime = Instant.now();
-        LOGGER.info("Finished batch of {} state store commits for table {} at {} (ran for {})",
+        LOGGER.info("Finished state store commits batch at {} for table {} (ran for {})",
                 requests.size(), tableId, finishTime, LoggedDuration.withFullOutput(startedAt, finishTime));
     }
 
