@@ -248,7 +248,7 @@ public class MultiThreadedStateStoreCommitter {
         reportCommitOutcomesToSqs(tableId, requests);
         Instant finishTime = Instant.now();
         LOGGER.info("Finished state store commits batch at {} for table {} (ran for {})",
-                requests.size(), tableId, finishTime, LoggedDuration.withFullOutput(startedAt, finishTime));
+                finishTime, tableId, LoggedDuration.withFullOutput(startedAt, finishTime));
     }
 
     /**
