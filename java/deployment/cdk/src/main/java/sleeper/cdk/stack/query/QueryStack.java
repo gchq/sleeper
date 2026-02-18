@@ -45,7 +45,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -86,7 +86,7 @@ public class QueryStack extends NestedStack {
     public QueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            ISleeperArtefacts artefacts,
+            SleeperArtefacts artefacts,
             SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);

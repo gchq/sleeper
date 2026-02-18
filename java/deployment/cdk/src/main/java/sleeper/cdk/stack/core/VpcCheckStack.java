@@ -27,7 +27,7 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -44,7 +44,7 @@ public class VpcCheckStack extends NestedStack {
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public VpcCheckStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            ISleeperArtefacts artefacts, SleeperNetworking networking, LoggingStack logging) {
+            SleeperArtefacts artefacts, SleeperNetworking networking, LoggingStack logging) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);

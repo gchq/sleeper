@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
  * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
  * ECR.
  */
-public class SleeperArtefacts implements ISleeperArtefacts {
+public class SleeperArtefacts {
 
     private final InstanceProperties instanceProperties;
     private final SleeperJars jars;
@@ -45,7 +45,7 @@ public class SleeperArtefacts implements ISleeperArtefacts {
      * @param  instanceProperties the instance properties
      * @return                    the artefacts
      */
-    public static ISleeperArtefacts from(S3Client s3Client, InstanceProperties instanceProperties) {
+    public static SleeperArtefacts from(S3Client s3Client, InstanceProperties instanceProperties) {
         return from(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
     }
 
@@ -57,20 +57,30 @@ public class SleeperArtefacts implements ISleeperArtefacts {
      * @param  jars               a provider for the version IDs of the jars in a versioned S3 jars bucket
      * @return                    the artefacts
      */
-    public static ISleeperArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
+    public static SleeperArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
         return new SleeperArtefacts(instanceProperties,
                 new SleeperJarsFromProperties(instanceProperties, jars),
                 new SleeperContainerImagesFromProperties(instanceProperties));
     }
 
-    @Override
+    /**
+     * Creates a helper to deploy lambdas using these deployment artefacts.
+     *
+     * @param  scope the scope you want to deploy in
+     * @return       the helper
+     */
     public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
         return new SleeperLambdaCode(scope, instanceProperties,
                 jars.lambdaJarsAtScope(scope),
                 containerImages.lambdaImagesAtScope(scope));
     }
 
-    @Override
+    /**
+     * Creates a helper to deploy containers in ECS.
+     *
+     * @param  scope the scope you want to deploy in
+     * @return       the helper
+     */
     public SleeperEcsImages ecsImagesAtScope(Construct scope) {
         return containerImages.ecsImagesAtScope(scope);
     }

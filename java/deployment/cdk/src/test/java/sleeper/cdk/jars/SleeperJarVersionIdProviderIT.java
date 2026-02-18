@@ -22,7 +22,6 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.assertions.Template;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
 import sleeper.cdk.lambda.SleeperLambdaCode;
@@ -130,7 +129,7 @@ public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
     }
 
     private SleeperLambdaCode lambdaCode(Stack stack) {
-        ISleeperArtefacts artefacts = SleeperArtefacts.from(instanceProperties, jars());
+        SleeperArtefacts artefacts = SleeperArtefacts.from(instanceProperties, jars());
         return artefacts.lambdaCodeAtScope(stack);
     }
 }

@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
@@ -54,7 +53,7 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final ISleeperArtefacts artefacts;
+    private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
     private final boolean validateProperties;
@@ -180,7 +179,7 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public ISleeperArtefacts getArtefacts() {
+    public SleeperArtefacts getArtefacts() {
         return artefacts;
     }
 
@@ -194,7 +193,7 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private ISleeperArtefacts artefacts;
+        private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
@@ -223,7 +222,7 @@ public class SleeperInstanceProps {
          * @param  artefacts the artefacts
          * @return           this builder
          */
-        public Builder artefacts(ISleeperArtefacts artefacts) {
+        public Builder artefacts(SleeperArtefacts artefacts) {
             this.artefacts = artefacts;
             return this;
         }

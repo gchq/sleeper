@@ -36,7 +36,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -54,7 +54,7 @@ public final class WebSocketQueryStack extends NestedStack {
     private CfnApi webSocketApi;
 
     public WebSocketQueryStack(Construct scope, String id, InstanceProperties instanceProperties,
-            ISleeperArtefacts artefacts, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+            SleeperArtefacts artefacts, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);

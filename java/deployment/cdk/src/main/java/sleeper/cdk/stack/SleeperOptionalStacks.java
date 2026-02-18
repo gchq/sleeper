@@ -18,7 +18,7 @@ package sleeper.cdk.stack;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
@@ -52,7 +52,7 @@ public class SleeperOptionalStacks {
     public static void create(
             Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        ISleeperArtefacts artefacts = props.getArtefacts();
+        SleeperArtefacts artefacts = props.getArtefacts();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());

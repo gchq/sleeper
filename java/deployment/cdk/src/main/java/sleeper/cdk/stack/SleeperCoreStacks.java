@@ -36,7 +36,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
@@ -120,7 +120,7 @@ public class SleeperCoreStacks {
     public static SleeperCoreStacks create(
             Construct scope, SleeperInstanceProps props, SleeperNetworking networking, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        ISleeperArtefacts artefacts = props.getArtefacts();
+        SleeperArtefacts artefacts = props.getArtefacts();
 
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             new VpcCheckStack(scope, "Vpc", instanceProperties, artefacts, networking, loggingStack);

@@ -29,7 +29,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -52,14 +52,14 @@ public class EcsClusterTasksStack extends NestedStack {
     private Provider provider;
     private SecurityGroup ecsSecurityGroup;
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, ISleeperArtefacts artefacts, LoggingStack loggingStack) {
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, LoggingStack loggingStack) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
         createAutoStopLambda(instanceProperties, artefacts, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, ISleeperArtefacts artefacts) {
+    public EcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
         super(scope, id);
         createEcsSecurityGroup(this, instanceProperties);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
@@ -68,7 +68,7 @@ public class EcsClusterTasksStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createAutoStopLambda(InstanceProperties instanceProperties, ISleeperArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createAutoStopLambda(InstanceProperties instanceProperties, SleeperArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 

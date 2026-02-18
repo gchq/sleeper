@@ -50,7 +50,7 @@ import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.ISleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
@@ -94,7 +94,7 @@ public class StateStoreCommitterStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            ISleeperArtefacts artefacts,
+            SleeperArtefacts artefacts,
             LoggingStack loggingStack,
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
