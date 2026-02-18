@@ -18,7 +18,6 @@ package sleeper.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -54,12 +53,6 @@ public class ExampleCDKApp {
                     .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                     .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
-            SleeperTable.createAsRootStack(app, id,
-                    StackProps.builder()
-                            .stackName(id)
-                            .env(environment)
-                            .build(),
-                    props);
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
 
