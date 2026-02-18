@@ -69,6 +69,8 @@ public class LoggingStack extends NestedStack {
         VPC_CHECK("vpc-check"),
         VPC_CHECK_PROVIDER("vpc-check-provider"),
         STATESTORE_COMMITTER("statestore-committer"),
+        COPY_CONTAINER("copy-container"),
+        COPY_CONTAINER_PROVIDER("copy-container-provider"),
 
         // Accessed via CoreStacks getters
         PROPERTIES_WRITER("properties-writer"),
