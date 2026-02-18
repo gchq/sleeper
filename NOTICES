@@ -163,7 +163,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
 
 - Apache License, Version 2.0
 
@@ -291,6 +291,26 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.*, org.bouncycastle:bcutil-jdk1
 
 - Bouncy Castle License
 
+Jib (com.google.cloud.tools:jib-*:0.*)
+
+- Apache License, Version 2.0
+
+Google HTTP Client Library For Java (com.google.http-client:google-http-client:2.*)
+
+- Apache License, Version 2.0
+
+gRPC (io.grpc:grpc-context:1.*)
+
+- Apache License, Version 2.0
+
+Google J2ObjC (com.google.j2objc:j2objc-annotations:3.*)
+
+- Apache License, Version 2.0
+
+Docker Java (com.github.docker-java:docker-java-*:3.*)
+
+- Apache License, Version 2.0
+
 Testcontainers (org.testcontainers:*:2.*)
 
 - MIT License
@@ -311,7 +331,7 @@ AWS JSii (software.amazon.jsii:jsii-runtime:1.*)
 
 - Apache License, Version 2.0
 
-AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:2.*)
+AWS Lambda Powertools (software.amazon.lambda:powertools-*:2.*)
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
