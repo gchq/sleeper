@@ -82,6 +82,10 @@ public class SleeperInstancePrinter {
             return Map.entry(entry.getKey(), sanitiseTemplate(map));
         }
 
+        if (entry.getValue() instanceof String string && Objects.equals("tableProperties", entry.getKey())) {
+            return Map.entry(entry.getKey(), sanitisePropertiesJoinElement(string));
+        }
+
         return entry;
     }
 

@@ -26,10 +26,10 @@ import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
 import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
+import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
 public class SleeperTableIT {
@@ -40,19 +40,26 @@ public class SleeperTableIT {
     @Test
     void shouldGenerateSleeperTableObjectWithDefaultOptions() {
         // Given
-        Stack sleeperTable = createSleeperInstanceAsRootStack(createTestInstanceProperties());
+        Stack stack = createSleeperTableAsRootStack();
+
+        //Core Stacks!
+        TableDefinerStack definerStack = new TableDefinerStack(stack, "TableDefiner", instanceProperties,
+                new SleeperArtefactsFromProperties(instanceProperties, jarVersionIds()));
+
+        //Create custom resource provider
+        //Declare sleeper table that deploys custom resource
 
         // When
-        //sleeperTable.createSleeperTable("test-table", "test-id");
+        //stack.createSleeperTable("test-table", "test-id");
 
         // Then
-        Approvals.verify(printer.toJson(sleeperTable), new Options()
+        Approvals.verify(printer.toJson(stack), new Options()
                 .withReporter((receieved, approved) -> false)
                 .forFile().withName("default-table", ".json"));
 
     }
 
-    private Stack createSleeperInstanceAsRootStack(InstanceProperties instanceProperties) {
+    private Stack createSleeperTableAsRootStack() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -64,16 +71,27 @@ public class SleeperTableIT {
                 .stackName("test-table")
                 .env(environment)
                 .build();
-        SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
-                .instanceProperties(instanceProperties)
-                .version("1.2.3")
-                .artefacts(new SleeperArtefactsFromProperties(instanceProperties, jarVersionIds()))
-                .skipCheckingVersionMatchesProperties(true)
-                .build();
-        return SleeperTable.createAsRootStack(app, "TestTable", stackProps, sleeperProps);
+
+        return new Stack(app, "TestTable", stackProps);
+        //return createAsRootStack(app, "TestTable", stackProps, sleeperProps);
     }
+
+    /*
+     * SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
+     * .instanceProperties(instanceProperties)
+     * .version("1.2.3")
+     * .artefacts(new SleeperArtefactsFromProperties(instanceProperties, jarVersionIds()))
+     * .skipCheckingVersionMatchesProperties(true)
+     * .build();
+     */
 
     private SleeperJarVersionIdProvider jarVersionIds() {
         return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     }
+
+    /*
+     * public Table createSleeperTable(String tableName, String instanceId, Schema schema) {
+     * return null;
+     * }
+     */
 }

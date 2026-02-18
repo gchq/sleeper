@@ -15,54 +15,47 @@
  */
 package sleeper.cdk;
 
-import org.jetbrains.annotations.NotNull;
-import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.dynamodb.Attribute;
-import software.amazon.awscdk.services.dynamodb.AttributeType;
-import software.amazon.awscdk.services.dynamodb.BillingMode;
-import software.amazon.awscdk.services.dynamodb.Table;
-import software.constructs.Construct;
+import sleeper.core.schema.Schema;
 
-public class SleeperTable extends NestedStack {
+public class SleeperTable {
 
-    static final String JOB_ID_AND_UPDATE = "JobIdAndUpdate";
-    static final String UPDATE_TIME = "UpdateTime";
-    static final String EXPIRY_DATE = "ExpiryDate";
+    private String tableName;
+    private String instanceId;
+    private Schema schema;
 
-    public SleeperTable(@NotNull Construct scope, @NotNull String id) {
-        super(scope, id);
+    public SleeperTable(Builder builder) {
+        this.tableName = builder.tableName;
+        this.instanceId = builder.instanceId;
+        this.schema = builder.schema;
     }
 
-    /**
-     * Declares a SleeperTable as a root level stack.
-     *
-     * @param  scope        the scope to add the SleeperTable to, usually an App or Stage
-     * @param  id           the stack ID
-     * @param  stackProps   configuration of the stack
-     * @param  sleeperProps configuration to deploy the instance
-     * @return              the stack
-     */
-    public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
-        Stack stack = new Stack(scope, id, stackProps);
-        return stack;
-    }
+    public static class Builder {
+        String tableName;
+        String instanceId;
+        Schema schema;
 
-    public Table createSleeperTable(String tableName, String tableId) {
-        return Table.Builder
-                .create(this, "SleeperTable")
-                .tableName(tableName)
-                .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(Attribute.builder()
-                        .name(tableId)
-                        .type(AttributeType.STRING)
-                        .build())
-                .sortKey(Attribute.builder()
-                        .name(JOB_ID_AND_UPDATE)
-                        .type(AttributeType.STRING)
-                        .build())
-                .timeToLiveAttribute(EXPIRY_DATE)
-                .build();
+        private Builder() {
+
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public Builder build() {
+            return this;
+        }
+
     }
 }

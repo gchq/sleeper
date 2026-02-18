@@ -24,7 +24,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
-import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -40,7 +39,7 @@ import java.util.Map;
 public class TableDefinerStack extends NestedStack {
 
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
@@ -53,13 +52,11 @@ public class TableDefinerStack extends NestedStack {
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for creating, updating and deleting Sleeper tables")
-                .logGroup(coreStacks.getLogGroup(LogGroupRef.TABLE_DEFINER)));
-
-        coreStacks.grantWriteInstanceConfig(tableDefinerLambda);
+                .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER, instanceProperties)));
 
         Provider tableDefinerProvider = Provider.Builder.create(this, "TableDefinerProvider")
                 .onEventHandler(tableDefinerLambda)
-                .logGroup(coreStacks.getLogGroup(LogGroupRef.TABLE_DEFINER_PROVIDER))
+                .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER_PROVIDER, instanceProperties))
                 .build();
 
         //TODO Update this to use TableProperties/SplitPoints
