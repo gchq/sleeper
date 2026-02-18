@@ -82,7 +82,7 @@ jobs:
         env:
           TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
           TRIVY_SHOW_SUPPRESSED: true
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: '${{ inputs.imageName }}:test'
           format: 'table'

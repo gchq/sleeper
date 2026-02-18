@@ -89,7 +89,7 @@ public interface TableDefaultProperty {
     UserDefinedInstanceProperty DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED = Index.propertyBuilder("sleeper.default.table.datafusion.s3.readahead.enabled")
             .description("Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data " +
                     "in larger blocks than are requested by DataFusion.")
-            .defaultValue("true")
+            .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.default.table.parquet.writer.version")
