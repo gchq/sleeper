@@ -108,22 +108,26 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
         resourceProperties.put("splitPoints", splitPoints);
 
-        handleEvent(type, resourceProperties);
-    }
-
-    private void callLambda(String type, TableProperties tableProperties, String splitPoints, TableProperties existingTableProperties) throws IOException {
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        resourceProperties.put("splitPoints", splitPoints);
-        resourceProperties.put("existingTableProperties", existingTableProperties.saveAsString());
-
-        handleEvent(type, resourceProperties);
-    }
-
-    private void handleEvent(String type, HashMap<String, Object> resourceProperties) throws IOException {
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType(type)
                 .withResourceProperties(resourceProperties)
+                .build();
+
+        tableDefinerLambda.handleEvent(event, null);
+    }
+
+    private void callLambda(String type, TableProperties tableProperties, String splitPoints, TableProperties oldTableProperties) throws IOException {
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        resourceProperties.put("splitPoints", splitPoints);
+
+        HashMap<String, Object> oldResourceProperties = new HashMap<>();
+        oldResourceProperties.put("tableProperties", oldTableProperties.saveAsString());
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType(type)
+                .withResourceProperties(resourceProperties)
+                .withOldResourceProperties(oldResourceProperties)
                 .build();
 
         tableDefinerLambda.handleEvent(event, null);
@@ -225,10 +229,12 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldUpdateTablePropertiesSuccessfully() throws IOException {
             //Given
             callLambda(CREATE, tableProperties);
+
+            TableProperties oldTableProperties = TableProperties.copyOf(tableProperties);
             tableProperties.set(TABLE_ONLINE, "false");
 
             //When
-            callLambda(UPDATE, tableProperties);
+            callLambda(UPDATE, tableProperties, "", oldTableProperties);
 
             //Then
             assertThat(propertiesStore.streamAllTables()).singleElement()
@@ -242,11 +248,11 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             tableProperties.set(TABLE_NAME, "old-table-name");
             callLambda(CREATE, tableProperties);
 
-            TableProperties existingTableProperties = TableProperties.copyOf(tableProperties);
+            TableProperties oldTableProperties = TableProperties.copyOf(tableProperties);
             tableProperties.set(TABLE_NAME, "new-table-name");
 
             //When
-            callLambda(UPDATE, tableProperties, "", existingTableProperties);
+            callLambda(UPDATE, tableProperties, "", oldTableProperties);
 
             //Then
             assertThat(propertiesStore.streamAllTables()).singleElement()

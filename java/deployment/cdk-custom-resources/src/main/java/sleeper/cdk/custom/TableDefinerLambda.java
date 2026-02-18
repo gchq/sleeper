@@ -74,6 +74,7 @@ public class TableDefinerLambda {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
         Map<String, Object> resourceProperties = event.getResourceProperties();
+        Map<String, Object> oldResourceProperties = event.getOldResourceProperties();
 
         Properties properties = new Properties();
         properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
@@ -85,7 +86,7 @@ public class TableDefinerLambda {
                 break;
             case "Update":
                 LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                updateTable(tableProperties, tablePropertiesStore, resourceProperties);
+                updateTable(tableProperties, tablePropertiesStore, oldResourceProperties);
                 break;
             case "Delete":
                 deleteTable(tableProperties, tablePropertiesStore);
@@ -158,11 +159,11 @@ public class TableDefinerLambda {
         }
     }
 
-    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> resourceProperties) throws IOException {
+    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> oldResourceProperties) throws IOException {
         tableProperties.validate();
-        if (resourceProperties.containsKey("existingTableProperties")) {
+        if (oldResourceProperties.containsKey("tableProperties")) {
             Properties properties = new Properties();
-            properties.load(new StringReader((String) resourceProperties.get("existingTableProperties")));
+            properties.load(new StringReader((String) oldResourceProperties.get("tableProperties")));
             InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
             TableProperties existingTableProperties = new TableProperties(instanceProperties, properties);
             TableStatus existingOpt = tablePropertiesStore.getExistingStatus(existingTableProperties).get();
