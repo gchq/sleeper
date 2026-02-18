@@ -41,7 +41,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
@@ -88,7 +88,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperArtefacts artefacts,
+            ISleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack,
             SleeperCoreStacks coreStacks,
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {

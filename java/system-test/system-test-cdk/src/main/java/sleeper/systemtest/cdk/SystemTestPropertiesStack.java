@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -43,7 +43,7 @@ public class SystemTestPropertiesStack extends NestedStack {
 
     public SystemTestPropertiesStack(
             Construct scope, String id, SystemTestStandaloneProperties systemTestProperties,
-            SystemTestBucketStack bucketStack, SleeperArtefacts artefacts) {
+            SystemTestBucketStack bucketStack, ISleeperArtefacts artefacts) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);

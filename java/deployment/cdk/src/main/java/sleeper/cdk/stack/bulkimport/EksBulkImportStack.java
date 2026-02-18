@@ -52,7 +52,7 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -86,7 +86,7 @@ public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts,
+            Construct scope, String id, InstanceProperties instanceProperties, ISleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks) {
         super(scope, id);
 

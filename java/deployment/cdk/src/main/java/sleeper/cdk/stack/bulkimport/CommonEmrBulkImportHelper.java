@@ -28,7 +28,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -95,7 +95,7 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            Queue jobQueue, SleeperArtefacts artefacts, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
+            Queue jobQueue, ISleeperArtefacts artefacts, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(scope);
         return createJobStarterFunction(jobQueue, lambdaCode, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));

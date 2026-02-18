@@ -23,7 +23,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -47,7 +47,7 @@ public class EmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperArtefacts artefacts,
+            ISleeperArtefacts artefacts,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             SleeperCoreStacks coreStacks) {

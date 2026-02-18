@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.ISleeperArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
@@ -44,7 +44,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends Stack {
     private final SleeperInstanceProps props;
-    private final SleeperArtefacts artefacts;
+    private final ISleeperArtefacts artefacts;
     private final SystemTestProperties instanceProperties;
 
     public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
