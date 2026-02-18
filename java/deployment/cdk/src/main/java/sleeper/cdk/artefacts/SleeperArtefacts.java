@@ -64,7 +64,7 @@ public class SleeperArtefacts {
     }
 
     /**
-     * Creates a helper to deploy lambdas using these deployment artefacts.
+     * Creates a helper to deploy to AWS Lambda.
      *
      * @param  scope the scope you want to deploy in
      * @return       the helper
