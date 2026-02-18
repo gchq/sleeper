@@ -80,7 +80,6 @@ public class ReadStateStoreCommitterLogs {
         }
         String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
         if (batchFinishTime != null) {
-            LOGGER.info("Matched batch!");
             return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
         }
         String tableId = matcher.group(CapturingGroups.TABLE_ID);

@@ -15,6 +15,9 @@
  */
 package sleeper.clients.report.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,6 +32,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * Finds separate runs of the state store committer based on log entries.
  */
 public class StateStoreCommitterRuns {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterRuns.class);
 
     private StateStoreCommitterRuns() {
     }
@@ -87,23 +92,28 @@ public class StateStoreCommitterRuns {
     private static List<StateStoreCommitterRun> splitIntoRuns(List<StateStoreCommitterLogEntry> logs) {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         StateStoreCommitterRun.Builder builder = null;
+        int started = 0, sum = 0, batch = 0, finished = 0;
         for (StateStoreCommitterLogEntry entry : logs) {
             if (entry instanceof StateStoreCommitterRunStarted) {
+                started++;
                 if (builder != null) {
                     runs.add(builder.build());
                 }
                 builder = newRun(entry).start((StateStoreCommitterRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
+                sum++;
                 if (builder == null) {
                     builder = newRun(entry);
                 }
                 builder.commit((StateStoreCommitSummary) entry);
             } else if (entry instanceof StateStoreCommitterRunBatchFinished) {
+                batch++;
                 if (builder == null) {
                     builder = newRun(entry);
                 }
                 builder.batchFinished((StateStoreCommitterRunFinished) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
+                finished++;
                 if (builder == null) {
                     builder = newRun(entry);
                 }
@@ -111,6 +121,7 @@ public class StateStoreCommitterRuns {
                 builder = null;
             }
         }
+        LOGGER.info("Found {} started, {} Summary, {} batch finished and {} finished logs", started, sum, batch, finished);
         if (builder != null) {
             runs.add(builder.build());
         }
