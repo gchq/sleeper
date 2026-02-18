@@ -304,19 +304,16 @@ public class ECSStateStoreCommitterThroughputST {
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
-        //163 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(100.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndTracker() {
-        //137 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(100.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
-        //501 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(400.00);
     }
@@ -324,9 +321,8 @@ public class ECSStateStoreCommitterThroughputST {
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {
         return commitsPerSecond -> {
             double filesPerSecond = commitsPerSecond * 10_000;
-            //89,700 lowest
             assertThat(filesPerSecond)
-                    .isGreaterThan(300.0);
+                    .isGreaterThan(7_000);
         };
     }
 
