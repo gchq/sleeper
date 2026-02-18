@@ -17,8 +17,6 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -31,7 +29,6 @@ import sleeper.systemtest.suite.testutil.parallel.Slow2;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -55,7 +52,6 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTOR
 @Slow2
 @Execution(SAME_THREAD)
 public class ECSStateStoreCommitterThroughputST {
-    public static final Logger LOGGER = LoggerFactory.getLogger(ECSStateStoreCommitterThroughputST.class);
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
@@ -74,9 +70,7 @@ public class ECSStateStoreCommitterThroughputST {
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
@@ -97,9 +91,7 @@ public class ECSStateStoreCommitterThroughputST {
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
@@ -122,9 +114,7 @@ public class ECSStateStoreCommitterThroughputST {
 
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
     }
 
@@ -148,9 +138,7 @@ public class ECSStateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
-        Map<String, Double> throughput = sleeper.stateStore().commitsPerSecondByTable();
-        throughput.entrySet().stream().forEach(entry -> LOGGER.info("shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables {} - {}", entry.getKey(), entry.getValue()));
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
                         .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
@@ -182,9 +170,7 @@ public class ECSStateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
@@ -224,9 +210,7 @@ public class ECSStateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                                 .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                 .collect(toUnmodifiableList()))));
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingCompaction throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
@@ -265,9 +249,7 @@ public class ECSStateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
                                 .collect(toUnmodifiableList()))));
-        double throughput = sleeper.stateStore().commitsPerSecondForTable();
-        LOGGER.info("shouldMeetExpectedThroughputWhenCommittingDeletedFiles throughtput {}", throughput);
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
@@ -299,9 +281,7 @@ public class ECSStateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
-        Map<String, Double> throughput = sleeper.stateStore().commitsPerSecondByTable();
-        throughput.entrySet().stream().forEach(entry -> LOGGER.info("shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables {} - {}", entry.getKey(), entry.getValue()));
-        assertThat(throughput)
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
                         .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
@@ -324,23 +304,27 @@ public class ECSStateStoreCommitterThroughputST {
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogOnly() {
+        //163 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isGreaterThan(50.0);
+                .isGreaterThan(100.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndTracker() {
+        //137 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isGreaterThan(35.0);
+                .isGreaterThan(100.0);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
+        //501 lowest
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isGreaterThan(20.0);
+                .isGreaterThan(400.00);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {
         return commitsPerSecond -> {
             double filesPerSecond = commitsPerSecond * 10_000;
+            //89,700 lowest
             assertThat(filesPerSecond)
                     .isGreaterThan(300.0);
         };
