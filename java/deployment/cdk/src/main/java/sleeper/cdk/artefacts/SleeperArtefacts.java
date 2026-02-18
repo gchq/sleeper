@@ -18,6 +18,12 @@ package sleeper.cdk.artefacts;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
+import sleeper.cdk.artefacts.containers.SleeperContainerImages;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
+import sleeper.cdk.artefacts.containers.SleeperEcsImages;
+import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJars;
+import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.properties.instance.InstanceProperties;
 

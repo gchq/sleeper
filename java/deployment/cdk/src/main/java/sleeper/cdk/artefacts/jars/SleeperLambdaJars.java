@@ -13,29 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefacts;
+package sleeper.cdk.artefacts.jars;
 
-import software.constructs.Construct;
+import software.amazon.awscdk.services.lambda.Code;
+
+import sleeper.core.deploy.LambdaJar;
 
 /**
- * Code to refer to container images during deployment.
+ * Code to refer to a fat jar for use when deploying a lambda. Sleeper builds fat jars that include all the dependencies
+ * for a lambda.
  */
-public interface SleeperContainerImages {
+@FunctionalInterface
+public interface SleeperLambdaJars {
 
     /**
-     * Creates a helper to deploy containers in ECS.
+     * Retrieves a reference to a fat jar in the jars bucket.
      *
-     * @param  scope the scope you want to deploy in
-     * @return       the helper
+     * @param  jar which jar we want to reference
+     * @return     the reference to the jar
      */
-    SleeperEcsImages ecsImagesAtScope(Construct scope);
-
-    /**
-     * Creates a helper to refer to container images during deployment to AWS Lambda.
-     *
-     * @param  scope the scope you want to deploy in
-     * @return       the helper
-     */
-    SleeperLambdaImages lambdaImagesAtScope(Construct scope);
-
+    Code jarCode(LambdaJar jar);
 }

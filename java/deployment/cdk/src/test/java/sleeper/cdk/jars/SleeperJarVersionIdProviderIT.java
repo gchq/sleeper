@@ -23,7 +23,7 @@ import software.amazon.awscdk.assertions.Template;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
