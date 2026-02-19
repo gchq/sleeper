@@ -23,7 +23,6 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
@@ -42,22 +41,15 @@ public class CopyContainerImageStack extends NestedStack {
     public CopyContainerImageStack(Construct scope, String id, String deploymentId, SleeperJars jars) {
         super(scope, id);
         SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, jars);
-        ILogGroup lambdaLogGroup = LogGroup.Builder.create(scope, "LambdaLogGroup")
-                .logGroupName("sleeper-" + deploymentId + "-copy-container")
-                .retention(RetentionDays.TWO_WEEKS)
-                .removalPolicy(RemovalPolicy.DESTROY)
-                .build();
-        ILogGroup providerLogGroup = LogGroup.Builder.create(scope, "ProviderLogGroup")
-                .logGroupName("sleeper-" + deploymentId + "-copy-container-provider")
-                .retention(RetentionDays.TWO_WEEKS)
-                .removalPolicy(RemovalPolicy.DESTROY)
-                .build();
-
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
                 .functionName("sleeper-" + deploymentId + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
-                .logGroup(lambdaLogGroup)
+                .logGroup(LogGroup.Builder.create(scope, "LambdaLogGroup")
+                        .logGroupName("sleeper-" + deploymentId + "-copy-container")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.DESTROY)
+                        .build())
                 .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
@@ -72,7 +64,11 @@ public class CopyContainerImageStack extends NestedStack {
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
+                .logGroup(LogGroup.Builder.create(scope, "ProviderLogGroup")
+                        .logGroupName("sleeper-" + deploymentId + "-copy-container-provider")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.DESTROY)
+                        .build())
                 .build();
     }
 
