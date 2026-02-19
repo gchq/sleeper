@@ -1120,7 +1120,7 @@ sleeper.subnets=set-automatically
 # instance types, as each type will count for a certain number of units. By default the units are the
 # number of instances.
 # If managed scaling is not used then the cluster will be of fixed size, with a number of instances
-# equal to this value.
+# equal to this value. This value must be in the range [1, 2000].
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.persistent.emr.min.capacity=1
 
@@ -1129,7 +1129,9 @@ sleeper.subnets=set-automatically
 # This is measured in instance fleet capacity units. These are declared alongside the requested
 # instance types, as each type will count for a certain number of units. By default the units are the
 # number of instances.
-# This value is only used if managed scaling is used.
+# This value is only used if managed scaling is used. This value must be in the range [1, 2000] and
+# greater than
+# the minimum capacity.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.persistent.emr.max.capacity=10
 
@@ -1820,7 +1822,7 @@ sleeper.subnets=set-automatically
 # Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data in larger
 # blocks than are requested by DataFusion.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.datafusion.s3.readahead.enabled=true
+# sleeper.default.table.datafusion.s3.readahead.enabled=false
 
 # Used to set parquet.writer.version, see documentation here:
 # https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md

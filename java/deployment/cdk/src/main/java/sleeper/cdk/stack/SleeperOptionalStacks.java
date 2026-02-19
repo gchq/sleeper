@@ -18,7 +18,7 @@ package sleeper.cdk.stack;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
@@ -52,7 +52,7 @@ public class SleeperOptionalStacks {
     public static void create(
             Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        SleeperJarsInBucket jars = props.getJars();
+        SleeperArtefacts artefacts = props.getArtefacts();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
@@ -61,12 +61,12 @@ public class SleeperOptionalStacks {
         }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(scope, "Athena", instanceProperties, jars, coreStacks);
+            new AthenaStack(scope, "Athena", instanceProperties, artefacts, coreStacks);
         }
 
         BulkImportBucketStack bulkImportBucketStack = null;
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(scope, "BulkImportBucket", instanceProperties, coreStacks, jars);
+            bulkImportBucketStack = new BulkImportBucketStack(scope, "BulkImportBucket", instanceProperties, coreStacks);
         }
         CommonEmrBulkImportStack emrBulkImportCommonStack = null;
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
@@ -78,9 +78,9 @@ public class SleeperOptionalStacks {
         EmrServerlessBulkImportStack emrServerlessBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EmrServerlessBulkImportStack)) {
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessStack = new AutoStopEmrServerlessApplicationStack(
-                    scope, "AutoStopEmrServerlessApplication", instanceProperties, jars, coreStacks.getLoggingStack());
+                    scope, "AutoStopEmrServerlessApplication", instanceProperties, artefacts, coreStacks.getLoggingStack());
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(scope, "BulkImportEMRServerless",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     coreStacks,
                     autoStopEmrServerlessStack);
@@ -94,7 +94,7 @@ public class SleeperOptionalStacks {
         EmrBulkImportStack emrBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
             emrBulkImportStack = new EmrBulkImportStack(scope, "BulkImportEMR",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks);
@@ -104,7 +104,7 @@ public class SleeperOptionalStacks {
         PersistentEmrBulkImportStack persistentEmrBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(scope, "BulkImportPersistentEMR",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks);
@@ -114,7 +114,7 @@ public class SleeperOptionalStacks {
         EksBulkImportStack eksBulkImportStack = null;
         if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
             eksBulkImportStack = new EksBulkImportStack(scope, "BulkImportEKS",
-                    instanceProperties, jars,
+                    instanceProperties, artefacts,
                     bulkImportBucketStack,
                     coreStacks);
         }
@@ -147,13 +147,12 @@ public class SleeperOptionalStacks {
             queryQueueStack = new QueryQueueStack(scope, "QueryQueue",
                     instanceProperties, coreStacks);
             queryStack = new QueryStack(scope, "Query",
-                    instanceProperties, jars, coreStacks,
+                    instanceProperties, artefacts, coreStacks,
                     queryQueueStack);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
-                new WebSocketQueryStack(scope,
-                        "WebSocketQuery",
-                        instanceProperties, jars,
+                new WebSocketQueryStack(scope, "WebSocketQuery",
+                        instanceProperties, artefacts,
                         coreStacks, queryQueueStack, queryStack);
             }
         }

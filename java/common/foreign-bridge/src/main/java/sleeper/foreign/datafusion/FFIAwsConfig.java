@@ -31,6 +31,7 @@ public class FFIAwsConfig extends Struct {
     final Struct.UTF8StringRef endpoint = new Struct.UTF8StringRef();
     final Struct.UTF8StringRef access_key = new Struct.UTF8StringRef();
     final Struct.UTF8StringRef secret_key = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef session_token = new Struct.UTF8StringRef();
     final Struct.Boolean allow_http = new Struct.Boolean();
 
     public FFIAwsConfig(jnr.ffi.Runtime runtime) {
@@ -39,5 +40,6 @@ public class FFIAwsConfig extends Struct {
         endpoint.set("");
         access_key.set("");
         secret_key.set("");
+        session_token.set("");
     }
 }

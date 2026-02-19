@@ -64,6 +64,7 @@ class SleeperPropertyValueUtilsTest {
             assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull("-7"))
                     .isFalse();
         }
+
     }
 
     @Nested

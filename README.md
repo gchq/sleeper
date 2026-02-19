@@ -1,6 +1,14 @@
 Sleeper
 =======
 
+[![Java Build Status](https://github.com/gchq/sleeper/actions/workflows/java-status.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/java-status.yaml)
+[![Rust Cache](https://github.com/gchq/sleeper/actions/workflows/rust-cache.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/rust-cache.yaml)
+[![Rust Audit](https://github.com/gchq/sleeper/actions/workflows/rust-audit.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/rust-audit.yaml)
+[![Dependency Check Nightly](https://github.com/gchq/sleeper/actions/workflows/dependency-check-nightly.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/dependency-check-nightly.yaml)
+[![Docker Image Tests Nightly](https://github.com/gchq/sleeper/actions/workflows/docker-image-nightly.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/docker-image-nightly.yaml)
+[![Rust Builders Deployment](https://github.com/gchq/sleeper/actions/workflows/rust-builders-main.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/rust-builders-main.yaml)
+[![Docker CLI Deployment](https://github.com/gchq/sleeper/actions/workflows/docker-cli-main.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/docker-cli-main.yaml)
+
 ## Introduction
 
 Sleeper is a serverless, cloud-native, log-structured merge tree based, scalable key-value store. It is designed to
