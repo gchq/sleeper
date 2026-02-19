@@ -42,7 +42,6 @@ import java.util.Map;
  */
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
-    private IFunction lambda;
     private Provider provider;
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, LoggingStack loggingStack) {
@@ -67,7 +66,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -75,8 +74,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
-                .create()
+        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of("s3:ListBucketVersions", "s3:DeleteObject", "s3:DeleteObjectVersion"))
                 .build());

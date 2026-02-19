@@ -35,12 +35,6 @@ public record UploadArtefactsAssets(Path jarsDirectory, String version) {
         return new UploadArtefactsAssets(jarsDirectory, SleeperVersion.getVersion());
     }
 
-    public Code lambdaCode(LambdaHandler handler) {
-        String filename = handler.getJar().getFilename(version);
-        String path = jarsDirectory.resolve(filename).toAbsolutePath().toString();
-        return Code.fromAsset(path);
-    }
-
     public IVersion buildFunction(Construct scope, String id, LambdaHandler handler, Consumer<LambdaBuilder> config) {
         LambdaBuilder builder = new FunctionBuilder(Function.Builder.create(scope, id)
                 .code(lambdaCode(handler))
@@ -48,6 +42,12 @@ public record UploadArtefactsAssets(Path jarsDirectory, String version) {
                 .runtime(Runtime.JAVA_17));
         config.accept(builder);
         return builder.build().getCurrentVersion();
+    }
+
+    private Code lambdaCode(LambdaHandler handler) {
+        String filename = handler.getJar().getFilename(version);
+        String path = jarsDirectory.resolve(filename).toString();
+        return Code.fromAsset(path);
     }
 
 }
