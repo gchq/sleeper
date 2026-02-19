@@ -45,7 +45,7 @@ public class CopyContainerImageStack extends NestedStack {
                 .functionName("sleeper-" + deploymentId + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
-                .logGroup(LogGroup.Builder.create(scope, "LambdaLogGroup")
+                .logGroup(LogGroup.Builder.create(this, "LambdaLogGroup")
                         .logGroupName("sleeper-" + deploymentId + "-copy-container")
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
@@ -64,7 +64,7 @@ public class CopyContainerImageStack extends NestedStack {
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(LogGroup.Builder.create(scope, "ProviderLogGroup")
+                .logGroup(LogGroup.Builder.create(this, "ProviderLogGroup")
                         .logGroupName("sleeper-" + deploymentId + "-copy-container-provider")
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
