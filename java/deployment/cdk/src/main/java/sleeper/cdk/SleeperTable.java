@@ -29,6 +29,10 @@ public class SleeperTable {
         this.schema = builder.schema;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
         String tableName;
         String instanceId;
@@ -53,8 +57,8 @@ public class SleeperTable {
             return this;
         }
 
-        public Builder build() {
-            return this;
+        public SleeperTable build() {
+            return new SleeperTable(this);
         }
 
     }
