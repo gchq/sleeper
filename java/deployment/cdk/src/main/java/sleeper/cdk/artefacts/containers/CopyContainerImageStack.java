@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.artefacts.containers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class CopyContainerImageStack extends NestedStack {
     private Provider provider;
 
