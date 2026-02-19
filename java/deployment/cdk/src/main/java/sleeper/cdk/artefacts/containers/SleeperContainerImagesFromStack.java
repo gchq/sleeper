@@ -62,11 +62,11 @@ public class SleeperContainerImagesFromStack implements SleeperContainerImages {
                         .build());
     }
 
-    public class CopyContainerAtScope {
+    private class CopyContainerAtScope {
         private final Construct scope;
         private final Map<String, CustomResource> imageNameToCustomResource = new HashMap<>();
 
-        public CopyContainerAtScope(Construct scope) {
+        CopyContainerAtScope(Construct scope) {
             this.scope = scope;
         }
 
