@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.containers.SleeperLambdaImages;
+import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.artefacts.jars.SleeperLambdaJars;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.model.LambdaDeployType;
@@ -40,6 +41,10 @@ public class SleeperLambdaCode {
         this.deployType = deployType;
         this.jars = jars;
         this.images = images;
+    }
+
+    public static SleeperLambdaCode jarsOnly(Construct scope, SleeperJars jars) {
+        return new SleeperLambdaCode(scope, LambdaDeployType.JAR, jars.lambdaJarsAtScope(scope), null);
     }
 
     public IVersion buildFunction(LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {

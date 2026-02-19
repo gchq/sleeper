@@ -27,7 +27,8 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.UploadArtefactsAssets;
+import sleeper.cdk.artefacts.jars.SleeperJars;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.core.deploy.LambdaHandler;
@@ -42,7 +43,8 @@ public class CopyContainerImageStack extends NestedStack {
 
     public CopyContainerImageStack(Construct scope, String id, Props props) {
         super(scope, id);
-        IFunction lambda = props.assets().buildFunction(this, "Function", LambdaHandler.COPY_CONTAINER, builder -> builder
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, props.jars());
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
                 .functionName("sleeper-" + props.deploymentId() + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
@@ -66,8 +68,8 @@ public class CopyContainerImageStack extends NestedStack {
         props.addTags().accept(this);
     }
 
-    public static CopyContainerImageStack standalone(Construct scope, String id, String deploymentId, UploadArtefactsAssets assets) {
-        return new CopyContainerImageStack(scope, id, Props.standalone(deploymentId, assets));
+    public static CopyContainerImageStack standalone(Construct scope, String id, String deploymentId, SleeperJars jars) {
+        return new CopyContainerImageStack(scope, id, Props.standalone(deploymentId, jars));
     }
 
     /**
@@ -87,13 +89,13 @@ public class CopyContainerImageStack extends NestedStack {
                 .build();
     }
 
-    public record Props(String deploymentId, UploadArtefactsAssets assets,
+    public record Props(String deploymentId, SleeperJars jars,
             Function<Construct, ILogGroup> lambdaLogGroupAtScope,
             Function<Construct, ILogGroup> providerLogGroupAtScope,
             Consumer<Stack> addTags) {
 
-        public static Props standalone(String deploymentId, UploadArtefactsAssets assets) {
-            return new Props(deploymentId, assets,
+        public static Props standalone(String deploymentId, SleeperJars jars) {
+            return new Props(deploymentId, jars,
                     standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER),
                     standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER_PROVIDER),
                     stack -> {
