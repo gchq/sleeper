@@ -24,7 +24,6 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.EcsClusterTasksStack;
@@ -68,7 +67,7 @@ public class SystemTestStandaloneApp extends Stack {
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
         try (S3Client s3Client = S3Client.create()) {
-            SleeperArtefacts artefacts = SleeperArtefactsFromProperties.from(s3Client, systemTestProperties.toInstancePropertiesForCdkUtils());
+            SleeperArtefacts artefacts = SleeperArtefacts.from(s3Client, systemTestProperties.toInstancePropertiesForCdkUtils());
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
             Environment environment = Environment.builder()
