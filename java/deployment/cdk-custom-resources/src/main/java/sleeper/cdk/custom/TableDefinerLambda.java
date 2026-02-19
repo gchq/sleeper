@@ -161,16 +161,11 @@ public class TableDefinerLambda {
 
     private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> oldResourceProperties) throws IOException {
         tableProperties.validate();
-        if (oldResourceProperties.containsKey("tableProperties")) {
-            Properties properties = new Properties();
-            properties.load(new StringReader((String) oldResourceProperties.get("tableProperties")));
-            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
-            TableProperties existingTableProperties = new TableProperties(instanceProperties, properties);
-            TableStatus existingOpt = tablePropertiesStore.getExistingStatus(existingTableProperties).get();
-            tablePropertiesStore.updateTable(existingOpt, tableProperties);
-        } else {
-            tablePropertiesStore.save(tableProperties);
-        }
+
+        // need to get physicalresourceid for the old table from the cdk
+        // set the physicalresourceid into the table properties so they are considered the same table.
+
+        tablePropertiesStore.update(tableProperties);
     }
 
 }

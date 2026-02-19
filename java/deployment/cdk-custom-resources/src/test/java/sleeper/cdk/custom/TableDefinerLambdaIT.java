@@ -264,14 +264,25 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldFailTableValidation() throws IOException {
             //Given
             callLambda(CREATE, tableProperties);
-
+            TableProperties oldTableProperties = TableProperties.copyOf(tableProperties);
             tableProperties.set(TABLE_ONLINE, "connected");
 
             //When/Then
-            assertThatThrownBy(() -> callLambda(UPDATE, tableProperties))
+            assertThatThrownBy(() -> callLambda(UPDATE, tableProperties, "", oldTableProperties))
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
                     .hasMessage("Property sleeper.table.online was invalid. It was \"connected\".");
+        }
 
+        @Test
+        public void shouldFailIfTableDoesNotExist() throws IOException {
+            //Given
+            TableProperties oldTableProperties = TableProperties.copyOf(tableProperties);
+            tableProperties.set(TABLE_ONLINE, "true");
+
+            //When/Then
+            assertThatThrownBy(() -> callLambda(UPDATE, tableProperties, "", oldTableProperties))
+                    .isInstanceOf(TableNotFoundException.class)
+                    .hasMessage("Table " + tableProperties.get(TABLE_NAME) + " does not exist");
         }
 
     }
