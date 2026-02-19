@@ -222,6 +222,7 @@
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.0</docker-java.version>
         <jib.version>0.28.1</jib.version>
+        <asm.version>9.9.1</asm.version>
         <!-- Testing -->
         <junit.version>5.14.3</junit.version>
         <junit.platform.version>1.14.3</junit.platform.version>
@@ -1200,6 +1201,11 @@
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-core</artifactId>
                 <version>${jib.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
