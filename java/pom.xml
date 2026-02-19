@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.41.31</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.32</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
