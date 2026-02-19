@@ -26,6 +26,9 @@ import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.LambdaDeployType;
+
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 /**
  * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
@@ -33,12 +36,12 @@ import sleeper.core.properties.instance.InstanceProperties;
  */
 public class SleeperArtefacts {
 
-    private final InstanceProperties instanceProperties;
+    private final LambdaDeployType lambdaDeployType;
     private final SleeperJars jars;
     private final SleeperContainerImages containerImages;
 
-    public SleeperArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
-        this.instanceProperties = instanceProperties;
+    public SleeperArtefacts(LambdaDeployType lambdaDeployType, SleeperJars jars, SleeperContainerImages containerImages) {
+        this.lambdaDeployType = lambdaDeployType;
         this.jars = jars;
         this.containerImages = containerImages;
     }
@@ -64,7 +67,8 @@ public class SleeperArtefacts {
      * @return                    the artefacts
      */
     public static SleeperArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
-        return new SleeperArtefacts(instanceProperties,
+        return new SleeperArtefacts(
+                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
                 new SleeperJarsFromProperties(instanceProperties, jars),
                 new SleeperContainerImagesFromProperties(instanceProperties));
     }
@@ -76,7 +80,7 @@ public class SleeperArtefacts {
      * @return       the helper
      */
     public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
-        return new SleeperLambdaCode(scope, instanceProperties,
+        return new SleeperLambdaCode(scope, lambdaDeployType,
                 jars.lambdaJarsAtScope(scope),
                 containerImages.lambdaImagesAtScope(scope));
     }

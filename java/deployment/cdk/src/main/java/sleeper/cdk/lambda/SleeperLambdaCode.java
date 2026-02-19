@@ -24,30 +24,26 @@ import software.constructs.Construct;
 import sleeper.cdk.artefacts.containers.SleeperLambdaImages;
 import sleeper.cdk.artefacts.jars.SleeperLambdaJars;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.function.Consumer;
 
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
-
 public class SleeperLambdaCode {
 
     private final Construct scope;
-    private final InstanceProperties instanceProperties;
+    private final LambdaDeployType deployType;
     private final SleeperLambdaJars jars;
     private final SleeperLambdaImages images;
 
-    public SleeperLambdaCode(Construct scope, InstanceProperties instanceProperties, SleeperLambdaJars jars, SleeperLambdaImages images) {
+    public SleeperLambdaCode(Construct scope, LambdaDeployType deployType, SleeperLambdaJars jars, SleeperLambdaImages images) {
         this.scope = scope;
-        this.instanceProperties = instanceProperties;
+        this.deployType = deployType;
         this.jars = jars;
         this.images = images;
     }
 
     public IVersion buildFunction(LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
-        LambdaDeployType deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
         LambdaBuilder builder;
         if (deployType == LambdaDeployType.CONTAINER || handler.isAlwaysDockerDeploy()) {
             builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)

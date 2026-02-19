@@ -25,7 +25,7 @@ public interface SleeperContainerImages {
     /**
      * Creates a helper to deploy containers in ECS.
      *
-     * @param  scope the scope you want to deploy in
+     * @param  scope the scope the ECS cluster will be deployed in
      * @return       the helper
      */
     SleeperEcsImages ecsImagesAtScope(Construct scope);
@@ -33,7 +33,7 @@ public interface SleeperContainerImages {
     /**
      * Creates a helper to refer to container images during deployment to AWS Lambda.
      *
-     * @param  scope the scope you want to deploy in
+     * @param  scope the scope the lambda(s) will be deployed in
      * @return       the helper
      */
     SleeperLambdaImages lambdaImagesAtScope(Construct scope);

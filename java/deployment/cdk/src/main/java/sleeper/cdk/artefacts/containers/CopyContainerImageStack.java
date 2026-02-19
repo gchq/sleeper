@@ -18,39 +18,35 @@ package sleeper.cdk.artefacts.containers;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.UploadArtefactsAssets;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class CopyContainerImageStack extends NestedStack {
     private Provider provider;
 
-    public CopyContainerImageStack(Construct scope, String id, InstanceProperties instanceProperties, UploadArtefactsAssets assets, LoggingStack loggingStack) {
+    public CopyContainerImageStack(Construct scope, String id, Props props) {
         super(scope, id);
-        create(Utils.cleanInstanceId(instanceProperties), assets,
-                loggingStack.getLogGroup(LogGroupRef.COPY_CONTAINER),
-                loggingStack.getLogGroup(LogGroupRef.COPY_CONTAINER_PROVIDER));
-        Utils.addTags(this, instanceProperties);
-    }
-
-    private void create(String deploymentId, UploadArtefactsAssets assets, ILogGroup lambdaLogGroup, ILogGroup providerLogGroup) {
-        IFunction lambda = assets.buildFunction(this, "Function", LambdaHandler.COPY_CONTAINER, builder -> builder
-                .functionName("sleeper-" + deploymentId + "-copy-container")
+        IFunction lambda = props.assets().buildFunction(this, "Function", LambdaHandler.COPY_CONTAINER, builder -> builder
+                .functionName("sleeper-" + props.deploymentId() + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
-                .logGroup(lambdaLogGroup)
+                .logGroup(props.lambdaLogGroupAtScope().apply(this))
                 .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
@@ -65,8 +61,13 @@ public class CopyContainerImageStack extends NestedStack {
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
+                .logGroup(props.providerLogGroupAtScope().apply(this))
                 .build();
+        props.addTags().accept(this);
+    }
+
+    public static CopyContainerImageStack standalone(Construct scope, String id, String deploymentId, UploadArtefactsAssets assets) {
+        return new CopyContainerImageStack(scope, id, Props.standalone(deploymentId, assets));
     }
 
     /**
@@ -84,6 +85,24 @@ public class CopyContainerImageStack extends NestedStack {
                 .properties(Map.of("source", source, "target", target))
                 .serviceToken(provider.getServiceToken())
                 .build();
+    }
+
+    public record Props(String deploymentId, UploadArtefactsAssets assets,
+            Function<Construct, ILogGroup> lambdaLogGroupAtScope,
+            Function<Construct, ILogGroup> providerLogGroupAtScope,
+            Consumer<Stack> addTags) {
+
+        public static Props standalone(String deploymentId, UploadArtefactsAssets assets) {
+            return new Props(deploymentId, assets,
+                    standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER),
+                    standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER_PROVIDER),
+                    stack -> {
+                    });
+        }
+    }
+
+    private static Function<Construct, ILogGroup> standloneLogGroup(String deploymentId, LogGroupRef logGroupRef) {
+        return scope -> LoggingStack.createLogGroup(scope, logGroupRef, deploymentId, RetentionDays.TWO_WEEKS, RemovalPolicy.DESTROY);
     }
 
 }
