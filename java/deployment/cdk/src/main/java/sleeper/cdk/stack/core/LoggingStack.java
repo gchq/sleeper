@@ -16,8 +16,10 @@
 package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.cdk.util.Utils;
@@ -56,10 +58,17 @@ public class LoggingStack extends NestedStack {
      * @return                    the log group
      */
     public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, InstanceProperties instanceProperties) {
+        return createLogGroup(scope, ref,
+                Utils.cleanInstanceId(instanceProperties),
+                Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)),
+                Utils.logsRemovalPolicy(instanceProperties));
+    }
+
+    public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, String deploymentId, RetentionDays retentionDays, RemovalPolicy removalPolicy) {
         return LogGroup.Builder.create(scope, ref.shortName)
-                .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
-                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
+                .logGroupName(ref.prefix + String.join("-", "sleeper", deploymentId, ref.shortName))
+                .retention(retentionDays)
+                .removalPolicy(removalPolicy)
                 .build();
     }
 

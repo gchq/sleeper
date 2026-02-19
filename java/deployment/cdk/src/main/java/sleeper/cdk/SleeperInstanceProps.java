@@ -136,7 +136,7 @@ public class SleeperInstanceProps {
         }
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
-                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration))
+                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
@@ -196,7 +196,7 @@ public class SleeperInstanceProps {
         private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
-        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
+        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
         private String version = SleeperVersion.getVersion();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;

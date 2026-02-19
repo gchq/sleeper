@@ -85,8 +85,7 @@ public class DockerRegistryApp extends Stack {
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
 
-        Stack stack = Stack.Builder.create(app, id).env(environment).build();
-        new DockerRegistryApp(stack, id,
+        new DockerRegistryApp(app, id,
                 StackProps.builder().env(environment).build(),
                 Props.from(context));
 

@@ -66,6 +66,19 @@ public class SleeperInstance {
     }
 
     /**
+     * Declares an instance of Sleeper as a nested stack.
+     *
+     * @param  scope        the scope to add the instance to, usually a Stack or NestedStack
+     * @param  id           the nested stack ID
+     * @param  sleeperProps configuration to deploy the instance
+     * @return              a reference to interact with constructs in the Sleeper instance
+     */
+    public static SleeperInstance createAsNestedStack(Construct scope, String id, SleeperInstanceProps sleeperProps) {
+        NestedStack stack = new NestedStack(scope, id);
+        return create(stack, sleeperProps);
+    }
+
+    /**
      * Declares an instance of Sleeper as a root level stack.
      *
      * @param  scope        the scope to add the instance to, usually an App or Stage
