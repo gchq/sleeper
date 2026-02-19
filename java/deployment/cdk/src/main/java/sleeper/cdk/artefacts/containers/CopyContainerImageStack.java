@@ -25,13 +25,12 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.lambda.SleeperLambdaCode;
-import sleeper.cdk.stack.core.LoggingStack;
-import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.core.deploy.LambdaHandler;
 
 import java.util.List;
@@ -98,15 +97,19 @@ public class CopyContainerImageStack extends NestedStack {
 
         public static Props standalone(String deploymentId, SleeperJars jars) {
             return new Props(deploymentId, jars,
-                    standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER),
-                    standloneLogGroup(deploymentId, LogGroupRef.COPY_CONTAINER_PROVIDER),
+                    standloneLogGroup(deploymentId, "copy-container"),
+                    standloneLogGroup(deploymentId, "copy-container-provider"),
                     stack -> {
                     });
         }
     }
 
-    private static Function<Construct, ILogGroup> standloneLogGroup(String deploymentId, LogGroupRef logGroupRef) {
-        return scope -> LoggingStack.createLogGroup(scope, logGroupRef, deploymentId, RetentionDays.TWO_WEEKS, RemovalPolicy.DESTROY);
+    private static Function<Construct, ILogGroup> standloneLogGroup(String deploymentId, String logGroupId) {
+        return scope -> LogGroup.Builder.create(scope, logGroupId)
+                .logGroupName(String.join("-", "sleeper", deploymentId, logGroupId))
+                .retention(RetentionDays.TWO_WEEKS)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
     }
 
 }
