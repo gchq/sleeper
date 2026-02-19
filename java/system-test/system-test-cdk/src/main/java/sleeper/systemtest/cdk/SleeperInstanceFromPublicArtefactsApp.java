@@ -25,8 +25,10 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstance;
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.UploadArtefactsAssets;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.containers.CopyContainerImageStack;
+import sleeper.cdk.artefacts.containers.SleeperContainerImages;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromStack;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
@@ -39,10 +41,11 @@ import java.nio.file.Path;
 public class SleeperInstanceFromPublicArtefactsApp extends Stack {
 
     public SleeperInstanceFromPublicArtefactsApp(Construct scope, String id, StackProps stackProps, Props props) {
-        CopyContainerImageStack.standalone(this, "CopyContainer", props.deploymentId(), props.assets());
+        CopyContainerImageStack copyContainers = CopyContainerImageStack.standalone(this, "CopyContainer", props.deploymentId(), props.jars());
+        SleeperContainerImages images = new SleeperContainerImagesFromStack(props.instanceProperties(), copyContainers, props.sourceImagePrefix());
         SleeperInstance.createAsNestedStack(this, "Instance", SleeperInstanceProps.builder()
                 .instanceProperties(props.instanceProperties())
-                .artefacts(null) // TODO wire in jars and containers
+                .artefacts(new SleeperArtefacts(props.instanceProperties(), props.jars(), images))
                 .build());
     }
 
@@ -63,19 +66,17 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
         }
     }
 
-    public record Props(String deploymentId, String vpcId, String subnetIds, String registryId, UploadArtefactsAssets assets, InstanceProperties instanceProperties, SleeperJars jars) {
+    public record Props(String deploymentId, String vpcId, String subnetIds, String sourceImagePrefix, InstanceProperties instanceProperties, SleeperJars jars) {
 
         public static Props from(S3Client s3Client, CdkContext context) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(
                     Path.of(context.tryGetContext("propertiesfile")));
-
             SleeperJars jars = new SleeperJarsFromProperties(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
             return new Props(
                     context.tryGetContext("id"),
                     context.tryGetContext("vpc"),
                     context.tryGetContext("subnets"),
-                    context.tryGetContext("registry"),
-                    UploadArtefactsAssets.fromJarsDirectory(Path.of(context.tryGetContext("jarsDir"))),
+                    context.tryGetContext("sourceImagePrefix"),
                     instanceProperties, jars);
         }
     }

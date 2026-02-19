@@ -46,6 +46,10 @@ public class SleeperArtefacts {
         this.containerImages = containerImages;
     }
 
+    public SleeperArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
+        this(instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class), jars, containerImages);
+    }
+
     /**
      * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties
      * object that is passed to SleeperInstance.
@@ -67,8 +71,7 @@ public class SleeperArtefacts {
      * @return                    the artefacts
      */
     public static SleeperArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
-        return new SleeperArtefacts(
-                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
+        return new SleeperArtefacts(instanceProperties,
                 new SleeperJarsFromProperties(instanceProperties, jars),
                 new SleeperContainerImagesFromProperties(instanceProperties));
     }
