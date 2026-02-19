@@ -61,4 +61,5 @@ RUN_PARAMS+=(
   "$BUILD_IMAGE"
 )
 
+docker pull "$BUILD_IMAGE"
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"
