@@ -20,7 +20,6 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
@@ -35,21 +34,30 @@ import sleeper.core.deploy.LambdaHandler;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class CopyContainerImageStack extends NestedStack {
     private Provider provider;
 
-    public CopyContainerImageStack(Construct scope, String id, Props props) {
+    public CopyContainerImageStack(Construct scope, String id, String deploymentId, SleeperJars jars) {
         super(scope, id);
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, props.jars());
+        SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, jars);
+        ILogGroup lambdaLogGroup = LogGroup.Builder.create(scope, "LambdaLogGroup")
+                .logGroupName("sleeper-" + deploymentId + "-copy-container")
+                .retention(RetentionDays.TWO_WEEKS)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
+        ILogGroup providerLogGroup = LogGroup.Builder.create(scope, "ProviderLogGroup")
+                .logGroupName("sleeper-" + deploymentId + "-copy-container-provider")
+                .retention(RetentionDays.TWO_WEEKS)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build();
+
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
-                .functionName("sleeper-" + props.deploymentId() + "-copy-container")
+                .functionName("sleeper-" + deploymentId + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
-                .logGroup(props.lambdaLogGroupAtScope().apply(this))
+                .logGroup(lambdaLogGroup)
                 .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
@@ -64,13 +72,8 @@ public class CopyContainerImageStack extends NestedStack {
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(props.providerLogGroupAtScope().apply(this))
+                .logGroup(providerLogGroup)
                 .build();
-        props.addTags().accept(this);
-    }
-
-    public static CopyContainerImageStack standalone(Construct scope, String id, String deploymentId, SleeperJars jars) {
-        return new CopyContainerImageStack(scope, id, Props.standalone(deploymentId, jars));
     }
 
     /**
@@ -87,28 +90,6 @@ public class CopyContainerImageStack extends NestedStack {
                 .resourceType("Custom::CopyContainerImage")
                 .properties(Map.of("source", source, "target", target))
                 .serviceToken(provider.getServiceToken())
-                .build();
-    }
-
-    public record Props(String deploymentId, SleeperJars jars,
-            Function<Construct, ILogGroup> lambdaLogGroupAtScope,
-            Function<Construct, ILogGroup> providerLogGroupAtScope,
-            Consumer<Stack> addTags) {
-
-        public static Props standalone(String deploymentId, SleeperJars jars) {
-            return new Props(deploymentId, jars,
-                    standloneLogGroup(deploymentId, "copy-container"),
-                    standloneLogGroup(deploymentId, "copy-container-provider"),
-                    stack -> {
-                    });
-        }
-    }
-
-    private static Function<Construct, ILogGroup> standloneLogGroup(String deploymentId, String logGroupId) {
-        return scope -> LogGroup.Builder.create(scope, logGroupId)
-                .logGroupName(String.join("-", "sleeper", deploymentId, logGroupId))
-                .retention(RetentionDays.TWO_WEEKS)
-                .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
     }
 
