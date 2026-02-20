@@ -25,7 +25,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstance;
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.containers.CopyContainerImageStack;
 import sleeper.cdk.artefacts.containers.SleeperContainerImages;
 import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromStack;
@@ -45,7 +45,7 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
         SleeperContainerImages images = new SleeperContainerImagesFromStack(props.instanceProperties(), copyContainers, props.sourceImagePrefix());
         SleeperInstance.createAsNestedStack(this, "Instance", SleeperInstanceProps.builder()
                 .instanceProperties(props.instanceProperties())
-                .artefacts(new SleeperInstanceArtefacts(props.instanceProperties(), props.jars(), images))
+                .artefacts(SleeperArtefacts.from(props.jars(), images))
                 .build());
     }
 

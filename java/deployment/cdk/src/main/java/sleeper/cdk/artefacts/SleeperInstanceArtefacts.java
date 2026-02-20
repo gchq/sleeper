@@ -15,15 +15,11 @@
  */
 package sleeper.cdk.artefacts;
 
-import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.containers.SleeperContainerImages;
-import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
 import sleeper.cdk.artefacts.containers.SleeperEcsImages;
-import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.cdk.artefacts.jars.SleeperJars;
-import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
@@ -31,49 +27,19 @@ import sleeper.core.properties.model.LambdaDeployType;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 /**
- * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
- * ECR.
+ * Points the CDK to deployment artefacts in AWS for a single Sleeper instance. This will include jars in the jars
+ * bucket, and Docker images in AWS ECR.
  */
 public class SleeperInstanceArtefacts {
 
-    private final LambdaDeployType lambdaDeployType;
+    private final InstanceProperties instanceProperties;
     private final SleeperJars jars;
     private final SleeperContainerImages containerImages;
 
-    public SleeperInstanceArtefacts(LambdaDeployType lambdaDeployType, SleeperJars jars, SleeperContainerImages containerImages) {
-        this.lambdaDeployType = lambdaDeployType;
+    public SleeperInstanceArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
+        this.instanceProperties = instanceProperties;
         this.jars = jars;
         this.containerImages = containerImages;
-    }
-
-    public SleeperInstanceArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
-        this(instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class), jars, containerImages);
-    }
-
-    /**
-     * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties
-     * object that is passed to SleeperInstance.
-     *
-     * @param  s3Client           an S3 client to look up version IDs of jars in a versioned S3 jars bucket
-     * @param  instanceProperties the instance properties
-     * @return                    the artefacts
-     */
-    public static SleeperInstanceArtefacts from(S3Client s3Client, InstanceProperties instanceProperties) {
-        return from(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
-    }
-
-    /**
-     * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties
-     * object that is passed to SleeperInstance.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  jars               a provider for the version IDs of the jars in a versioned S3 jars bucket
-     * @return                    the artefacts
-     */
-    public static SleeperInstanceArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
-        return new SleeperInstanceArtefacts(instanceProperties,
-                new SleeperJarsFromProperties(instanceProperties, jars),
-                new SleeperContainerImagesFromProperties(instanceProperties));
     }
 
     /**
@@ -83,7 +49,8 @@ public class SleeperInstanceArtefacts {
      * @return       the helper
      */
     public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
-        return new SleeperLambdaCode(scope, lambdaDeployType,
+        return new SleeperLambdaCode(scope,
+                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
                 jars.lambdaJarsAtScope(scope),
                 containerImages.lambdaImagesAtScope(scope));
     }
