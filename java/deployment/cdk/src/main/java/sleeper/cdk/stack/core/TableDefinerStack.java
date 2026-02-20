@@ -22,8 +22,9 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -42,7 +43,7 @@ public class TableDefinerStack extends NestedStack {
     Provider tableDefinerProvider;
 
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
