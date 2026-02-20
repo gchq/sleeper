@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefacts;
+package sleeper.cdk.artefacts.jars;
 
-import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.lambda.Code;
 
-import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.deploy.LambdaJar;
 
 /**
- * Code to refer to a Docker image for use when deploying to ECS.
+ * Code to refer to a fat jar for use when deploying a lambda. Sleeper builds fat jars that include all the dependencies
+ * for a lambda.
  */
-public interface SleeperEcsImages {
+@FunctionalInterface
+public interface SleeperLambdaJars {
 
     /**
-     * Retrieves a reference to a Docker image. The scope and ID can be used in case it is necessary to create a new
-     * construct to refer to the image.
+     * Retrieves a reference to a fat jar in the jars bucket.
      *
-     * @param  deployment which deployment we want the Docker image for
-     * @return            the reference to the Docker image
+     * @param  jar which jar we want to reference
+     * @return     the reference to the jar
      */
-    ContainerImage containerImage(DockerDeployment deployment);
-
+    Code jarCode(LambdaJar jar);
 }
