@@ -42,6 +42,7 @@ import java.util.List;
 public class CopyPublicDockerImageCdkApp extends Stack {
 
     public CopyPublicDockerImageCdkApp(Construct scope, String id, StackProps stackProps, Props props) {
+        super(scope, id, stackProps);
         IRepository repository = Repository.Builder.create(this, "Repository")
                 .repositoryName(props.deploymentId() + "/test")
                 .removalPolicy(RemovalPolicy.DESTROY)
