@@ -42,7 +42,7 @@ public class ReadStateStoreCommitterLogs {
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "State store committer process started at ([^\\s]+)|" + // State store process started message type
             "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
-            "Started statestore commits batch at ([^\\s]+)|" + //EC2 batch start message
+            "Started state store commits batch at ([^\\s]+)|" + //EC2 batch start message
             "Finished state store commits batch at ([^\\s]+)|" + //EC2 batch finish message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 

@@ -151,7 +151,7 @@ public class MultiThreadedStateStoreCommitter {
                     }
                 }
 
-                LOGGER.info("Started statestore commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
+                LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
                         response.messages().size(),
                         LoggedDuration.withShortOutput(startedAt, Instant.now()),
                         LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
