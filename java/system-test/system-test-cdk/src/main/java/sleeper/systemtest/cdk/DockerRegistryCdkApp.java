@@ -76,7 +76,7 @@ public class DockerRegistryCdkApp extends Stack {
                 .portMappings(List.of(PortMapping.builder().containerPort(5000).build()))
                 .build());
         ISecurityGroup securityGroup = SecurityGroup.Builder.create(this, "SecurityGroup").build();
-        securityGroup.addIngressRule(Peer.ipv4("10.0.0.0/8"), Port.tcp(5000));
+        securityGroup.addIngressRule(Peer.ipv4("10.0.0.0/8"), Port.tcp(5000)); // Access from within VPC
         FargateService.Builder.create(this, "Service")
                 .cluster(cluster).serviceName(id)
                 .taskDefinition(taskDefinition)
