@@ -295,7 +295,7 @@
               ]
             },
             "splitPoints": "",
-            "tableProperties": "sleeper.table.id\u003dtable-id\nsleeper.table.schema\u003d{\"rowKeyFields\"\\:[{\"name\"\\:\"key\",\"type\"\\:\"LongType\"}],\"sortKeyFields\"\\:[],\"valueFields\"\\:[]}\nsleeper.table.name\u003dtable-name\n"
+            "tableProperties": "sleeper.table.schema\u003d{\"rowKeyFields\"\\:[{\"name\"\\:\"key\",\"type\"\\:\"LongType\"}],\"sortKeyFields\"\\:[],\"valueFields\"\\:[]}\nsleeper.table.name\u003dtable-name\n"
           }
         }
       }

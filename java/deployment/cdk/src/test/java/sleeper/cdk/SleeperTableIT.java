@@ -24,17 +24,13 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
-import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
-import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SleeperTableIT {
@@ -48,13 +44,15 @@ public class SleeperTableIT {
         Stack stack = createSleeperTableAsRootStack();
 
         TableDefinerStack definerStack = new TableDefinerStack(stack, "TableDefiner", instanceProperties,
-                new SleeperArtefactsFromProperties(instanceProperties, jarVersionIds()));
+                SleeperInstanceArtefacts.from(instanceProperties, jarVersionIds()));
 
         // When
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-        tableProperties.set(TABLE_ID, "table-id");
-        tableProperties.set(TABLE_NAME, "table-name");
-        definerStack.createCustomResource(tableProperties);
+        SleeperTable sleeperTable = SleeperTable.builder()
+                .tableName("table-name")
+                .instanceId("instance-id") // Will need to validate?
+                .schema(createSchemaWithKey("key"))
+                .build();
+        definerStack.createCustomResource(sleeperTable);
 
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
@@ -82,12 +80,4 @@ public class SleeperTableIT {
     private SleeperJarVersionIdProvider jarVersionIds() {
         return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     }
-
-    /*
-     * SleeperTable sleeperTable = SleeperTable.builder()
-     * .tableName("tableName")
-     * .instanceId("instanceId")
-     * .schema(createSchemaWithKey("key"))
-     * .build();
-     */
 }

@@ -22,14 +22,13 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperTable;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
-import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
@@ -43,7 +42,7 @@ public class TableDefinerStack extends NestedStack {
     Provider tableDefinerProvider;
 
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
@@ -66,14 +65,15 @@ public class TableDefinerStack extends NestedStack {
         Utils.addTags(this, instanceProperties);
     }
 
-    public CustomResource createCustomResource(TableProperties tableProperties) {
+    public CustomResource createCustomResource(SleeperTable sleeperTable) {
         //TODO Update this to use TableProperties/SplitPoints
         return CustomResource.Builder.create(this, "TableDefinerProperties")
                 .resourceType("Custom::TableDefinerProperties")
-                .properties(Map.of("tableProperties", tableProperties.saveAsString(),
+                .properties(Map.of("tableProperties", sleeperTable.saveAsString(),
                         "splitPoints", ""))
                 .serviceToken(tableDefinerProvider.getServiceToken())
                 .build();
 
     }
+
 }

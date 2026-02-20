@@ -16,17 +16,42 @@
 package sleeper.cdk;
 
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.util.Properties;
+
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperTable {
 
     private String tableName;
     private String instanceId;
+    private String constructId;
     private Schema schema;
 
     public SleeperTable(Builder builder) {
         this.tableName = builder.tableName;
         this.instanceId = builder.instanceId;
+        this.constructId = builder.constructId;
         this.schema = builder.schema;
+    }
+
+    public String saveAsString() {
+        Properties properties = new Properties();
+        properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
+        properties.setProperty(SCHEMA.getPropertyName(), new SchemaSerDe().toJson(schema));
+
+        StringWriter stringWriter = new StringWriter();
+        try {
+            properties.store(stringWriter, "");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return stringWriter.toString();
     }
 
     public static Builder builder() {
@@ -36,6 +61,7 @@ public class SleeperTable {
     public static class Builder {
         String tableName;
         String instanceId;
+        String constructId;
         Schema schema;
 
         private Builder() {
@@ -49,6 +75,11 @@ public class SleeperTable {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder constructId(String constructId) {
+            this.instanceId = constructId;
             return this;
         }
 
