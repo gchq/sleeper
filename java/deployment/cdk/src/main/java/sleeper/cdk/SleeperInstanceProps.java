@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -53,7 +53,7 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final SleeperArtefacts artefacts;
+    private final SleeperInstanceArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
     private final boolean validateProperties;
@@ -97,7 +97,7 @@ public class SleeperInstanceProps {
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .artefacts(SleeperArtefacts.from(s3Client, instanceProperties))
+                .artefacts(SleeperInstanceArtefacts.from(s3Client, instanceProperties))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
@@ -179,7 +179,7 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperArtefacts getArtefacts() {
+    public SleeperInstanceArtefacts getArtefacts() {
         return artefacts;
     }
 
@@ -193,7 +193,7 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperArtefacts artefacts;
+        private SleeperInstanceArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
@@ -222,7 +222,7 @@ public class SleeperInstanceProps {
          * @param  artefacts the artefacts
          * @return           this builder
          */
-        public Builder artefacts(SleeperArtefacts artefacts) {
+        public Builder artefacts(SleeperInstanceArtefacts artefacts) {
             this.artefacts = artefacts;
             return this;
         }

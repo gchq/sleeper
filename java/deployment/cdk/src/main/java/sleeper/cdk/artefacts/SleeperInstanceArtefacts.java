@@ -34,19 +34,19 @@ import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE
  * Points the CDK to deployment artefacts in AWS. This will include jars in the jars bucket, and Docker images in AWS
  * ECR.
  */
-public class SleeperArtefacts {
+public class SleeperInstanceArtefacts {
 
     private final LambdaDeployType lambdaDeployType;
     private final SleeperJars jars;
     private final SleeperContainerImages containerImages;
 
-    public SleeperArtefacts(LambdaDeployType lambdaDeployType, SleeperJars jars, SleeperContainerImages containerImages) {
+    public SleeperInstanceArtefacts(LambdaDeployType lambdaDeployType, SleeperJars jars, SleeperContainerImages containerImages) {
         this.lambdaDeployType = lambdaDeployType;
         this.jars = jars;
         this.containerImages = containerImages;
     }
 
-    public SleeperArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
+    public SleeperInstanceArtefacts(InstanceProperties instanceProperties, SleeperJars jars, SleeperContainerImages containerImages) {
         this(instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class), jars, containerImages);
     }
 
@@ -58,7 +58,7 @@ public class SleeperArtefacts {
      * @param  instanceProperties the instance properties
      * @return                    the artefacts
      */
-    public static SleeperArtefacts from(S3Client s3Client, InstanceProperties instanceProperties) {
+    public static SleeperInstanceArtefacts from(S3Client s3Client, InstanceProperties instanceProperties) {
         return from(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
     }
 
@@ -70,8 +70,8 @@ public class SleeperArtefacts {
      * @param  jars               a provider for the version IDs of the jars in a versioned S3 jars bucket
      * @return                    the artefacts
      */
-    public static SleeperArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
-        return new SleeperArtefacts(instanceProperties,
+    public static SleeperInstanceArtefacts from(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
+        return new SleeperInstanceArtefacts(instanceProperties,
                 new SleeperJarsFromProperties(instanceProperties, jars),
                 new SleeperContainerImagesFromProperties(instanceProperties));
     }
