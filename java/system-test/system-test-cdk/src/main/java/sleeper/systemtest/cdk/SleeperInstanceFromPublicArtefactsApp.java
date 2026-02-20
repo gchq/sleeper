@@ -66,7 +66,7 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
         }
     }
 
-    public record Props(String deploymentId, String vpcId, String subnetIds, String sourceImagePrefix, InstanceProperties instanceProperties, SleeperJars jars) {
+    public record Props(String deploymentId, String sourceImagePrefix, InstanceProperties instanceProperties, SleeperJars jars) {
 
         public static Props from(S3Client s3Client, CdkContext context) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(
@@ -74,8 +74,6 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
             SleeperJars jars = new SleeperJarsFromProperties(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
             return new Props(
                     context.tryGetContext("id"),
-                    context.tryGetContext("vpc"),
-                    context.tryGetContext("subnets"),
                     context.tryGetContext("sourceImagePrefix"),
                     instanceProperties, jars);
         }
