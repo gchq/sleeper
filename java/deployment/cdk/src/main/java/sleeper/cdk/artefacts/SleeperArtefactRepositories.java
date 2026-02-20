@@ -34,6 +34,8 @@ import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * AWS resources that will hold artefacts used to deploy Sleeper. This should be deployed separately before deploying a
@@ -47,9 +49,9 @@ public class SleeperArtefactRepositories {
     private final List<String> extraEcrImages;
 
     private SleeperArtefactRepositories(Builder builder) {
-        scope = builder.scope;
-        deploymentId = builder.deploymentId;
-        extraEcrImages = builder.extraEcrImages;
+        scope = Objects.requireNonNull(builder.scope, "scope must not be null");
+        deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
+        extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
         create();
     }
 
