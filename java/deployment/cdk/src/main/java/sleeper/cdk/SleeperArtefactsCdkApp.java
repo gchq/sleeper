@@ -22,6 +22,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.artefacts.SleeperArtefactRepositories;
+import sleeper.cdk.artefacts.SleeperArtefactRepositories.ToDeploy;
 import sleeper.cdk.util.CdkContext;
 
 /**
@@ -50,6 +51,7 @@ public class SleeperArtefactsCdkApp {
                 .build());
         SleeperArtefactRepositories.Builder.create(stack, deploymentId)
                 .extraEcrImages(context.getList("extraEcrImages"))
+                .deploy(ToDeploy.fromString(context.tryGetContext("deploy")))
                 .build();
         app.synth();
     }
