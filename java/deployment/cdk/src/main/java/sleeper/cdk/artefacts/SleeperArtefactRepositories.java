@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.artefacts;
 
+import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
@@ -47,15 +48,22 @@ public class SleeperArtefactRepositories {
     private final Construct scope;
     private final String deploymentId;
     private final List<String> extraEcrImages;
+    private final ToDeploy deploy;
 
     private SleeperArtefactRepositories(Builder builder) {
         scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
         extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
-        create();
+        deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
+        if (deploy.isDeployJars()) {
+            deployJars();
+        }
+        if (deploy.isDeployImages()) {
+            deployImages();
+        }
     }
 
-    private void create() {
+    private void deployJars() {
         Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -70,7 +78,9 @@ public class SleeperArtefactRepositories {
                 // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
                 .versioned(true)
                 .build();
+    }
 
+    private void deployImages() {
         for (LambdaJar jar : LambdaJar.all()) {
             createRepository(jar.getImageName());
         }
@@ -116,6 +126,7 @@ public class SleeperArtefactRepositories {
         private final Construct scope;
         private final String deploymentId;
         private List<String> extraEcrImages;
+        private ToDeploy deploy;
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
@@ -131,8 +142,36 @@ public class SleeperArtefactRepositories {
             return this;
         }
 
+        public Builder deploy(ToDeploy deploy) {
+            this.deploy = deploy;
+            return this;
+        }
+
         public SleeperArtefactRepositories build() {
             return new SleeperArtefactRepositories(this);
+        }
+    }
+
+    public enum ToDeploy {
+        ALL, JARS, IMAGES;
+
+        public static ToDeploy fromString(String string) {
+            if (string == null) {
+                return null;
+            }
+            ToDeploy upload = EnumUtils.getEnumIgnoreCase(ToDeploy.class, string);
+            if (upload == null) {
+                throw new IllegalArgumentException("Unknown identifier for which resources to deploy: " + string);
+            }
+            return upload;
+        }
+
+        public boolean isDeployJars() {
+            return this == ALL || this == JARS;
+        }
+
+        public boolean isDeployImages() {
+            return this == ALL || this == IMAGES;
         }
     }
 }
