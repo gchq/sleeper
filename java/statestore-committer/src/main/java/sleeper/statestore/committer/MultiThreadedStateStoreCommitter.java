@@ -81,7 +81,6 @@ public class MultiThreadedStateStoreCommitter {
     private StateStoreProvider stateStoreProvider;
     private RetryOnThrottling retryOnThrottling;
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
-    private boolean isProcessingTasks = false;
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
         this.s3Client = s3Client;
@@ -146,17 +145,13 @@ public class MultiThreadedStateStoreCommitter {
                 // Only initialise after we receive the first messages, because the instance properties may not have
                 // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
-                    if (!isProcessingTasks) {
-                        LOGGER.info("State store committer process started at {}", Instant.now());
-                        isProcessingTasks = true;
-                    }
                     lastReceivedCommitsAt = Instant.now();
                     if (stateStoreProvider == null) {
                         init();
                     }
                 }
 
-                LOGGER.info("Received {} messages from queue, have been running for {}, last received commits {} ago",
+                LOGGER.info("Started statestore commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
                         response.messages().size(),
                         LoggedDuration.withShortOutput(startedAt, Instant.now()),
                         LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
@@ -203,8 +198,6 @@ public class MultiThreadedStateStoreCommitter {
 
                     tableFutures.put(tableId, task);
                 });
-
-                checkIfAllCurrentTasksComplete();
             }
         } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
@@ -216,13 +209,6 @@ public class MultiThreadedStateStoreCommitter {
             }
             tableFutures.values().stream().forEach(CompletableFuture::join);
             LOGGER.info("All pending requests have been actioned");
-        }
-    }
-
-    private void checkIfAllCurrentTasksComplete() {
-        //If committer has received new tasks AND all tasks have completed
-        if (isProcessingTasks && !tableFutures.entrySet().stream().anyMatch(future -> !future.getValue().isDone())) {
-            isProcessingTasks = false;
         }
     }
 

@@ -177,6 +177,19 @@ public class StateStoreCommitterRun {
         }
 
         /**
+         * Sets the start time for the run based on if the supplied start is earlier than the current found one.
+         *
+         * @param  start the log entry recording that the state store committer finished
+         * @return       this builder
+         */
+        public Builder batchStart(StateStoreCommitterRunStarted start) {
+            if (this.start == null || this.start.getStartTime().isAfter(start.getStartTime())) {
+                this.start = start;
+            }
+            return this;
+        }
+
+        /**
          * Sets the finish time for the run based on if the supplied finish is later than the current found one.
          *
          * @param  finish the log entry recording that the state store committer finished

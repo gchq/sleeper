@@ -88,7 +88,12 @@ public class StateStoreCommitterRuns {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         StateStoreCommitterRun.Builder builder = null;
         for (StateStoreCommitterLogEntry entry : logs) {
-            if (entry instanceof StateStoreCommitterRunStarted) {
+            if (entry instanceof StateStoreCommitterRunBatchStarted) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.batchStart((StateStoreCommitterRunStarted) entry);
+            } else if (entry instanceof StateStoreCommitterRunStarted) {
                 if (builder != null) {
                     runs.add(builder.build());
                 }

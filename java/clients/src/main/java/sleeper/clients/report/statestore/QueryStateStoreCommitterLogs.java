@@ -79,7 +79,7 @@ public class QueryStateStoreCommitterLogs {
                 .limit(limit)
                 .queryString("fields @timestamp, @message, @logStream " +
                         "| filter @message like /State store committer process (started|finished) at|" +
-                        "Finished state store commits batch at|Applied request to table/ " +
+                        "(Started|Finished) state store commits batch at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
         return waitForQuery(queryId)
