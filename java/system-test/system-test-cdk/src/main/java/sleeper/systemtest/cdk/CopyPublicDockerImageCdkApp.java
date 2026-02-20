@@ -15,7 +15,10 @@
  */
 package sleeper.systemtest.cdk;
 
+import software.amazon.awscdk.App;
+import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -23,7 +26,6 @@ import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecr.TagStatus;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.containers.CopyContainerImageStack;
@@ -37,9 +39,9 @@ import java.util.List;
 /**
  * An app to test copying a Docker image from a public repository into ECR with a CDK custom resource.
  */
-public class CopyPublicDockerImageApp extends Stack {
+public class CopyPublicDockerImageCdkApp extends Stack {
 
-    public CopyPublicDockerImageApp(Construct scope, String id, StackProps stackProps, Props props) {
+    public CopyPublicDockerImageCdkApp(Construct scope, String id, StackProps stackProps, Props props) {
         IRepository repository = Repository.Builder.create(this, "Repository")
                 .repositoryName(props.deploymentId() + "/test")
                 .removalPolicy(RemovalPolicy.DESTROY)
@@ -62,9 +64,23 @@ public class CopyPublicDockerImageApp extends Stack {
                 .createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri());
     }
 
+    public static void main(String[] args) {
+        App app = new App(AppProps.builder()
+                .analyticsReporting(false)
+                .build());
+        Environment environment = Environment.builder()
+                .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                .region(System.getenv("CDK_DEFAULT_REGION"))
+                .build();
+        Props props = Props.from(CdkContext.from(app));
+        new CopyPublicDockerImageCdkApp(app, props.deploymentId(),
+                StackProps.builder().env(environment).build(), props);
+        app.synth();
+    }
+
     public record Props(String deploymentId, String sourceImageName, SleeperJars jars) {
 
-        public static Props from(S3Client s3Client, CdkContext context) {
+        public static Props from(CdkContext context) {
             return new Props(
                     context.tryGetContext("id"),
                     context.tryGetContext("sourceImageName"),
