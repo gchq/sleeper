@@ -21,10 +21,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.ec2.Subnet;
-import software.amazon.awscdk.services.ec2.SubnetSelection;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -32,23 +28,20 @@ import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.jars.SleeperJars;
-import sleeper.cdk.lambda.LambdaBuilder;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class CopyContainerImageStack extends NestedStack {
     private Provider provider;
 
-    public CopyContainerImageStack(Construct scope, String id, String deploymentId, SleeperJars jars, String vpcId, String subnetIds) {
+    public CopyContainerImageStack(Construct scope, String id, String deploymentId, SleeperJars jars) {
         super(scope, id);
         SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, jars);
-        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", withVpc(vpcId, subnetIds).andThen(builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
                 .functionName("sleeper-" + deploymentId + "-copy-container")
                 .memorySize(2048)
                 .description("Lambda for copying container images from an external repository to ECR")
@@ -58,7 +51,7 @@ public class CopyContainerImageStack extends NestedStack {
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build())
                 .vpcSubnets(null)
-                .timeout(Duration.minutes(15))));
+                .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
@@ -78,20 +71,6 @@ public class CopyContainerImageStack extends NestedStack {
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build())
                 .build();
-    }
-
-    private Consumer<LambdaBuilder> withVpc(String vpcId, String subnetIds) {
-        if (vpcId == null) {
-            return builder -> {
-            };
-        }
-        return builder -> builder
-                .vpc(Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
-                .vpcSubnets(SubnetSelection.builder()
-                        .subnets(SleeperPropertyValueUtils.readList(subnetIds).stream()
-                                .map(id -> Subnet.fromSubnetId(this, "Subnet-" + id, id))
-                                .toList())
-                        .build());
     }
 
     /**
