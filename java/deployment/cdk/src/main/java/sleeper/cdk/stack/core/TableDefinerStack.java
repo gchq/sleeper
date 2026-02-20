@@ -28,6 +28,7 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
@@ -37,6 +38,8 @@ import java.util.Map;
  */
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableDefinerStack extends NestedStack {
+
+    Provider tableDefinerProvider;
 
     public TableDefinerStack(
             Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
@@ -54,19 +57,22 @@ public class TableDefinerStack extends NestedStack {
                 .description("Lambda for creating, updating and deleting Sleeper tables")
                 .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER, instanceProperties)));
 
-        Provider tableDefinerProvider = Provider.Builder.create(this, "TableDefinerProvider")
+        tableDefinerProvider = Provider.Builder.create(this, "TableDefinerProvider")
                 .onEventHandler(tableDefinerLambda)
                 .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER_PROVIDER, instanceProperties))
                 .build();
 
+        Utils.addTags(this, instanceProperties);
+    }
+
+    public CustomResource createCustomResource(TableProperties tableProperties) {
         //TODO Update this to use TableProperties/SplitPoints
-        CustomResource.Builder.create(this, "TableDefinerProperties")
+        return CustomResource.Builder.create(this, "TableDefinerProperties")
                 .resourceType("Custom::TableDefinerProperties")
-                .properties(Map.of("tableProperties", instanceProperties.saveAsString(),
+                .properties(Map.of("tableProperties", tableProperties.saveAsString(),
                         "splitPoints", ""))
                 .serviceToken(tableDefinerProvider.getServiceToken())
                 .build();
 
-        Utils.addTags(this, instanceProperties);
     }
 }
