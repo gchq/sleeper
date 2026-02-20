@@ -69,7 +69,7 @@ public class SleeperInstanceIT {
         SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
                 .instanceProperties(instanceProperties)
                 .version("1.2.3")
-                .artefacts(SleeperArtefacts.from(instanceProperties, jarVersionIds()))
+                .artefacts(SleeperArtefacts.fromProperties(jarVersionIds()))
                 .skipCheckingVersionMatchesProperties(true)
                 .build();
         return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
