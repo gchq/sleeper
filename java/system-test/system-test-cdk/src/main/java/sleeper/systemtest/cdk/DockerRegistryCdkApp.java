@@ -32,12 +32,15 @@ import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.ContainerInsights;
 import software.amazon.awscdk.services.ecs.FargateService;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.ecs.PortMapping;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
+
+import java.util.List;
 
 /**
  * A CDK app to deploy a Docker registry within a VPC for testing.
@@ -66,6 +69,7 @@ public class DockerRegistryCdkApp extends Stack {
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build()))
+                .portMappings(List.of(PortMapping.builder().containerPort(5000).build()))
                 .build());
         FargateService.Builder.create(this, "Service")
                 .cluster(cluster).serviceName(id)
