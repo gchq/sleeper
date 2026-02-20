@@ -74,6 +74,7 @@ public class TableDefinerLambda {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
         Map<String, Object> resourceProperties = event.getResourceProperties();
+        Map<String, Object> oldResourceProperties = event.getOldResourceProperties();
 
         Properties properties = new Properties();
         properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
@@ -85,8 +86,7 @@ public class TableDefinerLambda {
                 break;
             case "Update":
                 LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                tableProperties.validate();
-                tablePropertiesStore.save(tableProperties);
+                updateTable(tableProperties, tablePropertiesStore, oldResourceProperties);
                 break;
             case "Delete":
                 deleteTable(tableProperties, tablePropertiesStore);
@@ -158,4 +158,14 @@ public class TableDefinerLambda {
             tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
         }
     }
+
+    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> oldResourceProperties) throws IOException {
+        tableProperties.validate();
+
+        // need to get physicalresourceid for the old table from the cdk
+        // set the physicalresourceid into the table properties so they are considered the same table.
+
+        tablePropertiesStore.update(tableProperties);
+    }
+
 }
