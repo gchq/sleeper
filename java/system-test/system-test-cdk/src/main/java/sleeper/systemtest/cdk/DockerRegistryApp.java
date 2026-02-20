@@ -41,10 +41,10 @@ import sleeper.cdk.util.Utils;
 
 public class DockerRegistryApp extends Stack {
 
-    public DockerRegistryApp(Construct scope, String id, StackProps stackProps, Props props) {
+    public DockerRegistryApp(Construct scope, String id, StackProps stackProps, String vpcId) {
         super(scope, id, stackProps);
 
-        IVpc vpc = Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(props.vpcId()).build());
+        IVpc vpc = Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build());
         Cluster cluster = Cluster.Builder
                 .create(this, "Cluster")
                 .clusterName(id)
@@ -87,15 +87,8 @@ public class DockerRegistryApp extends Stack {
 
         new DockerRegistryApp(app, id,
                 StackProps.builder().env(environment).build(),
-                Props.from(context));
+                context.tryGetContext("vpc"));
 
         app.synth();
-    }
-
-    public record Props(String vpcId) {
-
-        public static Props from(CdkContext context) {
-            return new Props(context.tryGetContext("vpc"));
-        }
     }
 }
