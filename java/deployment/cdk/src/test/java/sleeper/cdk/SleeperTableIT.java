@@ -25,7 +25,9 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,7 +46,7 @@ public class SleeperTableIT {
         Stack stack = createSleeperTableAsRootStack();
 
         TableDefinerStack definerStack = new TableDefinerStack(stack, "TableDefiner", instanceProperties,
-                SleeperInstanceArtefacts.from(instanceProperties, jarVersionIds()));
+                new SleeperInstanceArtefacts(instanceProperties, new SleeperJarsFromProperties(instanceProperties, jarVersionIds()), new SleeperContainerImagesFromProperties(instanceProperties)));
 
         // When
         SleeperTable sleeperTable = SleeperTable.builder()
