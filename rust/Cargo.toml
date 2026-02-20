@@ -30,11 +30,11 @@ assert_cmd = { version = "2.1.2" }                 # CLI interface testing
 async-trait = { version = "0.1.89" }
 aws-config = { version = "1.8.14" }                  # Credential loading
 aws-credential-types = { version = "1.2.13" }        # Credential provider types
-aws-types = { version = "1.3.11" }                   # for Region
+aws-types = { version = "1.3.13" }                   # for Region
 bytes = { version = "1.11.1" }                      # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.23.1" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.43" }                     # Log helper
-clap = { version = "4.5.59" }                       # Cmd line args processing
+clap = { version = "4.5.60" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
