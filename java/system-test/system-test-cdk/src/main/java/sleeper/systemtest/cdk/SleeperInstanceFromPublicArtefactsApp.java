@@ -38,6 +38,9 @@ import sleeper.core.properties.local.LoadLocalProperties;
 
 import java.nio.file.Path;
 
+/**
+ * An example app for testing deployment of Sleeper with artefacts from an external repository.
+ */
 public class SleeperInstanceFromPublicArtefactsApp extends Stack {
 
     public SleeperInstanceFromPublicArtefactsApp(Construct scope, String id, StackProps stackProps, Props props) {
