@@ -123,12 +123,13 @@ public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
         return properties;
     }
 
-    private SleeperJarVersionIdProvider jars() {
-        return SleeperJarVersionIdProvider.from(s3Client, instanceProperties);
+    private SleeperLambdaCode lambdaCode(Stack stack) {
+        return SleeperArtefacts.fromProperties(s3Client)
+                .forInstance(instanceProperties)
+                .lambdaCodeAtScope(stack);
     }
 
-    private SleeperLambdaCode lambdaCode(Stack stack) {
-        SleeperArtefacts artefacts = SleeperArtefacts.from(instanceProperties, jars());
-        return artefacts.lambdaCodeAtScope(stack);
+    private SleeperJarVersionIdProvider jars() {
+        return SleeperJarVersionIdProvider.from(s3Client, instanceProperties);
     }
 }

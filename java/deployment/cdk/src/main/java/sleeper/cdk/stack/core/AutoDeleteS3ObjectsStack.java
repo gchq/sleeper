@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -42,17 +42,16 @@ import java.util.Map;
  */
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
-    private IFunction lambda;
     private Provider provider;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, LoggingStack loggingStack) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts, LoggingStack loggingStack) {
         super(scope, id);
         createLambda(instanceProperties, artefacts, loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
     // This is for a standalone system test deployment, where there is no Sleeper instance and the LoggingStack is not used.
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts) {
         super(scope, id);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS, instanceProperties);
         ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER, instanceProperties);
@@ -60,14 +59,14 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createLambda(InstanceProperties instanceProperties, SleeperArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createLambda(InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -75,8 +74,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
-                .create()
+        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of("s3:ListBucketVersions", "s3:DeleteObject", "s3:DeleteObjectVersion"))
                 .build());

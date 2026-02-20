@@ -24,37 +24,46 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
+import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class SleeperInstanceIT {
+public class SleeperTableIT {
 
     InstanceProperties instanceProperties = createTestInstancePropertiesWithId("test-instance");
     SleeperInstancePrinter printer = new SleeperInstancePrinter();
 
     @Test
-    void shouldGenerateCloudFormationTemplatesWithDefaultOptionalStacks() {
+    void shouldGenerateSleeperTableObjectWithDefaultOptions() {
         // Given
-        instanceProperties.unset(OPTIONAL_STACKS);
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_RELEASE, "emr-1.2.3");
+        Stack stack = createSleeperTableAsRootStack();
+
+        TableDefinerStack definerStack = new TableDefinerStack(stack, "TableDefiner", instanceProperties,
+                new SleeperInstanceArtefacts(instanceProperties, new SleeperJarsFromProperties(instanceProperties, jarVersionIds()), new SleeperContainerImagesFromProperties(instanceProperties)));
 
         // When
-        Stack stack = createSleeperInstanceAsRootStack();
+        SleeperTable sleeperTable = SleeperTable.builder()
+                .tableName("table-name")
+                .instanceId("instance-id") // Will need to validate?
+                .schema(createSchemaWithKey("key"))
+                .build();
+        definerStack.createCustomResource(sleeperTable);
 
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
-                .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
-                .forFile().withName("default-instance", ".json"));
+                .withReporter((receieved, approved) -> false)
+                .forFile().withName("default-table", ".json"));
+
     }
 
-    private Stack createSleeperInstanceAsRootStack() {
+    private Stack createSleeperTableAsRootStack() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -63,16 +72,11 @@ public class SleeperInstanceIT {
                 .region("test-region")
                 .build();
         StackProps stackProps = StackProps.builder()
-                .stackName(instanceProperties.get(ID))
+                .stackName("test-table")
                 .env(environment)
                 .build();
-        SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
-                .instanceProperties(instanceProperties)
-                .version("1.2.3")
-                .artefacts(SleeperArtefacts.fromProperties(jarVersionIds()))
-                .skipCheckingVersionMatchesProperties(true)
-                .build();
-        return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
+
+        return new Stack(app, "TestTable", stackProps);
     }
 
     private SleeperJarVersionIdProvider jarVersionIds() {

@@ -22,9 +22,9 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.SleeperTable;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
-import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -39,8 +39,10 @@ import java.util.Map;
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableDefinerStack extends NestedStack {
 
+    Provider tableDefinerProvider;
+
     public TableDefinerStack(
-            Construct scope, String id, InstanceProperties instanceProperties, SleeperArtefacts artefacts, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts) {
         super(scope, id);
 
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
@@ -53,23 +55,25 @@ public class TableDefinerStack extends NestedStack {
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for creating, updating and deleting Sleeper tables")
-                .logGroup(coreStacks.getLogGroup(LogGroupRef.TABLE_DEFINER)));
+                .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER, instanceProperties)));
 
-        coreStacks.grantWriteInstanceConfig(tableDefinerLambda);
-
-        Provider tableDefinerProvider = Provider.Builder.create(this, "TableDefinerProvider")
+        tableDefinerProvider = Provider.Builder.create(this, "TableDefinerProvider")
                 .onEventHandler(tableDefinerLambda)
-                .logGroup(coreStacks.getLogGroup(LogGroupRef.TABLE_DEFINER_PROVIDER))
-                .build();
-
-        //TODO Update this to use TableProperties/SplitPoints
-        CustomResource.Builder.create(this, "TableDefinerProperties")
-                .resourceType("Custom::TableDefinerProperties")
-                .properties(Map.of("tableProperties", instanceProperties.saveAsString(),
-                        "splitPoints", ""))
-                .serviceToken(tableDefinerProvider.getServiceToken())
+                .logGroup(LoggingStack.createLogGroup(this, LogGroupRef.TABLE_DEFINER_PROVIDER, instanceProperties))
                 .build();
 
         Utils.addTags(this, instanceProperties);
     }
+
+    public CustomResource createCustomResource(SleeperTable sleeperTable) {
+        //TODO Update this to use TableProperties/SplitPoints
+        return CustomResource.Builder.create(this, "TableDefinerProperties")
+                .resourceType("Custom::TableDefinerProperties")
+                .properties(Map.of("tableProperties", sleeperTable.saveAsString(),
+                        "splitPoints", ""))
+                .serviceToken(tableDefinerProvider.getServiceToken())
+                .build();
+
+    }
+
 }

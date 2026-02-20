@@ -15,20 +15,14 @@
  */
 package sleeper.cdk.artefacts.containers;
 
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.constructs.Construct;
 
-import sleeper.core.deploy.DockerDeployment;
-import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 
@@ -42,33 +36,21 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
 
     @Override
     public SleeperEcsImages ecsImagesAtScope(Construct scope) {
-        Map<String, IRepository> deploymentNameToRepository = new HashMap<>();
+        SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
         return deployment -> ContainerImage.fromEcrRepository(
-                deploymentNameToRepository.computeIfAbsent(deployment.getDeploymentName(),
-                        imageName -> createRepositoryReference(scope, deployment)),
+                repositories.getRepository(deployment),
                 instanceProperties.get(VERSION));
     }
 
     @Override
     public SleeperLambdaImages lambdaImagesAtScope(Construct scope) {
-        Map<String, IRepository> imageNameToRepository = new HashMap<>();
+        SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
         return handler -> DockerImageCode.fromEcr(
-                imageNameToRepository.computeIfAbsent(handler.getJar().getImageName(),
-                        imageName -> createRepositoryReference(scope, handler.getJar())),
+                repositories.getRepository(handler.getJar()),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
                         .tagOrDigest(instanceProperties.get(VERSION))
                         .build());
-    }
-
-    private IRepository createRepositoryReference(Construct scope, LambdaJar jar) {
-        String id = jar.getImageName() + "-repository";
-        return Repository.fromRepositoryName(scope, id, jar.getEcrRepositoryName(instanceProperties));
-    }
-
-    private IRepository createRepositoryReference(Construct scope, DockerDeployment deployment) {
-        String id = deployment.getDeploymentName() + "-repository";
-        return Repository.fromRepositoryName(scope, id, deployment.getEcrRepositoryName(instanceProperties));
     }
 
 }

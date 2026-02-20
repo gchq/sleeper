@@ -1,0 +1,304 @@
+{
+  "StackIdToTemplate": {
+    "TestTable": {
+      "Parameters": {
+        "BootstrapVersion": {
+          "Type": "AWS::SSM::Parameter::Value\u003cString\u003e",
+          "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+          "Default": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "Resources": {
+        "TableDefinerNestedStackTableDefinerNestedStackResource185B3659": {
+          "Type": "AWS::CloudFormation::Stack",
+          "DeletionPolicy": "Delete",
+          "UpdateReplacePolicy": "Delete",
+          "Properties": {
+            "TemplateURL": "removed-for-test",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        }
+      },
+      "Rules": {
+        "CheckBootstrapVersion": {
+          "Assertions": [
+            {
+              "Assert": {
+                "Fn::Not": [
+                  {
+                    "Fn::Contains": [
+                      [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5"
+                      ],
+                      {
+                        "Ref": "BootstrapVersion"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "AssertDescription": "CDK bootstrap stack version 6 required. Please run \u0027cdk bootstrap\u0027 with a recent version of the CDK CLI."
+            }
+          ]
+        }
+      }
+    },
+    "TableDefiner": {
+      "Resources": {
+        "TableDefinerLambdaCurrentVersion54FD3418d9450e250f68bd0d822c389bdfa90764": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TableDefinerLambda38016205"
+            }
+          }
+        },
+        "TableDefinerLambda38016205": {
+          "Type": "AWS::Lambda::Function",
+          "DependsOn": [
+            "TableDefinerLambdaServiceRole7DA90CCF"
+          ],
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "TableDefinerLambdaServiceRole7DA90CCF",
+                "Arn"
+              ]
+            },
+            "FunctionName": "sleeper-test-instance-table-definer",
+            "MemorySize": 2048,
+            "Runtime": "java17",
+            "Description": "Lambda for creating, updating and deleting Sleeper tables",
+            "LoggingConfig": {
+              "LogGroup": {
+                "Ref": "tabledefiner1B009C7F"
+              }
+            },
+            "Environment": {
+              "Variables": {
+                "JAVA_TOOL_OPTIONS": "--add-opens\u003djava.base/java.nio\u003dALL-UNNAMED --add-opens\u003djava.base/sun.nio.ch\u003dALL-UNNAMED --add-opens\u003djava.base/java.util\u003dALL-UNNAMED --add-opens\u003djava.base/java.lang.invoke\u003dALL-UNNAMED",
+                "SLEEPER_CONFIG_BUCKET": "sleeper-test-instance-config"
+              }
+            },
+            "Handler": "sleeper.cdk.custom.TableDefinerLambda::handleEvent",
+            "Code": {
+              "S3ObjectVersion": "cdk-custom-resources-test-version",
+              "S3Bucket": "sleeper-test-instance-jars",
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "tabledefinerprovider41F0A6E3": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-table-definer-provider",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "TableDefinerProviderframeworkonEventServiceRoleDDACEB66": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "TableDefinerProviderframeworkonEvent7D57665B": {
+          "Type": "AWS::Lambda::Function",
+          "DependsOn": [
+            "TableDefinerProviderframeworkonEventServiceRoleDefaultPolicyB449FD0D",
+            "TableDefinerProviderframeworkonEventServiceRoleDDACEB66"
+          ],
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "TableDefinerProviderframeworkonEventServiceRoleDDACEB66",
+                "Arn"
+              ]
+            },
+            "Runtime": "nodejs22.x",
+            "Description": "AWS CDK resource provider framework - onEvent (TestTable/TableDefiner/TableDefinerProvider)",
+            "Timeout": 900,
+            "LoggingConfig": {
+              "LogFormat": "JSON",
+              "ApplicationLogLevel": "FATAL",
+              "LogGroup": {
+                "Ref": "tabledefinerprovider41F0A6E3"
+              }
+            },
+            "Environment": {
+              "Variables": {
+                "USER_ON_EVENT_FUNCTION_ARN": {
+                  "Ref": "TableDefinerLambdaCurrentVersion54FD3418d9450e250f68bd0d822c389bdfa90764"
+                }
+              }
+            },
+            "Handler": "framework.onEvent",
+            "Code": {
+              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
+              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "TableDefinerProviderframeworkonEventServiceRoleDefaultPolicyB449FD0D": {
+          "Type": "AWS::IAM::Policy",
+          "Properties": {
+            "PolicyName": "TableDefinerProviderframeworkonEventServiceRoleDefaultPolicyB449FD0D",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "lambda:InvokeFunction",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "TableDefinerLambdaCurrentVersion54FD3418d9450e250f68bd0d822c389bdfa90764"
+                  }
+                },
+                {
+                  "Action": "lambda:GetFunction",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "TableDefinerLambdaCurrentVersion54FD3418d9450e250f68bd0d822c389bdfa90764"
+                  }
+                }
+              ]
+            },
+            "Roles": [
+              {
+                "Ref": "TableDefinerProviderframeworkonEventServiceRoleDDACEB66"
+              }
+            ]
+          }
+        },
+        "tabledefiner1B009C7F": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-table-definer",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "TableDefinerLambdaServiceRole7DA90CCF": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "TableDefiner"
+              }
+            ]
+          }
+        },
+        "TableDefinerProperties": {
+          "Type": "Custom::TableDefinerProperties",
+          "DeletionPolicy": "Delete",
+          "UpdateReplacePolicy": "Delete",
+          "Properties": {
+            "ServiceToken": {
+              "Fn::GetAtt": [
+                "TableDefinerProviderframeworkonEvent7D57665B",
+                "Arn"
+              ]
+            },
+            "splitPoints": "",
+            "tableProperties": "sleeper.table.schema\u003d{\"rowKeyFields\"\\:[{\"name\"\\:\"key\",\"type\"\\:\"LongType\"}],\"sortKeyFields\"\\:[],\"valueFields\"\\:[]}\nsleeper.table.name\u003dtable-name\n"
+          }
+        }
+      }
+    }
+  }
+}
