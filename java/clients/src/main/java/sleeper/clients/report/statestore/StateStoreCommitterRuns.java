@@ -88,7 +88,12 @@ public class StateStoreCommitterRuns {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         StateStoreCommitterRun.Builder builder = null;
         for (StateStoreCommitterLogEntry entry : logs) {
-            if (entry instanceof StateStoreCommitterRunStarted) {
+            if (entry instanceof StateStoreCommitterRunBatchStarted) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.batchStart((StateStoreCommitterRunStarted) entry);
+            } else if (entry instanceof StateStoreCommitterRunStarted) {
                 if (builder != null) {
                     runs.add(builder.build());
                 }
@@ -98,6 +103,11 @@ public class StateStoreCommitterRuns {
                     builder = newRun(entry);
                 }
                 builder.commit((StateStoreCommitSummary) entry);
+            } else if (entry instanceof StateStoreCommitterRunBatchFinished) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.batchFinished((StateStoreCommitterRunFinished) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);

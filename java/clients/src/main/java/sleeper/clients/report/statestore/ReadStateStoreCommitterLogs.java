@@ -15,6 +15,8 @@
  */
 package sleeper.clients.report.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
@@ -30,6 +32,7 @@ import java.util.regex.Pattern;
  * Parses individual log messages from the state store comitter.
  */
 public class ReadStateStoreCommitterLogs {
+    public static final Logger LOGGER = LoggerFactory.getLogger(ReadStateStoreCommitterLogs.class);
 
     private ReadStateStoreCommitterLogs() {
     }
@@ -37,8 +40,10 @@ public class ReadStateStoreCommitterLogs {
     public static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS");
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at ([^\\s]+)|" + // Lambda started message type
-            "Lambda finished at ([^\\s]+) |" + // Lambda finished message type
+            "State store committer process started at ([^\\s]+)|" + // State store process started message type
+            "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
+            "Started state store commits batch at ([^\\s]+)|" + //EC2 batch start message
+            "Finished state store commits batch at ([^\\s]+)|" + //EC2 batch finish message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     /**
@@ -47,9 +52,11 @@ public class ReadStateStoreCommitterLogs {
     private static class CapturingGroups {
         private static final int START_TIME = 1;
         private static final int FINISH_TIME = 2;
-        private static final int TABLE_ID = 3;
-        private static final int TYPE = 4;
-        private static final int COMMIT_TIME = 5;
+        private static final int BATCH_START_TIME = 3;
+        private static final int BATCH_FINISH_TIME = 4;
+        private static final int TABLE_ID = 5;
+        private static final int TYPE = 6;
+        private static final int COMMIT_TIME = 7;
 
         private CapturingGroups() {
         }
@@ -58,6 +65,7 @@ public class ReadStateStoreCommitterLogs {
     private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
+            LOGGER.info("Couldn't match: {}", message);
             return null;
         }
         // The pattern can only match one type of log message at a time.
@@ -71,12 +79,21 @@ public class ReadStateStoreCommitterLogs {
         if (finishTime != null) {
             return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
         }
+        String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
+        if (batchStartTime != null) {
+            return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
+        }
+        String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
+        if (batchFinishTime != null) {
+            return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
+        }
         String tableId = matcher.group(CapturingGroups.TABLE_ID);
         if (tableId != null) {
             String type = matcher.group(CapturingGroups.TYPE);
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
             return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
         }
+        LOGGER.info("Match found but no group: {}", message);
         return null;
     }
 

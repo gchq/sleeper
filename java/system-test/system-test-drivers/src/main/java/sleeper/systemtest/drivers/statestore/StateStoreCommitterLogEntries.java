@@ -53,8 +53,8 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
         Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
         return tableIds.stream()
                 .collect(toMap(id -> id, tableId -> {
-                    List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
-                    return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondInRuns(tableRuns);
+                    return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondInRuns(
+                            runsByTableId.getOrDefault(tableId, List.of()));
                 }));
     }
 

@@ -151,10 +151,11 @@ public class MultiThreadedStateStoreCommitter {
                     }
                 }
 
-                LOGGER.info("Received {} messages from queue, have been running for {}, last received commits {} ago",
-                        response.messages().size(),
-                        LoggedDuration.withShortOutput(startedAt, Instant.now()),
-                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
+                Instant messageReceivedTime = Instant.now();
+                LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
+                        messageReceivedTime, response.messages().size(),
+                        LoggedDuration.withShortOutput(startedAt, messageReceivedTime),
+                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, messageReceivedTime));
 
                 Map<String, List<StateStoreCommitRequestWithSqsReceipt>> commitRequestsByTableId = response.messages().stream()
                         .map(message -> {
@@ -229,13 +230,12 @@ public class MultiThreadedStateStoreCommitter {
 
     private void processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
         Instant startedAt = Instant.now();
-        LOGGER.info("Processing {} requests for table: {} ...", requests.size(), tableId);
+        LOGGER.info("Started batch of {} state store commits for table {} at {}", requests.size(), tableId, startedAt);
         applyBatchOfCommits(retryOnThrottling, stateStore, requests);
         reportCommitOutcomesToSqs(tableId, requests);
-        LOGGER.info("Finished applying batch of {} commit requests for table {} in {}",
-                requests.size(),
-                tableId,
-                LoggedDuration.withShortOutput(startedAt, Instant.now()));
+        Instant finishTime = Instant.now();
+        LOGGER.info("Finished state store commits batch at {} for table {} (ran for {})",
+                finishTime, tableId, LoggedDuration.withFullOutput(startedAt, finishTime));
     }
 
     /**
