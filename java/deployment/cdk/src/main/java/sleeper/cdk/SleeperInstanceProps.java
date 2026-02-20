@@ -195,7 +195,6 @@ public class SleeperInstanceProps {
     public static class Builder {
         private InstanceProperties instanceProperties;
         private SleeperArtefacts artefacts;
-        private SleeperInstanceArtefacts instanceArtefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
@@ -349,7 +348,7 @@ public class SleeperInstanceProps {
         public SleeperInstanceProps build() {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
-            Objects.requireNonNull(instanceArtefacts, "artefacts must not be null");
+            Objects.requireNonNull(artefacts, "artefacts must not be null");
 
             Properties tagsProperties = instanceProperties.getTagsProperties();
             tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));
