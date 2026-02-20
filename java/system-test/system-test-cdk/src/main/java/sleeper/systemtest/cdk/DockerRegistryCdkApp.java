@@ -39,9 +39,12 @@ import software.constructs.Construct;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
 
-public class DockerRegistryApp extends Stack {
+/**
+ * A CDK app to deploy a Docker registry within a VPC for testing.
+ */
+public class DockerRegistryCdkApp extends Stack {
 
-    public DockerRegistryApp(Construct scope, String id, StackProps stackProps, String vpcId) {
+    public DockerRegistryCdkApp(Construct scope, String id, StackProps stackProps, String vpcId) {
         super(scope, id, stackProps);
 
         IVpc vpc = Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build());
@@ -85,7 +88,7 @@ public class DockerRegistryApp extends Stack {
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
 
-        new DockerRegistryApp(app, id,
+        new DockerRegistryCdkApp(app, id,
                 StackProps.builder().env(environment).build(),
                 context.tryGetContext("vpc"));
 
