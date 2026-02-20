@@ -21,7 +21,11 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.Peer;
+import software.amazon.awscdk.services.ec2.Port;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -71,6 +75,8 @@ public class DockerRegistryCdkApp extends Stack {
                         .build()))
                 .portMappings(List.of(PortMapping.builder().containerPort(5000).build()))
                 .build());
+        ISecurityGroup securityGroup = SecurityGroup.Builder.create(this, "SecurityGroup").build();
+        securityGroup.addIngressRule(Peer.ipv4("10.0.0.0/8"), Port.tcp(5000));
         FargateService.Builder.create(this, "Service")
                 .cluster(cluster).serviceName(id)
                 .taskDefinition(taskDefinition)
@@ -78,6 +84,7 @@ public class DockerRegistryCdkApp extends Stack {
                 .vpcSubnets(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS)
                         .build())
+                .securityGroups(List.of(securityGroup))
                 .build();
     }
 
