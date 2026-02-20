@@ -42,9 +42,20 @@ import java.util.List;
  */
 public class SleeperArtefactRepositories {
 
+    private final Construct scope;
+    private final String deploymentId;
+    private final List<String> extraEcrImages;
+
     private SleeperArtefactRepositories(Builder builder) {
-        Bucket.Builder.create(builder.scope, "JarsBucket")
-                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(builder.deploymentId))
+        scope = builder.scope;
+        deploymentId = builder.deploymentId;
+        extraEcrImages = builder.extraEcrImages;
+        create();
+    }
+
+    private void create() {
+        Bucket.Builder.create(scope, "JarsBucket")
+                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -59,11 +70,11 @@ public class SleeperArtefactRepositories {
                 .build();
 
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(builder.scope, builder.deploymentId, jar.getImageName());
+            createRepository(jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(builder.scope, builder.deploymentId, deployment.getDeploymentName());
+            Repository repository = createRepository(deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
@@ -74,12 +85,10 @@ public class SleeperArtefactRepositories {
             }
         }
 
-        for (String imageName : builder.extraEcrImages) {
-            createRepository(builder.scope, builder.deploymentId, imageName);
-        }
+        extraEcrImages.forEach(this::createRepository);
     }
 
-    private static Repository createRepository(Construct scope, String deploymentId, String imageName) {
+    private Repository createRepository(String imageName) {
         return Repository.Builder.create(scope, "Repository-" + imageName)
                 .repositoryName(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(deploymentId) + "/" + imageName)
                 .removalPolicy(RemovalPolicy.DESTROY)
