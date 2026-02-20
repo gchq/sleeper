@@ -263,7 +263,7 @@ Mockito (org.mockito:mockito-core:5.*)
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:27.*)
+ApprovalTests.Java (com.approvaltests:approvaltests:28.*)
 
 - Apache License, Version 2.0
 
@@ -306,6 +306,10 @@ gRPC (io.grpc:grpc-context:1.*)
 Google J2ObjC (com.google.j2objc:j2objc-annotations:3.*)
 
 - Apache License, Version 2.0
+
+ASM (org.ow2.asm:asm:9.*)
+
+- The 3-Clause BSD License
 
 Docker Java (com.github.docker-java:docker-java-*:3.*)
 
