@@ -16,11 +16,7 @@
 package sleeper.cdk.artefacts;
 
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.NestedStackProps;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecr.TagStatus;
@@ -46,40 +42,9 @@ import java.util.List;
  */
 public class SleeperArtefactRepositories {
 
-    private SleeperArtefactRepositories() {
-    }
-
-    /**
-     * Declares a Sleeper artefacts deployment as a nested stack.
-     *
-     * @param scope          the scope to add the instance to, usually a Stack or NestedStack
-     * @param id             the nested stack ID
-     * @param stackProps     configuration of the nested stack
-     * @param deploymentId   the artefacts deployment ID
-     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
-     */
-    public static void createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, String deploymentId, List<String> extraEcrImages) {
-        NestedStack stack = new NestedStack(scope, id, stackProps);
-        create(stack, deploymentId, extraEcrImages);
-    }
-
-    /**
-     * Declares a Sleeper artefacts deployment as a root level stack.
-     *
-     * @param scope          the scope to add the instance to, usually an App or Stage
-     * @param id             the stack ID
-     * @param stackProps     configuration of the stack
-     * @param deploymentId   the artefacts deployment ID
-     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
-     */
-    public static void createAsRootStack(Construct scope, String id, StackProps stackProps, String deploymentId, List<String> extraEcrImages) {
-        Stack stack = new Stack(scope, id, stackProps);
-        create(stack, deploymentId, extraEcrImages);
-    }
-
-    private static void create(Construct scope, String deploymentId, List<String> extraEcrImages) {
-        Bucket.Builder.create(scope, "JarsBucket")
-                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
+    private SleeperArtefactRepositories(Builder builder) {
+        Bucket.Builder.create(builder.scope, "JarsBucket")
+                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(builder.deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -94,11 +59,11 @@ public class SleeperArtefactRepositories {
                 .build();
 
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(scope, deploymentId, jar.getImageName());
+            createRepository(builder.scope, builder.deploymentId, jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(scope, deploymentId, deployment.getDeploymentName());
+            Repository repository = createRepository(builder.scope, builder.deploymentId, deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
@@ -109,8 +74,8 @@ public class SleeperArtefactRepositories {
             }
         }
 
-        for (String imageName : extraEcrImages) {
-            createRepository(scope, deploymentId, imageName);
+        for (String imageName : builder.extraEcrImages) {
+            createRepository(builder.scope, builder.deploymentId, imageName);
         }
     }
 
@@ -134,5 +99,29 @@ public class SleeperArtefactRepositories {
                                 .build()))
                 .emptyOnDelete(true)
                 .build();
+    }
+
+    public static class Builder {
+        private final Construct scope;
+        private final String deploymentId;
+        private List<String> extraEcrImages;
+
+        private Builder(Construct scope, String deploymentId) {
+            this.scope = scope;
+            this.deploymentId = deploymentId;
+        }
+
+        public static Builder create(Construct scope, String deploymentId) {
+            return new Builder(scope, deploymentId);
+        }
+
+        public Builder extraEcrImages(List<String> extraEcrImages) {
+            this.extraEcrImages = extraEcrImages;
+            return this;
+        }
+
+        public SleeperArtefactRepositories build() {
+            return new SleeperArtefactRepositories(this);
+        }
     }
 }
