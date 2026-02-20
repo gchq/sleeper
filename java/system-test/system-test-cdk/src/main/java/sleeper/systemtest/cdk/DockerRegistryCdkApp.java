@@ -56,7 +56,7 @@ public class DockerRegistryCdkApp extends Stack {
                 .build();
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder.create(this, "Task")
                 .family(id)
-                .cpu(128)
+                .cpu(256)
                 .memoryLimitMiB(512)
                 .build();
         taskDefinition.addContainer("Registry", ContainerDefinitionOptions.builder()
