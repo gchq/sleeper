@@ -151,10 +151,11 @@ public class MultiThreadedStateStoreCommitter {
                     }
                 }
 
+                Instant messageReceivedTime = Instant.now();
                 LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
-                        response.messages().size(),
-                        LoggedDuration.withShortOutput(startedAt, Instant.now()),
-                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
+                        messageReceivedTime, response.messages().size(),
+                        LoggedDuration.withShortOutput(startedAt, messageReceivedTime),
+                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, messageReceivedTime));
 
                 Map<String, List<StateStoreCommitRequestWithSqsReceipt>> commitRequestsByTableId = response.messages().stream()
                         .map(message -> {
