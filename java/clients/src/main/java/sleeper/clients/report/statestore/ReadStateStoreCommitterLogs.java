@@ -42,7 +42,7 @@ public class ReadStateStoreCommitterLogs {
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
             "State store committer process started at ([^\\s]+)|" + // State store process started message type
             "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
-            "Started state store commits batch at ([^\\s]+)|" + //EC2 batch start message
+            "Started state store commits batch at ([^\\s]+) having received ([^\\s]+) messages|" + //EC2 batch start message
             "Finished state store commits batch at ([^\\s]+)|" + //EC2 batch finish message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
@@ -53,10 +53,11 @@ public class ReadStateStoreCommitterLogs {
         private static final int START_TIME = 1;
         private static final int FINISH_TIME = 2;
         private static final int BATCH_START_TIME = 3;
-        private static final int BATCH_FINISH_TIME = 4;
-        private static final int TABLE_ID = 5;
-        private static final int TYPE = 6;
-        private static final int COMMIT_TIME = 7;
+        private static final int BATCH_START_MESSAGES = 4;
+        private static final int BATCH_FINISH_TIME = 5;
+        private static final int TABLE_ID = 6;
+        private static final int TYPE = 7;
+        private static final int COMMIT_TIME = 8;
 
         private CapturingGroups() {
         }
@@ -80,7 +81,7 @@ public class ReadStateStoreCommitterLogs {
             return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
         }
         String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
-        if (batchStartTime != null) {
+        if (batchStartTime != null && Integer.parseInt(matcher.group(CapturingGroups.BATCH_START_MESSAGES)) > 0) {
             return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
         }
         String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
