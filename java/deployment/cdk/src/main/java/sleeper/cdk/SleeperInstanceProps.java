@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -97,7 +98,7 @@ public class SleeperInstanceProps {
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .artefacts(SleeperArtefacts.from(s3Client, instanceProperties))
+                .artefacts(SleeperArtefacts.fromProperties(s3Client))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
@@ -136,7 +137,7 @@ public class SleeperInstanceProps {
         }
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
-                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration))
+                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
@@ -179,8 +180,8 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperArtefacts getArtefacts() {
-        return artefacts;
+    public SleeperInstanceArtefacts getArtefacts() {
+        return artefacts.forInstance(instanceProperties);
     }
 
     public boolean isDeployPaused() {
@@ -196,7 +197,7 @@ public class SleeperInstanceProps {
         private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
-        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
+        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
         private String version = SleeperVersion.getVersion();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;

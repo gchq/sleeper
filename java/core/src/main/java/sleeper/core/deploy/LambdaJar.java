@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 /**
@@ -147,6 +150,20 @@ public class LambdaJar {
      */
     public String getFormattedFilename(String version) {
         return String.format(filenameFormat, version);
+    }
+
+    /**
+     * Retrieves the Docker image name for deploying this jar as a Docker container. Includes the repository URL and the
+     * tag. This method requires that CDK defined properties are set due to requiring account and region.
+     *
+     * @param  properties the instance properties
+     * @return            the Docker image name
+     */
+    public String getDockerImageName(InstanceProperties properties) {
+        return properties.get(ACCOUNT) + ".dkr.ecr." +
+                properties.get(REGION) + ".amazonaws.com/" +
+                getEcrRepositoryName(properties) +
+                ":" + properties.get(VERSION);
     }
 
     /**
