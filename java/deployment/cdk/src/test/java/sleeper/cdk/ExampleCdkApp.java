@@ -31,9 +31,9 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 /**
  * Deploys an example of Sleeper CDK, presently for defining own tables.
  */
-public class ExampleCDKApp {
+public class ExampleCdkApp {
 
-    private ExampleCDKApp() {
+    private ExampleCdkApp() {
     }
 
     public static void main(String[] args) {
