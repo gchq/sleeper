@@ -252,7 +252,7 @@
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
         <surefire.plugin.version>3.5.4</surefire.plugin.version>
-        <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
+        <failsafe.plugin.version>3.5.5</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
