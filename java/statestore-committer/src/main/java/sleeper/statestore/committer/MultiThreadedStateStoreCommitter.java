@@ -142,63 +142,63 @@ public class MultiThreadedStateStoreCommitter {
                         .visibilityTimeout(15 * 60)
                         .build());
 
-                // Only initialise after we receive the first messages, because the instance properties may not have
-                // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
                     lastReceivedCommitsAt = Instant.now();
+                    // Only initialise after we receive the first messages, because the instance properties may not have
+                    // been written to the config bucket yet when we first start up.
                     if (stateStoreProvider == null) {
                         init();
                     }
-                }
 
-                Instant messageReceivedTime = Instant.now();
-                LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
-                        messageReceivedTime, response.messages().size(),
-                        LoggedDuration.withShortOutput(startedAt, messageReceivedTime),
-                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, messageReceivedTime));
+                    Instant messageReceivedTime = Instant.now();
+                    LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
+                            messageReceivedTime, response.messages().size(),
+                            LoggedDuration.withShortOutput(startedAt, messageReceivedTime),
+                            LoggedDuration.withShortOutput(lastReceivedCommitsAt, messageReceivedTime));
 
-                Map<String, List<StateStoreCommitRequestWithSqsReceipt>> commitRequestsByTableId = response.messages().stream()
-                        .map(message -> {
-                            LOGGER.trace("Received message: {}", message);
-                            StateStoreCommitRequest request = serDe.fromJson(message.body());
-                            LOGGER.trace("Received request: {}", request);
-                            return new StateStoreCommitRequestWithSqsReceipt(request, message.receiptHandle());
-                        })
-                        .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
+                    Map<String, List<StateStoreCommitRequestWithSqsReceipt>> commitRequestsByTableId = response.messages().stream()
+                            .map(message -> {
+                                LOGGER.trace("Received message: {}", message);
+                                StateStoreCommitRequest request = serDe.fromJson(message.body());
+                                LOGGER.trace("Received request: {}", request);
+                                return new StateStoreCommitRequestWithSqsReceipt(request, message.receiptHandle());
+                            })
+                            .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
 
-                // Try to make sure there is going to be enough heap space available to process these commits
-                Set<String> stateStoresToKeepInCache = tableFutures.entrySet().stream()
-                        .filter(tableFuture -> !tableFuture.getValue().isDone())
-                        .map(tableFuture -> tableFuture.getKey())
-                        .collect(toSet());
-                stateStoresToKeepInCache.addAll(commitRequestsByTableId.keySet());
-                ensureEnoughHeapSpaceAvailable(stateStoresToKeepInCache);
+                    // Try to make sure there is going to be enough heap space available to process these commits
+                    Set<String> stateStoresToKeepInCache = tableFutures.entrySet().stream()
+                            .filter(tableFuture -> !tableFuture.getValue().isDone())
+                            .map(tableFuture -> tableFuture.getKey())
+                            .collect(toSet());
+                    stateStoresToKeepInCache.addAll(commitRequestsByTableId.keySet());
+                    ensureEnoughHeapSpaceAvailable(stateStoresToKeepInCache);
 
-                commitRequestsByTableId.entrySet().forEach(tableCommitRequests -> {
-                    String tableId = tableCommitRequests.getKey();
-                    List<StateStoreCommitRequestWithSqsReceipt> requests = tableCommitRequests.getValue();
-                    LOGGER.info("Received {} requests for table: {}", requests.size(), tableId);
+                    commitRequestsByTableId.entrySet().forEach(tableCommitRequests -> {
+                        String tableId = tableCommitRequests.getKey();
+                        List<StateStoreCommitRequestWithSqsReceipt> requests = tableCommitRequests.getValue();
+                        LOGGER.info("Received {} requests for table: {}", requests.size(), tableId);
 
-                    // Wait until processing of previous commits for this table has finished
-                    if (tableFutures.containsKey(tableId)) {
-                        try {
-                            tableFutures.get(tableId).get();
-                        } catch (Exception e) {
-                            throw new IllegalStateException("Exception was thrown during the processing of the previous batch of commits for table " + tableId + ":", e);
+                        // Wait until processing of previous commits for this table has finished
+                        if (tableFutures.containsKey(tableId)) {
+                            try {
+                                tableFutures.get(tableId).get();
+                            } catch (Exception e) {
+                                throw new IllegalStateException("Exception was thrown during the processing of the previous batch of commits for table " + tableId + ":", e);
+                            }
                         }
-                    }
 
-                    TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-                    StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+                        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
-                    // Apply the commits for each table on a separate thread
-                    CompletableFuture<Instant> task = CompletableFuture.supplyAsync(() -> {
-                        processCommitRequestsForTable(tableId, stateStore, requests);
-                        return Instant.now();
+                        // Apply the commits for each table on a separate thread
+                        CompletableFuture<Instant> task = CompletableFuture.supplyAsync(() -> {
+                            processCommitRequestsForTable(tableId, stateStore, requests);
+                            return Instant.now();
+                        });
+
+                        tableFutures.put(tableId, task);
                     });
-
-                    tableFutures.put(tableId, task);
-                });
+                }
             }
         } catch (RuntimeException e) {
             LOGGER.error("Caught exception, starting graceful shutdown:", e);
