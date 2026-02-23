@@ -29,6 +29,7 @@ import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -39,6 +40,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.cdk.custom.containers.JibEvents;
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -63,6 +65,9 @@ public class CopyContainerImageLambdaIT {
 
     @Container
     public GenericContainer<?> destination = createDockerRegistryContainer();
+
+    @TempDir
+    private Path cacheDir;
 
     @BeforeEach
     void setUp() {
@@ -89,6 +94,7 @@ public class CopyContainerImageLambdaIT {
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+        assertThat(cacheDir).isNotEmptyDirectory();
     }
 
     @Test
@@ -118,6 +124,7 @@ public class CopyContainerImageLambdaIT {
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+        assertThat(cacheDir).isNotEmptyDirectory();
     }
 
     @Test
@@ -133,6 +140,7 @@ public class CopyContainerImageLambdaIT {
         // Then
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", true, true)));
+        assertThat(cacheDir).isEmptyDirectory();
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
@@ -169,6 +177,7 @@ public class CopyContainerImageLambdaIT {
     private CopyContainerImageLambda lambda() {
         return CopyContainerImageLambda.builder()
                 .allowInsecureRegistries(true)
+                .cacheDir(cacheDir)
                 .build();
     }
 
