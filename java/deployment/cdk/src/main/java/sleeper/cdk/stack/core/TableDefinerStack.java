@@ -18,6 +18,8 @@ package sleeper.cdk.stack.core;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
@@ -76,4 +78,27 @@ public class TableDefinerStack extends NestedStack {
 
     }
 
+    /**
+     * Declares an SleeperDefinerStack as a root level stack.
+     *
+     * @param  scope        the scope to add the stack to, usually an App or Stage
+     * @param  id           the stack ID
+     * @param  stackProps   configuration of the stack
+     * @param  sleeperProps configuration to deploy the stack
+     * @return              the stack
+     */
+    public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps) {
+        Stack stack = new Stack(scope, id, stackProps);
+        create(id);
+        return stack;
+    }
+
+    public static SleeperTable create(String instanceId) {
+        return SleeperTable.builder()
+                .tableName("")
+                .instanceId(instanceId)
+                .constructId("")
+                .schema(null)
+                .build();
+    }
 }

@@ -18,10 +18,12 @@ package sleeper.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.cdk.stack.core.TableDefinerStack;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -35,10 +37,6 @@ public class ExampleCDKApp {
     }
 
     public static void main(String[] args) {
-        createCDKApp();
-    }
-
-    public static App createCDKApp() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -46,19 +44,22 @@ public class ExampleCDKApp {
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
             SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
-            InstanceProperties instanceProperties = props.getInstanceProperties();
-            String id = instanceProperties.get(ID);
 
+            InstanceProperties instanceProperties = props.getInstanceProperties();
             Environment environment = Environment.builder()
                     .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                     .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
+            TableDefinerStack.createAsRootStack(app,
+                    instanceProperties.get(ID),
+                    StackProps.builder()
+                            .stackName("example-cdk-stack")
+                            .env(environment)
+                            .build());
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
-
             app.synth();
         }
-        return app;
     }
 
 }
