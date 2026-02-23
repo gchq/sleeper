@@ -233,7 +233,7 @@
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>28.0.0</approvaltests.version>
-        <json-path.version>2.10.0</json-path.version>
+        <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
@@ -251,7 +251,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
-        <surefire.plugin.version>3.5.4</surefire.plugin.version>
+        <surefire.plugin.version>3.5.5</surefire.plugin.version>
         <failsafe.plugin.version>3.5.5</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
