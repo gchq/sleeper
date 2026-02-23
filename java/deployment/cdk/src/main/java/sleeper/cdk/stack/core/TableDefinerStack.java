@@ -96,7 +96,6 @@ public class TableDefinerStack extends NestedStack {
         return SleeperTable.builder()
                 .tableName("")
                 .instanceId(instanceId)
-                .constructId("")
                 .schema(null)
                 .build();
     }
