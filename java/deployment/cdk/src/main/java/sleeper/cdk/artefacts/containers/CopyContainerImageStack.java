@@ -56,6 +56,7 @@ public class CopyContainerImageStack extends NestedStack {
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of(
+                        "ecr:GetAuthorizationToken",
                         "ecr:BatchCheckLayerAvailability",
                         "ecr:CompleteLayerUpload",
                         "ecr:InitiateLayerUpload",
