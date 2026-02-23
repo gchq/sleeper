@@ -44,6 +44,7 @@ import java.nio.file.Path;
 public class SleeperInstanceFromPublicArtefactsApp extends Stack {
 
     public SleeperInstanceFromPublicArtefactsApp(Construct scope, String id, StackProps stackProps, Props props) {
+        super(scope, id, stackProps);
         CopyContainerImageStack copyContainers = new CopyContainerImageStack(this, "CopyContainer", props.deploymentId(), props.jars());
         SleeperContainerImages images = new SleeperContainerImagesFromStack(props.instanceProperties(), copyContainers, props.sourceImagePrefix());
         SleeperInstance.createAsNestedStack(this, "Instance", SleeperInstanceProps.builder()
