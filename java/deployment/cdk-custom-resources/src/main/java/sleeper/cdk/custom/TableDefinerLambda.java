@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
+import software.amazon.lambda.powertools.cloudformation.Response;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -39,6 +41,7 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -54,11 +57,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 /**
  * Lambda Function which defines Sleeper tables.
  */
-public class TableDefinerLambda {
+public class TableDefinerLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final String bucketName;
+    private InstanceProperties instanceProperties;
+    private TablePropertiesStore tablePropertiesStore;
+    private Map<String, Object> resourceProperties;
+    private TableProperties tableProperties;
 
     public TableDefinerLambda() {
         this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -67,37 +73,30 @@ public class TableDefinerLambda {
     public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient, String bucketName) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
-        this.bucketName = bucketName;
+
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     }
 
-    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        Map<String, Object> resourceProperties = event.getResourceProperties();
-        Map<String, Object> oldResourceProperties = event.getOldResourceProperties();
-
-        Properties properties = new Properties();
-        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-
-        switch (event.getRequestType()) {
-            case "Create":
-                addTable(tableProperties, tablePropertiesStore, resourceProperties);
-                break;
-            case "Update":
-                LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                updateTable(tableProperties, tablePropertiesStore, oldResourceProperties);
-                break;
-            case "Delete":
-                deleteTable(tableProperties, tablePropertiesStore);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
-        }
+    @Override
+    protected Response create(CloudFormationCustomResourceEvent event, Context context) {
+        return addTable(event);
     }
 
-    private void addTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore,
-            Map<String, Object> resourceProperties) throws IOException {
+    @Override
+    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
+        return updateTable(event);
+    }
+
+    @Override
+    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
+        return deleteTable(event);
+    }
+
+    private Response addTable(CloudFormationCustomResourceEvent event) {
+
+        setTableProperties(event);
+
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Validating table properties for table {}", tableName);
@@ -109,6 +108,9 @@ public class TableDefinerLambda {
         } else {
             createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
         }
+
+        tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
+        return Response.success(event.getPhysicalResourceId());
     }
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
@@ -139,7 +141,8 @@ public class TableDefinerLambda {
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
     }
 
-    private void deleteTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
+    private Response deleteTable(CloudFormationCustomResourceEvent event) {
+        setTableProperties(event);
         String tableName = tableProperties.get(TABLE_NAME);
         if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
             LOGGER.info("Taking table {} offline.", tableName);
@@ -157,15 +160,30 @@ public class TableDefinerLambda {
             new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
             tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
         }
+        return Response.success(event.getPhysicalResourceId());
     }
 
-    private void updateTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore, Map<String, Object> oldResourceProperties) throws IOException {
+    private Response updateTable(CloudFormationCustomResourceEvent event) {
+        LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
+        setTableProperties(event);
         tableProperties.validate();
 
-        // need to get physicalresourceid for the old table from the cdk
-        // set the physicalresourceid into the table properties so they are considered the same table.
+        tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
 
         tablePropertiesStore.update(tableProperties);
+        return Response.success(event.getPhysicalResourceId());
+    }
+
+    private void setTableProperties(CloudFormationCustomResourceEvent event) {
+        resourceProperties = event.getResourceProperties();
+
+        Properties properties = new Properties();
+        try {
+            properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        tableProperties = new TableProperties(instanceProperties, properties);
     }
 
 }
