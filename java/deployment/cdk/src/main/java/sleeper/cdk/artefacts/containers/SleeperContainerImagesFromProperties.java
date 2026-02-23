@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefacts;
+package sleeper.cdk.artefacts.containers;
 
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.ContainerImage;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -36,30 +31,13 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
-/**
- * Creates references to artefacts based on the instance properties. This must use the same InstanceProperties object
- * that is passed to SleeperInstance.
- */
-public class SleeperArtefactsFromProperties implements SleeperArtefacts {
+public class SleeperContainerImagesFromProperties implements SleeperContainerImages {
 
     private final InstanceProperties instanceProperties;
-    private final SleeperJarVersionIdProvider jars;
 
-    public SleeperArtefactsFromProperties(InstanceProperties instanceProperties, SleeperJarVersionIdProvider jars) {
+    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
-        this.jars = jars;
-    }
-
-    public static SleeperArtefactsFromProperties from(S3Client s3Client, InstanceProperties instanceProperties) {
-        return new SleeperArtefactsFromProperties(instanceProperties,
-                SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
-    }
-
-    @Override
-    public SleeperLambdaCode lambdaCodeAtScope(Construct scope) {
-        return new SleeperLambdaCode(scope, instanceProperties, lambdaJars(scope), lambdaImages(scope));
     }
 
     @Override
@@ -71,12 +49,8 @@ public class SleeperArtefactsFromProperties implements SleeperArtefacts {
                 instanceProperties.get(VERSION));
     }
 
-    private SleeperLambdaJars lambdaJars(Construct scope) {
-        IBucket bucket = Bucket.fromBucketName(scope, "LambdaJarsBucket", instanceProperties.get(JARS_BUCKET));
-        return jar -> Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
-    }
-
-    private SleeperLambdaImages lambdaImages(Construct scope) {
+    @Override
+    public SleeperLambdaImages lambdaImagesAtScope(Construct scope) {
         Map<String, IRepository> imageNameToRepository = new HashMap<>();
         return handler -> DockerImageCode.fromEcr(
                 imageNameToRepository.computeIfAbsent(handler.getJar().getImageName(),

@@ -21,8 +21,8 @@ import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperLambdaImages;
-import sleeper.cdk.artefacts.SleeperLambdaJars;
+import sleeper.cdk.artefacts.containers.SleeperLambdaImages;
+import sleeper.cdk.artefacts.jars.SleeperLambdaJars;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
