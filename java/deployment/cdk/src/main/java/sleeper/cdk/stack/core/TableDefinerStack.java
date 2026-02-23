@@ -81,11 +81,10 @@ public class TableDefinerStack extends NestedStack {
     /**
      * Declares an SleeperDefinerStack as a root level stack.
      *
-     * @param  scope        the scope to add the stack to, usually an App or Stage
-     * @param  id           the stack ID
-     * @param  stackProps   configuration of the stack
-     * @param  sleeperProps configuration to deploy the stack
-     * @return              the stack
+     * @param  scope      the scope to add the stack to, usually an App or Stage
+     * @param  id         the stack ID
+     * @param  stackProps configuration of the stack
+     * @return            the stack
      */
     public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps) {
         Stack stack = new Stack(scope, id, stackProps);
