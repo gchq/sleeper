@@ -23,14 +23,13 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.Properties;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperTable {
 
     private String tableName;
-    private String instanceId;
+    //private String instanceId;
     //private String constructId;
     private Schema schema;
 
@@ -44,7 +43,7 @@ public class SleeperTable {
     public String saveAsString() {
         Properties properties = new Properties();
         properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
-        properties.setProperty(ID.getPropertyName(), instanceId);
+        //properties.setProperty(ID.getPropertyName(), instanceId);
         properties.setProperty(SCHEMA.getPropertyName(), new SchemaSerDe().toJson(schema));
 
         StringWriter stringWriter = new StringWriter();
