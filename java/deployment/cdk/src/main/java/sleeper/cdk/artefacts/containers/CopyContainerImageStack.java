@@ -50,11 +50,13 @@ public class CopyContainerImageStack extends NestedStack {
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build())
+                .vpcSubnets(null)
                 .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .resources(List.of("*"))
                 .actions(List.of(
+                        "ecr:GetAuthorizationToken",
                         "ecr:BatchCheckLayerAvailability",
                         "ecr:CompleteLayerUpload",
                         "ecr:InitiateLayerUpload",

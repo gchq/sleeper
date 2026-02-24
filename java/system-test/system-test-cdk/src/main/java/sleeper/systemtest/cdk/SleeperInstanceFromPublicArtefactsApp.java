@@ -38,9 +38,13 @@ import sleeper.core.properties.local.LoadLocalProperties;
 
 import java.nio.file.Path;
 
+/**
+ * An example app for testing deployment of Sleeper with artefacts from an external repository.
+ */
 public class SleeperInstanceFromPublicArtefactsApp extends Stack {
 
     public SleeperInstanceFromPublicArtefactsApp(Construct scope, String id, StackProps stackProps, Props props) {
+        super(scope, id, stackProps);
         CopyContainerImageStack copyContainers = new CopyContainerImageStack(this, "CopyContainer", props.deploymentId(), props.jars());
         SleeperContainerImages images = new SleeperContainerImagesFromStack(props.instanceProperties(), copyContainers, props.sourceImagePrefix());
         SleeperInstance.createAsNestedStack(this, "Instance", SleeperInstanceProps.builder()
@@ -66,7 +70,7 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
         }
     }
 
-    public record Props(String deploymentId, String vpcId, String subnetIds, String sourceImagePrefix, InstanceProperties instanceProperties, SleeperJars jars) {
+    public record Props(String deploymentId, String sourceImagePrefix, InstanceProperties instanceProperties, SleeperJars jars) {
 
         public static Props from(S3Client s3Client, CdkContext context) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(
@@ -74,8 +78,6 @@ public class SleeperInstanceFromPublicArtefactsApp extends Stack {
             SleeperJars jars = new SleeperJarsFromProperties(instanceProperties, SleeperJarVersionIdProvider.from(s3Client, instanceProperties));
             return new Props(
                     context.tryGetContext("id"),
-                    context.tryGetContext("vpc"),
-                    context.tryGetContext("subnets"),
                     context.tryGetContext("sourceImagePrefix"),
                     instanceProperties, jars);
         }

@@ -37,21 +37,27 @@ import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambda.class);
 
+    private final Path cacheDir;
     private final boolean allowInsecureRegistries;
     private final CredentialRetriever sourceCredentialRetriever;
     private final CredentialRetriever targetCredentialRetriever;
 
     public CopyContainerImageLambda() {
-        this(builder().targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create())));
+        this(builder()
+                .targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create()))
+                .cacheDir(createTemporaryDirectory()));
     }
 
     protected CopyContainerImageLambda(Builder builder) {
+        cacheDir = builder.cacheDir;
         allowInsecureRegistries = builder.allowInsecureRegistries;
         sourceCredentialRetriever = builder.sourceCredentialRetriever;
         targetCredentialRetriever = builder.targetCredentialRetriever;
@@ -107,13 +113,30 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     }
 
     private Containerizer configure(Containerizer containerizer) {
-        return JibEvents.logEvents(LOGGER, containerizer.setAllowInsecureRegistries(allowInsecureRegistries));
+        containerizer.setBaseImageLayersCache(cacheDir);
+        containerizer.setApplicationLayersCache(cacheDir);
+        containerizer.setAllowInsecureRegistries(allowInsecureRegistries);
+        return JibEvents.logEvents(LOGGER, containerizer);
+    }
+
+    private static Path createTemporaryDirectory() {
+        try {
+            return Files.createTempDirectory(null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static class Builder {
+        private Path cacheDir;
         private boolean allowInsecureRegistries;
         private CredentialRetriever sourceCredentialRetriever;
         private CredentialRetriever targetCredentialRetriever;
+
+        public Builder cacheDir(Path cacheDir) {
+            this.cacheDir = cacheDir;
+            return this;
+        }
 
         public Builder allowInsecureRegistries(boolean allowInsecureRegistries) {
             this.allowInsecureRegistries = allowInsecureRegistries;
