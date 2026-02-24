@@ -18,15 +18,12 @@ package sleeper.cdk.custom;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.cdk.custom.testutil.NexusRepositoryContainer;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-
-import java.nio.file.Path;
 
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -37,8 +34,6 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
 
     @Container
     public final NexusRepositoryContainer source = new NexusRepositoryContainer();
-    @TempDir
-    private Path tempDir;
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeEach
@@ -49,6 +44,7 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
     @Test
     void shouldCopyJarFromMavenToBucket() {
         source.createRepository("test");
+        source.uploadJar("test", "some-content");
         source.listComponents("test");
     }
 }

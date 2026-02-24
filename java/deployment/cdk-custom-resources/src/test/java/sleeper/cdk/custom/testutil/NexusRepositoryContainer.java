@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.custom.testutil;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,21 +30,27 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryContainer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(NexusRepositoryContainer.class);
 
+    private final Gson gson = new Gson();
+    private final HttpClient client = HttpClient.newHttpClient();
     private String adminPassword;
+    private boolean acceptedEula;
 
     public NexusRepositoryContainer() {
         super(DockerImageName.parse("sonatype/nexus3"));
         setExposedPorts(List.of(8081));
         setLogConsumers(List.of(outputFrame -> LOGGER.info("{}", outputFrame.getUtf8StringWithoutLineEnding())));
-        setStartupCheckStrategy(new NexusRepositoryStartupCheckStrategy());
+        setStartupCheckStrategy(new NexusRepositoryStartupCheckStrategy().withTimeout(Duration.ofMinutes(1)));
     }
 
     public void checkHealth() {
@@ -76,6 +83,21 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
                         """, repositoryName))).build());
     }
 
+    public void uploadJar(String repositoryName, String content) {
+        acceptEula();
+        sendAndLog(requestWithAuth()
+                .uri(URI.create(getBaseUrl() + "/service/rest/v1/components?repository=" + repositoryName))
+                .header("Content-Type", "multipart/form-data; boundary=PART")
+                .header("Accept", "application/json")
+                .POST(BodyPublishers.ofString(getMultipartDataWithBoundary("PART", Map.of(
+                        "maven2.groupId", "org.group",
+                        "maven2.artifactId", "test-artifact",
+                        "maven2.version", "1.0",
+                        "maven2.asset1", new MultipartFile("test.jar", content),
+                        "maven2.asset1.extension", "jar"))))
+                .build());
+    }
+
     public void listComponents(String repositoryName) {
         sendAndLog(requestWithAuth()
                 .uri(URI.create(getBaseUrl() + "/service/rest/v1/components?repository=" + repositoryName))
@@ -104,17 +126,84 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
         return adminPassword;
     }
 
-    private void sendAndLog(HttpRequest request) {
+    private void acceptEula() {
+        if (acceptedEula) {
+            return;
+        }
+        EulaStatus eulaStatus = getEulaStatus();
+        if (eulaStatus.accepted()) {
+            acceptedEula = true;
+            return;
+        }
+        sendAndLog(requestWithAuth()
+                .uri(URI.create(getBaseUrl() + "/service/rest/v1/system/eula"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(BodyPublishers.ofString(String.format("{\"accepted\":true,\"disclaimer\":\"%s\"}", eulaStatus.disclaimer())))
+                .build());
+        acceptedEula = true;
+    }
+
+    private EulaStatus getEulaStatus() {
+        String json = sendAndLog(requestWithAuth()
+                .uri(URI.create(getBaseUrl() + "/service/rest/v1/system/eula"))
+                .header("Accept", "application/json")
+                .GET()
+                .build());
+        return gson.fromJson(json, EulaStatus.class);
+    }
+
+    public record EulaStatus(boolean accepted, String disclaimer) {
+    }
+
+    private String sendAndLog(HttpRequest request) {
+        return sendAndLog(request, BodyHandlers.ofString());
+    }
+
+    private <T> T sendAndLog(HttpRequest request, BodyHandler<T> bodyHandler) {
         try {
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+            HttpResponse<T> response = client.send(request, bodyHandler);
             LOGGER.info("Response: {}", response);
             LOGGER.info("Body: {}", response.body());
+            if (response.statusCode() < 200 || response.statusCode() > 299) {
+                throw new RuntimeException("Request failed with status " + response.statusCode());
+            }
+            return response.body();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static String getMultipartDataWithBoundary(String boundary, Map<String, Object> formData) {
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<String, Object> entry : formData.entrySet()) {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+            builder.append("--").append(boundary).append("\r\n");
+            if (value instanceof String string) {
+                builder.append("Content-Disposition: form-data; name=\"").append(name).append("\"\r\n");
+                builder.append("\r\n");
+                builder.append(string);
+            } else if (value instanceof MultipartFile file) {
+                builder.append("Content-Disposition: form-data; name=\"").append(name).append("\"; ")
+                        .append("filename=\"").append(file.filename()).append("\"\r\n");
+                builder.append("Content-Type: text/plain\r\n");
+                builder.append("\r\n");
+                builder.append(file.content());
+            } else {
+                throw new IllegalArgumentException("Unsupported value type: " + value);
+            }
+            builder.append("\r\n");
+        }
+        builder.append("--").append(boundary);
+        LOGGER.info("Generated multipart data: {}", builder);
+        return builder.toString();
+    }
+
+    public record MultipartFile(String filename, String content) {
     }
 
 }
