@@ -96,7 +96,6 @@ public class ReadStateStoreCommitterLogs {
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
             return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
         }
-        LOGGER.info("Match found but no group: {}", message);
         return null;
     }
 
