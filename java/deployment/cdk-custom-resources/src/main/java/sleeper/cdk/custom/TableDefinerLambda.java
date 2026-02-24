@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
 import software.amazon.lambda.powertools.cloudformation.Response;
-import software.amazon.lambda.powertools.cloudformation.Response.Status;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -121,11 +120,8 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
             createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
         }
 
-        //   tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
-        return Response.builder()
-                .status(Status.SUCCESS)
-                // .value(Map.of("resourceId", event.getPhysicalResourceId()))
-                .build();
+        event.setPhysicalResourceId(tableProperties.get(TABLE_ID));
+        return Response.success(event.getPhysicalResourceId());
     }
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
