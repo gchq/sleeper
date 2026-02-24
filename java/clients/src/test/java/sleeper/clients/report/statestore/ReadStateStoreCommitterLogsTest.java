@@ -16,6 +16,8 @@
 package sleeper.clients.report.statestore;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
@@ -47,6 +49,40 @@ public class ReadStateStoreCommitterLogsTest {
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
                 new StateStoreCommitterRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+    }
+
+    @ParameterizedTest(name = "shouldReadBatchedStartedWith {0} messages")
+    @ValueSource(ints = {1, 2, 30, 400, 5000})
+    void shouldReadBatchStarted(int messages) {
+        // Given
+        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received "
+                + messages + " messages";
+        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isEqualTo(
+                new StateStoreCommitterRunBatchStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+    }
+
+    @Test
+    void shouldNotReadBatchStartedWhenZeroMessages() {
+        // Given
+        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received 0 messages";
+        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isNull();
+    }
+
+    @Test
+    void shouldReadBatchFinished() {
+        // Given
+        String message = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Finished state store commits batch at 2024-08-13T12:13:00Z";
+        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
+                new StateStoreCommitterRunBatchFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
     @Test
