@@ -91,7 +91,7 @@ public class StateStoreFakeCommitsDsl {
 
     public StateStoreFakeCommitsDsl waitForCommitLogs() throws InterruptedException {
         waiter.waitForCommitLogs(
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(20), Duration.ofMinutes(5)),
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(20), Duration.ofMinutes(5)).toBuilder().maxRetries(30).build(),
                 waitForNumCommitsByTableId, getRunsAfterTime);
         return this;
     }

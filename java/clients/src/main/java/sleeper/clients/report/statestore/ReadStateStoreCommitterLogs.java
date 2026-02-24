@@ -81,8 +81,10 @@ public class ReadStateStoreCommitterLogs {
             return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
         }
         String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
-        if (batchStartTime != null && Integer.parseInt(matcher.group(CapturingGroups.BATCH_START_MESSAGES)) > 0) {
-            return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
+        if (batchStartTime != null) {
+            if (Integer.parseInt(matcher.group(CapturingGroups.BATCH_START_MESSAGES)) > 0) {
+                return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
+            }
         }
         String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
         if (batchFinishTime != null) {
