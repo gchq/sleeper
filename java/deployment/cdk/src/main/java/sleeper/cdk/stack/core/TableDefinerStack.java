@@ -88,14 +88,13 @@ public class TableDefinerStack extends NestedStack {
      */
     public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps) {
         Stack stack = new Stack(scope, id, stackProps);
-        create(id);
+        create();
         return stack;
     }
 
-    public static SleeperTable create(String instanceId) {
+    public static SleeperTable create() {
         return SleeperTable.builder()
                 .tableName("")
-                //.instanceId(instanceId)
                 .schema(null)
                 .build();
     }

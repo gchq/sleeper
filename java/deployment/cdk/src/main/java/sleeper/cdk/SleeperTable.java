@@ -29,21 +29,16 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public class SleeperTable {
 
     private String tableName;
-    //private String instanceId;
-    //private String constructId;
     private Schema schema;
 
     public SleeperTable(Builder builder) {
         this.tableName = builder.tableName;
-        //this.instanceId = builder.instanceId;
-        //this.constructId = builder.constructId;
         this.schema = builder.schema;
     }
 
     public String saveAsString() {
         Properties properties = new Properties();
         properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
-        //properties.setProperty(ID.getPropertyName(), instanceId);
         properties.setProperty(SCHEMA.getPropertyName(), new SchemaSerDe().toJson(schema));
 
         StringWriter stringWriter = new StringWriter();
@@ -61,30 +56,15 @@ public class SleeperTable {
 
     public static class Builder {
         String tableName;
-        //String instanceId;
-        //String constructId;
         Schema schema;
 
         private Builder() {
-
         }
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
-
-        /*public Builder instanceId(String instanceId) {
-            this.instanceId = instanceId;
-            return this;
-        }*/
-
-        /*
-         * public Builder constructId(String constructId) {
-         * this.instanceId = constructId;
-         * return this;
-         * }
-         */
 
         public Builder schema(Schema schema) {
             this.schema = schema;
@@ -94,6 +74,5 @@ public class SleeperTable {
         public SleeperTable build() {
             return new SleeperTable(this);
         }
-
     }
 }

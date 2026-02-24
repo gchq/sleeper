@@ -51,7 +51,6 @@ public class SleeperTableIT {
         // When
         SleeperTable sleeperTable = SleeperTable.builder()
                 .tableName("table-name")
-                //.instanceId("table-id // // Will need to validate?e?
                 .schema(createSchemaWithKey("key"))
                 .build();
         definerStack.createCustomResource(sleeperTable);
