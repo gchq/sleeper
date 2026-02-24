@@ -63,7 +63,7 @@ public class SleeperTable {
     public static class Builder {
         String tableName;
         String instanceId;
-        String constructId;
+        //String constructId;
         Schema schema;
 
         private Builder() {
