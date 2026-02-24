@@ -35,7 +35,7 @@ public class SleeperTable {
 
     public SleeperTable(Builder builder) {
         this.tableName = builder.tableName;
-        this.instanceId = builder.instanceId;
+        //this.instanceId = builder.instanceId;
         //this.constructId = builder.constructId;
         this.schema = builder.schema;
     }
@@ -61,7 +61,7 @@ public class SleeperTable {
 
     public static class Builder {
         String tableName;
-        String instanceId;
+        //String instanceId;
         //String constructId;
         Schema schema;
 
@@ -74,10 +74,10 @@ public class SleeperTable {
             return this;
         }
 
-        public Builder instanceId(String instanceId) {
+        /*public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
             return this;
-        }
+        }*/
 
         /*
          * public Builder constructId(String constructId) {
