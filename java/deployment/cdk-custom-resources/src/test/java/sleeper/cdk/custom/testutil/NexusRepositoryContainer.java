@@ -83,7 +83,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
                         """, repositoryName))).build());
     }
 
-    public void uploadJar(String repositoryName, String content) {
+    public String uploadJarGetUrl(String repositoryName, String artifactId, String content) {
         acceptEula();
         sendAndLog(requestWithAuth()
                 .uri(URI.create(getBaseUrl() + "/service/rest/v1/components?repository=" + repositoryName))
@@ -91,11 +91,12 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
                 .header("Accept", "application/json")
                 .POST(BodyPublishers.ofString(getMultipartDataWithBoundary("PART", Map.of(
                         "maven2.groupId", "org.group",
-                        "maven2.artifactId", "test-artifact",
+                        "maven2.artifactId", artifactId,
                         "maven2.version", "1.0",
                         "maven2.asset1", new MultipartFile("test.jar", content),
                         "maven2.asset1.extension", "jar"))))
                 .build());
+        return getBaseUrl() + "/repository/" + repositoryName + "/org/group/" + artifactId + "/1.0/" + artifactId + "-1.0.jar";
     }
 
     public void listComponents(String repositoryName) {
@@ -153,7 +154,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
         return gson.fromJson(json, EulaStatus.class);
     }
 
-    public record EulaStatus(boolean accepted, String disclaimer) {
+    private record EulaStatus(boolean accepted, String disclaimer) {
     }
 
     private String sendAndLog(HttpRequest request) {
@@ -203,7 +204,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
         return builder.toString();
     }
 
-    public record MultipartFile(String filename, String content) {
+    private record MultipartFile(String filename, String content) {
     }
 
 }
