@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
 import software.amazon.lambda.powertools.cloudformation.Response;
+import software.amazon.lambda.powertools.cloudformation.Response.Status;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -61,10 +62,11 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private InstanceProperties instanceProperties;
+    private final String bucketName;
     private TablePropertiesStore tablePropertiesStore;
-    private Map<String, Object> resourceProperties;
     private TableProperties tableProperties;
+    private Map<String, Object> resourceProperties;
+    private InstanceProperties instanceProperties;
 
     public TableDefinerLambda() {
         this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -73,9 +75,19 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
     public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient, String bucketName) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
+        this.bucketName = bucketName;
+    }
 
+    public final Response handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        this.resourceProperties = event.getResourceProperties();
+
+        Properties properties = new Properties();
+        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
+        this.tableProperties = new TableProperties(instanceProperties, properties);
+
+        return super.handleRequest(event, context);
     }
 
     @Override
@@ -109,8 +121,11 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
             createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
         }
 
-        tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
-        return Response.success(event.getPhysicalResourceId());
+        //   tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
+        return Response.builder()
+                .status(Status.SUCCESS)
+                // .value(Map.of("resourceId", event.getPhysicalResourceId()))
+                .build();
     }
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
@@ -168,7 +183,7 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         setTableProperties(event);
         tableProperties.validate();
 
-        tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
+        //tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
 
         tablePropertiesStore.update(tableProperties);
         return Response.success(event.getPhysicalResourceId());
