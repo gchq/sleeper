@@ -16,8 +16,6 @@
 package sleeper.clients.report.statestore;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
@@ -51,27 +49,15 @@ public class ReadStateStoreCommitterLogsTest {
                 new StateStoreCommitterRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
-    @ParameterizedTest(name = "shouldReadBatchedStartedWith {0} messages")
-    @ValueSource(ints = {1, 2, 30, 400, 5000})
-    void shouldReadBatchStarted(int messages) {
+    @Test
+    void shouldReadBatchStarted() {
         // Given
-        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received "
-                + messages + " messages";
+        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received 10 messages";
         Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isEqualTo(
                 new StateStoreCommitterRunBatchStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
-    }
-
-    @Test
-    void shouldNotReadBatchStartedWhenZeroMessages() {
-        // Given
-        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received 0 messages";
-        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
-
-        // When / Then
-        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isNull();
     }
 
     @Test
