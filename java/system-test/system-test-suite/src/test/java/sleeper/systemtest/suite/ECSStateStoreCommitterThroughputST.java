@@ -40,28 +40,28 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTOR
 @Slow2
 @Execution(SAME_THREAD)
 public class ECSStateStoreCommitterThroughputST {
-
-    @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
-        // Given
-        sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
-        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-        sleeper.partitioning().setPartitions(partitions);
-
-        // When
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-        sleeper.stateStore().fakeCommits()
-                .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
-                        .map(StateStoreCommitMessage::addFile))
-                .waitForCommitLogs();
-
-        // Then
-        assertThat(sleeper.tableFiles().references()).hasSize(1000);
-        assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
-    }
     /*
+     * @Test
+     * void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
+     * // Given
+     * sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
+     * PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+     * sleeper.partitioning().setPartitions(partitions);
+     *
+     * // When
+     * FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+     * sleeper.stateStore().fakeCommits()
+     * .sendBatched(IntStream.rangeClosed(1, 1000)
+     * .mapToObj(i -> fileFactory.rootFile(filename(i), i))
+     * .map(StateStoreCommitMessage::addFile))
+     * .waitForCommitLogs();
+     *
+     * // Then
+     * assertThat(sleeper.tableFiles().references()).hasSize(1000);
+     * assertThat(sleeper.stateStore().commitsPerSecondForTable())
+     * .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
+     * }
+     *
      * @Test
      * void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception
      * {
@@ -69,7 +69,7 @@ public class ECSStateStoreCommitterThroughputST {
      * sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
      * PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
      * sleeper.partitioning().setPartitions(partitions);
-     * 
+     *
      * // When
      * FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
      * sleeper.stateStore().fakeCommits()
@@ -77,13 +77,13 @@ public class ECSStateStoreCommitterThroughputST {
      * .mapToObj(i -> fileFactory.rootFile(filename(i), i))
      * .map(StateStoreCommitMessage::addFileWithJob))
      * .waitForCommitLogs();
-     * 
+     *
      * // Then
      * assertThat(sleeper.tableFiles().references()).hasSize(1000);
      * assertThat(sleeper.stateStore().commitsPerSecondForTable())
      * .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
      * }
-     * 
+     *
      * @Test
      * void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
      * // Given
@@ -91,7 +91,7 @@ public class ECSStateStoreCommitterThroughputST {
      * PartitionTree partitions = new
      * PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
      * sleeper.partitioning().setPartitions(partitions);
-     * 
+     *
      * // When
      * FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(),
      * sleeper.tableProperties(), partitions);
@@ -102,40 +102,40 @@ public class ECSStateStoreCommitterThroughputST {
      * .toList())
      * .map(StateStoreCommitMessage::addFiles))
      * .waitForCommitLogs();
-     * 
+     *
      * // Then
      * assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
      * assertThat(sleeper.stateStore().commitsPerSecondForTable())
      * .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
      * }
-     * 
-     * @Test
-     * void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws
-     * Exception {
-     * // Given
-     * sleeper.connectToInstanceNoTables(ECS_STATESTORE);
-     * sleeper.tables().createMany(10, DEFAULT_SCHEMA);
-     * PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
-     * sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
-     * 
-     * // When
-     * FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-     * sleeper.stateStore().fakeCommits()
-     * .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
-     * .mapToObj(i -> fileFactory.rootFile(filename(i), i))
-     * .map(StateStoreCommitMessage::addFile))
-     * .waitForCommitLogs();
-     * 
-     * // Then
-     * assertThat(sleeper.tableFiles().referencesByTable())
-     * .hasSize(10)
-     * .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
-     * assertThat(sleeper.stateStore().commitsPerSecondByTable())
-     * .hasSize(10)
-     * .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
-     * .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
-     * }
-     * 
+     */
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstanceNoTables(ECS_STATESTORE);
+        sleeper.tables().createMany(10, DEFAULT_SCHEMA);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.stateStore().fakeCommits()
+                .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
+                        .mapToObj(i -> fileFactory.rootFile(filename(i), i))
+                        .map(StateStoreCommitMessage::addFile))
+                .waitForCommitLogs();
+
+        // Then
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(10)
+                .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+        assertThat(sleeper.stateStore().commitsPerSecondByTable())
+                .hasSize(10)
+                .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
+                        .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
+    }
+
+    /*
      * @Test
      * void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperDsl sleeper) throws Exception {
      * // Given
@@ -280,7 +280,6 @@ public class ECSStateStoreCommitterThroughputST {
      * .satisfies(expectedCommitsPerSecondForTransactionLogAcrossTables()));
      * }
      */
-
     private String filename(int i) {
         return "file-" + i + ".parquet";
     }
