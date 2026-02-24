@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -92,6 +91,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     private final TableProperties tableProperties = createTableProperties();
+    private String tableId;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -126,6 +126,12 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .build();
 
         tableDefinerLambda.handleEvent(event, new FakeLambdaContext());
+
+        if (event.getPhysicalResourceId() != null) {
+            tableId = event.getPhysicalResourceId();
+        } else {
+            tableId = tableProperties.get(TABLE_ID);
+        }
     }
 
     @Nested
@@ -252,12 +258,12 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        @Disabled
         public void shouldRenameTableSuccessfully(WireMockRuntimeInfo runtimeInfo) throws IOException {
             // Given
             tableProperties.set(TABLE_NAME, "old-table-name");
             callLambda(runtimeInfo, CREATE, tableProperties);
 
+            tableProperties.set(TABLE_ID, tableId);
             tableProperties.set(TABLE_NAME, "new-table-name");
 
             // When
@@ -267,7 +273,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
             assertThat(propertiesStore.streamAllTables()).singleElement()
-                    .extracting(table -> withoutTableId(table))
                     .isEqualTo(tableProperties);
         }
 
