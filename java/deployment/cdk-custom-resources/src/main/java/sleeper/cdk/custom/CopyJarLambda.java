@@ -160,8 +160,7 @@ public class CopyJarLambda extends AbstractCustomResourceHandler {
 
         @Override
         public void transferComplete(TransferComplete context) {
-            LOGGER.info("Progress: {}", context.progressSnapshot());
-            LOGGER.info("Transfer complete: {}", context.completedTransfer());
+            LOGGER.info("Transfer complete: {}", context.progressSnapshot());
         }
 
         @Override
