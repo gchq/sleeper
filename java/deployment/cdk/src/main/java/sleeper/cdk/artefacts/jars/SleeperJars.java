@@ -26,7 +26,7 @@ public interface SleeperJars {
     /**
      * Creates a helper to refer to jars during deployment to AWS Lambda.
      *
-     * @param  scope the scope you want to deploy in
+     * @param  scope the scope the lambda(s) will be deployed in
      * @return       the helper
      */
     SleeperLambdaJars lambdaJarsAtScope(Construct scope);

@@ -16,6 +16,9 @@
 package sleeper.cdk.lambda;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.services.ec2.ISecurityGroup;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.lambda.DockerImageFunction;
 import software.amazon.awscdk.services.lambda.DockerImageFunction.Builder;
 import software.amazon.awscdk.services.lambda.Function;
@@ -78,6 +81,24 @@ public class DockerFunctionBuilder implements LambdaBuilder {
     @Override
     public LambdaBuilder reservedConcurrentExecutions(Number reservedConcurrentExecutions) {
         builder.reservedConcurrentExecutions(reservedConcurrentExecutions);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder vpc(IVpc vpc) {
+        builder.vpc(vpc);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder vpcSubnets(SubnetSelection vpcSubnets) {
+        builder.vpcSubnets(vpcSubnets);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder securityGroups(List<? extends ISecurityGroup> securityGroups) {
+        builder.securityGroups(securityGroups);
         return this;
     }
 

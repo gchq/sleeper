@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
 
 import sleeper.cdk.util.CdkContext;
-import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -47,18 +46,18 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
      * is set but the subnets are not, defaults to all private subnets. If the context variables are not set, reads the
      * IDs from the instance properties.
      *
-     * @param  scope         the scope to add references to the VPC and subnets to
-     * @param  context       the context to read the IDs from if they are set
-     * @param  configuration the configuration to read the IDs from if the context variables are not set
-     * @return               the networking settings
+     * @param  scope              the scope to add references to the VPC and subnets to
+     * @param  context            the context to read the IDs from if they are set
+     * @param  instanceProperties the configuration to read the IDs from if the context variables are not set
+     * @return                    the networking settings
      */
-    public static SleeperNetworking createByContext(Construct scope, CdkContext context, SleeperInstanceConfiguration configuration) {
+    public static SleeperNetworking createByContext(Construct scope, CdkContext context, InstanceProperties instanceProperties) {
         String vpcId = context.tryGetContext("vpc");
         if (vpcId != null) {
             List<String> subnetIds = context.getList("subnets");
             return createByIds(scope, vpcId, subnetIds);
         } else {
-            return createByProperties(scope, configuration.getInstanceProperties());
+            return createByProperties(scope, instanceProperties);
         }
     }
 

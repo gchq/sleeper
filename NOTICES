@@ -362,7 +362,7 @@ Eclipse Jetty (org.eclipse.jetty:*:11.*, org.eclipse.jetty.http2:*:11.*)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
-JSON Path (com.jayway.jsonpath:json-path:2.*)
+JSON Path (com.jayway.jsonpath:json-path:3.*)
 
 - Apache License, Version 2.0
 
