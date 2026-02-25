@@ -91,6 +91,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 bulkImportJobQueue, artefacts, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
+        bulkImportJobQueue.grantSendMessages(jobStarter);
         createCluster(this, instanceProperties, coreStacks, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addTags(this, instanceProperties);
     }
