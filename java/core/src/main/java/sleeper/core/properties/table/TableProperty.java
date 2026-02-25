@@ -244,7 +244,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This property is NOT used by DataFusion data engine.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.page.size")
+    TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.parquet.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
             .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
@@ -303,7 +303,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
+    TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.parquet.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
