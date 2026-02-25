@@ -179,8 +179,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         setTableProperties(event);
         tableProperties.validate();
 
-        //tableProperties.set(TABLE_ID, event.getPhysicalResourceId());
-
         tablePropertiesStore.update(tableProperties);
         return Response.success(event.getPhysicalResourceId());
     }
