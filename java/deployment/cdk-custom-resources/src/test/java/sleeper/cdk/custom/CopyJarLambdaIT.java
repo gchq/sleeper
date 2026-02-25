@@ -20,10 +20,10 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
 import sleeper.cdk.custom.testutil.NexusRepositoryContainer;
@@ -31,6 +31,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -50,39 +51,43 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class CopyJarLambdaIT extends LocalStackTestBase {
 
     @Container
-    public final NexusRepositoryContainer source = new NexusRepositoryContainer();
+    public static final NexusRepositoryContainer SOURCE = new NexusRepositoryContainer();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final String repositoryName = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(JARS_BUCKET));
+        s3Client.putBucketVersioning(builder -> builder
+                .bucket(instanceProperties.get(JARS_BUCKET))
+                .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         stubFor(put("/report-response").willReturn(aResponse().withStatus(200)));
     }
 
     @Test
-    @Disabled("TODO")
     void shouldCopyJarFromMavenToBucket(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        source.createRepository("test-repository");
-        String url = source.uploadJarGetUrl("test-repository", "test-artifact", "some-content");
-        source.listComponents("test-repository");
+        SOURCE.createRepository(repositoryName);
+        String url = SOURCE.uploadJarGetUrl(repositoryName, "test-artifact", "some-content");
+        SOURCE.listComponents(repositoryName);
 
         // When
         handleEvent(event(runtimeInfo)
                 .withRequestType("Create")
                 .withResourceProperties(Map.of(
                         "source", url,
-                        "version", "4.2",
-                        "artifactId", "cdk-custom-resources"))
+                        "bucket", instanceProperties.get(JARS_BUCKET),
+                        "key", "test.jar"))
                 .build());
 
         // Then
         assertThat(listObjectKeys(instanceProperties.get(JARS_BUCKET)))
-                .containsExactly("cdk-custom-resources-4.2.jar");
-        assertThat(getObjectAsString(instanceProperties.get(JARS_BUCKET), "cdk-custom-resources-4.2.jar"))
+                .containsExactly("test.jar");
+        assertThat(getObjectAsString(instanceProperties.get(JARS_BUCKET), "test.jar"))
                 .isEqualTo("some-content");
         verify(putRequestedFor(urlEqualTo("/report-response"))
-                .withRequestBody(matchingJsonPath("$.Data.versionId", matching("[a-z0-9]+"))
+                .withRequestBody(matchingJsonPath("$.Data.versionId", matching("[A-Za-z0-9_]+"))
+                        .and(matchingJsonPath("$.PhysicalResourceId", equalTo(instanceProperties.get(JARS_BUCKET) + "/test.jar")))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
     }
 
@@ -96,6 +101,6 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
     }
 
     private CopyJarLambda lambda() {
-        return new CopyJarLambda();
+        return CopyJarLambda.builder().s3TransferManager(s3TransferManager).httpRequestConfig(SOURCE::setAuth).build();
     }
 }

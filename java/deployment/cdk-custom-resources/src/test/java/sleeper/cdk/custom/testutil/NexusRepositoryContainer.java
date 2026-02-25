@@ -67,7 +67,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
                             "name": "%s",
                             "online": true,
                             "component": {
-                                "proprietaryComponents": true
+                                "proprietaryComponents": false
                             },
                             "storage": {
                                 "blobStoreName": "default",
@@ -110,10 +110,13 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
     }
 
     private HttpRequest.Builder requestWithAuth() {
+        return setAuth(HttpRequest.newBuilder());
+    }
+
+    public HttpRequest.Builder setAuth(HttpRequest.Builder builder) {
         String auth = "admin:" + getAdminPassword();
         String encoded = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-        return HttpRequest.newBuilder()
-                .header("Authorization", "Basic " + encoded);
+        return builder.header("Authorization", "Basic " + encoded);
     }
 
     private String getAdminPassword() {
