@@ -53,6 +53,10 @@ public class CopyJarLambda extends AbstractCustomResourceHandler {
     private final HttpClient httpClient;
     private final Consumer<HttpRequest.Builder> httpRequestConfig;
 
+    public CopyJarLambda() {
+        this(builder().s3TransferManager(S3TransferManager.create()));
+    }
+
     public CopyJarLambda(Builder builder) {
         s3TransferManager = builder.s3TransferManager;
         httpClient = builder.httpClient;
