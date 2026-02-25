@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.google.cloud.tools.jib.api.CacheDirectoryCreationException;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.CredentialRetriever;
+import com.google.cloud.tools.jib.api.ImageReference;
 import com.google.cloud.tools.jib.api.InvalidImageReferenceException;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.JibContainer;
@@ -88,10 +89,13 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         String target = (String) properties.get("target");
 
         try {
-            JibContainer container = Jib.from(registryImage(source, sourceCredentialRetriever))
-                    .containerize(configure(Containerizer.to(registryImage(target, targetCredentialRetriever))));
+            ImageReference sourceRef = ImageReference.parse(source);
+            ImageReference targetRef = ImageReference.parse(target);
+            JibContainer container = Jib.from(registryImage(sourceRef, sourceCredentialRetriever))
+                    .containerize(configure(Containerizer.to(registryImage(targetRef, targetCredentialRetriever))));
             return Response.builder()
                     .status(Status.SUCCESS)
+                    .physicalResourceId(target)
                     .value(Map.of("digest", container.getDigest().toString()))
                     .build();
         } catch (InterruptedException e) {
@@ -100,11 +104,16 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Failed to copy container image", e);
+            return Response.builder()
+                    .status(Status.FAILED)
+                    .physicalResourceId(target)
+                    .reason("Failed to copy container image: " + e.getMessage())
+                    .build();
         }
     }
 
-    private static RegistryImage registryImage(String imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
+    private static RegistryImage registryImage(ImageReference imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
         RegistryImage image = RegistryImage.named(imageName);
         if (credentialRetriever != null) {
             image.addCredentialRetriever(credentialRetriever);
