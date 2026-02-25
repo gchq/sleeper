@@ -29,6 +29,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * NOTE: The full code for this is still in progress so this shouldn't be used yet as it has not been tested.
+ * TODO: Get the CDK to automatically notice when the source image has changed or been republished,
+ * so that that would trigger a redeployment with the new artefacts.
+ */
 public class SleeperContainerImagesFromStack implements SleeperContainerImages {
 
     private final InstanceProperties instanceProperties;
