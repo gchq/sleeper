@@ -101,9 +101,7 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
+        } catch (IOException | RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
             LOGGER.error("Failed to copy container image", e);
             return Response.builder()
                     .status(Status.FAILED)
