@@ -34,7 +34,7 @@ import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEn
  * Definitions of instance properties that are defaults for table properties.
  */
 public interface TableDefaultProperty {
-    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.table.parquet.query.column.index.enabled")
+    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.table.query.parquet.column.index.enabled")
             .description("Used during Sleeper queries to determine whether the column/offset indexes (also known as page indexes) are read from Parquet files. " +
                     "For some queries, e.g. single/few row lookups this can improve performance by enabling more aggressive pruning. On range " +
                     "queries, especially on large tables this can harm performance, since readers will read the extra index data before " +
@@ -42,16 +42,16 @@ public interface TableDefaultProperty {
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.table.rowgroup.size")
+    UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.table.parquet.rowgroup.size")
             .description("Maximum number of bytes to write in a Parquet row group (default is 8MiB). " +
                     "This property is NOT used by DataFusion data engine.")
             .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_PAGE_SIZE = Index.propertyBuilder("sleeper.default.table.page.size")
+    UserDefinedInstanceProperty DEFAULT_PAGE_SIZE = Index.propertyBuilder("sleeper.default.table.parquet.page.size")
             .description("The size of the pages in the Parquet files (default is 128KiB).")
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.table.compression.codec")
+    UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.table.parquet.compression.codec")
             .description("The compression codec to use in the Parquet files.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .defaultValue("zstd")
