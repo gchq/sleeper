@@ -40,6 +40,7 @@ import java.nio.file.Path;
 
 /**
  * An example app for testing deployment of Sleeper with artefacts from an external repository.
+ * NOTE: The full code for this is still in progress so this class shouldn't be used yet as it has not been tested.
  */
 public class SleeperInstanceFromPublicArtefactsApp extends Stack {
 
