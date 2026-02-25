@@ -191,6 +191,38 @@ public class StateStoreCommitterRequestsPerSecondTest {
                 "table-2", averageRequestsPerSecondInRunsAndOverall(2.0, 2.0)));
     }
 
+    @Test
+    void shouldUseEarliestStartTimeInBatchRun() {
+        // Given
+        batchRunStartedAt(Instant.parse("2024-08-15T10:40:01Z")); //Same as finish time
+        batchRunStartedAt(Instant.parse("2024-08-15T10:40:00Z")); //1 second earlier
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+
+        // When
+        StateStoreCommitterRequestsPerSecond report = report();
+
+        // Then
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+    }
+
+    @Test
+    void shouldUseLatestFinishTimeInBatchRun() {
+        // Given
+        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        batchRunFinisheddAt(Instant.parse("2024-08-15T10:40:00Z")); //Same as start time
+        batchRunFinisheddAt(Instant.parse("2024-08-15T10:40:01Z")); //1 second later
+
+        // When
+        StateStoreCommitterRequestsPerSecond report = report();
+
+        // Then
+        assertThat(report).isEqualTo(
+                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+    }
+
     private StateStoreCommitterRequestsPerSecond report() {
         return StateStoreCommitterRequestsPerSecond.fromRuns(
                 StateStoreCommitterRuns.findRunsByLogStream(logs));
@@ -207,6 +239,14 @@ public class StateStoreCommitterRequestsPerSecondTest {
 
     private void runStartedOnStreamAtTime(String logStream, Instant time) {
         add(new StateStoreCommitterRunStarted(logStream, Instant.MIN, time));
+    }
+
+    private void batchRunStartedAt(Instant time) {
+        add(new StateStoreCommitterRunBatchStarted(DEFAULT_LOG_STREAM, time, time));
+    }
+
+    private void batchRunFinisheddAt(Instant time) {
+        add(new StateStoreCommitterRunBatchFinished(DEFAULT_LOG_STREAM, time, time));
     }
 
     private void committedAtTime(Instant time) {

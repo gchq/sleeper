@@ -15,6 +15,8 @@
  */
 package sleeper.clients.report.statestore;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -26,155 +28,232 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StateStoreCommitterRunsFromEntriesTest {
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
+    private String testStream = "test-stream";
 
-    @Test
-    void shouldReadFinishedRunWithOneCommit() {
-        // Given
-        StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
-        StateStoreCommitSummary committed = committedOnStream("test-stream");
-        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
+    @Nested
+    @DisplayName("Lambda state store tests")
+    class LambdaTests {
+        @Test
+        void shouldReadFinishedRunWithOneCommit() {
+            // Given
+            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
-        // Then
-        assertThat(runs)
-                .containsExactly(finishedRun(started, finished, committed));
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRun(started, finished, committed));
+        }
+
+        @Test
+        void shouldReadMultipleRunsOnSameLogStream() {
+            // Given
+            StateStoreCommitterRunStarted started1 = runStartedOnStream(testStream);
+            StateStoreCommitSummary committed1 = committedOnStream(testStream);
+            StateStoreCommitterRunFinished finished1 = runFinishedOnStream(testStream);
+            StateStoreCommitterRunStarted started2 = runStartedOnStream(testStream);
+            StateStoreCommitSummary committed2 = committedOnStream(testStream);
+            StateStoreCommitterRunFinished finished2 = runFinishedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(
+                            finishedRun(started1, finished1, committed1),
+                            finishedRun(started2, finished2, committed2));
+        }
+
+        @Test
+        void shouldReadOverlappingRunsOnDifferentLogStreams() {
+            // Given
+            StateStoreCommitterRunStarted started1 = runStartedOnStream("stream-1");
+            StateStoreCommitterRunStarted started2 = runStartedOnStream("stream-2");
+            StateStoreCommitSummary committed2 = committedOnStream("stream-2");
+            StateStoreCommitSummary committed1 = committedOnStream("stream-1");
+            StateStoreCommitterRunFinished finished1 = runFinishedOnStream("stream-1");
+            StateStoreCommitterRunFinished finished2 = runFinishedOnStream("stream-2");
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(
+                            finishedRun(started1, finished1, committed1),
+                            finishedRun(started2, finished2, committed2));
+        }
+
+        @Test
+        void shouldReadUnfinishedRunWithNoCommits() {
+            // Given
+            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(unfinishedRun(started));
+        }
+
+        @Test
+        void shouldReadUnfinishedRunWithOneCommit() {
+            // Given
+            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+            StateStoreCommitSummary committed = committedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(unfinishedRun(started, committed));
+        }
+
+        @Test
+        void shouldReadUnfinishedRunWithUnknownStartTimeAndOneCommit() {
+            // Given
+            StateStoreCommitSummary committed = committedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(unfinishedRunUnknownStart(committed));
+        }
+
+        @Test
+        void shouldReadFinishedRunWithUnknownStartTimeAndNoCommits() {
+            // Given
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRunUnknownStart(finished));
+        }
+
+        @Test
+        void shouldReadFinishedRunWithUnknownStartTimeAndOneCommit() {
+            // Given
+            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRunUnknownStart(finished, committed));
+        }
+
+        @Test
+        void shouldReadFinishedThenStartedRunOnSameStream() {
+            // Given
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRunUnknownStart(finished), unfinishedRun(started));
+        }
+
+        @Test
+        void shouldReadTwoStartedRunsOnSameStream() {
+            // Given
+            StateStoreCommitterRunStarted started1 = runStartedOnStream(testStream);
+            StateStoreCommitterRunStarted started2 = runStartedOnStream(testStream);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(unfinishedRun(started1), unfinishedRun(started2));
+        }
     }
 
-    @Test
-    void shouldReadMultipleRunsOnSameLogStream() {
-        // Given
-        StateStoreCommitterRunStarted started1 = runStartedOnStream("test-stream");
-        StateStoreCommitSummary committed1 = committedOnStream("test-stream");
-        StateStoreCommitterRunFinished finished1 = runFinishedOnStream("test-stream");
-        StateStoreCommitterRunStarted started2 = runStartedOnStream("test-stream");
-        StateStoreCommitSummary committed2 = committedOnStream("test-stream");
-        StateStoreCommitterRunFinished finished2 = runFinishedOnStream("test-stream");
+    @Nested
+    @DisplayName("Multi threaded state sore tests")
+    class MultiThreadedTests {
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+        @Test
+        void shouldUseEarliestStartTiime() {
+            //Given
+            batchRunStartedAt(testStream, Instant.parse("2026-01-02T00:00:00Z"));
+            StateStoreCommitterRunBatchStarted firstBatch = batchRunStartedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
+            batchRunStartedAt(testStream, Instant.parse("2026-01-03T00:00:00Z"));
 
-        // Then
-        assertThat(runs)
-                .containsExactly(
-                        finishedRun(started1, finished1, committed1),
-                        finishedRun(started2, finished2, committed2));
-    }
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
-    @Test
-    void shouldReadOverlappingRunsOnDifferentLogStreams() {
-        // Given
-        StateStoreCommitterRunStarted started1 = runStartedOnStream("stream-1");
-        StateStoreCommitterRunStarted started2 = runStartedOnStream("stream-2");
-        StateStoreCommitSummary committed2 = committedOnStream("stream-2");
-        StateStoreCommitSummary committed1 = committedOnStream("stream-1");
-        StateStoreCommitterRunFinished finished1 = runFinishedOnStream("stream-1");
-        StateStoreCommitterRunFinished finished2 = runFinishedOnStream("stream-2");
+            //Then
+            assertThat(runs.size()).isEqualTo(1);
+            assertThat(runs.get(0)).isEqualTo(finishedRun(firstBatch, null));
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+        }
 
-        // Then
-        assertThat(runs)
-                .containsExactly(
-                        finishedRun(started1, finished1, committed1),
-                        finishedRun(started2, finished2, committed2));
-    }
+        @Test
+        void shouldUseLatestFinishTiime() {
+            //Given
+            batchRunFinishedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
+            StateStoreCommitterRunBatchFinished lastBatch = batchRunFinishedAt(testStream, Instant.parse("2026-01-03T00:00:00Z"));
+            batchRunFinishedAt(testStream, Instant.parse("2026-01-02T00:00:00Z"));
 
-    @Test
-    void shouldReadUnfinishedRunWithNoCommits() {
-        // Given
-        StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+            //Then
+            assertThat(runs.size()).isEqualTo(1);
+            assertThat(runs.get(0)).isEqualTo(finishedRunUnknownStart(lastBatch));
 
-        // Then
-        assertThat(runs)
-                .containsExactly(unfinishedRun(started));
-    }
+        }
 
-    @Test
-    void shouldReadUnfinishedRunWithOneCommit() {
-        // Given
-        StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
-        StateStoreCommitSummary committed = committedOnStream("test-stream");
+        @Test
+        void shouldReadFinishedRunWithOneCommit() {
+            // Given
+            StateStoreCommitterRunBatchStarted started = batchRunStartedAt(testStream, Instant.now());
+            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitterRunBatchFinished finished = batchRunFinishedAt(testStream, Instant.now());
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
-        // Then
-        assertThat(runs)
-                .containsExactly(unfinishedRun(started, committed));
-    }
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRun(started, finished, committed));
+        }
 
-    @Test
-    void shouldReadUnfinishedRunWithUnknownStartTimeAndOneCommit() {
-        // Given
-        StateStoreCommitSummary committed = committedOnStream("test-stream");
+        @Test
+        void shouldReadOverlappingRunsOnDifferentLogStreams() {
+            // Given
+            StateStoreCommitterRunBatchStarted started1 = batchRunStartedAt("stream-1", Instant.now());
+            StateStoreCommitterRunBatchStarted started2 = batchRunStartedAt("stream-2", Instant.now());
+            StateStoreCommitSummary committed2 = committedOnStream("stream-2");
+            StateStoreCommitSummary committed1 = committedOnStream("stream-1");
+            StateStoreCommitterRunFinished finished1 = batchRunFinishedAt("stream-1", Instant.now());
+            StateStoreCommitterRunFinished finished2 = batchRunFinishedAt("stream-2", Instant.now());
 
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
 
-        // Then
-        assertThat(runs)
-                .containsExactly(unfinishedRunUnknownStart(committed));
-    }
-
-    @Test
-    void shouldReadFinishedRunWithUnknownStartTimeAndNoCommits() {
-        // Given
-        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
-
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-        // Then
-        assertThat(runs)
-                .containsExactly(finishedRunUnknownStart(finished));
-    }
-
-    @Test
-    void shouldReadFinishedRunWithUnknownStartTimeAndOneCommit() {
-        // Given
-        StateStoreCommitSummary committed = committedOnStream("test-stream");
-        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
-
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-        // Then
-        assertThat(runs)
-                .containsExactly(finishedRunUnknownStart(finished, committed));
-    }
-
-    @Test
-    void shouldReadFinishedThenStartedRunOnSameStream() {
-        // Given
-        StateStoreCommitterRunFinished finished = runFinishedOnStream("test-stream");
-        StateStoreCommitterRunStarted started = runStartedOnStream("test-stream");
-
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-        // Then
-        assertThat(runs)
-                .containsExactly(finishedRunUnknownStart(finished), unfinishedRun(started));
-    }
-
-    @Test
-    void shouldReadTwoStartedRunsOnSameStream() {
-        // Given
-        StateStoreCommitterRunStarted started1 = runStartedOnStream("test-stream");
-        StateStoreCommitterRunStarted started2 = runStartedOnStream("test-stream");
-
-        // When
-        List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-        // Then
-        assertThat(runs)
-                .containsExactly(unfinishedRun(started1), unfinishedRun(started2));
+            // Then
+            assertThat(runs)
+                    .containsExactly(
+                            finishedRun(started1, finished1, committed1),
+                            finishedRun(started2, finished2, committed2));
+        }
     }
 
     private StateStoreCommitterRunStarted runStartedOnStream(String logStream) {
@@ -187,6 +266,14 @@ public class StateStoreCommitterRunsFromEntriesTest {
 
     private StateStoreCommitterRunFinished runFinishedOnStream(String logStream) {
         return add(new StateStoreCommitterRunFinished(logStream, Instant.now(), Instant.now()));
+    }
+
+    private StateStoreCommitterRunBatchStarted batchRunStartedAt(String logStream, Instant startTime) {
+        return add(new StateStoreCommitterRunBatchStarted(logStream, Instant.now(), startTime));
+    }
+
+    private StateStoreCommitterRunBatchFinished batchRunFinishedAt(String logStream, Instant finishTime) {
+        return add(new StateStoreCommitterRunBatchFinished(logStream, Instant.now(), finishTime));
     }
 
     private <T extends StateStoreCommitterLogEntry> T add(T log) {
