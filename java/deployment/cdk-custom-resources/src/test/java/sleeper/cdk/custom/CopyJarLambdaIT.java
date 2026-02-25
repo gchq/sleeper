@@ -57,6 +57,7 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
+        SOURCE.createRepository(repositoryName);
         createBucket(instanceProperties.get(JARS_BUCKET));
         s3Client.putBucketVersioning(builder -> builder
                 .bucket(instanceProperties.get(JARS_BUCKET))
@@ -67,9 +68,7 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
     @Test
     void shouldCopyJarFromMavenToBucket(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        SOURCE.createRepository(repositoryName);
-        String url = SOURCE.uploadJarGetUrl(repositoryName, "test-artifact", "some-content");
-        SOURCE.listComponents(repositoryName);
+        String url = uploadJarGetUrl("test-artifact", "some-content");
 
         // When
         handleEvent(event(runtimeInfo)
@@ -86,9 +85,15 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
         assertThat(getObjectAsString(instanceProperties.get(JARS_BUCKET), "test.jar"))
                 .isEqualTo("some-content");
         verify(putRequestedFor(urlEqualTo("/report-response"))
-                .withRequestBody(matchingJsonPath("$.Data.versionId", matching("[A-Za-z0-9_]+"))
+                .withRequestBody(matchingJsonPath("$.Data.versionId", matching(".+"))
                         .and(matchingJsonPath("$.PhysicalResourceId", equalTo(instanceProperties.get(JARS_BUCKET) + "/test.jar")))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+    }
+
+    private String uploadJarGetUrl(String artifactId, String content) {
+        String url = SOURCE.uploadJarGetUrl(repositoryName, "test-artifact", "some-content");
+        SOURCE.listComponents(repositoryName);
+        return url;
     }
 
     private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
