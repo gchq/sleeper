@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
@@ -66,7 +67,7 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldCopyJarFromMavenToBucket(WireMockRuntimeInfo runtimeInfo) throws Exception {
+    void shouldCopyJarOnCreate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
         String url = uploadJarGetUrl("test-artifact", "some-content");
 
@@ -90,8 +91,50 @@ public class CopyJarLambdaIT extends LocalStackTestBase {
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
     }
 
+    @Test
+    void shouldCopyJarOnUpdate(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        putObject(instanceProperties.get(JARS_BUCKET), "test.jar", "old-content");
+        String url = uploadJarGetUrl("test-artifact", "new-content");
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Update")
+                .withResourceProperties(Map.of(
+                        "source", url,
+                        "bucket", instanceProperties.get(JARS_BUCKET),
+                        "key", "test.jar"))
+                .build());
+
+        // Then
+        assertThat(listObjectKeys(instanceProperties.get(JARS_BUCKET)))
+                .containsExactly("test.jar");
+        assertThat(getObjectAsString(instanceProperties.get(JARS_BUCKET), "test.jar"))
+                .isEqualTo("new-content");
+        verify(putRequestedFor(urlEqualTo("/report-response"))
+                .withRequestBody(matchingJsonPath("$.Data.versionId", matching(".+"))
+                        .and(matchingJsonPath("$.PhysicalResourceId", equalTo(instanceProperties.get(JARS_BUCKET) + "/test.jar")))
+                        .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+    }
+
+    @Test
+    void shouldDoNothingOnDelete(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Delete")
+                .withResourceProperties(Map.of(
+                        "source", "ignored",
+                        "bucket", instanceProperties.get(JARS_BUCKET),
+                        "key", "test.jar"))
+                .build());
+
+        // Then
+        verify(putRequestedFor(urlEqualTo("/report-response"))
+                .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", true, true)));
+    }
+
     private String uploadJarGetUrl(String artifactId, String content) {
-        String url = SOURCE.uploadJarGetUrl(repositoryName, "test-artifact", "some-content");
+        String url = SOURCE.uploadJarGetUrl(repositoryName, artifactId, content);
         SOURCE.listComponents(repositoryName);
         return url;
     }

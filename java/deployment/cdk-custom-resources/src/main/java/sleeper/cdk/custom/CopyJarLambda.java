@@ -69,19 +69,20 @@ public class CopyJarLambda extends AbstractCustomResourceHandler {
 
     @Override
     protected Response create(CloudFormationCustomResourceEvent event, Context context) {
+        LOGGER.info("Received create: {}", event);
         return copyJar(event);
     }
 
     @Override
     protected Response update(CloudFormationCustomResourceEvent event, Context context) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'update'");
+        LOGGER.info("Received update: {}", event);
+        return copyJar(event);
     }
 
     @Override
     protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        LOGGER.info("Received delete: {}", event);
+        return Response.success(event.getPhysicalResourceId());
     }
 
     private Response copyJar(CloudFormationCustomResourceEvent event) {
@@ -90,7 +91,6 @@ public class CopyJarLambda extends AbstractCustomResourceHandler {
         String bucket = (String) properties.get("bucket");
         String key = (String) properties.get("key");
 
-        LOGGER.info("Initiating copy from {} to {}/{}", source, bucket, key);
         try (DownloadResponse response = openDownload(source)) {
             Upload upload = s3TransferManager.upload(UploadRequest.builder()
                     .requestBody(AsyncRequestBody.fromInputStream(response.stream(), response.contentLength(), ForkJoinPool.commonPool()))
