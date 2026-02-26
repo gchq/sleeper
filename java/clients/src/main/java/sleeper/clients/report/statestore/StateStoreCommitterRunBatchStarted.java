@@ -19,6 +19,9 @@ import java.time.Instant;
 
 /**
  * A log entry recording that a state store committer batch started processing.
+ * A state store committer run can have multiple batch starts but only one run start.
+ * Instances of this class are compared with each other to calculate which of the multi threaded
+ * state store batch starts was the first in the run.
  */
 public class StateStoreCommitterRunBatchStarted extends StateStoreCommitterRunStarted {
 

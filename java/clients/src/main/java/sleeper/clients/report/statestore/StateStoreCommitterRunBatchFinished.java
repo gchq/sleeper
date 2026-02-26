@@ -19,6 +19,9 @@ import java.time.Instant;
 
 /**
  * A log entry recording that a state store committer batch finished processing.
+ * A state store committer run can have multiple batch finishes but only one run finished.
+ * Instances of this class are compared with each other to calculate which of the multi threaded
+ * state store batch finishes was the last in the run.
  */
 public class StateStoreCommitterRunBatchFinished extends StateStoreCommitterRunFinished {
 
