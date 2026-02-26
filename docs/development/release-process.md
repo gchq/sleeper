@@ -17,7 +17,7 @@ The following steps explain how to prepare and publish a release for Sleeper.
      - This will be done immediately after the release.
 
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
-   design that has changed in this release. Whilst doing this check that new/changed features work as documented.
+   design that has changed in this release. Whilst doing this, check that new/changed features work as documented.
 
 3. Check for any work in the release that has only been partially implemented so far. Decide if those parts can either be
    temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to work yet.
