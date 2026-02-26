@@ -215,7 +215,7 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadEarliestStartTimeFromMultipleBatchStarts() {
             // Given
-            Instand earliestStart = Instant.now();
+            Instant earliestStart = Instant.now();
             Instant finish = earliestStart.plusSeconds(3);
             //Thread 1
             batchRunStartedAt(testStream, earliestStart.plusSeconds(1));
