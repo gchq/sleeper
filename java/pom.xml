@@ -91,7 +91,7 @@
         -->
         <snappy.version>1.1.10.8</snappy.version>
         <!-- Parquet uses Aircompressor. -->
-        <aircompressor.version>2.0.2</aircompressor.version>
+        <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.33.5</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
