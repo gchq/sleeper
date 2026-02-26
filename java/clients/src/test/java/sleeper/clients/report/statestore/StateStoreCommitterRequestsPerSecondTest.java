@@ -245,7 +245,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
         add(new StateStoreCommitterRunBatchStarted(DEFAULT_LOG_STREAM, time, time));
     }
 
-    private void batchRunFinisheddAt(Instant time) {
+    private void batchRunFinishedAt(Instant time) {
         add(new StateStoreCommitterRunBatchFinished(DEFAULT_LOG_STREAM, time, time));
     }
 

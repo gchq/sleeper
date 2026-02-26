@@ -52,7 +52,8 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadBatchStarted() {
         // Given
-        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z having received 10 messages";
+        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z" +
+                " having received 10 messages from queue, have been running for 0h3m30s, last received commits 1m30s ago";
         Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
 
         // When / Then
@@ -63,7 +64,8 @@ public class ReadStateStoreCommitterLogsTest {
     @Test
     void shouldReadBatchFinished() {
         // Given
-        String message = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Finished state store commits batch at 2024-08-13T12:13:00Z";
+        String message = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Finished state store commits batch at 2024-08-13T12:13:00Z" +
+                " for table 123456a78 (ran for 0.123 seconds)";
         Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
 
         // When / Then

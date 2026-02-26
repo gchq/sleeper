@@ -86,7 +86,6 @@ public class QueryStateStoreCommitterLogs {
         return waitForQuery(queryId)
                 .results().stream()
                 .map(ReadStateStoreCommitterLogs::read)
-                .filter(logs -> logs != null)
                 .collect(toUnmodifiableList());
     }
 

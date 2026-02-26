@@ -189,7 +189,7 @@ public class StateStoreCommitterRunsFromEntriesTest {
     class MultiThreadedTests {
 
         @Test
-        void shouldUseEarliestStartTiime() {
+        void shouldUseEarliestStartTime() {
             //Given
             batchRunStartedAt(testStream, Instant.parse("2026-01-02T00:00:00Z"));
             StateStoreCommitterRunBatchStarted firstBatch = batchRunStartedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
@@ -200,12 +200,11 @@ public class StateStoreCommitterRunsFromEntriesTest {
 
             //Then
             assertThat(runs.size()).isEqualTo(1);
-            assertThat(runs.get(0)).isEqualTo(finishedRun(firstBatch, null));
-
+            assertThat(runs.get(0)).isEqualTo(unfinishedRun(firstBatch));
         }
 
         @Test
-        void shouldUseLatestFinishTiime() {
+        void shouldUseLatestFinishTime() {
             //Given
             batchRunFinishedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
             StateStoreCommitterRunBatchFinished lastBatch = batchRunFinishedAt(testStream, Instant.parse("2026-01-03T00:00:00Z"));
@@ -217,7 +216,6 @@ public class StateStoreCommitterRunsFromEntriesTest {
             //Then
             assertThat(runs.size()).isEqualTo(1);
             assertThat(runs.get(0)).isEqualTo(finishedRunUnknownStart(lastBatch));
-
         }
 
         @Test

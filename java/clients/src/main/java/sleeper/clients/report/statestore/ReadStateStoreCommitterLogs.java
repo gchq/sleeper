@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,8 +66,7 @@ public class ReadStateStoreCommitterLogs {
     private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
         if (!matcher.find()) {
-            LOGGER.info("Couldn't match: {}", message);
-            return null;
+            throw new NoSuchElementException("Couldn't match " + message);
         }
         // The pattern can only match one type of log message at a time.
         // Each capturing group will be null unless its message type was matched.
@@ -93,7 +93,7 @@ public class ReadStateStoreCommitterLogs {
             String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
             return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
         }
-        return null;
+        throw new NoSuchElementException("Matched log pattern but could not match group for " + message);
     }
 
     /**

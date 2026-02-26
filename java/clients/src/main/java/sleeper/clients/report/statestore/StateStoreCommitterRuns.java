@@ -92,7 +92,7 @@ public class StateStoreCommitterRuns {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                builder.batchStart((StateStoreCommitterRunStarted) entry);
+                builder.batchStart((StateStoreCommitterRunBatchStarted) entry);
             } else if (entry instanceof StateStoreCommitterRunStarted) {
                 if (builder != null) {
                     runs.add(builder.build());
@@ -107,7 +107,7 @@ public class StateStoreCommitterRuns {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                builder.batchFinished((StateStoreCommitterRunFinished) entry);
+                builder.batchFinished((StateStoreCommitterRunBatchFinished) entry);
             } else if (entry instanceof StateStoreCommitterRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);
