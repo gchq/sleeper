@@ -91,21 +91,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
 
     @Override
     protected Response create(CloudFormationCustomResourceEvent event, Context context) {
-        return addTable(event);
-    }
-
-    @Override
-    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
-        return updateTable(event);
-    }
-
-    @Override
-    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
-        return deleteTable(event);
-    }
-
-    private Response addTable(CloudFormationCustomResourceEvent event) {
-
         setTableProperties(event);
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -121,6 +106,40 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         }
 
         event.setPhysicalResourceId(tableProperties.get(TABLE_ID));
+        return Response.success(event.getPhysicalResourceId());
+
+    }
+
+    @Override
+    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
+        LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
+        setTableProperties(event);
+        tableProperties.validate();
+
+        tablePropertiesStore.update(tableProperties);
+        return Response.success(event.getPhysicalResourceId());
+    }
+
+    @Override
+    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
+        setTableProperties(event);
+        String tableName = tableProperties.get(TABLE_NAME);
+        if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
+            LOGGER.info("Taking table {} offline.", tableName);
+            tableProperties.set(TABLE_ONLINE, "false");
+            tablePropertiesStore.save(tableProperties);
+        } else {
+            //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
+            tableProperties = tablePropertiesStore.loadByName(tableName);
+            String tableId = tableProperties.get(TABLE_ID);
+            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
+            LOGGER.info("Deleting table {} and associated data.", tableName);
+            StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
+                    .getStateStore(tableProperties).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
+            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
+            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
+        }
         return Response.success(event.getPhysicalResourceId());
     }
 
@@ -150,37 +169,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(
                 tableProperties.getInstanceProperties(), s3Client, dynamoClient);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-    }
-
-    private Response deleteTable(CloudFormationCustomResourceEvent event) {
-        setTableProperties(event);
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
-            LOGGER.info("Taking table {} offline.", tableName);
-            tableProperties.set(TABLE_ONLINE, "false");
-            tablePropertiesStore.save(tableProperties);
-        } else {
-            //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
-            tableProperties = tablePropertiesStore.loadByName(tableName);
-            String tableId = tableProperties.get(TABLE_ID);
-            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
-            LOGGER.info("Deleting table {} and associated data.", tableName);
-            StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
-                    .getStateStore(tableProperties).clearSleeperTable();
-            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
-            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
-        }
-        return Response.success(event.getPhysicalResourceId());
-    }
-
-    private Response updateTable(CloudFormationCustomResourceEvent event) {
-        LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-        setTableProperties(event);
-        tableProperties.validate();
-
-        tablePropertiesStore.update(tableProperties);
-        return Response.success(event.getPhysicalResourceId());
     }
 
     private void setTableProperties(CloudFormationCustomResourceEvent event) {
