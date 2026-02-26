@@ -130,11 +130,22 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public void setSchema(Schema schema) {
         this.schema = schema;
-        set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
+        super.set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
     }
 
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
+    }
+
+    @Override
+    public void set(TableProperty property, String value) {
+        if (value != null) {
+            if (property == SCHEMA) {
+                setSchema(Schema.loadFromString(value));
+            } else {
+                super.set(property, value);
+            }
+        }
     }
 
     @Override
