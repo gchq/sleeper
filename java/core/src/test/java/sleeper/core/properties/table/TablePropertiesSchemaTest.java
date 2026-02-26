@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Properties;
@@ -27,6 +28,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesSchemaTest {
@@ -117,5 +119,18 @@ class TablePropertiesSchemaTest {
         // Then
         assertThatThrownBy(() -> TableProperties.createAndValidate(instanceProperties, properties))
                 .hasMessage("Property sleeper.table.name was invalid. It was unset.");
+    }
+
+    @Test
+    void shouldSetSchemaCorrectlyWhenSetCalled() {
+        //Given
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+
+        //When
+        tableProperties.set(SCHEMA, new SchemaSerDe().toJson(schema));
+
+        //Then
+        assertThat(tableProperties.getSchema()).isEqualTo(schema);
     }
 }
