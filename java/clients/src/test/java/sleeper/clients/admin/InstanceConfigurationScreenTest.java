@@ -280,8 +280,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).containsSubsequence(
                     "sleeper.optional.stacks",
-                    "sleeper.default.table.page.size",
-                    "sleeper.default.table.compression.codec");
+                    "sleeper.default.table.parquet.page.size",
+                    "sleeper.default.table.parquet.compression.codec");
         }
 
         @Test
@@ -621,7 +621,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
                     .contains("Found changes to properties:\n" +
                             "\n" +
-                            "sleeper.table.rowgroup.size\n" +
+                            "sleeper.table.parquet.rowgroup.size\n" +
                             "Maximum number of bytes to write in a Parquet row group " +
                             "(defaults to value set in instance\n" +
                             "properties). This property is NOT used by DataFusion data engine.\n" +

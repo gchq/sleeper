@@ -91,7 +91,7 @@
         -->
         <snappy.version>1.1.10.8</snappy.version>
         <!-- Parquet uses Aircompressor. -->
-        <aircompressor.version>2.0.2</aircompressor.version>
+        <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.33.5</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.42.1</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.42.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -189,7 +189,7 @@
         <cdk.version>2.240.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.5.1</constructs.version>
-        <jsii.version>1.126.0</jsii.version>
+        <jsii.version>1.127.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
