@@ -65,35 +65,34 @@ public class ReadStateStoreCommitterLogs {
 
     private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
-        if (!matcher.find()) {
-            throw new NoSuchElementException("Couldn't match " + message);
+        if (matcher.find()) {
+            // The pattern can only match one type of log message at a time.
+            // Each capturing group will be null unless its message type was matched.
+            // We determine which type of message was found based on which capturing group is set.
+            String startTime = matcher.group(CapturingGroups.START_TIME);
+            if (startTime != null) {
+                return new StateStoreCommitterRunStarted(logStream, timestamp, Instant.parse(startTime));
+            }
+            String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
+            if (finishTime != null) {
+                return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
+            }
+            String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
+            if (batchStartTime != null) {
+                return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
+            }
+            String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
+            if (batchFinishTime != null) {
+                return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
+            }
+            String tableId = matcher.group(CapturingGroups.TABLE_ID);
+            if (tableId != null) {
+                String type = matcher.group(CapturingGroups.TYPE);
+                String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
+                return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
+            }
         }
-        // The pattern can only match one type of log message at a time.
-        // Each capturing group will be null unless its message type was matched.
-        // We determine which type of message was found based on which capturing group is set.
-        String startTime = matcher.group(CapturingGroups.START_TIME);
-        if (startTime != null) {
-            return new StateStoreCommitterRunStarted(logStream, timestamp, Instant.parse(startTime));
-        }
-        String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
-        if (finishTime != null) {
-            return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
-        }
-        String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
-        if (batchStartTime != null) {
-            return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
-        }
-        String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
-        if (batchFinishTime != null) {
-            return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
-        }
-        String tableId = matcher.group(CapturingGroups.TABLE_ID);
-        if (tableId != null) {
-            String type = matcher.group(CapturingGroups.TYPE);
-            String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
-            return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
-        }
-        throw new NoSuchElementException("Matched log pattern but could not match group for " + message);
+        throw new NoSuchElementException("Couldn't match [" + message + "]");
     }
 
     /**

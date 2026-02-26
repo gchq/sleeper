@@ -22,8 +22,10 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ReadStateStoreCommitterLogsTest {
 
@@ -85,13 +87,15 @@ public class ReadStateStoreCommitterLogsTest {
     }
 
     @Test
-    void shouldReadUnrecognisedLog() {
+    void shouldThrowExceptionForUnmatchedLog() {
         // Given
-        String message = "some other log\n";
+        String message = "some other log";
         Instant timestamp = Instant.parse("2024-08-13T12:12:00Z");
 
         // When / Then
-        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isNull();
+        assertThatThrownBy(() -> ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message)))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("Couldn't match [some other log]");
     }
 
     @Test
