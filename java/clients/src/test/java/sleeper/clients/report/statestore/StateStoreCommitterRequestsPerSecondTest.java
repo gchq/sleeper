@@ -212,8 +212,8 @@ public class StateStoreCommitterRequestsPerSecondTest {
         // Given
         runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
         committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        batchRunFinisheddAt(Instant.parse("2024-08-15T10:40:00Z")); //Same as start time
-        batchRunFinisheddAt(Instant.parse("2024-08-15T10:40:01Z")); //1 second later
+        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:00Z")); //Same as start time
+        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:01Z")); //1 second later
 
         // When
         StateStoreCommitterRequestsPerSecond report = report();
