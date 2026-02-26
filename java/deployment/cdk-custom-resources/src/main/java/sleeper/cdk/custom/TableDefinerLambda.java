@@ -24,9 +24,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
 import software.amazon.lambda.powertools.cloudformation.Response;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -40,11 +37,8 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -62,10 +56,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final String bucketName;
-    private TablePropertiesStore tablePropertiesStore;
-    private TableProperties tableProperties;
-    private Map<String, Object> resourceProperties;
-    private InstanceProperties instanceProperties;
 
     public TableDefinerLambda() {
         this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -78,67 +68,59 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
     }
 
     public Response handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
-        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
-        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        this.resourceProperties = event.getResourceProperties();
-
-        Properties properties = new Properties();
-        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
-        this.tableProperties = new TableProperties(instanceProperties, properties);
-
         return super.handleRequest(event, context);
     }
 
     @Override
     protected Response create(CloudFormationCustomResourceEvent event, Context context) {
-        setTableProperties(event);
-
-        String tableName = tableProperties.get(TABLE_NAME);
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
 
         LOGGER.info("Validating table properties for table {}", tableName);
-        tableProperties.validate();
+        properties.getTableProperties().validate();
 
         //Table may just be offline from a previous delete call
-        if (tableProperties.getBoolean(TableProperty.TABLE_REUSE_EXISTING)) {
-            reuseExistingTable(tableName, tablePropertiesStore, tableProperties);
+        if (properties.getTableProperties().getBoolean(TableProperty.TABLE_REUSE_EXISTING)) {
+            reuseExistingTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties());
         } else {
-            createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
+            createNewTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties(), properties.getResourceProperties());
         }
 
-        event.setPhysicalResourceId(tableProperties.get(TABLE_ID));
+        event.setPhysicalResourceId(properties.getTableProperties().get(TABLE_ID));
         return Response.success(event.getPhysicalResourceId());
 
     }
 
     @Override
     protected Response update(CloudFormationCustomResourceEvent event, Context context) {
-        LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-        setTableProperties(event);
-        tableProperties.validate();
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
 
-        tablePropertiesStore.update(tableProperties);
+        LOGGER.info("Updating table properties for table {}", properties.getTableProperties().get(TABLE_NAME));
+        properties.getTableProperties().validate();
+
+        properties.getTablePropertiesStore().update(properties.getTableProperties());
         return Response.success(event.getPhysicalResourceId());
     }
 
     @Override
     protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
-        setTableProperties(event);
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
+        if (properties.getTableProperties().getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
             LOGGER.info("Taking table {} offline.", tableName);
-            tableProperties.set(TABLE_ONLINE, "false");
-            tablePropertiesStore.save(tableProperties);
+            properties.getTableProperties().set(TABLE_ONLINE, "false");
+            properties.getTablePropertiesStore().save(properties.getTableProperties());
         } else {
             //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
-            tableProperties = tablePropertiesStore.loadByName(tableName);
-            String tableId = tableProperties.get(TABLE_ID);
-            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
+            properties.setTableProperties(properties.getTablePropertiesStore().loadByName(tableName));
+            String tableId = properties.getTableProperties().get(TABLE_ID);
+            properties.setInstanceProperties(properties.getTableProperties().getInstanceProperties());
             LOGGER.info("Deleting table {} and associated data.", tableName);
-            StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
-                    .getStateStore(tableProperties).clearSleeperTable();
-            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
-            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
+            StateStoreFactory.createProvider(properties.getInstanceProperties(), s3Client, dynamoClient)
+                    .getStateStore(properties.getTableProperties()).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, properties.getInstanceProperties().get(DATA_BUCKET), tableId);
+            new DynamoDBTransactionLogSnapshotMetadataStore(properties.getInstanceProperties(), properties.getTableProperties(), dynamoClient).deleteAllSnapshots();
+            properties.getTablePropertiesStore().delete(TableStatus.uniqueIdAndName(tableId, tableName, properties.getTableProperties().getBoolean(TABLE_ONLINE)));
         }
         return Response.success(event.getPhysicalResourceId());
     }
@@ -169,18 +151,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(
                 tableProperties.getInstanceProperties(), s3Client, dynamoClient);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-    }
-
-    private void setTableProperties(CloudFormationCustomResourceEvent event) {
-        resourceProperties = event.getResourceProperties();
-
-        Properties properties = new Properties();
-        try {
-            properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        tableProperties = new TableProperties(instanceProperties, properties);
     }
 
 }
