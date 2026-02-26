@@ -189,40 +189,19 @@ public class StateStoreCommitterRunsFromEntriesTest {
     class MultiThreadedTests {
 
         @Test
-        void shouldUseEarliestStartTime() {
-            //Given
-            batchRunStartedAt(testStream, Instant.parse("2026-01-02T00:00:00Z"));
-            StateStoreCommitterRunBatchStarted firstBatch = batchRunStartedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
-            batchRunStartedAt(testStream, Instant.parse("2026-01-03T00:00:00Z"));
-
-            // When
-            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-            //Then
-            assertThat(runs.size()).isEqualTo(1);
-            assertThat(runs.get(0)).isEqualTo(unfinishedRun(firstBatch));
-        }
-
-        @Test
-        void shouldUseLatestFinishTime() {
-            //Given
-            batchRunFinishedAt(testStream, Instant.parse("2026-01-01T00:00:00Z"));
-            StateStoreCommitterRunBatchFinished lastBatch = batchRunFinishedAt(testStream, Instant.parse("2026-01-03T00:00:00Z"));
-            batchRunFinishedAt(testStream, Instant.parse("2026-01-02T00:00:00Z"));
-
-            // When
-            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-            //Then
-            assertThat(runs.size()).isEqualTo(1);
-            assertThat(runs.get(0)).isEqualTo(finishedRunUnknownStart(lastBatch));
-        }
-
-        @Test
-        void shouldReadFinishedRunWithOneCommit() {
+        void shouldReadLogsFromMultipleThreadsAsOneRun() {
             // Given
+            //Thread 1
             StateStoreCommitterRunBatchStarted started = batchRunStartedAt(testStream, Instant.now());
-            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitSummary thread1 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, Instant.now());
+            //Thread 2
+            batchRunStartedAt(testStream, Instant.now());
+            StateStoreCommitSummary thread2 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, Instant.now());
+            //Thread 3
+            batchRunStartedAt(testStream, Instant.now());
+            StateStoreCommitSummary thread3 = committedOnStream(testStream);
             StateStoreCommitterRunBatchFinished finished = batchRunFinishedAt(testStream, Instant.now());
 
             // When
@@ -230,7 +209,59 @@ public class StateStoreCommitterRunsFromEntriesTest {
 
             // Then
             assertThat(runs)
-                    .containsExactly(finishedRun(started, finished, committed));
+                    .containsExactly(finishedRun(started, finished, thread1, thread2, thread3));
+        }
+
+        @Test
+        void shouldReadEarliestStartTimeFromMultipleBatchStarts() {
+            // Given
+            Instand earliestStart = Instant.now();
+            Instant finish = earliestStart.plusSeconds(3);
+            //Thread 1
+            batchRunStartedAt(testStream, earliestStart.plusSeconds(1));
+            StateStoreCommitSummary thread1 = committedOnStream(testStream);
+            StateStoreCommitterRunBatchFinished finished = batchRunFinishedAt(testStream, finish);
+            //Thread 2
+            StateStoreCommitterRunBatchStarted earliest = batchRunStartedAt(testStream, earliestStart);
+            StateStoreCommitSummary thread2 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, finish);
+            //Thread 3
+            batchRunStartedAt(testStream, earliestStart.plusSeconds(2));
+            StateStoreCommitSummary thread3 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, finish);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRun(earliest, finished, thread1, thread2, thread3));
+        }
+
+        @Test
+        void shouldReadLatestFinishTimeFromMultipleBatchStarts() {
+            // Given
+            Instant start = Instant.now();
+            Instant latestFinish = start.plusSeconds(3);
+            //Thread 1
+            StateStoreCommitterRunBatchStarted earliest = batchRunStartedAt(testStream, start);
+            StateStoreCommitSummary thread1 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, latestFinish.minusSeconds(2));
+            //Thread 2
+            batchRunStartedAt(testStream, start);
+            StateStoreCommitSummary thread2 = committedOnStream(testStream);
+            StateStoreCommitterRunBatchFinished finished = batchRunFinishedAt(testStream, latestFinish);
+            //Thread 3
+            batchRunStartedAt(testStream, start);
+            StateStoreCommitSummary thread3 = committedOnStream(testStream);
+            batchRunFinishedAt(testStream, latestFinish.minusSeconds(1));
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRun(earliest, finished, thread1, thread2, thread3));
         }
     }
 

@@ -192,33 +192,57 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     @Test
-    void shouldUseEarliestStartTimeInBatchRun() {
+    void shouldUseEarliestStartTimeFoundInMultiThreadRun() {
         // Given
-        batchRunStartedAt(Instant.parse("2024-08-15T10:40:01Z")); //Same as finish time
-        batchRunStartedAt(Instant.parse("2024-08-15T10:40:00Z")); //1 second earlier
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:01Z"));
+        Instant earliestStart = Instant.now();
+        Instant finish = earliestStart.plusSeconds(3);
+        //Thread 1
+        batchRunStartedAt(earliestStart.plusSeconds(1));
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(finish);
+        //Thread 2 - Earliest start
+        batchRunStartedAt(earliestStart);
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(finish);
+        //Thread 3
+        batchRunStartedAt(earliestStart.plusSeconds(2));
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(finish);
 
         // When
         StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
+        //3 commits in 3 seconds = 1per second
+        //Only ever 1 run in multi threaded state store
         assertThat(report).isEqualTo(
                 averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
 
     @Test
-    void shouldUseLatestFinishTimeInBatchRun() {
+    void shouldUseLatestFinishTimeFoundInMultiThreadRun() {
         // Given
-        batchRunStartedAt(Instant.parse("2024-08-15T10:40:00Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:00Z")); //Same as start time
-        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:01Z")); //1 second later
+        Instant start = Instant.now();
+        Instant lastFinish = start.plusSeconds(3);
+        //Thread 1
+        batchRunStartedAt(start);
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(lastFinish.minusSeconds(2));
+        //Thread 2 - Earliest start
+        batchRunStartedAt(start);
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(lastFinish);
+        //Thread 3
+        batchRunStartedAt(start);
+        committedAtTime(Instant.now());
+        batchRunFinishedAt(lastFinish.minusSeconds(1));
 
         // When
         StateStoreCommitterRequestsPerSecond report = report();
 
         // Then
+        //3 commits in 3 seconds = 1per second
+        //Only ever 1 run in multi threaded state store
         assertThat(report).isEqualTo(
                 averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
