@@ -43,12 +43,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class DashboardStack extends NestedStack {
+
+    private static final List<String> S3_REQUEST_METRIC_NAMES = List.of(
+        "AllRequests",
+        "HeadRequests",
+        "GetRequests",
+        "PutRequests",
+        "PostRequests",
+        "ListRequests",
+        "DeleteRequests"
+    );
+    private static final List<String> S3_ERROR_METRIC_NAMES = List.of(
+        "4xxErrors",
+        "5xxErrors"
+    );
+
     private final String instanceId;
     private final List<String> tableNames;
     private final String metricsNamespace;
@@ -90,6 +107,15 @@ public class DashboardStack extends NestedStack {
         addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
         addTableWidgets();
+
+        List<String> ingestSourceBucketNames = instanceProperties.getList(INGEST_SOURCE_BUCKET);
+        ingestSourceBucketNames.forEach(bucketName -> {
+                addBucketWidgets("Ingest Source Bucket: " + bucketName, bucketName);
+        });
+
+        String tableBucketName = instanceProperties.get(DATA_BUCKET);
+        addBucketWidgets("Table Data Bucket: " + tableBucketName, tableBucketName);
+
         addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
@@ -110,6 +136,7 @@ public class DashboardStack extends NestedStack {
                     SingleValueWidget.Builder.create()
                             .title("Errors")
                             .metrics(errorMetrics)
+                            .period(Duration.minutes(1))
                             .width(24)
                             .build());
         }
@@ -189,6 +216,58 @@ public class DashboardStack extends NestedStack {
         return Map.of(
                 "instanceId", instanceId,
                 "tableName", tableName);
+    }
+
+    private void addBucketWidgets(String title, String bucketName) {
+        List<Metric> requestMetrics = S3_REQUEST_METRIC_NAMES.stream()
+                .map(metricName -> Metric.Builder.create()
+                        .namespace("AWS/S3")
+                        .metricName(metricName)
+                        .dimensionsMap(Map.of(
+                                "BucketName", bucketName,
+                                "FilterId", "all"
+                        ))
+                        .unit(Unit.COUNT)
+                        .period(Duration.minutes(1))
+                        .statistic("Sum")
+                        .build())
+                .toList();
+
+        List<Metric> errorMetrics = S3_ERROR_METRIC_NAMES.stream()
+                .map(metricName -> Metric.Builder.create()
+                        .namespace("AWS/S3")
+                        .metricName(metricName)
+                        .dimensionsMap(Map.of(
+                                "BucketName", bucketName,
+                                "FilterId", "all"
+                        ))
+                        .unit(Unit.COUNT)
+                        .period(Duration.minutes(1))
+                        .statistic("Sum")
+                        .build())
+                .toList();
+
+        dashboard.addWidgets(
+                TextWidget.Builder.create()
+                        .markdown("## " + title)
+                        .width(24)
+                        .height(1)
+                        .build(),
+                GraphWidget.Builder.create()
+                        .view(GraphWidgetView.TIME_SERIES)
+                        .title("Request Counts")
+                        .left(requestMetrics)
+                        .leftYAxis(YAxisProps.builder().min(0).build())
+                        .width(12)
+                        .build(),
+                GraphWidget.Builder.create()
+                        .view(GraphWidgetView.TIME_SERIES)
+                        .title("Error Counts")
+                        .left(errorMetrics)
+                        .leftYAxis(YAxisProps.builder().min(0).build())
+                        .width(12)
+                        .build()
+        );
     }
 
     private void addTableWidgets() {
