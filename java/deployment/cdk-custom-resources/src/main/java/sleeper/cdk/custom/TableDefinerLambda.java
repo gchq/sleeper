@@ -77,7 +77,7 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         this.bucketName = bucketName;
     }
 
-    public final Response handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
+    public Response handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
         this.resourceProperties = event.getResourceProperties();
