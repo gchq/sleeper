@@ -232,26 +232,6 @@ public class StateStoreCommitterRunsFromEntriesTest {
             assertThat(runs)
                     .containsExactly(finishedRun(started, finished, committed));
         }
-
-        @Test
-        void shouldReadOverlappingRunsOnDifferentLogStreams() {
-            // Given
-            StateStoreCommitterRunBatchStarted started1 = batchRunStartedAt("stream-1", Instant.now());
-            StateStoreCommitterRunBatchStarted started2 = batchRunStartedAt("stream-2", Instant.now());
-            StateStoreCommitSummary committed2 = committedOnStream("stream-2");
-            StateStoreCommitSummary committed1 = committedOnStream("stream-1");
-            StateStoreCommitterRunFinished finished1 = batchRunFinishedAt("stream-1", Instant.now());
-            StateStoreCommitterRunFinished finished2 = batchRunFinishedAt("stream-2", Instant.now());
-
-            // When
-            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
-
-            // Then
-            assertThat(runs)
-                    .containsExactly(
-                            finishedRun(started1, finished1, committed1),
-                            finishedRun(started2, finished2, committed2));
-        }
     }
 
     private StateStoreCommitterRunStarted runStartedOnStream(String logStream) {

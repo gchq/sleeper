@@ -197,7 +197,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
         batchRunStartedAt(Instant.parse("2024-08-15T10:40:01Z")); //Same as finish time
         batchRunStartedAt(Instant.parse("2024-08-15T10:40:00Z")); //1 second earlier
         committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+        batchRunFinishedAt(Instant.parse("2024-08-15T10:40:01Z"));
 
         // When
         StateStoreCommitterRequestsPerSecond report = report();
@@ -210,7 +210,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
     @Test
     void shouldUseLatestFinishTimeInBatchRun() {
         // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+        batchRunStartedAt(Instant.parse("2024-08-15T10:40:00Z"));
         committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
         batchRunFinishedAt(Instant.parse("2024-08-15T10:40:00Z")); //Same as start time
         batchRunFinishedAt(Instant.parse("2024-08-15T10:40:01Z")); //1 second later
