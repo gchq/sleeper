@@ -188,7 +188,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(runtimeInfo, CREATE, tableProperties);
 
             // Then
-            // NoTableToReuseException
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
                             .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
@@ -209,7 +208,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(runtimeInfo, CREATE, tableProperties);
 
             // Then
-            // TableAlreadyExistsException
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
                             .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
@@ -286,7 +284,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(runtimeInfo, UPDATE, tableProperties);
 
             // Then
-            // SleeperPropertiesInvalidException
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
                             .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
@@ -301,7 +298,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(runtimeInfo, UPDATE, tableProperties);
 
             // Then
-            // TableNotFoundException
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
                             .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
@@ -332,7 +328,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(runtimeInfo, DELETE, tableProperties);
 
             // Then
-            // TableNotFoundException
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
                             .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
