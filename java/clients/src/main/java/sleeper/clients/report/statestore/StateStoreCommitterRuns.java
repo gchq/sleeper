@@ -88,31 +88,31 @@ public class StateStoreCommitterRuns {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         StateStoreCommitterRun.Builder builder = null;
         for (StateStoreCommitterLogEntry entry : logs) {
-            if (entry instanceof StateStoreCommitterRunBatchStarted) {
+            if (entry instanceof StateStoreCommitterThreadRunStarted) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                builder.batchStart((StateStoreCommitterRunBatchStarted) entry);
-            } else if (entry instanceof StateStoreCommitterRunStarted) {
+                builder.batchStart((StateStoreCommitterThreadRunStarted) entry);
+            } else if (entry instanceof StateStoreCommitterLambdaRunStarted) {
                 if (builder != null) {
                     runs.add(builder.build());
                 }
-                builder = newRun(entry).start((StateStoreCommitterRunStarted) entry);
+                builder = newRun(entry).start((StateStoreCommitterLambdaRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
                 builder.commit((StateStoreCommitSummary) entry);
-            } else if (entry instanceof StateStoreCommitterRunBatchFinished) {
+            } else if (entry instanceof StateStoreCommitterThreadRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                builder.batchFinished((StateStoreCommitterRunBatchFinished) entry);
-            } else if (entry instanceof StateStoreCommitterRunFinished) {
+                builder.batchFinished((StateStoreCommitterThreadRunFinished) entry);
+            } else if (entry instanceof StateStoreCommitterLambdaRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                runs.add(builder.finish((StateStoreCommitterRunFinished) entry).build());
+                runs.add(builder.finish((StateStoreCommitterLambdaRunFinished) entry).build());
                 builder = null;
             }
         }

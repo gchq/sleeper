@@ -182,7 +182,7 @@ public class StateStoreCommitterRun {
          * @param  start the log entry recording that the state store committer finished
          * @return       this builder
          */
-        public Builder batchStart(StateStoreCommitterRunBatchStarted start) {
+        public Builder batchStart(StateStoreCommitterThreadRunStarted start) {
             if (this.start == null || this.start.getStartTime().isAfter(start.getStartTime())) {
                 this.start = start;
             }
@@ -195,7 +195,7 @@ public class StateStoreCommitterRun {
          * @param  finish the log entry recording that the state store committer finished
          * @return        this builder
          */
-        public Builder batchFinished(StateStoreCommitterRunBatchFinished finish) {
+        public Builder batchFinished(StateStoreCommitterThreadRunFinished finish) {
             if (this.finish == null || this.finish.getFinishTime().isBefore(finish.getFinishTime())) {
                 this.finish = finish;
             }

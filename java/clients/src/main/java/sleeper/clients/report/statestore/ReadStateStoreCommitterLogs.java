@@ -51,10 +51,10 @@ public class ReadStateStoreCommitterLogs {
      * Constants to refer to capture groups in the regular expression above.
      */
     private static class CapturingGroups {
-        private static final int START_TIME = 1;
-        private static final int FINISH_TIME = 2;
-        private static final int BATCH_START_TIME = 3;
-        private static final int BATCH_FINISH_TIME = 4;
+        private static final int LAMBDA_START_TIME = 1;
+        private static final int LAMBDA_FINISH_TIME = 2;
+        private static final int THREAD_START_TIME = 3;
+        private static final int THREAD_FINISH_TIME = 4;
         private static final int TABLE_ID = 5;
         private static final int TYPE = 6;
         private static final int COMMIT_TIME = 7;
@@ -69,21 +69,21 @@ public class ReadStateStoreCommitterLogs {
             // The pattern can only match one type of log message at a time.
             // Each capturing group will be null unless its message type was matched.
             // We determine which type of message was found based on which capturing group is set.
-            String startTime = matcher.group(CapturingGroups.START_TIME);
+            String startTime = matcher.group(CapturingGroups.LAMBDA_START_TIME);
             if (startTime != null) {
-                return new StateStoreCommitterRunStarted(logStream, timestamp, Instant.parse(startTime));
+                return new StateStoreCommitterLambdaRunStarted(logStream, timestamp, Instant.parse(startTime));
             }
-            String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
+            String finishTime = matcher.group(CapturingGroups.LAMBDA_FINISH_TIME);
             if (finishTime != null) {
-                return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
+                return new StateStoreCommitterLambdaRunFinished(logStream, timestamp, Instant.parse(finishTime));
             }
-            String batchStartTime = matcher.group(CapturingGroups.BATCH_START_TIME);
+            String batchStartTime = matcher.group(CapturingGroups.THREAD_START_TIME);
             if (batchStartTime != null) {
-                return new StateStoreCommitterRunBatchStarted(logStream, timestamp, Instant.parse(batchStartTime));
+                return new StateStoreCommitterThreadRunStarted(logStream, timestamp, Instant.parse(batchStartTime));
             }
-            String batchFinishTime = matcher.group(CapturingGroups.BATCH_FINISH_TIME);
+            String batchFinishTime = matcher.group(CapturingGroups.THREAD_FINISH_TIME);
             if (batchFinishTime != null) {
-                return new StateStoreCommitterRunBatchFinished(logStream, timestamp, Instant.parse(batchFinishTime));
+                return new StateStoreCommitterThreadRunFinished(logStream, timestamp, Instant.parse(batchFinishTime));
             }
             String tableId = matcher.group(CapturingGroups.TABLE_ID);
             if (tableId != null) {
@@ -97,8 +97,11 @@ public class ReadStateStoreCommitterLogs {
 
     /**
      * Reads an entry from the state store committer log that matches one of the expected types of message. This can be
-     * a {@link StateStoreCommitterRunStarted}, a {@link StateStoreCommitterRunFinished} or
-     * a {@link StateStoreCommitSummary}.
+     * a {@link StateStoreCommitterLambdaRunStarted} or {@link StateStoreCommitterLambdaRunFinished} for Lambda
+     * implementations,
+     * a {@link StateStoreCommitterThreadRunStarted} or {@link StateStoreCommitterThreadRunFinished} for Multi Threaded
+     * implementations, or
+     * a {@link StateStoreCommitSummary} for both impemenations.
      *
      * @param  entry the log entry as returned from Amazon CloudWatch
      * @return       the parsed entry, or null if it was not one of the expected message types

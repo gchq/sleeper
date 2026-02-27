@@ -37,7 +37,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
@@ -48,7 +48,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
-                new StateStoreCommitterRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+                new StateStoreCommitterLambdaRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isEqualTo(
-                new StateStoreCommitterRunBatchStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+                new StateStoreCommitterThreadRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
-                new StateStoreCommitterRunBatchFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+                new StateStoreCommitterThreadRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
@@ -129,7 +129,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry))
-                .isEqualTo(new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                .isEqualTo(new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream",
+                new StateStoreCommitterLambdaRunStarted("test-stream",
                         Instant.parse("2024-08-13T12:12:30.123Z"),
                         Instant.parse("2024-08-13T12:12:00Z")));
     }

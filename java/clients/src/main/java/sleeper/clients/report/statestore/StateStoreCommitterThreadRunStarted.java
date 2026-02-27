@@ -18,14 +18,14 @@ package sleeper.clients.report.statestore;
 import java.time.Instant;
 
 /**
- * A log entry recording that a state store committer batch finished processing.
- * A state store committer run can have multiple batch finishes but only one run finished.
+ * A log entry recording that a state store committer batch started processing.
+ * A state store committer run can have multiple batch starts but only one run start.
  * Instances of this class are compared with each other to calculate which of the multi threaded
- * state store batch finishes was the last in the run.
+ * state store batch starts was the first in the run.
  */
-public class StateStoreCommitterRunBatchFinished extends StateStoreCommitterRunFinished {
+public class StateStoreCommitterThreadRunStarted extends StateStoreCommitterRunStarted {
 
-    public StateStoreCommitterRunBatchFinished(String logStream, Instant timestamp, Instant finishTime) {
-        super(logStream, timestamp, finishTime);
+    public StateStoreCommitterThreadRunStarted(String logStream, Instant timestamp, Instant startTime) {
+        super(logStream, timestamp, startTime);
     }
 }

@@ -262,15 +262,15 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     private void runStartedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterRunStarted(logStream, Instant.MIN, time));
+        add(new StateStoreCommitterLambdaRunStarted(logStream, Instant.MIN, time));
     }
 
     private void batchRunStartedAt(Instant time) {
-        add(new StateStoreCommitterRunBatchStarted(DEFAULT_LOG_STREAM, time, time));
+        add(new StateStoreCommitterThreadRunStarted(DEFAULT_LOG_STREAM, time, time));
     }
 
     private void batchRunFinishedAt(Instant time) {
-        add(new StateStoreCommitterRunBatchFinished(DEFAULT_LOG_STREAM, time, time));
+        add(new StateStoreCommitterThreadRunFinished(DEFAULT_LOG_STREAM, time, time));
     }
 
     private void committedAtTime(Instant time) {
@@ -290,7 +290,7 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     private void runFinishedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterRunFinished(logStream, Instant.MIN, time));
+        add(new StateStoreCommitterLambdaRunFinished(logStream, Instant.MIN, time));
     }
 
     private void add(StateStoreCommitterLogEntry log) {

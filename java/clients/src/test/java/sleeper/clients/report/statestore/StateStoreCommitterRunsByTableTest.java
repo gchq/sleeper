@@ -94,8 +94,8 @@ public class StateStoreCommitterRunsByTableTest {
     private StateStoreCommitterRun finishedRunWithCommitsInTables(String... commitTableIds) {
         return add(StateStoreCommitterRun.builder()
                 .logStream(DEFAULT_LOG_STREAM)
-                .start(new StateStoreCommitterRunStarted(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
-                .finish(new StateStoreCommitterRunFinished(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
+                .start(new StateStoreCommitterLambdaRunStarted(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
+                .finish(new StateStoreCommitterLambdaRunFinished(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
                 .commits(commitsWithTableIds(commitTableIds))
                 .build());
     }

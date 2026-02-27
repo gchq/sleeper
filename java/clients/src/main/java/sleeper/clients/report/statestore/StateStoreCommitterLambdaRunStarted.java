@@ -18,14 +18,11 @@ package sleeper.clients.report.statestore;
 import java.time.Instant;
 
 /**
- * A log entry recording that a state store committer batch started processing.
- * A state store committer run can have multiple batch starts but only one run start.
- * Instances of this class are compared with each other to calculate which of the multi threaded
- * state store batch starts was the first in the run.
+ * A log entry recording that a state store committer Lambda started processing.
  */
-public class StateStoreCommitterRunBatchStarted extends StateStoreCommitterRunStarted {
+public class StateStoreCommitterLambdaRunStarted extends StateStoreCommitterRunStarted {
 
-    public StateStoreCommitterRunBatchStarted(String logStream, Instant timestamp, Instant startTime) {
+    public StateStoreCommitterLambdaRunStarted(String logStream, Instant timestamp, Instant startTime) {
         super(logStream, timestamp, startTime);
     }
 }
