@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.lambda;
 
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.services.lambda.DockerImageFunction;
-import software.amazon.awscdk.services.lambda.DockerImageFunction.Builder;
+import software.amazon.awscdk.services.ec2.ISecurityGroup;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
@@ -25,11 +26,11 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import java.util.List;
 import java.util.Map;
 
-public class DockerFunctionBuilder implements LambdaBuilder {
+public class FunctionBuilder implements LambdaBuilder {
 
-    private final DockerImageFunction.Builder builder;
+    private final Function.Builder builder;
 
-    public DockerFunctionBuilder(Builder builder) {
+    public FunctionBuilder(Function.Builder builder) {
         this.builder = builder;
     }
 
@@ -78,6 +79,24 @@ public class DockerFunctionBuilder implements LambdaBuilder {
     @Override
     public LambdaBuilder reservedConcurrentExecutions(Number reservedConcurrentExecutions) {
         builder.reservedConcurrentExecutions(reservedConcurrentExecutions);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder vpc(IVpc vpc) {
+        builder.vpc(vpc);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder vpcSubnets(SubnetSelection vpcSubnets) {
+        builder.vpcSubnets(vpcSubnets);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder securityGroups(List<? extends ISecurityGroup> securityGroups) {
+        builder.securityGroups(securityGroups);
         return this;
     }
 

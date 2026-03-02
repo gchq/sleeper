@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rust:1.88-bookworm
+FROM rust:1.93-bookworm
 
 RUN apt-get update && apt-get install -y \
     # Sleeper Rust build-time dependencies
