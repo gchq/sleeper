@@ -30,6 +30,10 @@ sleeper.table.name=changeme
 
 # Select which data engine to use for the table. Valid values are: [java, datafusion,
 # datafusion_experimental]
+# The options "datafusion" and "datafusion_experimental" currently have identical behaviour, as the
+# DataFusion data engine no longer has any experimental components. We may remove the
+# "datafusion_experimental" option in a future release, which will cause instances with that set to
+# fail after an upgrade. Please use the "datafusion" option instead.
 # (default value shown below, uncomment to set a value)
 # sleeper.table.data.engine=DATAFUSION
 
