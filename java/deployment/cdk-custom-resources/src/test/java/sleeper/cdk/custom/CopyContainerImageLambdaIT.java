@@ -29,6 +29,7 @@ import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -39,7 +40,9 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.cdk.custom.containers.JibEvents;
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -59,10 +62,12 @@ public class CopyContainerImageLambdaIT {
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambdaIT.class);
 
     @Container
-    public GenericContainer<?> source = createDockerRegistryContainer();
-
+    public static final GenericContainer<?> SOURCE = createDockerRegistryContainer();
     @Container
-    public GenericContainer<?> destination = createDockerRegistryContainer();
+    public static final GenericContainer<?> DESTINATION = createDockerRegistryContainer();
+    @TempDir
+    private Path cacheDir;
+    private final String imageName = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -72,52 +77,54 @@ public class CopyContainerImageLambdaIT {
     @Test
     void shouldCopyDockerImageOnCreate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        copyImage("scratch", imageNameInRegistry(source, "test"));
+        copyImage("scratch", imageNameInRegistry(SOURCE));
 
         // When
         handleEvent(event(runtimeInfo)
                 .withRequestType("Create")
                 .withResourceProperties(Map.of(
-                        "source", imageNameInRegistry(source, "test"),
-                        "target", imageNameInRegistry(destination, "test")))
+                        "source", imageNameInRegistry(SOURCE),
+                        "target", imageNameInRegistry(DESTINATION)))
                 .build());
 
         // Then
-        assertThat(registryClient(destination, "test").pullManifest("latest"))
+        assertThat(imageClientForRegistry(DESTINATION).pullManifest("latest"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+        assertThat(cacheDir).isNotEmptyDirectory();
     }
 
     @Test
     void shouldCopyNewDockerImageOnUpdate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        copyImage("scratch", imageNameInRegistry(destination, "test:old"));
-        copyImage("scratch", imageNameInRegistry(source, "test:new"));
+        copyImage("scratch", imageNameInRegistryWithTag(DESTINATION, "old"));
+        copyImage("scratch", imageNameInRegistryWithTag(SOURCE, "new"));
 
         // When
         handleEvent(event(runtimeInfo)
                 .withRequestType("Update")
                 .withResourceProperties(Map.of(
-                        "source", imageNameInRegistry(source, "test:new"),
-                        "target", imageNameInRegistry(destination, "test:new")))
+                        "source", imageNameInRegistryWithTag(SOURCE, "new"),
+                        "target", imageNameInRegistryWithTag(DESTINATION, "new")))
                 .withOldResourceProperties(Map.of(
-                        "source", imageNameInRegistry(source, "test:old"),
-                        "target", imageNameInRegistry(destination, "test:old")))
+                        "source", imageNameInRegistryWithTag(SOURCE, "new"),
+                        "target", imageNameInRegistryWithTag(DESTINATION, "old")))
                 .build());
 
         // Then
-        assertThat(registryClient(destination, "test").pullManifest("new"))
+        assertThat(imageClientForRegistry(DESTINATION).pullManifest("new"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
-        assertThat(registryClient(destination, "test").pullManifest("old"))
+        assertThat(imageClientForRegistry(DESTINATION).pullManifest("old"))
                 .extracting(ManifestAndDigest::getManifest)
                 .isInstanceOf(V22ManifestTemplate.class);
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", matching("sha256:[a-z0-9]+"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
+        assertThat(cacheDir).isNotEmptyDirectory();
     }
 
     @Test
@@ -126,13 +133,14 @@ public class CopyContainerImageLambdaIT {
         handleEvent(event(runtimeInfo)
                 .withRequestType("Delete")
                 .withResourceProperties(Map.of(
-                        "source", imageNameInRegistry(source, "test"),
-                        "target", imageNameInRegistry(destination, "test")))
+                        "source", imageNameInRegistry(SOURCE),
+                        "target", imageNameInRegistry(DESTINATION)))
                 .build());
 
         // Then
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", true, true)));
+        assertThat(cacheDir).isEmptyDirectory();
     }
 
     private static void copyImage(String baseImage, String target) throws Exception {
@@ -140,8 +148,12 @@ public class CopyContainerImageLambdaIT {
                 .setAllowInsecureRegistries(true));
     }
 
-    private static String imageNameInRegistry(GenericContainer<?> container, String name) {
-        return container.getHost() + ":" + container.getFirstMappedPort() + "/" + name;
+    private String imageNameInRegistry(GenericContainer<?> container) {
+        return container.getHost() + ":" + container.getFirstMappedPort() + "/" + imageName;
+    }
+
+    private String imageNameInRegistryWithTag(GenericContainer<?> container, String tag) {
+        return container.getHost() + ":" + container.getFirstMappedPort() + "/" + imageName + ":" + tag;
     }
 
     private static GenericContainer<?> createDockerRegistryContainer() {
@@ -150,11 +162,11 @@ public class CopyContainerImageLambdaIT {
                 .withLogConsumer(outputFrame -> LOGGER.info("From Docker registry: {}", outputFrame.getUtf8StringWithoutLineEnding()));
     }
 
-    private static RegistryClient registryClient(GenericContainer<?> container, String name) {
+    private RegistryClient imageClientForRegistry(GenericContainer<?> container) {
         EventHandlers eventHandlers = JibEvents.createEventHandlers(LOGGER);
         String serverUrl = container.getHost() + ":" + container.getFirstMappedPort();
         FailoverHttpClient httpClient = new FailoverHttpClient(true, true, eventHandlers::dispatch);
-        return RegistryClient.factory(eventHandlers, serverUrl, name, httpClient).newRegistryClient();
+        return RegistryClient.factory(eventHandlers, serverUrl, imageName, httpClient).newRegistryClient();
     }
 
     private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
@@ -169,6 +181,7 @@ public class CopyContainerImageLambdaIT {
     private CopyContainerImageLambda lambda() {
         return CopyContainerImageLambda.builder()
                 .allowInsecureRegistries(true)
+                .cacheDir(cacheDir)
                 .build();
     }
 

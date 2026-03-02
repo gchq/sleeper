@@ -15,12 +15,9 @@
  */
 package sleeper.cdk.artefacts;
 
+import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.NestedStackProps;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecr.TagStatus;
@@ -38,6 +35,8 @@ import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * AWS resources that will hold artefacts used to deploy Sleeper. This should be deployed separately before deploying a
@@ -46,38 +45,25 @@ import java.util.List;
  */
 public class SleeperArtefactRepositories {
 
-    private SleeperArtefactRepositories() {
+    private final Construct scope;
+    private final String deploymentId;
+    private final List<String> extraEcrImages;
+    private final ToDeploy deploy;
+
+    private SleeperArtefactRepositories(Builder builder) {
+        scope = Objects.requireNonNull(builder.scope, "scope must not be null");
+        deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
+        extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
+        deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
+        if (deploy.isDeployJars()) {
+            deployJars();
+        }
+        if (deploy.isDeployImages()) {
+            deployImages();
+        }
     }
 
-    /**
-     * Declares a Sleeper artefacts deployment as a nested stack.
-     *
-     * @param scope          the scope to add the instance to, usually a Stack or NestedStack
-     * @param id             the nested stack ID
-     * @param stackProps     configuration of the nested stack
-     * @param deploymentId   the artefacts deployment ID
-     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
-     */
-    public static void createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, String deploymentId, List<String> extraEcrImages) {
-        NestedStack stack = new NestedStack(scope, id, stackProps);
-        create(stack, deploymentId, extraEcrImages);
-    }
-
-    /**
-     * Declares a Sleeper artefacts deployment as a root level stack.
-     *
-     * @param scope          the scope to add the instance to, usually an App or Stage
-     * @param id             the stack ID
-     * @param stackProps     configuration of the stack
-     * @param deploymentId   the artefacts deployment ID
-     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
-     */
-    public static void createAsRootStack(Construct scope, String id, StackProps stackProps, String deploymentId, List<String> extraEcrImages) {
-        Stack stack = new Stack(scope, id, stackProps);
-        create(stack, deploymentId, extraEcrImages);
-    }
-
-    private static void create(Construct scope, String deploymentId, List<String> extraEcrImages) {
+    private void deployJars() {
         Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -92,13 +78,15 @@ public class SleeperArtefactRepositories {
                 // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
                 .versioned(true)
                 .build();
+    }
 
+    private void deployImages() {
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(scope, deploymentId, jar.getImageName());
+            createRepository(jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(scope, deploymentId, deployment.getDeploymentName());
+            Repository repository = createRepository(deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
@@ -109,12 +97,10 @@ public class SleeperArtefactRepositories {
             }
         }
 
-        for (String imageName : extraEcrImages) {
-            createRepository(scope, deploymentId, imageName);
-        }
+        extraEcrImages.forEach(this::createRepository);
     }
 
-    private static Repository createRepository(Construct scope, String deploymentId, String imageName) {
+    private Repository createRepository(String imageName) {
         return Repository.Builder.create(scope, "Repository-" + imageName)
                 .repositoryName(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(deploymentId) + "/" + imageName)
                 .removalPolicy(RemovalPolicy.DESTROY)
@@ -134,5 +120,58 @@ public class SleeperArtefactRepositories {
                                 .build()))
                 .emptyOnDelete(true)
                 .build();
+    }
+
+    public static class Builder {
+        private final Construct scope;
+        private final String deploymentId;
+        private List<String> extraEcrImages;
+        private ToDeploy deploy;
+
+        private Builder(Construct scope, String deploymentId) {
+            this.scope = scope;
+            this.deploymentId = deploymentId;
+        }
+
+        public static Builder create(Construct scope, String deploymentId) {
+            return new Builder(scope, deploymentId);
+        }
+
+        public Builder extraEcrImages(List<String> extraEcrImages) {
+            this.extraEcrImages = extraEcrImages;
+            return this;
+        }
+
+        public Builder deploy(ToDeploy deploy) {
+            this.deploy = deploy;
+            return this;
+        }
+
+        public SleeperArtefactRepositories build() {
+            return new SleeperArtefactRepositories(this);
+        }
+    }
+
+    public enum ToDeploy {
+        ALL, JARS, IMAGES;
+
+        public static ToDeploy fromString(String string) {
+            if (string == null) {
+                return null;
+            }
+            ToDeploy upload = EnumUtils.getEnumIgnoreCase(ToDeploy.class, string);
+            if (upload == null) {
+                throw new IllegalArgumentException("Unknown identifier for which resources to deploy: " + string);
+            }
+            return upload;
+        }
+
+        public boolean isDeployJars() {
+            return this == ALL || this == JARS;
+        }
+
+        public boolean isDeployImages() {
+            return this == ALL || this == IMAGES;
+        }
     }
 }

@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.google.cloud.tools.jib.api.CacheDirectoryCreationException;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.CredentialRetriever;
+import com.google.cloud.tools.jib.api.ImageReference;
 import com.google.cloud.tools.jib.api.InvalidImageReferenceException;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.JibContainer;
@@ -37,21 +38,27 @@ import sleeper.cdk.custom.containers.JibEvents;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyContainerImageLambda.class);
 
+    private final Path cacheDir;
     private final boolean allowInsecureRegistries;
     private final CredentialRetriever sourceCredentialRetriever;
     private final CredentialRetriever targetCredentialRetriever;
 
     public CopyContainerImageLambda() {
-        this(builder().targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create())));
+        this(builder()
+                .targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create()))
+                .cacheDir(createTemporaryDirectory()));
     }
 
     protected CopyContainerImageLambda(Builder builder) {
+        cacheDir = builder.cacheDir;
         allowInsecureRegistries = builder.allowInsecureRegistries;
         sourceCredentialRetriever = builder.sourceCredentialRetriever;
         targetCredentialRetriever = builder.targetCredentialRetriever;
@@ -82,23 +89,29 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         String target = (String) properties.get("target");
 
         try {
-            JibContainer container = Jib.from(registryImage(source, sourceCredentialRetriever))
-                    .containerize(configure(Containerizer.to(registryImage(target, targetCredentialRetriever))));
+            ImageReference sourceRef = ImageReference.parse(source);
+            ImageReference targetRef = ImageReference.parse(target);
+            JibContainer container = Jib.from(registryImage(sourceRef, sourceCredentialRetriever))
+                    .containerize(configure(Containerizer.to(registryImage(targetRef, targetCredentialRetriever))));
             return Response.builder()
                     .status(Status.SUCCESS)
+                    .physicalResourceId(target)
                     .value(Map.of("digest", container.getDigest().toString()))
                     .build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
-            throw new RuntimeException(e);
+        } catch (IOException | RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
+            LOGGER.error("Failed to copy container image", e);
+            return Response.builder()
+                    .status(Status.FAILED)
+                    .physicalResourceId(target)
+                    .reason("Failed to copy container image: " + e.getMessage())
+                    .build();
         }
     }
 
-    private static RegistryImage registryImage(String imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
+    private static RegistryImage registryImage(ImageReference imageName, CredentialRetriever credentialRetriever) throws InvalidImageReferenceException {
         RegistryImage image = RegistryImage.named(imageName);
         if (credentialRetriever != null) {
             image.addCredentialRetriever(credentialRetriever);
@@ -107,13 +120,30 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     }
 
     private Containerizer configure(Containerizer containerizer) {
-        return JibEvents.logEvents(LOGGER, containerizer.setAllowInsecureRegistries(allowInsecureRegistries));
+        containerizer.setBaseImageLayersCache(cacheDir);
+        containerizer.setApplicationLayersCache(cacheDir);
+        containerizer.setAllowInsecureRegistries(allowInsecureRegistries);
+        return JibEvents.logEvents(LOGGER, containerizer);
+    }
+
+    private static Path createTemporaryDirectory() {
+        try {
+            return Files.createTempDirectory(null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static class Builder {
+        private Path cacheDir;
         private boolean allowInsecureRegistries;
         private CredentialRetriever sourceCredentialRetriever;
         private CredentialRetriever targetCredentialRetriever;
+
+        public Builder cacheDir(Path cacheDir) {
+            this.cacheDir = cacheDir;
+            return this;
+        }
 
         public Builder allowInsecureRegistries(boolean allowInsecureRegistries) {
             this.allowInsecureRegistries = allowInsecureRegistries;

@@ -145,7 +145,7 @@ public class SleeperPropertiesValidationTest {
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
             // When / Then
             assertThatThrownBy(tableProperties::validate)
-                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\".");
+                    .hasMessage("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\".");
         }
 
         @Test
@@ -191,7 +191,7 @@ public class SleeperPropertiesValidationTest {
             // When/Then
             assertThatThrownBy(tableProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\". Failure 1 of 2.")
+                    .hasMessage("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\". Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
                             COMPRESSION_CODEC, "madeUp",
