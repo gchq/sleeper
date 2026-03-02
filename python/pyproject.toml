@@ -1,11 +1,52 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
+[project]
+name = "sleeper"
+version = "0.35.1.dev1"
+description = "Python client for Sleeper"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+
+license = { file = "LICENSE" }
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
 ]
+
+dependencies = [
+    "pyarrow",
+    "boto3",
+    "s3fs",
+    "boto3-stubs[essential]",
+    "websockets",
+    "jproperties",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-mock",
+    "pytest-asyncio",
+    "testcontainers[localstack]",
+    "ruff"
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
 python_functions = "should_*"
 filterwarnings = [
     "error",
@@ -13,4 +54,8 @@ filterwarnings = [
 ]
 
 [tool.ruff]
+target-version = "py310"
 line-length = 200
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
