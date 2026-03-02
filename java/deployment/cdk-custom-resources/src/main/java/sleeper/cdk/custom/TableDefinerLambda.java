@@ -86,8 +86,7 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
             createNewTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties(), properties.getResourceProperties());
         }
 
-        event.setPhysicalResourceId(properties.getTableProperties().get(TABLE_ID));
-        return Response.success(event.getPhysicalResourceId());
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
 
     }
 
@@ -96,10 +95,11 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
 
         LOGGER.info("Updating table properties for table {}", properties.getTableProperties().get(TABLE_NAME));
+        properties.getTableProperties().set(TABLE_ID, event.getPhysicalResourceId());
         properties.getTableProperties().validate();
 
         properties.getTablePropertiesStore().update(properties.getTableProperties());
-        return Response.success(event.getPhysicalResourceId());
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
     }
 
     @Override
@@ -122,7 +122,7 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
             new DynamoDBTransactionLogSnapshotMetadataStore(properties.getInstanceProperties(), properties.getTableProperties(), dynamoClient).deleteAllSnapshots();
             properties.getTablePropertiesStore().delete(TableStatus.uniqueIdAndName(tableId, tableName, properties.getTableProperties().getBoolean(TABLE_ONLINE)));
         }
-        return Response.success(event.getPhysicalResourceId());
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
     }
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {

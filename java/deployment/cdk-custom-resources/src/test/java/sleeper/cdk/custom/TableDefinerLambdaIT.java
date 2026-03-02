@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.lambda.powertools.cloudformation.Response;
 
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -91,7 +92,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     private final TableProperties tableProperties = createTableProperties();
-    private String tableId;
+    private String physicalResourceId;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -110,11 +111,11 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         return properties;
     }
 
-    private void callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties) throws IOException {
-        callLambda(runtimeInfo, type, tableProperties, "");
+    private Response callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties) throws IOException {
+        return callLambda(runtimeInfo, type, tableProperties, "");
     }
 
-    private void callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties, String splitPoints) throws IOException {
+    private Response callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties, String splitPoints) throws IOException {
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
         resourceProperties.put("splitPoints", splitPoints);
@@ -123,15 +124,10 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .withRequestType(type)
                 .withResourceProperties(resourceProperties)
                 .withResponseUrl(runtimeInfo.getHttpBaseUrl() + "/report-response")
+                .withPhysicalResourceId(physicalResourceId)
                 .build();
 
-        tableDefinerLambda.handleEvent(event, new FakeLambdaContext());
-
-        if (event.getPhysicalResourceId() != null) {
-            tableId = event.getPhysicalResourceId();
-        } else {
-            tableId = tableProperties.get(TABLE_ID);
-        }
+        return tableDefinerLambda.handleEvent(event, new FakeLambdaContext());
     }
 
     @Nested
@@ -259,9 +255,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldRenameTableSuccessfully(WireMockRuntimeInfo runtimeInfo) throws IOException {
             // Given
             tableProperties.set(TABLE_NAME, "old-table-name");
-            callLambda(runtimeInfo, CREATE, tableProperties);
 
-            tableProperties.set(TABLE_ID, tableId);
+            physicalResourceId = callLambda(runtimeInfo, CREATE, tableProperties).getPhysicalResourceId();
+
             tableProperties.set(TABLE_NAME, "new-table-name");
 
             // When
@@ -271,6 +267,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             verify(putRequestedFor(urlEqualTo("/report-response"))
                     .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
             assertThat(propertiesStore.streamAllTables()).singleElement()
+                    .extracting(table -> withoutTableId(table))
                     .isEqualTo(tableProperties);
         }
 
