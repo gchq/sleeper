@@ -19,6 +19,9 @@ vulnerabilities:
   # (hadoop-client-runtime-3.4.1.jar)
   - id: CVE-2025-52999
   - id: CVE-2025-49128
+  # com.fasterxml.jackson.core:jackson-core
+  # (jackson-core-2.19.2.jar)
+  - id: CWE-770
   # com.google.guava:guava
   # (spark-network-common_2.12-3.5.6.jar)
   - id: CVE-2018-10237
