@@ -207,7 +207,7 @@ mod i32_tests {
         *,
     };
     use cxx::UniquePtr;
-    use rand::Rng;
+    use rand::RngExt;
 
     // convenience alias
     use i32_sketch_t as sketch_type;
@@ -561,7 +561,7 @@ mod i64_tests {
         *,
     };
     use cxx::UniquePtr;
-    use rand::Rng;
+    use rand::RngExt;
 
     // convenience alias
     use i64_sketch_t as sketch_type;

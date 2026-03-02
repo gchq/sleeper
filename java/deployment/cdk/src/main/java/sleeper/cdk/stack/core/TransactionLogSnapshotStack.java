@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -22,13 +23,12 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.TrackDeadLetters;
@@ -63,6 +63,7 @@ import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_DELET
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TransactionLogSnapshotStack extends NestedStack {
 
     public TransactionLogSnapshotStack(
@@ -71,8 +72,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
-        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
         createSnapshotCreationLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
         createSnapshotDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
         Utils.addTags(this, props.getInstanceProperties());
@@ -84,7 +84,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
         String creationFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation");
-        IFunction snapshotCreationTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
+        IFunction snapshotCreationTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to create transaction log snapshots for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -92,7 +92,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_SNAPSHOT_CREATION_TRIGGER)));
-        IFunction snapshotCreationLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
+        IFunction snapshotCreationLambda = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_CREATION, "TransactionLogSnapshotCreation", builder -> builder
                 .functionName(creationFunctionName)
                 .description("Creates transaction log snapshots for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -149,7 +149,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion");
-        IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
+        IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to delete old transaction log snapshots for and puts them on a queue to be processed")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
@@ -157,7 +157,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_SNAPSHOT_DELETION_TRIGGER)));
-        IFunction snapshotDeletionLambda = lambdaCode.buildFunction(this, LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
+        IFunction snapshotDeletionLambda = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_DELETION, "TransactionLogSnapshotDeletion", builder -> builder
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log snapshots for tables")
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.ingest;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -28,14 +29,13 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -64,6 +64,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class IngestBatcherStack extends NestedStack {
 
     private final IQueue submitQueue;
@@ -121,15 +122,14 @@ public class IngestBatcherStack extends NestedStack {
                 .build();
 
         // Lambdas to receive submitted files and create batches
-        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
-        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
-        IFunction submitterLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
+        IFunction submitterLambda = lambdaCode.buildFunction(LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)
                 .description("Triggered by an SQS event that contains a request to ingest a file")
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
@@ -146,7 +146,7 @@ public class IngestBatcherStack extends NestedStack {
         coreStacks.grantReadTableDataBucket(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
-        IFunction jobCreatorLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_JOB_CREATOR, "IngestBatcherJobCreationLambda", builder -> builder
+        IFunction jobCreatorLambda = lambdaCode.buildFunction(LambdaHandler.INGEST_BATCHER_JOB_CREATOR, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
                 .description("Create jobs by batching up submitted file ingest requests")
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB))

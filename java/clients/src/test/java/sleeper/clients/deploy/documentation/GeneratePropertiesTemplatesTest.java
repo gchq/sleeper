@@ -185,7 +185,7 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldNotIncludePropertyDefaultedFromNonMandatoryInstanceProperty() {
             assertThat(propertiesString)
-                    .doesNotContain("sleeper.table.compression.codec");
+                    .doesNotContain("sleeper.table.parquet.compression.codec");
         }
 
         @Test

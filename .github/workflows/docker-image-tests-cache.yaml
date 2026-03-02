@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - develop
-  workflow_dispatch: # Allow manual running to refresh/check cache
-  schedule:
-    - cron: '0 2 * * *'
 
 jobs:
   build:

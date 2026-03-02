@@ -52,7 +52,7 @@ import software.amazon.awscdk.services.lambda.CfnPermission;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.IDependable;
 
-import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -198,7 +198,7 @@ public class CompactionOnEc2Resources {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-custom-termination");
 
-        IFunction handler = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_TASK_TERMINATOR, "CompactionTerminator", builder -> builder
+        IFunction handler = lambdaCode.buildFunction(LambdaHandler.COMPACTION_TASK_TERMINATOR, "CompactionTerminator", builder -> builder
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)

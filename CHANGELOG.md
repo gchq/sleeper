@@ -6,6 +6,31 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.35.1
+
+### 2nd March, 2026
+
+This includes minor improvements, as well as bugfixes and security upgrades to dependencies.
+
+Query:
+- Queries now run on DataFusion by default
+
+Scripts:
+- Added a script to list tables in an instance
+- Added median and percentiles to file status report
+
+Configuration:
+- Some table properties have been renamed to include "parquet" more consistently ([see issue](https://github.com/gchq/sleeper/issues/6545))
+
+Build:
+- Builders for Rust code now work on ARM64 architecture
+
+Bugfixes:
+- Allowed maximum capacity lower than 3 for a persistent EMR cluster with managed scaling, improved validation of managed scaling configuration
+- When more bulk import jobs are submitted to a persistent EMR cluster than can fit as pending steps, the job no longer fails and is re-queued on the bulk import queue
+- Setting the schema property directly on a TableProperties object no longer results in a null schema
+
+
 ## Version 0.35.0
 
 ### 9th February, 2026

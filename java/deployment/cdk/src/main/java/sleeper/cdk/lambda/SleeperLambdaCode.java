@@ -13,52 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.lambda;
 
-import software.amazon.awscdk.services.ecr.Repository;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.DockerImageFunction;
-import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IVersion;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.artefacts.containers.SleeperLambdaImages;
+import sleeper.cdk.artefacts.jars.SleeperJars;
+import sleeper.cdk.artefacts.jars.SleeperLambdaJars;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 
-import java.util.List;
 import java.util.function.Consumer;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 public class SleeperLambdaCode {
 
-    private final SleeperJarsInBucket jars;
-    private final InstanceProperties instanceProperties;
-    private final IBucket bucket;
+    private final Construct scope;
+    private final LambdaDeployType deployType;
+    private final SleeperLambdaJars jars;
+    private final SleeperLambdaImages images;
 
-    SleeperLambdaCode(SleeperJarsInBucket jars, InstanceProperties instanceProperties, IBucket bucket) {
+    public SleeperLambdaCode(Construct scope, LambdaDeployType deployType, SleeperLambdaJars jars, SleeperLambdaImages images) {
+        this.scope = scope;
+        this.deployType = deployType;
         this.jars = jars;
-        this.instanceProperties = instanceProperties;
-        this.bucket = bucket;
+        this.images = images;
     }
 
-    public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
+    public static SleeperLambdaCode jarsOnly(Construct scope, SleeperJars jars) {
+        return new SleeperLambdaCode(scope, LambdaDeployType.JAR, jars.lambdaJarsAtScope(scope), null);
+    }
 
-        LambdaDeployType deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+    public IVersion buildFunction(LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
+
         LambdaBuilder builder;
         if (deployType == LambdaDeployType.CONTAINER || handler.isAlwaysDockerDeploy()) {
             builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
-                    .code(containerCode(scope, handler, id)));
+                    .code(images.containerCode(handler)));
         } else if (deployType == LambdaDeployType.JAR) {
             builder = new FunctionBuilder(Function.Builder.create(scope, id)
-                    .code(jarCode(handler.getJar()))
+                    .code(jars.jarCode(handler.getJar()))
                     .handler(handler.getHandler())
                     .runtime(Runtime.JAVA_17));
         } else {
@@ -74,18 +71,5 @@ public class SleeperLambdaCode {
         // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
         // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
         return function.getCurrentVersion();
-    }
-
-    private Code jarCode(LambdaJar jar) {
-        return Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
-    }
-
-    private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
-        return DockerImageCode.fromEcr(
-                Repository.fromRepositoryName(scope, id + "Repository", jars.getRepositoryName(handler.getJar())),
-                EcrImageCodeProps.builder()
-                        .cmd(List.of(handler.getHandler()))
-                        .tagOrDigest(instanceProperties.get(VERSION))
-                        .build());
     }
 }

@@ -16,15 +16,20 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.query.QueryTypeDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.query.QueryRange.range;
@@ -33,6 +38,10 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStri
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
+/**
+ * Web socket queries are covered separately here. They need much more system test coverage than other query types since
+ * we can't test them fully without deploying an Amazon API Gateway.
+ */
 @SystemTest
 public class QueryWebSocketST {
     @TempDir
@@ -43,19 +52,21 @@ public class QueryWebSocketST {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
-    @Test
-    void shouldRunQueryForAllRows(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryForAllRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
-        assertThat(sleeper.query().webSocket()
+        assertThat(queryType.query(sleeper)
                 .allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
     }
 
-    @Test
-    void shouldRunQueryWithOneRange(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryWithOneRange(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -63,14 +74,15 @@ public class QueryWebSocketST {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
-        assertThat(sleeper.query().webSocket()
+        assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20")))
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 20));
     }
 
-    @Test
-    void shouldRunQueryWithTwoRangesThatOverlap(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryWithTwoRangesThatOverlap(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -78,15 +90,16 @@ public class QueryWebSocketST {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
-        assertThat(sleeper.query().webSocket()
+        assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-30"),
                         range("row-20", "row-40")))
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 40));
     }
 
-    @Test
-    void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryWithTwoRangesThatDoNotOverlap(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -94,7 +107,7 @@ public class QueryWebSocketST {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
-        assertThat(sleeper.query().webSocket()
+        assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20"),
                         range("row-30", "row-40")))
@@ -104,10 +117,11 @@ public class QueryWebSocketST {
                                 LongStream.range(30, 40))));
     }
 
-    @Test
-    void shouldRunQueryReturningNoRows(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryReturningNoRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // When/Then
-        assertThat(sleeper.query().webSocket()
+        assertThat(queryType.query(sleeper)
                 .allRowsInTable())
                 .isEmpty();
     }
@@ -115,13 +129,22 @@ public class QueryWebSocketST {
     // We established an appropriate number of rows for this by roughly checking the payload size produced in
     // QueryWebSocketMessageSerDeTest and comparing against the AWS docs:
     // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
-    @Test
-    void shouldRunQueryReturningManyRows(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryReturningTooManyRowsForOneWebSocketMessage(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given we have a number of rows that will break API Gateway's limit on payload size
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 3000));
 
         // When/Then
-        assertThat(sleeper.query().webSocket().allRowsInTable())
+        assertThat(queryType.query(sleeper).allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 3000));
+    }
+
+    private static Stream<Arguments> queryTypes() {
+        return Stream.of(
+                Arguments.of(Named.of("Java data engine",
+                        QueryTypeDsl.builder().java().webSocket().build())),
+                Arguments.of(Named.of("DataFusion data engine",
+                        QueryTypeDsl.builder().dataFusion().webSocket().build())));
     }
 }

@@ -15,17 +15,21 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.query.QueryTypeDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.query.QueryRange.range;
@@ -34,8 +38,13 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStri
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
+/**
+ * Web socket queries are covered in a separate class, QueryWebSocketST. They need much more system test coverage since
+ * we can't test them fully without deploying an Amazon API Gateway. Direct and SQS queries have more coverage through
+ * integration tests, so their system test coverage here is more basic.
+ */
 @SystemTest
-public class QuerySqsST {
+public class QueryST {
     @TempDir
     private Path tempDir;
 
@@ -44,24 +53,9 @@ public class QuerySqsST {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
-    @AfterEach
-    void tearDown(SleeperDsl sleeper) {
-        sleeper.query().emptyResultsBucket();
-    }
-
-    @Test
-    void shouldRunQueryForAllRows(SleeperDsl sleeper) {
-        // Given
-        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-        // When/Then
-        assertThat(sleeper.query().byQueue()
-                .allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
-    }
-
-    @Test
-    void shouldRunQueryWithOneRange(SleeperDsl sleeper) {
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQuery(QueryTypeDsl queryType, SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -69,38 +63,7 @@ public class QuerySqsST {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
-        assertThat(sleeper.query().byQueue()
-                .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        range("row-10", "row-20")))
-                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 20));
-    }
-
-    @Test
-    void shouldRunQueryWithTwoRangesThatOverlap(SleeperDsl sleeper) {
-        // Given
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-        // When/Then
-        assertThat(sleeper.query().byQueue()
-                .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        range("row-10", "row-30"),
-                        range("row-20", "row-40")))
-                .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 40));
-    }
-
-    @Test
-    void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperDsl sleeper) {
-        // Given
-        sleeper.setGeneratorOverrides(
-                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-        // When/Then
-        assertThat(sleeper.query().byQueue()
+        assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20"),
                         range("row-30", "row-40")))
@@ -109,4 +72,26 @@ public class QuerySqsST {
                                 LongStream.range(10, 20),
                                 LongStream.range(30, 40))));
     }
+
+    @ParameterizedTest
+    @MethodSource("queryTypes")
+    void shouldRunQueryReturningNoRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
+        // When/Then
+        assertThat(queryType.query(sleeper)
+                .allRowsInTable())
+                .isEmpty();
+    }
+
+    private static Stream<Arguments> queryTypes() {
+        return Stream.of(
+                Arguments.of(Named.of("Java data engine, direct",
+                        QueryTypeDsl.builder().java().direct().build())),
+                Arguments.of(Named.of("Java data engine, by SQS queue",
+                        QueryTypeDsl.builder().java().byQueue().build())),
+                Arguments.of(Named.of("DataFusion data engine, direct",
+                        QueryTypeDsl.builder().dataFusion().direct().build())),
+                Arguments.of(Named.of("DataFusion data engine, by SQS queue",
+                        QueryTypeDsl.builder().dataFusion().byQueue().build())));
+    }
+
 }
