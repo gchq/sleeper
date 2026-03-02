@@ -2,3 +2,6 @@
 vulnerabilities:
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
+
+  # False positive for jackson-core, we're actually using a version with the fix (2.21.1)
+  - id: GHSA-72hv-8253-57qq
