@@ -18,7 +18,7 @@ package sleeper.clients.report.statestore;
 import java.time.Instant;
 
 /**
- * A log entry recording that a state store committer Lambda started processing.
+ * A log entry recording that a state store committer lambda started processing.
  */
 public class StateStoreCommitterLambdaRunStarted extends StateStoreCommitterRunStarted {
 

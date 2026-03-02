@@ -177,7 +177,8 @@ public class StateStoreCommitterRun {
         }
 
         /**
-         * Sets the start time for the run based on if the supplied start is earlier than the current found one.
+         * Sets the start log entry for a run. The multithreaded state store committer runs will have multiple start
+         * log entries so this method will ensure the earliest is used.
          *
          * @param  start the log entry recording that the state store committer finished
          * @return       this builder
@@ -190,7 +191,8 @@ public class StateStoreCommitterRun {
         }
 
         /**
-         * Sets the finish time for the run based on if the supplied finish is later than the current found one.
+         * Sets the finish log entry for a run. The multithreaded state store committer runs will have multiple finish
+         * log entries so this method will ensure the last is used.
          *
          * @param  finish the log entry recording that the state store committer finished
          * @return        this builder

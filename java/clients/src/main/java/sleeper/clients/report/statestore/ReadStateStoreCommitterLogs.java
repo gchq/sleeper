@@ -15,8 +15,6 @@
  */
 package sleeper.clients.report.statestore;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.model.ResultField;
 
 import java.time.Instant;
@@ -33,7 +31,6 @@ import java.util.regex.Pattern;
  * Parses individual log messages from the state store comitter.
  */
 public class ReadStateStoreCommitterLogs {
-    public static final Logger LOGGER = LoggerFactory.getLogger(ReadStateStoreCommitterLogs.class);
 
     private ReadStateStoreCommitterLogs() {
     }

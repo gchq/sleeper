@@ -191,15 +191,15 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadLogsFromMultipleThreadsAsOneRun() {
             // Given
-            //Thread 1
+            //Table 1 thread logs
             StateStoreCommitterThreadRunStarted started = batchRunStartedAt(testStream, Instant.now());
             StateStoreCommitSummary thread1 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, Instant.now());
-            //Thread 2
+            //Table 2 thread logs
             batchRunStartedAt(testStream, Instant.now());
             StateStoreCommitSummary thread2 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, Instant.now());
-            //Thread 3
+            //Table 3 thread logs
             batchRunStartedAt(testStream, Instant.now());
             StateStoreCommitSummary thread3 = committedOnStream(testStream);
             StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, Instant.now());
@@ -217,15 +217,15 @@ public class StateStoreCommitterRunsFromEntriesTest {
             // Given
             Instant earliestStart = Instant.now();
             Instant finish = earliestStart.plusSeconds(3);
-            //Thread 1
+            //Table 1 thread logs
             batchRunStartedAt(testStream, earliestStart.plusSeconds(1));
             StateStoreCommitSummary thread1 = committedOnStream(testStream);
             StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, finish);
-            //Thread 2
+            //Table 2 thread logs
             StateStoreCommitterThreadRunStarted earliest = batchRunStartedAt(testStream, earliestStart);
             StateStoreCommitSummary thread2 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, finish);
-            //Thread 3
+            //Table 3 thread logs
             batchRunStartedAt(testStream, earliestStart.plusSeconds(2));
             StateStoreCommitSummary thread3 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, finish);
@@ -243,15 +243,15 @@ public class StateStoreCommitterRunsFromEntriesTest {
             // Given
             Instant start = Instant.now();
             Instant latestFinish = start.plusSeconds(3);
-            //Thread 1
+            //Table 1 thread logs
             StateStoreCommitterThreadRunStarted earliest = batchRunStartedAt(testStream, start);
             StateStoreCommitSummary thread1 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, latestFinish.minusSeconds(2));
-            //Thread 2
+            //Table 2 thread logs
             batchRunStartedAt(testStream, start);
             StateStoreCommitSummary thread2 = committedOnStream(testStream);
             StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, latestFinish);
-            //Thread 3
+            //Table 3 thread logs
             batchRunStartedAt(testStream, start);
             StateStoreCommitSummary thread3 = committedOnStream(testStream);
             batchRunFinishedAt(testStream, latestFinish.minusSeconds(1));

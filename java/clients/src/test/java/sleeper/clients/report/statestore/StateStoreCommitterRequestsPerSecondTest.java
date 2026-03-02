@@ -196,15 +196,15 @@ public class StateStoreCommitterRequestsPerSecondTest {
         // Given
         Instant earliestStart = Instant.now();
         Instant finish = earliestStart.plusSeconds(3);
-        //Thread 1
+        //Table 1 thread logs
         batchRunStartedAt(earliestStart.plusSeconds(1));
         committedAtTime(Instant.now());
         batchRunFinishedAt(finish);
-        //Thread 2 - Earliest start
+        //Table 2 thread logs - Earliest start
         batchRunStartedAt(earliestStart);
         committedAtTime(Instant.now());
         batchRunFinishedAt(finish);
-        //Thread 3
+        //Table 3 thread logs
         batchRunStartedAt(earliestStart.plusSeconds(2));
         committedAtTime(Instant.now());
         batchRunFinishedAt(finish);
@@ -224,15 +224,15 @@ public class StateStoreCommitterRequestsPerSecondTest {
         // Given
         Instant start = Instant.now();
         Instant lastFinish = start.plusSeconds(3);
-        //Thread 1
+        //Table 1 thread logs
         batchRunStartedAt(start);
         committedAtTime(Instant.now());
         batchRunFinishedAt(lastFinish.minusSeconds(2));
-        //Thread 2 - Earliest start
+        //Table 2 thread logs - Last finish
         batchRunStartedAt(start);
         committedAtTime(Instant.now());
         batchRunFinishedAt(lastFinish);
-        //Thread 3
+        //Table 3 thread logs
         batchRunStartedAt(start);
         committedAtTime(Instant.now());
         batchRunFinishedAt(lastFinish.minusSeconds(1));
