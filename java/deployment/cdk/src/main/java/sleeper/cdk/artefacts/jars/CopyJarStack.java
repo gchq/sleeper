@@ -38,7 +38,7 @@ public class CopyJarStack extends NestedStack {
     public CopyJarStack(Construct scope, String id, String deploymentId, SleeperJars jars) {
         super(scope, id);
         SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, jars);
-        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_JAR, "Function", builder -> builder
                 .functionName("sleeper-" + deploymentId + "-copy-jar")
                 .memorySize(2048)
                 .description("Lambda for copying jar files from an external repository to a jars bucket")
