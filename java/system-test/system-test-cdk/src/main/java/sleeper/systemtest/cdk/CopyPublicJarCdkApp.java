@@ -20,13 +20,16 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperArtefactRepositories;
-import sleeper.cdk.artefacts.jars.CopyJarStack;
+import sleeper.cdk.artefacts.jars.CopyJarProvider;
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.artefacts.jars.SleeperJarsFromFileSystem;
 import sleeper.cdk.util.CdkContext;
@@ -42,8 +45,21 @@ public class CopyPublicJarCdkApp extends Stack {
         super(scope, id, stackProps);
 
         IBucket bucket = SleeperArtefactRepositories.createJarsBucket(this, props.deploymentId());
-        CustomResource copyJar = new CopyJarStack(this, "CopyJars", props.deploymentId(), props.jars())
-                .createCopyJar(this, "CopyJar", props.sourceUrl(), bucket.getBucketName(), "test.jar");
+        CopyJarProvider copyJarProvider = CopyJarProvider.Builder.create(this, "CopyJars")
+                .jars(props.jars())
+                .functionName("sleeper-" + id + "-copy-jars")
+                .functionLogGroup(LogGroup.Builder.create(this, "LambdaLogGroup")
+                        .logGroupName("sleeper-" + id + "-copy-jars")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.RETAIN)
+                        .build())
+                .providerLogGroup(LogGroup.Builder.create(this, "ProviderLogGroup")
+                        .logGroupName("sleeper-" + id + "-copy-jars-provider")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.RETAIN)
+                        .build())
+                .build();
+        CustomResource copyJar = copyJarProvider.createCopyJar(this, "CopyJar", props.sourceUrl(), bucket.getBucketName(), "test.jar");
         CfnOutput.Builder.create(this, "VersionId")
                 .value(copyJar.getAttString("versionId"))
                 .build();
