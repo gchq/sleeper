@@ -16,20 +16,67 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ]; then
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/subcommands && pwd)
+
+show_usage() {
   echo "Usage: environment <subcommand>"
+  COMMANDS=$(ls $SUBCOMMANDS_DIR | grep -Po '.+(?=.sh)' | tr '\n' ' ')
+  echo "Available subcommands: help $COMMANDS"
+}
+
+if [ "$#" -lt 1 ]; then
+  show_usage
   exit 1
 fi
 
 SUBCOMMAND=$1
 shift
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/subcommands && pwd)
+if [ "$SUBCOMMAND" == "help" ]; then
+  show_usage
+  echo
+  echo "Commands to invoke the CDK for an environment:"
+  echo "=============================================="
+  echo
+  echo "deploy"
+  echo "Runs a CDK deployment of an environment. The first argument is the environment ID for your deployment. Further"
+  echo "arguments will be passed to the CDK. If an EC2 instance is deployed, further commands will interact with that"
+  echo "instance."
+  echo
+  echo "destroy"
+  echo "Runs a CDK destroy of an environment. The first argument is the environment ID for your deployment. Further"
+  echo "arguments will be passed to the CDK."
+  echo
+  echo
+  echo "Commands to work with existing environments:"
+  echo "============================================"
+  echo
+  echo "add"
+  echo "Adds an environment that has been previously deployed, so you can connect to its EC2 instance. Takes a single"
+  echo "argument of the evironment ID that you want to add. This must be deployed in the currently authenticated AWS"
+  echo "account."
+  echo
+  echo "list"
+  echo "Lists environments known locally. These may be used with the \"set\" command to switch environments."
+  echo
+  echo "set"
+  echo "Switches to another environment known locally, so you can connect to its EC2 instance. Takes a single"
+  echo "argument of the evironment ID that you want to switch to. The environment must have previously been added with"
+  echo "the \"add\" or \"deploy\" command."
+  echo
+  echo
+  echo "Commands to interact with a deployed EC2 instance:"
+  echo "============================================="
+  echo
+  echo "adduser"
+  echo "Adds a new user in the EC2 instance of the current environment."
+fi
 
 SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
 if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
   echo "Subcommand not found: environment $SUBCOMMAND"
+  show_usage
   exit 1
 fi
 
