@@ -26,9 +26,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateStoreCommitterRunsFromEntriesTest {
+    private static final String DEFAULT_LOG_STREAM = "test-stream";
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
-    private String testStream = "test-stream";
 
     @Nested
     @DisplayName("Lambda state store tests")
@@ -36,9 +36,9 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadFinishedRunWithOneCommit() {
             // Given
-            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
-            StateStoreCommitSummary committed = committedOnStream(testStream);
-            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+            StateStoreCommitterRunStarted started = runStartedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitSummary committed = committedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -51,12 +51,12 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadMultipleRunsOnSameLogStream() {
             // Given
-            StateStoreCommitterRunStarted started1 = runStartedOnStream(testStream);
-            StateStoreCommitSummary committed1 = committedOnStream(testStream);
-            StateStoreCommitterRunFinished finished1 = runFinishedOnStream(testStream);
-            StateStoreCommitterRunStarted started2 = runStartedOnStream(testStream);
-            StateStoreCommitSummary committed2 = committedOnStream(testStream);
-            StateStoreCommitterRunFinished finished2 = runFinishedOnStream(testStream);
+            StateStoreCommitterRunStarted started1 = runStartedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitSummary committed1 = committedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunFinished finished1 = runFinishedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunStarted started2 = runStartedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitSummary committed2 = committedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunFinished finished2 = runFinishedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -91,7 +91,7 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadUnfinishedRunWithNoCommits() {
             // Given
-            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+            StateStoreCommitterRunStarted started = runStartedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -104,8 +104,8 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadUnfinishedRunWithOneCommit() {
             // Given
-            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
-            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitterRunStarted started = runStartedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitSummary committed = committedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -118,7 +118,7 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadUnfinishedRunWithUnknownStartTimeAndOneCommit() {
             // Given
-            StateStoreCommitSummary committed = committedOnStream(testStream);
+            StateStoreCommitSummary committed = committedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -131,7 +131,7 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadFinishedRunWithUnknownStartTimeAndNoCommits() {
             // Given
-            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -144,8 +144,8 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadFinishedRunWithUnknownStartTimeAndOneCommit() {
             // Given
-            StateStoreCommitSummary committed = committedOnStream(testStream);
-            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
+            StateStoreCommitSummary committed = committedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -158,8 +158,8 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadFinishedThenStartedRunOnSameStream() {
             // Given
-            StateStoreCommitterRunFinished finished = runFinishedOnStream(testStream);
-            StateStoreCommitterRunStarted started = runStartedOnStream(testStream);
+            StateStoreCommitterRunFinished finished = runFinishedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunStarted started = runStartedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -172,8 +172,8 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadTwoStartedRunsOnSameStream() {
             // Given
-            StateStoreCommitterRunStarted started1 = runStartedOnStream(testStream);
-            StateStoreCommitterRunStarted started2 = runStartedOnStream(testStream);
+            StateStoreCommitterRunStarted started1 = runStartedOnStream(DEFAULT_LOG_STREAM);
+            StateStoreCommitterRunStarted started2 = runStartedOnStream(DEFAULT_LOG_STREAM);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -185,24 +185,27 @@ public class StateStoreCommitterRunsFromEntriesTest {
     }
 
     @Nested
-    @DisplayName("Multi threaded state sore tests")
+    @DisplayName("Multi threaded state store tests")
     class MultiThreadedTests {
 
         @Test
         void shouldReadLogsFromMultipleThreadsAsOneRun() {
             // Given
+            Instant startTime = Instant.parse("2026-01-01T00:00:00Z");
+            Instant commitTime = Instant.parse("2026-01-01T00:00:01Z");
+            Instant endTime = Instant.parse("2026-01-01T00:00:02Z");
             //Table 1 thread logs
-            StateStoreCommitterThreadRunStarted started = batchRunStartedAt(testStream, Instant.now());
-            StateStoreCommitSummary thread1 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, Instant.now());
+            StateStoreCommitterThreadRunStarted started = batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread1 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
             //Table 2 thread logs
-            batchRunStartedAt(testStream, Instant.now());
-            StateStoreCommitSummary thread2 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, Instant.now());
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread2 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
             //Table 3 thread logs
-            batchRunStartedAt(testStream, Instant.now());
-            StateStoreCommitSummary thread3 = committedOnStream(testStream);
-            StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, Instant.now());
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread3 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            StateStoreCommitterThreadRunFinished finished = batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -215,20 +218,20 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadEarliestStartTimeFromMultipleBatchStarts() {
             // Given
-            Instant earliestStart = Instant.now();
-            Instant finish = earliestStart.plusSeconds(3);
+            Instant commitTime = Instant.parse("2026-01-01T00:00:02Z");
+            Instant endTime = Instant.parse("2026-01-01T00:00:03Z");
             //Table 1 thread logs
-            batchRunStartedAt(testStream, earliestStart.plusSeconds(1));
-            StateStoreCommitSummary thread1 = committedOnStream(testStream);
-            StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, finish);
-            //Table 2 thread logs
-            StateStoreCommitterThreadRunStarted earliest = batchRunStartedAt(testStream, earliestStart);
-            StateStoreCommitSummary thread2 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, finish);
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:01Z"));
+            StateStoreCommitSummary thread1 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            StateStoreCommitterThreadRunFinished finished = batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
+            //Table 2 thread logs - Earliest Start
+            StateStoreCommitterThreadRunStarted earliest = batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:00Z"));
+            StateStoreCommitSummary thread2 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
             //Table 3 thread logs
-            batchRunStartedAt(testStream, earliestStart.plusSeconds(2));
-            StateStoreCommitSummary thread3 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, finish);
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:02Z"));
+            StateStoreCommitSummary thread3 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, endTime);
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -241,20 +244,21 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadLatestFinishTimeFromMultipleBatchStarts() {
             // Given
-            Instant start = Instant.now();
-            Instant latestFinish = start.plusSeconds(3);
+            Instant startTime = Instant.parse("2026-01-01T00:00:00Z");
+            Instant commitTime = Instant.parse("2026-01-01T00:00:01Z");
+
             //Table 1 thread logs
-            StateStoreCommitterThreadRunStarted earliest = batchRunStartedAt(testStream, start);
-            StateStoreCommitSummary thread1 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, latestFinish.minusSeconds(2));
-            //Table 2 thread logs
-            batchRunStartedAt(testStream, start);
-            StateStoreCommitSummary thread2 = committedOnStream(testStream);
-            StateStoreCommitterThreadRunFinished finished = batchRunFinishedAt(testStream, latestFinish);
+            StateStoreCommitterThreadRunStarted earliest = batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread1 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:01Z"));
+            //Table 2 thread logs - Last finish
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread2 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            StateStoreCommitterThreadRunFinished finished = batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:03Z"));
             //Table 3 thread logs
-            batchRunStartedAt(testStream, start);
-            StateStoreCommitSummary thread3 = committedOnStream(testStream);
-            batchRunFinishedAt(testStream, latestFinish.minusSeconds(1));
+            batchRunStartedOnStreamAtTime(DEFAULT_LOG_STREAM, startTime);
+            StateStoreCommitSummary thread3 = committedOnStreamAtTime(DEFAULT_LOG_STREAM, commitTime);
+            batchRunFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, Instant.parse("2026-01-01T00:00:02Z"));
 
             // When
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
@@ -262,6 +266,31 @@ public class StateStoreCommitterRunsFromEntriesTest {
             // Then
             assertThat(runs)
                     .containsExactly(finishedRun(earliest, finished, thread1, thread2, thread3));
+        }
+
+        @Test
+        void shouldHandleMultipleLogStreamsAsSeperateRuns() {
+            // Given
+            Instant startTime = Instant.parse("2026-01-01T00:00:00Z");
+            Instant commitTime = Instant.parse("2026-01-01T00:00:01Z");
+            Instant endTime = Instant.parse("2026-01-01T00:00:02Z");
+
+            //Table 1 thread logs
+            StateStoreCommitterThreadRunStarted earliest1 = batchRunStartedOnStreamAtTime("stream-1", startTime);
+            StateStoreCommitSummary thread1 = committedOnStreamAtTime("stream-1", commitTime);
+            StateStoreCommitterThreadRunFinished finished1 = batchRunFinishedOnStreamAtTime("stream-1", endTime);
+            //Table 2 thread logs
+            StateStoreCommitterThreadRunStarted earliest2 = batchRunStartedOnStreamAtTime("stream-2", startTime);
+            StateStoreCommitSummary thread2 = committedOnStreamAtTime("stream-2", commitTime);
+            StateStoreCommitterThreadRunFinished finished2 = batchRunFinishedOnStreamAtTime("stream-2", endTime);
+
+            // When
+            List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(logs);
+
+            // Then
+            assertThat(runs)
+                    .containsExactly(finishedRun(earliest1, finished1, thread1),
+                            finishedRun(earliest2, finished2, thread2));
         }
     }
 
@@ -273,16 +302,20 @@ public class StateStoreCommitterRunsFromEntriesTest {
         return add(new StateStoreCommitSummary(logStream, Instant.now(), "test-table", "test-commit", Instant.now()));
     }
 
+    private StateStoreCommitSummary committedOnStreamAtTime(String logStream, Instant time) {
+        return add(new StateStoreCommitSummary(logStream, time, "test-table", "test-commit", time));
+    }
+
     private StateStoreCommitterRunFinished runFinishedOnStream(String logStream) {
         return add(new StateStoreCommitterLambdaRunFinished(logStream, Instant.now(), Instant.now()));
     }
 
-    private StateStoreCommitterThreadRunStarted batchRunStartedAt(String logStream, Instant startTime) {
-        return add(new StateStoreCommitterThreadRunStarted(logStream, Instant.now(), startTime));
+    private StateStoreCommitterThreadRunStarted batchRunStartedOnStreamAtTime(String logStream, Instant startTime) {
+        return add(new StateStoreCommitterThreadRunStarted(logStream, startTime, startTime));
     }
 
-    private StateStoreCommitterThreadRunFinished batchRunFinishedAt(String logStream, Instant finishTime) {
-        return add(new StateStoreCommitterThreadRunFinished(logStream, Instant.now(), finishTime));
+    private StateStoreCommitterThreadRunFinished batchRunFinishedOnStreamAtTime(String logStream, Instant finishTime) {
+        return add(new StateStoreCommitterThreadRunFinished(logStream, finishTime, finishTime));
     }
 
     private <T extends StateStoreCommitterLogEntry> T add(T log) {
