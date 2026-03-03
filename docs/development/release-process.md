@@ -17,14 +17,17 @@ The following steps explain how to prepare and publish a release for Sleeper.
      - This will be done immediately after the release.
 
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
-   design that has changed in this release.
+   design that has changed in this release. Whilst doing this, check that new/changed features work as documented.
 
-3. Make sure the [NOTICES](../../NOTICES) file is up to date.
+3. Check for any work in the release that has only been partially implemented so far. Decide if those parts can either be
+   temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to work yet.
 
-4. Create pull requests for the changelog and roadmap update. These can stay on hold until the release is ready. The
+4. Make sure the [NOTICES](../../NOTICES) file is up to date.
+
+5. Create pull requests for the changelog and roadmap update. These can stay on hold until the release is ready. The
    changelog should be updated with any bug fixes or further changes.
 
-5. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
+6. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
    of release.
 
 There should be a cron job configured to run the test suite nightly. This setup is documented in
@@ -33,11 +36,11 @@ the [system tests guide](system-tests.md#nightly-test-scripts).
 At this point we can pause merging any pull requests that are not essential for the release. This includes version
 upgrades done by Dependabot.
 
-6. Run a deployment with `.scripts/deploy/deployNew.sh` to check that it can deploy an instance successfully when using
+7. Run a deployment with `.scripts/deploy/deployNew.sh` to check that it can deploy an instance successfully when using
    the templates instead of your own configuration files. First set the property `sleeper.retain.infra.after.destroy` to
    false in the template, so that the instance will tear down fully afterwards.
 
-7. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
+8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:
 
 ```bash
@@ -54,7 +57,7 @@ The following tests can be used as a quick check that all is working correctly. 
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
-8. Test a simple query:
+9. Test a simple query:
 
 ```bash
 ./scripts/utility/query.sh ${ID}
@@ -64,7 +67,7 @@ Choose a range query, choose 'y' for the first two questions and then choose a r
 As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it
 should be in the region of 900 results.
 
-9. Test a query that will be executed by lambda:
+10. Test a query that will be executed by lambda:
 
 ```bash
 ./scripts/utility/lambdaQuery.sh ${ID}
@@ -74,7 +77,7 @@ Choose the S3 results bucket option and then choose the same options as above. I
 The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query
 should be quicker.
 
-10. Test a query that will be executed by lambda with the results being returned over a websocket:
+11. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
 ./scripts/utility/webSocketQuery.sh ${ID}
@@ -82,21 +85,21 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-11. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
+12. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
     performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
     necessary to re-run the tests manually. See the [system test guide](system-tests.md#acceptance-tests).
 
-12. Create a pull request for release preparation, with the performance figures and version number update. Set the
+13. Create a pull request for release preparation, with the performance figures and version number update. Set the
     version number using `scripts/dev/updateVersionNumber.sh <version>`.
 
-13. If anything fails on any of the pull requests, fix the failures as a separate PR, then **re-run the manual testing
+14. If anything fails on any of the pull requests, fix the failures as a separate PR, then **re-run the manual testing
     steps in AWS before continuing with the release**.
 
-14. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
+15. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
     and release preparation.
 
-15. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
+16. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
     main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
-16. Create a pull request to update the version number for the next release as a snapshot version. Set the version
+17. Create a pull request to update the version number for the next release as a snapshot version. Set the version
     number using `scripts/dev/updateVersionNumber.sh <version>`. Merge it when everything passes.
