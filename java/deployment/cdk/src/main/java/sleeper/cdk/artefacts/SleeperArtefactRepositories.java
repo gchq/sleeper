@@ -28,6 +28,7 @@ import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.core.deploy.DockerDeployment;
@@ -56,15 +57,15 @@ public class SleeperArtefactRepositories {
         extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
         if (deploy.isDeployJars()) {
-            deployJars();
+            createJarsBucket(scope, deploymentId);
         }
         if (deploy.isDeployImages()) {
             deployImages();
         }
     }
 
-    private void deployJars() {
-        Bucket.Builder.create(scope, "JarsBucket")
+    public static IBucket createJarsBucket(Construct scope, String deploymentId) {
+        return Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
