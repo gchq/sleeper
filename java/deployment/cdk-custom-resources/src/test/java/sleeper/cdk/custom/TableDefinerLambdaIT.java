@@ -370,7 +370,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             TableProperties table1 = createTableProperties("table-1");
-            callLambda(runtimeInfo, CREATE, table1);
+            String table1Id = callLambda(runtimeInfo, CREATE, table1).getPhysicalResourceId();
             TableProperties createdTable1 = propertiesStore.loadByName(table1.get(TABLE_NAME));
 
             AllReferencesToAFile file1 = ingestRows(createdTable1, List.of(
@@ -387,6 +387,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             AllReferencesToAFile file2 = ingestRows(createdTable2, List.of(new Row(Map.of("key1", 25L))));
 
             // When
+            physicalResourceId = table1Id;
             callLambda(runtimeInfo, DELETE, table1);
 
             // Then

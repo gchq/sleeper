@@ -39,7 +39,7 @@ public class TableDefinerLambdaProperties {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final Map<String, Object> resourceProperties;
-    private TableProperties tableProperties;
+    private final TableProperties tableProperties;
 
     public TableDefinerLambdaProperties(CloudFormationCustomResourceEvent event, S3Client s3Client, DynamoDbClient dynamoClient, String bucketName) {
 
@@ -70,10 +70,6 @@ public class TableDefinerLambdaProperties {
 
     public TableProperties getTableProperties() {
         return tableProperties;
-    }
-
-    public void setTableProperties(TableProperties tableProperties) {
-        this.tableProperties = tableProperties;
     }
 
 }
