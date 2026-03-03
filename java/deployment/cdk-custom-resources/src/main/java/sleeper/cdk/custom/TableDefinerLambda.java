@@ -109,7 +109,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
             //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
             properties.setTableProperties(properties.getTablePropertiesStore().loadByName(tableName));
             String tableId = properties.getTableProperties().get(TABLE_ID);
-            properties.setInstanceProperties(properties.getTableProperties().getInstanceProperties());
             LOGGER.info("Deleting table {} and associated data.", tableName);
             StateStoreFactory.createProvider(properties.getInstanceProperties(), s3Client, dynamoClient)
                     .getStateStore(properties.getTableProperties()).clearSleeperTable();

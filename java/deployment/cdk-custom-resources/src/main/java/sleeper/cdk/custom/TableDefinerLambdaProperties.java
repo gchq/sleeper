@@ -36,7 +36,7 @@ import java.util.Properties;
  */
 public class TableDefinerLambdaProperties {
 
-    private InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final Map<String, Object> resourceProperties;
     private TableProperties tableProperties;
@@ -74,10 +74,6 @@ public class TableDefinerLambdaProperties {
 
     public void setTableProperties(TableProperties tableProperties) {
         this.tableProperties = tableProperties;
-    }
-
-    public void setInstanceProperties(InstanceProperties instanceProperties) {
-        this.instanceProperties = instanceProperties;
     }
 
 }
