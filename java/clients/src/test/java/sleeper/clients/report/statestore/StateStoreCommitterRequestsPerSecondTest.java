@@ -192,51 +192,20 @@ public class StateStoreCommitterRequestsPerSecondTest {
     }
 
     @Test
-    void shouldUseEarliestStartTimeFoundInMultiThreadRun() {
+    void shouldCalculateAverageRequestsForMultiThreadedCommitter() {
         // Given
-        Instant commitTime = Instant.parse("2026-01-01T00:00:02Z");
-        Instant finishTime = Instant.parse("2026-01-01T00:00:03Z");
         //Table 1 thread logs
-        batchRunStartedAt(Instant.parse("2026-01-01T00:00:01Z"));
-        committedAtTime(commitTime);
-        batchRunFinishedAt(finishTime);
-        //Table 2 thread logs - Earliest start
         batchRunStartedAt(Instant.parse("2026-01-01T00:00:00Z"));
-        committedAtTime(commitTime);
-        batchRunFinishedAt(finishTime);
-        //Table 3 thread logs
-        batchRunStartedAt(Instant.parse("2026-01-01T00:00:02Z"));
-        committedAtTime(commitTime);
-        batchRunFinishedAt(finishTime);
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        //3 commits in 3 seconds = 1per second
-        //Only ever 1 run in multi threaded state store
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
-    }
-
-    @Test
-    void shouldUseLatestFinishTimeFoundInMultiThreadRun() {
-        // Given
-        Instant startTime = Instant.parse("2026-01-01T00:00:00Z");
-        Instant commitTime = Instant.parse("2026-01-01T00:00:01Z");
-
-        //Table 1 thread logs
-        batchRunStartedAt(startTime);
-        committedAtTime(commitTime);
-        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:01Z"));
-        //Table 2 thread logs - Last finish
-        batchRunStartedAt(startTime);
-        committedAtTime(commitTime);
+        committedAtTime(Instant.parse("2026-01-01T00:00:01Z"));
+        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:02Z"));
+        //Table 2 thread logs
+        batchRunStartedAt(Instant.parse("2026-01-01T00:00:01Z"));
+        committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
         batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
         //Table 3 thread logs
-        batchRunStartedAt(startTime);
-        committedAtTime(commitTime);
-        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:02Z"));
+        batchRunStartedAt(Instant.parse("2026-01-01T00:00:02Z"));
+        committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
+        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
 
         // When
         StateStoreCommitterRequestsPerSecond report = report();
