@@ -70,7 +70,25 @@ if [ "$SUBCOMMAND" == "help" ]; then
   echo "============================================="
   echo
   echo "adduser"
-  echo "Adds a new user in the EC2 instance of the current environment."
+  echo "Adds a new user in the EC2 instance of the current environment. Takes a single argument of the username. The"
+  echo "user will be added to the \"sudo\" and \"docker\" groups. The Sleeper CLI will be installed for the user, and"
+  echo "the GitHub repository will be cloned for CLI builder containers. This will be set as the user to log in as when"
+  echo "connecting to the instance."
+  echo
+  echo "connect"
+  echo "Connects to the EC2 instance of the current environment. By default, this creates a \"screen\" session, or"
+  echo "reconnects to any previous session for the same user. This starts an SSH session by creating a temporary SSH"
+  echo "key, uploading it with EC2 Instance Connect, and then using SSM Session Manager to tunnel to the instance."
+  echo "Any arguments will be passed as arguments to SSH, instead of invoking \"screen -d -RR\"."
+  echo
+  echo "deluser"
+  echo "Deletes a user in the EC2 instance of the current environment. Takes a single argument of the username."
+  echo
+  echo "setuser"
+  echo "Sets which user of the EC2 to log in as when connecting to the instance. Takes a single argument of the username."
+  echo
+  echo "test-connection"
+  echo "Tests that we can connect to the EC2. Opens an SSH connection and then terminates."
 fi
 
 SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
