@@ -39,15 +39,14 @@ public class CopyJarStack extends NestedStack {
         super(scope, id);
         SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(this, jars);
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, "Function", builder -> builder
-                .functionName("sleeper-" + deploymentId + "-copy-container")
+                .functionName("sleeper-" + deploymentId + "-copy-jar")
                 .memorySize(2048)
-                .description("Lambda for copying container images from an external repository to ECR")
+                .description("Lambda for copying jar files from an external repository to a jars bucket")
                 .logGroup(LogGroup.Builder.create(this, "LambdaLogGroup")
-                        .logGroupName("sleeper-" + deploymentId + "-copy-container")
+                        .logGroupName("sleeper-" + deploymentId + "-copy-jar")
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build())
-                .vpcSubnets(null)
                 .timeout(Duration.minutes(15)));
 
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
@@ -61,7 +60,7 @@ public class CopyJarStack extends NestedStack {
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
                 .logGroup(LogGroup.Builder.create(this, "ProviderLogGroup")
-                        .logGroupName("sleeper-" + deploymentId + "-copy-container-provider")
+                        .logGroupName("sleeper-" + deploymentId + "-copy-jar-provider")
                         .retention(RetentionDays.TWO_WEEKS)
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build())
