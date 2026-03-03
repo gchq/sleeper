@@ -15,12 +15,17 @@
  */
 package sleeper.cdk;
 
+import software.amazon.awscdk.CustomResource;
+import software.amazon.awscdk.customresources.Provider;
+import software.constructs.Construct;
+
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.Map;
 import java.util.Properties;
 
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
@@ -50,15 +55,21 @@ public class SleeperTable {
         return stringWriter.toString();
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public static class Builder {
+        private Construct scope;
+        private String instanceId;
         private String tableName;
+        private String constructId;
         private Schema schema;
 
-        private Builder() {
+        private Builder(Construct scope, String constructId) {
+            this.scope = scope;
+            this.constructId = constructId;
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
         }
 
         public Builder tableName(String tableName) {
@@ -73,6 +84,20 @@ public class SleeperTable {
 
         public SleeperTable build() {
             return new SleeperTable(this);
+        }
+
+        public CustomResource buildResource(Provider provider) {
+            return CustomResource.Builder.create(scope, constructId)
+                    .resourceType("Custom::SleeperTable")
+                    .properties(Map.of("tableProperties", build().saveAsString(),
+                            "instanceId", this.instanceId,
+                            "splitPoints", ""))
+                    .serviceToken(provider.getServiceToken())
+                    .build();
+        }
+
+        public static Builder create(Construct scope, String constructId) {
+            return new Builder(scope, constructId);
         }
     }
 }

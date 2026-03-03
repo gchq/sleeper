@@ -49,11 +49,7 @@ public class SleeperTableIT {
                 new SleeperInstanceArtefacts(instanceProperties, new SleeperJarsFromProperties(instanceProperties, jarVersionIds()), new SleeperContainerImagesFromProperties(instanceProperties)));
 
         // When
-        SleeperTable sleeperTable = SleeperTable.builder()
-                .tableName("table-name")
-                .schema(createSchemaWithKey("key"))
-                .build();
-        definerStack.createCustomResource(sleeperTable);
+        definerStack.createSleeperTable(createSchemaWithKey("key"));
 
         // Then
         Approvals.verify(printer.toJson(stack), new Options()

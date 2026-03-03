@@ -31,6 +31,7 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.schema.Schema;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
@@ -67,14 +68,26 @@ public class TableDefinerStack extends NestedStack {
         Utils.addTags(this, instanceProperties);
     }
 
-    public CustomResource createCustomResource(SleeperTable sleeperTable) {
+    public CustomResource createTableDefinerResource(String propertiesString) {
         return CustomResource.Builder.create(this, "TableDefinerProperties")
                 .resourceType("Custom::SleeperTable")
-                .properties(Map.of("tableProperties", sleeperTable.saveAsString(),
+                .properties(Map.of("tableProperties", propertiesString,
                         "splitPoints", ""))
                 .serviceToken(tableDefinerProvider.getServiceToken())
                 .build();
 
+    }
+
+    public CustomResource createSleeperTable(Schema schema) {
+        return SleeperTable.Builder.create(this, "TableDefinerProperties")
+                .instanceId("test-instance")
+                .tableName("table-name")
+                .schema(schema)
+                .buildResource(tableDefinerProvider);
+    }
+
+    public Provider getTableDefinerProvider() {
+        return tableDefinerProvider;
     }
 
     /**
@@ -86,15 +99,6 @@ public class TableDefinerStack extends NestedStack {
      * @return            the stack
      */
     public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps) {
-        Stack stack = new Stack(scope, id, stackProps);
-        create();
-        return stack;
-    }
-
-    public static SleeperTable create() {
-        return SleeperTable.builder()
-                .tableName("")
-                .schema(null)
-                .build();
-    }
+        return new Stack(scope, id, stackProps);
+    } //TODO Remove this method
 }

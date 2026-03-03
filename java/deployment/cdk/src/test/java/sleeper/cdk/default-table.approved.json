@@ -295,6 +295,7 @@
               ]
             },
             "splitPoints": "",
+            "instanceId": "test-instance",
             "tableProperties": "sleeper.table.schema\u003d{\"rowKeyFields\"\\:[{\"name\"\\:\"key\",\"type\"\\:\"LongType\"}],\"sortKeyFields\"\\:[],\"valueFields\"\\:[]}\nsleeper.table.name\u003dtable-name\n"
           }
         }
