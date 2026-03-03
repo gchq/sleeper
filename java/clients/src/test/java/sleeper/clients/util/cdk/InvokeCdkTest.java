@@ -75,19 +75,6 @@ class InvokeCdkTest {
         }
 
         @Test
-        void shouldRunExampleTestCdkDeploySuccessfully() throws IOException, InterruptedException {
-            // When
-            cdk().invoke(InvokeCdk.Type.EXAMPLE, CdkCommand.deployWithoutProperties());
-
-            // Then
-            assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.ExampleCdkApp",
-                    "deploy",
-                    "--require-approval", "never",
-                    "*")));
-        }
-
-        @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
             cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(propertiesFile));

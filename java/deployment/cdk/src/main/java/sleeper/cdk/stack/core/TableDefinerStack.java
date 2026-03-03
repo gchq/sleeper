@@ -41,7 +41,7 @@ import java.util.Map;
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class TableDefinerStack extends NestedStack {
 
-    Provider tableDefinerProvider;
+    private Provider tableDefinerProvider;
 
     public TableDefinerStack(
             Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts) {
@@ -68,9 +68,8 @@ public class TableDefinerStack extends NestedStack {
     }
 
     public CustomResource createCustomResource(SleeperTable sleeperTable) {
-        //TODO Update this to use TableProperties/SplitPoints
         return CustomResource.Builder.create(this, "TableDefinerProperties")
-                .resourceType("Custom::TableDefinerProperties")
+                .resourceType("Custom::SleeperTable")
                 .properties(Map.of("tableProperties", sleeperTable.saveAsString(),
                         "splitPoints", ""))
                 .serviceToken(tableDefinerProvider.getServiceToken())

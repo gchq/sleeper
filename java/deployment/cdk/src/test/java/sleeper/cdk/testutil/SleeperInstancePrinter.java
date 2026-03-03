@@ -67,11 +67,11 @@ public class SleeperInstancePrinter {
     }
 
     private Entry<String, Object> sanitise(Entry<String, Object> entry) {
-        if (Objects.equals("TemplateURL", entry.getKey())) {
+        if ("TemplateURL".equals(entry.getKey())) {
             return Map.entry(entry.getKey(), "removed-for-test");
         }
 
-        if (Objects.equals("properties", entry.getKey())
+        if ("properties".equals(entry.getKey())
                 && entry.getValue() instanceof Map map
                 && Objects.equals(Set.of("Fn::Join"), map.keySet())
                 && map.get("Fn::Join") instanceof List list) {
@@ -82,7 +82,7 @@ public class SleeperInstancePrinter {
             return Map.entry(entry.getKey(), sanitiseTemplate(map));
         }
 
-        if (entry.getValue() instanceof String string && Objects.equals("tableProperties", entry.getKey())) {
+        if (entry.getValue() instanceof String string && "tableProperties".equals(entry.getKey())) {
             return Map.entry(entry.getKey(), sanitisePropertiesJoinElement(string));
         }
 

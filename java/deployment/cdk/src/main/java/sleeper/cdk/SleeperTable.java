@@ -28,8 +28,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperTable {
 
-    private String tableName;
-    private Schema schema;
+    private final String tableName;
+    private final Schema schema;
 
     public SleeperTable(Builder builder) {
         this.tableName = builder.tableName;
@@ -55,8 +55,8 @@ public class SleeperTable {
     }
 
     public static class Builder {
-        String tableName;
-        Schema schema;
+        private String tableName;
+        private Schema schema;
 
         private Builder() {
         }

@@ -32,10 +32,6 @@ public record CdkCommand(List<String> command, List<String> arguments) {
                 .build();
     }
 
-    public static CdkCommand deployWithoutProperties() {
-        return builder().deploy().build();
-    }
-
     public static CdkCommand deployPropertiesChange(Path propertiesFile) {
         return builder().deploy().propertiesFile(propertiesFile).build();
     }
