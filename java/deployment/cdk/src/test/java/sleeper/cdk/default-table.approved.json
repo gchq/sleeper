@@ -284,7 +284,7 @@
           }
         },
         "TableDefinerProperties": {
-          "Type": "Custom::TableDefinerProperties",
+          "Type": "Custom::SleeperTable",
           "DeletionPolicy": "Delete",
           "UpdateReplacePolicy": "Delete",
           "Properties": {
