@@ -15,6 +15,8 @@
  */
 package sleeper.clients.report.statestore;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -32,189 +34,222 @@ public class StateStoreCommitterRequestsPerSecondTest {
 
     private List<StateStoreCommitterLogEntry> logs = new ArrayList<>();
 
-    @Test
-    void shouldFindOneRequestOnOneRunLastingOneSecond() {
-        // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+    @Nested
+    @DisplayName("Lambda state store tests")
+    class LambdaTests {
+        @Test
+        void shouldFindOneRequestOnOneRunLastingOneSecond() {
+            // Given
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+            committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
 
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
 
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+        }
+
+        @Test
+        void shouldFindTwoRequestsOnOneRunLastingOneSecond() {
+            // Given
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+            committedAtTime(Instant.parse("2024-08-15T10:40:00.500Z"));
+            committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(2.0, 2.0));
+        }
+
+        @Test
+        void shouldFindTwoRequestsOnSeparateRunsLastingOneSecond() {
+            // Given
+            runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
+            runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00Z"));
+            committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
+            committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+            runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
+            runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.0, 2.0));
+        }
+
+        @Test
+        void shouldFindTwoRequestsOnSeparateRunsLastingDifferentTimes() {
+            // Given
+            runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
+            runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00Z"));
+            committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
+            runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
+            committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+            runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.5, 2.0));
+        }
+
+        @Test
+        void shouldFindTwoRequestsOnSeparateRunsWhenFirstRunFinishesAfterLastRun() {
+            // Given
+            runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
+            runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00.500Z"));
+            committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
+            runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
+            committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
+            runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(0.75, 1.0));
+        }
+
+        @Test
+        void shouldIncludeRunWithNoFinishTime() {
+            // Given
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+            committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+        }
+
+        @Test
+        void shouldIgnoreRunWithNoStartTime() {
+            // Given
+            committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
+        }
+
+        @Test
+        void shouldIgnoreRunWithNoCommits() {
+            // Given
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:02Z"));
+            committedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
+
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+        }
+
+        @Test
+        void shouldFindNoLogs() {
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
+
+            // Then
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
+        }
+
+        @Test
+        void shouldReportByTable() {
+            // Given
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
+            committedToTableAtTime("table-1", Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+            lambdaRunStartedAtTime(Instant.parse("2024-08-15T10:41:00Z"));
+            committedToTableAtTime("table-2", Instant.parse("2024-08-15T10:41:00.500Z"));
+            lambdaRunFinishedAtTime(Instant.parse("2024-08-15T10:41:00.500Z"));
+
+            // When
+            Map<String, StateStoreCommitterRequestsPerSecond> report = reportByTable();
+
+            // Then
+            assertThat(report).isEqualTo(Map.of(
+                    "table-1", averageRequestsPerSecondInRunsAndOverall(1.0, 1.0),
+                    "table-2", averageRequestsPerSecondInRunsAndOverall(2.0, 2.0)));
+        }
+
+        private void lambdaRunStartedAtTime(Instant time) {
+            runStartedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
+        }
+
+        private void runStartedOnStreamAtTime(String logStream, Instant time) {
+            add(new StateStoreCommitterLambdaRunStarted(logStream, Instant.MIN, time));
+        }
+
+        private void lambdaRunFinishedAtTime(Instant time) {
+            runFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
+        }
+
+        private void runFinishedOnStreamAtTime(String logStream, Instant time) {
+            add(new StateStoreCommitterLambdaRunFinished(logStream, Instant.MIN, time));
+        }
     }
 
-    @Test
-    void shouldFindTwoRequestsOnOneRunLastingOneSecond() {
-        // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:00.500Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
+    @Nested
+    @DisplayName("Multi threaded state store tests")
+    class MultiThreadedTests {
+        @Test
+        void shouldCalculateAverageRequestsForMultiThreadedCommitter() {
+            // Given
+            //Table 1 thread logs
+            batchRunStartedAt(Instant.parse("2026-01-01T00:00:00Z"));
+            committedAtTime(Instant.parse("2026-01-01T00:00:01Z"));
+            batchRunFinishedAt(Instant.parse("2026-01-01T00:00:02Z"));
+            //Table 2 thread logs
+            batchRunStartedAt(Instant.parse("2026-01-01T00:00:01Z"));
+            committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
+            batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
+            //Table 3 thread logs
+            batchRunStartedAt(Instant.parse("2026-01-01T00:00:02Z"));
+            committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
+            batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
 
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
+            // When
+            StateStoreCommitterRequestsPerSecond report = report();
 
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(2.0, 2.0));
-    }
+            // Then
+            //3 commits in 3 seconds = 1per second
+            //Only ever 1 run in multi threaded state store
+            assertThat(report).isEqualTo(
+                    averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
+        }
 
-    @Test
-    void shouldFindTwoRequestsOnSeparateRunsLastingOneSecond() {
-        // Given
-        runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
-        runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
-        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
+        private void batchRunStartedAt(Instant time) {
+            add(new StateStoreCommitterThreadRunStarted(DEFAULT_LOG_STREAM, time, time));
+        }
 
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
+        private void batchRunFinishedAt(Instant time) {
+            add(new StateStoreCommitterThreadRunFinished(DEFAULT_LOG_STREAM, time, time));
+        }
 
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 2.0));
-    }
-
-    @Test
-    void shouldFindTwoRequestsOnSeparateRunsLastingDifferentTimes() {
-        // Given
-        runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
-        runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00Z"));
-        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
-        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00.500Z"));
-        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.5, 2.0));
-    }
-
-    @Test
-    void shouldFindTwoRequestsOnSeparateRunsWhenFirstRunFinishesAfterLastRun() {
-        // Given
-        runStartedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:00Z"));
-        runStartedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:00.500Z"));
-        committedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
-        runFinishedOnStreamAtTime("stream-2", Instant.parse("2024-08-15T10:40:01.500Z"));
-        committedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
-        runFinishedOnStreamAtTime("stream-1", Instant.parse("2024-08-15T10:40:02Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(0.75, 1.0));
-    }
-
-    @Test
-    void shouldIncludeRunWithNoFinishTime() {
-        // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
-    }
-
-    @Test
-    void shouldIgnoreRunWithNoStartTime() {
-        // Given
-        committedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
-    }
-
-    @Test
-    void shouldIgnoreRunWithNoCommits() {
-        // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:02Z"));
-        committedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:03Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
-    }
-
-    @Test
-    void shouldFindNoLogs() {
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(0.0, 0.0));
-    }
-
-    @Test
-    void shouldReportByTable() {
-        // Given
-        runStartedAtTime(Instant.parse("2024-08-15T10:40:00Z"));
-        committedToTableAtTime("table-1", Instant.parse("2024-08-15T10:40:01Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:40:01Z"));
-        runStartedAtTime(Instant.parse("2024-08-15T10:41:00Z"));
-        committedToTableAtTime("table-2", Instant.parse("2024-08-15T10:41:00.500Z"));
-        runFinishedAtTime(Instant.parse("2024-08-15T10:41:00.500Z"));
-
-        // When
-        Map<String, StateStoreCommitterRequestsPerSecond> report = reportByTable();
-
-        // Then
-        assertThat(report).isEqualTo(Map.of(
-                "table-1", averageRequestsPerSecondInRunsAndOverall(1.0, 1.0),
-                "table-2", averageRequestsPerSecondInRunsAndOverall(2.0, 2.0)));
-    }
-
-    @Test
-    void shouldCalculateAverageRequestsForMultiThreadedCommitter() {
-        // Given
-        //Table 1 thread logs
-        batchRunStartedAt(Instant.parse("2026-01-01T00:00:00Z"));
-        committedAtTime(Instant.parse("2026-01-01T00:00:01Z"));
-        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:02Z"));
-        //Table 2 thread logs
-        batchRunStartedAt(Instant.parse("2026-01-01T00:00:01Z"));
-        committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
-        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
-        //Table 3 thread logs
-        batchRunStartedAt(Instant.parse("2026-01-01T00:00:02Z"));
-        committedAtTime(Instant.parse("2026-01-01T00:00:02Z"));
-        batchRunFinishedAt(Instant.parse("2026-01-01T00:00:03Z"));
-
-        // When
-        StateStoreCommitterRequestsPerSecond report = report();
-
-        // Then
-        //3 commits in 3 seconds = 1per second
-        //Only ever 1 run in multi threaded state store
-        assertThat(report).isEqualTo(
-                averageRequestsPerSecondInRunsAndOverall(1.0, 1.0));
     }
 
     private StateStoreCommitterRequestsPerSecond report() {
@@ -227,22 +262,6 @@ public class StateStoreCommitterRequestsPerSecondTest {
                 StateStoreCommitterRuns.findRunsByLogStream(logs));
     }
 
-    private void runStartedAtTime(Instant time) {
-        runStartedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
-    }
-
-    private void runStartedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterLambdaRunStarted(logStream, Instant.MIN, time));
-    }
-
-    private void batchRunStartedAt(Instant time) {
-        add(new StateStoreCommitterThreadRunStarted(DEFAULT_LOG_STREAM, time, time));
-    }
-
-    private void batchRunFinishedAt(Instant time) {
-        add(new StateStoreCommitterThreadRunFinished(DEFAULT_LOG_STREAM, time, time));
-    }
-
     private void committedAtTime(Instant time) {
         committedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
     }
@@ -253,14 +272,6 @@ public class StateStoreCommitterRequestsPerSecondTest {
 
     private void committedToTableAtTime(String tableId, Instant time) {
         add(new StateStoreCommitSummary(DEFAULT_LOG_STREAM, Instant.MIN, tableId, "test-commit", time));
-    }
-
-    private void runFinishedAtTime(Instant time) {
-        runFinishedOnStreamAtTime(DEFAULT_LOG_STREAM, time);
-    }
-
-    private void runFinishedOnStreamAtTime(String logStream, Instant time) {
-        add(new StateStoreCommitterLambdaRunFinished(logStream, Instant.MIN, time));
     }
 
     private void add(StateStoreCommitterLogEntry log) {
