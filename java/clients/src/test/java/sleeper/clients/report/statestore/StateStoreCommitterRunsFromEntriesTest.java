@@ -191,7 +191,6 @@ public class StateStoreCommitterRunsFromEntriesTest {
         @Test
         void shouldReadLogsFromMultipleThreadsAsOneRun() {
             // Given
-
             //Table 1 thread logs
             StateStoreCommitterThreadRunStarted started = batchRunStartedOnStream(DEFAULT_LOG_STREAM);
             StateStoreCommitSummary thread1 = committedOnStream(DEFAULT_LOG_STREAM);
