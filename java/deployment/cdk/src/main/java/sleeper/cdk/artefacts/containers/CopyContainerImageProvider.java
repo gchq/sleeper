@@ -41,8 +41,9 @@ public class CopyContainerImageProvider {
     private CopyContainerImageProvider(Builder builder) {
         Construct scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         String id = Objects.requireNonNull(builder.id, "id must not be null");
-        SleeperJars jars = Objects.requireNonNull(builder.jars, "jars must not be null");
         String functionName = Objects.requireNonNull(builder.functionName, "functionName must not be null");
+        SleeperLambdaCode lambdaCode = Optional.ofNullable(builder.lambdaCode)
+                .orElseGet(() -> SleeperLambdaCode.jarsOnly(scope, Objects.requireNonNull(builder.jars, "lambdaCode or jars must not be null")));
         ILogGroup functionLogGroup = Optional.ofNullable(builder.functionLogGroup)
                 .orElseGet(() -> LogGroup.Builder.create(scope, id + "LambdaLogGroup")
                         .logGroupName(functionName)
@@ -56,7 +57,6 @@ public class CopyContainerImageProvider {
                         .removalPolicy(RemovalPolicy.DESTROY)
                         .build());
 
-        SleeperLambdaCode lambdaCode = SleeperLambdaCode.jarsOnly(scope, jars);
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.COPY_CONTAINER, id + "Function", lambdaBuilder -> lambdaBuilder
                 .functionName(functionName)
                 .memorySize(2048)
@@ -102,9 +102,10 @@ public class CopyContainerImageProvider {
         private final Construct scope;
         private final String id;
         private String functionName;
+        private SleeperLambdaCode lambdaCode;
+        private SleeperJars jars;
         private ILogGroup functionLogGroup;
         private ILogGroup providerLogGroup;
-        private SleeperJars jars;
 
         private Builder(Construct scope, String id) {
             this.scope = scope;
@@ -115,13 +116,18 @@ public class CopyContainerImageProvider {
             return new Builder(scope, id);
         }
 
-        public Builder jars(SleeperJars jars) {
-            this.jars = jars;
+        public Builder functionName(String functionName) {
+            this.functionName = functionName;
             return this;
         }
 
-        public Builder functionName(String functionName) {
-            this.functionName = functionName;
+        public Builder lambdaCode(SleeperLambdaCode lambdaCode) {
+            this.lambdaCode = lambdaCode;
+            return this;
+        }
+
+        public Builder jars(SleeperJars jars) {
+            this.jars = jars;
             return this;
         }
 
