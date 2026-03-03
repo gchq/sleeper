@@ -17,6 +17,8 @@ package sleeper.systemtest.cdk;
 
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -40,8 +42,11 @@ public class CopyPublicJarCdkApp extends Stack {
         super(scope, id, stackProps);
 
         IBucket bucket = SleeperArtefactRepositories.createJarsBucket(this, props.deploymentId());
-        new CopyJarStack(this, "CopyJars", props.deploymentId(), props.jars())
+        CustomResource copyJar = new CopyJarStack(this, "CopyJars", props.deploymentId(), props.jars())
                 .createCopyJar(this, "CopyJar", props.sourceUrl(), bucket.getBucketName(), "test.jar");
+        CfnOutput.Builder.create(this, "VersionId")
+                .value(copyJar.getAttString("versionId"))
+                .build();
     }
 
     public static void main(String[] args) {

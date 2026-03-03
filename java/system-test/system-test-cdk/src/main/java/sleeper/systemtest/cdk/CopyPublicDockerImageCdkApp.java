@@ -17,6 +17,8 @@ package sleeper.systemtest.cdk;
 
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
@@ -61,8 +63,11 @@ public class CopyPublicDockerImageCdkApp extends Stack {
                                 .build()))
                 .emptyOnDelete(true)
                 .build();
-        new CopyContainerImageStack(this, "CopyContainer", props.deploymentId(), props.jars())
+        CustomResource copyImage = new CopyContainerImageStack(this, "CopyContainer", props.deploymentId(), props.jars())
                 .createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri());
+        CfnOutput.Builder.create(this, "Digest")
+                .value(copyImage.getAttString("digest"))
+                .build();
     }
 
     public static void main(String[] args) {
