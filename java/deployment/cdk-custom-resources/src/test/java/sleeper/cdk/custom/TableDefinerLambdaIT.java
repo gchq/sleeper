@@ -127,7 +127,12 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .withPhysicalResourceId(physicalResourceId)
                 .build();
 
-        return tableDefinerLambda.handleRequest(event, new FakeLambdaContext());
+        Response response = tableDefinerLambda.handleRequest(event, new FakeLambdaContext());
+        if (response != null && response.getPhysicalResourceId() != null) {
+            physicalResourceId = response.getPhysicalResourceId();
+        }
+
+        return response;
     }
 
     @Nested
@@ -256,7 +261,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             // Given
             tableProperties.set(TABLE_NAME, "old-table-name");
 
-            physicalResourceId = callLambda(runtimeInfo, CREATE, tableProperties).getPhysicalResourceId();
+            callLambda(runtimeInfo, CREATE, tableProperties);
 
             tableProperties.set(TABLE_NAME, "new-table-name");
 
