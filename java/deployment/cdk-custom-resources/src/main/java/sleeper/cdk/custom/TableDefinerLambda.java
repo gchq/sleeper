@@ -36,7 +36,6 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -65,10 +64,6 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.bucketName = bucketName;
-    }
-
-    public Response handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
-        return super.handleRequest(event, context);
     }
 
     @Override

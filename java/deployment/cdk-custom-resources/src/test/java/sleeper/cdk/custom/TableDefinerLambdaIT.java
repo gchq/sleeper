@@ -127,7 +127,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .withPhysicalResourceId(physicalResourceId)
                 .build();
 
-        return tableDefinerLambda.handleEvent(event, new FakeLambdaContext());
+        return tableDefinerLambda.handleRequest(event, new FakeLambdaContext());
     }
 
     @Nested
