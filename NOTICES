@@ -175,7 +175,7 @@ JAXB API (javax.xml.bind:jaxb-api:2.*)
 
 - Common Development and Distribution License (CDDL) Version 1.1 (https://javaee.github.io/jaxb-v2/LICENSE)
 
-JLine (org.jline:jline:3.*)
+JLine (org.jline:jline:4.*)
 
 - The 3-Clause BSD License
 
