@@ -49,7 +49,9 @@ public class SleeperTableIT {
                 new SleeperInstanceArtefacts(instanceProperties, new SleeperJarsFromProperties(instanceProperties, jarVersionIds()), new SleeperContainerImagesFromProperties(instanceProperties)));
 
         // When
-        definerStack.createSleeperTable(createSchemaWithKey("key"));
+        definerStack.createSleeperTableCustomResource("test-instance",
+                "table-name",
+                createSchemaWithKey("key"));
 
         // Then
         Approvals.verify(printer.toJson(stack), new Options()

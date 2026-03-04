@@ -34,8 +34,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.EnvironmentUtils;
 
-import java.util.Map;
-
 /**
  * The table definer stack is used to create, update and delete Sleeper tables using a custom resource.
  */
@@ -68,20 +66,10 @@ public class TableDefinerStack extends NestedStack {
         Utils.addTags(this, instanceProperties);
     }
 
-    public CustomResource createTableDefinerResource(String propertiesString) {
-        return CustomResource.Builder.create(this, "TableDefinerProperties")
-                .resourceType("Custom::SleeperTable")
-                .properties(Map.of("tableProperties", propertiesString,
-                        "splitPoints", ""))
-                .serviceToken(tableDefinerProvider.getServiceToken())
-                .build();
-
-    }
-
-    public CustomResource createSleeperTable(Schema schema) {
+    public CustomResource createSleeperTableCustomResource(String instanceId, String tableName, Schema schema) {
         return SleeperTable.Builder.create(this, "TableDefinerProperties")
-                .instanceId("test-instance")
-                .tableName("table-name")
+                .instanceId(instanceId)
+                .tableName(tableName)
                 .schema(schema)
                 .buildResource(tableDefinerProvider);
     }
