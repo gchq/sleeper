@@ -34,6 +34,7 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
+  - id: CVE-2025-15558
   # Golang stdlib
   - id: CVE-2025-68121
   # github.com/sigstore/rekor
