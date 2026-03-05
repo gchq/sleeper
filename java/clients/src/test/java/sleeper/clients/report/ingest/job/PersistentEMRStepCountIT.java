@@ -169,6 +169,6 @@ class PersistentEMRStepCountIT {
     }
 
     private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo) {
-        return PersistentEMRStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo), StaticRateLimit.none());
+        return PersistentEmrStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo), StaticRateLimit.none());
     }
 }

@@ -37,8 +37,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
  * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the number
  * of steps with each status.
  */
-public class PersistentEMRStepCount {
-    private PersistentEMRStepCount() {
+public class PersistentEmrStepCount {
+    private PersistentEmrStepCount() {
     }
 
     private static final List<ClusterState> ACTIVE_STATES = List.of(ClusterState.STARTING, ClusterState.BOOTSTRAPPING,
@@ -73,7 +73,7 @@ public class PersistentEMRStepCount {
             InstanceProperties instanceProperties, EmrClient emrClient, StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
         return getPersistentClusterId(instanceProperties, emrClient, listActiveClustersLimit)
                 .map(id -> emrClient.listSteps(request -> request.clusterId(id)).steps())
-                .map(PersistentEMRStepCount::countStepsByState)
+                .map(PersistentEmrStepCount::countStepsByState)
                 .orElse(Collections.emptyMap());
     }
 
@@ -96,7 +96,7 @@ public class PersistentEMRStepCount {
     private static Map<String, Integer> countStepsByState(List<StepSummary> steps) {
         Map<String, Integer> counts = new HashMap<>();
         for (StepSummary step : steps) {
-            counts.compute(step.status().stateAsString(), PersistentEMRStepCount::incrementCount);
+            counts.compute(step.status().stateAsString(), PersistentEmrStepCount::incrementCount);
         }
         return counts;
     }
