@@ -53,7 +53,8 @@ public class PersistentEmrStepCount {
 
     /**
      * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the
-     * number of steps with each status.
+     * number of steps with each status. If the rate limit is met, the results of the last call to this method will be
+     * returned instead until enough time has passed.
      *
      * @param  instanceProperties the instance properties
      * @param  emrClient          the AWS EMR client
@@ -67,7 +68,8 @@ public class PersistentEmrStepCount {
 
     /**
      * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the
-     * number of steps with each status.
+     * number of steps with each status. If the rate limit is met, the results of the last call to this method will be
+     * returned instead until enough time has passed.
      *
      * @param  instanceProperties the instance properties
      * @param  emrClient          the AWS EMR client
