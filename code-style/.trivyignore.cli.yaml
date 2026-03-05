@@ -34,11 +34,9 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
+  - id: CVE-2025-15558
   # Golang stdlib
   - id: CVE-2025-68121
-  - id: CVE-2025-61726
-  - id: CVE-2025-61728
-  - id: CVE-2025-61730
   # github.com/sigstore/rekor
   - id: CVE-2026-23831
   - id: CVE-2026-24117
@@ -48,3 +46,14 @@ vulnerabilities:
   - id: CVE-2026-23991
   - id: CVE-2026-23992
   - id: CVE-2026-24686
+  # github.com/cloudflare/circl
+  - id: CVE-2026-1229
+  # go.opentelemetry.io/otel/sdk
+  - id: CVE-2026-24051
+
+
+  # Dependencies of the latest version of AWS CDK/CLI:
+
+  # minimatch NodeJS package
+  - id: CVE-2026-27903
+  - id: CVE-2026-27904
