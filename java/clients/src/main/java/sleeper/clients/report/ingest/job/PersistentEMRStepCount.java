@@ -17,11 +17,11 @@
 package sleeper.clients.report.ingest.job;
 
 import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.emr.model.ClusterState;
 import software.amazon.awssdk.services.emr.model.ClusterSummary;
 import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepSummary;
 
-import sleeper.clients.util.EmrUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static sleeper.clients.util.EmrUtils.listActiveClusters;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 /**
@@ -41,6 +40,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {
     }
+
+    private static final List<ClusterState> ACTIVE_STATES = List.of(ClusterState.STARTING, ClusterState.BOOTSTRAPPING,
+            ClusterState.RUNNING, ClusterState.WAITING, ClusterState.TERMINATING);
+    private static final StaticRateLimit<ListClustersResponse> LIST_ACTIVE_CLUSTERS_LIMIT = StaticRateLimit.forMaximumRatePerSecond(0.5);
 
     /**
      * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the
@@ -53,7 +56,7 @@ public class PersistentEMRStepCount {
      */
     public static Map<String, Integer> byStatus(
             InstanceProperties instanceProperties, EmrClient emrClient) {
-        return byStatus(instanceProperties, emrClient, EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
+        return byStatus(instanceProperties, emrClient, LIST_ACTIVE_CLUSTERS_LIMIT);
     }
 
     /**
@@ -84,6 +87,10 @@ public class PersistentEMRStepCount {
                 .filter(cluster -> clusterName.equals(cluster.name()))
                 .map(ClusterSummary::id)
                 .findAny();
+    }
+
+    private static ListClustersResponse listActiveClusters(EmrClient emrClient, StaticRateLimit<ListClustersResponse> rateLimit) {
+        return rateLimit.requestOrGetLast(() -> emrClient.listClusters(request -> request.clusterStates(ACTIVE_STATES)));
     }
 
     private static Map<String, Integer> countStepsByState(List<StepSummary> steps) {
