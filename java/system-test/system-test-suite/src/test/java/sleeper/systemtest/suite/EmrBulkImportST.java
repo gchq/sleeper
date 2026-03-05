@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.row.Row;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -38,8 +40,9 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class EmrBulkImportST {
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @Test
@@ -63,4 +66,5 @@ public class EmrBulkImportST {
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8);
     }
+
 }
