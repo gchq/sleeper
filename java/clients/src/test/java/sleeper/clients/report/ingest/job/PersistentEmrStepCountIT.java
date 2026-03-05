@@ -36,7 +36,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
-class PersistentEMRStepCountIT {
+class PersistentEmrStepCountIT {
     private final InstanceProperties properties = createTestInstanceProperties();
 
     @Test
