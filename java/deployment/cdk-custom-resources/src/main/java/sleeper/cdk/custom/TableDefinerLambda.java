@@ -101,14 +101,13 @@ public class TableDefinerLambda extends AbstractCustomResourceHandler {
     protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
         TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
         String tableName = properties.getTableProperties().get(TABLE_NAME);
+        String tableId = event.getPhysicalResourceId();
+        properties.getTableProperties().set(TABLE_ID, tableId);
         if (properties.getTableProperties().getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
             LOGGER.info("Taking table {} offline.", tableName);
             properties.getTableProperties().set(TABLE_ONLINE, "false");
             properties.getTablePropertiesStore().save(properties.getTableProperties());
         } else {
-            //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
-            properties.getTableProperties().set(TABLE_ID, event.getPhysicalResourceId());
-            String tableId = properties.getTableProperties().get(TABLE_ID);
             LOGGER.info("Deleting table {} and associated data.", tableName);
             StateStoreFactory.createProvider(properties.getInstanceProperties(), s3Client, dynamoClient)
                     .getStateStore(properties.getTableProperties()).clearSleeperTable();
