@@ -161,6 +161,15 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        This dependency is brought in through Trino, and our Trino plugin is currently experimental. To upgrade Trino
+        we also need to upgrade Java. AWS EMR does not yet support using Apache Spark with versions of Java beyond 17,
+        so we are not currently able to upgrade.
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$</packageUrl>
+        <cve>CVE-2025-5115</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
         of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
         we're using uses Jetty 9.
