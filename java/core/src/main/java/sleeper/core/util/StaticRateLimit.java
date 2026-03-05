@@ -37,17 +37,6 @@ public class StaticRateLimit<T> {
     }
 
     /**
-     * Creates an instance of this class to operate at the given maximum rate per second.
-     *
-     * @param  <T>           the request result type
-     * @param  ratePerSecond the number of requests per second to stay below
-     * @return               the new instance
-     */
-    public static <T> StaticRateLimit<T> forMaximumRatePerSecond(double ratePerSecond) {
-        return withWaitBetweenRequests(RateLimitUtils.calculateSleepForSustainedRatePerSecond(ratePerSecond), Instant::now);
-    }
-
-    /**
      * Creates an instance of this class to wait for the given time between requests.
      *
      * @param  <T>                 the request result type
