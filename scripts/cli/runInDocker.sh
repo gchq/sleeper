@@ -256,6 +256,24 @@ elif [ "$COMMAND" == "help" ]; then
   echo "can be invoked by passing further subcommands like \"sleeper environment <subcommand>\". If no subcommand is"
   echo "given, this starts a shell inside a Docker container where you can invoke the subcommands like"
   echo "\"environment <subcommand>\". Run \"sleeper environment help\" for more information."
+  echo
+  echo "aws"
+  echo "Runs the AWS CLI in an \"environment\" Docker container. Arguments will be passed to the AWS CLI."
+  echo
+  echo "cdk"
+  echo "Runs the AWS CDK in an \"environment\" Docker container. Arguments will be passed to the CDK."
+  echo
+  echo "cli upgrade"
+  echo "Retreieves the latest version of this script, and uses the updated script to retrieve the latest versions of"
+  echo "the Docker images."
+  echo
+  echo "cli pull-images"
+  echo "Retrieves the latest version of the Docker images."
+  echo
+  echo "version"
+  echo "Prints the version of Sleeper that was used to build the Docker images currently being used. This will be a"
+  echo "snapshot version, as we are only able to publish a single version of the Docker images to GitHub Container"
+  echo "Registry. We keep this up to date by publishing from the development branch."
   exit
 else
   echo "Command not found: $COMMAND"
