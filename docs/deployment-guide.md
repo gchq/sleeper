@@ -95,7 +95,7 @@ We have a version of this script that will either create or update an instance, 
 declaratively:
 
 ```bash
-./scripts/deploy/deploy.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
 This does not currently include Sleeper tables, see issue https://github.com/gchq/sleeper/issues/5870.
