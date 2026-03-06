@@ -47,7 +47,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
     private boolean acceptedEula;
 
     public NexusRepositoryContainer() {
-        super(DockerImageName.parse("sonatype/nexus3"));
+        super(DockerImageName.parse("sonatype/nexus3:3.89.1"));
         setExposedPorts(List.of(8081));
         setLogConsumers(List.of(outputFrame -> LOGGER.info("{}", outputFrame.getUtf8StringWithoutLineEnding())));
         setStartupCheckStrategy(new NexusRepositoryStartupCheckStrategy().withTimeout(Duration.ofMinutes(1)));
