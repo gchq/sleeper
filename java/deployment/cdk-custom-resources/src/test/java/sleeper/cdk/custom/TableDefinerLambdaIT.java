@@ -16,6 +16,8 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -23,7 +25,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.lambda.powertools.cloudformation.Response;
 
+import sleeper.cdk.custom.testutil.FakeLambdaContext;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -37,9 +41,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
-import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
@@ -59,9 +60,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
@@ -73,8 +82,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
+@WireMockTest
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
     private static final String CREATE = "Create", UPDATE = "Update", DELETE = "Delete";
@@ -83,6 +92,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     private final TableProperties tableProperties = createTableProperties();
+    private String physicalResourceId;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -90,19 +100,22 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        stubFor(put("/report-response").willReturn(aResponse().withStatus(200)));
     }
 
     private TableProperties createTableProperties() {
         TableProperties properties = createTestTableProperties(instanceProperties, schema);
-        properties.set(TABLE_ONLINE, "true");
+        // Properties from the CDK will not have a table ID.
+        // The user will not set this as it's created internally by Sleeper.
+        properties.unset(TABLE_ID);
         return properties;
     }
 
-    private void callLambda(String type, TableProperties tableProperties) throws IOException {
-        callLambda(type, tableProperties, "");
+    private Response callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties) throws IOException {
+        return callLambda(runtimeInfo, type, tableProperties, "");
     }
 
-    private void callLambda(String type, TableProperties tableProperties, String splitPoints) throws IOException {
+    private Response callLambda(WireMockRuntimeInfo runtimeInfo, String type, TableProperties tableProperties, String splitPoints) throws IOException {
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
         resourceProperties.put("splitPoints", splitPoints);
@@ -110,9 +123,16 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType(type)
                 .withResourceProperties(resourceProperties)
+                .withResponseUrl(runtimeInfo.getHttpBaseUrl() + "/report-response")
+                .withPhysicalResourceId(physicalResourceId)
                 .build();
 
-        tableDefinerLambda.handleEvent(event, null);
+        Response response = tableDefinerLambda.handleRequest(event, new FakeLambdaContext());
+        if (response != null && response.getPhysicalResourceId() != null) {
+            physicalResourceId = response.getPhysicalResourceId();
+        }
+
+        return response;
     }
 
     @Nested
@@ -123,84 +143,97 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldCreateTableWithNoSplitPoints() throws IOException {
+        public void shouldCreateTableWithNoSplitPoints(WireMockRuntimeInfo runtimeInfo) throws IOException {
             // Given/ When
-            callLambda(CREATE, tableProperties, "");
+            callLambda(runtimeInfo, CREATE, tableProperties, "");
 
             // Then
-            TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
-            assertThat(foundProperties).isEqualTo(tableProperties);
-            assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-            assertThat(stateStore(foundProperties).getAllPartitions())
-                    .containsExactlyElementsOf(new PartitionsBuilder(schema)
-                            .rootFirst("root")
-                            .buildList());
-
+            assertThat(propertiesStore.streamAllTables()).singleElement().satisfies(foundProperties -> {
+                assertThat(withoutTableId(foundProperties)).isEqualTo(tableProperties);
+                assertThat(stateStore(foundProperties).getAllPartitions())
+                        .containsExactlyElementsOf(new PartitionsBuilder(schema)
+                                .rootFirst("root")
+                                .buildList());
+            });
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
         }
 
         @Test
-        public void shouldCreateTableWithMultipleSplitPoints() throws IOException {
+        public void shouldCreateTableWithMultipleSplitPoints(WireMockRuntimeInfo runtimeInfo) throws IOException {
             // Given/When
-            callLambda(CREATE, tableProperties, "0\n5\n10\n");
+            callLambda(runtimeInfo, CREATE, tableProperties, "0\n5\n10\n");
 
             // Then
-            TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
-            assertThat(foundProperties).isEqualTo(tableProperties);
-            assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-            assertThat(stateStore(foundProperties).getAllPartitions())
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
-                            .rootFirst("root")
-                            .splitToNewChildren("root", "l", "r", Long.valueOf(5))
-                            .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
-                            .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
-                            .buildList());
+            assertThat(propertiesStore.streamAllTables()).singleElement().satisfies(foundProperties -> {
+                assertThat(withoutTableId(foundProperties)).isEqualTo(tableProperties);
+                assertThat(stateStore(foundProperties).getAllPartitions())
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                        .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                                .rootFirst("root")
+                                .splitToNewChildren("root", "l", "r", Long.valueOf(5))
+                                .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
+                                .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
+                                .buildList());
+            });
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
         }
 
         @Test
-        public void shouldFailToReuseTableIfTableDoesNotExist() throws IOException {
-            //Given
+        public void shouldFailToReuseTableIfTableDoesNotExist(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
             tableProperties.set(TABLE_REUSE_EXISTING, "true");
 
-            //Then
-            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
-                    .isInstanceOf(NoTableToReuseException.class);
+            // When
+            callLambda(runtimeInfo, CREATE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
+                            .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
+
         }
 
         @Test
-        public void shouldFailToReuseTableIfImportFlagNotSet() throws IOException {
-            //Given
+        public void shouldFailToReuseTableIfImportFlagNotSet(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
             tableProperties.set(TABLE_NAME, "tableName");
             tableProperties.set(TABLE_ID, "tableID");
-            callLambda(CREATE, tableProperties);
-            //Should just take the table offline
+            callLambda(runtimeInfo, CREATE, tableProperties);
+            // Should just take the table offline
             tableProperties.set(RETAIN_TABLE_AFTER_REMOVAL, "true");
-            callLambda(DELETE, tableProperties);
+            callLambda(runtimeInfo, DELETE, tableProperties);
 
-            //Then
-            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
-                    .isInstanceOf(TableAlreadyExistsException.class)
-                    .hasMessage("Table already exists: tableName (tableID) [offline]. If attempting to reuse an " +
-                            "existing table ensure the sleeper.table.reuse.existing property is set to true.");
+            // When
+            callLambda(runtimeInfo, CREATE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
+                            .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
         }
 
         @Test
-        public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
-            //Given
-            callLambda(CREATE, tableProperties);
-            //Should just take the table offline
+        public void shouldUpdateTableIfImportDataPropertySet(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
+            callLambda(runtimeInfo, CREATE, tableProperties);
+            // Should just take the table offline
             tableProperties.set(RETAIN_TABLE_AFTER_REMOVAL, "true");
-            callLambda(DELETE, tableProperties);
+            callLambda(runtimeInfo, DELETE, tableProperties);
             assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
 
-            //When
+            // When
             tableProperties.set(TABLE_ONLINE, "true");
             tableProperties.set(TABLE_REUSE_EXISTING, "true");
-            callLambda(CREATE, tableProperties);
+            callLambda(runtimeInfo, CREATE, tableProperties);
 
-            //Then
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+            // Then
+            assertThat(propertiesStore.streamAllTables()).singleElement()
+                    .extracting(table -> withoutTableId(table))
                     .isEqualTo(tableProperties);
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
         }
     }
 
@@ -208,18 +241,70 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     class TableDefinerLambdaUpdateIT {
 
         @Test
-        public void shouldUpdateTablePropertiesSuccessfully() throws IOException {
-            //Given
-            callLambda(CREATE, tableProperties);
+        public void shouldUpdateTablePropertiesSuccessfully(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
+            callLambda(runtimeInfo, CREATE, tableProperties);
+
             tableProperties.set(TABLE_ONLINE, "false");
 
-            //When
-            callLambda(UPDATE, tableProperties);
+            // When
+            callLambda(runtimeInfo, UPDATE, tableProperties);
 
-            //Then
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+            // Then
+            assertThat(propertiesStore.streamAllTables()).singleElement()
+                    .extracting(table -> withoutTableId(table))
                     .isEqualTo(tableProperties);
         }
+
+        @Test
+        public void shouldRenameTableSuccessfully(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
+            tableProperties.set(TABLE_NAME, "old-table-name");
+
+            callLambda(runtimeInfo, CREATE, tableProperties);
+
+            tableProperties.set(TABLE_NAME, "new-table-name");
+
+            // When
+            callLambda(runtimeInfo, UPDATE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("SUCCESS"))));
+            assertThat(propertiesStore.streamAllTables()).singleElement()
+                    .extracting(table -> withoutTableId(table))
+                    .isEqualTo(tableProperties);
+        }
+
+        @Test
+        public void shouldFailTableValidation(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
+            callLambda(runtimeInfo, CREATE, tableProperties);
+            tableProperties.set(TABLE_ONLINE, "connected");
+
+            // When
+            callLambda(runtimeInfo, UPDATE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
+                            .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
+        }
+
+        @Test
+        public void shouldFailIfTableDoesNotExist(WireMockRuntimeInfo runtimeInfo) throws IOException {
+            // Given
+            tableProperties.set(TABLE_ONLINE, "true");
+
+            // When
+            callLambda(runtimeInfo, UPDATE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
+                            .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
+        }
+
     }
 
     @Nested
@@ -236,50 +321,59 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldFailToDeleteTableThatDoesNotExist() {
+        public void shouldFailToDeleteTableThatDoesNotExist(WireMockRuntimeInfo runtimeInfo) throws Exception {
             // Given
             instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            // When / Then
-            assertThatThrownBy(() -> callLambda(DELETE, tableProperties))
-                    .isInstanceOf(TableNotFoundException.class);
+            // When
+            callLambda(runtimeInfo, DELETE, tableProperties);
+
+            // Then
+            verify(putRequestedFor(urlEqualTo("/report-response"))
+                    .withRequestBody(matchingJsonPath("$.Status", equalTo("FAILED"))
+                            .and(matchingJsonPath("$.Reason", containing("See the details in CloudWatch Log Stream")))));
         }
 
         @Test
-        void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetTrue() throws Exception {
+        void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetTrue(WireMockRuntimeInfo runtimeInfo) throws Exception {
             // Given
+            tableProperties.set(TABLE_ONLINE, "true");
             instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "true");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            callLambda(CREATE, tableProperties);
-            AllReferencesToAFile file = ingestRows(tableProperties, List.of(new Row(Map.of("key1", 25L))));
+            callLambda(runtimeInfo, CREATE, tableProperties);
+            TableProperties createdProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+            AllReferencesToAFile file = ingestRows(createdProperties, List.of(new Row(Map.of("key1", 25L))));
 
             // When
-            callLambda(DELETE, tableProperties);
+            callLambda(runtimeInfo, DELETE, tableProperties);
 
             // Then
             tableProperties.set(TABLE_ONLINE, "false");
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME))).isEqualTo(tableProperties);
-            assertThat(streamTableFileTransactions(tableProperties)).isNotEmpty();
-            assertThat(streamTablePartitionTransactions(tableProperties)).isNotEmpty();
-            assertThat(listDataBucketObjectKeys())
-                    .extracting(FilenameUtils::getName)
-                    .containsExactly(
-                            FilenameUtils.getName(file.getFilename()),
-                            FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+            assertThat(propertiesStore.streamAllTables()).singleElement().satisfies(foundProperties -> {
+                assertThat(withoutTableId(foundProperties)).isEqualTo(tableProperties);
+                assertThat(streamTableFileTransactions(foundProperties)).isNotEmpty();
+                assertThat(streamTablePartitionTransactions(foundProperties)).isNotEmpty();
+                assertThat(listDataBucketObjectKeys())
+                        .extracting(FilenameUtils::getName)
+                        .containsExactly(
+                                FilenameUtils.getName(file.getFilename()),
+                                FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+            });
         }
 
         @Test
-        void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
+        void shouldFullyDeleteSpecifiedTableButNoOthers(WireMockRuntimeInfo runtimeInfo) throws Exception {
             // Given
             instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            TableProperties table1 = createTableProperties(uniqueIdAndName("test-table-1", "table-1"));
-            callLambda(CREATE, table1);
+            TableProperties table1 = createTableProperties("table-1");
+            String table1Id = callLambda(runtimeInfo, CREATE, table1).getPhysicalResourceId();
+            TableProperties createdTable1 = propertiesStore.loadByName(table1.get(TABLE_NAME));
 
-            AllReferencesToAFile file1 = ingestRows(table1, List.of(
+            AllReferencesToAFile file1 = ingestRows(createdTable1, List.of(
                     new Row(Map.of("key1", 25L))));
             assertThat(listDataBucketObjectKeys())
                     .extracting(FilenameUtils::getName)
@@ -287,22 +381,23 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             FilenameUtils.getName(file1.getFilename()),
                             FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
 
-            TableProperties table2 = createTableProperties(uniqueIdAndName("test-table-2", "table-2"));
-            callLambda(CREATE, table2);
-            AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
+            TableProperties table2 = createTableProperties("table-2");
+            callLambda(runtimeInfo, CREATE, table2);
+            TableProperties createdTable2 = propertiesStore.loadByName(table2.get(TABLE_NAME));
+            AllReferencesToAFile file2 = ingestRows(createdTable2, List.of(new Row(Map.of("key1", 25L))));
 
             // When
-            callLambda(DELETE, table1);
+            physicalResourceId = table1Id;
+            callLambda(runtimeInfo, DELETE, table1);
 
             // Then
-            assertThatThrownBy(() -> propertiesStore.loadByName(table1.get(TABLE_NAME)))
-                    .isInstanceOf(TableNotFoundException.class);
-            assertThat(streamTableFileTransactions(table1)).isEmpty();
-            assertThat(streamTablePartitionTransactions(table1)).isEmpty();
-            assertThat(propertiesStore.loadByName("table-2"))
+            assertThat(propertiesStore.streamAllTables()).singleElement()
+                    .extracting(table -> withoutTableId(table))
                     .isEqualTo(table2);
-            assertThat(streamTableFileTransactions(table2)).isNotEmpty();
-            assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
+            assertThat(streamTableFileTransactions(createdTable1)).isEmpty();
+            assertThat(streamTablePartitionTransactions(createdTable1)).isEmpty();
+            assertThat(streamTableFileTransactions(createdTable2)).isNotEmpty();
+            assertThat(streamTablePartitionTransactions(createdTable2)).isNotEmpty();
             assertThat(listDataBucketObjectKeys())
                     .extracting(FilenameUtils::getName)
                     .containsExactly(
@@ -311,19 +406,19 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
+        void shouldFullyDeleteTableWhenSnapshotIsPresent(WireMockRuntimeInfo runtimeInfo) throws Exception {
             // Given
             instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            callLambda(CREATE, tableProperties, "50");
+            callLambda(runtimeInfo, CREATE, tableProperties, "50");
+            TableProperties createdTableProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
 
-            AllReferencesToAFile file = ingestRows(tableProperties, List.of(
+            AllReferencesToAFile file = ingestRows(createdTableProperties, List.of(
                     new Row(Map.of("key1", 25L)),
                     new Row(Map.of("key1", 100L))));
 
-            DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
-                    .createSnapshot();
+            createStateStoreSnapshot(createdTableProperties);
 
             assertThat(listDataBucketObjectKeys())
                     .extracting(FilenameUtils::getName)
@@ -336,23 +431,22 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             "1-partitions.arrow");
 
             // When
-            callLambda(DELETE, tableProperties);
+            callLambda(runtimeInfo, DELETE, tableProperties);
 
             // Then
-            assertThatThrownBy(() -> propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
-                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(propertiesStore.streamAllTables()).isEmpty();
             assertThat(listDataBucketObjectKeys()).isEmpty();
             // And
-            var snapshotMetadataStore = snapshotMetadataStore(tableProperties);
+            var snapshotMetadataStore = snapshotMetadataStore(createdTableProperties);
             assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
             assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
             assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
         }
 
-        private TableProperties createTableProperties(TableStatus tableStatus) {
+        private TableProperties createTableProperties(String tableName) {
             TableProperties table = createTestTableProperties(instanceProperties, schema);
-            table.set(TABLE_ID, tableStatus.getTableUniqueId());
-            table.set(TABLE_NAME, tableStatus.getTableName());
+            table.unset(TABLE_ID);
+            table.set(TABLE_NAME, tableName);
             return table;
         }
 
@@ -403,4 +497,14 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
     }
 
+    private static TableProperties withoutTableId(TableProperties tableProperties) {
+        TableProperties withoutTableId = TableProperties.copyOf(tableProperties);
+        withoutTableId.unset(TABLE_ID);
+        return withoutTableId;
+    }
+
+    private void createStateStoreSnapshot(TableProperties tableProperties) {
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+    }
 }
