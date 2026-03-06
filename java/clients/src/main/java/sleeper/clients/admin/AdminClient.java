@@ -38,7 +38,7 @@ import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.report.TableNamesReport;
-import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -109,7 +109,7 @@ public class AdminClient {
                     uploadDockerImages, DockerImageConfiguration.getDefault(), out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
-                    properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
+                    properties -> PersistentEmrStepCount.byStatus(properties, emrClient));
         }
         System.exit(errorCode);
     }
