@@ -178,8 +178,9 @@ class PersistentEmrStepCountIT {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
         StaticRateLimit<Map<String, Integer>> rateLimit = StaticRateLimit.withWaitBetweenRequests(
-                Duration.ofMinutes(10),
-                supplyTimes(Instant.parse("2026-03-06T12:00:00Z"), Instant.parse("2026-03-06T12:00:01Z")));
+                Duration.ofMinutes(10), supplyTimes(
+                        Instant.parse("2026-03-06T12:00:00Z"),
+                        Instant.parse("2026-03-06T12:00:01Z")));
         rateLimit.requestOrGetLast(() -> Map.of("PENDING", 1));
 
         // When
