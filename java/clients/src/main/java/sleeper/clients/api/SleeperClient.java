@@ -366,6 +366,9 @@ public class SleeperClient implements AutoCloseable {
         shutdown.run();
     }
 
+    /**
+     * Creates clients to interact with Sleeper.
+     */
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -503,6 +506,12 @@ public class SleeperClient implements AutoCloseable {
             return this;
         }
 
+        /**
+         * Sets the client to query Sleeper via a web socket.
+         *
+         * @param  queryWebSocketSender the client
+         * @return                      this builder for chaining
+         */
         public Builder queryWebSocketSender(QueryWebSocketSender queryWebSocketSender) {
             this.queryWebSocketSender = queryWebSocketSender;
             return this;
