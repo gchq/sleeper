@@ -33,7 +33,7 @@ use datafusion::{
     physical_expr::LexOrdering,
     physical_plan::displayable,
 };
-use log::info;
+use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 
@@ -147,7 +147,7 @@ async fn execute_compaction_plan<'a>(
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
     let physical_plan = ops.to_physical_plan(frame, sort_ordering).await?;
-    info!(
+    debug!(
         "Physical plan\n{}",
         displayable(physical_plan.as_ref()).indent(true)
     );
