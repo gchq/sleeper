@@ -81,7 +81,7 @@ public class SleeperInstanceIT {
     }
 
     private SleeperContainerImageDigestProvider imageDigest() {
-        return new SleeperContainerImageDigestProvider(image -> image.getDockerImageName(instanceProperties) + "-test-digest");
+        return new SleeperContainerImageDigestProvider(image -> image.getDeploymentName() + "-test-digest");
     }
 
 }

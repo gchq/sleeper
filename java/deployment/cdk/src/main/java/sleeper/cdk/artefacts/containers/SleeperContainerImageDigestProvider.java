@@ -64,7 +64,7 @@ public class SleeperContainerImageDigestProvider {
 
         static GetDigest fromEcrRepository(EcrClient ecrClient, InstanceProperties instanceProperties) {
             return deployment -> {
-                String image = deployment.getDockerImageName(instanceProperties);
+                String image = deployment.getDeploymentName();
                 LOGGER.info("Checking latest digest for image: {}", image);
 
                 DescribeImagesResponse response = ecrClient.describeImages(DescribeImagesRequest.builder()
