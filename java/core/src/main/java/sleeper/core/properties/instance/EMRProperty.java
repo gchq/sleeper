@@ -71,7 +71,7 @@ public interface EMRProperty {
     //  - Properties that are independent of the instance type and number of instances:
     UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
             .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
-                    "in the cluster while it's running.")
+                    "in the cluster while it's running. NOTE: Updating this property will cause any existing EMR cluster to be destroyed and re-created.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
