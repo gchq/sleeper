@@ -54,11 +54,14 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
     private final SqsClient sqsClient;
 
     public TransactionLogSnapshotCreationTriggerLambda() {
-        this.s3Client = S3Client.create();
-        this.dynamoClient = DynamoDbClient.create();
-        this.sqsClient = SqsClient.create();
-        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
+        this(S3Client.create(), DynamoDbClient.create(), SqsClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+    }
+
+    public TransactionLogSnapshotCreationTriggerLambda(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName) {
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.sqsClient = sqsClient;
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
     }
 
     @Override
