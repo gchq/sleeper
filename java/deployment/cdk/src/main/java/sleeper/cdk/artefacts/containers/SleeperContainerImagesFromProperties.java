@@ -15,7 +15,7 @@
  */
 package sleeper.cdk.artefacts.containers;
 
-import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.EcrImage;
 import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.constructs.Construct;
@@ -29,17 +29,19 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 public class SleeperContainerImagesFromProperties implements SleeperContainerImages {
 
     private final InstanceProperties instanceProperties;
+    private final SleeperContainerImageDigestProvider digest;
 
-    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties) {
+    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties, SleeperContainerImageDigestProvider digest) {
         this.instanceProperties = instanceProperties;
+        this.digest = digest;
     }
 
     @Override
     public SleeperEcsImages ecsImagesAtScope(Construct scope) {
         SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
-        return deployment -> ContainerImage.fromEcrRepository(
+        return deployment -> EcrImage.fromEcrRepository(
                 repositories.getRepository(deployment),
-                instanceProperties.get(VERSION));
+                digest.getLatestDigest(deployment));
     }
 
     @Override

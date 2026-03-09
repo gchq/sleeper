@@ -25,6 +25,7 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.cdk.testutil.SleeperInstancePrinter;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -69,7 +70,7 @@ public class SleeperInstanceIT {
         SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
                 .instanceProperties(instanceProperties)
                 .version("1.2.3")
-                .artefacts(SleeperArtefacts.fromProperties(jarVersionIds()))
+                .artefacts(SleeperArtefacts.fromProperties(jarVersionIds(), imageDigest()))
                 .skipCheckingVersionMatchesProperties(true)
                 .build();
         return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
@@ -78,4 +79,9 @@ public class SleeperInstanceIT {
     private SleeperJarVersionIdProvider jarVersionIds() {
         return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     }
+
+    private SleeperContainerImageDigestProvider imageDigest() {
+        return new SleeperContainerImageDigestProvider(image -> image.getDockerImageName(instanceProperties) + "-test-digest");
+    }
+
 }

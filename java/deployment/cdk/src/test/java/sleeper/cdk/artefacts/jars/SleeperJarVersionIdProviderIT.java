@@ -124,7 +124,7 @@ public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
     }
 
     private SleeperLambdaCode lambdaCode(Stack stack) {
-        return SleeperArtefacts.fromProperties(s3Client)
+        return SleeperArtefacts.fromProperties(s3Client, ecrClient)
                 .forInstance(instanceProperties)
                 .lambdaCodeAtScope(stack);
     }
