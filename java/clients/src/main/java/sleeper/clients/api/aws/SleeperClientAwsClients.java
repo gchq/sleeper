@@ -31,7 +31,8 @@ import java.util.Objects;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * AWS clients to instantiate a Sleeper client.
+ * AWS clients to instantiate a Sleeper client. This is used by {@link AwsSleeperClientBuilder}, in
+ * {@link AwsSleeperClientBuilder#awsClients} or {@link AwsSleeperClientBuilder#awsProvider}.
  */
 public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
@@ -51,18 +52,38 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         return new Builder();
     }
 
+    /**
+     * Retrieves the AWS client to interact with S3.
+     *
+     * @return the client
+     */
     public S3Client s3() {
         return s3ClientWrapper.get();
     }
 
+    /**
+     * Retrieves the AWS client to interact with DynamoDB.
+     *
+     * @return the client
+     */
     public DynamoDbClient dynamo() {
         return dynamoClientWrapper.get();
     }
 
+    /**
+     * Retrieves the AWS client to interact with SQS.
+     *
+     * @return the client
+     */
     public SqsClient sqs() {
         return sqsClientWrapper.get();
     }
 
+    /**
+     * Retrieves the provider for credentials for the AWS SDK.
+     *
+     * @return the client
+     */
     public AwsCredentialsProvider awsCredentialsProvider() {
         return awsCredentialsProvider;
     }
@@ -72,6 +93,9 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
+    /**
+     * Creates AWS clients to instantiate a Sleeper client.
+     */
     public static class Builder {
         private ShutdownWrapper<S3Client> s3ClientWrapper;
         private ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
