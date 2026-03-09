@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
-import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
@@ -125,7 +125,7 @@ public class IngestJobStatusReport {
                 IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
                 new IngestJobStatusReport(tracker, table, queryType, queryParameters,
                         reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                        PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
+                        PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
             }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
