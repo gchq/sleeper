@@ -15,8 +15,26 @@
  */
 package sleeper.restapi;
 
-public class Main {
+/**
+ * Rest api for interacting with the sleeper instance.
+ * Utilises API Gateway.
+ *
+ * TODO Futher expand this javadoc
+ */
+public class SleeperRest {
+
+    private SleeperRest() {
+
+    }
+
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        //Will create rest api for interacting with Sleeper
+    }
+
+    /**
+     * TODO add further expanded javadoc.
+     */
+    public void getVersion() {
+        // Simple first method for providing functionality of returning the version number
     }
 }
