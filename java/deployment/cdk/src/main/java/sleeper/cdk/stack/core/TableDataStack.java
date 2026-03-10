@@ -29,10 +29,10 @@ import software.constructs.Construct;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.List;
+
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-
-import java.util.List;
 
 public class TableDataStack extends NestedStack {
 
