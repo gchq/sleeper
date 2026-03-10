@@ -8,7 +8,7 @@
         <version>0.35.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>restapi</artifactId>
+    <artifactId>rest-api</artifactId>
 
     <!-- TODO Tidy up the dependencies -->
     <dependencies>
