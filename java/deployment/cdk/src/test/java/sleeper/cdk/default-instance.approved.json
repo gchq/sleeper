@@ -1014,6 +1014,12 @@
                   "Outputs.TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3QueueName"
                 ]
               },
+              "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef": {
+                "Fn::GetAtt": [
+                  "TableDataNestedStackTableDataNestedStackResourceBB9D1CD9",
+                  "Outputs.TestInstanceTableDataTableDataBucket68FE959DRef"
+                ]
+              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DQueueName": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -24216,6 +24222,9 @@
         "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3QueueName": {
           "Type": "String"
         },
+        "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef": {
+          "Type": "String"
+        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DQueueName": {
           "Type": "String"
         },
@@ -24324,7 +24333,7 @@
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449QueueName"
                   },
-                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]]}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]],\"period\":60}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -24408,7 +24417,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93QueueName"
                   },
-                  "\",{\"label\":\"Partition Splits\",\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":6,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsWaiting\",\"region\":\"",
+                  "\",{\"label\":\"Partition Splits\",\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":6,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsWaiting\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -24420,7 +24429,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93QueueName"
                   },
-                  "\",{\"label\":\"Partition Splits\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":12,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"AgeOfOldestWaitingJob\",\"region\":\"",
+                  "\",{\"label\":\"Partition Splits\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":12,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"AgeOfOldestWaitingJob\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
