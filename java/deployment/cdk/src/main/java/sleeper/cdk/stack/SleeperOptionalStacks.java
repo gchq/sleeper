@@ -38,6 +38,7 @@ import sleeper.cdk.stack.query.QueryStack;
 import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.restapi.SleeperRestAPI;
 
 import java.util.Set;
 
@@ -168,6 +169,11 @@ public class SleeperOptionalStacks {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
             new IngestBatcherStack(scope, "IngestBatcher", props, coreStacks, ingestStacks);
+        }
+
+        // Stack to allow provide a Rest API
+        if (optionalStacks.contains(OptionalStack.RestApiStack)) {
+            new SleeperRestAPI(scope, "RestApi");
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {
