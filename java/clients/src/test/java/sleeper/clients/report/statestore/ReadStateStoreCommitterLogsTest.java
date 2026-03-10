@@ -22,31 +22,57 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ReadStateStoreCommitterLogsTest {
 
     @Test
     void shouldReadLambdaStarted() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
     void shouldReadLambdaFinished() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda finished at 2024-08-13T12:13:00Z (ran for 1 minute)\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process finished at 2024-08-13T12:13:00Z (ran for 1 minute)\n";
         Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
-                new StateStoreCommitterRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+                new StateStoreCommitterLambdaRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+    }
+
+    @Test
+    void shouldReadBatchStarted() {
+        // Given
+        String log = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Started state store commits batch at 2024-08-13T12:13:00Z" +
+                " having received 10 messages from queue, have been running for 0h3m30s, last received commits 1m30s ago";
+        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, log))).isEqualTo(
+                new StateStoreCommitterThreadRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
+    }
+
+    @Test
+    void shouldReadBatchFinished() {
+        // Given
+        String message = "statestore.committer.MultiThreadedStateStoreCommitter INFO - Finished state store commits batch at 2024-08-13T12:13:00Z" +
+                " for table 123456a78 (ran for 0.123 seconds)";
+        Instant timestamp = Instant.parse("2024-08-13T12:13:30Z");
+
+        // When / Then
+        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isEqualTo(
+                new StateStoreCommitterThreadRunFinished("test-stream", timestamp, Instant.parse("2024-08-13T12:13:00Z")));
     }
 
     @Test
@@ -61,19 +87,21 @@ public class ReadStateStoreCommitterLogsTest {
     }
 
     @Test
-    void shouldReadUnrecognisedLog() {
+    void shouldThrowExceptionForUnmatchedLog() {
         // Given
-        String message = "some other log\n";
+        String message = "some other log";
         Instant timestamp = Instant.parse("2024-08-13T12:12:00Z");
 
         // When / Then
-        assertThat(ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message))).isNull();
+        assertThatThrownBy(() -> ReadStateStoreCommitterLogs.read(logEntry("test-stream", timestamp, message)))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("Couldn't match [some other log]");
     }
 
     @Test
     void shouldReadLogWithFieldsInReverseOrder() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
         List<ResultField> entry = List.of(
                 messageField(message),
@@ -82,13 +110,13 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
     void shouldReadLogWithExtraFields() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         Instant timestamp = Instant.parse("2024-08-13T12:12:30Z");
         List<ResultField> entry = List.of(
                 ResultField.builder().field("@extraField").value("some value").build(),
@@ -101,13 +129,13 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry))
-                .isEqualTo(new StateStoreCommitterRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
+                .isEqualTo(new StateStoreCommitterLambdaRunStarted("test-stream", timestamp, Instant.parse("2024-08-13T12:12:00Z")));
     }
 
     @Test
     void shouldReadTimestampFromString() {
         // Given
-        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - Lambda started at 2024-08-13T12:12:00Z\n";
+        String message = "[main] lambda.committer.StateStoreCommitterLambda INFO - State store committer process started at 2024-08-13T12:12:00Z\n";
         List<ResultField> entry = List.of(
                 messageField(message),
                 timestampField("2024-08-13 12:12:30.123"),
@@ -115,7 +143,7 @@ public class ReadStateStoreCommitterLogsTest {
 
         // When / Then
         assertThat(ReadStateStoreCommitterLogs.read(entry)).isEqualTo(
-                new StateStoreCommitterRunStarted("test-stream",
+                new StateStoreCommitterLambdaRunStarted("test-stream",
                         Instant.parse("2024-08-13T12:12:30.123Z"),
                         Instant.parse("2024-08-13T12:12:00Z")));
     }

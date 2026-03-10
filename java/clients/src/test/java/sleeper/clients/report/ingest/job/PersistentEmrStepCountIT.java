@@ -23,10 +23,13 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.findUnmatchedRequests;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
@@ -34,9 +37,10 @@ import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrCluste
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listStepsRequestWithClusterId;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 @WireMockTest
-class PersistentEMRStepCountIT {
+class PersistentEmrStepCountIT {
     private final InstanceProperties properties = createTestInstanceProperties();
 
     @Test
@@ -76,6 +80,7 @@ class PersistentEMRStepCountIT {
         // When / Then
         assertThat(getStepCountByStatus(runtimeInfo))
                 .isEqualTo(Collections.emptyMap());
+        assertThat(findUnmatchedRequests()).isEmpty();
     }
 
     @Test
@@ -168,7 +173,29 @@ class PersistentEMRStepCountIT {
                 .isEqualTo(Map.of("PENDING", 2));
     }
 
+    @Test
+    void shouldNotRepeatTooSoonAfterPreviousRequestWithRateLimit(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
+        StaticRateLimit<Map<String, Integer>> rateLimit = StaticRateLimit.withWaitBetweenRequests(
+                Duration.ofMinutes(10), supplyTimes(
+                        Instant.parse("2026-03-06T12:00:00Z"),
+                        Instant.parse("2026-03-06T12:00:01Z")));
+        rateLimit.requestOrGetLast(() -> Map.of("PENDING", 1));
+
+        // When
+        Map<String, Integer> stepCount = getStepCountByStatus(runtimeInfo, rateLimit);
+
+        // Then
+        assertThat(stepCount).isEqualTo(Map.of("PENDING", 1));
+        assertThat(findUnmatchedRequests()).isEmpty();
+    }
+
     private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo) {
-        return PersistentEMRStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo), StaticRateLimit.none());
+        return getStepCountByStatus(runtimeInfo, StaticRateLimit.none());
+    }
+
+    private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo, StaticRateLimit<Map<String, Integer>> rateLimit) {
+        return PersistentEmrStepCount.byStatus(properties, wiremockEmrClient(runtimeInfo), rateLimit);
     }
 }

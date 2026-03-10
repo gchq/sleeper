@@ -382,7 +382,7 @@ public class PageThroughLogsTest {
     }
 
     private StateStoreCommitterLogEntry entryAt(Instant time) {
-        return new StateStoreCommitterRunStarted("test-stream", time, Instant.MIN);
+        return new StateStoreCommitterLambdaRunStarted("test-stream", time, Instant.MIN);
     }
 
 }
