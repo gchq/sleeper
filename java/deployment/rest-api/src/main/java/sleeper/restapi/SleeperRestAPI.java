@@ -15,7 +15,9 @@
  */
 package sleeper.restapi;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
 import software.amazon.awssdk.services.apigateway.model.ApiGatewayException;
@@ -25,6 +27,14 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
+
+import java.util.Map;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * Rest api for interacting with the sleeper instance.
@@ -34,18 +44,27 @@ import sleeper.cdk.lambda.SleeperLambdaCode;
  */
 public class SleeperRestAPI extends NestedStack {
 
-    public SleeperRestAPI(Construct scope, String id, SleeperInstanceArtefacts artefacts) {
-        super(scope, id);
+    public SleeperRestAPI(Construct scope, String id, InstanceProperties instanceProperties,
+            SleeperInstanceArtefacts artefacts) {
+        super(scope, instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
-        setUpRestApi(id, lambdaCode);
+        setUpRestApi(instanceProperties, instanceProperties.get(ID), lambdaCode);
     }
 
-    private void setUpRestApi(String id, SleeperLambdaCode lambdaCode) {
+    private void setUpRestApi(InstanceProperties instanceProperties, String id, SleeperLambdaCode lambdaCode) {
         //This section to elobrate/set from elsewhere
         String restApiName = "rest-api-name";
-        Region region = Region.EU_WEST_2;
 
-        ApiGatewayClient apiGateway = setUpApiGateway(region);
+        Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        String functionName = String.join("-", "sleeper", id, "rest-api-handler");
+        IFunction lambdaFunction = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, id, builder -> builder
+                .functionName(functionName)
+                .description("Function for creating rest api for interacting with sleeper")
+                .environment(env)
+                .memorySize(1024)
+                .timeout(Duration.seconds(60)));
+
+        ApiGatewayClient apiGateway = setUpApiGateway(Region.of(instanceProperties.get(REGION)));
 
         try {
             CreateRestApiRequest request = CreateRestApiRequest.builder()
@@ -54,7 +73,7 @@ public class SleeperRestAPI extends NestedStack {
                     .name(restApiName)
                     .build();
             CreateRestApiResponse response = apiGateway.createRestApi(request);
-            response.id();
+            response.id(); // Just doing something with the response to stop the redline for now
         } catch (ApiGatewayException ex) {
 
         }
