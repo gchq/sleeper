@@ -16,10 +16,15 @@
 package sleeper.restapi;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.apigateway.ApiGatewayClient;
+import software.amazon.awssdk.services.apigateway.model.ApiGatewayException;
 import software.amazon.awssdk.services.apigateway.model.CreateRestApiRequest;
 import software.amazon.awssdk.services.apigateway.model.CreateRestApiResponse;
 import software.constructs.Construct;
+
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.lambda.SleeperLambdaCode;
 
 /**
  * Rest api for interacting with the sleeper instance.
@@ -29,26 +34,37 @@ import software.constructs.Construct;
  */
 public class SleeperRestAPI extends NestedStack {
 
-    public SleeperRestAPI(Construct scope, String id) {
+    public SleeperRestAPI(Construct scope, String id, SleeperInstanceArtefacts artefacts) {
         super(scope, id);
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
+        setUpRestApi(id, lambdaCode);
     }
 
-    private ApiGatewayClient setUpApiGateway() {
-        return null;
-    }
+    private void setUpRestApi(String id, SleeperLambdaCode lambdaCode) {
+        //This section to elobrate/set from elsewhere
+        String restApiName = "rest-api-name";
+        Region region = Region.EU_WEST_2;
 
-    private void createRestApi(ApiGatewayClient apiGateway, String restApiId) {
+        ApiGatewayClient apiGateway = setUpApiGateway(region);
+
         try {
             CreateRestApiRequest request = CreateRestApiRequest.builder()
-                    .cloneFrom(restApiId)
-                    .description("test rest api") //TODO Elobate description
-                    .name("SleeperRestAPI") // TODO allow customisation
+                    .cloneFrom(id)
+                    .description("Rest api for sleeper interaction")
+                    .name(restApiName)
                     .build();
             CreateRestApiResponse response = apiGateway.createRestApi(request);
             response.id();
-        } catch (Exception ex) {
+        } catch (ApiGatewayException ex) {
 
         }
+
+    }
+
+    private ApiGatewayClient setUpApiGateway(Region region) {
+        return ApiGatewayClient.builder()
+                .region(region)
+                .build();
     }
 
     /**
