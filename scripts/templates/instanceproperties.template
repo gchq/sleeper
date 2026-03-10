@@ -94,7 +94,7 @@ sleeper.subnets=set-automatically
 # Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
 # PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
 # WebSocketQueryStack, AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack,
-# PartitionSplittingStack, DashboardStack, TableMetricsStack]
+# PartitionSplittingStack, RestApiStack, DashboardStack, TableMetricsStack]
 # (default value shown below, uncomment to set a value)
 # sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
