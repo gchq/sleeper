@@ -716,7 +716,8 @@ sleeper.subnets=set-automatically
 # sleeper.bulk.import.emr.spark.sql.shuffle.partitions=290
 
 # (Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying
-# this will allow you to SSH to the nodes in the cluster while it's running.
+# this will allow you to SSH to the nodes in the cluster while it's running. NOTE: Updating this
+# property will cause any existing EMR cluster to be destroyed and re-created.
 # (uncomment to set a value)
 # sleeper.bulk.import.emr.keypair.name=
 
