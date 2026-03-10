@@ -32,7 +32,7 @@ use datafusion::{
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
-use log::{debug, info};
+use log::debug;
 use num_format::{Locale, ToFormattedString};
 use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -70,7 +70,7 @@ pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
     .explain(false, false)?
     .collect()
     .await?;
-    info!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
+    debug!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
     Ok(())
 }
 
