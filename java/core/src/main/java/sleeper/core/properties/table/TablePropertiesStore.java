@@ -230,22 +230,22 @@ public class TablePropertiesStore {
         /**
          * Loads properties of the given Sleeper table.
          *
-         * @param  table the table status
+         * @param  table the table status, from the table index
          * @return       the table properties
          */
         TableProperties loadProperties(TableStatus table);
 
         /**
-         * Saves table properties.
+         * Saves table properties. Will not update the table index.
          *
          * @param tableProperties the table properties
          */
         void saveProperties(TableProperties tableProperties);
 
         /**
-         * Deletes table properties.
+         * Deletes table properties. Will not update the table index.
          *
-         * @param table the table status
+         * @param table the table status, from the table index
          */
         void deleteProperties(TableStatus table);
     }
