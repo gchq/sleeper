@@ -98,21 +98,22 @@ public class TablePropertiesStore {
     }
 
     /**
-     * Loads properties for all tables in the Sleeper instance.
+     * Loads properties for all tables in the Sleeper instance. Properties will not be validated.
      *
      * @return the table properties
      */
     public Stream<TableProperties> streamAllTables() {
-        return streamAllTableStatuses().map(this::loadProperties);
+        return streamAllTableStatuses().map(client::loadProperties);
     }
 
     /**
-     * Loads properties for online tables in the Sleeper instance.
+     * Loads properties for online tables in the Sleeper instance. Properties will not be validated.
      *
      * @return the table properties for online tables
      */
     public Stream<TableProperties> streamOnlineTables() {
-        return tableIndex.streamOnlineTables().map(this::loadProperties);
+        return tableIndex.streamOnlineTables()
+                .map(client::loadProperties);
     }
 
     /**

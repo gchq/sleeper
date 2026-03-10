@@ -161,5 +161,6 @@ class TablePropertiesSchemaTest {
         assertThat(tableProperties.getSchema()).isNull();
         assertThatThrownBy(tableProperties::validate)
                 .hasMessage("Property sleeper.table.schema was invalid. It was \"{}\".");
+        assertThat(tableProperties.isValid()).isFalse();
     }
 }

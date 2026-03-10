@@ -18,7 +18,6 @@ package sleeper.statestore.lambda.snapshot;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
@@ -91,7 +90,6 @@ public class TransactionLogSnapshotCreationTriggerLambdaIT extends LocalStackTes
     }
 
     @Test
-    @Disabled("TODO")
     void shouldNotTriggerSnapshotCreationForTableWithInvalidSchema() {
         // Given
         TableProperties tableProperties = new TableProperties(instanceProperties,

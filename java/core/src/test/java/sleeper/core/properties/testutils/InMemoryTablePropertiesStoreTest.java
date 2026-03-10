@@ -33,8 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
@@ -246,6 +248,68 @@ public class InMemoryTablePropertiesStoreTest {
         void shouldFindNoTableByNameNoValidation() {
             assertThatThrownBy(() -> store.loadByNameNoValidation("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Load properties of all tables")
+    class LoadAll {
+
+        @Test
+        void shouldLoadOnlineAndOfflineTables() {
+            // Given
+            TableProperties table1 = createValidTableProperties();
+            TableProperties table2 = createValidTableProperties();
+            table2.set(TABLE_ONLINE, "false");
+            store.save(table1);
+            store.save(table2);
+
+            // When / Then
+            assertThat(store.streamAllTables())
+                    .containsExactly(table1, table2);
+        }
+
+        @Test
+        void shouldIncludeTableWithInvalidProperty() {
+            // Given
+            tableProperties.set(SCHEMA, "{}");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(store.streamAllTables())
+                    .containsExactly(tableProperties);
+        }
+    }
+
+    @Nested
+    @DisplayName("Load properties of online tables")
+    class LoadOnline {
+
+        @Test
+        void shouldLoadOnlyOnlineTables() {
+            // Given
+            TableProperties table1 = createValidTableProperties();
+            TableProperties table2 = createValidTableProperties();
+            TableProperties table3 = createValidTableProperties();
+            table2.set(TABLE_ONLINE, "false");
+            store.save(table1);
+            store.save(table2);
+            store.save(table3);
+
+            // When / Then
+            assertThat(store.streamOnlineTables())
+                    .containsExactly(table1, table3);
+        }
+
+        @Test
+        void shouldIncludeTableWithInvalidProperty() {
+            // Given
+            tableProperties.set(SCHEMA, "{}");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(store.streamOnlineTables())
+                    .containsExactly(tableProperties);
         }
     }
 
