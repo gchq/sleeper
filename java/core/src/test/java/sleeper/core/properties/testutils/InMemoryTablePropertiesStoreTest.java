@@ -178,8 +178,8 @@ public class InMemoryTablePropertiesStoreTest {
     }
 
     @Nested
-    @DisplayName("Load table properties")
-    class LoadProperties {
+    @DisplayName("Load properties by ID")
+    class LoadById {
 
         @Test
         void shouldLoadTableById() {
@@ -201,6 +201,17 @@ public class InMemoryTablePropertiesStoreTest {
             assertThatThrownBy(() -> store.loadById(tableId))
                     .isInstanceOf(IllegalArgumentException.class);
         }
+
+        @Test
+        void shouldFindNoTableById() {
+            assertThatThrownBy(() -> store.loadById("not-a-table"))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Load properties by name")
+    class LoadByName {
 
         @Test
         void shouldNotLoadInvalidTableByName() {
@@ -234,12 +245,6 @@ public class InMemoryTablePropertiesStoreTest {
         @Test
         void shouldFindNoTableByNameNoValidation() {
             assertThatThrownBy(() -> store.loadByNameNoValidation("not-a-table"))
-                    .isInstanceOf(TableNotFoundException.class);
-        }
-
-        @Test
-        void shouldFindNoTableById() {
-            assertThatThrownBy(() -> store.loadById("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
