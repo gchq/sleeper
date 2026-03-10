@@ -27,6 +27,9 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import java.net.URI;
 import java.util.Map;
 
+/**
+ * A factory for AWS SDK clients that will assume a role. Created with {@link AssumeSleeperRole}.
+ */
 public class AssumeSleeperRoleAwsSdk {
     private final String region;
     private final String endpointUrl;
@@ -38,6 +41,14 @@ public class AssumeSleeperRoleAwsSdk {
         this.credentialsProvider = provider;
     }
 
+    /**
+     * Configures and creates an AWS SDK client to assume the role.
+     *
+     * @param  <T>     the type of AWS client
+     * @param  <B>     the type of AWS client builder
+     * @param  builder the AWS client builder
+     * @return         the AWS client
+     */
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T buildClient(B builder) {
         builder.credentialsProvider(credentialsProvider).region(Region.of(region));
         if (endpointUrl != null) {
@@ -46,6 +57,13 @@ public class AssumeSleeperRoleAwsSdk {
         return builder.build();
     }
 
+    /**
+     * Configures and creates a Common Run Time based S3AsyncClient to assume the role. This method is needed because
+     * the CRT client builder does not implement {@link software.amazon.awssdk.awscore.client.builder.AwsClientBuilder}.
+     *
+     * @param  builder the AWS client builder
+     * @return         the AWS client
+     */
     public S3AsyncClient buildClient(S3CrtAsyncClientBuilder builder) {
         builder.credentialsProvider(credentialsProvider).region(Region.of(region));
         if (endpointUrl != null) {
@@ -54,14 +72,30 @@ public class AssumeSleeperRoleAwsSdk {
         return builder.build();
     }
 
+    /**
+     * Returns a region provider to set the region associated with the role.
+     *
+     * @return the region provider
+     */
     public AwsRegionProvider regionProvider() {
         return () -> Region.of(region);
     }
 
+    /**
+     * Returns a credentials provider that assumes the role.
+     *
+     * @return the credentials provider
+     */
     public AwsCredentialsProvider credentialsProvider() {
         return credentialsProvider;
     }
 
+    /**
+     * Generates environment variables that will configure AWS tools to assume the role. This will not refresh
+     * credentials automatically, so please use {@link #credentialsProvider()} when possible.
+     *
+     * @return the environment variables
+     */
     public Map<String, String> authEnvVars() {
         AwsSessionCredentials credentials = (AwsSessionCredentials) credentialsProvider.resolveCredentials();
         return Map.of(
@@ -72,6 +106,12 @@ public class AssumeSleeperRoleAwsSdk {
                 "AWS_DEFAULT_REGION", region);
     }
 
+    /**
+     * Generates configuration for DataFusion to assume the role. This will not refresh credentials automatically, so
+     * please configure this in DataFusion directly when possible.
+     *
+     * @return the configuration
+     */
     public DataFusionAwsConfig dataFusionAwsConfig() {
         AwsSessionCredentials credentials = (AwsSessionCredentials) credentialsProvider.resolveCredentials();
         return DataFusionAwsConfig.builder()

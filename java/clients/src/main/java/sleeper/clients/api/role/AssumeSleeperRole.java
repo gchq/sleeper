@@ -32,6 +32,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 
+/**
+ * Authenticates with AWS STS to assume a role associated with a Sleeper instance. This can be used to gain the
+ * appropriate permissions for e.g. ingest, administration, when you have permissions to assume the relevant role.
+ */
 public class AssumeSleeperRole {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssumeSleeperRole.class);
 
@@ -53,14 +57,32 @@ public class AssumeSleeperRole {
         LOGGER.info("Assuming role: {}", roleArn);
     }
 
+    /**
+     * Creates an object that can be used to assume the role for ingest via SQS queue.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the object
+     */
     public static AssumeSleeperRole ingestByQueue(InstanceProperties instanceProperties) {
         return fromArnProperty(instanceProperties, INGEST_BY_QUEUE_ROLE_ARN);
     }
 
+    /**
+     * Creates an object that can be used to assume the role for direct ingest.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the object
+     */
     public static AssumeSleeperRole directIngest(InstanceProperties instanceProperties) {
         return fromArnProperty(instanceProperties, INGEST_DIRECT_ROLE_ARN);
     }
 
+    /**
+     * Creates an object that can be used to assume the role to administer the Sleeper instance.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the object
+     */
     public static AssumeSleeperRole instanceAdmin(InstanceProperties instanceProperties) {
         return fromArnProperty(instanceProperties, ADMIN_ROLE_ARN);
     }
@@ -73,11 +95,23 @@ public class AssumeSleeperRole {
         return new AssumeSleeperRole(region, endpointUrl, roleArn);
     }
 
+    /**
+     * Creates an object that can be used to assume a role by its ARN.
+     *
+     * @param  roleArn the ARN of the role to assume
+     * @return         the object
+     */
     public static AssumeSleeperRole fromArn(String roleArn) {
         String region = new DefaultAwsRegionProviderChain().getRegion().id();
         return new AssumeSleeperRole(region, null, roleArn);
     }
 
+    /**
+     * Prepares to create AWS SDK clients that will assume the role.
+     *
+     * @param  sts the AWS STS client
+     * @return     a factory to create AWS SDK clients that will assume the role
+     */
     public AssumeSleeperRoleAwsSdk forAwsSdk(StsClient sts) {
         StsAssumeRoleCredentialsProvider provider = StsAssumeRoleCredentialsProvider.builder()
                 .refreshRequest(builder -> builder.roleArn(roleArn).roleSessionName(roleSessionName))
@@ -86,6 +120,11 @@ public class AssumeSleeperRole {
         return new AssumeSleeperRoleAwsSdk(region, endpointUrl, provider);
     }
 
+    /**
+     * Prepares to configure Hadoop to assume the role.
+     *
+     * @return an object that can configure Hadoop to assume the role
+     */
     public AssumeSleeperRoleHadoop forHadoop() {
         return new AssumeSleeperRoleHadoop(roleArn, roleSessionName);
     }

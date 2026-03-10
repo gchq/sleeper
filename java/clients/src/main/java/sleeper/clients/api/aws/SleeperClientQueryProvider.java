@@ -92,6 +92,9 @@ public interface SleeperClientQueryProvider {
         return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
     }
 
+    /**
+     * A query provider backed by a single thread pool.
+     */
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
         private final BufferAllocator allocator = new RootAllocator();
