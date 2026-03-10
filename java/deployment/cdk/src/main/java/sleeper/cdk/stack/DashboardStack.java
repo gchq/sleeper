@@ -46,7 +46,6 @@ import java.util.stream.IntStream;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
@@ -107,11 +106,6 @@ public class DashboardStack extends NestedStack {
         addErrorMetricsWidgets(errorMetrics);
         addIngestWidgets();
         addTableWidgets();
-
-        List<String> ingestSourceBucketNames = instanceProperties.getList(INGEST_SOURCE_BUCKET);
-        ingestSourceBucketNames.forEach(bucketName -> {
-                addBucketWidgets("Ingest Source Bucket: " + bucketName, bucketName);
-        });
 
         String tableBucketName = instanceProperties.get(DATA_BUCKET);
         addBucketWidgets("Table Data Bucket: " + tableBucketName, tableBucketName);
