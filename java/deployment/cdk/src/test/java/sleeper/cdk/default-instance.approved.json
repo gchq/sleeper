@@ -7517,6 +7517,11 @@
                 }
               ]
             },
+            "MetricsConfigurations": [
+              {
+                "Id": "all"
+              }
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -24343,7 +24348,55 @@
                   {
                     "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobQueue349E97BCQueueName"
                   },
-                  "\",{\"stat\":\"Maximum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":10,\"properties\":{\"markdown\":\"## Compactions and Splits\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",{\"stat\":\"Maximum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":10,\"properties\":{\"markdown\":\"## Table Data Bucket: ",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\"}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Request Counts\",\"region\":\"",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\",\"metrics\":[[\"AWS/S3\",\"AllRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"HeadRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"GetRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"PutRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"PostRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"ListRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"DeleteRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":12,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Error Counts\",\"region\":\"",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\",\"metrics\":[[\"AWS/S3\",\"4xxErrors\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"5xxErrors\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":17,\"properties\":{\"markdown\":\"## Compactions and Splits\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
