@@ -100,10 +100,10 @@ declaratively:
 
 This does not currently include Sleeper tables, see issue https://github.com/gchq/sleeper/issues/5870.
 
-#### Update existing instance
+#### Redeploy existing instance
 
-The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
-that have changed, update all the docker images, and perform a `cdk deploy`.
+The `deployExisting.sh` script can be used to re-run the CDK against an existing instance of sleeper or update it to a newer version.
+This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
 ./scripts/deploy/deployExisting.sh <instance-id>
