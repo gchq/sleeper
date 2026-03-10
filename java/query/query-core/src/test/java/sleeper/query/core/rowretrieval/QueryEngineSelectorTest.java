@@ -40,6 +40,15 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetDataFusionEngine() {
         // Given
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
+
+        // When / Then
+        assertThat(createRowRetriever()).isSameAs(dataFusionRowRetriever);
+    }
+
+    @Test
+    void shouldSetDataFusionEngineExperimental() {
+        // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
 
         // When / Then
@@ -50,15 +59,6 @@ public class QueryEngineSelectorTest {
     void shouldSetJavaEngine() {
         // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
-
-        // When / Then
-        assertThat(createRowRetriever()).isSameAs(javaRowRetriever);
-    }
-
-    @Test
-    void shouldSetDataFusionForCompactionOnly() {
-        // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
 
         // When / Then
         assertThat(createRowRetriever()).isSameAs(javaRowRetriever);

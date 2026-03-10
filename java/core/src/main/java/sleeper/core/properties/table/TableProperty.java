@@ -154,7 +154,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty DATA_ENGINE = Index.propertyBuilder("sleeper.table.data.engine")
             .defaultProperty(DEFAULT_DATA_ENGINE)
             .description("Select which data engine to use for the table. " +
-                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class) + "\n" +
+                    "The options \"datafusion\" and \"datafusion_experimental\" currently have identical behaviour, " +
+                    "as the DataFusion data engine no longer has any experimental components. We may remove the " +
+                    "\"datafusion_experimental\" option in a future release, which will cause instances with that " +
+                    "set to fail after an upgrade. Please use the \"datafusion\" option instead.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
@@ -237,14 +241,14 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
-    TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
+    TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.parquet.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("Maximum number of bytes to write in a Parquet row group " +
                     "(defaults to value set in instance properties). " +
                     "This property is NOT used by DataFusion data engine.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.page.size")
+    TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.parquet.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
             .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
@@ -287,7 +291,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
             .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
-    TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
+    TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.query.parquet.column.index.enabled")
             .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
             .description("Used during Sleeper queries to determine whether the column/offset indexes (also known as page indexes) are read from Parquet files. " +
                     "For some queries, e.g. single/few row lookups this can improve performance by enabling more aggressive pruning. On range " +
@@ -303,7 +307,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
+    TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.parquet.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))

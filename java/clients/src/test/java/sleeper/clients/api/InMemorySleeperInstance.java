@@ -41,6 +41,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
+/**
+ * An in-memory implementation of Sleeper. Used to create a {@link SleeperClient} for unit testing.
+ */
 public class InMemorySleeperInstance {
 
     private final InstanceProperties properties;
@@ -68,6 +71,11 @@ public class InMemorySleeperInstance {
         return webSocketConnection;
     }
 
+    /**
+     * Creates a builder for a Sleeper client that will interact with this instance.
+     *
+     * @return the builder
+     */
     public SleeperClient.Builder sleeperClientBuilder() {
         return new SleeperClient.Builder()
                 .instanceProperties(properties)
@@ -83,10 +91,22 @@ public class InMemorySleeperInstance {
                 .queryWebSocketSender(queryWebSocketSender());
     }
 
+    /**
+     * Prepares for ingest to a Sleeper table.
+     *
+     * @param  tableName the name of the table
+     * @return           a factory for an ingest coordinator
+     */
     public InMemoryIngest ingestByTableName(String tableName) {
         return ingest(tablePropertiesProvider.getByName(tableName));
     }
 
+    /**
+     * Prepares for ingest to a Sleeper table.
+     *
+     * @param  tableProperties the table properties
+     * @return                 a factory for an ingest coordinator
+     */
     public InMemoryIngest ingest(TableProperties tableProperties) {
         return new InMemoryIngest(properties,
                 tableProperties,
@@ -94,50 +114,123 @@ public class InMemorySleeperInstance {
                 dataStore, sketchesStore);
     }
 
+    /**
+     * Retrieves an in-memory queue of bulk import jobs. Each platform has its own queue of jobs to be run.
+     *
+     * @param  platform the platform to retrieve the queue for
+     * @return          the queue
+     */
     public Queue<BulkImportJob> bulkImportQueue(BulkImportPlatform platform) {
         return bulkImportQueues.computeIfAbsent(platform, p -> new LinkedList<>());
     }
 
+    /**
+     * Retrieves the instance properties. The returned object is the only copy of the properties, so any edits will
+     * apply to the whole instance immediately.
+     *
+     * @return the instance properties
+     */
     public InstanceProperties properties() {
         return properties;
     }
 
+    /**
+     * Retrieves the table index. This tracks what tables are in the instance, and their status. Updates must be applied
+     * via {@link #tablePropertiesStore()}, in order for changes to be reflected in the table properties.
+     *
+     * @return the table index
+     */
     public InMemoryTableIndex tableIndex() {
         return tableIndex;
     }
 
+    /**
+     * Retrieves the table properties store. Table properties objects returned from the store will be the only copy of
+     * the properties, so any edits will apply to the whole instance immediately without being saved back to the store.
+     * Saving the table properties back to the store will apply any edits to the table index when necessary.
+     *
+     * @return the table properties store
+     */
     public TablePropertiesStore tablePropertiesStore() {
         return tablePropertiesStore;
     }
 
+    /**
+     * Retrieves the table properties provider. Table properties objects returned from the provider will be the only
+     * copy of the properties, so any edits will apply to the whole instance immediately, unless you edit a property
+     * that needs to be applied to the table index. To apply changes to the table index, use
+     * {@link #tablePropertiesStore()}.
+     *
+     * @return the table properties provider
+     */
     public TablePropertiesProvider tablePropertiesProvider() {
         return tablePropertiesProvider;
     }
 
+    /**
+     * Retrieves the transaction logs held in memory. These are the backing for the Sleeper table state, which you can
+     * interact with through the state store via {@link #stateStoreProvider()}.
+     *
+     * @return the transaction logs
+     */
     public InMemoryTransactionLogsPerTable transactionLogsPerTable() {
         return transactionLogsPerTable;
     }
 
+    /**
+     * Retrieves the state store provider. This is used to interact with the Sleeper table state, which is backed by the
+     * transaction logs returned from {@link #transactionLogsPerTable()}.
+     *
+     * @return the state store provider
+     */
     public StateStoreProvider stateStoreProvider() {
         return stateStoreProvider;
     }
 
+    /**
+     * Retrieves the in-memory store of table data. This contains the contents of simulated files held in Sleeper
+     * tables.
+     *
+     * @return the store
+     */
     public InMemoryRowStore dataStore() {
         return dataStore;
     }
 
+    /**
+     * Retrieves the in-memory store of sketches data. This contains data sketches of simulated files held in Sleeper
+     * tables.
+     *
+     * @return the store
+     */
     public InMemorySketchesStore sketchesStore() {
         return sketchesStore;
     }
 
+    /**
+     * Retrieves the in-memory queue of ingest jobs.
+     *
+     * @return the queue
+     */
     public Queue<IngestJob> ingestQueue() {
         return ingestQueue;
     }
 
+    /**
+     * Retrieves the map of in-memory queues of bulk import jobs. A queue will be added for a platform automatically
+     * when bulk import jobs are sent for that platform.
+     *
+     * @return the queues
+     */
     public Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues() {
         return bulkImportQueues;
     }
 
+    /**
+     * Retrieves the in-memory queue of submissions to the ingest batcher.
+     *
+     * @return the queue
+     */
     public Queue<IngestBatcherSubmitRequest> ingestBatcherQueue() {
         return ingestBatcherQueue;
     }
@@ -153,6 +246,11 @@ public class InMemorySleeperInstance {
         };
     }
 
+    /**
+     * Retrieves the in-memory queue of bulk export queries.
+     *
+     * @return the queue
+     */
     public Queue<BulkExportQuery> bulkExportQueue() {
         return bulkExportQueue;
     }

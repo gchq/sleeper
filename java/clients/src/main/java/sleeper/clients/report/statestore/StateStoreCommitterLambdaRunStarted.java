@@ -13,24 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefacts;
+package sleeper.clients.report.statestore;
 
-import software.amazon.awscdk.services.ecs.ContainerImage;
-
-import sleeper.core.deploy.DockerDeployment;
+import java.time.Instant;
 
 /**
- * Code to refer to a Docker image for use when deploying to ECS.
+ * A log entry recording that a state store committer lambda started processing.
  */
-public interface SleeperEcsImages {
+public class StateStoreCommitterLambdaRunStarted extends StateStoreCommitterRunStarted {
 
-    /**
-     * Retrieves a reference to a Docker image. The scope and ID can be used in case it is necessary to create a new
-     * construct to refer to the image.
-     *
-     * @param  deployment which deployment we want the Docker image for
-     * @return            the reference to the Docker image
-     */
-    ContainerImage containerImage(DockerDeployment deployment);
-
+    public StateStoreCommitterLambdaRunStarted(String logStream, Instant timestamp, Instant startTime) {
+        super(logStream, timestamp, startTime);
+    }
 }

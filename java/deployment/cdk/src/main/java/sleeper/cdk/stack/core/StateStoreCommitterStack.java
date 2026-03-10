@@ -50,8 +50,8 @@ import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperEcsImages;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.containers.SleeperEcsImages;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -94,7 +94,7 @@ public class StateStoreCommitterStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            SleeperArtefacts artefacts,
+            SleeperInstanceArtefacts artefacts,
             LoggingStack loggingStack,
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
@@ -112,7 +112,7 @@ public class StateStoreCommitterStack extends NestedStack {
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
         if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsImages, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
+            ecsTaskToCommitStateStoreUpdates(loggingStack, policiesStack, configBucketStack, tableIndexStack, stateStoreStacks, ecsImages, ecsClusterTasksStack.getEcsSecurityGroup(), commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
                     loggingStack, policiesStack, lambdaCode,
@@ -154,7 +154,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void ecsTaskToCommitStateStoreUpdates(
-            LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks, SleeperEcsImages ecsImages, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
         String instanceId = instanceProperties.get(ID);
 
@@ -200,6 +200,9 @@ public class StateStoreCommitterStack extends NestedStack {
         ContainerImage containerImage = ecsImages.containerImage(DockerDeployment.STATESTORE_COMMITTER);
 
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
+        instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
+        logGroup.grantRead(policiesStack.getReportingPolicyForGrants());
+        logGroup.grant(policiesStack.getReportingPolicyForGrants(), "logs:StartQuery", "logs:GetQueryResults");
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));

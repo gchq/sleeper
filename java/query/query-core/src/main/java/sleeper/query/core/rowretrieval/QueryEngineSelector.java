@@ -49,8 +49,8 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION_EXPERIMENTAL:
-                return dataFusionProvider.getRowRetriever(tableProperties);
             case DATAFUSION:
+                return dataFusionProvider.getRowRetriever(tableProperties);
             case JAVA:
             default:
                 return javaProvider.getRowRetriever(tableProperties);

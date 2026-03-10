@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.jars;
+package sleeper.cdk.artefacts.jars;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +23,6 @@ import software.amazon.awscdk.assertions.Template;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.SleeperArtefactsFromProperties;
-import sleeper.cdk.artefacts.SleeperJarVersionIdProvider;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -125,12 +123,13 @@ public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
         return properties;
     }
 
-    private SleeperJarVersionIdProvider jars() {
-        return SleeperJarVersionIdProvider.from(s3Client, instanceProperties);
+    private SleeperLambdaCode lambdaCode(Stack stack) {
+        return SleeperArtefacts.fromProperties(s3Client)
+                .forInstance(instanceProperties)
+                .lambdaCodeAtScope(stack);
     }
 
-    private SleeperLambdaCode lambdaCode(Stack stack) {
-        SleeperArtefacts artefacts = new SleeperArtefactsFromProperties(instanceProperties, jars());
-        return artefacts.lambdaCodeAtScope(stack);
+    private SleeperJarVersionIdProvider jars() {
+        return SleeperJarVersionIdProvider.from(s3Client, instanceProperties);
     }
 }

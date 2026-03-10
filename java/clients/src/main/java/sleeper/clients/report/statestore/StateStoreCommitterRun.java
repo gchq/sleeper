@@ -177,6 +177,34 @@ public class StateStoreCommitterRun {
         }
 
         /**
+         * Sets the start log entry for a run. The multithreaded state store committer runs will have multiple start
+         * log entries so this method will ensure the earliest is used.
+         *
+         * @param  start the log entry recording that the state store committer finished
+         * @return       this builder
+         */
+        public Builder batchStart(StateStoreCommitterThreadRunStarted start) {
+            if (this.start == null || this.start.getStartTime().isAfter(start.getStartTime())) {
+                this.start = start;
+            }
+            return this;
+        }
+
+        /**
+         * Sets the finish log entry for a run. The multithreaded state store committer runs will have multiple finish
+         * log entries so this method will ensure the last is used.
+         *
+         * @param  finish the log entry recording that the state store committer finished
+         * @return        this builder
+         */
+        public Builder batchFinished(StateStoreCommitterThreadRunFinished finish) {
+            if (this.finish == null || this.finish.getFinishTime().isBefore(finish.getFinishTime())) {
+                this.finish = finish;
+            }
+            return this;
+        }
+
+        /**
          * Sets the log entries for transaction commits during the state store committer invocation.
          *
          * @param  commits the log entries for transactions committed

@@ -26,11 +26,32 @@ import sleeper.query.core.model.Query;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Queries a Sleeper table via a web socket.
+ */
 @FunctionalInterface
 public interface QueryWebSocketSender {
+
+    /**
+     * Makes a query against a Sleeper table.
+     *
+     * @param  query                the query
+     * @return                      the results
+     * @throws InterruptedException thrown if the thread is interrupted while waiting for results
+     */
     CompletableFuture<List<Row>> sendQuery(Query query) throws InterruptedException;
 
-    static QueryWebSocketSender query(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+    /**
+     * Creates an object to query a given Sleeper instance in AWS. The instance must have the optional stack for web
+     * socket queries enabled.
+     *
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider the table properties provider
+     * @param  awsCredentialsProvider  the provider for AWS credentials
+     * @return                         the object
+     */
+    static QueryWebSocketSender query(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             AwsCredentialsProvider awsCredentialsProvider) {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, awsCredentialsProvider);
         return query -> {
