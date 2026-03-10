@@ -5,3 +5,10 @@ vulnerabilities:
 
   # False positive for jackson-core, we're actually using a version with the fix (2.21.1)
   - id: GHSA-72hv-8253-57qq
+
+  # AWS Lambda Runtime Interface Emulator hasn't yet updated to the latest version of Go.
+  # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
+  # interface emulator is only used for testing.
+  - id: CVE-2026-25679
+  - id: CVE-2026-27139
+  - id: CVE-2026-27142

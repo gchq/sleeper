@@ -23,11 +23,26 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
+/**
+ * Sends an ingest job to a Sleeper instance. Note that at scale bulk import should be used instead.
+ */
 @FunctionalInterface
 public interface IngestJobSender {
 
+    /**
+     * Sends an ingest job to add data to a Sleeper table.
+     *
+     * @param job the job
+     */
     void sendFilesToIngest(IngestJob job);
 
+    /**
+     * Creates an object to send ingest jobs to an Amazon SQS queue.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  sqsClient          the SQS client
+     * @return                    the sender
+     */
     static IngestJobSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         IngestJobSerDe serDe = new IngestJobSerDe();
         return job -> sqsClient.sendMessage(send -> send

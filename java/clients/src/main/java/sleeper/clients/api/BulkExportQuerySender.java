@@ -23,11 +23,26 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
 
+/**
+ * Sends a bulk export query to a Sleeper instance.
+ */
 @FunctionalInterface
 public interface BulkExportQuerySender {
 
+    /**
+     * Sends a query to bulk export data from a Sleeper table.
+     *
+     * @param query the query
+     */
     void sendQueryToBulkExport(BulkExportQuery query);
 
+    /**
+     * Creates an object to send bulk export queries to an Amazon SQS queue.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  sqsClient          the SQS client
+     * @return                    the sender
+     */
     static BulkExportQuerySender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         BulkExportQuerySerDe serDe = new BulkExportQuerySerDe();
         return query -> sqsClient.sendMessage(send -> send
