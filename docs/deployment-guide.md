@@ -51,6 +51,12 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 
 The scripts for deployment create an instance of Sleeper either from your own configuration files, or from templates.
 
+The two scrips available to use are found in scripts/deploy and have the following uscases:
+| File            | Purpose                        | Usecase |
+|-----------------|--------------------------------|--|
+deployNew.sh      | Deploys a new instance         | Use When deploying a new instance
+deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an exising deployment, in case you're concerned there's drift. Or when you wish to upgrade and existing instance to a newer version.
+
 They also upload the necessary deployment artefacts to AWS. These artefacts must be available for deployment, either by
 building Sleeper locally or installing pre-published artefacts. See the [developer guide](developer-guide.md#building)
 for details. These artefacts will be uploaded to a separate CDK stack from the Sleeper instance.
