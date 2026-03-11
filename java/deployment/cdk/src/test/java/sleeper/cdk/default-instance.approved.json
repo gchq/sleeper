@@ -13663,7 +13663,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs18.x",
+            "Runtime": "nodejs22.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
