@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Optional;
@@ -213,6 +214,21 @@ public class SleeperPropertyValueUtils {
      */
     public static boolean isValidLogRetention(String logRetention) {
         return VALID_LOG_RETENTION_VALUES.contains(logRetention);
+    }
+
+    /**
+     * Checks if a property value is a valid Sleeper table schema.
+     *
+     * @param  string the table schema as a JSON string
+     * @return        true if the string represents a valid schema
+     */
+    public static boolean isValidSchema(String string) {
+        try {
+            Schema.loadFromString(string);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /**

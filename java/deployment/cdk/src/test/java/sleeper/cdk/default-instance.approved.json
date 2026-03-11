@@ -1014,6 +1014,12 @@
                   "Outputs.TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3QueueName"
                 ]
               },
+              "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef": {
+                "Fn::GetAtt": [
+                  "TableDataNestedStackTableDataNestedStackResourceBB9D1CD9",
+                  "Outputs.TestInstanceTableDataTableDataBucket68FE959DRef"
+                ]
+              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DQueueName": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -7517,6 +7523,11 @@
                 }
               ]
             },
+            "MetricsConfigurations": [
+              {
+                "Id": "all"
+              }
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -13663,7 +13674,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs18.x",
+            "Runtime": "nodejs22.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
@@ -24211,6 +24222,9 @@
         "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3QueueName": {
           "Type": "String"
         },
+        "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef": {
+          "Type": "String"
+        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DQueueName": {
           "Type": "String"
         },
@@ -24319,7 +24333,7 @@
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449QueueName"
                   },
-                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]]}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]],\"period\":60}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -24343,7 +24357,55 @@
                   {
                     "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobQueue349E97BCQueueName"
                   },
-                  "\",{\"stat\":\"Maximum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":10,\"properties\":{\"markdown\":\"## Compactions and Splits\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",{\"stat\":\"Maximum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":10,\"properties\":{\"markdown\":\"## Table Data Bucket: ",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\"}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Request Counts\",\"region\":\"",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\",\"metrics\":[[\"AWS/S3\",\"AllRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"HeadRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"GetRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"PutRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"PostRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"ListRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"DeleteRequests\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":12,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Error Counts\",\"region\":\"",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "\",\"metrics\":[[\"AWS/S3\",\"4xxErrors\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}],[\"AWS/S3\",\"5xxErrors\",\"BucketName\",\"",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":17,\"properties\":{\"markdown\":\"## Compactions and Splits\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -24355,7 +24417,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93QueueName"
                   },
-                  "\",{\"label\":\"Partition Splits\",\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":6,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsWaiting\",\"region\":\"",
+                  "\",{\"label\":\"Partition Splits\",\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":6,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsWaiting\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -24367,7 +24429,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93QueueName"
                   },
-                  "\",{\"label\":\"Partition Splits\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":12,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"AgeOfOldestWaitingJob\",\"region\":\"",
+                  "\",{\"label\":\"Partition Splits\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":12,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"AgeOfOldestWaitingJob\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
