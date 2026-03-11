@@ -18,10 +18,10 @@ package sleeper.core.table;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Stream;
 
 /**
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  */
 public class InMemoryTableIndex implements TableIndex {
 
-    private final Map<String, TableStatus> indexByName = new TreeMap<>();
+    private final Map<String, TableStatus> indexByName = new LinkedHashMap<>();
     private final Map<String, TableStatus> indexById = new HashMap<>();
 
     @Override

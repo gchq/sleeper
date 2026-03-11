@@ -98,6 +98,17 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
+     * Checks whether all properties are valid.
+     *
+     * @return true if all values are valid
+     */
+    public boolean isValid() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        return reporter.isValid();
+    }
+
+    /**
      * Retrieves an index of definitions of all properties that can be set for this object. Deals with metadata rather
      * than property values.
      *

@@ -47,4 +47,13 @@ public class SleeperPropertiesValidationReporter {
         }
     }
 
+    /**
+     * Checks if all property values were valid.
+     *
+     * @return true if all values were valid
+     */
+    public boolean isValid() {
+        return invalidValues.isEmpty();
+    }
+
 }
