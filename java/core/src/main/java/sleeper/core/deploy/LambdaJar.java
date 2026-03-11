@@ -84,7 +84,7 @@ public class LambdaJar {
             .artifactId("splitter-lambda").add();
 
     public static final LambdaJar REST_API = builder()
-            .filenameFormat("rest-api.jar")
+            .filenameFormat("rest-api-%s.jar")
             .imageName("rest-api")
             .artifactId("rest-api")
             .add();
