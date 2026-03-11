@@ -219,7 +219,7 @@ public class SleeperPropertyValueUtils {
     /**
      * Checks if a property value is a valid Sleeper table schema.
      *
-     * @param  string the table schema as a string
+     * @param  string the table schema as a JSON string
      * @return        true if the string represents a valid schema
      */
     public static boolean isValidSchema(String string) {
