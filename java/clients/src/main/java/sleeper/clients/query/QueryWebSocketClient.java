@@ -53,12 +53,12 @@ public class QueryWebSocketClient {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.adapter = adapter;
         this.timeoutMs = timeoutMs;
-        if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
-            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
-        }
     }
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
+        if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
+            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
+        }
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
         QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
