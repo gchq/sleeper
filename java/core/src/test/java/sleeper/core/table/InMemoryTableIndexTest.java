@@ -99,7 +99,7 @@ public class InMemoryTableIndexTest {
     class ListTables {
 
         @Test
-        void shouldGetTablesOrderedByName() {
+        void shouldGetTablesInOrderTheyWereAdded() {
             createTable("some-table");
             createTable("a-table");
             createTable("this-table");
@@ -108,10 +108,10 @@ public class InMemoryTableIndexTest {
             assertThat(index.streamAllTables())
                     .extracting(TableStatus::getTableName)
                     .containsExactly(
-                            "a-table",
-                            "other-table",
                             "some-table",
-                            "this-table");
+                            "a-table",
+                            "this-table",
+                            "other-table");
         }
 
         @Test
