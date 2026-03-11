@@ -31,3 +31,4 @@ vulnerabilities:
   - id: CVE-2026-27904
   # tar NodeJS package
   - id: CVE-2026-29786
+  - id: CVE-2026-31802
