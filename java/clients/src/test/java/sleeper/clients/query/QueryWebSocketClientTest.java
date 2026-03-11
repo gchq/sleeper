@@ -319,8 +319,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
         @Test
         void shouldFailToSendQueryWithNoWebSocketDeployed() {
-            // Given
+            // Given no web socket is deployed
             instanceProperties.unset(QUERY_WEBSOCKET_API_URL);
+            // And we create the client (which we should be able to do)
             QueryWebSocketClient client = createClient();
             Query query = exactQuery("test-query", 100);
 
