@@ -221,11 +221,12 @@ impl ObjectStoreFactory {
 
 fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> ReadaheadStore<T> {
     ReadaheadStore::new(store, bucket)
-        .with_max_live_streams(
-            std::thread::available_parallelism()
-                .unwrap_or(NonZero::new(2usize).unwrap())
-                .get(),
-        )
+        // .with_max_live_streams(
+        //     std::thread::available_parallelism()
+        //         .unwrap_or(NonZero::new(2usize).unwrap())
+        //         .get(),
+        // )
+        .with_max_live_streams(1)
         .with_max_stream_age(Duration::from_secs(60))
 }
 

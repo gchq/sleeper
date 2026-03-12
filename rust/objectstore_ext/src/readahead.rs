@@ -409,23 +409,48 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .lock()
             .expect("ReadaheadStore cache lock poisoned");
         let mut total_live_streams = 0;
-        for (_, cache_ob) in cache.iter_mut() {
+        for (path, cache_ob) in cache.iter_mut() {
             // Evict all which are too old
             cache_ob
                 .streams
                 .retain(|_, c| now.duration_since(c.last_use) < self.max_age);
-            // Max size evictions. Evict "earliest" in file first
+            // Max size evictions. Evict smaller stream positions in file first
             while cache_ob.streams.len() > self.max_live_streams {
-                cache_ob.streams.pop_first();
+                let to_remove = cache_ob
+                    .streams
+                    .iter()
+                    .min_by_key(|(_, c)| c.last_use)
+                    .map(|(k, _)| k.clone());
+                // let removed = cache_ob.streams.pop_first();
+                if let Some(v) = to_remove {
+                    cache_ob.streams.remove(&v);
+                    debug!("Remove pos {} for {}", v, path);
+                }
             }
             total_live_streams += cache_ob.streams.len();
         }
         debug!(
-            "Cache contains live streams {} across {} files",
+            "After purge cache contains live streams {} across {} files",
             total_live_streams.to_formatted_string(&Locale::en),
             cache.len().to_formatted_string(&Locale::en),
         );
         total_live_streams
+    }
+
+    pub fn dump(&self) {
+        let cache = self.cache.lock().unwrap();
+        let mut live_streams = 0;
+        for (p, ob) in cache.iter() {
+            for (k, _) in &ob.streams {
+                info!("{k} for {p}");
+            }
+            live_streams += ob.streams.len();
+        }
+        info!(
+            "Cache contains {} live streams across {} files",
+            live_streams.to_formatted_string(&Locale::en),
+            cache.len().to_formatted_string(&Locale::en)
+        );
     }
 
     /// Empty the cache of previous streams.
@@ -538,13 +563,15 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             return self.inner.get_opts(location, options).await;
         }
 
+        self.dump();
+        self.clean_cache();
+
         let start_pos = get_start_pos(options.range.as_ref());
         let cached = self
             .get_cached_stream(location, options.range.as_ref())
             .await?;
 
         // Clean cache here so that we don't expire something we're just about to use, even if it is about to expire
-        self.clean_cache();
 
         // If cache hit
         match cached {
