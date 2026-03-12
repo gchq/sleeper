@@ -94,6 +94,8 @@ async fn main() -> color_eyre::Result<()> {
         })
         .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
         .format_target(false)
+        .filter_module("objectstore_ext", log::LevelFilter::Debug)
+        .filter_module("sleeper_core", log::LevelFilter::Debug)
         .init();
 
     let args = CmdLineArgs::parse();

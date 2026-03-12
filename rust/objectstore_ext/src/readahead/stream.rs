@@ -65,6 +65,7 @@ impl PositionedStream {
     pub fn new(inner: BoxStream<'static, Result<Bytes>>, pos: u64, stop_pos: u64) -> Self {
         Self::new_with_disposal(inner, pos, stop_pos, None::<fn(&mut PositionedStream)>)
     }
+
     /// Wrap the given byte stream with a given function to call when instance is dropped.
     pub fn new_with_disposal<F: FnOnce(&mut PositionedStream) + Send + Sync + 'static>(
         inner: BoxStream<'static, Result<Bytes>>,

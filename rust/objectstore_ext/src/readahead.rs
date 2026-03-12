@@ -72,7 +72,10 @@ use object_store::{
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
-    sync::{Arc, Mutex, Weak},
+    sync::{
+        Arc, Mutex, Weak,
+        atomic::{AtomicUsize, Ordering},
+    },
     time::{Duration, Instant},
 };
 use stream::PositionedStream;
@@ -179,8 +182,8 @@ pub struct ReadaheadStore<T: ObjectStore> {
     max_age: Duration,
     /// Maximum number of live streams per object.
     max_live_streams: usize,
-    /// Number of underlying GET requests
-    underlying_gets: Arc<Mutex<usize>>,
+    /// Number of underlying GET requests. This is only for logging purposes.
+    underlying_gets: AtomicUsize,
 }
 
 impl<T: ObjectStore> ReadaheadStore<T> {
@@ -194,7 +197,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             max_readahead: DEFAULT_READAHEAD,
             max_age: DEFAULT_MAX_STREAM_AGE,
             max_live_streams: DEFAULT_MAX_STREAM_PER_LOCATION,
-            underlying_gets: Arc::new(Mutex::new(0)),
+            underlying_gets: AtomicUsize::new(0),
         }
     }
 
@@ -339,10 +342,10 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             attributes,
         } = response;
 
-        *self
-            .underlying_gets
-            .lock()
-            .expect("ReadaheadStore lock poisoned") += 1;
+        // Update counter with relaxed ordering, guarantees atomicity, but we don't
+        // care about memory ordering between threads
+        self.underlying_gets.fetch_add(1, Ordering::Relaxed);
+
         debug!(
             "ReadaheadStore GET request to {}/{location}",
             self.path_prefix
@@ -443,8 +446,7 @@ impl<T: ObjectStore> Drop for ReadaheadStore<T> {
         info!(
             "ReadaheadStore made {} GET requests to underlying location {}",
             self.underlying_gets
-                .lock()
-                .expect("ReadaheadStore lock poisoned")
+                .load(Ordering::Relaxed)
                 .to_formatted_string(&Locale::en),
             self.path_prefix,
         );
@@ -1163,7 +1165,7 @@ mod tests {
         // When - no op
 
         // Then
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
 
         Ok(())
     }
@@ -1175,13 +1177,13 @@ mod tests {
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
         let _ = ps
             .make_get_request(&"test_file".into(), GetOptions::default())
             .await?;
 
         // Then
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
 
         Ok(())
     }
@@ -1562,7 +1564,7 @@ mod tests {
         let ps = make_store();
         ps.put(&"test_file".into(), "some data".into()).await?;
 
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
 
         // When
         {
@@ -1578,7 +1580,7 @@ mod tests {
         }
 
         // Then - should have incremented underlying GET count
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
 
         // When - make cached request
         {
@@ -1593,7 +1595,7 @@ mod tests {
                 .await?;
         }
         // Then - cached request should NOT have incremented GET count
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
 
         Ok(())
     }
