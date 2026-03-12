@@ -287,6 +287,9 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             update(store).addFile(file2);
 
             // Then
+            assertThat(filesLogStore.readTransactions(TransactionLogRange.fromMinimum(1)))
+                    .extracting(TransactionLogEntry::getTransactionNumber)
+                    .containsExactly(11L);
             assertThat(store.getFileReferences()).containsExactly(file1, file2);
         }
     }
