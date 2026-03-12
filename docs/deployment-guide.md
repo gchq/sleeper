@@ -53,7 +53,7 @@ The scripts for deployment create an instance of Sleeper either from your own co
 
 The two scrips available to use are found in scripts/deploy and have the following uscases:
 | File            | Purpose                        | Usecase |
-|-----------------|--------------------------------|--|
+|-----------------|--------------------------------|---------|
 deployNew.sh      | Deploys a new instance         | Use When deploying a new instance
 deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an exising deployment, in case you're concerned there's drift. Or when you wish to upgrade and existing instance to a newer version.
 
