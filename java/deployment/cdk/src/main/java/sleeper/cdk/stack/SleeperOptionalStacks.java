@@ -170,12 +170,10 @@ public class SleeperOptionalStacks {
             new IngestBatcherStack(scope, "IngestBatcher", props, coreStacks, ingestStacks);
         }
 
-        // Stack to allow provide a Rest API TODO Enable
-        /*
-         * if (optionalStacks.contains(OptionalStack.RestApiStack)) {
-         * //new SleeperRestAPI();;
-         * }
-         */
+        // Stack to allow provide a Rest API
+        if (optionalStacks.contains(OptionalStack.RestApiStack)) {
+            new RestApiStack(scope, "RestApi", instanceProperties, artefacts);
+        }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {
             new DashboardStack(scope, "Dashboard",

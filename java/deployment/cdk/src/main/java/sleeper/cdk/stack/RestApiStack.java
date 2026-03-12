@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.restapi;
+package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -42,9 +42,9 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
  *
  * TODO Futher expand this javadoc
  */
-public class SleeperRestAPI extends NestedStack {
+public class RestApiStack extends NestedStack {
 
-    public SleeperRestAPI(Construct scope, String id, InstanceProperties instanceProperties,
+    public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts) {
         super(scope, instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
@@ -62,16 +62,13 @@ public class SleeperRestAPI extends NestedStack {
                 .description("Function for creating rest api for interacting with sleeper")
                 .environment(env)
                 .memorySize(1024)
+                // Need a log group
                 .timeout(Duration.seconds(60)));
 
         ApiGatewayClient apiGateway = setUpApiGateway(Region.of(instanceProperties.get(REGION)));
 
+        CreateRestApiRequest request = createRestApiRequest(id, restApiName);
         try {
-            CreateRestApiRequest request = CreateRestApiRequest.builder()
-                    .cloneFrom(id)
-                    .description("Rest api for sleeper interaction")
-                    .name(restApiName)
-                    .build();
             CreateRestApiResponse response = apiGateway.createRestApi(request);
             response.id(); // Just doing something with the response to stop the redline for now
         } catch (ApiGatewayException ex) {
@@ -83,6 +80,14 @@ public class SleeperRestAPI extends NestedStack {
     private ApiGatewayClient setUpApiGateway(Region region) {
         return ApiGatewayClient.builder()
                 .region(region)
+                .build();
+    }
+
+    private CreateRestApiRequest createRestApiRequest(String id, String name) {
+        return CreateRestApiRequest.builder()
+                .cloneFrom(id)
+                .description("Rest api for sleeper interaction")
+                .name(name)
                 .build();
     }
 
