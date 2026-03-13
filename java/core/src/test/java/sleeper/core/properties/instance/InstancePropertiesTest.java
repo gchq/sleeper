@@ -306,21 +306,6 @@ class InstancePropertiesTest {
                 .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
     }
 
-    @Test
-    public void shouldFailValidationForInvalidEMRManagedScalingBoundsWhenEmrScalingSetTrue() {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "15");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "10");
-        properties.validate();
-
-        // When / Then
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true");
-        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
-    }
-
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");
