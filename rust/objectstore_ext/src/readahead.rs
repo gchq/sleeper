@@ -425,13 +425,12 @@ impl<T: ObjectStore> ReadaheadStore<T> {
                 let mut removal_queue = cache_ob
                     .streams
                     .iter()
-                    .map(|(p, c)| (p.clone(), c.last_use))
+                    .map(|(p, c)| (*p, c.last_use))
                     .collect::<Vec<_>>();
                 removal_queue.sort_unstable_by_key(|(_, d)| *d);
                 // Take necessary number and evict
                 for (k, _) in removal_queue.into_iter().take(streams_to_evict) {
                     cache_ob.streams.remove(&k);
-                    debug!("Remove pos {} for {}", k, path);
                 }
             }
             total_live_streams += cache_ob.streams.len();
@@ -1597,14 +1596,14 @@ mod tests {
                     12,
                     Instant::now().checked_sub(Duration::from_secs(30)).unwrap(),
                 ),
-                ("test_file", 56, instant_to_keep.clone()),
+                ("test_file", 56, instant_to_keep),
                 (
                     "test_file",
                     45,
                     Instant::now().checked_sub(Duration::from_secs(20)).unwrap(),
                 ),
             ],
-            vec![("test_file", 56, instant_to_keep.clone())],
+            vec![("test_file", 56, instant_to_keep)],
         );
     }
 
