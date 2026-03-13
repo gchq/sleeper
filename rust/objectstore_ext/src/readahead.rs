@@ -560,8 +560,6 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             .get_cached_stream(location, options.range.as_ref())
             .await?;
 
-        // Clean cache here so that we don't expire something we're just about to use, even if it is about to expire
-
         // If cache hit
         match cached {
             Some((meta, attributes, stream)) => {
