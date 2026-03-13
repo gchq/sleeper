@@ -352,14 +352,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
         let payload = match payload {
             GetResultPayload::Stream(stream) => {
                 // Retrieve data from cache or insert it if needed
-                let mut cache = self.cache.lock().unwrap();
-                cache
-                    .entry(location.to_owned())
-                    .or_insert_with(|| CacheObject {
-                        meta: meta.clone(),
-                        attrs: attributes.clone(),
-                        streams: BTreeMap::new(),
-                    });
+                self.create_cache_location(location, meta.clone(), attributes.clone());
 
                 let inserter = CacheInserter {
                     cache_ptr: Arc::downgrade(&self.cache),
@@ -384,6 +377,21 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             meta,
             attributes,
         })
+    }
+
+    /// Creates an empty cache object for the given location.
+    fn create_cache_location(&self, location: &Path, meta: ObjectMeta, attributes: Attributes) {
+        let mut cache = self
+            .cache
+            .lock()
+            .expect("ReadaheadStore cache lock poisoned");
+        cache
+            .entry(location.to_owned())
+            .or_insert_with(|| CacheObject {
+                meta,
+                attrs: attributes,
+                streams: BTreeMap::new(),
+            });
     }
 
     /// Purge all cache entries that are too old or too numerous across all files.
@@ -530,10 +538,15 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     }
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
+        debug!("READAHEAD GET CALLED");
         // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
         // to do anything with it
         if should_skip_readahead(&options) {
-            return self.inner.get_opts(location, options).await;
+            let result = self.inner.get_opts(location, options).await?;
+            // Create an empty cache entry for the ObjectMeta, in case it's wanted for future HEAD requests
+            debug!("Creating HEAD based cache entry for {location}");
+            self.create_cache_location(location, result.meta.clone(), result.attributes.clone());
+            return Ok(result);
         }
 
         let start_pos = get_start_pos(options.range.as_ref());
@@ -580,6 +593,33 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
 
     async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
         self.inner.copy_if_not_exists(from, to).await
+    }
+
+    async fn head(&self, location: &Path) -> Result<ObjectMeta> {
+        let cached_meta = {
+            let cache = self
+                .cache
+                .lock()
+                .expect("ReadaheadStore cache lock poisoned");
+            cache.get(location).map(|cache_ob| {
+                debug!("Readahead cached retrieval for HEAD {location}");
+                cache_ob.meta.clone()
+            })
+        };
+
+        // If we retrieved something from the cache, return it
+        // otherwise re-direct to GET which will call inner get_opts
+        // and cache result
+        Ok(if let Some(meta) = cached_meta {
+            meta
+        } else {
+            debug!("Readahead cache miss for HEAD {location}");
+            let options = GetOptions {
+                head: true,
+                ..Default::default()
+            };
+            self.get_opts(location, options).await?.meta
+        })
     }
 }
 
