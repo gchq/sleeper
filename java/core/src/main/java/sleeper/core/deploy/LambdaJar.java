@@ -83,6 +83,12 @@ public class LambdaJar {
             .imageName("partition-splitter-lambda")
             .artifactId("splitter-lambda").add();
 
+    public static final LambdaJar REST_API = builder()
+            .filenameFormat("rest-api-%s.jar")
+            .imageName("rest-api")
+            .artifactId("rest-api")
+            .add();
+
     // The query module includes Hadoop, which makes the jar too big to deploy directly.
     // It seems difficult to reduce this significantly, but this may be unnecessary if we switch to using DataFusion
     // for queries.
