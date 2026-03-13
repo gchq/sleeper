@@ -1,10 +1,12 @@
-Sleeper CLI deployment environment
-==================================
+Sleeper environment tool
+========================
 
 To deploy Sleeper in AWS, we need a suitable networking context for a Sleeper instance to interact with AWS services.
 We need to get the necessary compiled artefacts into AWS to deploy the system. We need the correct permissions and
-access to be able to deploy and interact with the system. The Sleeper CLI contains tools to establish an environment
-that satisfies these constraints.
+access to be able to deploy and interact with the system. The Sleeper environment tool can establish an environment that
+satisfies these constraints.
+
+Before you start, ensure you have installed the CLI for the [Sleeper Docker tools](docker-tools.md).
 
 We'll look at how to prepare to interact with AWS, and how to create a suitable environment.
 
@@ -23,9 +25,9 @@ For general administration of an existing Sleeper instance it is not necessary t
 
 ### Authentication
 
-To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. The AWS configuration will be
-mounted into Sleeper CLI Docker containers from your home directory on your host machine. AWS environment variables will
-also be propagated to Sleeper CLI containers if you set them on the host machine.
+To use the tool against AWS, you need to authenticate against your AWS account. The AWS configuration will be mounted
+into Sleeper Docker tool containers from your home directory on your host machine. AWS environment variables will also
+be propagated to Sleeper Docker tool containers if you set them on the host machine.
 
 You can configure AWS without installing the AWS CLI by running `sleeper aws configure`, or any other AWS commands
 you may need with `sleeper aws`.
@@ -43,9 +45,9 @@ sleeper cdk bootstrap
 
 ### Deploy/connect to an environment
 
-The Sleeper CLI can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking context that is
-suitable for deploying Sleeper. The machine in AWS avoids the need for lengthy uploads of build artefacts from outside
-AWS.
+The Sleeper environment tool can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking
+context that is suitable for deploying Sleeper. The machine in AWS avoids the need for lengthy uploads of build
+artefacts from outside AWS.
 
 This tool will automatically configure authentication such that once you're in the EC2 instance you'll have
 administrator access to your AWS account. This is intended for development and testing.

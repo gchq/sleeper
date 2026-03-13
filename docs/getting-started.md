@@ -8,75 +8,33 @@ allow you to deploy an instance, ingest some files, and run reports and scripts 
 ## Sleeper in AWS
 
 This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
-The Sleeper CLI lets you run these scripts in a Docker container, with only Docker as a pre-installed dependency.
+Other scripts are provided to interact with Sleeper.
 
-It's currently necessary to build the system yourself to deploy or interact with Sleeper. In the future we may publish
-pre-built artefacts that will make this unnecessary.
-
-## Install Sleeper CLI
-
-The Sleeper CLI runs a Docker container that contains all the necessary tools to build and deploy Sleeper. This can give
-you a command line inside a container with these tools pre-installed, or run commands in such a container. This way you
-can avoid needing to install any dependencies other than Docker on your machine.
-
-### Dependencies
-
-The Sleeper CLI has the following dependencies, please install these first:
-
-* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/)
-
-### Install script
-
-You can run the following commands to install the latest version of the CLI from GitHub:
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
-chmod +x ./sleeper-install.sh
-./sleeper-install.sh
-```
-
-Relaunch your terminal and check that the command `sleeper version` gives a version number. Note that this will be the
-version of the CLI, rather than the version of Sleeper you will deploy.
-
-### Commands
-
-The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
-`cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
-configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
-
-The `sleeper builder` command gives you a command line in a Docker container with all the necessary tools to build
-Sleeper, and a workspace folder persisted in the host at `~/.sleeper/builder`. We will use this to deploy and interact
-with Sleeper.
-
-You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
-build and deployment tools up to date.
+We do not currently publish pre-built versions of Sleeper publicly. Internally we have automated publishing of Sleeper,
+with a scripted installation. Search internally for documentation on this. If you are in another organisation you may
+need to build it yourself. In that case, see the [developer guide](developer-guide.md) for how to build it,
+and [publishing](development/publishing.md) for tools to set up your own pre-build.
 
 ## Environment setup
 
-If you already have an instance of Sleeper, please see the [usage guide](usage-guide.md) for how to interact with it.
-If you're deploying your own, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance
-to deploy from, to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use the Sleeper
-CLI to create both of these, see the documentation for
-the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md).
+You'll need to prepare your AWS account to deploy Sleeper into. See [environment setup](deployment/environment-setup.md)
+for how to do this. For the rest of this guide we'll assume you're working in an EC2 instance in an AWS account that's
+configured appropriately.
 
-If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
-multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
-VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway endpoint for S3, deployment of a Sleeper
-instance will fail in the CDK.
+## Dependencies
 
-If you prefer to use your own EC2, it should run on an x86_64 architecture, with Bash and Docker, and have enough
-resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
-(`t3.xlarge`), as that takes the build from over 40 minutes with 2 vCPUs, to around 20 minutes for the first build.
+Once you've installed or built Sleeper, here are the dependencies you will need installed in your EC2, in order to
+deploy and interact with an instance:
 
-The [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md) includes options to deploy an EC2 to
-an existing VPC, or a VPC on its own. If you don't use that, you will need to have bootstrapped CDK in your AWS account.
+* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/)
+* Java: Minimum version 17, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
-You can also refer to [environment setup](deployment/environment-setup.md) for how to authenticate with AWS, how to
-bootstrap CDK, and how to verify you have sufficient AWS Lambda concurrency quota in your account.
-
-Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either use our deployment scripts,
-or invoke the CDK yourself as described in the [deployment guide](deployment-guide.md).
+We also have tools to run a Docker container with these pre-installed, so you only need Docker installed in your EC2.
+See [Sleeper Docker tools](deployment/docker-tools.md).
 
 ## Deployment
 
