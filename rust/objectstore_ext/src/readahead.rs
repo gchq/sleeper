@@ -449,6 +449,18 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .expect("ReadaheadStore cache lock poisoned")
             .clear();
     }
+
+    /// Remove all cache entries for given location.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    pub fn remove_cache_for(&self, location: &Path) {
+        let mut cache = self
+            .cache
+            .lock()
+            .expect("ReadaheadStore cache lock poisoned");
+        cache.remove(location);
+    }
 }
 
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
@@ -534,6 +546,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         payload: PutPayload,
         opts: PutOptions,
     ) -> Result<PutResult> {
+        self.remove_cache_for(location);
         self.inner.put_opts(location, payload, opts).await
     }
 
@@ -542,6 +555,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         location: &Path,
         opts: PutMultipartOptions,
     ) -> Result<Box<dyn MultipartUpload>> {
+        self.remove_cache_for(location);
         self.inner.put_multipart_opts(location, opts).await
     }
 
@@ -586,6 +600,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     }
 
     async fn delete(&self, location: &Path) -> Result<()> {
+        self.remove_cache_for(location);
         self.inner.delete(location).await
     }
 
@@ -1236,6 +1251,36 @@ mod tests {
         let ps = make_store();
         ps.put(&"test_file".into(), "some data".into()).await?;
 
+        // When
+        let meta = ps.head(&"test_file".into()).await?;
+
+        // Then
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
+
+        // When 2 - request data again
+        let meta2 = ps.head(&"test_file".into()).await?;
+
+        // Then
+        assert_eq!(meta, meta2);
+        // No extra HEAD request should have occurred
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_cache_objectmeta_on_get() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+        let _ = ps.get(&"test_file".into()).await?;
+
+        // When
+        let _ = ps.head(&"test_file".into()).await?;
+
+        // Then - no specific HEAD should have occurred
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
+
         Ok(())
     }
 
@@ -1272,16 +1317,7 @@ mod tests {
         ps.delete(&"test_file".into()).await?;
 
         // Then 2 - cache should be empty
-        assert_eq!(
-            ps.cache
-                .lock()
-                .unwrap()
-                .get(&"test_file".into())
-                .unwrap()
-                .streams
-                .len(),
-            0
-        );
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
 
         Ok(())
     }
@@ -1319,16 +1355,7 @@ mod tests {
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // Then 2 - cache should be empty
-        assert_eq!(
-            ps.cache
-                .lock()
-                .unwrap()
-                .get(&"test_file".into())
-                .unwrap()
-                .streams
-                .len(),
-            0
-        );
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
 
         Ok(())
     }
@@ -1367,16 +1394,7 @@ mod tests {
         p.complete().await?;
 
         // Then 2 - cache should be empty
-        assert_eq!(
-            ps.cache
-                .lock()
-                .unwrap()
-                .get(&"test_file".into())
-                .unwrap()
-                .streams
-                .len(),
-            0
-        );
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
 
         Ok(())
     }
