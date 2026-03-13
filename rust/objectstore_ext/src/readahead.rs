@@ -1372,10 +1372,59 @@ mod tests {
             );
         }
         drop(cache);
+
         // When
         let size = ps.clean_cache();
+
         // Then
         assert_eq!(size, expected, "Incorrect number of items left in cache");
+    }
+
+    fn test_cache_purge_and_validate<T: Into<Path>, I: IntoIterator<Item = (T, u64, Instant)>>(
+        live_streams: usize,
+        max_age: Duration,
+        expected: usize,
+        items: I,
+        expected_remaining: I,
+    ) {
+        // Given
+        let ps = make_store()
+            .with_max_live_streams(live_streams)
+            .with_max_stream_age(max_age);
+        let mut cache = ps.cache.lock().unwrap();
+        for (path, pos, time) in items {
+            let k = cache.entry(path.into()).or_insert_with(|| CacheObject {
+                meta: test_meta(),
+                attrs: test_attributes(),
+                streams: BTreeMap::new(),
+            });
+            k.streams.insert(
+                pos,
+                Container {
+                    inner: Box::pin(stream::empty()),
+                    pos,
+                    last_use: time,
+                },
+            );
+        }
+        drop(cache);
+
+        // When
+        let size = ps.clean_cache();
+
+        // Then
+        assert_eq!(size, expected, "Incorrect number of items left in cache");
+
+        // Validate correct items left in cache
+        let cache = ps.cache.lock().unwrap();
+        for (path, pos, time) in expected_remaining {
+            let cache_ob = cache.get(&path.into()).expect("No entry for {path}");
+            let item = cache_ob
+                .streams
+                .get(&pos)
+                .expect("No cache entry in {path} for {pos}");
+            assert_eq!(time, item.last_use);
+        }
     }
 
     #[tokio::test]
@@ -1532,6 +1581,30 @@ mod tests {
                         .unwrap(),
                 ),
             ],
+        );
+    }
+
+    #[tokio::test]
+    async fn purge_oldest_two_lru() {
+        let instant_to_keep = Instant::now().checked_sub(Duration::from_secs(10)).unwrap();
+        test_cache_purge_and_validate(
+            1,
+            Duration::from_secs(60),
+            1,
+            vec![
+                (
+                    "test_file",
+                    12,
+                    Instant::now().checked_sub(Duration::from_secs(30)).unwrap(),
+                ),
+                ("test_file", 56, instant_to_keep.clone()),
+                (
+                    "test_file",
+                    45,
+                    Instant::now().checked_sub(Duration::from_secs(20)).unwrap(),
+                ),
+            ],
+            vec![("test_file", 56, instant_to_keep.clone())],
         );
     }
 
