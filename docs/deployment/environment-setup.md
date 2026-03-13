@@ -1,37 +1,6 @@
 Environment setup
 =================
 
-## Install Sleeper CLI
-
-The Sleeper CLI contains tools to deploy into AWS, and to build the system. This runs commands inside a Docker
-container. This way you can avoid needing to install any dependencies other than Docker on your machine. In the future
-we may also publish pre-built artefacts that will make it unnecessary to build Sleeper yourself. When using the Sleeper
-CLI, the build and deployment can be invoked from a single script to minimise setup for testing.
-
-### Dependencies
-
-The Sleeper CLI has the following dependencies, please install these first:
-
-* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/)
-
-### Install script
-
-You can run the following commands to install the latest version of the CLI from GitHub:
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/install.sh" -o ./sleeper-install.sh
-chmod +x ./sleeper-install.sh
-./sleeper-install.sh
-```
-
-The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
-`cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
-configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
-
-You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
-build and deployment tools up to date.
-
 ## Preparing AWS
 
 ### Configure AWS CLI
@@ -96,8 +65,8 @@ and you will have to see if you can adjust your existing lambdas to free some up
 ## Deployment environment
 
 To deploy Sleeper, you'll need a VPC that meets certain requirements. You'll also want an EC2 instance to deploy from,
-to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use the Sleeper CLI to create
-both of these, see the documentation for the [Sleeper CLI deployment environment](cli-deployment-environment.md).
+to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use
+the [Sleeper environment tool](environment-tool.md) to create both of these.
 
 If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
 multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
@@ -108,8 +77,8 @@ If you prefer to use your own EC2, it should run on an x86_64 architecture, with
 resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
 (`t3.xlarge`), as that takes the build from over 40 minutes with 2 vCPUs, to around 20 minutes for the first build.
 
-The [Sleeper CLI deployment environment](cli-deployment-environment.md) includes options to deploy an EC2 to
-an existing VPC, or a VPC on its own.
+The [Sleeper environment tool](environment-tool.md) includes options to deploy an EC2 to an existing VPC, or a VPC on
+its own.
 
 Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either move on
 to the [deployment guide](../deployment-guide.md), or the [getting started guide deployment section](../getting-started.md#deployment)

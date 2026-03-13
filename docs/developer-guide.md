@@ -102,7 +102,7 @@ You will need the following software:
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-* [Java](https://openjdk.java.net/install/): Requires version 17, to match the version used by AWS EMR
+* Java: Requires version 21, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
 * [Maven](https://maven.apache.org/)
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [Rust](https://rustup.rs/)

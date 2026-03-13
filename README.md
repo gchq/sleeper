@@ -12,8 +12,8 @@ Sleeper
 ## Introduction
 
 Sleeper is a serverless, cloud-native, log-structured merge tree based, scalable key-value store. It is designed to
-allow the ingest of very large volumes of data at low cost. Queries for rows where the key takes a given value takes
-around 1-2 seconds, but many thousands can be run in parallel. Each individual query has a negligible cost.
+allow the ingest of very large volumes of data at low cost. A query for rows where the key takes a given value takes
+around half a second, but many thousands can be run in parallel. Each individual query has a negligible cost.
 
 Data is stored as rows in tables. A table has a schema with key fields, optional sort fields, and some value fields.
 A metadata store tracks Parquet files in S3. These files contain rows in sorted order, by the key field and then by

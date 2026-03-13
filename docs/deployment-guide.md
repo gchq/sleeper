@@ -13,8 +13,8 @@ You will need to get your environment set up correctly so that you can deploy a 
 interact with it. See [environment setup](deployment/environment-setup.md) for how to install the Sleeper CLI and create
 an environment suitable for deploying Sleeper.
 
-If you set up the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), you can connect to it
-and build Sleeper like this:
+If you created an EC2 with the [Sleeper environment tool](deployment/environment-tool.md), you can connect to it and
+build Sleeper like this:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
