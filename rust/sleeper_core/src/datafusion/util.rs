@@ -331,8 +331,8 @@ pub fn add_numeric_casts(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::util::{
-        add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-        remove_coalesce_physical_stage,
+        MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
+        calculate_upload_size, remove_coalesce_physical_stage,
     };
     use arrow::{
         array::RecordBatch,
@@ -642,5 +642,47 @@ mod tests {
 
         // Then
         assert_eq!(metadata_size, 10 * 1024 * 1024);
+    }
+
+    #[test]
+    fn should_return_minimum_upload_size_with_zero() -> Result<(), Error> {
+        // Given
+        let input_size = 0;
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, MIN_PUT_SIZE);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_minimum_upload_size_with_10_g() -> Result<(), Error> {
+        // Given
+        let input_size = 10 * 1024 * 1024 * 1024; //10GiB
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, MIN_PUT_SIZE);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_scaled_upload_size_with_300_g() -> Result<(), Error> {
+        // Given
+        let input_size = 300 * 1024 * 1024 * 1024; //300GiB
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, 64_424_509);
+
+        Ok(())
     }
 }
