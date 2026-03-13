@@ -93,11 +93,11 @@ pub enum ReadaheadError {
 
 /// Default amount in bytes to allow a stream to be readahead before the
 /// stream will be closed and re-opened.
-pub const DEFAULT_READAHEAD: u64 = 2u64.pow(16);
+pub const DEFAULT_READAHEAD: u64 = 1024 * 1024;
 /// Maximum number of cached streams per location before being purged.
 pub const DEFAULT_MAX_STREAM_PER_LOCATION: usize = 2;
 /// Maximum age of a stream before being purged.
-pub const DEFAULT_MAX_STREAM_AGE: Duration = Duration::from_secs(10);
+pub const DEFAULT_MAX_STREAM_AGE: Duration = Duration::from_secs(20);
 
 /// Simple container for storing a byte stream and its location.
 struct Container {
@@ -414,43 +414,34 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             cache_ob
                 .streams
                 .retain(|_, c| now.duration_since(c.last_use) < self.max_age);
-            // Max size evictions. Evict smaller stream positions in file first
-            while cache_ob.streams.len() > self.max_live_streams {
-                let to_remove = cache_ob
+            // Evict least recently used streams until we are under size
+            if cache_ob.streams.len() > self.max_live_streams {
+                let streams_to_evict = cache_ob.streams.len() - self.max_live_streams;
+                debug!(
+                    "Need to evict {streams_to_evict} for {path} max {}",
+                    self.max_live_streams
+                );
+                // Get stream of entries ordered by oldest first (LRU)
+                let mut removal_queue = cache_ob
                     .streams
                     .iter()
-                    .min_by_key(|(_, c)| c.last_use)
-                    .map(|(k, _)| k.clone());
-                // let removed = cache_ob.streams.pop_first();
-                if let Some(v) = to_remove {
-                    cache_ob.streams.remove(&v);
-                    debug!("Remove pos {} for {}", v, path);
+                    .map(|(p, c)| (p.clone(), c.last_use))
+                    .collect::<Vec<_>>();
+                removal_queue.sort_unstable_by_key(|(_, d)| *d);
+                // Take necessary number and evict
+                for (k, _) in removal_queue.into_iter().take(streams_to_evict) {
+                    cache_ob.streams.remove(&k);
+                    debug!("Remove pos {} for {}", k, path);
                 }
             }
             total_live_streams += cache_ob.streams.len();
         }
         debug!(
-            "After purge cache contains live streams {} across {} files",
+            "After purge, cache contains live streams {} across {} files",
             total_live_streams.to_formatted_string(&Locale::en),
             cache.len().to_formatted_string(&Locale::en),
         );
         total_live_streams
-    }
-
-    pub fn dump(&self) {
-        let cache = self.cache.lock().unwrap();
-        let mut live_streams = 0;
-        for (p, ob) in cache.iter() {
-            for (k, _) in &ob.streams {
-                info!("{k} for {p}");
-            }
-            live_streams += ob.streams.len();
-        }
-        info!(
-            "Cache contains {} live streams across {} files",
-            live_streams.to_formatted_string(&Locale::en),
-            cache.len().to_formatted_string(&Locale::en)
-        );
     }
 
     /// Empty the cache of previous streams.
@@ -563,7 +554,6 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             return self.inner.get_opts(location, options).await;
         }
 
-        self.dump();
         self.clean_cache();
 
         let start_pos = get_start_pos(options.range.as_ref());
