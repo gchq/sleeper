@@ -5,14 +5,6 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-## Sleeper in LocalStack
-
-The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
-LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
-data. See the documentation on [deploying to localstack](deployment/deploy-to-localstack.md) for more information.
-
-The rest of this guide will deal with Sleeper in AWS.
-
 ## Sleeper in AWS
 
 This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
