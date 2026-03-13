@@ -152,6 +152,9 @@ public class TransactionLogHead<T> {
             forceUpdate();
             validate(transaction);
         } else {
+            if (lastTransactionNumber < 1) { // Load initial state if we haven't yet
+                forceUpdate();
+            }
             try {
                 validate(transaction);
             } catch (StateStoreException e) {
