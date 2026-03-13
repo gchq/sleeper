@@ -2,6 +2,8 @@
 //! but delegates to a custom GET implementation. This allows it to implement a readahead mechanism
 //! to reduce the number of GET calls.
 //!
+//! It also caches [`ObjectMeta`]s retrieved from GET/HEAD requests and returns them on future HEAD requests.
+//!
 //! When a ranged get request is made, [`ReadaheadStore`] will convert the [`GetRange::Bounded`] range to a
 //! [`GetRange::Offset`] range when the request is made to the underlying store so that we can read beyond the
 //! original range requested. A [`PositionedStream`] is returned which honours the original bounded range. The returned
