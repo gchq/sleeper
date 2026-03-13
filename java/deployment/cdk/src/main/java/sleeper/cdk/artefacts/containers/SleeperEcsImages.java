@@ -15,7 +15,7 @@
  */
 package sleeper.cdk.artefacts.containers;
 
-import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.EcrImage;
 
 import sleeper.core.deploy.DockerDeployment;
 
@@ -31,6 +31,6 @@ public interface SleeperEcsImages {
      * @param  deployment which deployment we want the Docker image for
      * @return            the reference to the Docker image
      */
-    ContainerImage containerImage(DockerDeployment deployment);
+    EcrImage containerImage(DockerDeployment deployment);
 
 }
