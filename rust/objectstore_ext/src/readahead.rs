@@ -71,8 +71,6 @@ use object_store::{
     ObjectMeta, ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result,
     path::Path,
 };
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
@@ -1442,12 +1440,12 @@ mod tests {
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
         assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
         let _ = ps.head(&"test_file".into()).await?;
 
         // Then
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
         assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
 
         Ok(())
