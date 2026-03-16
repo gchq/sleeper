@@ -75,7 +75,7 @@
         Hadoop uses an old version of wildfly-openssl in hadoop-aws.
         We upgraded to the latest version from wildfly-openssl 1.1.3.Final.
         -->
-        <wildfly-openssl.version>2.2.5.Final</wildfly-openssl.version>
+        <wildfly-openssl.version>2.3.0.Final</wildfly-openssl.version>
         <wildfly-common.version>2.0.1</wildfly-common.version>
         <!--
         Hadoop uses an old version of Woodstox in hadoop-common.
@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.3</log4j.version>
-        <aws-java-sdk-v2.version>2.42.12</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.42.13</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
