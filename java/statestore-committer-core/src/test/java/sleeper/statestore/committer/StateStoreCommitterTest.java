@@ -453,7 +453,7 @@ public class StateStoreCommitterTest {
     class ConfigureUpdateFromLog {
 
         @Test
-        void shouldFailFirstAddTransactionWhenItConflictsAndConfiguredToOnlyUpdateOnFailedCommit() throws Exception {
+        void shouldAddFirstTransactionWhenItConflictsAndConfiguredToNotUpdateOnEveryCommit() throws Exception {
             // Given
             TableProperties tableProperties = createTable();
             tableProperties.set(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT, "false");
@@ -474,7 +474,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failedRequests).isEmpty();
-            assertThat(addTransactionCalls.get()).isEqualTo(3);
+            assertThat(addTransactionCalls.get()).isEqualTo(2);
             assertThat(readTransactionCalls.get()).isEqualTo(1);
             assertThat(stateStore(tableProperties).getFileReferences())
                     .containsExactly(file1, file2, file3);
