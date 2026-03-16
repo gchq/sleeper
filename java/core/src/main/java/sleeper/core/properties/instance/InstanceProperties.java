@@ -83,7 +83,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         // Validate EMR managed scaling max is greater than min
         int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
         int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-        if (getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING) && maxEmrCapacity <= minEmrCapacity) {
+        boolean managedScalling = getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING);
+        if (managedScalling && maxEmrCapacity <= minEmrCapacity) {
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, String.valueOf(managedScalling));
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, String.valueOf(minEmrCapacity));
             reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, String.valueOf(maxEmrCapacity));
         }
     }
