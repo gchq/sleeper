@@ -1276,7 +1276,7 @@ mod tests {
         // When 2 - request data again
         let meta2 = ps.head(&"test_file".into()).await?;
 
-        // Then
+        // Then 2
         assert_eq!(meta, meta2);
         // No extra HEAD request should have occurred
         assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
@@ -1294,7 +1294,7 @@ mod tests {
         // When
         let _ = ps.head(&"test_file".into()).await?;
 
-        // Then - no specific HEAD should have occurred
+        // Then - no HEAD request should have occurred
         assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
 
         Ok(())
@@ -1354,6 +1354,7 @@ mod tests {
                 },
             )
             .await?;
+
         // Then
         // check file in cache
         assert_eq!(
@@ -1392,6 +1393,7 @@ mod tests {
                 },
             )
             .await?;
+
         // Then
         // check file in cache
         assert_eq!(
