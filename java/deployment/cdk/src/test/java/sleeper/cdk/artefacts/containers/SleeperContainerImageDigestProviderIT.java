@@ -22,13 +22,8 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.ImageNotFoundException;
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
-import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
-
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -44,8 +39,6 @@ import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Cli
 public class SleeperContainerImageDigestProviderIT {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    protected final Map<Path, String> files = new HashMap<>();
-    DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
 
     @Test
     void shouldGetLatestDigestOfAnImage(WireMockRuntimeInfo runtimeInfo) throws Exception {
