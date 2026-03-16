@@ -1,19 +1,13 @@
 Getting started
 ===============
 
-There are 2 ways of deploying Sleeper and interacting with an instance. You can deploy to AWS, or to Docker on your
-local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
-allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
-
-## Sleeper in AWS
-
 This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
 Other scripts are provided to interact with Sleeper.
 
-We do not currently publish pre-built versions of Sleeper publicly. Internally we have automated publishing of Sleeper,
-with a scripted installation. Search internally for documentation on this. If you are in another organisation you may
-need to build it yourself. In that case, see the [developer guide](developer-guide.md) for how to build it,
-and [publishing](development/publishing.md) for tools to set up your own pre-build.
+If you have access to the organisation's internal systems, search there for how to install Sleeper. We do not currently
+publish pre-built versions of Sleeper publicly. If you're an external user you may need to build it yourself. See
+the [developer guide](developer-guide.md) for how to build it, and [publishing](development/publishing.md) for tools to
+set up your own pre-build.
 
 ## Environment setup
 
