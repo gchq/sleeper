@@ -15,67 +15,146 @@
  */
 package sleeper.cdk.artefacts.containers;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.ecr.model.ImageNotFoundException;
+import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
 import sleeper.clients.deploy.DeployConfiguration;
-import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrTestBase;
-import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.findUnmatchedRequests;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
-public class SleeperContainerImageDigestProviderIT extends UploadDockerImagesToEcrTestBase {
+@WireMockTest
+public class SleeperContainerImageDigestProviderIT {
 
-    //private final String repositoryName = UUID.randomUUID().toString();
-    //private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = createInstanceProperties();
     protected final Map<Path, String> files = new HashMap<>();
     DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
 
     @Test
-    void shouldGetLatestVersionOfAnImage() throws Exception {
+    void shouldGetLatestDigestOfAnImage(WireMockRuntimeInfo runtimeInfo) throws Exception {
 
         // Given
-        properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+        String expectedDigest = "sha256:abc123...";
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerRegistry_V20150921.DescribeImages"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/x-amz-json-1.1")
+                        .withBody("""
+                                {
+                                    "imageDetails": [
+                                        {
+                                            "imageDigest": "sha256:abc123...",
+                                            "imageTags": ["latest"]
+                                        }
+                                    ]
+                                }
+                                """)));
 
-        // When
-        uploadForDeployment(dockerDeploymentImageConfig());
-
-        // Then
-        String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-        assertThat(commandsThatRan).containsExactly(
-                dockerLoginToEcrCommand(),
-                buildImageCommand(expectedTag, "./docker/ingest"),
-                pushImageCommand(expectedTag));
+        // When / Then
+        assertThat(digestProvider(runtimeInfo).getLatestDigest(DockerDeployment.INGEST))
+                .isEqualTo(expectedDigest);
+        assertThat(findUnmatchedRequests()).isEmpty();
     }
 
-    // private InstanceProperties createInstanceProperties() {
-    //     InstanceProperties properties = createTestInstanceProperties();
-    //     return properties;
-    // }
+    @Test
+    void shouldTestIfOldDigestIsReturned(WireMockRuntimeInfo runtimeInfo) throws Exception {
 
-    // private SleeperContainerImageDigestProvider images() {
-    //     return SleeperContainerImageDigestProvider.from(ecrClient, properties);
-    // }
+        // Given
+        String expectedDigest = "sha256:def678...";
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerRegistry_V20150921.DescribeImages"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/x-amz-json-1.1")
+                        .withBody("""
+                                {
+                                    "imageDetails": [
+                                        {
+                                            "imageDigest": "sha256:abc123...",
+                                            "imageTags": ["latest"]
+                                        }
+                                    ]
+                                }
+                                """)));
 
-    @Override
-    protected UploadDockerImagesToEcr uploader() {
-        return new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .deployConfig(deployConfig)
-                        .commandRunner(commandRunner)
-                        .copyFile((source, target) -> files.put(target, files.get(source)))
-                        .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                        .version("1.0.0")
-                        .build(),
-                ecrClient, "123", "test-region");
+        // When / Then
+        assertThat(digestProvider(runtimeInfo).getLatestDigest(DockerDeployment.INGEST))
+                .isNotEqualTo(expectedDigest);
+        assertThat(findUnmatchedRequests()).isEmpty();
+    }
+
+    @Test
+    void shouldThrowAnErrorIfImageNotFound(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        // Given
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerRegistry_V20150921.DescribeImages"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/x-amz-json-1.1")
+                        .withHeader("x-amzn-ErrorType", "ImageNotFoundException")
+                        .withBody("""
+                                {
+                                    "__type": "ImageNotFoundException",
+                                    "message": "Image not found."
+                                }
+                                """)));
+
+        // When / Then
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getLatestDigest(DockerDeployment.INGEST))
+                .isInstanceOf(ImageNotFoundException.class)
+                .hasMessageContaining("Image not found");
+        assertThat(findUnmatchedRequests()).isEmpty();
+    }
+
+    @Test
+    void shouldThrowAnErrorIfRepositoryNotFound(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        // Given
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerRegistry_V20150921.DescribeImages"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/x-amz-json-1.1")
+                        .withHeader("x-amzn-ErrorType", "RepositoryNotFoundException")
+                        .withBody("""
+                                {
+                                    "__type": "RepositoryNotFoundException",
+                                    "message": "Repository not found."
+                                }
+                                """)));
+
+        // When / Then
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getLatestDigest(DockerDeployment.INGEST))
+                .isInstanceOf(RepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found");
+        assertThat(findUnmatchedRequests()).isEmpty();
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        InstanceProperties properties = createTestInstanceProperties();
+        return properties;
+    }
+
+    private SleeperContainerImageDigestProvider digestProvider(WireMockRuntimeInfo runtimeInfo) {
+        return SleeperContainerImageDigestProvider.from(wiremockAwsV2Client(runtimeInfo, EcrClient.builder()), instanceProperties);
     }
 }
