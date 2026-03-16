@@ -21,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperProperty;
 
 import java.io.File;
 import java.io.IOException;
@@ -302,8 +303,18 @@ class InstancePropertiesTest {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "10");
 
         // When / Then
-        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessage(String.format("Property %s was invalid. It was \"true\". Failure 1 of 3.",
+                        BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING.getPropertyName()))
+                .extracting("invalidValues")
+                .satisfies(invalidValues -> {
+                    assertThat(invalidValues).isNotNull();
+                    Map<SleeperProperty, String> values = (Map) invalidValues;
+                    assertThat(values.keySet()).contains(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING,
+                            BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY,
+                            BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+                });
     }
 
     private static InstanceProperties getSleeperProperties() {
