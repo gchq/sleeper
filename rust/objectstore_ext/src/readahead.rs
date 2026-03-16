@@ -1835,6 +1835,7 @@ mod tests {
 
     #[tokio::test]
     async fn purge_oldest_two_lru() {
+        // Test that of 3 streams, the 2 oldest get purged, leaving the most recent
         let instant_to_keep = Instant::now().checked_sub(Duration::from_secs(10)).unwrap();
         test_cache_purge_and_validate(
             1,
