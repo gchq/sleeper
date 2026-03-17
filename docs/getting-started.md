@@ -38,16 +38,19 @@ See [Sleeper Docker tools](deployment/docker-tools.md).
 This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
 Other scripts are provided to interact with Sleeper.
 
-The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
-This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
-then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
-understand what the system is doing.
+The easiest way to deploy a full instance of Sleeper and interact with it is to use the demonstration deployment.
+This deploys a Sleeper instance and a table with a simple schema, and comes with a data generation ECS cluster that will
+write some random data into the table. You can then use the status scripts to see how much data is in the system,
+run some example queries, and view logs to help understand what the system is doing.
 
-If you'd prefer to match how you would deploy to production, see the [deployment guide](deployment-guide.md).
+If you'd prefer to match how you would deploy to production, see the [deployment guide](deployment-guide.md). If you
+deploy your own instance, or if you have your own Parquet files already that you'd like to add, you can follow the
+documentation for [tables](usage/tables.md) and [ingest](usage/ingest.md) to add your data, before moving on to the
+section below for interacting with Sleeper.
 
-The Git repository includes a manual system test deployment script that builds and deploys Sleeper, and starts random
-data generation in a separate "system test" ECS cluster. By default this generates 40 million rows per ECS task. This
-script takes a globally unique Sleeper instance ID, and IDs of the VPC and subnets you want to deploy the instance to.
+The demonstration deployment consists of a script takes a globally unique Sleeper instance ID, and IDs of the VPC and
+subnets you want to deploy the instance to. By default it runs 10 data generation ECS tasks, that each generate 40
+million rows.
 
 The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
 the instance ID as part of the name of all AWS resources that are deployed.
