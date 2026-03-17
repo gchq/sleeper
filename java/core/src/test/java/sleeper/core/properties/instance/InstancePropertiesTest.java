@@ -94,7 +94,6 @@ import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
@@ -279,18 +278,6 @@ class InstancePropertiesTest {
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
                 .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
-    }
-
-    @Test
-    public void shouldPassValidationForInvalidEMRManagedScalingBoundsWhenEmrScalingFalse() {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "15");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "10");
-
-        // When / Then
-        properties.validate(); //Will throw if invalid
     }
 
     private static InstanceProperties getSleeperProperties() {
