@@ -3,11 +3,10 @@ Developer Guide
 
 This is a brief guide to developing Sleeper.
 
-## Get your environment setup
+## Deployment environment setup
 
-Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
-copy that you built yourself.
+Before you do any dev work on Sleeper it is worth reading the [deployment environment setup](deployment/environment-setup.md)
+document. Once you've built the system, exactly the same will apply with a copy that you built yourself.
 
 ### Install prerequisite software
 

@@ -8,9 +8,9 @@ We do not currently publish pre-built versions of Sleeper publicly. If you're an
 yourself, or use your own publishing. See the [developer guide](developer-guide.md) for how to build it,
 and [publishing](development/publishing.md) for tools to set up your own.
 
-## Environment setup
+## Deployment environment setup
 
-You'll need to prepare your AWS account to deploy Sleeper into. See [environment setup](deployment/environment-setup.md)
+You'll need to prepare your AWS account to deploy Sleeper into. See [deployment environment setup](deployment/environment-setup.md)
 for how to do this. This includes bootstrapping the CDK, configuring or creating a VPC with endpoints for relevant AWS
 services, and creating an EC2 instance to avoid lengthy uploads of large jar files and Docker images from outside AWS.
 The setup documentation includes tools to automate most of this.

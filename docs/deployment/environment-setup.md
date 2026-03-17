@@ -1,5 +1,5 @@
-Environment setup
-=================
+Deployment environment setup
+============================
 
 ## Preparing AWS
 

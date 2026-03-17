@@ -4,10 +4,10 @@ Building and deploying Sleeper
 This contains instructions on how to deploy Sleeper.
 
 Please follow the [getting started guide](getting-started.md) to install or build Sleeper and its dependencies, and
-prepare a suitable environment. For the rest of this guide we'll assume you're working in an EC2 instance in an AWS
-account that's configured appropriately. You should either have the dependencies listed there installed in your EC2,
-or run a builder Docker container in your EC2 with the [Sleeper Docker tools](deployment/docker-tools.md), which comes
-with those dependencies pre-installed.
+prepare your AWS account. For the rest of this guide we'll assume you're working in an EC2 instance in an AWS account
+that's configured appropriately. You should either have the dependencies listed there installed in your EC2, or run a
+builder Docker container in your EC2 with the [Sleeper Docker tools](deployment/docker-tools.md), which comes with those
+dependencies pre-installed.
 
 If you just want a local instance for testing, see the documentation
 on [deploying to localstack](deployment/deploy-to-localstack.md). This has very limited functionality compared to a
