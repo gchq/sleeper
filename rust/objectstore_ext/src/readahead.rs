@@ -453,7 +453,9 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             };
             if cache_ob.streams.len() > max_streams_for_location {
                 let streams_to_evict = cache_ob.streams.len() - max_streams_for_location;
-                debug!("Need to evict {streams_to_evict} for {path}",);
+                debug!(
+                    "Need to evict {streams_to_evict} for {path} max for location {max_streams_for_location}"
+                );
                 // Get stream of entries ordered by oldest first (LRU)
                 let mut removal_queue = cache_ob
                     .streams
