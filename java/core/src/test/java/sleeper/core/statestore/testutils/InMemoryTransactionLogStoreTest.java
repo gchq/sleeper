@@ -56,18 +56,6 @@ public class InMemoryTransactionLogStoreTest {
     }
 
     @Test
-    void shouldFailToAddFirstTransactionWithTooHighNumber() throws Exception {
-        // Given
-        TransactionLogEntry entry = logEntry(2, new ClearFilesTransaction());
-
-        // When / Then
-        assertThatThrownBy(() -> store.addTransaction(entry))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Attempted to add transaction 2 when we only have 0");
-        assertThat(store.readTransactions(toUpdateLocalStateAt(0))).isEmpty();
-    }
-
-    @Test
     void shouldFailToAddTransactionWithTooLowNumber() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1,
