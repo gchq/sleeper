@@ -16,7 +16,9 @@ deployed instance.
 ## Deployment
 
 Sleeper is deployed using the AWS CDK. You can invoke the CDK to do this either using the automated scripts or by using
-the CDK directly.
+the CDK directly. The scripts do the same thing as the direct CDK deployment, but through Java and with some
+configuration specific to either creation or update of an existing instance. The scripts also include configuration of
+tables, which direct CDK deployment does not.
 
 Either approach should be done from within an EC2 instance to avoid lengthy uploads of large jar files and Docker
 images.
