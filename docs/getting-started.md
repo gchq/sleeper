@@ -1,13 +1,12 @@
 Getting started
 ===============
 
-This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
-Other scripts are provided to interact with Sleeper.
+If you have access to our organisation's internal systems, search there for how to install Sleeper. After that
+installation you'll be able to use any of our deployment methods, as well as the scripts to interact with Sleeper.
 
-If you have access to the organisation's internal systems, search there for how to install Sleeper. We do not currently
-publish pre-built versions of Sleeper publicly. If you're an external user you may need to build it yourself. See
-the [developer guide](developer-guide.md) for how to build it, and [publishing](development/publishing.md) for tools to
-set up your own pre-build.
+We do not currently publish pre-built versions of Sleeper publicly. If you're an external user you can build it
+yourself, or use your own publishing. See the [developer guide](developer-guide.md) for how to build it,
+and [publishing](development/publishing.md) for tools to set up your own.
 
 ## Environment setup
 
@@ -22,7 +21,7 @@ deploy and interact with an instance:
 
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-* Java: Minimum version 17, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
+* Java: Minimum version 17, we recommend and test against [Amazon Corretto JDK 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
@@ -31,6 +30,9 @@ We also have tools to run a Docker container with these pre-installed, so you on
 See [Sleeper Docker tools](deployment/docker-tools.md).
 
 ## Deployment
+
+This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
+Other scripts are provided to interact with Sleeper.
 
 The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
 This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
