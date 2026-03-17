@@ -70,7 +70,7 @@ impl FFICommonConfig {
     /// The schema types for the row key fields in this Sleeper schema.
     ///
     /// # Errors
-    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`FFIRowKeySchemaType`].
+    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`RowKeySchemaType`].
     pub fn schema_types(&self) -> Result<Vec<RowKeySchemaType>, color_eyre::Report> {
         unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
             .iter()

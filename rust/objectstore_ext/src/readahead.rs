@@ -411,11 +411,33 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     /// # Panics
     /// If the mutex lock that guards the cache has become poisoned.
     pub fn clean_cache(&self) -> usize {
+        self.clean_cache_with_remove(false)
+    }
+
+    /// Purge all cache entries that are too old or too numerous across all files.
+    /// A lock will be obtained for the cache object and all streams that are too old
+    /// will be purged as well as the lowest position streams if there are too many.
+    ///
+    /// If `stream_removed' is true, then the maximum number of live streams per location
+    /// discounts for a cache item having just been removed. This is used internally by
+    /// [`get_opts`] to allow for a cached stream to be removed, whilst correctly preserving
+    /// the maximum live streams invariant.
+    ///
+    /// Returns the total number of live streams still in the cache.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    fn clean_cache_with_remove(&self, stream_removed: bool) -> usize {
         let now = Instant::now();
+        let max_streams = if stream_removed {
+            self.max_live_streams.saturating_sub(1)
+        } else {
+            self.max_live_streams
+        };
         debug!(
             "Purging cache of streams older than {}s or when more than {} streams per location",
             self.max_age.as_secs().to_formatted_string(&Locale::en),
-            self.max_live_streams.to_formatted_string(&Locale::en)
+            max_streams.to_formatted_string(&Locale::en)
         );
         let mut cache = self
             .cache
@@ -428,11 +450,11 @@ impl<T: ObjectStore> ReadaheadStore<T> {
                 .streams
                 .retain(|_, c| now.duration_since(c.last_use) < self.max_age);
             // Evict least recently used streams until we are under size
-            if cache_ob.streams.len() > self.max_live_streams {
-                let streams_to_evict = cache_ob.streams.len() - self.max_live_streams;
+            if cache_ob.streams.len() > max_streams {
+                let streams_to_evict = cache_ob.streams.len() - max_streams;
                 debug!(
                     "Need to evict {streams_to_evict} for {path} max {}",
-                    self.max_live_streams
+                    max_streams
                 );
                 // Get stream of entries ordered by oldest first (LRU)
                 let mut removal_queue = cache_ob
@@ -590,12 +612,13 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             return Ok(result);
         }
 
-        self.clean_cache();
-
         let start_pos = get_start_pos(options.range.as_ref());
         let cached = self
             .get_cached_stream(location, options.range.as_ref())
             .await?;
+
+        // Clean cache, but record that one cacheable stream has just been removed
+        self.clean_cache_with_remove(true);
 
         // If cache hit
         match cached {
