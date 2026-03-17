@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility methods for validating & reading Sleeper configuration properties.
+ * Utility methods for validating &amp; reading Sleeper configuration properties.
  */
 public class SleeperPropertyValueUtils {
 
