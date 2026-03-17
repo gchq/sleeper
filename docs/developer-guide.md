@@ -17,8 +17,8 @@ these available.
 #### Dev container
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
-the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
-image based on this configuration.
+the [Sleeper Docker tools](deployment/docker-tools.md). This includes all the same dependencies. If your IDE supports
+Dev Containers, it can work against this Docker image based on this configuration.
 
 The dev container configuration will mount any AWS CLI, Maven and SSH configuration from your host machine into the
 container.
@@ -121,9 +121,9 @@ previous build that included Rust, skipping Rust will reuse the same binaries.
 
 When running Maven directly, you can pass `-Pquick` to skip tests and linting.
 
-### Sleeper CLI
+### Sleeper Docker tools
 
-To build the Sleeper CLI, you can run this script:
+To build the Sleeper Docker tools, you can run this script:
 
 ```bash
 ./scripts/cli/buildAll.sh
