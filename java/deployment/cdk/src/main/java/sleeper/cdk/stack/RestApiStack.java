@@ -23,9 +23,13 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.apigateway.CfnRestApi;
 import software.amazon.awscdk.services.apigateway.CfnRestApi.EndpointConfigurationProperty;
 import software.amazon.awscdk.services.apigateway.CfnRestApi.S3LocationProperty;
+import software.amazon.awscdk.services.apigateway.CfnStage;
 import software.amazon.awscdk.services.apigateway.IntegrationType;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
+import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awssdk.services.apigateway.model.CreateRestApiRequest;
 import software.constructs.Construct;
 
@@ -83,11 +87,32 @@ public class RestApiStack extends NestedStack {
                 .integrationUri(restApiUri)
                 .build();
 
+        CfnRoute.Builder.create(this, "connect-route")
+                .apiId(restApi.getRef())
+                .apiKeyRequired(false)
+                .authorizationType("AWS_IAM")
+                .routeKey("$connect")
+                .target("integrations/" + restApiIntegration.getRef())
+                .build();
+
+        lambdaFunction.addPermission("apigateway-access-to-lambda", Permission.builder()
+                .principal(new ServicePrincipal("apigateway.amazonaws.com"))
+                .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
+                        .service("execute-api")
+                        .resource(restApi.getRef())
+                        .resourceName("*/*")
+                        .build()))
+                .build());
+
+        CfnStage restapiStage = CfnStage.Builder.create(scope, "restapi-stage")
+                .restApiId(restApi.getRef())
+                .stageName("live")
+                .build();
     }
 
     // TODO Check and re-enable properties
     private CfnRestApi setUpApiGateway(Construct scope, String instanceId) {
-        return CfnRestApi.Builder.create(this, instanceId)
+        return CfnRestApi.Builder.create(scope, instanceId)
                 //.apiKeySourceType("apiKeySourceType")
                 //.binaryMediaTypes(List.of("binaryMediaTypes"))
                 .body(createApiBody())
