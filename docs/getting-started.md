@@ -11,8 +11,12 @@ and [publishing](development/publishing.md) for tools to set up your own.
 ## Environment setup
 
 You'll need to prepare your AWS account to deploy Sleeper into. See [environment setup](deployment/environment-setup.md)
-for how to do this. For the rest of this guide we'll assume you're working in an EC2 instance in an AWS account that's
-configured appropriately.
+for how to do this. This includes bootstrapping the CDK, configuring or creating a VPC with endpoints for relevant AWS
+services, and creating an EC2 instance to avoid lengthy uploads of large jar files and Docker images from outside AWS.
+The setup documentation includes tools to automate most of this.
+
+For the rest of this guide we'll assume you're working in an EC2 instance in an AWS account that's configured
+appropriately.
 
 ## Dependencies
 
