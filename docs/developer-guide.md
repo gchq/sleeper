@@ -60,16 +60,15 @@ cd sleeper
 git checkout --track origin/main
 ```
 
-#### Sleeper CLI builder image
+#### Sleeper builder image
 
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](getting-started.md), you can
-use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
-container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
-without using Dev Containers.
+If you've installed the [Sleeper Docker tools](deployment/docker-tools.md), you can use `sleeper builder` to get a
+command line inside a Docker container with the dependencies pre-installed. This is the same container image that's used
+for the Dev Containers setup above. It may be useful if you want to work inside Docker without using Dev Containers.
 
-If you're in an EC2 deployed with `sleeper environment`, the Sleeper CLI was pre-installed and the repository was
-already checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can
-use the commands below to do this:
+If you're in an EC2 deployed with `sleeper environment`, this is pre-installed and the repository has already been
+checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can use the
+commands below to do this:
 
 ```bash
 sleeper builder
