@@ -443,18 +443,17 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             cache_ob
                 .streams
                 .retain(|_, c| now.duration_since(c.last_use) < self.max_age);
-            // Evict least recently used streams until we are under size
-            if cache_ob.streams.len() > self.max_live_streams {
-                let mut streams_to_evict = cache_ob.streams.len() - self.max_live_streams;
-                if let Some(removed_location) = retrieved_location
-                    && removed_location == path
-                {
-                    streams_to_evict = streams_to_evict.saturating_sub(1);
-                }
-                debug!(
-                    "Need to evict {streams_to_evict} for {path} max {}",
-                    self.max_live_streams
-                );
+            // Max streams for this location depends on if a stream has just been removed for it
+            let max_streams_for_location = if let Some(retrieved) = retrieved_location
+                && retrieved == path
+            {
+                self.max_live_streams.saturating_sub(1)
+            } else {
+                self.max_live_streams
+            };
+            if cache_ob.streams.len() > max_streams_for_location {
+                let streams_to_evict = cache_ob.streams.len() - max_streams_for_location;
+                debug!("Need to evict {streams_to_evict} for {path}",);
                 // Get stream of entries ordered by oldest first (LRU)
                 let mut removal_queue = cache_ob
                     .streams
@@ -2010,6 +2009,7 @@ mod tests {
         ps.put(&"test_file2".into(), "some data".into()).await?;
 
         // When
+        // Get a cached stream and drop it, causing it to insert into cache
         ps.get_range(&"test_file2".into(), 1..2).await?;
 
         // Then
@@ -2028,6 +2028,30 @@ mod tests {
                 .0,
             1
         );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_opts_should_purge_location_when_stream_retrieved() -> Result<()> {
+        // Given
+        let ps = make_store()
+            .with_max_live_streams(1)
+            .with_max_stream_age(Duration::from_secs(10));
+
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        // Get a cached stream and drop it, causing it to insert into cache
+        ps.get_range(&"test_file".into(), 4..5).await?;
+        // Get a second cached stream and drop it, this should cause above stream to be evicted.
+        ps.get_range(&"test_file".into(), 2..4).await?;
+
+        // Then
+        // test_file cache should have 1 entry
+        let cache = ps.cache.lock().unwrap();
+        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.get(&"test_file".into()).unwrap().streams.len(), 1);
 
         Ok(())
     }
