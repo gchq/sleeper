@@ -30,6 +30,10 @@ deploy and interact with an instance:
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
+If your EC2 runs Amazon Linux, some features such as direct queries may not work. We compile our native code against
+a recent version of Ubuntu, and Amazon Linux uses an old version of glibc which is not compatible. We recommend using
+Ubuntu.
+
 We also have tools to run a Docker container with these pre-installed, so you only need Docker installed in your EC2.
 See [Sleeper Docker tools](deployment/docker-tools.md).
 
@@ -48,6 +52,8 @@ deploy your own instance, or if you have your own Parquet files already that you
 documentation for [tables](usage/tables.md) and [ingest](usage/ingest.md) to add your data, before moving on to the
 section below for interacting with Sleeper.
 
+### Demonstration deployment
+
 The demonstration deployment consists of a script takes a globally unique Sleeper instance ID, and IDs of the VPC and
 subnets you want to deploy the instance to. By default it runs 10 data generation ECS tasks, that each generate 40
 million rows.
@@ -60,25 +66,21 @@ An instance will fail to deploy if it would replace log groups from a deleted in
 
 Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
-We will run the deployment in a Docker container in your EC2 instance, using the `sleeper builder` command. This Docker
-container will be deleted after you exit. This contains a workspace mounted from a folder in the host home directory,
-which will persist after the container exits, and will be reused by future calls to `sleeper builder`. It also inherits
-the AWS and Docker configuration from the host.
+Currently the demonstration deployment is not included in a normal build of the system. If you've installed with a
+script, see the [developer guide](developer-guide.md) for how to set up to build the system.
 
-From a command line in your EC2 instance, if you set environment variables for the instance `ID`, `VPC` and `SUBNETS`,
-you can run the script like this:
+From a command line in your EC2 instance with the dependencies to build the system available, you can run the script
+like this:
 
 ```bash
-sleeper builder # Create a Docker container with a workspace mounted in from the host directory ~/.sleeper/builder
-git clone --branch main https://github.com/gchq/sleeper.git # Get the latest release version of Sleeper
-cd sleeper
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
+cd sleeper # Navigate to this Git repository, which was checked out during installation or building
+./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc> <subnets>
 ```
 
 You may prefer to run this script in the background and redirect output to a file:
 
 ```bash
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS} &> test.log &
+./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc> <subnets> &> test.log &
 less -R test.log # Press shift+F to follow the output in less
 ```
 
@@ -92,7 +94,7 @@ generate data. The data will appear in Sleeper in large batches as the tasks fin
 Run the following command to see how many rows are currently in the system:
 
 ```bash
-./scripts/utility/filesStatusReport.sh ${ID} system-test
+./scripts/utility/filesStatusReport.sh <instance-id> system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -100,7 +102,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-./scripts/utility/query.sh ${ID}
+./scripts/utility/query.sh <instance-id>
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -140,7 +142,7 @@ It is possible to run variations on this system test by editing the system test 
 ```bash
 cd ./scripts/test/deployAll
 editor system-test-instance.properties
-./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
+./buildDeployTest.sh  <instance-id> <vpc> <subnets>
 ```
 
 To deploy your own instance of Sleeper with a particular schema, follow the [deployment guide](deployment-guide.md).
