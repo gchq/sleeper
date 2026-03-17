@@ -15,12 +15,16 @@
  */
 package sleeper.cdk.stack;
 
+import software.amazon.awscdk.ArnComponents;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.apigateway.CfnRestApi;
 import software.amazon.awscdk.services.apigateway.CfnRestApi.EndpointConfigurationProperty;
 import software.amazon.awscdk.services.apigateway.CfnRestApi.S3LocationProperty;
+import software.amazon.awscdk.services.apigateway.IntegrationType;
+import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awssdk.services.apigateway.model.CreateRestApiRequest;
 import software.constructs.Construct;
@@ -53,7 +57,7 @@ public class RestApiStack extends NestedStack {
 
     private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String id, SleeperLambdaCode lambdaCode) {
         //This section to elobrate/set from elsewhere
-        String restApiName = "rest-api-name";
+        //String restApiName = "rest-api-name";
 
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String functionName = String.join("-", "sleeper", id, "rest-api-handler");
@@ -63,15 +67,29 @@ public class RestApiStack extends NestedStack {
                 .environment(env)
                 .memorySize(1024)
                 // Need a log group
-                .timeout(Duration.seconds(60)));
+                .timeout(Duration.seconds(29)));
 
-        setUpApiGateway(scope, instanceProperties.get(ID));
+        String restApiUri = Stack.of(this).formatArn(ArnComponents.builder()
+                .service("apigateway")
+                .account("lambda")
+                .resource("path/2015-03-31/functions")
+                .resourceName(lambdaFunction.getFunctionArn() + "/invocations")
+                .build());
+
+        CfnRestApi restApi = setUpApiGateway(scope, instanceProperties.get(ID));
+        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(this, "integration")
+                .apiId(restApi.getRef())
+                .integrationType(IntegrationType.AWS_PROXY.name())
+                .integrationUri(restApiUri)
+                .build();
+
     }
 
+    // TODO Check and re-enable properties
     private CfnRestApi setUpApiGateway(Construct scope, String instanceId) {
-        CfnRestApi restApi = CfnRestApi.Builder.create(this, instanceId)
-                .apiKeySourceType("apiKeySourceType")
-                .binaryMediaTypes(List.of("binaryMediaTypes"))
+        return CfnRestApi.Builder.create(this, instanceId)
+                //.apiKeySourceType("apiKeySourceType")
+                //.binaryMediaTypes(List.of("binaryMediaTypes"))
                 .body(createApiBody())
                 .bodyS3Location(S3LocationProperty.builder()
                         .bucket("bucket")
@@ -79,10 +97,10 @@ public class RestApiStack extends NestedStack {
                         .key("key")
                         .version("version")
                         .build())
-                .cloneFrom("cloneFrom")
-                .description("description")
-                .disableExecuteApiEndpoint(false)
-                .endpointAccessMode("endpointAccessMode")
+                //.cloneFrom("cloneFrom")
+                .description("Sleeper Rest Api")
+                //.disableExecuteApiEndpoint(false)
+                //.endpointAccessMode("endpointAccessMode")
                 .endpointConfiguration(EndpointConfigurationProperty.builder()
                         .ipAddressType("ipAddressType")
                         .types(List.of("types"))
@@ -90,10 +108,9 @@ public class RestApiStack extends NestedStack {
                         .build())
                 .failOnWarnings(false)
                 .minimumCompressionSize(123)
-                .mode("mode")
-                .name("name")
-                .parameters(Map.of(
-                        "parametersKey", "parameters"))
+                //.mode("mode")
+                //.name("name")
+                //.parameters(Map.of("parametersKey", "parameters"))
                 //.policy(policy)
                 .securityPolicy("securityPolicy")
                 .tags(List.of(CfnTag.builder()
@@ -101,8 +118,6 @@ public class RestApiStack extends NestedStack {
                         .value("value")
                         .build()))
                 .build();
-
-        return restApi;
     }
 
     //Method to add all functionality to rest api
