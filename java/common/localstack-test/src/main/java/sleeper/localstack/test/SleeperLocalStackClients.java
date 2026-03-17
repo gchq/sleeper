@@ -20,7 +20,6 @@ import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -49,6 +48,5 @@ public class SleeperLocalStackClients {
     public static final CloudWatchClient CLOUDWATCH_CLIENT = buildAwsV2Client(CONTAINER, CloudWatchClient.builder());
     public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
     public static final AwsCredentialsProvider CREDENTIALS_PROVIDER = buildAwsCredentialsProvider();
-    public static final EcrClient ECR_CLIENT = buildAwsV2Client(CONTAINER, EcrClient.builder());
 
 }

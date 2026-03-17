@@ -31,10 +31,9 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 
 /**
- * Finds container images to deploy. Looks up the latest digest for each image in an Ecr repository. The
+ * Finds container images to deploy. Looks up the latest digest for each image in an ECR repository. The
  * deployment will be done against a specific digest of each image. It will only check the repository once for each
- * image, and
- * you can reuse the same object for multiple Sleeper instances.
+ * image, and you can reuse the same object for multiple Sleeper instances.
  */
 public class SleeperContainerImageDigestProvider {
 
@@ -56,7 +55,7 @@ public class SleeperContainerImageDigestProvider {
     }
 
     /**
-     * Checks the digest for the latest version of a given image in an Ecr repository. When we provide the CDK with a
+     * Checks the digest for the latest version of a given image in an ECR repository. When we provide the CDK with a
      * specific image digest, it can tell when the image has changed even if it still has the same name.
      */
     public interface GetDigest {
