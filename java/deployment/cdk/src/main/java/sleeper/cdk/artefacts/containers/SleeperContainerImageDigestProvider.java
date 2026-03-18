@@ -51,7 +51,7 @@ public class SleeperContainerImageDigestProvider {
         return new SleeperContainerImageDigestProvider(GetDigest.fromEcrRepository(ecrClient, instanceProperties));
     }
 
-    public String getLatestDigest(DockerDeployment deployment) {
+    public String getDigestForLatestVersion(DockerDeployment deployment) {
         return latestDigestByContainer.computeIfAbsent(deployment, getDigest::getDigest);
     }
 
