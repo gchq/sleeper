@@ -22,7 +22,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.apigateway.CfnRestApi;
-import software.amazon.awscdk.services.apigateway.CfnStage;
 import software.amazon.awscdk.services.apigateway.IntegrationType;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
 import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
@@ -96,14 +95,12 @@ public class RestApiStack extends NestedStack {
                         .build()))
                 .build());
 
-        CfnStage stage = CfnStage.Builder.create(scope, "restapi-stage")
-                .restApiId(restApiId)
-                .build();
+        String restApiUrl = buildRestApiUrl(restApi);
 
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
-                .value(restApiUri)
+                .value(restApiUrl)
                 .build());
-        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restApiUri);
+        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restApiUrl);
     }
 
     private String setupRestApiUri(Construct scope, IFunction lambda) {
@@ -122,6 +119,11 @@ public class RestApiStack extends NestedStack {
                 .description("Sleeper Rest Api")
                 .name("sleeper-rest-api")
                 .build();
+    }
+
+    private String buildRestApiUrl(CfnRestApi restApi, IFunction lambda) {
+        // TODO Needs elobrating
+        return "";
     }
 
     // TODO: Method to add all calls to the rest API (YAML Format)
