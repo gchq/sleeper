@@ -529,7 +529,11 @@ libc (https://github.com/rust-lang/libc)
 
 - Apache License, Version 2.0
 
-arrow (https://github.com/apache/arrow-rs)
+arrow (https://github.com/apache/arrow)
+
+- Apache License, Version 2.0
+
+arrow-rs (https://github.com/apache/arrow-rs)
 
 - Apache License, Version 2.0
 
@@ -641,6 +645,9 @@ test-log (https://github.com/d-e-s-o/test-log)
 
 - Apache 2 License
 
+cbindgen (https://github.com/mozilla/cbindgen)
+
+- Mozilla Public License Version 2.0
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.
