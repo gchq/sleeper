@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.DescribeImagesRequest;
 import software.amazon.awssdk.services.ecr.model.DescribeImagesResponse;
+import software.amazon.awssdk.services.ecr.model.ImageDetail;
 import software.amazon.awssdk.services.ecr.model.ImageIdentifier;
 
 import sleeper.core.deploy.DockerDeployment;
@@ -71,7 +72,10 @@ public class SleeperContainerImageDigestProvider {
                         .imageIds(ImageIdentifier.builder().imageTag(instanceProperties.get(VERSION)).build())
                         .build());
 
-                String digest = response.imageDetails().get(0).imageDigest();
+                String digest = response.imageDetails().stream()
+                        .findFirst()
+                        .map(ImageDetail::imageDigest)
+                        .orElseThrow(() -> new RuntimeException("No image digest found!"));
                 LOGGER.info("Found latest digest for image {}: {}", image, digest);
                 return digest;
             };

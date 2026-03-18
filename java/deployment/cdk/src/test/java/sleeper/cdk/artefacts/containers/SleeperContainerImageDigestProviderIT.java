@@ -68,33 +68,6 @@ public class SleeperContainerImageDigestProviderIT {
     }
 
     @Test
-    void shouldTestIfOldDigestIsReturned(WireMockRuntimeInfo runtimeInfo) throws Exception {
-
-        // Given
-        String expectedDigest = "sha256:def678...";
-        stubFor(post("/")
-                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerRegistry_V20150921.DescribeImages"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/x-amz-json-1.1")
-                        .withBody("""
-                                {
-                                    "imageDetails": [
-                                        {
-                                            "imageDigest": "sha256:abc123...",
-                                            "imageTags": ["latest"]
-                                        }
-                                    ]
-                                }
-                                """)));
-
-        // When / Then
-        assertThat(digestProvider(runtimeInfo).getLatestDigest(DockerDeployment.INGEST))
-                .isNotEqualTo(expectedDigest);
-        assertThat(findUnmatchedRequests()).isEmpty();
-    }
-
-    @Test
     void shouldThrowAnErrorIfImageNotFound(WireMockRuntimeInfo runtimeInfo) throws Exception {
 
         // Given
