@@ -51,6 +51,12 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 
 The scripts for deployment create an instance of Sleeper either from your own configuration files, or from templates.
 
+The two scripts available to use are found in scripts/deploy and have the following usecases:
+| File            | Purpose                        | Usecase |
+|-----------------|--------------------------------|---------|
+deployNew.sh      | Deploys a new instance         | Use when deploying a new instance
+deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an existing deployment, in case you're concerned there's drift, or when you wish to upgrade an existing instance to a newer version.
+
 They also upload the necessary deployment artefacts to AWS. These artefacts must be available for deployment, either by
 building Sleeper locally or installing pre-published artefacts. See the [developer guide](developer-guide.md#building)
 for details. These artefacts will be uploaded to a separate CDK stack from the Sleeper instance.
@@ -89,21 +95,11 @@ cp example/basic/* scripts/my-instance/
 ./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
-#### Declarative deployment
+#### Redeploy existing instance
 
-We have a version of this script that will either create or update an instance, applying your configuration
-declaratively:
-
-```bash
-./scripts/deploy/deploy.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
-```
-
-This does not currently include Sleeper tables, see issue https://github.com/gchq/sleeper/issues/5870.
-
-#### Update existing instance
-
-The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
-that have changed, update all the docker images, and perform a `cdk deploy`.
+The `deployExisting.sh` script can be used to re-run the CDK against an existing instance of Sleeper.
+This can be used to upgrade an instance of Sleeper to a newer version.
+This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
 ./scripts/deploy/deployExisting.sh <instance-id>
