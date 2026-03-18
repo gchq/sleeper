@@ -55,7 +55,7 @@ The two scripts available to use are found in scripts/deploy and have the follow
 | File            | Purpose                        | Usecase |
 |-----------------|--------------------------------|---------|
 deployNew.sh      | Deploys a new instance         | Use when deploying a new instance
-deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an exising deployment, in case you're concerned there's drift, or when you wish to upgrade and existing instance to a newer version.
+deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an existing deployment, in case you're concerned there's drift, or when you wish to upgrade an existing instance to a newer version.
 
 They also upload the necessary deployment artefacts to AWS. These artefacts must be available for deployment, either by
 building Sleeper locally or installing pre-published artefacts. See the [developer guide](developer-guide.md#building)
