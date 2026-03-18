@@ -17,18 +17,10 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import software.amazon.awssdk.services.s3.S3Client;
 
 public class RestApiLambda {
 
-    private final S3Client s3Client;
-
     public RestApiLambda() {
-        this(S3Client.create());
-    }
-
-    public RestApiLambda(S3Client s3Client) {
-        this.s3Client = s3Client;
     }
 
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) {
