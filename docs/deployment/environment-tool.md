@@ -1,14 +1,14 @@
 Sleeper environment tool
 ========================
 
+The Sleeper environment tool can create an environment in your AWS account that's suitable for deploying Sleeper.
+
 To deploy Sleeper in AWS, we need a suitable networking context for a Sleeper instance to interact with AWS services.
-We need to get the necessary compiled artefacts into AWS to deploy the system. We need the correct permissions and
-access to be able to deploy and interact with the system. The Sleeper environment tool automates deployment of an
-environment that satisfies these constraints within your AWS account.
+We want the deployment to happen inside AWS, so that the necessary compiled artefacts don't need to be uploaded from
+outside. The environment satisfies these constraints by deploying a VPC and an EC2 instance.
 
-Before you start, ensure you have installed the CLI for the [Sleeper Docker tools](docker-tools.md).
-
-We'll look at how to prepare to interact with AWS, and how to create a suitable environment to deploy Sleeper.
+Before you start, ensure you have installed the tools as described in [Sleeper Docker tools](docker-tools.md), and
+followed the [Deployment environment setup](environment-setup.md) up to the creation of the deployment environment.
 
 ### Authentication
 
