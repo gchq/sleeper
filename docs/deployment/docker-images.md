@@ -60,7 +60,6 @@ Docker image for each lambda jar.
 | lambda-jobSpecCreationLambda-`<version-number>`.jar | compaction-job-creator-lambda     | false                |
 | runningjobs-`<version-number>`.jar                  | compaction-task-creator-lambda    | false                |
 | lambda-splitter-`<version-number>`.jar              | partition-splitter-lambda         | false                |
-| rest-api-`<version-number>`.jar                     | rest-api                          | false                |
 | query-`<version-number>`.jar                        | query-lambda                      | true                 |
 | cdk-custom-resources-`<version-number>`.jar         | custom-resources-lambda           | false                |
 | metrics-`<version-number>`.jar                      | metrics-lambda                    | false                |

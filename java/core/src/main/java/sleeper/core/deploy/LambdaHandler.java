@@ -200,7 +200,7 @@ public class LambdaHandler {
             .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
             .core().add();
     public static final LambdaHandler REST_API_HANDLER = builder()
-            .jar(LambdaJar.REST_API)
+            .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.RestApiLambda::handleRequest")
             .core().add();
 
