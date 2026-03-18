@@ -118,6 +118,37 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     @Test
+    void shouldDeleteTableEvenWithInvalidSchema() throws Exception {
+        // Given
+        TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
+        StateStore stateStoreBefore = createStateStore(table);
+        update(stateStoreBefore).initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        AllReferencesToAFile file = ingestRows(table, List.of(
+                new Row(Map.of("key1", 25L)),
+                new Row(Map.of("key1", 100L))));
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+        table.setSchema(Schema.loadFromString("{}"));
+        propertiesStore.update(table);
+
+        // When
+        deleteTable("table-1");
+
+        // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(listDataBucketObjectKeys()).isEmpty();
+        assertThat(streamTableFileTransactions(table)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table)).isEmpty();
+    }
+
+    @Test
     void shouldDeleteOneTableWhenAnotherTableIsPresent() throws Exception {
         // Given
         TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
