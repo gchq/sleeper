@@ -88,7 +88,7 @@ public class PersistentEMRManagedScalingBoundsTest {
 
     @Nested
     @DisplayName("Use managed scaling")
-    class ManagedScalingTests {
+    class ManagedScaling {
         @Test
         public void shouldValidateFalseWhenMinGreaterMaxAndManagedScalingTrue() {
             // Given
@@ -102,7 +102,7 @@ public class PersistentEMRManagedScalingBoundsTest {
                     .hasMessage(String.format("Property %s was invalid. It was \"true\". Failure 1 of 3.",
                             BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING.getPropertyName()))
                     .extracting("invalidValues", as(InstanceOfAssertFactories.MAP))
-                    .containsAllEntriesOf(Map.of(
+                    .isEqualTo(Map.of(
                             BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true",
                             BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "10",
                             BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "5"));
