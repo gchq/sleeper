@@ -54,8 +54,8 @@ section below for interacting with Sleeper.
 
 ### Demonstration deployment
 
-The demonstration deployment consists of a script takes a globally unique Sleeper instance ID, and IDs of the VPC and
-subnets you want to deploy the instance to. By default it runs 10 data generation ECS tasks, that each generate 40
+The demonstration deployment consists of a script that takes a globally unique Sleeper instance ID, and IDs of the VPC
+and subnets you want to deploy the instance to. By default it runs 10 data generation ECS tasks, that each generate 40
 million rows.
 
 The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
