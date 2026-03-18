@@ -25,7 +25,7 @@ deploy and interact with an instance:
 
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-* Java: Minimum version 17, we recommend and test against [Amazon Corretto JDK 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
+* Java: Minimum version 17, we recommend and test against [Amazon Corretto JDK 17](https://docs.aws.amazon.com/corretto/latest/corretto-17-ug/downloads-list.html).
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
