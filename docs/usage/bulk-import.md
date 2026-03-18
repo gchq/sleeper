@@ -468,10 +468,7 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 
 #### Bulk import on EKS
 
-The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
-[deployment guide](../deployment-guide.md).
-
-It's also important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
+It's important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
 with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned
 to your user, or users with administrator access. This may be in the form AWSReservedSSO_AdministratorAccess_abc123 if
 you log in with SSO, or OrganizationAccountAccessRole if you log in with an AWS Organisation.

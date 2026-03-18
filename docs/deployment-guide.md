@@ -3,44 +3,25 @@ Building and deploying Sleeper
 
 This contains instructions on how to deploy Sleeper.
 
+Please follow the [getting started guide](getting-started.md) to install or build Sleeper and its dependencies, and
+prepare your AWS account. For the rest of this guide we'll assume you're working in an EC2 instance in an AWS account
+that's configured appropriately. You should either have the dependencies listed there installed in your EC2, or run a
+builder Docker container in your EC2 with the [Sleeper Docker tools](deployment/docker-tools.md), which comes with those
+dependencies pre-installed.
+
 If you just want a local instance for testing, see the documentation
 on [deploying to localstack](deployment/deploy-to-localstack.md). This has very limited functionality compared to a
 deployed instance.
 
-## Get your environment set up
-
-You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [environment setup](deployment/environment-setup.md) for how to install the Sleeper CLI and create
-an environment suitable for deploying Sleeper.
-
-If you set up the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), you can connect to it
-and build Sleeper like this:
-
-```bash
-sleeper environment connect # Get a shell in the EC2 you deployed
-sleeper builder             # Get a shell in a builder Docker container (hosted in the EC2)
-cd sleeper                  # Change directory to the root of the Git repository
-./scripts/build/build.sh
-```
-
-If you used the system test deployment described in the getting started guide, you will have already built Sleeper from
-the Git repository in a `sleeper builder` container. If you deploy from outside of AWS this will involve lengthy uploads
-of build artefacts, which you can avoid with the environment EC2, or your own EC2 instance. If you deploy from your own
-EC2, you will need to check out the Git repository inside a `sleeper builder` container yourself.
-
-The `sleeper builder` command gets you a shell inside a Docker container with all the dependencies required to build and
-deploy an instance of Sleeper.  The container will be deleted after you exit. You will start in a directory mounted into
-the container from a folder in the host home directory under `~/.sleeper`. This workspace will persist after the
-container exits, and will be reused by future calls to `sleeper builder`. It also inherits the AWS and Docker
-configuration from the host.
-
 ## Deployment
 
 Sleeper is deployed using the AWS CDK. You can invoke the CDK to do this either using the automated scripts or by using
-the CDK directly.
+the CDK directly. The scripts do the same thing as the direct CDK deployment, but through Java and with some
+configuration specific to either creation or update of an existing instance. The scripts also include configuration of
+tables, which direct CDK deployment does not.
 
-Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
-jar files and Docker images.
+Either approach should be done from within an EC2 instance to avoid lengthy uploads of large jar files and Docker
+images.
 
 ### Using the CDK directly
 

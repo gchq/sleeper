@@ -8,7 +8,7 @@ and tear them down afterwards.
 ### Setup
 
 Setup of nightly system test automation is included in `sleeper environment deploy`. See
-the [deployment guide](../../../docs/deployment-guide.md#deployment-environment) for details. Here's a command to deploy
+[Sleeper environment tool](../../../docs/deployment/environment-tool.md) for details. Here's a command to deploy
 a VPC and build EC2 with a cron job enabled to run the nightly test suite:
 
 ```bash

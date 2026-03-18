@@ -5,7 +5,10 @@ The following notes describe how to use the system tests that work with a deploy
 
 In order to run any system tests you need an environment suitable for deploying Sleeper. To avoid latency and
 unnecessary data transfer, system tests should be run from inside AWS, usually in an EC2 instance. See
-the [getting started guide](../getting-started.md) for how to create a suitable environment.
+[deployment environment setup](../deployment/environment-setup.md) for how to create a suitable environment.
+
+These tests are designed to run in an EC2 deployed with the [Sleeper environment tool](../deployment/environment-tool.md),
+in a `sleeper builder` Docker container run with the [Sleeper Docker tools](../deployment/docker-tools.md).
 
 ## Manual testing
 
