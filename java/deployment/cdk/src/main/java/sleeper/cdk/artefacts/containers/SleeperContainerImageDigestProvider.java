@@ -52,21 +52,21 @@ public class SleeperContainerImageDigestProvider {
      * done against a specific digest of each image. It will only check the repository once for each image, and you can
      * reuse the same object for multiple Sleeper instances.
      *
-     * @param  ecrClient          the ecr client
+     * @param  ecrClient          the ECR client
      * @param  instanceProperties the instance properties
-     * @return                    a sleper contain image digest provider
+     * @return                    an image digest provider
      */
     public static SleeperContainerImageDigestProvider from(EcrClient ecrClient, InstanceProperties instanceProperties) {
         return new SleeperContainerImageDigestProvider(GetDigest.fromEcrRepository(ecrClient, instanceProperties));
     }
 
     /**
-     * Get the digest of the image in the docker deployment.
+     * Get the digest of the image in the Docker deployment.
      *
-     * @param  deployment the docker deployment
+     * @param  deployment the Docker deployment
      * @return            the digest for the given deployment
      */
-    public String getDigestForLatestVersion(DockerDeployment deployment) {
+    public String getDigestToDeploy(DockerDeployment deployment) {
         return latestDigestByContainer.computeIfAbsent(deployment, getDigest::getDigest);
     }
 
@@ -76,9 +76,9 @@ public class SleeperContainerImageDigestProvider {
      */
     public interface GetDigest {
         /**
-         * Get the digest of the image in the docker deployment.
+         * Get the digest of the image in the Docker deployment.
          *
-         * @param  deployment the docker deployment
+         * @param  deployment the Docker deployment
          * @return            the digest for the given deployment
          */
         String getDigest(DockerDeployment deployment);
@@ -87,7 +87,7 @@ public class SleeperContainerImageDigestProvider {
          * Implementation of GetDigest that checks the digest for the latest version of a given image in an ECR
          * repository.
          *
-         * @param  ecrClient          the ecr client
+         * @param  ecrClient          the ECR client
          * @param  instanceProperties the instance properties
          * @return                    the get digest implementation
          */

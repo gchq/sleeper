@@ -62,7 +62,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThat(digestProvider(runtimeInfo).getDigestForLatestVersion(DockerDeployment.INGEST))
+        assertThat(digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
                 .isEqualTo(expectedDigest);
         assertThat(findUnmatchedRequests()).isEmpty();
     }
@@ -85,7 +85,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestForLatestVersion(DockerDeployment.INGEST))
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
                 .isInstanceOf(ImageNotFoundException.class)
                 .hasMessageContaining("Image not found");
         assertThat(findUnmatchedRequests()).isEmpty();
@@ -109,7 +109,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestForLatestVersion(DockerDeployment.INGEST))
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
                 .isInstanceOf(RepositoryNotFoundException.class)
                 .hasMessageContaining("Repository not found");
         assertThat(findUnmatchedRequests()).isEmpty();

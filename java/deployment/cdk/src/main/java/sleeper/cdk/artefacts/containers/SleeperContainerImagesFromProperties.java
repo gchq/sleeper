@@ -41,7 +41,7 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
         SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
         return deployment -> EcrImage.fromEcrRepository(
                 repositories.getRepository(deployment),
-                digest.getDigestForLatestVersion(deployment));
+                digest.getDigestToDeploy(deployment));
     }
 
     @Override
