@@ -5,8 +5,8 @@ A deployment of Sleeper includes components that run in Docker containers. This 
 are used in Sleeper, how to build them, and how to make them available for deployment.
 
 The easiest way to build and deploy these images is with our automated scripts. See
-the [deployment guide](../deployment-guide.md) and [deployment with the CDK](./deploy-with-cdk.md) for more information.
-The information below may be useful if you prefer to replicate this yourself.
+the [deployment guide](../deployment-guide.md) for more information. The information below may be useful if you prefer
+to replicate this yourself.
 
 ## Docker deployment images
 

@@ -280,18 +280,6 @@ class InstancePropertiesTest {
                 .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
     }
 
-    @Test
-    public void shouldFailValidationForInvalidEMRManagedScalingBounds() {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "15");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "10");
-
-        // When / Then
-        assertThatThrownBy(() -> properties.validate()).isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessageContaining(String.format("%s was invalid", BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
-    }
-
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");

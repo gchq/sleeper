@@ -96,9 +96,9 @@ SleeperInstance.createAsNestedStack(stack, "MyInstance",
 ### Using the CDK CLI
 
 To deploy a Sleeper instance to AWS with the CDK, you need an [instance configuration](instance-configuration.md) and
-a [suitable environment](environment-setup.md). The artefacts will need to be uploaded as described in the section
-above. You can either use the instance ID as the deployment ID for the artefacts, or you can set the deployment ID in
-the CDK context variable `artefactsId`, or the instance property `sleeper.artefacts.deployment`.
+a [suitable deployment environment](environment-setup.md) in your AWS account. The artefacts will need to be uploaded as
+described in the section above. You can either use the instance ID as the deployment ID for the artefacts, or you can
+set the deployment ID in the CDK context variable `artefactsId`, or the instance property `sleeper.artefacts.deployment`.
 
 You can use the same CDK apps used by the automated scripts, or your own CDK configuration. We'll give examples with the
 CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance:
