@@ -52,11 +52,11 @@ public class RestApiStack extends NestedStack {
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts) {
         super(scope, instanceProperties.get(ID));
-        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
-        setUpRestApi(scope, instanceProperties, instanceProperties.get(ID), lambdaCode);
+        setUpRestApi(scope, instanceProperties, instanceProperties.get(ID), artefacts);
     }
 
-    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String id, SleeperLambdaCode lambdaCode) {
+    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String id, SleeperInstanceArtefacts artefacts) {
+        SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String functionName = String.join("-", "sleeper", id, "rest-api-handler");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, id, builder -> builder
