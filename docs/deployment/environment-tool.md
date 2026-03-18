@@ -1,31 +1,20 @@
-Sleeper CLI deployment environment
-==================================
+Sleeper environment tool
+========================
+
+The Sleeper environment tool can create an environment in your AWS account that's suitable for deploying Sleeper.
 
 To deploy Sleeper in AWS, we need a suitable networking context for a Sleeper instance to interact with AWS services.
-We need to get the necessary compiled artefacts into AWS to deploy the system. We need the correct permissions and
-access to be able to deploy and interact with the system. The Sleeper CLI contains tools to establish an environment
-that satisfies these constraints.
+We want the deployment to happen inside AWS, so that the necessary compiled artefacts don't need to be uploaded from
+outside. The environment satisfies these constraints by deploying a VPC and an EC2 instance.
 
-We'll look at how to prepare to interact with AWS, and how to create a suitable environment.
-
-By default this will deploy networking and an EC2 instance. The EC2 instance is provided to allow easy deployment of
-Sleeper, especially for development. It's a machine that can build Sleeper within AWS, and it avoids lengthy uploads of
-built artifacts into AWS, particularly jars and Docker images. In the future we may add support for prebuilt artifacts,
-in which case the EC2 will not be needed to deploy Sleeper.
-
-The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
-security setup, and you may wish to avoid deploying an EC2 with admin access to a production AWS account.
-
-A VPC is deployed with a default security group that will deny all incoming and outgoing traffic.
-Sleeper is configured to not use the default security group for the VPC and instead uses custom defined ones when relevant.
-
-For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
+Before you start, ensure you have installed the tools as described in [Sleeper Docker tools](docker-tools.md), and
+followed the [Deployment environment setup](environment-setup.md) up to the creation of the deployment environment.
 
 ### Authentication
 
-To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. The AWS configuration will be
-mounted into Sleeper CLI Docker containers from your home directory on your host machine. AWS environment variables will
-also be propagated to Sleeper CLI containers if you set them on the host machine.
+To use the tool against AWS, you need to authenticate against your AWS account. The AWS configuration will be mounted
+into Sleeper Docker tool containers from your home directory on your host machine. AWS environment variables will also
+be propagated to Sleeper Docker tool containers if you set them on the host machine.
 
 You can configure AWS without installing the AWS CLI by running `sleeper aws configure`, or any other AWS commands
 you may need with `sleeper aws`.
@@ -43,12 +32,18 @@ sleeper cdk bootstrap
 
 ### Deploy/connect to an environment
 
-The Sleeper CLI can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking context that is
-suitable for deploying Sleeper. The machine in AWS avoids the need for lengthy uploads of build artefacts from outside
-AWS.
+The Sleeper environment tool can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking
+context that is suitable for deploying Sleeper. The machine in AWS avoids the need for lengthy uploads of build
+artefacts from outside AWS.
+
+A VPC is deployed with endpoints to access AWS services, and a default security group that will deny all incoming and
+outgoing traffic. Sleeper is configured to not use the default security group for the VPC, and instead uses custom
+defined ones when relevant.
 
 This tool will automatically configure authentication such that once you're in the EC2 instance you'll have
-administrator access to your AWS account. This is intended for development and testing.
+administrator access to your AWS account. This is intended for development and testing. A production instance of Sleeper
+is likely to need some extra security setup, and you may wish to avoid deploying an EC2 with admin access to a
+production AWS account.
 
 You can deploy a fresh environment like this:
 
@@ -57,8 +52,16 @@ You can deploy a fresh environment like this:
 sleeper environment deploy <environment-id>
 ```
 
-[See below](#managing-environments) for options for this command. By default this will deploy a fresh VPC and EC2,
-either of which may be omitted.
+Parameters after the environment ID will be passed to a `cdk deploy --all` command. By default this will deploy a fresh
+VPC and EC2, either of which may be omitted:
+
+```bash
+# Only deploy VPC (running this with an existing environment will remove the EC2)
+sleeper environment deploy <environment-id> -c deployEc2=false
+
+# Deploy EC2 in an existing VPC
+sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
+```
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
@@ -72,8 +75,8 @@ sleeper environment add <environment-id>
 sleeper environment adduser <username>
 ```
 
-The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
-You can then SSH to it with EC2 Instance Connect and SSM Session Manager, using this command:
+The `sleeper environment deploy` command will wait for the EC2 instance to be deployed. The following command will
+SSH into the EC2 with EC2 Instance Connect and SSM Session Manager:
 
 ```bash
 sleeper environment connect
@@ -81,8 +84,8 @@ sleeper environment connect
 
 #### Cloud Init
 
-Immediately after it's deployed, commands will run on this instance to install the Sleeper CLI. Once you're connected,
-you can check the progress of those commands like this:
+Immediately after it's deployed, commands will run on the EC2 instance to install the Sleeper CLI. Once you're
+connected, you can check the progress of those commands like this:
 
 ```bash
 cloud-init status
@@ -137,31 +140,7 @@ Note that `sleeper environment` commands are not intended to be run from inside 
 an EC2, this will be in a fresh context that is not aware of environments you have deployed or added. You can still use
 it to run `aws` and `cdk` commands, although it may be more convenient to use `sleeper builder` for this.
 
-#### Managing environments
-
-You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify a unique environment ID when deploying an environment. Parameters after the environment ID will be
-passed to a `cdk deploy --all` command.
-
-```bash
-# Deploy EC2 in a new VPC
-sleeper environment deploy <environment-id>
-
-# Only deploy VPC (running this with an existing environment will remove the EC2)
-sleeper environment deploy <environment-id> -c deployEc2=false
-
-# Deploy EC2 in an existing VPC
-sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
-
-# Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
-sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
-```
-
-You can add an environment that was previously deployed like this:
-
-```bash
-sleeper environment add <environment-id>
-```
+#### SSH connection options
 
 Whether you deployed or added an environment, you can connect to the deployed EC2 like this when it is running:
 
@@ -180,7 +159,9 @@ You can replace the `screen` command by adding your own parameters to pass to ss
 sleeper environment connect bash
 ```
 
-You can switch environments like this:
+#### Managing environments
+
+If you've deployed or added multiple environments, you can switch between them like this:
 
 ```bash
 sleeper environment list
