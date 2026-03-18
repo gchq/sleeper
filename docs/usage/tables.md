@@ -27,12 +27,10 @@ See more information on this in the [data processing document](data-processing.m
 Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
 will consist of the following steps:
 
-1. Use the `estimateSplitPoints.sh` script to estimate split points from your data.
-2. Use the `addTable.sh` script to create the table.
-3. Use the `reinitialiseTable.sh` script with the split points from the first step.
-4. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
+1. Use the `addTable.sh` script to create the table.
+2. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
 
-All of these scripts will rely on a schema for your table, which should be created first.
+These scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
 
 We also have scripts to rename and delete a table, and to take it offline / online. You can also edit table properties
@@ -57,14 +55,25 @@ cat ./scripts/templates/schema.template
   ]
 }
 ID=my-instance-id
-./scripts/utility/estimateSplitPoints.sh ./scripts/templates/schema.template 128 100000 32768 splits.file s3a://my-bucket/file.parquet
 ./scripts/utility/addTable.sh $ID table1
-./scripts/utility/reinitialiseTable.sh $ID table1 true splits.file
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
 We'll look at the table scripts below. See the [ingest batcher documentation](ingest-batcher.md) for more information on
 `sendToIngestBatcher.sh`.
+
+### Add table
+
+The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
+schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
+client. We will add support for declarative deployment in the future.
+
+```bash
+cd scripts
+editor templates/tableproperties.template
+editor templates/schema.template
+./utility/addTable.sh <instance-id> <table-name>
+```
 
 ### Pre-split partitions
 
@@ -102,19 +111,6 @@ You can apply the resulting split points when adding a table by setting an absol
 table property `sleeper.table.splits.file`. If you've created a table but haven't added any data yet, you can apply a
 change to this by reinitialising the table. In the future it will not be necessary to set this property when using the
 instance configuration folder structure, see issue https://github.com/gchq/sleeper/issues/583.
-
-### Add table
-
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
-
-```bash
-cd scripts
-editor templates/tableproperties.template
-editor templates/schema.template
-./utility/addTable.sh <instance-id> <table-name>
-```
 
 ### Reinitialise a table
 

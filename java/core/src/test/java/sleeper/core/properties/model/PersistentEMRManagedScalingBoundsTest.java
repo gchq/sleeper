@@ -15,16 +15,24 @@
  */
 package sleeper.core.properties.model;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class PersistentEMRManagedScalingBoundsTest {
@@ -78,26 +86,49 @@ public class PersistentEMRManagedScalingBoundsTest {
                 .hasMessageContaining("2005");
     }
 
-    @Test
-    public void shouldValidateFalseMinGreaterMax() {
-        // Given
-        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
-        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+    @Nested
+    @DisplayName("Use managed scaling")
+    class ManagedScaling {
+        @Test
+        public void shouldValidateFalseWhenMinGreaterMaxAndManagedScalingTrue() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true");
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
 
-        // When / Then
-        assertThatThrownBy(() -> instanceProperties.validate())
-                .isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessageContaining("5");
-    }
+            // When / Then
+            assertThatThrownBy(() -> instanceProperties.validate())
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .hasMessage(String.format("Property %s was invalid. It was \"true\". Failure 1 of 3.",
+                            BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING.getPropertyName()))
+                    .extracting("invalidValues", as(InstanceOfAssertFactories.MAP))
+                    .isEqualTo(Map.of(
+                            BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true",
+                            BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "10",
+                            BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "5"));
+        }
 
-    @Test
-    public void shouldValidateTrue() {
-        // Given
-        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 1);
-        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+        @Test
+        public void shouldValidateTrueWhenMinLowerThanMaxAndManagedScalingTrue() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true");
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 1);
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
 
-        // When / Then
-        instanceProperties.validate();
+            // When / Then
+            assertThatCode(() -> instanceProperties.validate()).doesNotThrowAnyException();
+        }
+
+        @Test
+        public void shouldValidateTrueWhenManagedScalingFalse() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 5);
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 5);
+
+            // When / Then
+            assertThatCode(() -> instanceProperties.validate()).doesNotThrowAnyException();
+        }
     }
 
     @Test
