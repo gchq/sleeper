@@ -184,7 +184,7 @@
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.48.0</google.errorprone.version>
         <google.http-client.version>2.1.0</google.http-client.version>
-        <google.grpc.version>1.79.0</google.grpc.version>
+        <google.grpc.version>1.80.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.243.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
