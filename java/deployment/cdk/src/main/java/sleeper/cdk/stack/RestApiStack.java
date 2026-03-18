@@ -16,13 +16,10 @@
 package sleeper.cdk.stack;
 
 import software.amazon.awscdk.ArnComponents;
-import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.apigateway.CfnRestApi;
-import software.amazon.awscdk.services.apigateway.CfnRestApi.EndpointConfigurationProperty;
-import software.amazon.awscdk.services.apigateway.CfnRestApi.S3LocationProperty;
 import software.amazon.awscdk.services.apigateway.CfnStage;
 import software.amazon.awscdk.services.apigateway.IntegrationType;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
@@ -39,7 +36,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -73,7 +69,7 @@ public class RestApiStack extends NestedStack {
                 // Need a log group
                 .timeout(Duration.seconds(29)));
 
-        String restApiUri = Stack.of(this).formatArn(ArnComponents.builder()
+        String restApiUri = Stack.of(scope).formatArn(ArnComponents.builder()
                 .service("apigateway")
                 .account("lambda")
                 .resource("path/2015-03-31/functions")
@@ -81,13 +77,13 @@ public class RestApiStack extends NestedStack {
                 .build());
 
         CfnRestApi restApi = setUpApiGateway(scope, instanceProperties.get(ID));
-        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(this, "integration")
+        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(scope, "restapi-integration")
                 .apiId(restApi.getRef())
                 .integrationType(IntegrationType.AWS_PROXY.name())
                 .integrationUri(restApiUri)
                 .build();
 
-        CfnRoute.Builder.create(this, "connect-route")
+        CfnRoute.Builder.create(scope, "connect-route")
                 .apiId(restApi.getRef())
                 .apiKeyRequired(false)
                 .authorizationType("AWS_IAM")
@@ -97,7 +93,7 @@ public class RestApiStack extends NestedStack {
 
         lambdaFunction.addPermission("apigateway-access-to-lambda", Permission.builder()
                 .principal(new ServicePrincipal("apigateway.amazonaws.com"))
-                .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
+                .sourceArn(Stack.of(scope).formatArn(ArnComponents.builder()
                         .service("execute-api")
                         .resource(restApi.getRef())
                         .resourceName("*/*")
@@ -110,47 +106,22 @@ public class RestApiStack extends NestedStack {
                 .build();
     }
 
-    // TODO Check and re-enable properties
     private CfnRestApi setUpApiGateway(Construct scope, String instanceId) {
         return CfnRestApi.Builder.create(scope, instanceId)
-                //.apiKeySourceType("apiKeySourceType")
-                //.binaryMediaTypes(List.of("binaryMediaTypes"))
                 .body(createApiBody())
-                .bodyS3Location(S3LocationProperty.builder()
-                        .bucket("bucket")
-                        .eTag("eTag")
-                        .key("key")
-                        .version("version")
-                        .build())
-                //.cloneFrom("cloneFrom")
+                // Exists alternate of having the restApi yaml stored within an S3 Bucket [BodyS3Location]
                 .description("Sleeper Rest Api")
-                //.disableExecuteApiEndpoint(false)
-                //.endpointAccessMode("endpointAccessMode")
-                .endpointConfiguration(EndpointConfigurationProperty.builder()
-                        .ipAddressType("ipAddressType")
-                        .types(List.of("types"))
-                        .vpcEndpointIds(List.of("vpcEndpointIds"))
-                        .build())
-                .failOnWarnings(false)
-                .minimumCompressionSize(123)
-                //.mode("mode")
-                //.name("name")
-                //.parameters(Map.of("parametersKey", "parameters"))
-                //.policy(policy)
-                .securityPolicy("securityPolicy")
-                .tags(List.of(CfnTag.builder()
-                        .key("key")
-                        .value("value")
-                        .build()))
+                .name("sleeper-rest-api")
                 .build();
     }
 
-    //Method to add all functionality to rest api
+    // TODO: Method to add all calls to the rest API (YAML Format)
     private Object createApiBody() {
-        return createRestApiRequest("test-id", "getVersion");
+        return createDummyRestApiRequest("test-id", "getVersion");
     }
 
-    private CreateRestApiRequest createRestApiRequest(String id, String name) {
+    // TODO: Remove/replace this method, added to provide placeholder
+    private CreateRestApiRequest createDummyRestApiRequest(String id, String name) {
         return CreateRestApiRequest.builder()
                 .cloneFrom(id)
                 .description("Get version of sleeper")
