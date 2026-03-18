@@ -47,10 +47,25 @@ public class SleeperContainerImageDigestProvider {
         this.getDigest = getDigest;
     }
 
+    /**
+     * Creates a provider that looks up the latest digest for each image in an ECR repository. The deployment will be
+     * done against a specific digest of each image. It will only check the repository once for each image, and you can
+     * reuse the same object for multiple Sleeper instances.
+     *
+     * @param  ecrClient          the ecr client
+     * @param  instanceProperties the instance properties
+     * @return                    a sleper contain image digest provider
+     */
     public static SleeperContainerImageDigestProvider from(EcrClient ecrClient, InstanceProperties instanceProperties) {
         return new SleeperContainerImageDigestProvider(GetDigest.fromEcrRepository(ecrClient, instanceProperties));
     }
 
+    /**
+     * Get the digest of the image in the docker deployment.
+     *
+     * @param  deployment the docker deployment
+     * @return            the digest for the given deployment
+     */
     public String getDigestForLatestVersion(DockerDeployment deployment) {
         return latestDigestByContainer.computeIfAbsent(deployment, getDigest::getDigest);
     }
@@ -60,8 +75,22 @@ public class SleeperContainerImageDigestProvider {
      * specific image digest, it can tell when the image has changed even if it still has the same name.
      */
     public interface GetDigest {
+        /**
+         * Get the digest of the image in the docker deployment.
+         *
+         * @param  deployment the docker deployment
+         * @return            the digest for the given deployment
+         */
         String getDigest(DockerDeployment deployment);
 
+        /**
+         * Implementation of GetDigest that checks the digest for the latest version of a given image in an ECR
+         * repository.
+         *
+         * @param  ecrClient          the ecr client
+         * @param  instanceProperties the instance properties
+         * @return                    the get digest implementation
+         */
         static GetDigest fromEcrRepository(EcrClient ecrClient, InstanceProperties instanceProperties) {
             return deployment -> {
                 String image = deployment.getDeploymentName();
