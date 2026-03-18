@@ -121,7 +121,7 @@ public class RestApiStack extends NestedStack {
                 .build();
     }
 
-    private String buildRestApiUrl(CfnRestApi restApi, IFunction lambda) {
+    private String buildRestApiUrl(CfnRestApi restApi) {
         // TODO Needs elobrating
         return "";
     }
