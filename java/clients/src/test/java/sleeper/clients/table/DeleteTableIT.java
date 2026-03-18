@@ -61,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -134,7 +135,8 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .containsExactly(
                         FilenameUtils.getName(file.getFilename()),
                         FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
-        table.setSchema(Schema.loadFromString("{}"));
+
+        table.set(SCHEMA, "{}");
         propertiesStore.update(table);
 
         // When
