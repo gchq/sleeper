@@ -88,6 +88,9 @@ public class InstancePropertyGroup {
     public static final PropertyGroup ATHENA = instanceGroup("Athena")
             .description("The following instance properties relate to the integration with Athena.")
             .build();
+    public static final PropertyGroup REST_API = instanceGroup("Rest Api")
+            .description("The following instance properties relate to the Rest Api")
+            .build();
     public static final PropertyGroup TABLE_PROPERTY_DEFAULT = instanceGroup("Table Property Defaults")
             .description("The following instance properties relate to default values used by table properties.")
             .build();

@@ -16,6 +16,8 @@
 package sleeper.cdk.stack;
 
 import software.amazon.awscdk.ArnComponents;
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Stack;
@@ -33,6 +35,7 @@ import software.constructs.Construct;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
@@ -44,7 +47,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
  * Rest api for interacting with the sleeper instance.
  * Utilises API Gateway.
  *
- * TODO Futher expand this javadoc
  */
 public class RestApiStack extends NestedStack {
 
@@ -56,12 +58,9 @@ public class RestApiStack extends NestedStack {
     }
 
     private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String id, SleeperLambdaCode lambdaCode) {
-        //This section to elobrate/set from elsewhere
-        //String restApiName = "rest-api-name";
-
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String functionName = String.join("-", "sleeper", id, "rest-api-handler");
-        IFunction lambdaFunction = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, id, builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, id, builder -> builder
                 .functionName(functionName)
                 .description("Function for creating rest api for interacting with sleeper")
                 .environment(env)
@@ -69,14 +68,11 @@ public class RestApiStack extends NestedStack {
                 // Need a log group
                 .timeout(Duration.seconds(29)));
 
-        String restApiUri = Stack.of(scope).formatArn(ArnComponents.builder()
-                .service("apigateway")
-                .account("lambda")
-                .resource("path/2015-03-31/functions")
-                .resourceName(lambdaFunction.getFunctionArn() + "/invocations")
-                .build());
+        String restApiId = "sleeper-restapi-" + instanceProperties.get(ID);
+        String restApiUri = setupRestApiUri(scope, lambda);
 
-        CfnRestApi restApi = setUpApiGateway(scope, instanceProperties.get(ID));
+        CfnRestApi restApi = setupApiGateway(scope, restApiId);
+
         CfnIntegration restApiIntegration = CfnIntegration.Builder.create(scope, "restapi-integration")
                 .apiId(restApi.getRef())
                 .integrationType(IntegrationType.AWS_PROXY.name())
@@ -91,7 +87,7 @@ public class RestApiStack extends NestedStack {
                 .target("integrations/" + restApiIntegration.getRef())
                 .build();
 
-        lambdaFunction.addPermission("apigateway-access-to-lambda", Permission.builder()
+        lambda.addPermission("apigateway-access-to-lambda", Permission.builder()
                 .principal(new ServicePrincipal("apigateway.amazonaws.com"))
                 .sourceArn(Stack.of(scope).formatArn(ArnComponents.builder()
                         .service("execute-api")
@@ -100,14 +96,27 @@ public class RestApiStack extends NestedStack {
                         .build()))
                 .build());
 
-        CfnStage restapiStage = CfnStage.Builder.create(scope, "restapi-stage")
-                .restApiId(restApi.getRef())
-                .stageName("live")
+        CfnStage stage = CfnStage.Builder.create(scope, "restapi-stage")
+                .restApiId(restApiId)
                 .build();
+
+        new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
+                .value(restApiUri)
+                .build());
+        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restApiUri);
     }
 
-    private CfnRestApi setUpApiGateway(Construct scope, String instanceId) {
-        return CfnRestApi.Builder.create(scope, instanceId)
+    private String setupRestApiUri(Construct scope, IFunction lambda) {
+        return Stack.of(scope).formatArn(ArnComponents.builder()
+                .service("apigateway")
+                .account("lambda")
+                .resource("path/2015-03-31/functions")
+                .resourceName(lambda.getFunctionArn() + "/invocations")
+                .build());
+    }
+
+    private CfnRestApi setupApiGateway(Construct scope, String id) {
+        return CfnRestApi.Builder.create(scope, id)
                 .body(createApiBody())
                 // Exists alternate of having the restApi yaml stored within an S3 Bucket [BodyS3Location]
                 .description("Sleeper Rest Api")
