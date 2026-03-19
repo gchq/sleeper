@@ -17921,7 +17921,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/compaction-job-execution:1.2.3"
+                      "/test-instance/compaction-job-execution:compaction-job-execution-test-digest"
                     ]
                   ]
                 },
@@ -23998,7 +23998,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/ingest:1.2.3"
+                      "/test-instance/ingest:ingest-test-digest"
                     ]
                   ]
                 },
