@@ -64,9 +64,8 @@ public class DeleteTable {
          * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
          * table existed.
          */
-        if (tableProperties.isValid()) {
-            stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-        }
+        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         snapshotMetadataStore(tableProperties).deleteAllSnapshots();
         tablePropertiesStore.deleteByName(tableName);

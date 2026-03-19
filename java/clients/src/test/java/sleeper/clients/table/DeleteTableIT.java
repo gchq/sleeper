@@ -146,8 +146,8 @@ public class DeleteTableIT extends LocalStackTestBase {
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(listDataBucketObjectKeys()).isEmpty();
-        //assertThat(streamTableFileTransactions(table)).isEmpty();
-        //assertThat(streamTablePartitionTransactions(table)).isEmpty();
+        assertThat(streamTableFileTransactions(table)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table)).isEmpty();
     }
 
     @Test
