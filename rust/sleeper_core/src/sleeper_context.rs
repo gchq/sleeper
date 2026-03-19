@@ -15,6 +15,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#[cfg(doc)]
+use datafusion::execution::object_store::ObjectStoreRegistry;
 use datafusion::{
     error::DataFusionError,
     execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
