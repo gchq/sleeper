@@ -134,6 +134,10 @@ public class ConfigurationUtils {
         // spark.hadoop properties (not referenced in the blog linked above)
         sparkConf.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
 
+        // Disable file/directory existence probes on file creation
+        // https://hadoop.apache.org/docs/r3.4.3/hadoop-aws/tools/hadoop-aws/performance.html#Create_Performance_fs.s3a.create.performance
+        sparkConf.put("spark.hadoop.fs.s3a.create.performance", "true");
+
         // spark.sql properties
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS));
 

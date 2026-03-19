@@ -73,7 +73,7 @@ public class UploadArtefacts {
                         "\n" +
                         "This works against an artefacts CDK deployment that must already exist in the same AWS " +
                         "account that you want to deploy Sleeper to. If you use the scripts for deployment you will " +
-                        "not need this, as this is done as part of \"deploy.sh\". If you prefer to use the artefacts " +
+                        "not need this, as this is done as part of \"deployNew.sh\" or \"deployExisting.sh\". If you prefer to use the artefacts " +
                         "CDK app directly, you can then use this tool to upload the needed artefacts to that " +
                         "deployment.\n" +
                         "\n" +
