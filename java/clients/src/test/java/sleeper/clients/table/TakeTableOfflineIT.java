@@ -84,7 +84,7 @@ public class TakeTableOfflineIT extends LocalStackTestBase {
         takeTableOffline("table-1");
 
         // Then
-        assertThat(propertiesStore.loadByName("table-1").get(TABLE_ONLINE)).isEqualTo("false");
+        assertThat(propertiesStore.loadByNameNoValidation("table-1").get(TABLE_ONLINE)).isEqualTo("false");
     }
 
     @Test
@@ -92,6 +92,22 @@ public class TakeTableOfflineIT extends LocalStackTestBase {
         // When / Then
         assertThatThrownBy(() -> takeTableOffline("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
+    }
+
+    @Test
+    void shouldTakeAllTablesOfflineDespiteInvalidSchema() {
+        // Given
+        createTable(uniqueIdAndName("test-table-1", "table-1"));
+        TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
+        table2.set(SCHEMA, "{}");
+        propertiesStore.update(table2);
+
+        // When
+        new TakeAllTablesOffline(s3Client, dynamoClient).takeAllOffline(instanceProperties);
+
+        // Then
+        assertThat(propertiesStore.loadByNameNoValidation("table-1").get(TABLE_ONLINE)).isEqualTo("false");
+        assertThat(propertiesStore.loadByNameNoValidation("table-2").get(TABLE_ONLINE)).isEqualTo("false");
     }
 
     private void takeTableOffline(String tableName) throws Exception {
