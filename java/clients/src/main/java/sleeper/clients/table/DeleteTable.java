@@ -65,7 +65,6 @@ public class DeleteTable {
          * table existed.
          */
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         snapshotMetadataStore(tableProperties).deleteAllSnapshots();
         tablePropertiesStore.deleteByName(tableName);
