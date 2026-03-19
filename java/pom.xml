@@ -220,7 +220,7 @@
         <json-smart.version>2.6.0</json-smart.version>
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
-        <docker-java.version>3.7.0</docker-java.version>
+        <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
         <asm.version>9.9.1</asm.version>
         <!-- Testing -->
