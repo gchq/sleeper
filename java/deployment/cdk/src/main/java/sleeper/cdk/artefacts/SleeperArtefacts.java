@@ -15,8 +15,10 @@
  */
 package sleeper.cdk.artefacts;
 
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
 import sleeper.cdk.artefacts.containers.SleeperContainerImages;
 import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
@@ -40,29 +42,34 @@ public interface SleeperArtefacts {
 
     /**
      * Retrieves existing artefacts from AWS based on settings in the instance properties. Takes container images from
-     * AWS ECR and jars from S3. Requires an S3 client to look up the version ID of each jar in the S3 bucket.
+     * AWS ECR and jars from S3. Requires an S3 client to look up the version ID of each jar in the S3 bucket, and an
+     * ECR client to look up the digest of each container image in ECR.
      *
-     * @param  s3Client the S3 client
-     * @return          the artefacts for deployment of Sleeper
+     * @param  s3Client  the S3 client
+     * @param  ecrClient the ECR client
+     * @return           the artefacts for deployment of Sleeper
      */
-    static SleeperArtefacts fromProperties(S3Client s3Client) {
+    static SleeperArtefacts fromProperties(S3Client s3Client, EcrClient ecrClient) {
         return instanceProperties -> new SleeperInstanceArtefacts(instanceProperties,
                 new SleeperJarsFromProperties(instanceProperties,
                         SleeperJarVersionIdProvider.from(s3Client, instanceProperties)),
-                new SleeperContainerImagesFromProperties(instanceProperties));
+                new SleeperContainerImagesFromProperties(instanceProperties,
+                        SleeperContainerImageDigestProvider.from(ecrClient, instanceProperties)));
     }
 
     /**
      * Retrieves existing artefacts from AWS based on settings in the instance properties. Takes container images from
-     * AWS ECR and jars from S3. Requires a provider to look up the version ID of each jar in the S3 bucket.
+     * AWS ECR and jars from S3. Requires a provider to look up the version ID of each jar in the S3 bucket, and a
+     * provider to look up the digest of each container image in ECR.
      *
      * @param  versionIdProvider the provider to look up the jar version IDs
+     * @param  digestIdProvider  the provider to look up the container image digests
      * @return                   the artefacts for deployment of Sleeper
      */
-    static SleeperArtefacts fromProperties(SleeperJarVersionIdProvider versionIdProvider) {
+    static SleeperArtefacts fromProperties(SleeperJarVersionIdProvider versionIdProvider, SleeperContainerImageDigestProvider digestIdProvider) {
         return instanceProperties -> new SleeperInstanceArtefacts(instanceProperties,
                 new SleeperJarsFromProperties(instanceProperties, versionIdProvider),
-                new SleeperContainerImagesFromProperties(instanceProperties));
+                new SleeperContainerImagesFromProperties(instanceProperties, digestIdProvider));
     }
 
     /**
