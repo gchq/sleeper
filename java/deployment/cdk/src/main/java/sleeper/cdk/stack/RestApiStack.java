@@ -28,10 +28,13 @@ import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.logs.ILogGroup;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.cdk.stack.core.LoggingStack;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -52,10 +55,12 @@ public class RestApiStack extends NestedStack {
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts) {
         super(scope, id);
-        setUpRestApi(scope, instanceProperties, id, artefacts);
+        ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.REST_API_HANDLER, instanceProperties);
+        setUpRestApi(scope, instanceProperties, id, artefacts, logGroup);
     }
 
-    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String constructId, SleeperInstanceArtefacts artefacts) {
+    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String constructId,
+            SleeperInstanceArtefacts artefacts, ILogGroup logGroup) {
         String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
@@ -65,7 +70,7 @@ public class RestApiStack extends NestedStack {
                 .description("Function for creating REST API for interacting with SLEEPER")
                 .environment(env)
                 .memorySize(1024)
-                // Need a log group
+                .logGroup(logGroup)
                 .timeout(Duration.seconds(29)));
 
         String restApiId = "sleeper-restapi-" + instanceId;
