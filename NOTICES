@@ -529,11 +529,11 @@ libc (https://github.com/rust-lang/libc)
 
 - Apache License, Version 2.0
 
-arrow (https://github.com/apache/arrow)
+arrow (C++) (https://github.com/apache/arrow)
 
 - Apache License, Version 2.0
 
-arrow-rs (https://github.com/apache/arrow-rs)
+arrow (Rust) (https://github.com/apache/arrow-rs)
 
 - Apache License, Version 2.0
 
