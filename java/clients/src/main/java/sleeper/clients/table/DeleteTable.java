@@ -55,7 +55,7 @@ public class DeleteTable {
     }
 
     public void delete(String tableName) {
-        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        TableProperties tableProperties = tablePropertiesStore.loadByNameNoValidation(tableName);
         /*
          * - First we clear the state store for the table. This needs to happen first so that if a transaction log
          * snapshot exists, it can be loaded when the transaction log state store updates.
@@ -90,7 +90,7 @@ public class DeleteTable {
         }
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdNoValidation(s3Client, args[0]);
             new DeleteTable(instanceProperties, s3Client, dynamoClient).delete(tableName);
         }
     }
