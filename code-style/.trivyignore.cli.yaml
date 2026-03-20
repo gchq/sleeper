@@ -22,6 +22,8 @@ vulnerabilities:
   - id: CVE-2026-1229
   # go.opentelemetry.io/otel/sdk
   - id: CVE-2026-24051
+  # google.golang.org/grpc
+  - id: CVE-2026-33186
 
 
   # Dependencies of the latest version of AWS CDK/CLI:
