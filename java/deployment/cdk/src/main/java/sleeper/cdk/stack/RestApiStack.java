@@ -33,6 +33,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -51,23 +52,24 @@ public class RestApiStack extends NestedStack {
 
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts) {
-        super(scope, instanceProperties.get(ID));
-        setUpRestApi(scope, instanceProperties, instanceProperties.get(ID), artefacts);
+        super(scope, id);
+        setUpRestApi(scope, instanceProperties, id, artefacts);
     }
 
-    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String id, SleeperInstanceArtefacts artefacts) {
+    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String constructId, SleeperInstanceArtefacts artefacts) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        String functionName = String.join("-", "sleeper", id, "rest-api-handler");
-        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, id, builder -> builder
+        String functionName = String.join("-", "sleeper", instanceId, "rest-api-handler");
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, constructId, builder -> builder
                 .functionName(functionName)
-                .description("Function for creating rest api for interacting with sleeper")
+                .description("Function for creating REST API for interacting with SLEEPER")
                 .environment(env)
                 .memorySize(1024)
                 // Need a log group
                 .timeout(Duration.seconds(29)));
 
-        String restApiId = "sleeper-restapi-" + instanceProperties.get(ID);
+        String restApiId = "sleeper-restapi-" + instanceId;
         String restApiUri = setupRestApiUri(scope, lambda);
 
         CfnRestApi restApi = setupApiGateway(scope, restApiId);

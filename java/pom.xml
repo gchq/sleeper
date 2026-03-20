@@ -464,11 +464,6 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
-                <artifactId>apigateway</artifactId>
-                <version>${aws-java-sdk-v2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
