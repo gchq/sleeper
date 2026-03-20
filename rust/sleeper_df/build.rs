@@ -1,0 +1,41 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+use cbindgen::Config;
+use std::env;
+
+fn main() {
+    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let out_path = std::path::Path::new(&crate_dir)
+        .join("include")
+        .join("sleeper_df.h");
+    println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=build.rs");
+    let config = Config {
+        usize_is_size_t: true,
+        pragma_once: true,
+        cpp_compat: true,
+        language: cbindgen::Language::C,
+        includes: vec!["arrow_c_abi.h".to_owned()],
+        after_includes: Some("typedef struct ArrowArrayStream FFI_ArrowArrayStream;".to_owned()),
+        ..Config::default()
+    };
+    cbindgen::Builder::new()
+        .with_crate(crate_dir)
+        .with_config(config)
+        .generate()
+        .expect("Unable to generate sleeper_df C header")
+        .write_to_file(&out_path);
+}
