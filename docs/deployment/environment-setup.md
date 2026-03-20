@@ -43,10 +43,10 @@ To deploy Sleeper into your AWS account you will need to have bootstrapped CDK i
 account. Bootstrapping installs all the resources that CDK needs to do deployments. Note
 that bootstrapping CDK is a one-time action for the account that is nothing to do with
 Sleeper itself. See
-[this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
-on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
-Docker container, with `sleeper cdk bootstrap`.
+[the AWS documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-env.html) for guidance
+on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command outputs a number of files to the current
+directory. It should not be run from inside the Sleeper directory. You can run `cdk bootstrap` in a Docker container
+with the Sleeper Docker tools, like `sleeper cdk bootstrap aws://123456789012/eu-west-2`.
 
 ### Lambda Reserved Concurrency
 

@@ -24,10 +24,11 @@ Most Sleeper clients also require you to set the default region in your AWS conf
 ### AWS CDK deployment
 
 If the CDK has never been bootstrapped in your AWS account, this must be done first. This only needs to be done
-once in a given AWS account.
+once in a given AWS account. Replace the number below with your AWS account number. See
+[the AWS documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-env.html) for further information.
 
 ```bash
-sleeper cdk bootstrap
+sleeper cdk bootstrap aws://123456789012/eu-west-2
 ```
 
 ### Deploy/connect to an environment
