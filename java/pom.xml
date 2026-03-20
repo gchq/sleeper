@@ -146,7 +146,7 @@
         <aws-crt.version>0.43.8</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.10.0</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.10.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.21.0</commons-codec.version>
