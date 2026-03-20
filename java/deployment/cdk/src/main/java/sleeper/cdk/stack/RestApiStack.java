@@ -28,7 +28,6 @@ import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awssdk.services.apigateway.model.CreateRestApiRequest;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
@@ -130,15 +129,10 @@ public class RestApiStack extends NestedStack {
 
     // TODO: Method to add all calls to the rest API (YAML Format)
     private Object createApiBody() {
-        return createDummyRestApiRequest("test-id", "getVersion");
+        return null;
     }
 
     // TODO: Remove/replace this method, added to provide placeholder
-    private CreateRestApiRequest createDummyRestApiRequest(String id, String name) {
-        return CreateRestApiRequest.builder()
-                .cloneFrom(id)
-                .description("Get version of sleeper")
-                .name(name)
-                .build();
+    private void createDummyRestApiRequest(String id, String name) {
     }
 }

@@ -781,7 +781,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
-    // REST Api
+    // REST API
     CdkDefinedInstanceProperty REST_API_URL = Index.propertyBuilder("sleeper.rest.api.url")
             .description("The URL for the sleeper REST API.")
             .propertyGroup(InstancePropertyGroup.REST_API)

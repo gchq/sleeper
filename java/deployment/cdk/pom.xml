@@ -43,10 +43,6 @@
             <groupId>software.constructs</groupId>
             <artifactId>constructs</artifactId>
         </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>apigateway</artifactId>
-        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
