@@ -33,16 +33,20 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
+import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
@@ -56,6 +60,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
@@ -72,9 +77,9 @@ public class MultiThreadedStateStoreCommitter {
     private String qUrl;
     private StateStoreCommitRequestSerDe serDe;
     private S3TransactionBodyStore transactionBodyStore;
+    private TablePropertiesProvider tablePropertiesProvider;
     private StateStoreProvider stateStoreProvider;
-    private StateStoreCommitter committer;
-    private PollWithRetries throttlingRetriesConfig;
+    private RetryOnThrottling retryOnThrottling;
     private Map<String, CompletableFuture<Instant>> tableFutures = new HashMap<>();
 
     public MultiThreadedStateStoreCommitter(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName, String qUrl) {
@@ -93,17 +98,15 @@ public class MultiThreadedStateStoreCommitter {
             qUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         }
 
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
 
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoClient);
         stateStoreProvider = StateStoreProvider.memoryLimitOnly(instanceProperties, stateStoreFactory);
         transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-        committer = new StateStoreCommitter(
-                tablePropertiesProvider,
-                stateStoreProvider,
-                transactionBodyStore);
-        throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
+
+        PollWithRetries throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
+        retryOnThrottling = operation -> DynamoDBUtils.retryOnThrottlingException(throttlingRetriesConfig, operation);
     }
 
     /**
@@ -143,17 +146,18 @@ public class MultiThreadedStateStoreCommitter {
                 // been written to the config bucket yet when we first start up.
                 if (response.hasMessages()) {
                     lastReceivedCommitsAt = Instant.now();
-                    if (committer == null) {
+                    if (stateStoreProvider == null) {
                         init();
                     }
                 }
 
-                LOGGER.info("Received {} messages from queue, have been running for {}, last received commits {} ago",
-                        response.messages().size(),
-                        LoggedDuration.withShortOutput(startedAt, Instant.now()),
-                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, Instant.now()));
+                Instant messageReceivedTime = Instant.now();
+                LOGGER.info("Started state store commits batch at {} having received {} messages from queue, have been running for {}, last received commits {} ago",
+                        messageReceivedTime, response.messages().size(),
+                        LoggedDuration.withShortOutput(startedAt, messageReceivedTime),
+                        LoggedDuration.withShortOutput(lastReceivedCommitsAt, messageReceivedTime));
 
-                Map<String, List<StateStoreCommitRequestWithSqsReceipt>> messagesByTableId = response.messages().stream()
+                Map<String, List<StateStoreCommitRequestWithSqsReceipt>> commitRequestsByTableId = response.messages().stream()
                         .map(message -> {
                             LOGGER.trace("Received message: {}", message);
                             StateStoreCommitRequest request = serDe.fromJson(message.body());
@@ -163,12 +167,17 @@ public class MultiThreadedStateStoreCommitter {
                         .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
 
                 // Try to make sure there is going to be enough heap space available to process these commits
-                ensureEnoughHeapSpaceAvailable(messagesByTableId.keySet());
+                Set<String> stateStoresToKeepInCache = tableFutures.entrySet().stream()
+                        .filter(tableFuture -> !tableFuture.getValue().isDone())
+                        .map(tableFuture -> tableFuture.getKey())
+                        .collect(toSet());
+                stateStoresToKeepInCache.addAll(commitRequestsByTableId.keySet());
+                ensureEnoughHeapSpaceAvailable(stateStoresToKeepInCache);
 
-                messagesByTableId.entrySet().forEach(tableMessages -> {
-                    String tableId = tableMessages.getKey();
-                    List<StateStoreCommitRequestWithSqsReceipt> requestsWithHandle = tableMessages.getValue();
-                    LOGGER.info("Received {} requests for table: {}", requestsWithHandle.size(), tableId);
+                commitRequestsByTableId.entrySet().forEach(tableCommitRequests -> {
+                    String tableId = tableCommitRequests.getKey();
+                    List<StateStoreCommitRequestWithSqsReceipt> requests = tableCommitRequests.getValue();
+                    LOGGER.info("Received {} requests for table: {}", requests.size(), tableId);
 
                     // Wait until processing of previous commits for this table has finished
                     if (tableFutures.containsKey(tableId)) {
@@ -179,9 +188,12 @@ public class MultiThreadedStateStoreCommitter {
                         }
                     }
 
+                    TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+                    StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+
                     // Apply the commits for each table on a separate thread
                     CompletableFuture<Instant> task = CompletableFuture.supplyAsync(() -> {
-                        processMessagesForTable(tableId, requestsWithHandle);
+                        processCommitRequestsForTable(tableId, stateStore, requests);
                         return Instant.now();
                     });
 
@@ -216,15 +228,57 @@ public class MultiThreadedStateStoreCommitter {
         }
     }
 
-    private boolean processMessagesForTable(String tableId, List<StateStoreCommitRequestWithSqsReceipt> requestsWithHandle) {
+    private void processCommitRequestsForTable(String tableId, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
         Instant startedAt = Instant.now();
-        LOGGER.info("Processing {} requests for table: {} ...", requestsWithHandle.size(), tableId);
+        LOGGER.info("Started batch of {} state store commits for table {} at {}", requests.size(), tableId, startedAt);
+        applyBatchOfCommits(retryOnThrottling, stateStore, requests);
+        reportCommitOutcomesToSqs(tableId, requests);
+        Instant finishTime = Instant.now();
+        LOGGER.info("Finished state store commits batch at {} for table {} (ran for {})",
+                finishTime, tableId, LoggedDuration.withFullOutput(startedAt, finishTime));
+    }
 
-        committer.applyBatch(
-                operation -> DynamoDBUtils.retryOnThrottlingException(throttlingRetriesConfig, operation),
-                requestsWithHandle.stream().map(StateStoreCommitRequestWithSqsReceipt::getHandle).toList());
+    /**
+     * Applies a batch of state store commit requests.
+     *
+     * @param retryOnThrottling function to apply retries due to DynamoDB API throttling
+     * @param stateStore        state store of the Sleeper table that the commit requests should be applied to
+     * @param requests          the commit requests
+     */
+    private void applyBatchOfCommits(RetryOnThrottling retryOnThrottling, StateStore stateStore, List<StateStoreCommitRequestWithSqsReceipt> requests) {
+        for (int i = 0; i < requests.size(); i++) {
+            StateStoreCommitRequestWithSqsReceipt request = requests.get(i);
+            try {
+                retryOnThrottling.doWithRetries(() -> applyCommit(stateStore, request));
+            } catch (InterruptedException e) {
+                LOGGER.error("Interrupted applying commit request", e);
+                requests.subList(i, requests.size())
+                        .forEach(failed -> failed.setFailed(e));
+                return;
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed commit request", e);
+                request.setFailed(e);
+            }
+        }
+    }
 
-        Map<Boolean, List<StateStoreCommitRequestWithSqsReceipt>> requestResults = requestsWithHandle.stream().collect(Collectors.partitioningBy(StateStoreCommitRequestWithSqsReceipt::failed));
+    /**
+     * Applies a state store commit request.
+     *
+     * @param stateStore state store of the Sleeper table that the commit request should be applied to
+     * @param request    the commit request
+     */
+    private void applyCommit(StateStore stateStore, StateStoreCommitRequestWithSqsReceipt request) throws StateStoreException {
+        stateStore.addTransaction(
+                AddTransactionRequest.withTransaction(transactionBodyStore.getTransaction(request.getCommitRequest()))
+                        .bodyKey(request.getCommitRequest().getBodyKey())
+                        .build());
+        LOGGER.info("Applied request to table ID {} with type {} at time {}",
+                request.getCommitRequest().getTableId(), request.getCommitRequest().getTransactionType(), Instant.now());
+    }
+
+    private void reportCommitOutcomesToSqs(String tableId, List<StateStoreCommitRequestWithSqsReceipt> requests) {
+        Map<Boolean, List<StateStoreCommitRequestWithSqsReceipt>> requestResults = requests.stream().collect(Collectors.partitioningBy(StateStoreCommitRequestWithSqsReceipt::failed));
         List<StateStoreCommitRequestWithSqsReceipt> failedRequests = requestResults.get(true);
         List<StateStoreCommitRequestWithSqsReceipt> successfulRequests = requestResults.get(false);
 
@@ -287,12 +341,6 @@ public class MultiThreadedStateStoreCommitter {
                 LOGGER.debug("Successfully changed visibility of {} requests for table {} in SQS queue", changeVisibilityResponse.successful().size(), tableId);
             }
         }
-
-        LOGGER.info("Finished processing {} messages for table {} in {} ...",
-                requestsWithHandle.size(),
-                tableId,
-                LoggedDuration.withShortOutput(startedAt, Instant.now()));
-        return true;
     }
 
     /**
@@ -313,11 +361,9 @@ public class MultiThreadedStateStoreCommitter {
             return commitRequest;
         }
 
-        private RequestHandle getHandle() {
-            return RequestHandle.withCallbackOnFail(commitRequest, e -> {
-                LOGGER.error("Error whilst processing state store commit request for table: {}", commitRequest.getTableId(), e);
-                failed = true;
-            });
+        private void setFailed(Exception e) {
+            LOGGER.error("Error whilst processing state store commit request for table: {}", commitRequest.getTableId(), e);
+            failed = true;
         }
 
         private String getSqsReceipt() {

@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.io.IOException;
@@ -31,6 +32,9 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 
 /**
  * Contains values of the properties to configure an instance of Sleeper.
@@ -68,6 +72,23 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.resetAndValidate(properties);
         return instanceProperties;
+    }
+
+    /**
+     * Overridden to check EMR managed scaling bounds are correct.
+     */
+    @Override
+    public void validate(SleeperPropertiesValidationReporter reporter) {
+        super.validate(reporter);
+        // Validate EMR managed scaling max is greater than min
+        int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
+        int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
+        boolean managedScaling = getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING);
+        if (managedScaling && maxEmrCapacity <= minEmrCapacity) {
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, String.valueOf(managedScaling));
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, String.valueOf(minEmrCapacity));
+            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, String.valueOf(maxEmrCapacity));
+        }
     }
 
     /**
@@ -203,8 +224,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
-            for (int i = 0; i < split.length; i += 2) {
-                tags.put(split[i], split[i + 1]);
+            if (split.length % 2 == 0) { //Ensure matching number of keys and values
+                for (int i = 0; i < split.length; i += 2) {
+                    tags.put(split[i], split[i + 1]);
+                }
             }
         }
         return tags;

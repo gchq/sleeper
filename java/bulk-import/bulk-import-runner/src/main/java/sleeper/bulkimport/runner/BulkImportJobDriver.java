@@ -31,7 +31,6 @@ import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -53,7 +52,6 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.sketches.Sketches;
-import sleeper.splitter.core.extend.ExtendPartitionTreeBasedOnSketches;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -70,7 +68,6 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 
 /**
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
@@ -83,14 +80,13 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
     private final ContextCreator<C> contextCreator;
-    private final DataSketcher<C> dataSketcher;
+    private final PartitionPreSplitter<C> preSplitter;
     private final BulkImporter<C> bulkImporter;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
     private final StateStoreCommitRequestSender asyncSender;
     private final Supplier<Instant> getTime;
-    private final Supplier<String> partitionIdSupplier;
 
     public BulkImportJobDriver(
             ContextCreator<C> contextCreator,
@@ -103,14 +99,13 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
             Supplier<Instant> getTime,
             Supplier<String> partitionIdSupplier) {
         this.contextCreator = contextCreator;
-        this.dataSketcher = dataSketcher;
+        this.preSplitter = new PartitionPreSplitter<>(dataSketcher, stateStoreProvider, partitionIdSupplier);
         this.bulkImporter = bulkImporter;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
         this.asyncSender = asyncSender;
         this.getTime = getTime;
-        this.partitionIdSupplier = partitionIdSupplier;
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -129,7 +124,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
             // Note that we stop the Spark context after we've applied the changes in Sleeper.
             try (C context = contextCreator.createContext(tableProperties, allPartitions, job)) {
 
-                C contextAfterSplit = preSplitPartitionsIfNecessary(tableProperties, allPartitions, context);
+                C contextAfterSplit = preSplitter.preSplitPartitionsIfNecessary(tableProperties, allPartitions, context);
 
                 Instant startTime = getTime.get();
                 tracker.jobStarted(IngestJobStartedEvent.builder()
@@ -150,24 +145,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     .failure(e)
                     .build());
             throw e;
-        }
-    }
-
-    private C preSplitPartitionsIfNecessary(TableProperties tableProperties, List<Partition> allPartitions, C context) {
-        PartitionTree tree = new PartitionTree(allPartitions);
-        List<Partition> leafPartitions = tree.getLeafPartitions();
-        int minLeafPartitions = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
-        if (leafPartitions.size() < minLeafPartitions) {
-            LOGGER.info("Extending partition tree from {} leaf partitions to {}", leafPartitions.size(), minLeafPartitions);
-            Map<String, Sketches> partitionIdToSketches = dataSketcher.generatePartitionIdToSketches(context);
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            ExtendPartitionTreeBasedOnSketches.forBulkImport(tableProperties, partitionIdSupplier)
-                    .createTransaction(tree, partitionIdToSketches)
-                    .synchronousCommit(stateStore);
-            return context.withPartitions(stateStore.getAllPartitions());
-        } else {
-            LOGGER.info("Partition tree meets minimum of {} leaf partitions", minLeafPartitions);
-            return context;
         }
     }
 

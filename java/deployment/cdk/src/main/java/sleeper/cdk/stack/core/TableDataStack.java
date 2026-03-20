@@ -22,12 +22,14 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.BucketMetrics;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+
+import java.util.List;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -38,7 +40,7 @@ public class TableDataStack extends NestedStack {
 
     public TableDataStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack, SleeperJarsInBucket jars) {
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -52,6 +54,11 @@ public class TableDataStack extends NestedStack {
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .removalPolicy(removalPolicy)
+                .metrics(List.of(
+                    BucketMetrics.builder()
+                        .id("all")
+                        .build()
+                ))
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {

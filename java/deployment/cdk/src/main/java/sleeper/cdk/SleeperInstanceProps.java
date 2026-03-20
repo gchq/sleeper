@@ -17,11 +17,13 @@ package sleeper.cdk;
 
 import software.amazon.awscdk.Stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
@@ -41,6 +43,7 @@ import java.util.Properties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -52,7 +55,7 @@ public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final SleeperJarsInBucket jars;
+    private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
     private final boolean validateProperties;
@@ -61,7 +64,7 @@ public class SleeperInstanceProps {
     private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
-        jars = builder.jars;
+        artefacts = builder.artefacts;
         networkingProvider = builder.networkingProvider;
         version = builder.version;
         validateProperties = builder.validateProperties;
@@ -77,11 +80,12 @@ public class SleeperInstanceProps {
      *
      * @param  configuration the configuration of the instance to deploy
      * @param  s3Client      the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient     the ECR client, to scan for container images to deploy and validate the current state
      * @param  dynamoClient  the DynamoDB client, to validate the current state
      * @return               the builder
      */
-    public static Builder builder(SleeperInstanceConfiguration configuration, S3Client s3Client, DynamoDbClient dynamoClient) {
-        return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
+    public static Builder builder(SleeperInstanceConfiguration configuration, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
+        return builder(configuration.getInstanceProperties(), s3Client, ecrClient, dynamoClient)
                 .tableProperties(configuration.getTableProperties());
     }
 
@@ -90,13 +94,14 @@ public class SleeperInstanceProps {
      *
      * @param  instanceProperties the configuration of the instance to deploy
      * @param  s3Client           the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient          the ECR client, to scan for container images to deploy and validate the current state
      * @param  dynamoClient       the DynamoDB client, to validate the current state
      * @return                    the builder
      */
-    public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
+    public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
-                .jars(SleeperJarsInBucket.from(s3Client, instanceProperties))
+                .artefacts(SleeperArtefacts.fromProperties(s3Client, ecrClient))
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
@@ -106,11 +111,12 @@ public class SleeperInstanceProps {
      *
      * @param  scope        the scope to read context variables from
      * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient    the ECR client, to scan for container images to deploy and validate the current state
      * @param  dynamoClient the DynamoDB client, to validate the current state
      * @return              the configuration
      */
-    public static SleeperInstanceProps fromContext(Construct scope, S3Client s3Client, DynamoDbClient dynamoClient) {
-        return fromContext(CdkContext.from(scope), s3Client, dynamoClient);
+    public static SleeperInstanceProps fromContext(Construct scope, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
+        return fromContext(CdkContext.from(scope), s3Client, ecrClient, dynamoClient);
     }
 
     /**
@@ -119,19 +125,24 @@ public class SleeperInstanceProps {
      *
      * @param  context      the context to read variables from
      * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient    the ECR client, to scan for container images to deploy and validate the current state
      * @param  dynamoClient the DynamoDB client, to validate the current state
      * @return              the configuration
      */
-    public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
+    public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         String instanceId = context.tryGetContext("id");
         if (instanceId != null) {
             configuration.getInstanceProperties().set(ID, instanceId);
         }
-        return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
+        String artefactsId = context.tryGetContext("artefactsId");
+        if (artefactsId != null) {
+            configuration.getInstanceProperties().set(ARTEFACTS_DEPLOYMENT_ID, artefactsId);
+        }
+        return builder(configuration.getInstanceProperties(), s3Client, ecrClient, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
-                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration))
+                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
@@ -174,8 +185,8 @@ public class SleeperInstanceProps {
         return tableProperties;
     }
 
-    public SleeperJarsInBucket getJars() {
-        return jars;
+    public SleeperInstanceArtefacts getArtefacts() {
+        return artefacts.forInstance(instanceProperties);
     }
 
     public boolean isDeployPaused() {
@@ -188,10 +199,10 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperJarsInBucket jars;
+        private SleeperArtefacts artefacts;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
-        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
+        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
         private String version = SleeperVersion.getVersion();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
@@ -210,17 +221,15 @@ public class SleeperInstanceProps {
         }
 
         /**
-         * Sets how to find jars to deploy lambda functions. This is required.
+         * Sets how to find artefacts to deploy in the instance. This is required.
          * <p>
-         * This will be used to find the latest version of each jar in a versioned S3 bucket. The deployment will be
-         * done against a specific version of each jar. It will only check the bucket once for each jar, and you can
-         * reuse the same object for multiple Sleeper instances.
+         * This will be used for jars to deploy to AWS Lambda, and for Docker images to deploy to ECS and others.
          *
-         * @param  jars the jars
-         * @return      this builder
+         * @param  artefacts the artefacts
+         * @return           this builder
          */
-        public Builder jars(SleeperJarsInBucket jars) {
-            this.jars = jars;
+        public Builder artefacts(SleeperArtefacts artefacts) {
+            this.artefacts = artefacts;
             return this;
         }
 
@@ -344,7 +353,7 @@ public class SleeperInstanceProps {
         public SleeperInstanceProps build() {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
-            Objects.requireNonNull(jars, "jars must not be null");
+            Objects.requireNonNull(artefacts, "artefacts must not be null");
 
             Properties tagsProperties = instanceProperties.getTagsProperties();
             tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));

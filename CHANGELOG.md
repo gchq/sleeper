@@ -6,6 +6,73 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.35.1
+
+### 2nd March, 2026
+
+This includes minor improvements, as well as bugfixes and security upgrades to dependencies.
+
+Query:
+- Queries now run on DataFusion by default
+
+Scripts:
+- Added a script to list tables in an instance
+- Added median and percentiles to file status report
+
+Configuration:
+- Some table properties have been renamed to include "parquet" more consistently ([see issue](https://github.com/gchq/sleeper/issues/6545))
+
+Build:
+- Builders for Rust code now work on ARM64 architecture
+
+Bugfixes:
+- Allowed maximum capacity lower than 3 for a persistent EMR cluster with managed scaling, improved validation of managed scaling configuration
+- When more bulk import jobs are submitted to a persistent EMR cluster than can fit as pending steps, the job no longer fails and is re-queued on the bulk import queue
+- Setting the schema property directly on a TableProperties object no longer results in a null schema
+
+
+## Version 0.35.0
+
+### 9th February, 2026
+
+This includes automation of pre-splitting table partitions in bulk import, and a high throughput committer for the state
+store.
+
+Bulk import:
+- When a bulk import job is submitted to a Sleeper table with too few partitions, they are pre-split automatically.
+  - This assumes the data in the bulk import job is representative of the table as a whole.
+  - Increased the default value of [`sleeper.default.table.bulk.import.min.leaf.partitions`](docs/usage/properties/instance/user/table_property_defaults.md) to 256.
+
+State store:
+- An experimental high throughput version of the state store committer is now available.
+  - This is a single persistent EC2 instance that listens for all messages from the commit queue.
+  - Can handle many Sleeper tables at much higher throughput than the default lambda version.
+  - Can be chosen with the instance property [`sleeper.statestore.committer.platform`](docs/usage/properties/instance/user/table_state.md).
+
+Spark:
+- Initial version of using Spark to query a Sleeper table
+
+Configuration:
+- Instance properties that are default values for table properties were renamed to start with `sleeper.default.table`.
+- Added [`sleeper.table.parquet.rowgroup.rows.max`](docs/usage/properties/table/data_storage.md) to set the maximum Parquet row group size for the DataFusion data engine.
+
+Deployment:
+- ECS tasks and services now use their own security group, rather than the default security group for the VPC.
+- Restricted permissions on default security group in environment deployed by Sleeper CLI.
+- Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
+- Improvements to workflow deploying an instance directly with the CDK CLI (see [documentation](docs/deployment/deploy-with-cdk.md#using-the-cdk-cli)).
+
+Bugfixes:
+- DataFusion data engine failed when aggregations were specified that did not match the order of the table schema.
+- Tags configured for an instance are now correctly added to the instance by the CDK.
+- Removed confusing logs about constructing a partition tree when reading table configuration, e.g. when the CDK starts.
+- A bug in the CDK meant changing the minimum capacity of a bulk import persistent EMR cluster caused deployment to fail.
+- When reinitialising a table that contained data, the underlying data files were not deleted.
+- Reasons that an ingest or compaction job failed were not always shown in reports.
+- EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
+- The admin client crashed when invalid tags were configured for the Sleeper instance.
+
+
 ## Version 0.34.1
 
 ### 9th December, 2025

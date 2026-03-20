@@ -25,6 +25,7 @@ import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
@@ -73,7 +74,7 @@ public class EmrPersistentBulkImportST {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRowsInTable())
+        assertThat(SystemTestSchema.sorted(sleeper.directQuery().allRowsInTable()))
                 .containsExactlyElementsOf(rows);
         assertThat(sleeper.partitioning().tree().getLeafPartitions())
                 .hasSize(8);

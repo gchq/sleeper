@@ -15,6 +15,7 @@
  */
 package sleeper.clients.deploy;
 
+import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -33,6 +34,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -61,14 +63,17 @@ public class UploadArtefacts {
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
+                        CommandOption.longOption("extra-images"),
                         CommandOption.longFlag("create-builder"),
-                        CommandOption.longFlag("create-deployment")))
+                        CommandOption.longFlag("create-deployment"),
+                        CommandOption.longFlag("overwrite-existing"),
+                        CommandOption.shortOption('u', "upload")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
                         "This works against an artefacts CDK deployment that must already exist in the same AWS " +
                         "account that you want to deploy Sleeper to. If you use the scripts for deployment you will " +
-                        "not need this, as this is done as part of \"deploy.sh\". If you prefer to use the artefacts " +
+                        "not need this, as this is done as part of \"deployNew.sh\" or \"deployExisting.sh\". If you prefer to use the artefacts " +
                         "CDK app directly, you can then use this tool to upload the needed artefacts to that " +
                         "deployment.\n" +
                         "\n" +
@@ -80,6 +85,10 @@ public class UploadArtefacts {
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
+                        "--extra-images\n" +
+                        "A comma-separated list of extra Docker images to upload. We will assume these are in the" +
+                        "same location as the other Docker images, and are not multiplatform.\n" +
+                        "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
                         "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
@@ -87,18 +96,32 @@ public class UploadArtefacts {
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
-                        "flag, this tool will deploy a new artefacts CDK deployment for you.")
+                        "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
+                        "\n" +
+                        "--overwrite-existing\n" +
+                        "By default, images are only uploaded if they do not already exist for this version of " +
+                        "Sleeper. This flag disables that check.\n" +
+                        "\n" +
+                        "--upload, -u\n" +
+                        "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
+                        "jars, or \"--upload images\" to only upload the container images.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getOptionalString("properties")
                         .map(Path::of)
-                        .map(LoadLocalProperties::loadInstanceProperties)
+                        .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
+                arguments.getOptionalString("extra-images")
+                        .map(string -> SleeperPropertyValueUtils.readList(string).stream()
+                                .map(StackDockerImage::dockerBuildImage).toList())
+                        .orElse(List.of()),
                 arguments.isFlagSetWithDefault("create-builder", true),
-                arguments.isFlagSetWithDefault("create-deployment", false)));
+                arguments.isFlagSetWithDefault("create-deployment", false),
+                arguments.isFlagSetWithDefault("overwrite-existing", false),
+                arguments.getOptionalString("upload").map(ToUpload::fromString).orElse(ToUpload.ALL)));
 
         String deploymentId;
         String jarsBucket;
@@ -138,24 +161,56 @@ public class UploadArtefacts {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
                         .invoke(InvokeCdk.Type.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
             }
-            syncJars.sync(SyncJarsRequest.builder()
-                    .bucketName(jarsBucket)
-                    .build());
-            uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
-                    .ecrPrefix(ecrPrefix)
-                    .images(images)
-                    .build());
+            if (args.toUpload().isUploadJars()) {
+                syncJars.sync(SyncJarsRequest.builder()
+                        .bucketName(jarsBucket)
+                        .build());
+            }
+            if (args.toUpload().isUploadImages()) {
+                uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
+                        .ecrPrefix(ecrPrefix)
+                        .images(images)
+                        .extraImages(args.extraImages())
+                        .overwriteExistingTag(args.overwriteExisting())
+                        .build());
+            }
         }
     }
 
     public record Arguments(
-            Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
-            boolean createMultiplatformBuilder, boolean createDeployment) {
+            Path scriptsDir,
+            InstanceProperties instanceProperties,
+            String deploymentId,
+            List<StackDockerImage> extraImages,
+            boolean createMultiplatformBuilder,
+            boolean createDeployment,
+            boolean overwriteExisting,
+            ToUpload toUpload) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
                 throw new CommandArgumentsException("Expected instance properties or artefacts deployment ID");
             }
+        }
+    }
+
+    public enum ToUpload {
+        ALL, JARS, IMAGES;
+
+        public static ToUpload fromString(String string) {
+            ToUpload upload = EnumUtils.getEnumIgnoreCase(ToUpload.class, string);
+            if (upload == null) {
+                throw new IllegalArgumentException("Unknown identifier for artefacts to upload: " + string);
+            }
+            return upload;
+        }
+
+        public boolean isUploadJars() {
+            return this == ALL || this == JARS;
+        }
+
+        public boolean isUploadImages() {
+            return this == ALL || this == IMAGES;
         }
     }
 

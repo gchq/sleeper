@@ -22,6 +22,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
@@ -75,6 +76,7 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 import static sleeper.core.properties.model.OptionalStack.CompactionStack;
 import static sleeper.core.properties.model.OptionalStack.EmrBulkImportStack;
 import static sleeper.core.properties.model.OptionalStack.EmrServerlessBulkImportStack;
@@ -103,6 +105,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cptec2", SystemTestInstance::createCompactionOnEC2Configuration);
     public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("cmmitr", SystemTestInstance::createStateStoreCommitterThroughputConfiguration);
+    public static final SystemTestInstanceConfiguration ECS_STATESTORE = usingSystemTestDefaults("ecsss", SystemTestInstance::createEcsStatestoreConfiguration);
     public static final SystemTestInstanceConfiguration REENABLE_OPTIONAL_STACKS = usingSystemTestDefaults("opstck", SystemTestInstance::createReenableOptionalStacksConfiguration);
     public static final SystemTestInstanceConfiguration OPTIONAL_FEATURES_DISABLED = SystemTestInstanceConfiguration.builder()
             .shortName("xf-off")
@@ -143,7 +146,7 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_EXECUTOR_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "2");
         properties.set(METRICS_TABLE_BATCH_SIZE, "2");
         properties.setNumber(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 1);
         properties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 1);
@@ -196,7 +199,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
-                List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+                List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack, OptionalStack.WebSocketQueryStack));
         properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_EC2_TYPE, "t4g.xlarge");
@@ -261,6 +264,14 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "stateStoreCommitterThroughput", "Sleeper Maven system test state store committer throughput");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static SleeperInstanceConfiguration createEcsStatestoreConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.set(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.EC2.toString());
+        setSystemTestTags(properties, "ecsStatestore", "Sleeper Maven system test instance with ECS state store");
         return createInstanceConfiguration(properties);
     }
 

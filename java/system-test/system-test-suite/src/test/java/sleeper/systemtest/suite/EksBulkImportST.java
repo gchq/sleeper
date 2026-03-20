@@ -26,6 +26,7 @@ import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
@@ -85,7 +86,7 @@ public class EksBulkImportST {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRowsInTable())
+        assertThat(SystemTestSchema.sorted(sleeper.directQuery().allRowsInTable()))
                 .containsExactlyElementsOf(rows);
         assertThat(sleeper.partitioning().tree().getLeafPartitions())
                 .hasSize(8);

@@ -21,10 +21,11 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperInstanceProps;
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
@@ -44,13 +45,13 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends Stack {
     private final SleeperInstanceProps props;
-    private final SleeperJarsInBucket jars;
+    private final SleeperInstanceArtefacts artefacts;
     private final SystemTestProperties instanceProperties;
 
     public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         super(app, id, stackProps);
         this.props = setProps(sleeperProps);
-        this.jars = sleeperProps.getJars();
+        this.artefacts = sleeperProps.getArtefacts();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
 
@@ -58,11 +59,11 @@ public class SystemTestApp extends Stack {
         SleeperNetworking networking = props.getNetworkingProvider().getNetworking(this);
         props.prepareProperties(this, networking);
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, artefacts, loggingStack);
 
         // System test bucket needs to be created first so that it's listed as an ingest source bucket before the ingest
         // stacks are created.
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, jars, autoDeleteS3Stack);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, autoDeleteS3Stack);
 
         // Sleeper instance
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, networking, loggingStack, autoDeleteS3Stack);
@@ -76,7 +77,7 @@ public class SystemTestApp extends Stack {
         }
 
         // Delay writing properties to include data generation cluster
-        new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
+        new PropertiesStack(this, "Properties", instanceProperties, artefacts, coreStacks);
     }
 
     public static void main(String[] args) {
@@ -85,8 +86,9 @@ public class SystemTestApp extends Stack {
                 .build());
 
         try (S3Client s3Client = S3Client.create();
+                EcrClient ecrClient = EcrClient.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, ecrClient, dynamoClient);
             InstanceProperties instanceProperties = props.getInstanceProperties();
 
             String id = instanceProperties.get(ID);

@@ -392,6 +392,37 @@ public class WaitForJobsStatusTest {
                     "}");
             assertThat(status.areAllJobsFinished()).isFalse();
         }
+
+        @Test
+        void shouldDisplayFailureReasonsWhenJobRetried() {
+            // Given
+            IngestJob job = createJobWithTableAndFiles("test-job", table, "test.parquet");
+            ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z"))
+                    .jobRunId("fail-run").taskId("test-task").build());
+            ingestTracker.jobFailed(job.failedEventBuilder(Instant.parse("2024-06-27T09:40:01Z"))
+                    .jobRunId("fail-run").taskId("test-task")
+                    .failureReasons(List.of("Some failure")).build());
+            ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:41:00Z"))
+                    .jobRunId("retry-run").taskId("test-task").build());
+            ingestTracker.jobFinished(job.finishedEventBuilder(summary(Instant.parse("2024-06-27T09:41:00Z"), Duration.ofMinutes(2), 100L, 100L))
+                    .jobRunId("retry-run").taskId("test-task").numFilesWrittenByJob(2).build());
+
+            // When
+            WaitForJobsStatus status = ingestStatus(
+                    List.of("test-job"),
+                    Instant.parse("2024-06-27T09:44:00Z"));
+
+            // Then
+            assertThat(status).hasToString("{\n" +
+                    "  \"countByFurthestStatus\": {\n" +
+                    "    \"FINISHED\": 1\n" +
+                    "  },\n" +
+                    "  \"failureReasons\": [\n" +
+                    "    \"Some failure\"\n" +
+                    "  ],\n" +
+                    "  \"numUnfinished\": 0\n" +
+                    "}");
+        }
     }
 
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {

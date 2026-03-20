@@ -716,7 +716,8 @@ sleeper.subnets=set-automatically
 # sleeper.bulk.import.emr.spark.sql.shuffle.partitions=290
 
 # (Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying
-# this will allow you to SSH to the nodes in the cluster while it's running.
+# this will allow you to SSH to the nodes in the cluster while it's running. NOTE: Updating this
+# property will cause any existing EMR cluster to be destroyed and re-created.
 # (uncomment to set a value)
 # sleeper.bulk.import.emr.keypair.name=
 
@@ -1120,7 +1121,7 @@ sleeper.subnets=set-automatically
 # instance types, as each type will count for a certain number of units. By default the units are the
 # number of instances.
 # If managed scaling is not used then the cluster will be of fixed size, with a number of instances
-# equal to this value.
+# equal to this value. This value must be in the range [1, 2000].
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.persistent.emr.min.capacity=1
 
@@ -1129,7 +1130,9 @@ sleeper.subnets=set-automatically
 # This is measured in instance fleet capacity units. These are declared alongside the requested
 # instance types, as each type will count for a certain number of units. By default the units are the
 # number of instances.
-# This value is only used if managed scaling is used.
+# This value is only used if managed scaling is used. This value must be in the range [1, 2000] and
+# greater than
+# the minimum capacity.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.persistent.emr.max.capacity=10
 
@@ -1771,22 +1774,27 @@ sleeper.subnets=set-automatically
 
 ## The following instance properties relate to default values used by table properties.
 
-# Default used during Parquet queries to determine whether the column indexes are used.
+# Used during Sleeper queries to determine whether the column/offset indexes (also known as page
+# indexes) are read from Parquet files. For some queries, e.g. single/few row lookups this can improve
+# performance by enabling more aggressive pruning. On range queries, especially on large tables this
+# can harm performance, since readers will read the extra index data before returning results, but
+# with little benefit from pruning.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.parquet.query.column.index.enabled=false
+# sleeper.default.table.query.parquet.column.index.enabled=false
 
-# The size of the row group in the Parquet files (default is 8MiB).
+# Maximum number of bytes to write in a Parquet row group (default is 8MiB). This property is NOT used
+# by DataFusion data engine.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.rowgroup.size=8388608
+# sleeper.default.table.parquet.rowgroup.size=8388608
 
 # The size of the pages in the Parquet files (default is 128KiB).
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.page.size=131072
+# sleeper.default.table.parquet.page.size=131072
 
 # The compression codec to use in the Parquet files.
 # Valid values are: [uncompressed, snappy, gzip, lzo, brotli, lz4, zstd]
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.compression.codec=zstd
+# sleeper.default.table.parquet.compression.codec=zstd
 
 # Whether dictionary encoding should be used for row key columns in the Parquet files.
 # (default value shown below, uncomment to set a value)
@@ -1815,7 +1823,7 @@ sleeper.subnets=set-automatically
 # Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data in larger
 # blocks than are requested by DataFusion.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.datafusion.s3.readahead.enabled=true
+# sleeper.default.table.datafusion.s3.readahead.enabled=false
 
 # Used to set parquet.writer.version, see documentation here:
 # https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
@@ -1823,6 +1831,10 @@ sleeper.subnets=set-automatically
 # the data.
 # (default value shown below, uncomment to set a value)
 # sleeper.default.table.parquet.writer.version=v2
+
+# Maximum number of rows to write in a Parquet row group.
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.parquet.rowgroup.rows.max=100000
 
 # The number of attempts to make when applying a transaction to the state store. This default can be
 # overridden by a table property.
@@ -1909,7 +1921,13 @@ sleeper.subnets=set-automatically
 # Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
 # minimum has not been reached, bulk import jobs will refuse to start.
 # (default value shown below, uncomment to set a value)
-# sleeper.default.table.bulk.import.min.leaf.partitions=64
+# sleeper.default.table.bulk.import.min.leaf.partitions=256
+
+# Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number
+# of leaf partitions. This will be retried if another process splits the same partitions at the same
+# time.
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.bulk.import.partition.splitting.attempts=3
 
 # Specifies the minimum total file size required for an ingest job to be batched and sent. An ingest
 # job will be created if the batcher runs while this much data is waiting, and the minimum number of

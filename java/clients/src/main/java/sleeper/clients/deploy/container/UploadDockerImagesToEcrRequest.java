@@ -23,16 +23,17 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
     private final List<StackDockerImage> images;
+    private final boolean overwriteExistingTag;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
-        images = requireNonNull(builder.images, "images must not be null");
+        images = requireNonNull(builder.images(), "images must not be null");
+        overwriteExistingTag = builder.overwriteExistingTag;
     }
 
     public static Builder builder() {
@@ -48,17 +49,14 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public Builder toBuilder() {
-        return builder().ecrPrefix(ecrPrefix).images(images);
+        return builder().ecrPrefix(ecrPrefix).images(images).overwriteExistingTag(overwriteExistingTag);
     }
 
     public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
         if (extraImages.isEmpty()) {
             return this;
         }
-        List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
-        newImages.addAll(images);
-        newImages.addAll(extraImages);
-        return toBuilder().images(newImages).build();
+        return toBuilder().extraImages(extraImages).build();
     }
 
     public String getEcrPrefix() {
@@ -67,6 +65,10 @@ public class UploadDockerImagesToEcrRequest {
 
     public List<StackDockerImage> getImages() {
         return images;
+    }
+
+    public boolean isOverwriteExistingTag() {
+        return overwriteExistingTag;
     }
 
     @Override
@@ -94,13 +96,14 @@ public class UploadDockerImagesToEcrRequest {
     public static final class Builder {
         private String ecrPrefix;
         private List<StackDockerImage> images;
+        private List<StackDockerImage> extraImages;
+        private boolean overwriteExistingTag;
 
         private Builder() {
         }
 
         public Builder properties(InstanceProperties properties) {
-            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX))
-                    .version(properties.get(VERSION));
+            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX));
         }
 
         public Builder ecrPrefix(String ecrPrefix) {
@@ -108,13 +111,29 @@ public class UploadDockerImagesToEcrRequest {
             return this;
         }
 
-        public Builder version(String version) {
-            return this;
-        }
-
         public Builder images(List<StackDockerImage> images) {
             this.images = images;
             return this;
+        }
+
+        public Builder extraImages(List<StackDockerImage> extraImages) {
+            this.extraImages = extraImages;
+            return this;
+        }
+
+        public Builder overwriteExistingTag(boolean overwriteExistingTag) {
+            this.overwriteExistingTag = overwriteExistingTag;
+            return this;
+        }
+
+        private List<StackDockerImage> images() {
+            if (images == null || extraImages == null || extraImages.isEmpty()) {
+                return images;
+            }
+            List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
+            newImages.addAll(images);
+            newImages.addAll(extraImages);
+            return newImages;
         }
 
         public UploadDockerImagesToEcrRequest build() {

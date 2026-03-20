@@ -64,6 +64,7 @@ class SleeperPropertyValueUtilsTest {
             assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull("-7"))
                     .isFalse();
         }
+
     }
 
     @Nested
@@ -165,6 +166,21 @@ class SleeperPropertyValueUtilsTest {
         @Test
         void shouldFailToValidateStringWhenListSizeExceedsMaxSize() {
             assertThat(SleeperPropertyValueUtils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
+        }
+
+        @Test
+        void shouldValidateEmptyListToBeInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("")).isTrue();
+        }
+
+        @Test
+        void shouldValidateListInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("key,value,key,value")).isTrue();
+        }
+
+        @Test
+        void shouldFailToValidateListNotInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("key=value")).isFalse();
         }
     }
 

@@ -230,7 +230,7 @@ class SleeperInstanceStacksPropsIT {
     }
 
     private SleeperInstanceProps readProps() {
-        SleeperInstanceProps props = SleeperInstanceProps.fromContext(cdkContext::get, null, null);
+        SleeperInstanceProps props = SleeperInstanceProps.fromContext(cdkContext::get, null, null, null);
         Stack stack = Stack.Builder.create()
                 .env(Environment.builder()
                         .account(account)

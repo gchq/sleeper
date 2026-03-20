@@ -44,7 +44,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestParameters {
@@ -194,7 +193,6 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_REGION, getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
         properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getArtefactsDeploymentId()));
-        properties.set(SYSTEM_TEST_REPO, SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(getArtefactsDeploymentId()) + "/system-test");
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
     }

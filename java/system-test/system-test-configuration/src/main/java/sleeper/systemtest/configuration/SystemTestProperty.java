@@ -24,7 +24,6 @@ import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
-import java.util.Objects;
 
 import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
@@ -56,10 +55,6 @@ public interface SystemTestProperty extends InstanceProperty {
                     "Use -1 to indicate infinite retention.")
             .defaultValue("30")
             .validationPredicate(SleeperPropertyValueUtils::isValidLogRetention)
-            .runCdkDeployWhenChanged(true).build();
-    SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
-            .description("The image in ECR used for writing random data to the system")
-            .validationPredicate(Objects::nonNull)
             .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster.enabled")
             .description("Whether to deploy the system test cluster for data generation")

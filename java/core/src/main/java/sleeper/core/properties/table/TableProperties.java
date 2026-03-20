@@ -29,7 +29,6 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -55,7 +54,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;
-        schema = loadSchema(properties);
+        setSchema(properties.getProperty(SCHEMA.getPropertyName()));
     }
 
     /**
@@ -94,18 +93,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return new TableProperties(tableProperties.instanceProperties, newProperties);
     }
 
-    private static Schema loadSchema(Properties properties) {
-        return Optional.ofNullable(properties.getProperty(SCHEMA.getPropertyName()))
-                .map(Schema::loadFromString)
-                .orElse(null);
-    }
-
     @Override
     protected void init() {
-        String schemaProperty = get(TableProperty.SCHEMA);
-        if (schemaProperty != null) {
-            schema = Schema.loadFromString(schemaProperty);
-        }
+        setSchema(get(SCHEMA));
         super.init();
     }
 
@@ -130,11 +120,27 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public void setSchema(Schema schema) {
         this.schema = schema;
-        set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
+        super.set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
+    }
+
+    private void setSchema(String string) {
+        try {
+            schema = Schema.loadFromString(string);
+        } catch (RuntimeException e) {
+            schema = null;
+        }
     }
 
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
+    }
+
+    @Override
+    public void set(TableProperty property, String value) {
+        super.set(property, value);
+        if (property == SCHEMA) {
+            setSchema(value);
+        }
     }
 
     @Override

@@ -484,6 +484,24 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // Then
             assertThat(commandsThatRan).isEmpty();
         }
+
+        @Test
+        void shouldForceUploadWhenVersionAlreadyExists() throws Exception {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
+
+            // When
+            uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerDeploymentImageConfig())
+                    .toBuilder().overwriteExistingTag(true).build());
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageCommand(expectedTag, "./docker/ingest"),
+                    pushImageCommand(expectedTag));
+        }
     }
 
     @Nested

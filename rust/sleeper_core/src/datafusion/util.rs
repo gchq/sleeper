@@ -20,7 +20,6 @@ use datafusion::{
         DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
-    config::ExecutionOptions,
     dataframe::DataFrame,
     error::DataFusionError,
     execution::{SessionStateBuilder, context::SessionContext},
@@ -32,8 +31,9 @@ use datafusion::{
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
-use log::{debug, info};
+use log::debug;
 use num_format::{Locale, ToFormattedString};
+use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
@@ -43,6 +43,22 @@ use crate::datafusion::{cast_udf::CastUDF, metrics::RowCounts};
 /// Maximum number of file upload parts to generate. Implementation will
 /// try to match this, but may not get there exactly.
 pub const MAX_PART_COUNT: u64 = 5000;
+/// The fraction of total file size to estimate for Parquet metadata. This errs
+/// on the larger side. We will bound this between a minimum of [`MIN_METADATA_SIZE_HINT`] and maximum
+/// of [`MAX_METADATA_SIZE_HINT`].
+pub const META_DATA_SIZE_FRACTION: f64 = 0.0001;
+const _: () = assert!(
+    0f64 <= META_DATA_SIZE_FRACTION && META_DATA_SIZE_FRACTION <= 1f64,
+    "META_DATA_SIZE_FRACTION out of range"
+);
+/// Minimum size (bytes) for the Parquet metadata size hint. This controls how much of the end of a Parquet file `DataFusion`
+/// will fetch when trying to load metadata.
+pub const MIN_METADATA_SIZE_HINT: u64 = 512 * 1024;
+/// Maximum size (bytes) for the Parquet metadata size hint. This controls how much of the end of a Parquet file `DataFusion`
+/// will fetch when trying to load metadata.
+pub const MAX_METADATA_SIZE_HINT: u64 = 10 * 1024 * 1024;
+/// Minimum upload size (bytes) for multipart PUT requests from `ObjectStore`.
+pub const MIN_PUT_SIZE: usize = 32 * 1024 * 1024;
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -61,7 +77,7 @@ pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
     .explain(false, false)?
     .collect()
     .await?;
-    info!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
+    debug!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
     Ok(())
 }
 
@@ -69,7 +85,7 @@ pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
 /// too many small parts. We conseratively set the upload size so that fewer, larger uploads are created.
 pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
     let upload_size = std::cmp::max(
-        ExecutionOptions::default().objectstore_writer_buffer_size,
+        MIN_PUT_SIZE,
         usize::try_from(total_input_size / MAX_PART_COUNT)
             .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
@@ -78,6 +94,18 @@ pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionE
         upload_size.to_formatted_string(&Locale::en)
     );
     Ok(upload_size)
+}
+
+/// Calculate the metadata size hint to use based on the largest file size. This value will be clamped
+/// between [`MIN_METADATA_SIZE_HINT`] and [`MAX_METADATA_SIZE_HINT`].
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
+pub fn calculate_metadata_size_hint(largest_file: u64) -> u64 {
+    ((largest_file as f64 * META_DATA_SIZE_FRACTION) as u64)
+        .clamp(MIN_METADATA_SIZE_HINT, MAX_METADATA_SIZE_HINT)
 }
 
 /// Checks if a physical plan contains a `SortExec` stage.
@@ -128,23 +156,38 @@ pub fn register_store(
     Ok(())
 }
 
-/// Calculate the total size of all `input_paths` objects.
+/// Retrieves the [`ObjectMeta`]s for each URL passed.
 ///
 /// # Errors
-/// Fails if we can't obtain the size of the input files from the object store.
-pub async fn retrieve_input_size(
+/// Fails if we can't retrieve object data from an object store.
+pub async fn retrieve_object_metas(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<u64, DataFusionError> {
-    let mut total_input = 0u64;
+) -> Result<Vec<ObjectMeta>, DataFusionError> {
+    let mut metas = Vec::new();
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
-        total_input += store.head(&p.into()).await?.size;
+        metas.push(store.head(&p.into()).await?);
     }
-    Ok(total_input)
+    Ok(metas)
+}
+
+/// Calculate the total size of all `input_paths` object metas.
+///
+/// # Returns
+/// A tuple of (total input size, largest single file).
+pub fn retrieve_input_size(inputs: &[ObjectMeta]) -> (u64, u64) {
+    let mut total_input = 0u64;
+    let mut largest_file = 0u64;
+    for input in inputs {
+        let size = input.size;
+        total_input += size;
+        largest_file = std::cmp::max(largest_file, size);
+    }
+    (total_input, largest_file)
 }
 
 /// Searches down a physical plan and removes the top most [`CoalescePartitionsExec`] stage.
@@ -288,7 +331,8 @@ pub fn add_numeric_casts(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::util::{
-        add_numeric_casts, apply_full_sort_ordering, remove_coalesce_physical_stage,
+        MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
+        calculate_upload_size, remove_coalesce_physical_stage,
     };
     use arrow::{
         array::RecordBatch,
@@ -538,6 +582,107 @@ mod tests {
             !contains_partial_sort,
             "Not all SortPreservingMergeExecs modified"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn should_report_minimum_metadata_size() {
+        // Given
+        let size = 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 512 * 1024);
+    }
+
+    #[test]
+    fn should_report_minimum_metadata_size_from_scaled() {
+        // Given
+        let size = 500 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 512 * 1024);
+    }
+
+    #[test]
+    fn should_report_valid_metadata_size() {
+        // Given
+        let size = 5 * 1024 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 536_870);
+    }
+
+    #[test]
+    fn should_report_maximum_metadata_size_from_scaled() {
+        // Given
+        let size = 300 * 1024 * 1024 * 1024;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 10 * 1024 * 1024);
+    }
+    #[test]
+    fn should_report_maximum_metadata_size() {
+        // Given
+        let size = u64::MAX;
+
+        // When
+        let metadata_size = calculate_metadata_size_hint(size);
+
+        // Then
+        assert_eq!(metadata_size, 10 * 1024 * 1024);
+    }
+
+    #[test]
+    fn should_return_minimum_upload_size_with_zero() -> Result<(), Error> {
+        // Given
+        let input_size = 0;
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, MIN_PUT_SIZE);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_minimum_upload_size_with_10_g() -> Result<(), Error> {
+        // Given
+        let input_size = 10 * 1024 * 1024 * 1024; //10GiB
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, MIN_PUT_SIZE);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_scaled_upload_size_with_300_g() -> Result<(), Error> {
+        // Given
+        let input_size = 300 * 1024 * 1024 * 1024; //300GiB
+
+        // When
+        let upload_size = calculate_upload_size(input_size)?;
+
+        // Then
+        assert_eq!(upload_size, 64_424_509);
+
         Ok(())
     }
 }

@@ -19,7 +19,7 @@
     <parent>
         <artifactId>deployment</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.35.0-SNAPSHOT</version>
+        <version>0.35.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,6 +27,10 @@
 
     <dependencies>
         <!-- AWS Cloud Development Kit -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecr</artifactId>
+        </dependency>
         <dependency>
             <groupId>software.amazon.awscdk</groupId>
             <artifactId>aws-cdk-lib</artifactId>

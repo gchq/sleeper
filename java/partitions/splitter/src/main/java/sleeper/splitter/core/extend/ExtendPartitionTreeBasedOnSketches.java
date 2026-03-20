@@ -91,7 +91,7 @@ public class ExtendPartitionTreeBasedOnSketches {
      * @return                       the new transaction
      */
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
-        List<Partition> originalLeafPartitions = tree.getLeafPartitions();
+        List<Partition> originalLeafPartitions = tree.streamLeavesInTreeOrder().toList();
         TreeExtensionTracker treeTracker = new TreeExtensionTracker(originalLeafPartitions);
         PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
         List<Partition> splittablePartitions = findPartitionsMeetingExpectedMinimumComparedToEvenDistribution(originalLeafPartitions, sketchIndex);

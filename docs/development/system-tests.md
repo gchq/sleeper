@@ -5,7 +5,10 @@ The following notes describe how to use the system tests that work with a deploy
 
 In order to run any system tests you need an environment suitable for deploying Sleeper. To avoid latency and
 unnecessary data transfer, system tests should be run from inside AWS, usually in an EC2 instance. See
-the [getting started guide](../getting-started.md) for how to create a suitable environment.
+[deployment environment setup](../deployment/environment-setup.md) for how to create a suitable environment.
+
+These tests are designed to run in an EC2 deployed with the [Sleeper environment tool](../deployment/environment-tool.md),
+in a `sleeper builder` Docker container run with the [Sleeper Docker tools](../deployment/docker-tools.md).
 
 ## Manual testing
 
@@ -247,3 +250,5 @@ directs the operation. For standard ingest and compaction this is an ECS task. F
 | 0.33.0         | 24/09/2025 | 279,038         | 3,879,695             | 175,805         | 4,384,010       |
 | 0.34.0         | 01/12/2025 | 296,435         | 3,957,087             | 187,877         | 3,411,815       |
 | 0.34.1         | 09/12/2025 | 266,216         | 3,908,600             | 208,115         | 3,413,008       |
+| 0.35.0         | 09/02/2026 | 250,432         | 4,187,338             | 194,904         | 3,449,223       |
+| 0.35.1         | 27/02/2026 | 261,300         | 3,733,464             | 178,526         | 3,538,171       |

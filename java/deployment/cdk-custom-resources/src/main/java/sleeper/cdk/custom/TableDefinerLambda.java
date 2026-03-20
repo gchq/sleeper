@@ -21,10 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
+import software.amazon.lambda.powertools.cloudformation.Response;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -37,11 +36,8 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -54,7 +50,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 /**
  * Lambda Function which defines Sleeper tables.
  */
-public class TableDefinerLambda {
+public class TableDefinerLambda extends AbstractCustomResourceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
@@ -70,45 +66,56 @@ public class TableDefinerLambda {
         this.bucketName = bucketName;
     }
 
-    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        Map<String, Object> resourceProperties = event.getResourceProperties();
-
-        Properties properties = new Properties();
-        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-
-        switch (event.getRequestType()) {
-            case "Create":
-                addTable(tableProperties, tablePropertiesStore, resourceProperties);
-                break;
-            case "Update":
-                LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
-                tableProperties.validate();
-                tablePropertiesStore.save(tableProperties);
-                break;
-            case "Delete":
-                deleteTable(tableProperties, tablePropertiesStore);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
-        }
-    }
-
-    private void addTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore,
-            Map<String, Object> resourceProperties) throws IOException {
-        String tableName = tableProperties.get(TABLE_NAME);
+    @Override
+    protected Response create(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
 
         LOGGER.info("Validating table properties for table {}", tableName);
-        tableProperties.validate();
+        properties.getTableProperties().validate();
 
         //Table may just be offline from a previous delete call
-        if (tableProperties.getBoolean(TableProperty.TABLE_REUSE_EXISTING)) {
-            reuseExistingTable(tableName, tablePropertiesStore, tableProperties);
+        if (properties.getTableProperties().getBoolean(TableProperty.TABLE_REUSE_EXISTING)) {
+            reuseExistingTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties());
         } else {
-            createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
+            createNewTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties(), properties.getResourceProperties());
         }
+
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
+
+    }
+
+    @Override
+    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+
+        LOGGER.info("Updating table properties for table {}", properties.getTableProperties().get(TABLE_NAME));
+        properties.getTableProperties().set(TABLE_ID, event.getPhysicalResourceId());
+        properties.getTableProperties().validate();
+
+        properties.getTablePropertiesStore().update(properties.getTableProperties());
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
+    }
+
+    @Override
+    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
+        String tableId = event.getPhysicalResourceId();
+        properties.getTableProperties().set(TABLE_ID, tableId);
+        if (properties.getTableProperties().getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
+            LOGGER.info("Taking table {} offline.", tableName);
+            properties.getTableProperties().set(TABLE_ONLINE, "false");
+            properties.getTablePropertiesStore().save(properties.getTableProperties());
+        } else {
+            LOGGER.info("Deleting table {} and associated data.", tableName);
+            StateStoreFactory.createProvider(properties.getInstanceProperties(), s3Client, dynamoClient)
+                    .getStateStore(properties.getTableProperties()).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, properties.getInstanceProperties().get(DATA_BUCKET), tableId);
+            new DynamoDBTransactionLogSnapshotMetadataStore(properties.getInstanceProperties(), properties.getTableProperties(), dynamoClient).deleteAllSnapshots();
+            properties.getTablePropertiesStore().delete(TableStatus.uniqueIdAndName(tableId, tableName, properties.getTableProperties().getBoolean(TABLE_ONLINE)));
+        }
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
     }
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
@@ -139,23 +146,4 @@ public class TableDefinerLambda {
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
     }
 
-    private void deleteTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
-            LOGGER.info("Taking table {} offline.", tableName);
-            tableProperties.set(TABLE_ONLINE, "false");
-            tablePropertiesStore.save(tableProperties);
-        } else {
-            //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
-            tableProperties = tablePropertiesStore.loadByName(tableName);
-            String tableId = tableProperties.get(TABLE_ID);
-            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
-            LOGGER.info("Deleting table {} and associated data.", tableName);
-            StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
-                    .getStateStore(tableProperties).clearSleeperTable();
-            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
-            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
-        }
-    }
 }

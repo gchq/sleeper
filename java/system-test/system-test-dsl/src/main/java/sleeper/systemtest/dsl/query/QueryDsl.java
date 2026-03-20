@@ -21,6 +21,7 @@ import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -65,6 +66,13 @@ public class QueryDsl {
 
     public List<Row> byRowKey(String key, QueryRange... ranges) {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
+    }
+
+    public TimedQueryResultsDsl timedByRowKey(String key, QueryRange... ranges) {
+        Instant startTime = Instant.now();
+        List<Row> rows = byRowKey(key, ranges);
+        Instant endTime = Instant.now();
+        return new TimedQueryResultsDsl(startTime, endTime, rows);
     }
 
     public List<Row> allRowsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {

@@ -43,6 +43,7 @@ pub struct FFICommonConfig {
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
     pub use_readahead_store: bool,
+    pub read_page_indexes: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
     pub row_key_cols_len: usize,
@@ -69,7 +70,7 @@ impl FFICommonConfig {
     /// The schema types for the row key fields in this Sleeper schema.
     ///
     /// # Errors
-    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`FFIRowKeySchemaType`].
+    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`RowKeySchemaType`].
     pub fn schema_types(&self) -> Result<Vec<RowKeySchemaType>, color_eyre::Report> {
         unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
             .iter()
@@ -153,6 +154,7 @@ impl FFICommonConfig {
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
+            .read_page_indexes(self.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(

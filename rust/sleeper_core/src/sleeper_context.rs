@@ -15,6 +15,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#[cfg(doc)]
+use datafusion::execution::object_store::ObjectStoreRegistry;
 use datafusion::{
     error::DataFusionError,
     execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
@@ -28,6 +30,9 @@ pub struct SleeperContext {
     // Interior mutable runtime
     inner: Mutex<RuntimeEnv>,
 }
+
+/// The maximum size of `DataFusion`'s file metadata cache.
+pub const METADATA_CACHE_SIZE: usize = 128 * 1024 * 1024;
 
 impl SleeperContext {
     /// Retrieves a runtime environment for `DataFusion` to work with.
@@ -47,6 +52,7 @@ impl SleeperContext {
                 .with_object_store_registry(
                     RuntimeEnvBuilder::default().object_store_registry.clone(),
                 )
+                .with_metadata_cache_limit(METADATA_CACHE_SIZE)
                 .build()?,
         ))
     }

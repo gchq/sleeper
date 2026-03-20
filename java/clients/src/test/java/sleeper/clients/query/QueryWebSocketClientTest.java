@@ -33,6 +33,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
 public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
@@ -314,11 +316,28 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
+
+        @Test
+        void shouldFailToSendQueryWithNoWebSocketDeployed() {
+            // Given no web socket is deployed
+            instanceProperties.unset(QUERY_WEBSOCKET_API_URL);
+            // And we create the client (which we should be able to do)
+            QueryWebSocketClient client = createClient();
+            Query query = exactQuery("test-query", 100);
+
+            // When / Then
+            assertThatThrownBy(() -> client.submitQuery(query))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
+        }
     }
 
     protected CompletableFuture<List<Row>> runQueryFuture(Query query) throws Exception {
-        QueryWebSocketClient realClient = new QueryWebSocketClient(
+        return createClient().submitQuery(query);
+    }
+
+    private QueryWebSocketClient createClient() {
+        return new QueryWebSocketClient(
                 instanceProperties, tablePropertiesProvider, connection.createAdapter(), 0);
-        return realClient.submitQuery(query);
     }
 }

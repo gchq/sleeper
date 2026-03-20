@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility methods for validating & reading Sleeper configuration properties.
+ * Utility methods for validating &amp; reading Sleeper configuration properties.
  */
 public class SleeperPropertyValueUtils {
 
@@ -216,6 +217,21 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is a valid Sleeper table schema.
+     *
+     * @param  string the table schema as a JSON string
+     * @return        true if the string represents a valid schema
+     */
+    public static boolean isValidSchema(String string) {
+        try {
+            Schema.loadFromString(string);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /**
      * Checks if a property value is a valid number of bytes to configure the Hadoop AWS integration.
      *
      * @param  numberOfBytes the value
@@ -339,6 +355,17 @@ public class SleeperPropertyValueUtils {
     public static boolean isListWithMaxSize(String input, int maxSize) {
         List<String> values = SleeperPropertyValueUtils.readList(input);
         return values.size() <= maxSize;
+    }
+
+    /**
+     * Checks if a property value is a comma-separated list with a matching number of key and value pairs.
+     *
+     * @param  input the value
+     * @return       true if the value meets the requirement
+     */
+    public static boolean isListInKeyValueFormat(String input) {
+        List<String> values = SleeperPropertyValueUtils.readList(input);
+        return values.size() % 2 == 0; //Expect even amount of items when in key-value format
     }
 
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {

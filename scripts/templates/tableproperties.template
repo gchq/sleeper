@@ -30,6 +30,10 @@ sleeper.table.name=changeme
 
 # Select which data engine to use for the table. Valid values are: [java, datafusion,
 # datafusion_experimental]
+# The options "datafusion" and "datafusion_experimental" currently have identical behaviour, as the
+# DataFusion data engine no longer has any experimental components. We may remove the
+# "datafusion_experimental" option in a future release, which will cause instances with that set to
+# fail after an upgrade. Please use the "datafusion" option instead.
 # (default value shown below, uncomment to set a value)
 # sleeper.table.data.engine=DATAFUSION
 
@@ -113,13 +117,14 @@ sleeper.table.name=changeme
 
 ## The following table properties relate to the storage of data inside a table.
 
-# The size of the row group in the Parquet files - defaults to the value in the instance properties.
+# Maximum number of bytes to write in a Parquet row group (defaults to value set in instance
+# properties). This property is NOT used by DataFusion data engine.
 # (default value shown below, uncomment to set a value)
-# sleeper.table.rowgroup.size=8388608
+# sleeper.table.parquet.rowgroup.size=8388608
 
 # The size of the page in the Parquet files - defaults to the value in the instance properties.
 # (default value shown below, uncomment to set a value)
-# sleeper.table.page.size=131072
+# sleeper.table.parquet.page.size=131072
 
 # Whether dictionary encoding should be used for row key columns in the Parquet files.
 # (default value shown below, uncomment to set a value)
@@ -148,7 +153,7 @@ sleeper.table.name=changeme
 # Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data in larger
 # blocks than are requested by DataFusion.
 # (default value shown below, uncomment to set a value)
-# sleeper.table.datafusion.s3.readahead.enabled=true
+# sleeper.table.datafusion.s3.readahead.enabled=false
 
 # Used to set parquet.writer.version, see documentation here:
 # https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
@@ -157,9 +162,17 @@ sleeper.table.name=changeme
 # (default value shown below, uncomment to set a value)
 # sleeper.table.parquet.writer.version=v2
 
-# Used during Parquet queries to determine whether the column indexes are used.
+# Used during Sleeper queries to determine whether the column/offset indexes (also known as page
+# indexes) are read from Parquet files. For some queries, e.g. single/few row lookups this can improve
+# performance by enabling more aggressive pruning. On range queries, especially on large tables this
+# can harm performance, since readers will read the extra index data before returning results, but
+# with little benefit from pruning.
 # (default value shown below, uncomment to set a value)
-# sleeper.table.parquet.query.column.index.enabled=false
+# sleeper.table.query.parquet.column.index.enabled=false
+
+# Maximum number of rows to write in a Parquet row group.
+# (default value shown below, uncomment to set a value)
+# sleeper.table.parquet.rowgroup.rows.max=100000
 
 # The S3 readahead range - defaults to the row group size.
 # (default value shown below, uncomment to set a value)
@@ -168,7 +181,7 @@ sleeper.table.name=changeme
 # The compression codec to use for this table. Defaults to the value in the instance properties.
 # Valid values are: [uncompressed, snappy, gzip, lzo, brotli, lz4, zstd]
 # (default value shown below, uncomment to set a value)
-# sleeper.table.compression.codec=zstd
+# sleeper.table.parquet.compression.codec=zstd
 
 # A file will not be deleted until this number of minutes have passed after it has been marked as
 # ready for garbage collection. The reason for not deleting files immediately after they have been
@@ -499,7 +512,13 @@ sleeper.table.name=changeme
 # Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
 # minimum has not been reached, bulk import jobs will refuse to start
 # (default value shown below, uncomment to set a value)
-# sleeper.table.bulk.import.min.leaf.partitions=64
+# sleeper.table.bulk.import.min.leaf.partitions=256
+
+# Specifies the number of times bulk import tries to create leaf partitions to meet the minimum number
+# of leaf partitions. This will be retried if another process splits the same partitions at the same
+# time.
+# (default value shown below, uncomment to set a value)
+# sleeper.table.bulk.import.partition.splitting.attempts=3
 
 # If true, bulk import will add files via requests sent to the state store committer lambda
 # asynchronously. If false, bulk import will commit new files at the end of the job synchronously.
