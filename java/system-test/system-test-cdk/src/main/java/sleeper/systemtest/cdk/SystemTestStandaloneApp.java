@@ -21,6 +21,7 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.artefacts.SleeperArtefacts;
@@ -67,8 +68,9 @@ public class SystemTestStandaloneApp extends Stack {
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
-        try (S3Client s3Client = S3Client.create()) {
-            SleeperInstanceArtefacts artefacts = SleeperArtefacts.fromProperties(s3Client).forInstance(systemTestProperties.toInstancePropertiesForCdkUtils());
+        try (S3Client s3Client = S3Client.create();
+                EcrClient ecrClient = EcrClient.create()) {
+            SleeperInstanceArtefacts artefacts = SleeperArtefacts.fromProperties(s3Client, ecrClient).forInstance(systemTestProperties.toInstancePropertiesForCdkUtils());
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
             Environment environment = Environment.builder()

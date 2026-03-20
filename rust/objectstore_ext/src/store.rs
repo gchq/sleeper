@@ -31,6 +31,8 @@ use std::{pin::Pin, sync::Mutex};
 struct LoggingData {
     /// The number of GET requests logged.
     get_count: usize,
+    /// The number of HEAD requests logged.
+    head_count: usize,
     /// The total number of bytes read across all files.
     get_bytes_read: u64,
 }
@@ -72,6 +74,18 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
             .get_count
     }
 
+    /// Gives the total number of HEAD requests made on this store.
+    ///
+    /// # Panics
+    /// If we are not able to acquire the lock for the store
+    /// stats.
+    pub fn head_count(&self) -> usize {
+        self.internal
+            .lock()
+            .expect("LoggingObjectStore stats lock poisoned")
+            .head_count
+    }
+
     /// Get the total number of bytes requested by this store in ranged requests.
     /// This is only a hint. The actual number of bytes read may be lower or higher.
     /// Only bytes requested via [`GetRange::Bounded`] requests are recorded. Further,
@@ -102,10 +116,11 @@ impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
 impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     fn drop(&mut self) {
         info!(
-            "LoggingObjectStore \"{}\" to \"{}\" made {} GET requests and requested a total of {} bytes (range bounded)",
+            "LoggingObjectStore \"{}\" to \"{}\" made {} GET and {} HEAD requests and requested a total of {} bytes (range bounded)",
             self.prefix,
             self.path_prefix,
             self.get_count().to_formatted_string(&Locale::en),
+            self.head_count().to_formatted_string(&Locale::en),
             self.get_bytes_read().to_formatted_string(&Locale::en)
         );
     }
@@ -167,6 +182,13 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
+        {
+            let stats = &mut *self
+                .internal
+                .lock()
+                .expect("LoggingObjectStore stats lock poisoned");
+            stats.head_count += 1;
+        }
         debug!(
             "{} HEAD request {}/{}",
             self.prefix, self.path_prefix, location
@@ -346,6 +368,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn single_heaq_request() -> Result<()> {
+        // Given
+        let store = make_store();
+        store.put(&"test_file".into(), "some_data".into()).await?;
+
+        // Then
+        assert_eq!(store.head_count(), 0);
+
+        // When
+        store.head(&"test_file".into()).await?;
+
+        // Then 2 - check HEAD incremented
+        assert_eq!(store.head_count(), 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn single_ranged_read_requests() -> Result<()> {
         // Given
         let store = make_store();
@@ -415,7 +455,7 @@ mod tests {
             assert_eq!(captured_logs[1].level, Level::Debug);
             assert_eq!(
                 captured_logs[2].body,
-                "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET requests and requested a total of 4 bytes (range bounded)"
+                "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET and 0 HEAD requests and requested a total of 4 bytes (range bounded)"
             );
             assert_eq!(captured_logs[2].level, Level::Info);
         });

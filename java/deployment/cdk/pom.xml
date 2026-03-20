@@ -28,6 +28,10 @@
     <dependencies>
         <!-- AWS Cloud Development Kit -->
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecr</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awscdk</groupId>
             <artifactId>aws-cdk-lib</artifactId>
         </dependency>

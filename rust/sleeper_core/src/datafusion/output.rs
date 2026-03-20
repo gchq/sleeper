@@ -98,7 +98,7 @@ impl Default for SleeperParquetOptions {
 /// The result of executing a [`DataFrame`] with a [`Completer`].
 ///
 /// A completer will return a different variant depending on the
-/// [`CompletionOptions`] the plan was configured with.
+/// [`OutputType`] the plan was configured with.
 pub enum CompletedOutput {
     /// Results of plan are returned as a asynchronous stream
     /// of Arrow [`RecordBatch`]es.
