@@ -121,7 +121,8 @@ public class LoggingStack extends NestedStack {
         QUERY_WEBSOCKET_HANDLER("query-websocket-handler"),
         QUERY_KEEP_WARM("query-keep-warm"),
         SIMPLE_ATHENA_HANDLER("Simple-athena-handler"),
-        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler");
+        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler"),
+        REST_API_HANDLER("REST-API-handler");
 
         private final String shortName;
         private final String prefix;

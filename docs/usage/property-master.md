@@ -31,6 +31,7 @@ Below you can find all properties that can be set for a Sleeper instance by the 
 [Metrics](properties/instance/cdk/metrics.md)<br>
 [Partition Splitting](properties/instance/cdk/partition_splitting.md)<br>
 [Query](properties/instance/cdk/query.md)<br>
+[REST API](properties/instance/cdk/rest_api.md)<br>
 
 ## Table Properties
 
