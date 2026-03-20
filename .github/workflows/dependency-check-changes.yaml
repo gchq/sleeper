@@ -4,6 +4,9 @@ on:
     paths:
       - 'code-style/dependency-check-suppressions.xml'
       - 'java/**/pom.xml'
+    paths-ignore:
+      - '.github/workflows/dependency-check.yaml'
+      - '.github/workflows/dependency-check-workflow-changes.yaml'
 
 jobs:
   check:
