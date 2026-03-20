@@ -22,7 +22,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.apigateway.CfnRestApi;
-import software.amazon.awscdk.services.apigateway.IntegrationType;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
 import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
@@ -80,7 +79,7 @@ public class RestApiStack extends NestedStack {
 
         CfnIntegration restApiIntegration = CfnIntegration.Builder.create(scope, "restapi-integration")
                 .apiId(restApi.getRef())
-                .integrationType(IntegrationType.AWS_PROXY.name())
+                .integrationType("AWS_PROXY")
                 .integrationUri(restApiUri)
                 .build();
 
