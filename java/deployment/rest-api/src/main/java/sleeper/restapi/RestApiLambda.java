@@ -13,27 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.custom;
+package sleeper.restapi;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 
+/**
+ * TODO Add class javadoc.
+ */
 public class RestApiLambda {
 
     public RestApiLambda() {
     }
 
-    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) {
+    /**
+     * TODO Add javadoc later.
+     *
+     * @param event words
+     */
+    public void handleEvent(APIGatewayV2HTTPEvent event) {
         // Properties aren't used yet but are likely required for future features
         // Map<String, Object> resourceProperties = event.getResourceProperties();
 
-        switch (event.getRequestType()) {
-            case "getVersion":
-                getVersion();
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
-        }
+        /*
+         * switch (event.getRequestType()) {
+         * case "getVersion":
+         * getVersion();
+         * break;
+         * default:
+         * throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
+         */
+
     }
 
     private void getVersion() {

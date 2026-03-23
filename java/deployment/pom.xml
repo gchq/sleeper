@@ -31,5 +31,6 @@
         <module>cdk-custom-resources</module>
         <module>cdk-environment</module>
         <module>build-uptime-lambda</module>
+        <module>rest-api</module>
     </modules>
 </project>
