@@ -14,7 +14,7 @@ This includes minor improvements, bugfixes and security upgrades to dependencies
 
 Compaction:
 - Increased block size of S3 PUTs in DataFusion compactions
-- Improvements to readahead behaviour with `sleeper.table.datafusion.s3.readahead.enabled`, caching S3 HEAD requests
+- Improvements to readahead behaviour with `sleeper.table.datafusion.s3.readahead.enabled`, caching for S3 HEAD requests
 
 Bulk import:
 - Disabled checks for whether output files already exist during bulk import, vastly reducing requests to S3
