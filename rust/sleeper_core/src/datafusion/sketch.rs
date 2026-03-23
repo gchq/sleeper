@@ -403,7 +403,7 @@ pub async fn serialise_sketches(
     let store_path = object_store::path::Path::from(path.path());
 
     // Save to object store
-    let store = store_factory.get_object_store(path)?;
+    let store = store_factory.get_object_store(path, true)?;
 
     store.put(&store_path, buf.into_inner().into()).await?;
 

@@ -132,7 +132,7 @@ async fn deserialise_sketches_with_factory(
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let store_path = object_store::path::Path::from(path.path());
-    let store = store_factory.get_object_store(path)?;
+    let store = store_factory.get_object_store(path, false)?;
     let result = store.get(&store_path).await?;
     read_sketches_from_result(result, key_types).await
 }

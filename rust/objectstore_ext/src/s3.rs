@@ -72,7 +72,6 @@ pub fn config_for_s3_module(
 ) -> AmazonS3Builder {
     AmazonS3Builder::from_env()
         .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
-        .with_client_options(ClientOptions::default().with_timeout_disabled())
         .with_region(region.as_ref())
 }
 
@@ -103,23 +102,23 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
         .ok_or(eyre!("invalid S3 bucket name"))
 }
 
-/// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
-/// object store.
-#[derive(Debug)]
-pub struct ObjectStoreFactory {
-    s3_config: Option<AmazonS3Builder>,
-    store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
-    use_readahead: bool,
+/// [`ObjectStoreFactory`] object store cache key.
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum StoreCacheKey {
+    /// This [`ObjectStore`] URL is to be read from.
+    Reading(String),
+    /// This ['ObjectStore'] URL is to be written to.
+    Writing(String),
 }
 
-impl ObjectStoreFactory {
-    #[must_use]
-    pub fn new(s3_config: Option<AmazonS3Builder>, use_readahead: bool) -> Self {
-        Self {
-            s3_config,
-            store_map: RefCell::new(HashMap::new()),
-            use_readahead,
-        }
+impl StoreCacheKey {
+    pub fn from_url(url: &Url, for_writing: bool) -> color_eyre::Result<Self> {
+        let store_key = StoreCacheKey::string_for(url)?;
+        Ok(if for_writing {
+            Self::Writing(store_key)
+        } else {
+            Self::Reading(store_key)
+        })
     }
 
     /// Create a cache key for the given URL.
@@ -130,7 +129,7 @@ impl ObjectStoreFactory {
     ///
     /// # Errors
     /// If the URL host can't be obtained
-    fn make_cache_key_for(url: &Url) -> color_eyre::Result<String> {
+    fn string_for(url: &Url) -> color_eyre::Result<String> {
         let scheme = url.scheme();
         match scheme {
             "s3" => {
@@ -139,6 +138,27 @@ impl ObjectStoreFactory {
                 Ok(format!("s3://{host}"))
             }
             _ => Ok(scheme.to_owned()),
+        }
+    }
+}
+
+/// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
+/// object store.
+#[derive(Debug)]
+pub struct ObjectStoreFactory {
+    s3_config: Option<AmazonS3Builder>,
+    /// ['ObjectStore'] cache. Split into stores for reading and writing
+    store_map: RefCell<HashMap<StoreCacheKey, Arc<dyn ObjectStore>>>,
+    use_readahead: bool,
+}
+
+impl ObjectStoreFactory {
+    #[must_use]
+    pub fn new(s3_config: Option<AmazonS3Builder>, use_readahead: bool) -> Self {
+        Self {
+            s3_config,
+            store_map: RefCell::new(HashMap::new()),
+            use_readahead,
         }
     }
 
@@ -153,14 +173,18 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
+    pub fn get_object_store(
+        &self,
+        src: &Url,
+        for_writing: bool,
+    ) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
-        match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
+        match borrow.entry(StoreCacheKey::from_url(src, for_writing)?) {
             // if entry found, then clone the shared pointer
             Entry::Occupied(occupied) => Ok(occupied.get().clone()),
             // otherwise, attempt to create the object store
-            Entry::Vacant(vacant) => match self.make_object_store(src) {
+            Entry::Vacant(vacant) => match self.make_object_store(src, for_writing) {
                 // success? Insert it into the entry (first clone) then return the shared pointer, cloned from reference
                 Ok(x) => Ok(vacant.insert(x.clone()).clone()),
                 // otherwise propogate error
@@ -176,12 +200,16 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
+    fn make_object_store(
+        &self,
+        src: &Url,
+        for_writing: bool,
+    ) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
                 Ok(self
-                    .connect_s3(src)
+                    .connect_s3(src, for_writing)
                     .map(|store| self.wrap_s3_store(store, &bucket))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
@@ -193,15 +221,21 @@ impl ObjectStoreFactory {
         }
     }
 
-    fn connect_s3(&self, src: &Url) -> color_eyre::Result<AmazonS3> {
-        match &self.s3_config {
+    fn connect_s3(&self, src: &Url, for_writing: bool) -> color_eyre::Result<AmazonS3> {
+        let builder = match &self.s3_config {
             Some(config) => Ok(config
                 .clone()
-                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
-                .build()?),
+                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)),
             None => Err(eyre!(
                 "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
             )),
+        }?;
+        if for_writing {
+            Ok(builder.build()?)
+        } else {
+            Ok(builder
+                .with_client_options(ClientOptions::default().with_timeout_disabled())
+                .build()?)
         }
     }
 
@@ -227,10 +261,10 @@ fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> LoggingObje
 
 #[cfg(test)]
 mod tests {
+    use super::extract_bucket;
+    use crate::s3::StoreCacheKey;
     use color_eyre::eyre::Result;
     use url::Url;
-
-    use super::{ObjectStoreFactory, extract_bucket};
 
     #[test]
     fn should_extract_bucket() -> Result<()> {
@@ -267,23 +301,42 @@ mod tests {
         let url = Url::parse("file:///some/file")?;
 
         // When
-        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+        let cache_key = StoreCacheKey::from_url(&url, false)?;
 
         // Then
-        assert_eq!(cache_key, "file");
+        assert_eq!(cache_key, StoreCacheKey::Reading("file".to_owned()));
         Ok(())
     }
 
     #[test]
-    fn should_create_bucket_cache_key_for_s3() -> Result<()> {
+    fn should_create_bucket_cache_key_for_s3_writing() -> Result<()> {
         // Given
         let url = Url::parse("s3://test-bucket/key")?;
 
         // When
-        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+        let cache_key = StoreCacheKey::from_url(&url, true)?;
 
         // Then
-        assert_eq!(cache_key, "s3://test-bucket");
+        assert_eq!(
+            cache_key,
+            StoreCacheKey::Writing("s3://test-bucket".to_owned())
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_create_bucket_cache_key_for_s3_reading() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://test-bucket/key")?;
+
+        // When
+        let cache_key = StoreCacheKey::from_url(&url, false)?;
+
+        // Then
+        assert_eq!(
+            cache_key,
+            StoreCacheKey::Reading("s3://test-bucket".to_owned())
+        );
         Ok(())
     }
 }

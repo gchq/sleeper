@@ -141,7 +141,7 @@ pub fn register_store(
 ) -> Result<(), DataFusionError> {
     for input_path in input_paths {
         let in_store = store_factory
-            .get_object_store(input_path)
+            .get_object_store(input_path, false)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
             .register_object_store(input_path, in_store);
@@ -149,7 +149,7 @@ pub fn register_store(
 
     if let Some(output) = output_path {
         let out_store = store_factory
-            .get_object_store(output)
+            .get_object_store(output, true)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env().register_object_store(output, out_store);
     }
@@ -167,7 +167,7 @@ pub async fn retrieve_object_metas(
     let mut metas = Vec::new();
     for input_path in input_paths {
         let store = store_factory
-            .get_object_store(input_path)
+            .get_object_store(input_path, false)
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
         metas.push(store.head(&p.into()).await?);

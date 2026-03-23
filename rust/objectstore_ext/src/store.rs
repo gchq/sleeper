@@ -129,20 +129,21 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
 #[async_trait]
 impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
+        let mut msg_detail = "HEAD".to_owned();
         if !options.head {
             let stats = &mut *self
                 .internal
                 .lock()
                 .expect("LoggingObjectStore stats lock poisoned");
             stats.get_count += 1;
-            match &options.range {
+            msg_detail = match &options.range {
                 Some(GetRange::Bounded(get_range)) => {
                     let len = get_range
                         .end
                         .checked_sub(get_range.start)
                         .expect("Get range length is negative");
                     stats.get_bytes_read += len;
-                    debug!(
+                    format!(
                         "{} GET request on {}/{} byte range {} to {} = {} bytes",
                         self.prefix,
                         self.path_prefix,
@@ -150,35 +151,39 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                         get_range.start.to_formatted_string(&Locale::en),
                         get_range.end.to_formatted_string(&Locale::en),
                         len.to_formatted_string(&Locale::en),
-                    );
+                    )
                 }
                 Some(GetRange::Offset(start_pos)) => {
-                    debug!(
+                    format!(
                         "{} GET request on {}/{} for byte {} to EOF",
                         self.prefix,
                         self.path_prefix,
                         location,
                         start_pos.to_formatted_string(&Locale::en)
-                    );
+                    )
                 }
+
                 Some(GetRange::Suffix(pos)) => {
-                    debug!(
+                    format!(
                         "{} GET request on {}/{} for last {} bytes of object",
                         self.prefix,
                         self.path_prefix,
                         location,
                         pos.to_formatted_string(&Locale::en)
-                    );
+                    )
                 }
                 None => {
-                    debug!(
+                    format!(
                         "{} GET request on {}/{} for complete file range",
                         self.prefix, self.path_prefix, location
-                    );
+                    )
                 }
-            }
+            };
         }
-        self.store.get_opts(location, options).await
+        debug!("{msg_detail}");
+        let result = self.store.get_opts(location, options).await;
+        debug!("COMPLETED {msg_detail}");
+        result
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
@@ -226,14 +231,17 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         payload: PutPayload,
         opts: PutOptions,
     ) -> Result<PutResult> {
-        debug!(
+        let msg = format!(
             "{} PUT request to {}/{} of {} bytes",
             self.prefix,
             self.path_prefix,
             location,
             payload.content_length().to_formatted_string(&Locale::en)
         );
-        self.store.put_opts(location, payload, opts).await
+        debug!("{msg}");
+        let result = self.store.put_opts(location, payload, opts).await;
+        debug!("COMPLETED {msg}");
+        result
     }
 
     async fn put_multipart_opts(
@@ -246,6 +254,10 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
             self.prefix, self.path_prefix, location
         );
         let part_upload = self.store.put_multipart_opts(location, opts).await?;
+        debug!(
+            "COMPLETED {} PUT MULTIPART request to {}/{}",
+            self.prefix, self.path_prefix, location
+        );
         Ok(Box::new(LoggingMultipartUpload::new(
             part_upload,
             &self.prefix,
@@ -277,13 +289,16 @@ impl LoggingMultipartUpload {
 
 impl MultipartUpload for LoggingMultipartUpload {
     fn put_part(&mut self, data: PutPayload) -> UploadPart {
-        debug!(
+        let msg = format!(
             "{} multipart PUT to {} of {} bytes",
             self.prefix,
             self.path,
             data.content_length().to_formatted_string(&Locale::en)
         );
-        self.inner.put_part(data)
+        debug!("{msg}");
+        let result = self.inner.put_part(data);
+        debug!("COMPLETED {msg}");
+        result
     }
 
     fn complete<'life0, 'async_trait>(
