@@ -27,21 +27,21 @@ Scripts:
 - Added help text to the Sleeper Docker tools CLI
 - Removed `scripts/deploy/deploy.sh` in favour of deploy new/existing
 
+Deployment:
+- Enabled S3 request metrics on the table data bucket
+- Container images are now referenced by image digest instead of tag
+
 Documentation:
 - Reworked getting started documentation and guides, clarified use of Sleeper Docker tools
 - Improved documentation of deployment scripts
 - Improved Javadoc for `SleeperClient` and related classes
 - Out of date documentation of Python client has been removed
 
-Deployment:
-- Enabled S3 request metrics on the table data bucket
-- Container images are now referenced by image digest instead of tag
+Build:
+- Maven artifact publishing now attaches source code
 
 System tests:
 - Added system test automation for the EC2 state store committer platform
-
-Build:
-- Maven artifact publishing now attaches source code
 
 Bugfixes:
 - `SleeperClient` can now be created for an instance without WebSocketQueryStack
