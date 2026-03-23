@@ -6,6 +6,55 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.35.2
+
+### 23rd March, 2026
+
+This includes minor improvements, bugfixes and security upgrades to dependencies.
+
+Compaction:
+- Increased block size of S3 PUTs in DataFusion compactions
+- Improvements to readahead behaviour with `sleeper.table.datafusion.s3.readahead.enabled`, caching for S3 HEAD requests
+
+Bulk import:
+- Disabled checks for whether output files already exist during bulk import, vastly reducing requests to S3
+
+Reports:
+- Added static rate limiting for all requests to the EMR API in reports, including in the admin client and system tests
+
+Scripts:
+- Renamed the Docker-based CLI to the Sleeper Docker tools
+- Added help text to the Sleeper Docker tools CLI
+- Removed `scripts/deploy/deploy.sh` in favour of deploy new/existing
+
+Deployment:
+- Enabled S3 request metrics on the table data bucket
+- Container images are now referenced by image digest instead of tag
+
+Documentation:
+- Reworked getting started documentation and guides, clarified use of Sleeper Docker tools
+- Improved documentation of deployment scripts
+- Improved Javadoc for `SleeperClient` and related classes
+- Out of date documentation of Python client has been removed
+
+Build:
+- Maven artifact publishing now attaches source code
+
+System tests:
+- Added system test automation for the EC2 state store committer platform
+
+Bugfixes:
+- `SleeperClient` can now be created for an instance without WebSocketQueryStack
+- If one table has invalid properties, state store snapshot creation did not run for other tables after loading the
+  invalid table
+- If you use the EC2-based state store committer, or set `sleeper.table.statestore.committer.update.every.batch` to
+  false, the table state was corrupted when a new committer first committed to an old table with a pre-existing snapshot
+- When managed scaling is disabled for persistent EMR bulk import, the cluster capacity was incorrectly validated
+  against the maximum capacity for managed scaling
+- The Sleeper Docker tools `sleeper cdk bootstrap` command was including a `cdk.json` file resulting in confusing
+  failures, it will now behave the same as running `cdk bootstrap` without any context
+
+
 ## Version 0.35.1
 
 ### 2nd March, 2026

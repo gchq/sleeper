@@ -24,7 +24,7 @@ ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/deployment/cdk-environment"
 BUILD_UPTIME_MAVEN_DIR="$MAVEN_DIR/deployment/build-uptime-lambda"
 SCRIPTS_DIR="$BASE_DIR/scripts"
 VERSION_FILE="$THIS_DIR/version.txt"
-JARS_DIR="$THIS_DIR/jars"
+JARS_DIR="$THIS_DIR/app/jars"
 
 if [ "$#" -lt 1 ]; then
   MAVEN_PARAMS=(clean install -q -Pquick)
