@@ -17,7 +17,7 @@
 use arrow::{datatypes::DataType, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
-        DFSchema, plan_err,
+        DFSchema, plan_datafusion_err, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     dataframe::DataFrame,
@@ -144,16 +144,37 @@ pub fn register_store(
             .get_object_store(input_path, false)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
-            .register_object_store(input_path, in_store);
+            .register_object_store(&modify_scheme(input_path, false)?, in_store);
     }
 
     if let Some(output) = output_path {
         let out_store = store_factory
             .get_object_store(output, true)
             .map_err(|e| DataFusionError::External(e.into()))?;
-        ctx.runtime_env().register_object_store(output, out_store);
+        ctx.runtime_env()
+            .register_object_store(&modify_scheme(output, true)?, out_store);
     }
     Ok(())
+}
+
+pub fn modify_scheme(u: &Url, for_writing: bool) -> Result<Url, DataFusionError> {
+    debug!("{u:?}");
+    if u.scheme() != "s3" {
+        debug!("scheme modification only available for s3 scheme!");
+        Ok(u.to_owned())
+    } else {
+        let mut changed = u.to_owned();
+        if for_writing {
+            changed
+                .set_scheme("s3w")
+                .map_err(|_| plan_datafusion_err!("Couldn't modify URL scheme"))?;
+        } else {
+            changed
+                .set_scheme("s3r")
+                .map_err(|_| plan_datafusion_err!("Couldn't modify URL scheme"))?;
+        }
+        Ok(changed)
+    }
 }
 
 /// Retrieves the [`ObjectMeta`]s for each URL passed.

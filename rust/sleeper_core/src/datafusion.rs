@@ -27,8 +27,8 @@ use crate::{
         unalias::unalias_view_projection_columns,
         util::{
             add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
-            remove_coalesce_physical_stage, retrieve_input_size,
+            calculate_upload_size, check_for_sort_exec, modify_scheme, output_partition_count,
+            register_store, remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
     filter_aggregation_config::aggregate::Aggregate,
@@ -197,6 +197,14 @@ impl<'a> SleeperOperations<'a> {
         // then we need to take action to prepopulate DF's metadata cache. We read the Parquet metadata without page indexes
         // and put it in the cache. Therefore, when DF runs the query, it will already see the metadata in the cache and
         // will not attempt to do so itself.
+
+        let modded_input_files = self
+            .config
+            .input_files()
+            .iter()
+            .map(|u| modify_scheme(u, false))
+            .collect::<Result<Vec<_>, _>>()?;
+
         if !self.config.read_page_indexes() {
             let metadata_size_hint = ctx
                 .state_ref()
@@ -206,13 +214,10 @@ impl<'a> SleeperOperations<'a> {
                 .execution
                 .parquet
                 .metadata_size_hint;
-            prepopulate_metadata_cache(ctx, self.config.input_files(), metas, metadata_size_hint)
-                .await?;
+            prepopulate_metadata_cache(ctx, &modded_input_files, metas, metadata_size_hint).await?;
         }
         // Read Parquet files and apply sort order
-        let frame = ctx
-            .read_parquet(self.config.input_files().clone(), po)
-            .await?;
+        let frame = ctx.read_parquet(modded_input_files, po).await?;
         // Do we have partition bounds?
         Ok(
             if let Some(expr) = Option::<Expr>::from(self.config.region()) {
@@ -320,9 +325,10 @@ impl<'a> SleeperOperations<'a> {
             self.config,
             logical_plan.schema(),
         );
+        let modded_output = modify_scheme(output_file, true)?;
         let logical_plan = LogicalPlanBuilder::copy_to(
             logical_plan,
-            output_file.as_str().into(),
+            modded_output.as_str().into(),
             format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
             HashMap::default(),
             Vec::new(),
