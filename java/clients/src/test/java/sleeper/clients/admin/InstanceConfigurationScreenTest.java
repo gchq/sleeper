@@ -36,6 +36,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -65,6 +66,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -629,6 +631,22 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
+
+        @Test
+        void shouldSetInvalidSchemaByPropertyConstant() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
+            after.set(SCHEMA, "{}");
+
+            // When/Then
+            assertThatThrownBy(() -> editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput())
+                    .isInstanceOf(NullPointerException.class);
+        }
+
     }
 
     @DisplayName("Filter by group")
