@@ -5,14 +5,14 @@ This section documents some of the improvements that we plan to make to Sleeper.
 
 The following improvements are actively being worked on:
 
-- https://github.com/gchq/sleeper/issues/5781 Easier CDK-focused deployment.
+- https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
 
 The following are likely to be worked on in the near future:
 
 - https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 - https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
 - https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
-- https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
+- https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
 
 The following improvements will be worked on in future (these are in no particular order):
 
@@ -33,7 +33,7 @@ The following improvements will be worked on in future (these are in no particul
     - https://github.com/gchq/sleeper/issues/4555 Optimise table snapshot creation.
 - Usability improvements.
     - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
-    - https://github.com/gchq/sleeper/issues/1786 REST API.
+    - https://github.com/gchq/sleeper/issues/1786 REST API to standardise Java/Python clients.
     - Python API improvements. This is currently basic and needs further work.
 - https://github.com/gchq/sleeper/issues/1392 Create a predicate language for specifying filters on queries.
 - https://github.com/gchq/sleeper/issues/1390 Review and extend the integrations with Athena and Trino.
