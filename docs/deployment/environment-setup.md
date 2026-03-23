@@ -46,7 +46,7 @@ Sleeper itself. See
 [the AWS documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-env.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command outputs a number of files to the current
 directory. It should not be run from inside the Sleeper directory. You can run `cdk bootstrap` in a Docker container
-with the Sleeper Docker tools, like `sleeper cdk bootstrap aws://123456789012/eu-west-2`.
+with the Sleeper Docker tools, like `sleeper cdk bootstrap aws://<account>/<region>`.
 
 ### Lambda Reserved Concurrency
 
