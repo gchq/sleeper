@@ -57,6 +57,7 @@ import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProp
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStoreIT extends AdminClientITBase {
@@ -186,6 +187,17 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("new-test-table");
         }
+
+        @Test
+        void shouldFailUpdateTablePropertyWithInvalidSchema() {
+            // Given
+            createTableInS3("test-table");
+
+            // When/Then
+            assertThatThrownBy(() -> updateTableProperty(instanceId, "test-table", SCHEMA, "{}"))
+                    .hasMessageContaining("Could not save properties for table test-table");
+        }
+
     }
 
     @DisplayName("Deploy instance property change with CDK")
