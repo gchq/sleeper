@@ -53,20 +53,24 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return updatedProperties;
     }
 
-    public Set<SleeperProperty> getInvalidProperties() {
+    public Set<SleeperProperty> getInvalidUpdatedProperties() {
+        return getInvalidProperties(updatedProperties);
+    }
+
+    private Set<SleeperProperty> getInvalidProperties(T properties) {
         try {
-            updatedProperties.validate();
-            return getUneditableChangedProperties()
+            properties.validate();
+            return getUneditableProperties(properties)
                     .collect(Collectors.toSet());
         } catch (SleeperPropertiesInvalidException e) {
-            return Stream.concat(getUneditableChangedProperties(), e.getInvalidValues().keySet().stream())
+            return Stream.concat(getUneditableProperties(properties), e.getInvalidValues().keySet().stream())
                     .collect(Collectors.toSet());
         }
     }
 
-    private Stream<? extends SleeperProperty> getUneditableChangedProperties() {
+    private Stream<? extends SleeperProperty> getUneditableProperties(T properties) {
         return diff.getChanges().stream()
-                .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
+                .flatMap(d -> d.getProperty(properties.getPropertiesIndex()).stream())
                 .filter(not(SleeperProperty::isEditable));
     }
 }
