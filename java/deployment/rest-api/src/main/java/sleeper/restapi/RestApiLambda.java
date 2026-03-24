@@ -17,6 +17,7 @@ package sleeper.restapi;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,30 +35,35 @@ public class RestApiLambda {
     /**
      * Used by the lambda handler to handle api gateway requests that have been sent to the REST API.
      *
-     * @param event the event
+     * @param  event the event
+     * @return       APIGatewayV2HTTPResponse the response from the api request
      */
-    public void handleEvent(APIGatewayV2HTTPEvent event) {
+    public APIGatewayV2HTTPResponse handleEvent(APIGatewayV2HTTPEvent event) {
         String requestPath = event.getRequestContext().getHttp().getPath();
         LOGGER.info("Recieved request for: " + requestPath);
         switch (requestPath) {
             case "addTable":
-                addTable(event.getRequestContext());
-                break;
+                return addTable(event.getRequestContext());
             case "getVersion":
-                requestSleeperVersion();
-                break;
+                return requestSleeperVersion();
             default:
-                break;
+                return APIGatewayV2HTTPResponse.builder()
+                        .withBody(String.format("Method requested \" %s \" does not match any found withing the API.", requestPath))
+                        .build();
         }
     }
 
-    private String requestSleeperVersion() {
-        return SleeperVersion.getVersion();
+    private APIGatewayV2HTTPResponse requestSleeperVersion() {
+        return APIGatewayV2HTTPResponse.builder()
+                .withBody(SleeperVersion.getVersion())
+                .build();
     }
 
     //TODO: Sample additional method call to the api
-    private void addTable(RequestContext context) {
-        // Create class to handle the call to add table
+    private APIGatewayV2HTTPResponse addTable(RequestContext context) {
+        return APIGatewayV2HTTPResponse.builder()
+                .withBody("Method not yet implemented.")
+                .build();
     }
 
 }
