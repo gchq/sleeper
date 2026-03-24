@@ -14,12 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{AsArray, BooleanBuilder},
-    datatypes::{DataType, Int64Type},
-};
+use arrow::array::{AsArray, BooleanBuilder};
 use datafusion::{
     common::{exec_err, plan_datafusion_err, plan_err},
+    datatypes::{DataType, Int64Type},
     error::{DataFusionError, Result},
     logical_expr::{
         ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
