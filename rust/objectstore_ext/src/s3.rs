@@ -106,13 +106,17 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
 
 /// If given an S3 Url, this will convert it to s3w. All others
 /// left unchanged.
+///
+/// # Panics
+/// Should never panic. If this panics, there is a bug!
+#[must_use]
 pub fn modify_output_path_scheme(url: &Url) -> Url {
     match url.scheme() {
         "s3" => {
             let mut new_url = url.to_owned();
-            let _ = new_url
+            new_url
                 .set_scheme(S3_WRITING_URL_SCHEME)
-                .expect(&format!("{S3_WRITING_URL_SCHEME} should be a valid scheme"));
+                .expect("should never happen. Scheme should be valid.");
             new_url
         }
         _ => url.to_owned(),
@@ -149,7 +153,7 @@ impl ObjectStoreFactory {
     fn make_cache_key_for(url: &Url) -> color_eyre::Result<String> {
         let scheme = url.scheme();
         match scheme {
-            s @ "s3" | s @ S3_WRITING_URL_SCHEME => {
+            s @ ("s3" | S3_WRITING_URL_SCHEME) => {
                 // Amazon S3 object store implementation is bucket specific
                 let host = extract_bucket(url)?;
                 Ok(format!("{s}://{host}"))

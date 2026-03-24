@@ -136,6 +136,7 @@ impl Display for CommonConfig<'_> {
 }
 
 /// Builder for `CommonConfig`.
+#[allow(clippy::struct_excessive_bools)]
 pub struct CommonConfigBuilder<'a> {
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
@@ -259,7 +260,7 @@ impl<'a> CommonConfigBuilder<'a> {
         self.normalise_s3a_urls();
 
         let output = if self.modify_output_scheme {
-            self.output.modified()
+            self.output.modified_scheme()
         } else {
             self.output
         };
@@ -350,10 +351,9 @@ impl AwsConfig {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::datafusion::{ColRange, PartitionBound, SleeperParquetOptions};
     use std::collections::HashMap;
-
-    use super::*;
     use url::Url;
 
     fn normalise_s3a_urls(input_files: Vec<Url>, output: OutputType) -> (Vec<Url>, OutputType) {
@@ -537,5 +537,46 @@ mod tests {
 
         // Then
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn should_modify_output_scheme_s3() -> Result<()> {
+        // Given
+        let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
+        let row_key_cols = vec!["key".to_string()];
+        let region = SleeperRegion::new(HashMap::from([(
+            "col".to_string(),
+            ColRange {
+                lower: PartitionBound::String("a"),
+                lower_inclusive: true,
+                upper: PartitionBound::String("z"),
+                upper_inclusive: true,
+            },
+        )]));
+
+        let builder = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .row_key_cols(row_key_cols)
+            .output(OutputType::File {
+                output_file: Url::parse("s3://bucket/path/file.parquet")?,
+                write_sketch_file: true,
+                opts: SleeperParquetOptions::default(),
+            })
+            .with_modified_output_scheme(true)
+            .region(region);
+
+        // When
+        let result = builder.build()?;
+
+        // Then
+        assert_eq!(
+            result.output(),
+            &OutputType::File {
+                output_file: Url::parse("s3w://bucket/path/file.parquet")?,
+                write_sketch_file: true,
+                opts: SleeperParquetOptions::default()
+            }
+        );
+        Ok(())
     }
 }

@@ -35,7 +35,7 @@ use std::{
 use url::Url;
 
 /// Defines how operation output should be given.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum OutputType {
     /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
     #[default]
@@ -65,7 +65,8 @@ impl OutputType {
         }
     }
 
-    pub fn modified(&self) -> Self {
+    #[must_use]
+    pub fn modified_scheme(&self) -> Self {
         match self {
             Self::ArrowRecordBatch => Self::ArrowRecordBatch,
             Self::File {
@@ -82,7 +83,7 @@ impl OutputType {
 }
 
 /// All Parquet output options supported by Sleeper.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SleeperParquetOptions {
     pub max_row_group_size: usize,
     pub max_page_size: usize,
