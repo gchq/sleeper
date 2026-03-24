@@ -169,6 +169,7 @@ impl FFICommonConfig {
                 self.aggregation_config,
             )?)?)
             .filters(Filter::parse_config(unpack_str(self.filtering_config)?)?)
+            .with_modified_output_scheme(true)
             .build()
     }
 }

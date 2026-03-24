@@ -169,6 +169,7 @@ async fn main() -> color_eyre::Result<()> {
         .filters(Filter::parse_config(
             &args.filter_config.unwrap_or_default(),
         )?)
+        .with_modified_output_scheme(true)
         .build()?;
 
     let query_config = LeafPartitionQueryConfig {

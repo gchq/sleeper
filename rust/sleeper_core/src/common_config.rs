@@ -80,13 +80,6 @@ impl CommonConfig<'_> {
         &self.output
     }
 
-    pub(crate) fn modify_output_scheme(self) -> Self {
-        Self {
-            output: self.output.modified(),
-            ..self
-        }
-    }
-
     pub(crate) fn input_files(&self) -> &Vec<Url> {
         &self.input_files
     }
