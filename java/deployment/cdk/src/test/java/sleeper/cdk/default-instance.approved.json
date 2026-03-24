@@ -3663,6 +3663,25 @@
             ]
           }
         },
+        "RESTAPIhandlerF3A0722D": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-REST-API-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
         "bulkimportPersistentEMRstart64C1297A": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
