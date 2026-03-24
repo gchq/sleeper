@@ -634,7 +634,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
         @Test
         @Disabled("TODO")
-        void shouldSetInvalidSchemaByPropertyConstant() throws Exception {
+        void shouldFailToSetInvalidSchemaInEditor() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
@@ -643,6 +643,25 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // When
             String output = editTableConfiguration(properties, before, after)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).isEmpty();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldRecoverFromInvalidSchema() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
+            before.set(SCHEMA, "{}");
+
+            // When
+            // TODO allow editing uneditable property when it is invalid
+            String output = editTableConfiguration(properties, before, after)
+                    // .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
             // Then
