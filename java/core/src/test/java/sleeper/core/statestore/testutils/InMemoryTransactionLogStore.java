@@ -56,11 +56,10 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
         doStartOfAddTransaction();
-        if (transactionNumber <= transactionEntries.size()) {
-            throw new DuplicateTransactionNumberException(transactionNumber);
-        }
-        if (transactionNumber > transactionEntries.size() + 1) {
-            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactionEntries.size());
+        for (TransactionLogEntry existingEntry : transactionEntries) {
+            if (entry.getTransactionNumber() == existingEntry.getTransactionNumber()) {
+                throw new DuplicateTransactionNumberException(transactionNumber);
+            }
         }
         transactionEntries.add(entry);
     }
@@ -152,8 +151,16 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         startOfRead = wrappingCheckedExceptions(action);
     }
 
+    /**
+     * Finds the last transaction number in the log.
+     *
+     * @return the last transaction number, or 0 if there are no entries
+     */
     public long getLastTransactionNumber() {
-        return transactionEntries.size();
+        if (transactionEntries.isEmpty()) {
+            return 0;
+        }
+        return getLastEntry().getTransactionNumber();
     }
 
     public TransactionLogEntry getLastEntry() {

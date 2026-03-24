@@ -45,6 +45,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     protected final InMemoryTransactionBodyStore transactionBodyStore = transactionLogs.getTransactionBodyStore();
+    protected final InMemoryTransactionLogSnapshots fileSnapshots = transactionLogs.getFilesSnapshots();
     protected final List<Duration> retryWaits = transactionLogs.getRetryWaits();
     protected PartitionsBuilder partitions;
     protected FileReferenceFactory factory;

@@ -22,7 +22,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/dependencies/build.sh"
+"$THIS_DIR/dependencies/build.sh" --no-cache
 
 END_DEPENDENCIES_TIME=$(record_time)
 echo "Finished dependencies Docker build at $(recorded_time_str "$END_DEPENDENCIES_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPENDENCIES_TIME")"

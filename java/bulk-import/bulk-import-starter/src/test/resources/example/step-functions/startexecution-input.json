@@ -70,6 +70,8 @@
     "--conf",
     "spark.memory.fraction=0.80",
     "--conf",
+    "spark.hadoop.fs.s3a.create.performance=true",
+    "--conf",
     "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
     "--conf",
     "spark.dynamicAllocation.enabled=false",

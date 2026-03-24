@@ -3,11 +3,10 @@ Developer Guide
 
 This is a brief guide to developing Sleeper.
 
-## Get your environment setup
+## Deployment environment setup
 
-Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
-copy that you built yourself.
+Before you do any dev work on Sleeper it is worth reading the [deployment environment setup](deployment/environment-setup.md)
+document. Once you've built the system, exactly the same will apply with a copy that you built yourself.
 
 ### Install prerequisite software
 
@@ -17,8 +16,8 @@ these available.
 #### Dev container
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
-the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
-image based on this configuration.
+the [Sleeper Docker tools](deployment/docker-tools.md). This includes all the same dependencies. If your IDE supports
+Dev Containers, it can work against this Docker image based on this configuration.
 
 The dev container configuration will mount any AWS CLI, Maven and SSH configuration from your host machine into the
 container.
@@ -60,16 +59,15 @@ cd sleeper
 git checkout --track origin/main
 ```
 
-#### Sleeper CLI builder image
+#### Sleeper builder image
 
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](getting-started.md), you can
-use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
-container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
-without using Dev Containers.
+If you've installed the [Sleeper Docker tools](deployment/docker-tools.md), you can use `sleeper builder` to get a
+command line inside a Docker container with the dependencies pre-installed. This is the same container image that's used
+for the Dev Containers setup above. It may be useful if you want to work inside Docker without using Dev Containers.
 
-If you're in an EC2 deployed with `sleeper environment`, the Sleeper CLI was pre-installed and the repository was
-already checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can
-use the commands below to do this:
+If you're in an EC2 deployed with `sleeper environment`, this is pre-installed and the repository has already been
+checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can use the
+commands below to do this:
 
 ```bash
 sleeper builder
@@ -102,7 +100,7 @@ You will need the following software:
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-* [Java](https://openjdk.java.net/install/): Requires version 17, to match the version used by AWS EMR
+* Java: Requires version 21, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
 * [Maven](https://maven.apache.org/)
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [Rust](https://rustup.rs/)
@@ -122,9 +120,9 @@ previous build that included Rust, skipping Rust will reuse the same binaries.
 
 When running Maven directly, you can pass `-Pquick` to skip tests and linting.
 
-### Sleeper CLI
+### Sleeper Docker tools
 
-To build the Sleeper CLI, you can run this script:
+To build the Sleeper Docker tools, you can run this script:
 
 ```bash
 ./scripts/cli/buildAll.sh

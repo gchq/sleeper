@@ -44,6 +44,8 @@ vulnerabilities:
   # (hadoop-client-runtime-3.4.1.jar)
   # (spark-core_2.12-3.5.6.jar)
   - id: CVE-2024-6763
+  - id: CVE-2025-11143
+  - id: CVE-2025-54920
   # org.eclipse.jetty:jetty-server
   # (spark-core_2.12-3.5.6.jar)
   - id: CVE-2024-13009

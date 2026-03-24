@@ -162,7 +162,7 @@ public class StateStoreProvider {
     }
 
     /**
-     * Creates an instance of the state store client for a Sleeper table. Implemented by {@link StateStoreFactory}.
+     * Creates an instance of the state store client for a Sleeper table. Implemented by StateStoreFactory.
      */
     public interface Factory {
 

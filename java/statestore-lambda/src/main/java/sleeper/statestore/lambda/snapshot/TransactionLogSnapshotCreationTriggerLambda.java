@@ -26,10 +26,9 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.table.TableIndex;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.invoke.tables.InvokeForTables;
@@ -54,11 +53,14 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
     private final SqsClient sqsClient;
 
     public TransactionLogSnapshotCreationTriggerLambda() {
-        this.s3Client = S3Client.create();
-        this.dynamoClient = DynamoDbClient.create();
-        this.sqsClient = SqsClient.create();
-        String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
+        this(S3Client.create(), DynamoDbClient.create(), SqsClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+    }
+
+    public TransactionLogSnapshotCreationTriggerLambda(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucketName) {
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.sqsClient = sqsClient;
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
     }
 
     @Override
@@ -74,11 +76,11 @@ public class TransactionLogSnapshotCreationTriggerLambda implements RequestHandl
     }
 
     private Stream<TableStatus> streamOnlineTransactionLogTables() {
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
-                S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient), Instant::now);
-        return tableIndex.streamOnlineTables()
-                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getSimpleName()
-                        .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        return tablePropertiesStore.streamOnlineTables()
+                .filter(TableProperties::isValid)
+                .filter(tableProperties -> DynamoDBTransactionLogStateStore.class.getSimpleName()
+                        .equals(tableProperties.get(STATESTORE_CLASSNAME)))
+                .map(TableProperties::getStatus);
     }
 }

@@ -57,6 +57,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
@@ -268,6 +269,26 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             assertThat(store.getFileReferences())
                     .containsExactly(withJobId("test-job", file));
             assertThat(retryWaits).isEmpty();
+        }
+
+        @Test
+        void shouldLoadSnapshotWhenAddingTransactionWithoutUpdatingFromLog() {
+            // Given
+            FileReference file1 = fileFactory().rootFile("test1.parquet", 100);
+            FileReference file2 = fileFactory().rootFile("test2.parquet", 100);
+            fileSnapshots.setLatestSnapshot(
+                    setupSnapshotWithFreshState(tableProperties, store -> update(store).addFile(file1))
+                            .createFilesSnapshot(10));
+            store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
+
+            // When
+            update(store).addFile(file2);
+
+            // Then
+            assertThat(filesLogStore.readTransactions(TransactionLogRange.fromMinimum(1)))
+                    .extracting(TransactionLogEntry::getTransactionNumber)
+                    .containsExactly(11L);
+            assertThat(store.getFileReferences()).containsExactly(file1, file2);
         }
     }
 

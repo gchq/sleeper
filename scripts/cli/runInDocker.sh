@@ -16,8 +16,13 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ]; then
+show_usage() {
   echo "Usage: sleeper <command>"
+  echo "Available commands: help, builder, environment, cli upgrade, aws, cdk, version"
+}
+
+if [ "$#" -lt 1 ]; then
+  show_usage
   exit 1
 fi
 
@@ -223,6 +228,11 @@ elif [ "$COMMAND" == "environment" ]; then
     run_in_environment_docker environment "$@"
   fi
 elif [ "$COMMAND" == "cli" ]; then
+  if [ "$#" -lt 1 ]; then
+    echo "Command not found: $COMMAND"
+    show_usage
+    exit 1
+  fi
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
@@ -231,9 +241,42 @@ elif [ "$COMMAND" == "cli" ]; then
     pull_docker_images
   else
     echo "Command not found: cli $SUBCOMMAND"
+    show_usage
     exit 1
   fi
+elif [ "$COMMAND" == "help" ]; then
+  show_usage
+  echo
+  echo "builder"
+  echo "Starts a shell inside a Docker container with the build dependencies of Sleeper pre-installed. Relevant"
+  echo "configuration is persisted and mounted into the container, as well as a workspace at \"/sleeper-builder\"."
+  echo
+  echo "environment"
+  echo "Starts a Docker container with tools to set up an environment suitable for deploying Sleeper in. These tools"
+  echo "can be invoked by passing further subcommands like \"sleeper environment <subcommand>\". If no subcommand is"
+  echo "given, this starts a shell inside a Docker container where you can invoke the subcommands like"
+  echo "\"environment <subcommand>\". Run \"sleeper environment help\" for more information."
+  echo
+  echo "aws"
+  echo "Runs the AWS CLI in an \"environment\" Docker container. Arguments will be passed to the AWS CLI."
+  echo
+  echo "cdk"
+  echo "Runs the AWS CDK in an \"environment\" Docker container. Arguments will be passed to the CDK."
+  echo
+  echo "cli upgrade"
+  echo "Retreieves the latest version of this script, and uses the updated script to retrieve the latest versions of"
+  echo "the Docker images."
+  echo
+  echo "cli pull-images"
+  echo "Retrieves the latest version of the Docker images."
+  echo
+  echo "version"
+  echo "Prints the version of Sleeper that was used to build the Docker images currently being used. This will be a"
+  echo "snapshot version, as we are only able to publish a single version of the Docker images to GitHub Container"
+  echo "Registry. We keep this up to date by publishing from the development branch."
+  exit
 else
   echo "Command not found: $COMMAND"
+  show_usage
   exit 1
 fi

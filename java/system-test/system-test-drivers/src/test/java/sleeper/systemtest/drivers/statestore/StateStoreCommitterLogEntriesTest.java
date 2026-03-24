@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.statestore;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.statestore.StateStoreCommitSummary;
-import sleeper.clients.report.statestore.StateStoreCommitterRunStarted;
+import sleeper.clients.report.statestore.StateStoreCommitterLambdaRunStarted;
 
 import java.time.Instant;
 import java.util.List;
@@ -83,7 +83,7 @@ public class StateStoreCommitterLogEntriesTest {
         return new StateStoreCommitSummary("test-stream", Instant.MIN, tableId, "test-commit", time);
     }
 
-    StateStoreCommitterRunStarted runStartedAtTime(Instant time) {
-        return new StateStoreCommitterRunStarted("test-stream", Instant.MIN, time);
+    StateStoreCommitterLambdaRunStarted runStartedAtTime(Instant time) {
+        return new StateStoreCommitterLambdaRunStarted("test-stream", Instant.MIN, time);
     }
 }

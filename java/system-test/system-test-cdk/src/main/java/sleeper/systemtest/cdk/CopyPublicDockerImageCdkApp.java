@@ -17,6 +17,8 @@ package sleeper.systemtest.cdk;
 
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.RemovalPolicy;
@@ -26,9 +28,11 @@ import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecr.TagStatus;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
-import sleeper.cdk.artefacts.containers.CopyContainerImageStack;
+import sleeper.cdk.artefacts.containers.CopyContainerImageProvider;
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.artefacts.jars.SleeperJarsFromFileSystem;
 import sleeper.cdk.util.CdkContext;
@@ -61,8 +65,24 @@ public class CopyPublicDockerImageCdkApp extends Stack {
                                 .build()))
                 .emptyOnDelete(true)
                 .build();
-        new CopyContainerImageStack(this, "CopyContainer", props.deploymentId(), props.jars())
-                .createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri());
+        CopyContainerImageProvider copyImageProvider = CopyContainerImageProvider.Builder.create(this, "CopyContainer")
+                .jars(props.jars())
+                .functionName("sleeper-" + props.deploymentId() + "-copy-image")
+                .functionLogGroup(LogGroup.Builder.create(this, "LambdaLogGroup")
+                        .logGroupName("sleeper-" + props.deploymentId() + "-copy-image")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.RETAIN)
+                        .build())
+                .providerLogGroup(LogGroup.Builder.create(this, "ProviderLogGroup")
+                        .logGroupName("sleeper-" + props.deploymentId() + "-copy-image-provider")
+                        .retention(RetentionDays.TWO_WEEKS)
+                        .removalPolicy(RemovalPolicy.RETAIN)
+                        .build())
+                .build();
+        CustomResource copyImage = copyImageProvider.createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri());
+        CfnOutput.Builder.create(this, "Digest")
+                .value(copyImage.getAttString("digest"))
+                .build();
     }
 
     public static void main(String[] args) {

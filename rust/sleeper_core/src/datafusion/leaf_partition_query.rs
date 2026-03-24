@@ -34,7 +34,7 @@ use datafusion::{
     logical_expr::{Expr, ident},
     physical_plan::displayable,
 };
-use log::info;
+use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{
     fmt::{Display, Formatter},
@@ -118,7 +118,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         if self.config.explain_plans {
-            info!(
+            debug!(
                 "Physical plan\n{}",
                 displayable(&*physical_plan).indent(true)
             );

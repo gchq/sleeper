@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 /// Represents a Sleeper partition region.
 ///
-/// A [`SleeperPartitionRegion`] is multi-dimension key range over row-key fields in Sleeper.
+/// A multi-dimension key range over row-key fields in Sleeper.
 /// If a table has only on row-key field then a region is a single row range. A region in a
 /// table with two row-key fields would be a rectangle, etc.
 #[derive(Debug, Default)]

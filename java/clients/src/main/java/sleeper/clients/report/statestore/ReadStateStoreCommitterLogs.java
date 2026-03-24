@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,19 +38,23 @@ public class ReadStateStoreCommitterLogs {
     public static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS");
 
     private static final Pattern MESSAGE_PATTERN = Pattern.compile("" +
-            "Lambda started at ([^\\s]+)|" + // Lambda started message type
-            "Lambda finished at ([^\\s]+) |" + // Lambda finished message type
+            "State store committer process started at ([^\\s]+)|" + // State store process started message type
+            "State store committer process finished at ([^\\s]+)|" + // Lambda finished message type
+            "Started state store commits batch at ([^\\s]+)|" + //EC2 batch start message
+            "Finished state store commits batch at ([^\\s]+)|" + //EC2 batch finish message type
             "Applied request to table ID ([^\\s]+) with type ([^\\s]+) at time ([^\\s]+)"); // Commit applied message type
 
     /**
      * Constants to refer to capture groups in the regular expression above.
      */
     private static class CapturingGroups {
-        private static final int START_TIME = 1;
-        private static final int FINISH_TIME = 2;
-        private static final int TABLE_ID = 3;
-        private static final int TYPE = 4;
-        private static final int COMMIT_TIME = 5;
+        private static final int LAMBDA_START_TIME = 1;
+        private static final int LAMBDA_FINISH_TIME = 2;
+        private static final int THREAD_START_TIME = 3;
+        private static final int THREAD_FINISH_TIME = 4;
+        private static final int TABLE_ID = 5;
+        private static final int TYPE = 6;
+        private static final int COMMIT_TIME = 7;
 
         private CapturingGroups() {
         }
@@ -57,33 +62,43 @@ public class ReadStateStoreCommitterLogs {
 
     private static StateStoreCommitterLogEntry readMessage(String logStream, Instant timestamp, String message) {
         Matcher matcher = MESSAGE_PATTERN.matcher(message);
-        if (!matcher.find()) {
-            return null;
+        if (matcher.find()) {
+            // The pattern can only match one type of log message at a time.
+            // Each capturing group will be null unless its message type was matched.
+            // We determine which type of message was found based on which capturing group is set.
+            String startTime = matcher.group(CapturingGroups.LAMBDA_START_TIME);
+            if (startTime != null) {
+                return new StateStoreCommitterLambdaRunStarted(logStream, timestamp, Instant.parse(startTime));
+            }
+            String finishTime = matcher.group(CapturingGroups.LAMBDA_FINISH_TIME);
+            if (finishTime != null) {
+                return new StateStoreCommitterLambdaRunFinished(logStream, timestamp, Instant.parse(finishTime));
+            }
+            String batchStartTime = matcher.group(CapturingGroups.THREAD_START_TIME);
+            if (batchStartTime != null) {
+                return new StateStoreCommitterThreadRunStarted(logStream, timestamp, Instant.parse(batchStartTime));
+            }
+            String batchFinishTime = matcher.group(CapturingGroups.THREAD_FINISH_TIME);
+            if (batchFinishTime != null) {
+                return new StateStoreCommitterThreadRunFinished(logStream, timestamp, Instant.parse(batchFinishTime));
+            }
+            String tableId = matcher.group(CapturingGroups.TABLE_ID);
+            if (tableId != null) {
+                String type = matcher.group(CapturingGroups.TYPE);
+                String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
+                return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
+            }
         }
-        // The pattern can only match one type of log message at a time.
-        // Each capturing group will be null unless its message type was matched.
-        // We determine which type of message was found based on which capturing group is set.
-        String startTime = matcher.group(CapturingGroups.START_TIME);
-        if (startTime != null) {
-            return new StateStoreCommitterRunStarted(logStream, timestamp, Instant.parse(startTime));
-        }
-        String finishTime = matcher.group(CapturingGroups.FINISH_TIME);
-        if (finishTime != null) {
-            return new StateStoreCommitterRunFinished(logStream, timestamp, Instant.parse(finishTime));
-        }
-        String tableId = matcher.group(CapturingGroups.TABLE_ID);
-        if (tableId != null) {
-            String type = matcher.group(CapturingGroups.TYPE);
-            String commitTime = matcher.group(CapturingGroups.COMMIT_TIME);
-            return new StateStoreCommitSummary(logStream, timestamp, tableId, type, Instant.parse(commitTime));
-        }
-        return null;
+        throw new NoSuchElementException("Couldn't match [" + message + "]");
     }
 
     /**
      * Reads an entry from the state store committer log that matches one of the expected types of message. This can be
-     * a {@link StateStoreCommitterRunStarted}, a {@link StateStoreCommitterRunFinished} or
-     * a {@link StateStoreCommitSummary}.
+     * a {@link StateStoreCommitterLambdaRunStarted} or {@link StateStoreCommitterLambdaRunFinished} for Lambda
+     * implementations,
+     * a {@link StateStoreCommitterThreadRunStarted} or {@link StateStoreCommitterThreadRunFinished} for Multi Threaded
+     * implementations, or
+     * a {@link StateStoreCommitSummary} for both impemenations.
      *
      * @param  entry the log entry as returned from Amazon CloudWatch
      * @return       the parsed entry, or null if it was not one of the expected message types

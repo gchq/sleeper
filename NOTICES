@@ -175,7 +175,7 @@ JAXB API (javax.xml.bind:jaxb-api:2.*)
 
 - Common Development and Distribution License (CDDL) Version 1.1 (https://javaee.github.io/jaxb-v2/LICENSE)
 
-JLine (org.jline:jline:3.*)
+JLine (org.jline:jline:4.*)
 
 - The 3-Clause BSD License
 
@@ -263,7 +263,7 @@ Mockito (org.mockito:mockito-core:5.*)
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:29.*)
+ApprovalTests.Java (com.approvaltests:approvaltests:30.*)
 
 - Apache License, Version 2.0
 
@@ -529,7 +529,11 @@ libc (https://github.com/rust-lang/libc)
 
 - Apache License, Version 2.0
 
-arrow (https://github.com/apache/arrow-rs)
+arrow (C++) (https://github.com/apache/arrow)
+
+- Apache License, Version 2.0
+
+arrow (Rust) (https://github.com/apache/arrow-rs)
 
 - Apache License, Version 2.0
 
@@ -641,6 +645,9 @@ test-log (https://github.com/d-e-s-o/test-log)
 
 - Apache 2 License
 
+cbindgen (https://github.com/mozilla/cbindgen)
+
+- Mozilla Public License Version 2.0
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.

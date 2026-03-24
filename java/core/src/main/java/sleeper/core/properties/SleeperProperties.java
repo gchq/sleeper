@@ -45,8 +45,8 @@ import static java.util.function.Predicate.not;
 
 /**
  * Holds values for Sleeper configuration properties. Abstract class which backs both
- * {@link sleeper.core.properties.instance.configuration.properties.instance.InstanceProperties} and
- * {@link sleeper.core.properties.table.configuration.properties.table.TableProperties}.
+ * {@link sleeper.core.properties.instance.InstanceProperties} and
+ * {@link sleeper.core.properties.table.TableProperties}.
  *
  * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
@@ -95,6 +95,17 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
                 reporter.invalidProperty(property, value);
             }
         });
+    }
+
+    /**
+     * Checks whether all properties are valid.
+     *
+     * @return true if all values are valid
+     */
+    public boolean isValid() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        return reporter.isValid();
     }
 
     /**
