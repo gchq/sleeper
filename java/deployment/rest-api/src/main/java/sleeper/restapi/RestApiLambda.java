@@ -16,8 +16,11 @@
 package sleeper.restapi;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import sleeper.core.SleeperVersion;
 
 /**
  * A lambda that controls a REST API for Sleeper.
@@ -34,8 +37,27 @@ public class RestApiLambda {
      * @param event the event
      */
     public void handleEvent(APIGatewayV2HTTPEvent event) {
-        // Test log message, improve!
-        LOGGER.info("Recieved event: " + event.getRawPath());
+        String requestPath = event.getRequestContext().getHttp().getPath();
+        LOGGER.info("Recieved request for: " + requestPath);
+        switch (requestPath) {
+            case "addTable":
+                addTable(event.getRequestContext());
+                break;
+            case "getVersion":
+                requestSleeperVersion();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private String requestSleeperVersion() {
+        return SleeperVersion.getVersion();
+    }
+
+    //TODO: Sample additional method call to the api
+    private void addTable(RequestContext context) {
+        // Create class to handle the call to add table
     }
 
 }
