@@ -33,6 +33,8 @@ use std::{
 };
 use url::Url;
 
+pub const S3_WRITING_URL_SCHEME: &str = "s3w";
+
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
 #[derive(Debug)]
@@ -72,7 +74,6 @@ pub fn config_for_s3_module(
 ) -> AmazonS3Builder {
     AmazonS3Builder::from_env()
         .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
-        .with_client_options(ClientOptions::default().with_timeout_disabled())
         .with_region(region.as_ref())
 }
 
@@ -101,6 +102,21 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
     src.host_str()
         .map(ToOwned::to_owned)
         .ok_or(eyre!("invalid S3 bucket name"))
+}
+
+/// If given an S3 Url, this will convert it to s3w. All others
+/// left unchanged.
+pub fn modify_output_path_scheme(url: &Url) -> Url {
+    match url.scheme() {
+        "s3" => {
+            let mut new_url = url.to_owned();
+            let _ = new_url
+                .set_scheme(S3_WRITING_URL_SCHEME)
+                .expect(&format!("{S3_WRITING_URL_SCHEME} should be a valid scheme"));
+            new_url
+        }
+        _ => url.to_owned(),
+    }
 }
 
 /// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
@@ -133,10 +149,10 @@ impl ObjectStoreFactory {
     fn make_cache_key_for(url: &Url) -> color_eyre::Result<String> {
         let scheme = url.scheme();
         match scheme {
-            "s3" => {
+            s @ "s3" | s @ S3_WRITING_URL_SCHEME => {
                 // Amazon S3 object store implementation is bucket specific
                 let host = extract_bucket(url)?;
-                Ok(format!("s3://{host}"))
+                Ok(format!("{s}://{host}"))
             }
             _ => Ok(scheme.to_owned()),
         }
@@ -181,7 +197,13 @@ impl ObjectStoreFactory {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
                 Ok(self
-                    .connect_s3(src)
+                    .connect_s3(src, false)
+                    .map(|store| self.wrap_s3_store(store, &bucket))?)
+            }
+            S3_WRITING_URL_SCHEME => {
+                let bucket = format!("{S3_WRITING_URL_SCHEME}://{}", extract_bucket(src)?);
+                Ok(self
+                    .connect_s3(src, true)
                     .map(|store| self.wrap_s3_store(store, &bucket))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
@@ -193,16 +215,22 @@ impl ObjectStoreFactory {
         }
     }
 
-    fn connect_s3(&self, src: &Url) -> color_eyre::Result<AmazonS3> {
-        match &self.s3_config {
+    fn connect_s3(&self, src: &Url, for_writing: bool) -> color_eyre::Result<AmazonS3> {
+        let builder = match &self.s3_config {
             Some(config) => Ok(config
                 .clone()
-                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)
-                .build()?),
+                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)),
             None => Err(eyre!(
                 "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
             )),
-        }
+        }?;
+        Ok(if for_writing {
+            builder.build()?
+        } else {
+            builder
+                .with_client_options(ClientOptions::default().with_timeout_disabled())
+                .build()?
+        })
     }
 
     fn wrap_s3_store(&self, store: AmazonS3, bucket: &str) -> Arc<dyn ObjectStore> {
@@ -229,6 +257,8 @@ fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> LoggingObje
 mod tests {
     use color_eyre::eyre::Result;
     use url::Url;
+
+    use crate::s3::modify_output_path_scheme;
 
     use super::{ObjectStoreFactory, extract_bucket};
 
@@ -284,6 +314,32 @@ mod tests {
 
         // Then
         assert_eq!(cache_key, "s3://test-bucket");
+        Ok(())
+    }
+
+    #[test]
+    fn should_not_replace_non_s3_url() -> Result<()> {
+        // Given
+        let url = Url::parse("http://example.com")?;
+
+        // When
+        let new_url = modify_output_path_scheme(&url);
+
+        // Then
+        assert_eq!(new_url, url);
+        Ok(())
+    }
+
+    #[test]
+    fn should_replace_s3_url() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://bucket/path/file.txt")?;
+
+        // When
+        let new_url = modify_output_path_scheme(&url);
+
+        // Then
+        assert_eq!(new_url, Url::parse("s3w://bucket/path/file.txt")?);
         Ok(())
     }
 }

@@ -27,6 +27,7 @@ use datafusion::{
     physical_plan::{ExecutionPlan, collect, execute_stream},
     prelude::DataFrame,
 };
+use objectstore_ext::s3::modify_output_path_scheme;
 use std::{
     fmt::{Debug, Formatter},
     sync::Arc,
@@ -63,10 +64,25 @@ impl OutputType {
             } => Box::new(FileOutputCompleter::new(ops)),
         }
     }
+
+    pub fn modified(&self) -> Self {
+        match self {
+            Self::ArrowRecordBatch => Self::ArrowRecordBatch,
+            Self::File {
+                output_file,
+                write_sketch_file,
+                opts,
+            } => Self::File {
+                output_file: modify_output_path_scheme(output_file),
+                write_sketch_file: *write_sketch_file,
+                opts: opts.clone(),
+            },
+        }
+    }
 }
 
 /// All Parquet output options supported by Sleeper.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SleeperParquetOptions {
     pub max_row_group_size: usize,
     pub max_page_size: usize,

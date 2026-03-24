@@ -80,6 +80,13 @@ impl CommonConfig<'_> {
         &self.output
     }
 
+    pub(crate) fn modify_output_scheme(self) -> Self {
+        Self {
+            output: self.output.modified(),
+            ..self
+        }
+    }
+
     pub(crate) fn input_files(&self) -> &Vec<Url> {
         &self.input_files
     }
@@ -146,6 +153,7 @@ pub struct CommonConfigBuilder<'a> {
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
     output: OutputType,
+    modify_output_scheme: bool,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -162,6 +170,7 @@ impl Default for CommonConfigBuilder<'_> {
             sort_key_cols: Vec::default(),
             region: SleeperRegion::default(),
             output: OutputType::default(),
+            modify_output_scheme: false,
             aggregates: Vec::default(),
             filters: Vec::default(),
         }
@@ -229,6 +238,12 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
+    pub fn with_modified_output_scheme(mut self, modify: bool) -> Self {
+        self.modify_output_scheme = modify;
+        self
+    }
+
+    #[must_use]
     pub fn aggregates(mut self, aggregates: Vec<Aggregate>) -> Self {
         self.aggregates = aggregates;
         self
@@ -250,6 +265,12 @@ impl<'a> CommonConfigBuilder<'a> {
         self.validate()?;
         self.normalise_s3a_urls();
 
+        let output = if self.modify_output_scheme {
+            self.output.modified()
+        } else {
+            self.output
+        };
+
         Ok(CommonConfig {
             aws_config: self.aws_config,
             input_files: self.input_files,
@@ -259,7 +280,7 @@ impl<'a> CommonConfigBuilder<'a> {
             row_key_cols: self.row_key_cols,
             sort_key_cols: self.sort_key_cols,
             region: self.region,
-            output: self.output,
+            output,
             aggregates: self.aggregates,
             filters: self.filters,
         })
