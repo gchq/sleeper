@@ -241,6 +241,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
     }
 
+    /**
+     * Builder for Dynamo DB transaction log store.
+     */
     public static final class Builder {
         String transactionDescription;
         String logTableName;
@@ -254,36 +257,80 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
 
         }
 
+        /**
+         * Sets the transaction description.
+         *
+         * @param  transactionDescription the description of the transaction
+         * @return                        the builder
+         */
         public Builder transactionDescription(String transactionDescription) {
             this.transactionDescription = transactionDescription;
             return this;
         }
 
+        /**
+         * Sets the log table name.
+         *
+         * @param  logTableName the logTableName
+         * @return              the builder
+         */
         public Builder logTableName(String logTableName) {
             this.logTableName = logTableName;
             return this;
         }
 
+        /**
+         * Sets the instance properties.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    the builder
+         */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
         }
 
+        /**
+         * Sets the table properties.
+         *
+         * @param  tableProperties the table properties
+         * @return                 the builder
+         */
         public Builder tableProperties(TableProperties tableProperties) {
             this.tableProperties = tableProperties;
             return this;
         }
 
+        /**
+         * Sets the Dynamo DB client.
+         *
+         * @param  dynamoClient the Dynamo DB client
+         * @return              the builder
+         */
         public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
         }
 
+        /**
+         * Sets the S3 client.
+         *
+         * @param  s3Client the S3 client
+         * @return          the builder
+         */
         public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
             return this;
         }
 
+        /**
+         * Sets if this log store is only going to be used for deletion.
+         * If it is only used for deletion the the SerDes don't need to be created.
+         * This allows us to delete tables even with invalid schema in S3.
+         *
+         * @param  isForDelete denotes is the log store will only be used for deletion
+         * @return             the builder
+         */
         public Builder isForDelete(boolean isForDelete) {
             this.isForDelete = isForDelete;
             return this;
