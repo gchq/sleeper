@@ -28,15 +28,25 @@ import static java.util.function.Predicate.not;
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
+    private final T properties;
     private final T updatedProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, T updatedProperties) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, T properties) {
+        this(diff, properties, null);
+    }
+
+    public UpdatePropertiesRequest(PropertiesDiff diff, T properties, T updatedProperties) {
         this.diff = diff;
+        this.properties = properties;
         this.updatedProperties = updatedProperties;
     }
 
     public PropertiesDiff getDiff() {
         return diff;
+    }
+
+    public T getProperties() {
+        return properties;
     }
 
     public T getUpdatedProperties() {

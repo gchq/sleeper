@@ -27,6 +27,6 @@ public class UpdatePropertiesRequestTestHelper {
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {
-        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), before, after);
     }
 }
