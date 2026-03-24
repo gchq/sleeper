@@ -98,7 +98,7 @@ public class PartitionSerDe {
         private final RegionJsonSerDe regionJsonSerDe;
 
         public PartitionJsonSerDe(Schema schema) {
-            this.regionJsonSerDe = schema == null ? null : new RegionJsonSerDe(schema);
+            this.regionJsonSerDe = new RegionJsonSerDe(schema);
         }
 
         @Override

@@ -107,6 +107,20 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                 instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private DynamoDBTransactionLogStore(Builder builder) {
+        this.transactionDescription = builder.transactionDescription;
+        this.logTableName = builder.logTableName;
+        this.sleeperTable = builder.tableProperties.getStatus();
+        this.dynamoClient = builder.dynamoClient;
+        this.transactionBodyStore = new S3TransactionBodyStore(builder.instanceProperties, builder.s3Client,
+                builder.isForDelete ? null : TransactionSerDeProvider.forOneTable(builder.tableProperties));
+        this.serDe = builder.isForDelete ? null : new TransactionSerDe(builder.tableProperties.getSchema());
+    }
+
     private DynamoDBTransactionLogStore(
             String transactionDescription, String logTableName,
             InstanceProperties instanceProperties, TableProperties tableProperties,
@@ -225,5 +239,58 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
         return Map.of(TABLE_ID, item.get(TABLE_ID),
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
+    }
+
+    public static final class Builder {
+        String transactionDescription;
+        String logTableName;
+        InstanceProperties instanceProperties;
+        TableProperties tableProperties;
+        DynamoDbClient dynamoClient;
+        S3Client s3Client;
+        boolean isForDelete;
+
+        private Builder() {
+
+        }
+
+        public Builder transactionDescription(String transactionDescription) {
+            this.transactionDescription = transactionDescription;
+            return this;
+        }
+
+        public Builder logTableName(String logTableName) {
+            this.logTableName = logTableName;
+            return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
+        }
+
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
+            this.dynamoClient = dynamoClient;
+            return this;
+        }
+
+        public Builder s3Client(S3Client s3Client) {
+            this.s3Client = s3Client;
+            return this;
+        }
+
+        public Builder isForDelete(boolean isForDelete) {
+            this.isForDelete = isForDelete;
+            return this;
+        }
+
+        public DynamoDBTransactionLogStore build() {
+            return new DynamoDBTransactionLogStore(this);
+        }
     }
 }

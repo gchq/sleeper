@@ -135,7 +135,20 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .containsExactly(
                         FilenameUtils.getName(file.getFilename()),
                         FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
 
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        // Data files
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
+                        // Snapshot files
+                        "1-files.arrow",
+                        "1-partitions.arrow");
+
+        String schema = table.get(SCHEMA);
         table.set(SCHEMA, "{}");
         propertiesStore.update(table);
 
@@ -143,11 +156,17 @@ public class DeleteTableIT extends LocalStackTestBase {
         deleteTable("table-1");
 
         // Then
+        table.set(SCHEMA, schema);
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(listDataBucketObjectKeys()).isEmpty();
         assertThat(streamTableFileTransactions(table)).isEmpty();
         assertThat(streamTablePartitionTransactions(table)).isEmpty();
+        // And
+        var snapshotMetadataStore = snapshotMetadataStore(table);
+        assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
+        assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
+        assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
     }
 
     @Test
