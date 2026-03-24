@@ -42,6 +42,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -122,13 +123,16 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     private DynamoDBTransactionLogStore(Builder builder) {
-        this.transactionDescription = builder.transactionDescription;
-        this.logTableName = builder.logTableName;
-        this.sleeperTable = builder.tableProperties.getStatus();
-        this.dynamoClient = builder.dynamoClient;
-        this.transactionBodyStore = new S3TransactionBodyStore(builder.instanceProperties, builder.s3Client,
-                builder.isForDelete ? null : TransactionSerDeProvider.forOneTable(builder.tableProperties));
-        this.serDe = builder.isForDelete ? null : new TransactionSerDe(builder.tableProperties.getSchema());
+        InstanceProperties instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        TableProperties tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
+        S3Client s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
+        this.transactionDescription = Objects.requireNonNull(builder.transactionDescription, "transactionDescription must not be null");
+        this.logTableName = Objects.requireNonNull(builder.logTableName, "logTableName must not be null");
+        this.sleeperTable = tableProperties.getStatus();
+        this.dynamoClient = Objects.requireNonNull(builder.dynamoClient, "dynamoClient must not be null");
+        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client,
+                builder.isForDelete ? null : TransactionSerDeProvider.forOneTable(tableProperties));
+        this.serDe = builder.isForDelete ? null : new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
