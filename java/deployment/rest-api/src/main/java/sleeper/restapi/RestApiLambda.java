@@ -16,36 +16,26 @@
 package sleeper.restapi;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * TODO Add class javadoc.
+ * A lambda that controls a REST API for Sleeper.
  */
 public class RestApiLambda {
+    public static final Logger LOGGER = LoggerFactory.getLogger(RestApiLambda.class);
 
     public RestApiLambda() {
     }
 
     /**
-     * TODO Add javadoc later.
+     * Used by the lambda handler to handle api gateway requests that have been sent to the REST API.
      *
-     * @param event words
+     * @param event the event
      */
     public void handleEvent(APIGatewayV2HTTPEvent event) {
-        // Properties aren't used yet but are likely required for future features
-        // Map<String, Object> resourceProperties = event.getResourceProperties();
-
-        /*
-         * switch (event.getRequestType()) {
-         * case "getVersion":
-         * getVersion();
-         * break;
-         * default:
-         * throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
-         */
-
+        // Test log message, improve!
+        LOGGER.info("Recieved event: " + event.getRawPath());
     }
 
-    private void getVersion() {
-        // TODO: Placeholder method for action of getVersion from the RESTapi
-    }
 }
