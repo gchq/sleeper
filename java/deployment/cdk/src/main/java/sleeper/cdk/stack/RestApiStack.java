@@ -21,9 +21,9 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.apigateway.CfnRestApi;
 import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
 import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
+import software.amazon.awscdk.services.apigatewayv2.HttpApi;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
@@ -75,16 +75,16 @@ public class RestApiStack extends NestedStack {
         String restApiId = "sleeper-restapi-" + instanceId;
         String restApiUri = setupRestApiUri(scope, lambda);
 
-        CfnRestApi restApi = setupApiGateway(scope, restApiId);
+        HttpApi restApi = setupApiGateway(scope, restApiId);
 
         CfnIntegration restApiIntegration = CfnIntegration.Builder.create(scope, "restapi-integration")
-                .apiId(restApi.getRef())
+                .apiId(restApi.getApiId())
                 .integrationType("AWS_PROXY")
                 .integrationUri(restApiUri)
                 .build();
 
         CfnRoute.Builder.create(scope, "connect-route")
-                .apiId(restApi.getRef())
+                .apiId(restApi.getApiId())
                 .apiKeyRequired(false)
                 .authorizationType("AWS_IAM")
                 .routeKey("$connect")
@@ -95,17 +95,15 @@ public class RestApiStack extends NestedStack {
                 .principal(new ServicePrincipal("apigateway.amazonaws.com"))
                 .sourceArn(Stack.of(scope).formatArn(ArnComponents.builder()
                         .service("execute-api")
-                        .resource(restApi.getRef())
+                        .resource(restApi.getApiId())
                         .resourceName("*/*")
                         .build()))
                 .build());
 
-        String restApiUrl = buildRestApiUrl(restApi);
-
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
-                .value(restApiUrl)
+                .value(restApi.getApiEndpoint())
                 .build());
-        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restApiUrl);
+        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restApi.getApiEndpoint());
     }
 
     private String setupRestApiUri(Construct scope, IFunction lambda) {
@@ -117,26 +115,10 @@ public class RestApiStack extends NestedStack {
                 .build());
     }
 
-    private CfnRestApi setupApiGateway(Construct scope, String id) {
-        return CfnRestApi.Builder.create(scope, id)
-                .body(createApiBody())
-                // Exists alternate of having the restApi yaml stored within an S3 Bucket [BodyS3Location]
+    private HttpApi setupApiGateway(Construct scope, String id) {
+        return HttpApi.Builder.create(scope, id)
                 .description("Sleeper Rest Api")
-                .name("sleeper-rest-api")
+                .apiName("sleeper-rest-api")
                 .build();
-    }
-
-    private String buildRestApiUrl(CfnRestApi restApi) {
-        // TODO Needs elobrating
-        return "";
-    }
-
-    // TODO: Method to add all calls to the rest API (YAML Format)
-    private Object createApiBody() {
-        return null;
-    }
-
-    // TODO: Remove/replace this method, added to provide placeholder
-    private void createDummyRestApiRequest(String id, String name) {
     }
 }
