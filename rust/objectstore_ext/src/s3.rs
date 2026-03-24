@@ -202,13 +202,13 @@ impl ObjectStoreFactory {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
                 Ok(self
                     .connect_s3(src, false)
-                    .map(|store| self.wrap_s3_store(store, &bucket))?)
+                    .map(|store| self.wrap_s3_store(store, &bucket, "DataFusion reading"))?)
             }
             S3_WRITING_URL_SCHEME => {
                 let bucket = format!("{S3_WRITING_URL_SCHEME}://{}", extract_bucket(src)?);
                 Ok(self
                     .connect_s3(src, true)
-                    .map(|store| self.wrap_s3_store(store, &bucket))?)
+                    .map(|store| self.wrap_s3_store(store, &bucket, "DataFusion writing"))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
@@ -237,14 +237,15 @@ impl ObjectStoreFactory {
         })
     }
 
-    fn wrap_s3_store(&self, store: AmazonS3, bucket: &str) -> Arc<dyn ObjectStore> {
+    fn wrap_s3_store(&self, store: AmazonS3, bucket: &str, prefix: &str) -> Arc<dyn ObjectStore> {
         if self.use_readahead {
             Arc::new(apply_s3_logging_store(
                 apply_readahead_store(store, bucket),
                 bucket,
+                prefix,
             ))
         } else {
-            Arc::new(apply_s3_logging_store(store, bucket))
+            Arc::new(apply_s3_logging_store(store, bucket, prefix))
         }
     }
 }
@@ -253,8 +254,12 @@ fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> ReadaheadSto
     ReadaheadStore::new(store, bucket).with_max_live_streams(1)
 }
 
-fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> LoggingObjectStore<T> {
-    LoggingObjectStore::new(store, "DataFusion", bucket)
+fn apply_s3_logging_store<T: ObjectStore>(
+    store: T,
+    bucket: &str,
+    prefix: &str,
+) -> LoggingObjectStore<T> {
+    LoggingObjectStore::new(store, prefix, bucket)
 }
 
 #[cfg(test)]
