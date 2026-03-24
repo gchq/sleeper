@@ -200,15 +200,20 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
-                Ok(self
-                    .connect_s3(src, false)
-                    .map(|store| self.wrap_s3_store(store, &bucket, "DataFusion reading"))?)
+                Ok(self.connect_s3(src, false).map(|store| {
+                    ObjectStoreFactory::wrap_s3_store(
+                        store,
+                        &bucket,
+                        "DataFusion reading",
+                        self.use_readahead,
+                    )
+                })?)
             }
             S3_WRITING_URL_SCHEME => {
                 let bucket = format!("{S3_WRITING_URL_SCHEME}://{}", extract_bucket(src)?);
-                Ok(self
-                    .connect_s3(src, true)
-                    .map(|store| self.wrap_s3_store(store, &bucket, "DataFusion writing"))?)
+                Ok(self.connect_s3(src, true).map(|store| {
+                    ObjectStoreFactory::wrap_s3_store(store, &bucket, "DataFusion writing", false)
+                })?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
@@ -237,8 +242,13 @@ impl ObjectStoreFactory {
         })
     }
 
-    fn wrap_s3_store(&self, store: AmazonS3, bucket: &str, prefix: &str) -> Arc<dyn ObjectStore> {
-        if self.use_readahead {
+    fn wrap_s3_store(
+        store: AmazonS3,
+        bucket: &str,
+        prefix: &str,
+        use_readahead: bool,
+    ) -> Arc<dyn ObjectStore> {
+        if use_readahead {
             Arc::new(apply_s3_logging_store(
                 apply_readahead_store(store, bucket),
                 bucket,
