@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.35.2
 
-### 23rd March, 2026
+### 24th March, 2026
 
 This includes minor improvements, bugfixes and security upgrades to dependencies.
 
