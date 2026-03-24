@@ -24,7 +24,7 @@ fi
 ENVIRONMENT_ID=$1
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-CDK_ROOT_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+CDK_ROOT_DIR=$(cd "$THIS_DIR" && cd ../../app && pwd)
 JARS_DIR=$(cd "$CDK_ROOT_DIR" && cd jars && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"

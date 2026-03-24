@@ -41,3 +41,6 @@ libc = { workspace = true }
 sleeper_core = { path = "../sleeper_core" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
+
+[build-dependencies]
+cbindgen = { workspace = true }
