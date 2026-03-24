@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.35.2</version>
+        <version>0.35.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>system-test-cdk</artifactId>
