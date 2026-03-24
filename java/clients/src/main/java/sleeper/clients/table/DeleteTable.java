@@ -90,7 +90,7 @@ public class DeleteTable {
         }
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdNoValidation(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             new DeleteTable(instanceProperties, s3Client, dynamoClient).delete(tableName);
         }
     }
