@@ -633,7 +633,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToSetInvalidSchemaInEditor() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
@@ -646,7 +645,22 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).isEmpty();
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.schema\n" +
+                            "The schema representing the structure of this table. This should be set in a separate schema.json\n" +
+                            "file, and cannot be edited once the table has been created.\n" +
+                            "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
+                            "further details.\n" +
+                            "Before: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n" +
+                            "After (cannot be changed, please undo): {}\n" +
+                            "\n" +
+                            "Found invalid properties:\n" +
+                            "sleeper.table.schema\n" +
+                            "\n");
+
         }
 
         @Test
