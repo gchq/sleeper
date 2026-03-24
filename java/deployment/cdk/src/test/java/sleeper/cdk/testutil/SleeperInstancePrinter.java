@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public class SleeperInstancePrinter {
 
-    private final StackPrinter printer = new StackPrinter(this::sanitiseTemplate);
+    private final StackPrinter printer = StackPrinter.sanitiseTemplates(this::sanitiseTemplate);
 
     public String toJson(Stack stack) {
         return printer.toJson(stack);

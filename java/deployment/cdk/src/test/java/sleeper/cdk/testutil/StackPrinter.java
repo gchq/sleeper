@@ -33,8 +33,16 @@ public class StackPrinter {
             .create();
     private final UnaryOperator<Map<String, Object>> sanitiser;
 
-    public StackPrinter(UnaryOperator<Map<String, Object>> sanitiser) {
+    private StackPrinter(UnaryOperator<Map<String, Object>> sanitiser) {
         this.sanitiser = sanitiser;
+    }
+
+    public static StackPrinter raw() {
+        return new StackPrinter(template -> template);
+    }
+
+    public static StackPrinter sanitiseTemplates(UnaryOperator<Map<String, Object>> sanitiser) {
+        return new StackPrinter(sanitiser);
     }
 
     public String toJson(Stack stack) {
