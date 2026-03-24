@@ -135,7 +135,10 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .containsExactly(
                         FilenameUtils.getName(file.getFilename()),
                         FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
 
+        String schema = table.get(SCHEMA);
         table.set(SCHEMA, "{}");
         propertiesStore.update(table);
 
@@ -143,6 +146,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         deleteTable("table-1");
 
         // Then
+        table.set(SCHEMA, schema);
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(listDataBucketObjectKeys()).isEmpty();
