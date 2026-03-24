@@ -27,7 +27,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
@@ -49,7 +48,6 @@ public class DeleteTable {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final TablePropertiesStore tablePropertiesStore;
-    private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         this.instanceProperties = instanceProperties;
@@ -70,8 +68,6 @@ public class DeleteTable {
          * table existed.
          */
         buildTransactionLogStateStore(tableProperties).clearSleeperTable();
-
-        //stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         snapshotMetadataStore(tableProperties).deleteAllSnapshots();
         tablePropertiesStore.deleteByName(tableName);
