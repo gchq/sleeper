@@ -131,8 +131,8 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         this.sleeperTable = tableProperties.getStatus();
         this.dynamoClient = Objects.requireNonNull(builder.dynamoClient, "dynamoClient must not be null");
         this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client,
-                builder.isForDelete ? null : TransactionSerDeProvider.forOneTable(tableProperties));
-        this.serDe = builder.isForDelete ? null : new TransactionSerDe(tableProperties.getSchema());
+                builder.isForDeleteOnly ? null : TransactionSerDeProvider.forOneTable(tableProperties));
+        this.serDe = builder.isForDeleteOnly ? null : new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
@@ -253,7 +253,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         TableProperties tableProperties;
         DynamoDbClient dynamoClient;
         S3Client s3Client;
-        boolean isForDelete = false;
+        boolean isForDeleteOnly = false;
 
         private Builder() {
 
@@ -330,11 +330,11 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
          * If it is only used for deletion the the SerDes don't need to be created.
          * This allows us to delete tables even with invalid schema in S3.
          *
-         * @param  isForDelete denotes is the log store will only be used for deletion
-         * @return             the builder
+         * @param  isForDeleteOnly denotes is the log store will only be used for deletion
+         * @return                 the builder
          */
-        public Builder isForDelete(boolean isForDelete) {
-            this.isForDelete = isForDelete;
+        public Builder isForDeleteOnly(boolean isForDeleteOnly) {
+            this.isForDeleteOnly = isForDeleteOnly;
             return this;
         }
 

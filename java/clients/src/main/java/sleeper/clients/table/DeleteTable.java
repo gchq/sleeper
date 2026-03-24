@@ -80,7 +80,7 @@ public class DeleteTable {
                 .tableProperties(tableProperties)
                 .dynamoClient(dynamoClient)
                 .s3Client(s3Client)
-                .isForDelete(true);
+                .isForDeleteOnly(true);
 
         return TransactionLogStateStore.builder().tableProperties(tableProperties)
                 .filesLogStore(builder
