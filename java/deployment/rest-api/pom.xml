@@ -19,7 +19,7 @@
     <parent>
         <artifactId>deployment</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.35.2</version>
+        <version>0.35.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -28,7 +28,7 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
+            <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
