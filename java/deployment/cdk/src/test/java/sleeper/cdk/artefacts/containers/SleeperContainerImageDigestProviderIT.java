@@ -39,6 +39,8 @@ import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Cli
 public class SleeperContainerImageDigestProviderIT {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final String imageName = DockerDeployment.INGEST.getDeploymentName();
+    private final String ecrRepository = DockerDeployment.INGEST.getEcrRepositoryName(instanceProperties);
 
     @Test
     void shouldGetLatestDigestOfAnImage(WireMockRuntimeInfo runtimeInfo) throws Exception {
@@ -62,9 +64,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        DockerDeployment deployment = DockerDeployment.INGEST;
-        assertThat(digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
-                deployment.getEcrRepositoryName(instanceProperties)))
+        assertThat(digestProvider(runtimeInfo).getDigestToDeploy(imageName, ecrRepository))
                 .isEqualTo(expectedDigest);
         assertThat(findUnmatchedRequests()).isEmpty();
     }
@@ -87,9 +87,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        DockerDeployment deployment = DockerDeployment.INGEST;
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
-                deployment.getEcrRepositoryName(instanceProperties)))
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(imageName, ecrRepository))
                 .isInstanceOf(ImageNotFoundException.class)
                 .hasMessageContaining("Image not found");
         assertThat(findUnmatchedRequests()).isEmpty();
@@ -113,9 +111,7 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        DockerDeployment deployment = DockerDeployment.INGEST;
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
-                deployment.getEcrRepositoryName(instanceProperties)))
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(imageName, ecrRepository))
                 .isInstanceOf(RepositoryNotFoundException.class)
                 .hasMessageContaining("Repository not found");
         assertThat(findUnmatchedRequests()).isEmpty();
