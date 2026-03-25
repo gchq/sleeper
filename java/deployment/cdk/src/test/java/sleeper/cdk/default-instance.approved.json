@@ -17921,7 +17921,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/compaction-job-execution:test-account.dkr.ecr.test-region.amazonaws.com/test-instance/compaction-job-execution:1.2.3-test-digest"
+                      "/test-instance/compaction-job-execution:compaction-job-execution-test-digest"
                     ]
                   ]
                 },
@@ -23998,7 +23998,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/ingest:test-account.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.2.3-test-digest"
+                      "/test-instance/ingest:ingest-test-digest"
                     ]
                   ]
                 },
