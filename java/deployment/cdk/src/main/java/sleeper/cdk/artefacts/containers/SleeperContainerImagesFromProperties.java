@@ -29,11 +29,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 public class SleeperContainerImagesFromProperties implements SleeperContainerImages {
 
     private final InstanceProperties instanceProperties;
-    private final SleeperContainerImageDigestProvider digest;
+    private final SleeperContainerImageDigestProvider digestProvider;
 
-    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties, SleeperContainerImageDigestProvider digest) {
+    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties, SleeperContainerImageDigestProvider digestProvider) {
         this.instanceProperties = instanceProperties;
-        this.digest = digest;
+        this.digestProvider = digestProvider;
     }
 
     @Override
@@ -41,7 +41,8 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
         SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
         return deployment -> EcrImage.fromEcrRepository(
                 repositories.getRepository(deployment),
-                digest.getDigestToDeploy(deployment));
+                digestProvider.getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
+                        deployment.getEcrRepositoryName(instanceProperties)));
     }
 
     @Override

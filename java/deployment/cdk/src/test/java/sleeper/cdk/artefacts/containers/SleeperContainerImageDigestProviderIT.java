@@ -62,7 +62,9 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThat(digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
+        DockerDeployment deployment = DockerDeployment.INGEST;
+        assertThat(digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
+                deployment.getEcrRepositoryName(instanceProperties)))
                 .isEqualTo(expectedDigest);
         assertThat(findUnmatchedRequests()).isEmpty();
     }
@@ -85,7 +87,9 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
+        DockerDeployment deployment = DockerDeployment.INGEST;
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
+                deployment.getEcrRepositoryName(instanceProperties)))
                 .isInstanceOf(ImageNotFoundException.class)
                 .hasMessageContaining("Image not found");
         assertThat(findUnmatchedRequests()).isEmpty();
@@ -109,7 +113,9 @@ public class SleeperContainerImageDigestProviderIT {
                                 """)));
 
         // When / Then
-        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(DockerDeployment.INGEST))
+        DockerDeployment deployment = DockerDeployment.INGEST;
+        assertThatThrownBy(() -> digestProvider(runtimeInfo).getDigestToDeploy(deployment.getDockerImageName(instanceProperties),
+                deployment.getEcrRepositoryName(instanceProperties)))
                 .isInstanceOf(RepositoryNotFoundException.class)
                 .hasMessageContaining("Repository not found");
         assertThat(findUnmatchedRequests()).isEmpty();
