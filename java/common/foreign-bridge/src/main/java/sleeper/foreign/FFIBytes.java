@@ -66,7 +66,7 @@ public class FFIBytes {
      * The internal data buffer pointer is taken from the given location. It is the callers
      * responsibility to ensure it remains valid for the life of this object.
      *
-     * @param  location
+     * @param  location memory to read from
      * @return          an FFIBytes deserialised from the given memory location.
      */
     public static FFIBytes readFrom(jnr.ffi.Pointer location) {
