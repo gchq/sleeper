@@ -15,12 +15,8 @@
  */
 package sleeper.cdk.testutil;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.assertions.Template;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,29 +31,11 @@ import static java.util.stream.Collectors.toMap;
  * A test helper to print a CDK stack containing a Sleeper instance, for use in approval tests.
  */
 public class SleeperInstancePrinter {
-    private final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
+
+    private final StackPrinter printer = StackPrinter.sanitiseTemplates(this::sanitiseTemplate);
 
     public String toJson(Stack stack) {
-        List<Stack> stacks = stack.getNode().findAll().stream()
-                .filter(construct -> construct instanceof Stack)
-                .map(construct -> (Stack) construct)
-                .toList();
-        Map<String, Object> stackIdToTemplate = stacks.stream()
-                .collect(toMap(
-                        s -> s.getNode().getId(),
-                        s -> toSanitisedMap(s),
-                        (stack1, stack2) -> {
-                            throw new IllegalStateException("Duplicate stack ID");
-                        },
-                        LinkedHashMap::new));
-        return gson.toJson(Map.of("StackIdToTemplate", stackIdToTemplate));
-    }
-
-    private Map<String, Object> toSanitisedMap(Stack stack) {
-        Map<String, Object> map = Template.fromStack(stack).toJSON();
-        return sanitiseTemplate(map);
+        return printer.toJson(stack);
     }
 
     public Map<String, Object> sanitiseTemplate(Map<String, Object> map) {
