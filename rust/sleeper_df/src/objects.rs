@@ -1,4 +1,6 @@
 //! All Foreign Function Interface compatible structs are here.
+use std::{ffi::c_uchar, slice};
+
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -14,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use color_eyre::eyre::eyre;
+use color_eyre::{Report, eyre::eyre};
 
 pub mod aws_config;
 pub mod ffi_common_config;
@@ -55,5 +57,33 @@ impl TryFrom<&usize> for RowKeySchemaType {
             4 => Ok(RowKeySchemaType::ByteArray),
             _ => Err(eyre!("Invalid FFIRowKeySchemaType ordinal value")),
         }
+    }
+}
+
+/// Represents an array of bytes (unsigned char in C, u8 in Rust) with a length.
+///
+/// This can be converted to a byte array slice or a string slice (assuming it is valid UTF-8).
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFICommonConfig.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FFIBytes {
+    pub length: usize,
+    pub buffer: *const c_uchar,
+}
+
+impl TryFrom<&FFIBytes> for &str {
+    type Error = Report;
+
+    fn try_from(value: &FFIBytes) -> Result<Self, Self::Error> {
+        Ok(std::str::from_utf8(<&[u8]>::from(value))?)
+    }
+}
+
+impl From<&FFIBytes> for &[u8] {
+    fn from(value: &FFIBytes) -> Self {
+        unsafe { slice::from_raw_parts(value.buffer, value.length) }
     }
 }
