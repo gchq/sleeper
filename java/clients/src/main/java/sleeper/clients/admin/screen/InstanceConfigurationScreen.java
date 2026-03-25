@@ -155,7 +155,7 @@ public class InstanceConfigurationScreen {
             UpdatePropertiesRequest<T> request = openPropertiesFile();
             PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
             if (changes.isChanged()) {
-                Set<SleeperProperty> invalidProperties = request.getInvalidUpdatedProperties();
+                Set<SleeperProperty> invalidProperties = request.getInvalidProperties();
                 changes.print(out, properties.getPropertiesIndex(), invalidProperties);
 
                 chooseFromOptions(request.getUpdatedProperties(), changes, invalidProperties.isEmpty());

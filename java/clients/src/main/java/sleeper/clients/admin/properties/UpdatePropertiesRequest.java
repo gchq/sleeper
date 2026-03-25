@@ -19,6 +19,7 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,16 +29,16 @@ import static java.util.function.Predicate.not;
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
-    private final T properties;
+    private final T beforeProperties;
     private final T updatedProperties;
 
     public UpdatePropertiesRequest(PropertiesDiff diff, T updatedProperties) {
         this(diff, null, updatedProperties);
     }
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, T properties, T updatedProperties) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
-        this.properties = properties;
+        this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
     }
 
@@ -45,32 +46,40 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return diff;
     }
 
-    public T getProperties() {
-        return properties;
+    public T getBeforeProperties() {
+        return beforeProperties;
     }
 
     public T getUpdatedProperties() {
         return updatedProperties;
     }
 
-    public Set<SleeperProperty> getInvalidUpdatedProperties() {
-        return getInvalidProperties(updatedProperties);
-    }
-
-    private Set<SleeperProperty> getInvalidProperties(T properties) {
+    public Set<SleeperProperty> getInvalidProperties() {
         try {
-            properties.validate();
-            return getUneditableProperties(properties)
+            updatedProperties.validate();
+            return getUneditableProperties()
                     .collect(Collectors.toSet());
         } catch (SleeperPropertiesInvalidException e) {
-            return Stream.concat(getUneditableProperties(properties), e.getInvalidValues().keySet().stream())
+            return Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
                     .collect(Collectors.toSet());
         }
     }
 
-    private Stream<? extends SleeperProperty> getUneditableProperties(T properties) {
+    private Stream<? extends SleeperProperty> getUneditableProperties() {
+        Set<SleeperProperty> invalidBeforeProperties = getInvalidPropertiesBefore();
         return diff.getChanges().stream()
-                .flatMap(d -> d.getProperty(properties.getPropertiesIndex()).stream())
-                .filter(not(SleeperProperty::isEditable));
+                .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
+                .filter(not(SleeperProperty::isEditable))
+                .filter(not(invalidBeforeProperties::contains));
     }
+
+    private Set<SleeperProperty> getInvalidPropertiesBefore() {
+        try {
+            beforeProperties.validate();
+            return Collections.emptySet();
+        } catch (SleeperPropertiesInvalidException e) {
+            return e.getInvalidValues().keySet();
+        }
+    }
+
 }
