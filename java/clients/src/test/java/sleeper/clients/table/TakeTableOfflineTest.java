@@ -52,7 +52,7 @@ public class TakeTableOfflineTest {
         takeTableOffline("table-1");
 
         // Then
-        assertThat(propertiesStore.loadByName("table-1").get(TABLE_ONLINE)).isEqualTo("false");
+        assertThat(propertiesStore.loadByName("table-1").getBoolean(TABLE_ONLINE)).isFalse();
     }
 
     @Test
@@ -66,7 +66,7 @@ public class TakeTableOfflineTest {
         takeTableOffline("table-1");
 
         // Then
-        assertThat(propertiesStore.loadByNameNoValidation("table-1").get(TABLE_ONLINE)).isEqualTo("false");
+        assertThat(propertiesStore.loadByNameNoValidation("table-1").getBoolean(TABLE_ONLINE)).isFalse();
     }
 
     @Test
