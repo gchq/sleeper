@@ -233,9 +233,9 @@ public class FFIArray<T> {
         } else if (type instanceof IntType) {
             return getValue(index, Integer.class, nullsAllowed, runtime);
         } else if (type instanceof StringType) {
-            return new String((byte[]) getValue(index, FFIBytes.class, nullsAllowed, runtime), StandardCharsets.UTF_8);
+            return getValue(index, String.class, nullsAllowed, runtime);
         } else if (type instanceof ByteArrayType) {
-            return getValue(index, FFIBytes.class, nullsAllowed, runtime);
+            return getValue(index, byte.class.arrayType(), nullsAllowed, runtime);
         } else {
             throw new IllegalArgumentException("Unsupported primitive type: " + type);
         }
@@ -280,7 +280,10 @@ public class FFIArray<T> {
             return (T) Long.valueOf(this.items[idx].getLong(0));
         } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
             return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
-        } else if (clazz.equals(FFIBytes.class)) {
+        } else if (clazz.equals(String.class)) {
+            FFIBytes bytes = FFIBytes.readFrom(this.items[idx]);
+            return (T) new String(bytes.getData(), StandardCharsets.UTF_8);
+        } else if (clazz.equals(byte.class.arrayType())) {
             FFIBytes bytes = FFIBytes.readFrom(this.items[idx]);
             return (T) bytes.getData();
         } else {
