@@ -194,11 +194,19 @@ public class FFIArray<T> {
             long e = (long) item;
             this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
             this.items[idx].putLong(0, e);
-        } else if (item instanceof FFIBytes) {
-            FFIBytes e = (FFIBytes) item;
-            bytesObjects.add(e);
+        } else if (item instanceof String) {
+            String e = (String) item;
+            byte[] utf8Data = e.getBytes(StandardCharsets.UTF_8);
+            FFIBytes bytes = new FFIBytes(r, utf8Data);
+            bytesObjects.add(bytes);
             this.items[idx] = r.getMemoryManager().allocateDirect(FFIBytes.size(r));
-            e.writeTo(this.items[idx]);
+            bytes.writeTo(this.items[idx]);
+        } else if (item instanceof byte[]) {
+            byte[] e = (byte[]) item;
+            FFIBytes bytes = new FFIBytes(r, e);
+            bytesObjects.add(bytes);
+            this.items[idx] = r.getMemoryManager().allocateDirect(FFIBytes.size(r));
+            bytes.writeTo(this.items[idx]);
         } else if (item instanceof Boolean) {
             boolean e = (boolean) item;
             this.items[idx] = r.getMemoryManager().allocateDirect(1);

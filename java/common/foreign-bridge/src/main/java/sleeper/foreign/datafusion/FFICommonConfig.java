@@ -23,7 +23,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 
@@ -45,7 +44,7 @@ public class FFICommonConfig extends Struct {
     /** Optional AWS configuration. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
-    public final FFIArray<FFIBytes> input_files = new FFIArray<>(this);
+    public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Whether we should use readahead when reading from S3. */
@@ -57,11 +56,11 @@ public class FFICommonConfig extends Struct {
     /** Specifies if sketch output is enabled. Can only be used with file output. */
     public final Struct.Boolean write_sketch_file = new Struct.Boolean();
     /** Names of Sleeper row key fields from schema. */
-    public final FFIArray<FFIBytes> row_key_cols = new FFIArray<>(this);
+    public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
     /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
     public final FFIArray<java.lang.Integer> row_key_schema = new FFIArray<>(this);
     /** Names of Sleeper sort key fields from schema. */
-    public final FFIArray<FFIBytes> sort_key_cols = new FFIArray<>(this);
+    public final FFIArray<java.lang.String> sort_key_cols = new FFIArray<>(this);
     /** Maximum size of output Parquet row group in rows. */
     public final Struct.size_t max_row_group_size = new Struct.size_t();
     /** Maximum size of output Parquet page size in bytes. */
