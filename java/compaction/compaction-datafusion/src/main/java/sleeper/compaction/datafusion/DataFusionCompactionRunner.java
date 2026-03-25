@@ -30,6 +30,7 @@ import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
@@ -38,7 +39,9 @@ import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -108,7 +111,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
-        params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
+        params.input_files.populate(makeFFIBytes(runtime, job.getInputFiles()), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
@@ -116,9 +119,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.read_page_indexes.set(false);
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
-        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
+        params.row_key_cols.populate(makeFFIBytes(runtime, schema.getRowKeyFieldNames()), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
-        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);
+        params.sort_key_cols.populate(makeFFIBytes(runtime, schema.getSortKeyFieldNames()), false);
         params.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
@@ -134,6 +137,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.validate();
 
         return params;
+    }
+
+    /**
+     * Converts strings into an array of {@link FFIBytes}.
+     *
+     * @param  runtime JNR runtime to use
+     * @param  strings strings to convert
+     * @return         byte objects for FFI
+     */
+    private static FFIBytes[] makeFFIBytes(jnr.ffi.Runtime runtime, List<String> strings) {
+        return strings.stream().map(s -> new FFIBytes(runtime, s.getBytes(StandardCharsets.UTF_8))).toArray(FFIBytes[]::new);
     }
 
     /**
