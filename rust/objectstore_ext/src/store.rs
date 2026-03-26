@@ -226,17 +226,14 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         payload: PutPayload,
         opts: PutOptions,
     ) -> Result<PutResult> {
-        let msg = format!(
+        debug!(
             "{} PUT request to {}/{} of {} bytes",
             self.prefix,
             self.path_prefix,
             location,
             payload.content_length().to_formatted_string(&Locale::en)
         );
-        debug!("{msg}");
-        let result = self.store.put_opts(location, payload, opts).await;
-        debug!("COMPLETE {msg}");
-        result
+        self.store.put_opts(location, payload, opts).await
     }
 
     async fn put_multipart_opts(
@@ -244,13 +241,11 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         location: &Path,
         opts: PutMultipartOptions,
     ) -> Result<Box<dyn MultipartUpload>> {
-        let msg = format!(
+        debug!(
             "{} PUT MULTIPART request to {}/{}",
             self.prefix, self.path_prefix, location
         );
-        debug!("{msg}");
         let part_upload = self.store.put_multipart_opts(location, opts).await?;
-        debug!("COMPLETE {msg}");
         Ok(Box::new(LoggingMultipartUpload::new(
             part_upload,
             &self.prefix,
@@ -282,16 +277,13 @@ impl LoggingMultipartUpload {
 
 impl MultipartUpload for LoggingMultipartUpload {
     fn put_part(&mut self, data: PutPayload) -> UploadPart {
-        let msg = format!(
+        debug!(
             "{} multipart PUT to {} of {} bytes",
             self.prefix,
             self.path,
             data.content_length().to_formatted_string(&Locale::en)
         );
-        debug!("{msg}");
-        let result = self.inner.put_part(data);
-        debug!("COMPLETE {msg}");
-        result
+        self.inner.put_part(data)
     }
 
     fn complete<'life0, 'async_trait>(
@@ -302,9 +294,7 @@ impl MultipartUpload for LoggingMultipartUpload {
         Self: 'async_trait,
     {
         debug!("multipart to {} COMPLETE", self.path);
-        let result = self.inner.complete();
-        debug!("COMPLETE multipart to {} COMPLETE", self.path);
-        result
+        self.inner.complete()
     }
 
     fn abort<'life0, 'async_trait>(
