@@ -19,19 +19,12 @@ use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::{Credentials, provider::ProvideCredentials};
 use color_eyre::eyre::eyre;
 use futures::Future;
-use log::debug;
 use object_store::{
     ClientOptions, CredentialProvider, Error, ObjectStore,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
 };
-use std::{
-    cell::RefCell,
-    collections::{HashMap, hash_map::Entry},
-    future::ready,
-    pin::Pin,
-    sync::Arc,
-};
+use std::{cell::RefCell, collections::HashMap, future::ready, pin::Pin, sync::Arc};
 use url::Url;
 
 pub const S3_WRITING_URL_SCHEME: &str = "s3w";
@@ -210,21 +203,14 @@ impl ObjectStoreFactory {
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     pub async fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
-        let mut borrow = self.store_map.borrow_mut();
-        // Perform a single lookup into the cache map
-        let o = match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
-            // if entry found, then clone the shared pointer
-            Entry::Occupied(occupied) => Ok(occupied.get().clone()),
-            // otherwise, attempt to create the object store
-            Entry::Vacant(vacant) => match self.make_object_store(src).await {
-                // success? Insert it into the entry (first clone) then return the shared pointer, cloned from reference
-                Ok(x) => Ok(vacant.insert(x.clone()).clone()),
-                // otherwise propogate error
-                Err(x) => Err(x),
-            },
-        };
-        debug!("{o:?}");
-        o
+        let store_key = ObjectStoreFactory::make_cache_key_for(src)?;
+        if let Some(store) = self.store_map.borrow().get(&store_key) {
+            Ok(store.clone())
+        } else {
+            let store = self.make_object_store(src).await?;
+            self.store_map.borrow_mut().insert(store_key, store.clone());
+            Ok(store)
+        }
     }
 
     /// Creates the appropriate [`object_store::ObjectStore`] for a given URL.
@@ -291,7 +277,6 @@ impl ObjectStoreFactory {
         Ok(builder.with_client_options(client_options).build()?)
     }
 
-    #[must_use]
     async fn make_s3_builder(&self) -> color_eyre::Result<AmazonS3Builder> {
         match &self.s3_config {
             Some(config) => Ok(config.to_builder()),

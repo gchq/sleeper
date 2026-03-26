@@ -65,7 +65,7 @@ impl CommonConfig<'_> {
         self.sorting_columns_iter().collect::<Vec<_>>()
     }
 
-    pub(crate) async fn create_object_store_factory(&self) -> ObjectStoreFactory {
+    pub(crate) fn create_object_store_factory(&self) -> ObjectStoreFactory {
         ObjectStoreFactory::new(self.aws_config.clone(), self.use_readahead_store)
     }
 
