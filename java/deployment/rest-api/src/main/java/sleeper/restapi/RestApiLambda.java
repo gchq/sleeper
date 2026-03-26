@@ -33,10 +33,10 @@ public class RestApiLambda {
     }
 
     /**
-     * Used by the lambda handler to handle api gateway requests that have been sent to the REST API.
+     * Used by the lambda handler to handle API Gateway requests that have been sent to the REST API.
      *
      * @param  event the event
-     * @return       APIGatewayV2HTTPResponse the response from the api request
+     * @return       the response from the API request
      */
     public APIGatewayV2HTTPResponse handleEvent(APIGatewayV2HTTPEvent event) {
         String requestPath = event.getRequestContext().getHttp().getPath();
