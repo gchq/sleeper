@@ -73,17 +73,17 @@ public class RestApiStack extends NestedStack {
                 .timeout(Duration.seconds(29)));
 
         String restApiId = "sleeper-restapi-" + instanceId;
-        String restApiUri = setupRestApiUri(scope, lambda);
+        String restApiUri = setupRestApiUri(this, lambda);
 
-        HttpApi restHttpApi = setupApiGateway(scope, restApiId);
+        HttpApi restHttpApi = setupApiGateway(this, restApiId);
 
-        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(scope, "restapi-integration")
+        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(this, "restapi-integration")
                 .apiId(restHttpApi.getApiId())
                 .integrationType("AWS_PROXY")
                 .integrationUri(restApiUri)
                 .build();
 
-        CfnRoute.Builder.create(scope, "connect-route")
+        CfnRoute.Builder.create(this, "connect-route")
                 .apiId(restHttpApi.getApiId())
                 .apiKeyRequired(false)
                 .authorizationType("AWS_IAM")
@@ -93,7 +93,7 @@ public class RestApiStack extends NestedStack {
 
         lambda.addPermission("apigateway-access-to-lambda", Permission.builder()
                 .principal(new ServicePrincipal("apigateway.amazonaws.com"))
-                .sourceArn(Stack.of(scope).formatArn(ArnComponents.builder()
+                .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
                         .service("execute-api")
                         .resource(restHttpApi.getApiId())
                         .resourceName("*/*")
