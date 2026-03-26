@@ -274,12 +274,10 @@ fn apply_s3_logging_store<T: ObjectStore>(
 
 #[cfg(test)]
 mod tests {
+    use super::{ObjectStoreFactory, extract_bucket};
+    use crate::s3::modify_output_path_scheme;
     use color_eyre::eyre::Result;
     use url::Url;
-
-    use crate::s3::modify_output_path_scheme;
-
-    use super::{ObjectStoreFactory, extract_bucket};
 
     #[test]
     fn should_extract_bucket() -> Result<()> {
