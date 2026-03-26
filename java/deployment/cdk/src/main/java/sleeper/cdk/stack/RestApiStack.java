@@ -27,12 +27,10 @@ import software.amazon.awscdk.services.apigatewayv2.HttpApi;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
-import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -52,14 +50,13 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class RestApiStack extends NestedStack {
 
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperInstanceArtefacts artefacts) {
+            SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.REST_API_HANDLER, instanceProperties);
-        setUpRestApi(scope, instanceProperties, id, artefacts, logGroup);
+        setUpRestApi(scope, instanceProperties, id, artefacts, coreStacks);
     }
 
     private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String constructId,
-            SleeperInstanceArtefacts artefacts, ILogGroup logGroup) {
+            SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
@@ -69,7 +66,7 @@ public class RestApiStack extends NestedStack {
                 .description("Implements a REST API for interacting with SLEEPER")
                 .environment(env)
                 .memorySize(1024)
-                .logGroup(logGroup)
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.REST_API_HANDLER))
                 .timeout(Duration.seconds(29)));
 
         String restApiUri = setupRestApiUri(this, lambda);
