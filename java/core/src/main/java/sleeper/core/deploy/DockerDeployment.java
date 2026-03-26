@@ -173,6 +173,12 @@ public class DockerDeployment {
         return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + deploymentName;
     }
 
+    @Override
+    public String toString() {
+        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", multiplatform=" + multiplatform
+                + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
+    }
+
     /**
      * Creates a Docker deployment.
      */

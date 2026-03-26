@@ -61,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -110,6 +111,42 @@ public class DeleteTableIT extends LocalStackTestBase {
         deleteTable("table-1");
 
         // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(listDataBucketObjectKeys()).isEmpty();
+        assertThat(streamTableFileTransactions(table)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table)).isEmpty();
+    }
+
+    @Test
+    void shouldDeleteTableEvenWithInvalidSchema() throws Exception {
+        // Given
+        TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
+        StateStore stateStoreBefore = createStateStore(table);
+        update(stateStoreBefore).initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        AllReferencesToAFile file = ingestRows(table, List.of(
+                new Row(Map.of("key1", 25L)),
+                new Row(Map.of("key1", 100L))));
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+
+        String schema = table.get(SCHEMA);
+        table.set(SCHEMA, "{}");
+        propertiesStore.update(table);
+
+        // When
+        deleteTable("table-1");
+
+        // Then
+        table.set(SCHEMA, schema);
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(listDataBucketObjectKeys()).isEmpty();
