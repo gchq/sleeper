@@ -74,7 +74,7 @@ public class RestApiStack extends NestedStack {
 
         String restApiUri = setupRestApiUri(this, lambda);
 
-        HttpApi restHttpApi = setupApiGateway(this, constructId, instanceId, lambda.getFunctionName());
+        HttpApi restHttpApi = setupApiGateway(this, instanceId, lambda.getFunctionName());
 
         CfnIntegration restApiIntegration = CfnIntegration.Builder.create(this, "restapi-integration")
                 .apiId(restHttpApi.getApiId())
@@ -114,8 +114,8 @@ public class RestApiStack extends NestedStack {
                 .build());
     }
 
-    private HttpApi setupApiGateway(Construct scope, String constructId, String instanceId, String lambdaName) {
-        return HttpApi.Builder.create(scope, String.format("sleeper-rest-api-s%", constructId))
+    private HttpApi setupApiGateway(Construct scope, String instanceId, String lambdaName) {
+        return HttpApi.Builder.create(scope, "RestApi")
                 .description("Sleeper Rest Api")
                 .apiName(String.format("sleeper-%s-%s", instanceId, lambdaName))
                 .build();
