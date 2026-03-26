@@ -21780,7 +21780,7 @@
                     {
                       "Ref": "AWS::URLSuffix"
                     },
-                    "/test-instance/query-lambda:1.2.3"
+                    "/test-instance/query-lambda:query-lambda-test-digest"
                   ]
                 ]
               }
@@ -21823,17 +21823,6 @@
                 "Value": "test-instance"
               }
             ]
-          }
-        },
-        "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0178f095f48117f9cc681640558677bd216": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "QueryLeafPartitionExecutorLambda23A190EE"
-            }
           }
         },
         "LeafPartitionQueryDeadLetterQueue1090F3DB": {
@@ -22310,6 +22299,17 @@
             "Threshold": 0
           }
         },
+        "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E017387430e2d9b0035f37e6a14fc839dcc1": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "QueryLeafPartitionExecutorLambda23A190EE"
+            }
+          }
+        },
         "QueryResultsQueueD60170BB": {
           "Type": "AWS::SQS::Queue",
           "DeletionPolicy": "Delete",
@@ -22671,7 +22671,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "QueryExecutorLambdaCurrentVersion57ADA607dbd82e8ce8584bb9752cafa0e1e8361f",
+                      "QueryExecutorLambdaCurrentVersion57ADA6073ad0df32061cf671feb54e26b78c302d",
                       "Version"
                     ]
                   }
@@ -22781,7 +22781,7 @@
                     {
                       "Ref": "AWS::URLSuffix"
                     },
-                    "/test-instance/query-lambda:1.2.3"
+                    "/test-instance/query-lambda:query-lambda-test-digest"
                   ]
                 ]
               }
@@ -22796,17 +22796,6 @@
                 "Value": "test-instance"
               }
             ]
-          }
-        },
-        "QueryExecutorLambdaCurrentVersion57ADA607dbd82e8ce8584bb9752cafa0e1e8361f": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "QueryExecutorLambdaC152EAEE"
-            }
           }
         },
         "PutToAnyS3BucketAndSendToAnySQSPolicyLeafPartition06A6190C": {
@@ -22874,6 +22863,17 @@
             ]
           }
         },
+        "QueryExecutorLambdaCurrentVersion57ADA6073ad0df32061cf671feb54e26b78c302d": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "QueryExecutorLambdaC152EAEE"
+            }
+          }
+        },
         "QueryLeafPartitionExecutorLambdaCurrentVersionSqsEventSourceTestInstanceQueryLeafPartitionQueryQueue4E07AFEA379AAA38": {
           "Type": "AWS::Lambda::EventSourceMapping",
           "Properties": {
@@ -22888,7 +22888,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0178f095f48117f9cc681640558677bd216",
+                      "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E017387430e2d9b0035f37e6a14fc839dcc1",
                       "Version"
                     ]
                   }
