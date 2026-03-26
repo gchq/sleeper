@@ -35,9 +35,13 @@ pub fn unpack_string(pointer: *const c_char) -> Result<String> {
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
 pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> Result<Vec<T>> {
+    if len == 0 {
+        return Ok(Vec::new());
+    }
     if array_base.is_null() {
         bail!("NULL pointer for array_base in generic typed array");
     }
+
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .map(|p| {
