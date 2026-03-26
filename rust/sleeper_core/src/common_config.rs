@@ -231,6 +231,10 @@ impl<'a> CommonConfigBuilder<'a> {
         self
     }
 
+    /// Should the scheme of the output file URL (if any) be replaced?
+    /// If true, this will cause the output file URL scheme to be changed
+    /// from "s3" to "s3w", ensuring `DataFusion` chooses the correct object
+    /// store for reading/writing.
     #[must_use]
     pub fn with_modified_output_scheme(mut self, modify: bool) -> Self {
         self.modify_output_scheme = modify;

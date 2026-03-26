@@ -193,6 +193,12 @@ impl ObjectStoreFactory {
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
     ///
+    /// We want to have two separate object stores instances for s3, one for reading and one for writing.
+    /// This function recognises "s3w" to mean "S3 for writing". An object store will be created that isn't wrapped
+    /// in a [`Readahead`] store and has a default timeout on it. By registering this in `DataFusion` under a separate
+    /// URL scheme, we can guarantee that `DataFusion` will use one S3 object store for reading and a separate one
+    /// for writing. This means we avoid the problem of trying to write to S3 with no timeouts set.
+    ///
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
@@ -224,6 +230,12 @@ impl ObjectStoreFactory {
         }
     }
 
+    /// Creates an S3 object store.
+    ///
+    /// When reading from S3, in combination with the [`ReadaheadStore`], we need to disable
+    /// timeouts otherwise, the data streams from S3 that we keep open for a long time will timeout.
+    /// When writing to S3 we want to keep those timeouts in place, thus we need to know if we are creating
+    /// this object store for reading or writing to S3.
     fn connect_s3(&self, src: &Url, for_writing: bool) -> color_eyre::Result<AmazonS3> {
         let builder = match &self.s3_config {
             Some(config) => Ok(config
