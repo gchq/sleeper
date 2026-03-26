@@ -172,7 +172,6 @@ pub async fn retrieve_object_metas(
             .get_object_store(input_path)
             .await
             .map_err(|e| DataFusionError::External(e.into()))?;
-        debug!("{store:?}");
         let p = input_path.path();
         metas.push(store.head(&p.into()).await?);
     }
