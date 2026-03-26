@@ -15,11 +15,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{Array, ArrayRef, BooleanArray},
-    datatypes::{DataType, Field, FieldRef},
-};
 use datafusion::{
+    arrow::{
+        array::{Array, ArrayRef, BooleanArray},
+        datatypes::{DataType, Field, FieldRef},
+    },
     common::{exec_err, plan_err},
     error::Result,
     execution::FunctionRegistry,
@@ -459,11 +459,9 @@ mod tests {
             non_null_sum, non_nullable, nullable_check, register_non_nullable_aggregate_udfs,
         },
     };
-    use arrow::{
-        array::{ArrayRef, BooleanArray, Int64Builder},
-        datatypes::{DataType, Field, Schema},
-    };
     use datafusion::{
+        arrow::array::{ArrayRef, BooleanArray, Int64Builder},
+        arrow::datatypes::{DataType, Field, Schema},
         common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
         execution::{SessionStateBuilder, context::ExecutionProps},
