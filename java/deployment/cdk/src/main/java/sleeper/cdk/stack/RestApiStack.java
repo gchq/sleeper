@@ -64,9 +64,9 @@ public class RestApiStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "rest-api-handler");
-        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, constructId, builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, constructId + "-lambda", builder -> builder
                 .functionName(functionName)
-                .description("Function for implementing a REST API for interacting with SLEEPER")
+                .description("Implements a REST API for interacting with SLEEPER")
                 .environment(env)
                 .memorySize(1024)
                 .logGroup(logGroup)
