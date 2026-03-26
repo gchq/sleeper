@@ -117,6 +117,14 @@ public interface CompactionProperty {
             .defaultValue("60")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.max.alive.time.seconds")
+            .description("The total time in seconds that a compaction task can be alive for before it is terminated.\n" +
+                    "When the task has finished it's current job, it will check out how long it's been running.\n" +
+                    "If it has been running longer than the max alive time it will terminate and a new task will begin running.\n" +
+                    "This allows the user to gracefully upgrade Sleeper to a newer version.")
+            .defaultValue("1800")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.consecutive.failures")
             .description("The maximum number of times that a compaction task can fail to process consecutive " +
                     "compaction jobs before it terminates.\n" +

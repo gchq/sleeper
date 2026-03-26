@@ -52,6 +52,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
@@ -131,10 +132,10 @@ public class CompactionTask {
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties);
-        while (consecutiveFailuresTracker.hasNotMetMaximumFailures()) {
+        Instant currentTime = timeSupplier.get();
+        while (consecutiveFailuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime, currentTime)) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
-                Instant currentTime = timeSupplier.get();
                 if (idleTimeTracker.isLookForNextMessage(currentTime)) {
                     continue;
                 } else {
@@ -147,8 +148,14 @@ public class CompactionTask {
                     processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
                 }
             }
+            currentTime = timeSupplier.get();
         }
-        return timeSupplier.get();
+        return currentTime;
+    }
+
+    private boolean hasNotReachedMaxAliveTime(Instant startTime, Instant currentTime) {
+        Duration aliveTime = Duration.between(startTime, currentTime);
+        return aliveTime.toSeconds() < instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS);
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {

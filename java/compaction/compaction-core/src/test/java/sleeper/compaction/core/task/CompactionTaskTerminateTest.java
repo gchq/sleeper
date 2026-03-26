@@ -30,6 +30,7 @@ import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 
@@ -217,6 +218,37 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             assertThat(consumedJobs).containsExactly(job2, job4);
             assertThat(jobsReturnedToQueue).containsExactly(job1, job3);
             assertThat(jobsOnQueue).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Stop after max alive time")
+    class StopAfterMaxAliveTime {
+
+        @Test
+        void shouldStopTaskAfterMaxAliveTime() throws Exception {
+            //Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS, 2);
+            Queue<Instant> times = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Task started
+                    Instant.parse("2024-02-22T13:50:01Z"), // Should keep alive check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job1 started
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job1 completed
+                    Instant.parse("2024-02-22T13:50:04Z"), // Should keep alive check
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+            CompactionJob job3 = createJobOnQueue("job3");
+            CompactionJob job4 = createJobOnQueue("job4");
+
+            // When
+            runTask(processJobs(jobSucceeds(), jobSucceeds(), jobSucceeds(), jobSucceeds()), times::poll);
+
+            // Then
+            assertThat(times).isEmpty();
+            assertThat(sleeps).isEmpty();
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(jobsOnQueue).containsExactly(job2, job3, job4);
         }
     }
 }
