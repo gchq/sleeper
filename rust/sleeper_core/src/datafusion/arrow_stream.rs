@@ -17,11 +17,13 @@
  * limitations under the License.
  */
 #[allow(unused)]
-use arrow::{
-    array::RecordBatchIterator, error::ArrowError, ffi_stream::FFI_ArrowArrayStream,
-    record_batch::RecordBatch,
+use datafusion::{
+    arrow::{
+        array::RecordBatchIterator, error::ArrowError, ffi_stream::FFI_ArrowArrayStream,
+        record_batch::RecordBatch,
+    },
+    execution::SendableRecordBatchStream,
 };
-use datafusion::execution::SendableRecordBatchStream;
 use futures::{Stream, StreamExt};
 use std::{pin::Pin, sync::Arc};
 use tokio::runtime::Runtime;

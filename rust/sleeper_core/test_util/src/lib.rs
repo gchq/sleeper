@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::{
-    array::{Array, ArrayRef, Int32Array, RecordBatch},
-    datatypes::{DataType, Field, Schema},
-};
 use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
+    arrow::{
+        array::{Array, ArrayRef, Int32Array, RecordBatch},
+        datatypes::{DataType, Field, Schema},
+    },
     execution::SendableRecordBatchStream,
     parquet::{
         arrow::{

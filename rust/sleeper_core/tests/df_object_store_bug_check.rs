@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::{
-    array::{ArrayRef, Int32Array, RecordBatch},
-    datatypes::{DataType, Field, Schema},
-};
 use color_eyre::eyre::Result;
 use datafusion::{
+    arrow::{
+        array::{ArrayRef, Int32Array, RecordBatch},
+        datatypes::{DataType, Field, Schema},
+    },
     assert_batches_eq,
     parquet::arrow::{AsyncArrowWriter, async_writer::ParquetObjectWriter},
     prelude::{ParquetReadOptions, SessionContext},

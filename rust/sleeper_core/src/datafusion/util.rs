@@ -14,8 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{datatypes::DataType, util::pretty::pretty_format_batches};
 use datafusion::{
+    arrow::{datatypes::DataType, util::pretty::pretty_format_batches},
     common::{
         DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
@@ -334,13 +334,13 @@ mod tests {
         MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
         calculate_upload_size, remove_coalesce_physical_stage,
     };
-    use arrow::{
-        array::RecordBatch,
-        compute::SortOptions,
-        datatypes::{DataType, Field, Schema},
-    };
     use color_eyre::eyre::Error;
     use datafusion::{
+        arrow::{
+            array::RecordBatch,
+            compute::SortOptions,
+            datatypes::{DataType, Field, Schema},
+        },
         catalog::memory::MemorySourceConfig,
         common::{DFSchema, tree_node::TreeNode},
         dataframe,
@@ -471,7 +471,7 @@ mod tests {
     fn should_return_same_plan_if_no_coalesce_found() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let ordering = build_ordering(&schema, 1);
@@ -490,7 +490,7 @@ mod tests {
     fn should_stop_replacement_after_first_coalesce() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
@@ -527,7 +527,7 @@ mod tests {
             Field::new("b", DataType::Int32, false),
             Field::new("c", DataType::Int32, false),
         ]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let ordering = build_ordering(&schema, 3);
@@ -551,7 +551,7 @@ mod tests {
             Field::new("c", DataType::Int32, false),
         ]));
 
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         // Create two sort stages that only apply ordering to first column

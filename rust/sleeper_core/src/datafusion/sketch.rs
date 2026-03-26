@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 use crate::datafusion::sketch_udf::SketchUDF;
-use arrow::{array::ArrayAccessor, datatypes::DataType};
 use bytes::BufMut;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
+    arrow::{array::ArrayAccessor, datatypes::DataType},
     common::DFSchema,
     dataframe::DataFrame,
     error::DataFusionError,

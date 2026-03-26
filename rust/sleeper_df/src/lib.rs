@@ -25,7 +25,7 @@ use crate::{
 };
 use ::log::{error, warn};
 #[cfg(doc)]
-use arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
+use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::c_int;

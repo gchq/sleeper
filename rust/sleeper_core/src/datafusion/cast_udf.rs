@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::{
-    array::Array,
-    array::AsArray,
-    compute::CastOptions,
-    datatypes::{DataType, Field, FieldRef, Int32Type, Int64Type},
-    util::display::FormatOptions,
-};
 use datafusion::{
+    arrow::{
+        array::Array,
+        array::AsArray,
+        compute::CastOptions,
+        datatypes::{DataType, Field, FieldRef, Int32Type, Int64Type},
+        util::display::FormatOptions,
+    },
     common::{exec_err, internal_err, plan_datafusion_err, plan_err},
     error::Result,
     logical_expr::{
@@ -82,8 +82,8 @@ impl ScalarUDFImpl for CastUDF {
 
     fn return_type(
         &self,
-        _arg_types: &[arrow::datatypes::DataType],
-    ) -> datafusion::error::Result<arrow::datatypes::DataType> {
+        _arg_types: &[datafusion::arrow::datatypes::DataType],
+    ) -> datafusion::error::Result<datafusion::arrow::datatypes::DataType> {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
 
@@ -238,8 +238,10 @@ fn create_full_range(output_type: &DataType) -> Result<Interval> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arrow::array::{Int32Array, Int64Array, StringArray};
-    use arrow::datatypes::DataType;
+    use datafusion::arrow::{
+        array::{Int32Array, Int64Array, StringArray},
+        datatypes::DataType,
+    },
     use color_eyre::eyre::Error;
     use datafusion::config::ConfigOptions;
     use datafusion::logical_expr::interval_arithmetic::Interval;
