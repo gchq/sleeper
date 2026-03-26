@@ -34,8 +34,8 @@ use crate::{
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::compute::SortOptions;
 use datafusion::{
+    arrow::compute::SortOptions,
     common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},

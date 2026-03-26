@@ -460,8 +460,10 @@ mod tests {
         },
     };
     use datafusion::{
-        arrow::array::{ArrayRef, BooleanArray, Int64Builder},
-        arrow::datatypes::{DataType, Field, Schema},
+        arrow::{
+            array::{ArrayRef, BooleanArray, Int64Builder},
+            datatypes::{DataType, Field, Schema},
+        },
         common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
         execution::{SessionStateBuilder, context::ExecutionProps},

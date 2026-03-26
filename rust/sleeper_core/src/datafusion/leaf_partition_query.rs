@@ -25,8 +25,8 @@ use crate::{
     },
 };
 #[cfg(doc)]
-use arrow::record_batch::RecordBatch;
 use datafusion::{
+    arrow::record_batch::RecordBatch,
     common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,

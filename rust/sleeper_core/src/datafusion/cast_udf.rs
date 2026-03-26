@@ -238,11 +238,11 @@ fn create_full_range(output_type: &DataType) -> Result<Interval> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use color_eyre::eyre::Error;
     use datafusion::arrow::{
         array::{Int32Array, Int64Array, StringArray},
         datatypes::DataType,
-    },
-    use color_eyre::eyre::Error;
+    };
     use datafusion::config::ConfigOptions;
     use datafusion::logical_expr::interval_arithmetic::Interval;
     use datafusion::scalar::ScalarValue;

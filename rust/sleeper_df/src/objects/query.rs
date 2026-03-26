@@ -18,8 +18,8 @@ use crate::{
     objects::{ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
     unpack::unpack_string_array,
 };
-use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::bail;
+use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
 use sleeper_core::LeafPartitionQueryConfig;
 use std::{ffi::c_char, slice};
 

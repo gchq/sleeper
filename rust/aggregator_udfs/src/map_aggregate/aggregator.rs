@@ -45,8 +45,10 @@ use crate::map_aggregate::{
     },
 };
 use datafusion::{
-    arrow::array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
-    arrow::datatypes::{DataType, Fields},
+    arrow::{
+        array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
+        datatypes::{DataType, Fields},
+    },
     common::{exec_err, plan_err},
     error::Result,
     logical_expr::{
@@ -279,11 +281,13 @@ pub mod map_test_common {
 #[cfg(test)]
 mod tests {
     use datafusion::{
-        arrow::array::{
-            ArrowPrimitiveType, BinaryBuilder, Int64Builder, MapBuilder, MapFieldNames,
-            StringBuilder,
+        arrow::{
+            array::{
+                ArrowPrimitiveType, BinaryBuilder, Int64Builder, MapBuilder, MapFieldNames,
+                StringBuilder,
+            },
+            datatypes::{DataType, Field, Fields, Schema},
         },
-        arrow::datatypes::{DataType, Field, Fields, Schema},
         error::DataFusionError,
         logical_expr::{AggregateUDFImpl, function::AccumulatorArgs},
         physical_expr::PhysicalSortExpr,
