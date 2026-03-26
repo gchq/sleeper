@@ -43,9 +43,8 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
- * Rest api for interacting with the sleeper instance.
+ * RESTs API for interacting with the Sleeper instance.
  * Utilises API Gateway.
- *
  */
 public class RestApiStack extends NestedStack {
 
@@ -63,7 +62,7 @@ public class RestApiStack extends NestedStack {
         String functionName = String.join("-", "sleeper", instanceId, "rest-api-handler");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.REST_API_HANDLER, constructId + "-lambda", builder -> builder
                 .functionName(functionName)
-                .description("Implements a REST API for interacting with SLEEPER")
+                .description("Implements a REST API for interacting with Sleeper")
                 .environment(env)
                 .memorySize(1024)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.REST_API_HANDLER))
@@ -113,7 +112,7 @@ public class RestApiStack extends NestedStack {
 
     private HttpApi setupApiGateway(Construct scope, String instanceId, String lambdaName) {
         return HttpApi.Builder.create(scope, "RestApi")
-                .description("Sleeper Rest Api")
+                .description("Sleeper REST API")
                 .apiName(String.format("sleeper-%s-%s", instanceId, lambdaName))
                 .build();
     }

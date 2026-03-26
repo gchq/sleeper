@@ -1,6 +1,6 @@
 ## Instance Properties - REST API - CDK Defined
 
-The following instance properties relate to the REST API
+The following instance properties relate to the REST API.
 
 | Property Name        | Description                       |
 |----------------------|-----------------------------------|
