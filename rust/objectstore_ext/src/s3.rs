@@ -16,9 +16,10 @@
  */
 use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 use aws_config::{BehaviorVersion, Region};
-use aws_credential_types::provider::ProvideCredentials;
+use aws_credential_types::{Credentials, provider::ProvideCredentials};
 use color_eyre::eyre::eyre;
 use futures::Future;
+use log::debug;
 use object_store::{
     ClientOptions, CredentialProvider, Error, ObjectStore,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
@@ -66,9 +67,44 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct AwsConfig {
+    pub region: String,
+    pub endpoint: String,
+    pub access_key: String,
+    pub secret_key: String,
+    pub session_token: Option<String>,
+    pub allow_http: bool,
+}
+
+impl AwsConfig {
+    /// Create an [`AmazonS3Builder`] from the given configuration object.
+    ///
+    /// Credentials are extracted from the given configuration object.
+    #[must_use]
+    fn to_builder(&self) -> AmazonS3Builder {
+        let creds = Credentials::from_keys(
+            &self.access_key,
+            &self.secret_key,
+            self.session_token.clone(),
+        );
+        let region = Region::new(String::from(&self.region));
+        let mut builder = builder_from_creds(&creds, &region);
+        if !self.endpoint.is_empty() {
+            builder = builder.with_endpoint(&self.endpoint);
+        }
+        builder
+    }
+
+    #[must_use]
+    fn configure_extra_options(&self, options: ClientOptions) -> ClientOptions {
+        options.with_allow_http(self.allow_http)
+    }
+}
+
 /// Create an [`object_store::ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
 #[must_use]
-pub fn config_for_s3_module(
+fn builder_from_creds(
     creds: &aws_credential_types::Credentials,
     region: &Region,
 ) -> AmazonS3Builder {
@@ -84,7 +120,7 @@ pub fn config_for_s3_module(
 /// This function will fail if we can't find any credentials in any of the
 /// [standard places](https://docs.aws.amazon.com/sdk-for-rust/latest/dg/credproviders.html),
 /// or if a default region is not set.
-pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
+async fn default_creds_builder() -> color_eyre::Result<AmazonS3Builder> {
     let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let creds = config
         .credentials_provider()
@@ -94,7 +130,7 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
     let region = config
         .region()
         .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-    Ok(config_for_s3_module(&creds, region))
+    Ok(builder_from_creds(&creds, region))
 }
 
 /// Extract the S3 bucket name from a URL.
@@ -127,14 +163,14 @@ pub fn modify_output_path_scheme(url: &Url) -> Url {
 /// object store.
 #[derive(Debug)]
 pub struct ObjectStoreFactory {
-    s3_config: Option<AmazonS3Builder>,
+    s3_config: Option<AwsConfig>,
     store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
     use_readahead: bool,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(s3_config: Option<AmazonS3Builder>, use_readahead: bool) -> Self {
+    pub fn new(s3_config: Option<AwsConfig>, use_readahead: bool) -> Self {
         Self {
             s3_config,
             store_map: RefCell::new(HashMap::new()),
@@ -173,20 +209,22 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
+    pub async fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
-        match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
+        let o = match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
             // if entry found, then clone the shared pointer
             Entry::Occupied(occupied) => Ok(occupied.get().clone()),
             // otherwise, attempt to create the object store
-            Entry::Vacant(vacant) => match self.make_object_store(src) {
+            Entry::Vacant(vacant) => match self.make_object_store(src).await {
                 // success? Insert it into the entry (first clone) then return the shared pointer, cloned from reference
                 Ok(x) => Ok(vacant.insert(x.clone()).clone()),
                 // otherwise propogate error
                 Err(x) => Err(x),
             },
-        }
+        };
+        debug!("{o:?}");
+        o
     }
 
     /// Creates the appropriate [`object_store::ObjectStore`] for a given URL.
@@ -202,11 +240,11 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
+    async fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
-                Ok(self.connect_s3(src, false).map(|store| {
+                Ok(self.make_s3_store(src, false).await.map(|store| {
                     ObjectStoreFactory::wrap_s3_store(
                         store,
                         &bucket,
@@ -217,7 +255,7 @@ impl ObjectStoreFactory {
             }
             S3_WRITING_URL_SCHEME => {
                 let bucket = format!("{S3_WRITING_URL_SCHEME}://{}", extract_bucket(src)?);
-                Ok(self.connect_s3(src, true).map(|store| {
+                Ok(self.make_s3_store(src, true).await.map(|store| {
                     ObjectStoreFactory::wrap_s3_store(store, &bucket, "DataFusion writing", false)
                 })?)
             }
@@ -236,22 +274,29 @@ impl ObjectStoreFactory {
     /// timeouts otherwise, the data streams from S3 that we keep open for a long time will timeout.
     /// When writing to S3 we want to keep those timeouts in place, thus we need to know if we are creating
     /// this object store for reading or writing to S3.
-    fn connect_s3(&self, src: &Url, for_writing: bool) -> color_eyre::Result<AmazonS3> {
-        let builder = match &self.s3_config {
-            Some(config) => Ok(config
-                .clone()
-                .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?)),
-            None => Err(eyre!(
-                "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
-            )),
-        }?;
-        Ok(if for_writing {
-            builder.build()?
-        } else {
-            builder
-                .with_client_options(ClientOptions::default().with_timeout_disabled())
-                .build()?
-        })
+    async fn make_s3_store(&self, src: &Url, for_writing: bool) -> color_eyre::Result<AmazonS3> {
+        let builder = self
+            .make_s3_builder()
+            .await?
+            .with_bucket_name(src.host_str().ok_or(eyre!("invalid S3 bucket name"))?);
+
+        let mut client_options = ClientOptions::default();
+        if let Some(options) = &self.s3_config {
+            client_options = options.configure_extra_options(client_options);
+        }
+        if !for_writing {
+            client_options = client_options.with_timeout_disabled();
+        }
+
+        Ok(builder.with_client_options(client_options).build()?)
+    }
+
+    #[must_use]
+    async fn make_s3_builder(&self) -> color_eyre::Result<AmazonS3Builder> {
+        match &self.s3_config {
+            Some(config) => Ok(config.to_builder()),
+            None => default_creds_builder().await,
+        }
     }
 
     fn wrap_s3_store(

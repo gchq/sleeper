@@ -34,11 +34,12 @@ pub mod sleeper_context;
 mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
-pub use common_config::{AwsConfig, CommonConfig, CommonConfigBuilder};
+pub use common_config::{CommonConfig, CommonConfigBuilder};
 pub use datafusion::{
     ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
     SleeperRegion, sketch::DataSketchVariant, stream_to_ffi_arrow_stream,
 };
+pub use objectstore_ext::s3::AwsConfig;
 
 /// Compacts the given Parquet files and reads the schema from the first.
 ///

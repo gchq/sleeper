@@ -17,11 +17,8 @@ use crate::{
     datafusion::{OutputType, SleeperRegion},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
-use aws_config::Region;
-use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail};
-use object_store::aws::AmazonS3Builder;
-use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
+use objectstore_ext::s3::{AwsConfig, ObjectStoreFactory};
 use std::fmt::{Display, Formatter};
 use url::Url;
 
@@ -69,11 +66,7 @@ impl CommonConfig<'_> {
     }
 
     pub(crate) async fn create_object_store_factory(&self) -> ObjectStoreFactory {
-        let s3_config = match &self.aws_config {
-            Some(aws_config) => Some(aws_config.to_s3_config()),
-            None => default_creds_store().await.ok(),
-        };
-        ObjectStoreFactory::new(s3_config, self.use_readahead_store)
+        ObjectStoreFactory::new(self.aws_config.clone(), self.use_readahead_store)
     }
 
     pub(crate) fn output(&self) -> &OutputType {
@@ -320,36 +313,6 @@ impl<'a> CommonConfigBuilder<'a> {
         {
             let _ = output_file.set_scheme("s3");
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct AwsConfig {
-    pub region: String,
-    pub endpoint: String,
-    pub access_key: String,
-    pub secret_key: String,
-    pub session_token: Option<String>,
-    pub allow_http: bool,
-}
-
-impl AwsConfig {
-    /// Create an [`AmazonS3Builder`] from the given configuration object.
-    ///
-    /// Credentials are extracted from the given configuration object.
-    #[must_use]
-    fn to_s3_config(&self) -> AmazonS3Builder {
-        let creds = Credentials::from_keys(
-            &self.access_key,
-            &self.secret_key,
-            self.session_token.clone(),
-        );
-        let region = Region::new(String::from(&self.region));
-        let mut builder = config_for_s3_module(&creds, &region);
-        if !self.endpoint.is_empty() {
-            builder = builder.with_endpoint(&self.endpoint);
-        }
-        builder.with_allow_http(self.allow_http)
     }
 }
 
