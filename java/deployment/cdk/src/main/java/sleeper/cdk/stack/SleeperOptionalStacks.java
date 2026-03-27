@@ -172,7 +172,7 @@ public class SleeperOptionalStacks {
 
         // Stack to allow provide a Rest API
         if (optionalStacks.contains(OptionalStack.RestApiStack)) {
-            new RestApiStack(scope, "RestApi", instanceProperties, artefacts);
+            new RestApiStack(scope, "RestApi", instanceProperties, artefacts, coreStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {
