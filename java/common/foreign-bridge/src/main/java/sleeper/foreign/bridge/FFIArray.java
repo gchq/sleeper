@@ -23,8 +23,11 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.foreign.FFIBytes;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -46,10 +49,15 @@ public class FFIArray<T> {
      */
     private jnr.ffi.Pointer basePtr;
     /**
-     * Reference to dynamically allocated items to prevent GC until Array instance
+     * Reference to dynamically allocated items to prevent GC until FFIArray instance
      * is collected. These pointers will NOT be transferred across FFI boundary.
      */
     private jnr.ffi.Pointer[] items;
+    /**
+     * References to inserted FFIBytes objects. Needed to prevent GC whilst this FFIArray
+     * is alive.
+     */
+    private List<FFIBytes> bytesObjects = new ArrayList<>();
 
     public FFIArray(Struct enclosing) {
         this.len = enclosing.new size_t();
@@ -186,23 +194,19 @@ public class FFIArray<T> {
             long e = (long) item;
             this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
             this.items[idx].putLong(0, e);
-        } else if (item instanceof java.lang.String) {
-            // Strings are encoded as 4 byte length then value
-            java.lang.String e = (java.lang.String) item;
-            byte[] utf8string = e.getBytes(StandardCharsets.UTF_8);
-            // Add four for length
-            int stringSize = utf8string.length + 4;
-            // Allocate memory for string and write length then the string
-            this.items[idx] = r.getMemoryManager().allocateDirect(stringSize);
-            this.items[idx].putInt(0, utf8string.length);
-            this.items[idx].put(4, utf8string, 0, utf8string.length);
+        } else if (item instanceof String) {
+            String e = (String) item;
+            byte[] utf8Data = e.getBytes(StandardCharsets.UTF_8);
+            FFIBytes bytes = new FFIBytes(r, utf8Data);
+            bytesObjects.add(bytes);
+            this.items[idx] = r.getMemoryManager().allocateDirect(FFIBytes.size(r));
+            bytes.writeTo(this.items[idx]);
         } else if (item instanceof byte[]) {
-            // Byte arrays are encoded as 4 byte length then value
             byte[] e = (byte[]) item;
-            int byteSize = e.length + 4;
-            this.items[idx] = r.getMemoryManager().allocateDirect(byteSize);
-            this.items[idx].putInt(0, e.length);
-            this.items[idx].put(4, e, 0, e.length);
+            FFIBytes bytes = new FFIBytes(r, e);
+            bytesObjects.add(bytes);
+            this.items[idx] = r.getMemoryManager().allocateDirect(FFIBytes.size(r));
+            bytes.writeTo(this.items[idx]);
         } else if (item instanceof Boolean) {
             boolean e = (boolean) item;
             this.items[idx] = r.getMemoryManager().allocateDirect(1);
@@ -231,7 +235,7 @@ public class FFIArray<T> {
         } else if (type instanceof StringType) {
             return getValue(index, String.class, nullsAllowed, runtime);
         } else if (type instanceof ByteArrayType) {
-            return getValue(index, byte[].class, nullsAllowed, runtime);
+            return getValue(index, byte.class.arrayType(), nullsAllowed, runtime);
         } else {
             throw new IllegalArgumentException("Unsupported primitive type: " + type);
         }
@@ -277,25 +281,11 @@ public class FFIArray<T> {
         } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
             return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
         } else if (clazz.equals(String.class)) {
-            // Read string length
-            int length = this.items[idx].getInt(0);
-            if (length < 0) {
-                throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
-            }
-            // Decode the bytes as UTF-8
-            byte[] utf8String = new byte[length];
-            this.items[idx].get(4, utf8String, 0, length);
-            return (T) new String(utf8String, StandardCharsets.UTF_8);
+            FFIBytes bytes = FFIBytes.readFrom(this.items[idx]);
+            return (T) new String(bytes.getData(), StandardCharsets.UTF_8);
         } else if (clazz.equals(byte.class.arrayType())) {
-            // Read the length of the byte array
-            int length = this.items[idx].getInt(0);
-            if (length < 0) {
-                throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
-            }
-            // Grab the actual bytes into the new array
-            byte[] bytes = new byte[length];
-            this.items[idx].get(4, bytes, 0, length);
-            return (T) bytes;
+            FFIBytes bytes = FFIBytes.readFrom(this.items[idx]);
+            return (T) bytes.getData();
         } else {
             throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
         }

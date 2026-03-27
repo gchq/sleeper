@@ -16,13 +16,13 @@
 */
 use crate::{
     objects::{
-        RowKeySchemaType,
+        FFIBytes, RowKeySchemaType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
         sleeper_region::FFISleeperRegion,
     },
-    unpack::{unpack_str, unpack_string, unpack_string_array, unpack_typed_array},
+    unpack::{unpack_str, unpack_string, unpack_typed_array},
 };
-use color_eyre::eyre::bail;
+use color_eyre::eyre::{Result, bail};
 use sleeper_core::{
     CommonConfig, CommonConfigBuilder, OutputType, SleeperParquetOptions,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
@@ -40,18 +40,18 @@ pub struct FFICommonConfig {
     pub override_aws_config: bool,
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
-    pub input_files: *const *const c_char,
+    pub input_files: *const *const FFIBytes,
     pub input_files_sorted: bool,
     pub use_readahead_store: bool,
     pub read_page_indexes: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
     pub row_key_cols_len: usize,
-    pub row_key_cols: *const *const c_char,
+    pub row_key_cols: *const *const FFIBytes,
     pub row_key_schema_len: usize,
     pub row_key_schema: *const *const usize,
     pub sort_key_cols_len: usize,
-    pub sort_key_cols: *const *const c_char,
+    pub sort_key_cols: *const *const FFIBytes,
     pub max_row_group_size: usize,
     pub max_page_size: usize,
     pub compression: *const c_char,
@@ -80,12 +80,10 @@ impl FFICommonConfig {
 
     /// Get row key field names.
     pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
-        Ok(
-            unpack_string_array(self.row_key_cols, self.row_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect::<Vec<_>>(),
-        )
+        unpack_typed_array(self.row_key_cols, self.row_key_cols_len)?
+            .iter()
+            .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+            .collect()
     }
 
     /// Convert to a Rust native struct.
@@ -148,9 +146,12 @@ impl FFICommonConfig {
         CommonConfigBuilder::new()
             .aws_config(unpack_aws_config(self)?)
             .input_files(
-                unpack_string_array(self.input_files, self.input_files_len)?
-                    .into_iter()
-                    .map(Url::parse)
+                unpack_typed_array(self.input_files, self.input_files_len)?
+                    .iter()
+                    .map(|bytes| {
+                        Url::parse(TryInto::<&str>::try_into(bytes)?)
+                            .map_err(color_eyre::Report::from)
+                    })
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
@@ -158,10 +159,12 @@ impl FFICommonConfig {
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
-                unpack_string_array(self.sort_key_cols, self.sort_key_cols_len)?
-                    .into_iter()
-                    .map(String::from)
-                    .collect(),
+                unpack_typed_array(self.sort_key_cols, self.sort_key_cols_len)?
+                    .iter()
+                    .map(|bytes| {
+                        Ok::<_, color_eyre::Report>(String::from(TryInto::<&str>::try_into(bytes)?))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
             )
             .region(region)
             .output(output)
