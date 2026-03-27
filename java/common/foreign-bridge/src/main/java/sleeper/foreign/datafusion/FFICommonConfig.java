@@ -74,13 +74,13 @@ public class FFICommonConfig extends Struct {
             aws_config.set(awsConfig.toFfi(runtime));
         } else {
             // Null will use default AWS credentials
-            aws_config.set((FFIAwsConfig) null);
+            aws_config.set(0);
         }
         // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
         output_file.set("");
         // Null here tells Rust to use defaults.
-        sleeper_options.set((FFISleeperOptions) null);
+        sleeper_options.set(0);
     }
 
     /**
