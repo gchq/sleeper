@@ -18,14 +18,12 @@ package sleeper.foreign;
 import jnr.ffi.Struct;
 import jnr.ffi.TypeAlias;
 
+import java.util.Objects;
+
 /**
  * A Java implementation of FFIBytes. Whilst this class is not a JNR-FFI {@link Struct} instance, it is used
  * to write compatible data at a given memory location. Memory is dynamically allocated for the internal buffer which
  * will be automatically freed when its owning instance is garbage collected.
- *
- * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
- * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 public class FFIBytes {
@@ -37,6 +35,7 @@ public class FFIBytes {
     private final jnr.ffi.Pointer data;
 
     public FFIBytes(jnr.ffi.Runtime runtime, byte[] data) {
+        Objects.requireNonNull(data, "data");
         // Allocate some memory for the data
         this.data = runtime.getMemoryManager().allocateDirect(data.length);
         this.data.put(0, data, 0, data.length);
@@ -94,5 +93,25 @@ public class FFIBytes {
      */
     public static int size(jnr.ffi.Runtime r) {
         return r.addressSize() + r.findType(TypeAlias.size_t).size();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(length, data);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("FFIBytes{length=%d, data=0x%x}", length, data.address());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!(obj instanceof FFIBytes))
+            return false;
+        FFIBytes other = (FFIBytes) obj;
+        return length == other.length && data.address() == other.data.address();
     }
 }
