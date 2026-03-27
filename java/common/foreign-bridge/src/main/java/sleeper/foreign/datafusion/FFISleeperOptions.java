@@ -19,6 +19,17 @@ import jnr.ffi.Struct;
 
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_ROWGROUP_ROWS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+
 /**
  * Contains all the Sleeper options for DataFusion operation. These may not be needed for every DataFusion usage,
  * so come with reasonable defaults. All defaults are documented in Rust code.
@@ -54,6 +65,17 @@ public class FFISleeperOptions extends Struct {
 
     public FFISleeperOptions(jnr.ffi.Runtime runtime) {
         super(runtime);
+        use_readahead_store.set(java.lang.Boolean.parseBoolean(DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED.getDefaultValue()));
+        read_page_indexes.set(false);
+        max_row_group_size.set(java.lang.Long.parseLong(DEFAULT_PARQUET_ROWGROUP_ROWS.getDefaultValue()));
+        max_page_size.set(java.lang.Long.parseLong(DEFAULT_PAGE_SIZE.getDefaultValue()));
+        compression.set(DEFAULT_COMPRESSION_CODEC.getDefaultValue());
+        writer_version.set(DEFAULT_PARQUET_WRITER_VERSION.getDefaultValue());
+        column_truncate_length.set(java.lang.Long.parseLong(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH.getDefaultValue()));
+        stats_truncate_length.set(java.lang.Long.parseLong(DEFAULT_STATISTICS_TRUNCATE_LENGTH.getDefaultValue()));
+        dict_enc_row_keys.set(java.lang.Boolean.parseBoolean(DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS.getDefaultValue()));
+        dict_enc_sort_keys.set(java.lang.Boolean.parseBoolean(DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS.getDefaultValue()));
+        dict_enc_values.set(java.lang.Boolean.parseBoolean(DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS.getDefaultValue()));
     }
 
     /**
