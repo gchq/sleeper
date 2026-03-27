@@ -23,7 +23,7 @@ public class UpdatePropertiesRequestTestHelper {
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> noChanges(T properties) {
-        return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties);
+        return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties, properties);
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {

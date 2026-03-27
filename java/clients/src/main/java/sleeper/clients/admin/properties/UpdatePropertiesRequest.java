@@ -32,10 +32,6 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final T beforeProperties;
     private final T updatedProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, T updatedProperties) {
-        this(diff, null, updatedProperties);
-    }
-
     public UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
