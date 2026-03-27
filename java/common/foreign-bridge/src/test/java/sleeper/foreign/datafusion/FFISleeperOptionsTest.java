@@ -18,6 +18,7 @@ package sleeper.foreign.datafusion;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public class FFISleeperOptionsTest {
     public static final jnr.ffi.Runtime RUNTIME = jnr.ffi.Runtime.getSystemRuntime();
@@ -30,6 +31,8 @@ public class FFISleeperOptionsTest {
         options.max_page_size.set(10);
         options.column_truncate_length.set(10);
         options.stats_truncate_length.set(10);
+        options.compression.set("zstd");
+        options.writer_version.set("v2");
 
         // Then
         assertThatIllegalStateException().isThrownBy(() -> options.validate()).withMessage("max row group size < 1");
@@ -43,6 +46,8 @@ public class FFISleeperOptionsTest {
         options.max_page_size.set(0);
         options.column_truncate_length.set(10);
         options.stats_truncate_length.set(10);
+        options.compression.set("zstd");
+        options.writer_version.set("v2");
 
         // Then
         assertThatIllegalStateException().isThrownBy(() -> options.validate()).withMessage("max page size < 1");
@@ -56,9 +61,41 @@ public class FFISleeperOptionsTest {
         options.max_page_size.set(10);
         options.column_truncate_length.set(0);
         options.stats_truncate_length.set(10);
+        options.compression.set("zstd");
+        options.writer_version.set("v2");
 
         // Then
         assertThatIllegalStateException().isThrownBy(() -> options.validate()).withMessage("column truncate length < 1");
+    }
+
+    @Test
+    void shouldFailOnNullCompressionCodec() {
+        // Given
+        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        options.max_row_group_size.set(10);
+        options.max_page_size.set(10);
+        options.column_truncate_length.set(10);
+        options.stats_truncate_length.set(10);
+        options.compression.set(null);
+        options.writer_version.set("v2");
+
+        // Then
+        assertThatNullPointerException().isThrownBy(() -> options.validate()).withMessage("Parquet compression codec is null");
+    }
+
+    @Test
+    void shouldFailOnNullWriterVersion() {
+        // Given
+        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        options.max_row_group_size.set(10);
+        options.max_page_size.set(10);
+        options.column_truncate_length.set(10);
+        options.stats_truncate_length.set(10);
+        options.compression.set("zstd");
+        options.writer_version.set(null);
+
+        // Then
+        assertThatNullPointerException().isThrownBy(() -> options.validate()).withMessage("Parquet writer is null");
     }
 
     @Test
@@ -69,6 +106,8 @@ public class FFISleeperOptionsTest {
         options.max_page_size.set(10);
         options.column_truncate_length.set(10);
         options.stats_truncate_length.set(0);
+        options.compression.set("zstd");
+        options.writer_version.set("v2");
 
         // Then
         assertThatIllegalStateException().isThrownBy(() -> options.validate()).withMessage("stats truncate length < 1");
@@ -82,6 +121,8 @@ public class FFISleeperOptionsTest {
         options.max_page_size.set(10);
         options.column_truncate_length.set(10);
         options.stats_truncate_length.set(10);
+        options.compression.set("zstd");
+        options.writer_version.set("v2");
 
         // When
         options.validate();

@@ -61,7 +61,7 @@ public class FFICommonConfig extends Struct {
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
-    /** Sleeper options. */
+    /** Sleeper options. Set to NULL if defaults are suitable. */
     public final Struct.StructRef<FFISleeperOptions> sleeper_options = new Struct.StructRef<>(FFISleeperOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
@@ -71,15 +71,16 @@ public class FFICommonConfig extends Struct {
     public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
         if (awsConfig != null) {
-            this.aws_config.set(awsConfig.toFfi(runtime));
+            aws_config.set(awsConfig.toFfi(runtime));
         } else {
-            this.aws_config.set((FFIAwsConfig) null);
+            // Null will use default AWS credentials
+            aws_config.set((FFIAwsConfig) null);
         }
         // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
         output_file.set("");
-        compression.set("");
-        writer_version.set("");
+        // Null here tells Rust to use defaults.
+        sleeper_options.set((FFISleeperOptions) null);
     }
 
     /**
@@ -97,8 +98,6 @@ public class FFICommonConfig extends Struct {
         }
         // Check strings non null
         Objects.requireNonNull(output_file.get(), "Output file is null");
-        Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
-        Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
         Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
         Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
     }

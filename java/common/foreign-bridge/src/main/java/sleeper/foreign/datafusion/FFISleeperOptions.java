@@ -17,9 +17,11 @@ package sleeper.foreign.datafusion;
 
 import jnr.ffi.Struct;
 
+import java.util.Objects;
+
 /**
  * Contains all the Sleeper options for DataFusion operation. These may not be needed for every DataFusion usage,
- * so come with reasonable defaults.
+ * so come with reasonable defaults. All defaults are documented in Rust code.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/ffi_sleeper_options.rs. The
@@ -72,5 +74,7 @@ public class FFISleeperOptions extends Struct {
         if (stats_truncate_length.get() < 1) {
             throw new IllegalStateException("stats truncate length < 1");
         }
+        Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
+        Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
     }
 }
