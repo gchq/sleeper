@@ -38,6 +38,7 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
+    // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const FFIBytes,
@@ -53,6 +54,7 @@ pub struct FFICommonConfig {
     pub region: *const FFISleeperRegion,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
+    // If this field is NULL, then use defaults
     pub sleeper_options: *const FFISleeperOptions,
 }
 
@@ -95,15 +97,17 @@ impl FFICommonConfig {
         if self.filtering_config.is_null() {
             bail!("FFICommonConfig filtering_config is NULL");
         }
-        if self.compression.is_null() {
-            bail!("FFICommonConfig compression is NULL");
-        }
-        if self.writer_version.is_null() {
-            bail!("FFICommonConfig writer_version is NULL");
-        }
         if self.region.is_null() {
             bail!("FFICommonConfig region is NULL");
         }
+
+        let sleeper_options = if let Some(options) = unsafe { self.sleeper_options.as_ref() } {
+            options
+        } else {
+            &FFISleeperOptions::default()
+        };
+        sleeper_options.check_for_nulls()?;
+
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
         // Contains numeric types to indicate schema types
@@ -114,15 +118,15 @@ impl FFICommonConfig {
 
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
-                max_row_group_size: self.max_row_group_size,
-                max_page_size: self.max_page_size,
-                compression: unpack_string(self.compression)?,
-                writer_version: unpack_string(self.writer_version)?,
-                column_truncate_length: self.column_truncate_length,
-                stats_truncate_length: self.stats_truncate_length,
-                dict_enc_row_keys: self.dict_enc_row_keys,
-                dict_enc_sort_keys: self.dict_enc_sort_keys,
-                dict_enc_values: self.dict_enc_values,
+                max_row_group_size: sleeper_options.max_row_group_size,
+                max_page_size: sleeper_options.max_page_size,
+                compression: unpack_string(sleeper_options.compression)?,
+                writer_version: unpack_string(sleeper_options.writer_version)?,
+                column_truncate_length: sleeper_options.column_truncate_length,
+                stats_truncate_length: sleeper_options.stats_truncate_length,
+                dict_enc_row_keys: sleeper_options.dict_enc_row_keys,
+                dict_enc_sort_keys: sleeper_options.dict_enc_sort_keys,
+                dict_enc_values: sleeper_options.dict_enc_values,
             };
             OutputType::File {
                 output_file: unpack_str(self.output_file).map(Url::parse)??,
@@ -134,7 +138,7 @@ impl FFICommonConfig {
         };
 
         CommonConfigBuilder::new()
-            .aws_config(unpack_aws_config(self)?)
+            .aws_config(unpack_aws_config(self))
             .input_files(
                 unpack_typed_array(self.input_files, self.input_files_len)?
                     .iter()
@@ -145,8 +149,8 @@ impl FFICommonConfig {
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
-            .read_page_indexes(self.read_page_indexes)
-            .use_readahead_store(self.use_readahead_store)
+            .read_page_indexes(sleeper_options.read_page_indexes)
+            .use_readahead_store(sleeper_options.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
                 unpack_typed_array(self.sort_key_cols, self.sort_key_cols_len)?
