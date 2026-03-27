@@ -140,7 +140,6 @@ pub struct CommonConfigBuilder<'a> {
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
     output: OutputType,
-    modify_s3_output_url_scheme: bool,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -157,7 +156,6 @@ impl Default for CommonConfigBuilder<'_> {
             sort_key_cols: Vec::default(),
             region: SleeperRegion::default(),
             output: OutputType::default(),
-            modify_s3_output_url_scheme: true,
             aggregates: Vec::default(),
             filters: Vec::default(),
         }
@@ -224,16 +222,6 @@ impl<'a> CommonConfigBuilder<'a> {
         self
     }
 
-    /// Should the scheme of the output file URL (if any) be replaced?
-    /// If true, this will cause the output file URL scheme to be changed
-    /// from "s3" to "s3w", ensuring `DataFusion` chooses the correct object
-    /// store for reading/writing.
-    #[must_use]
-    pub fn with_modify_s3_output_url_scheme(mut self, modify: bool) -> Self {
-        self.modify_s3_output_url_scheme = modify;
-        self
-    }
-
     #[must_use]
     pub fn aggregates(mut self, aggregates: Vec<Aggregate>) -> Self {
         self.aggregates = aggregates;
@@ -256,11 +244,10 @@ impl<'a> CommonConfigBuilder<'a> {
         self.validate()?;
         self.normalise_s3a_urls();
 
-        let output = if self.modify_s3_output_url_scheme {
-            self.output.modified_scheme()
-        } else {
-            self.output
-        };
+        // This will cause the output file URL scheme to be changed
+        // from "s3" to "s3w", ensuring `DataFusion` chooses the correct object
+        // store for reading/writing.
+        let output = self.output.modified_scheme();
 
         Ok(CommonConfig {
             aws_config: self.aws_config,
@@ -396,7 +383,7 @@ mod tests {
 
         // Then
         if let OutputType::File { output_file, .. } = new_output {
-            assert_eq!(output_file.scheme(), "s3");
+            assert_eq!(output_file.scheme(), "s3w");
         } else {
             panic!("Unexpected output option type")
         }
