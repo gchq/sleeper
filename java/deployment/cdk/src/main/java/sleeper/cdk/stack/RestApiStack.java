@@ -15,18 +15,15 @@
  */
 package sleeper.cdk.stack;
 
-import software.amazon.awscdk.ArnComponents;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.apigatewayv2.CfnIntegration;
-import software.amazon.awscdk.services.apigatewayv2.CfnRoute;
+import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
+import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
-import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.lambda.Permission;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
@@ -38,6 +35,7 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -68,46 +66,17 @@ public class RestApiStack extends NestedStack {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.REST_API_HANDLER))
                 .timeout(Duration.seconds(29)));
 
-        String restApiUri = setupRestApiUri(this, lambda);
-
         HttpApi restHttpApi = setupApiGateway(this, instanceId, lambda.getFunctionName());
-
-        CfnIntegration restApiIntegration = CfnIntegration.Builder.create(this, "restapi-integration")
-                .apiId(restHttpApi.getApiId())
-                .integrationType("AWS_PROXY")
-                .integrationUri(restApiUri)
-                .build();
-
-        CfnRoute.Builder.create(this, "connect-route")
-                .apiId(restHttpApi.getApiId())
-                .apiKeyRequired(false)
-                .authorizationType("AWS_IAM")
-                .routeKey("$connect")
-                .target("integrations/" + restApiIntegration.getRef())
-                .build();
-
-        lambda.addPermission("apigateway-access-to-lambda", Permission.builder()
-                .principal(new ServicePrincipal("apigateway.amazonaws.com"))
-                .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
-                        .service("execute-api")
-                        .resource(restHttpApi.getApiId())
-                        .resourceName("*/*")
-                        .build()))
-                .build());
+        HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
+        restHttpApi.addRoutes(AddRoutesOptions.builder()
+                .path("/sleeper")
+                .methods(List.of(HttpMethod.GET))
+                .integration(integration).build());
 
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
                 .value(restHttpApi.getApiEndpoint())
                 .build());
         instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restHttpApi.getApiEndpoint());
-    }
-
-    private String setupRestApiUri(Construct scope, IFunction lambda) {
-        return Stack.of(scope).formatArn(ArnComponents.builder()
-                .service("apigateway")
-                .account("lambda")
-                .resource("path/2015-03-31/functions")
-                .resourceName(lambda.getFunctionArn() + "/invocations")
-                .build());
     }
 
     private HttpApi setupApiGateway(Construct scope, String instanceId, String lambdaName) {
