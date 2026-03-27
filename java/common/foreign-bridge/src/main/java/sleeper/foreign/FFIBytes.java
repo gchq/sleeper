@@ -107,10 +107,13 @@ public class FFIBytes {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof FFIBytes))
+        }
+        if (!(obj instanceof FFIBytes)) {
             return false;
+        }
+
         FFIBytes other = (FFIBytes) obj;
         return length == other.length && data.address() == other.data.address();
     }
