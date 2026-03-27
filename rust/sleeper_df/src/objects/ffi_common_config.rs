@@ -37,7 +37,6 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
-    pub override_aws_config: bool,
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const FFIBytes,

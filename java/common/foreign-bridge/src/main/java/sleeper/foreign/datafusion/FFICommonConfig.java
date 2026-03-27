@@ -39,9 +39,7 @@ import java.util.Objects;
 @SuppressWarnings("checkstyle:membername")
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class FFICommonConfig extends Struct {
-    /** Specifies AWS default configuration been overriden. */
-    public final Struct.Boolean override_aws_config = new Struct.Boolean();
-    /** Optional AWS configuration. */
+    /** Optional AWS configuration. Set to NULL if not used. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
@@ -93,10 +91,9 @@ public class FFICommonConfig extends Struct {
     public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
         if (awsConfig != null) {
-            this.override_aws_config.set(true);
             this.aws_config.set(awsConfig.toFfi(runtime));
         } else {
-            this.override_aws_config.set(false);
+            this.aws_config.set((FFIAwsConfig) null);
         }
         // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
