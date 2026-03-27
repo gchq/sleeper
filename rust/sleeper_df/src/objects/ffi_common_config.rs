@@ -18,6 +18,7 @@ use crate::{
     objects::{
         FFIBytes, RowKeySchemaType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
+        ffi_sleeper_options::FFISleeperOptions,
         sleeper_region::FFISleeperRegion,
     },
     unpack::{unpack_str, unpack_string, unpack_typed_array},
@@ -41,8 +42,6 @@ pub struct FFICommonConfig {
     pub input_files_len: usize,
     pub input_files: *const *const FFIBytes,
     pub input_files_sorted: bool,
-    pub use_readahead_store: bool,
-    pub read_page_indexes: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
     pub row_key_cols_len: usize,
@@ -51,18 +50,10 @@ pub struct FFICommonConfig {
     pub row_key_schema: *const *const usize,
     pub sort_key_cols_len: usize,
     pub sort_key_cols: *const *const FFIBytes,
-    pub max_row_group_size: usize,
-    pub max_page_size: usize,
-    pub compression: *const c_char,
-    pub writer_version: *const c_char,
-    pub column_truncate_length: usize,
-    pub stats_truncate_length: usize,
-    pub dict_enc_row_keys: bool,
-    pub dict_enc_sort_keys: bool,
-    pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
+    pub sleeper_options: *const FFISleeperOptions,
 }
 
 impl FFICommonConfig {

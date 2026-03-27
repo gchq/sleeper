@@ -45,10 +45,6 @@ public class FFICommonConfig extends Struct {
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
-    /** Whether we should use readahead when reading from S3. */
-    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
-    /** Whether Parquet page indexes should be read. */
-    public final Struct.Boolean read_page_indexes = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Specifies if sketch output is enabled. Can only be used with file output. */
@@ -59,30 +55,14 @@ public class FFICommonConfig extends Struct {
     public final FFIArray<java.lang.Integer> row_key_schema = new FFIArray<>(this);
     /** Names of Sleeper sort key fields from schema. */
     public final FFIArray<java.lang.String> sort_key_cols = new FFIArray<>(this);
-    /** Maximum size of output Parquet row group in rows. */
-    public final Struct.size_t max_row_group_size = new Struct.size_t();
-    /** Maximum size of output Parquet page size in bytes. */
-    public final Struct.size_t max_page_size = new Struct.size_t();
-    /** Output Parquet compression codec. */
-    public final Struct.UTF8StringRef compression = new Struct.UTF8StringRef();
-    /** Output Parquet writer version. Must be 1.0 or 2.0 */
-    public final Struct.UTF8StringRef writer_version = new Struct.UTF8StringRef();
-    /** Column min/max values truncation length in output Parquet. */
-    public final Struct.size_t column_truncate_length = new Struct.size_t();
-    /** Max sizeof statistics block in output Parquet. */
-    public final Struct.size_t stats_truncate_length = new Struct.size_t();
-    /** Should row key fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_row_keys = new Struct.Boolean();
-    /** Should sort key fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
-    /** Should value fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_values = new Struct.Boolean();
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
     /** Compaction aggregation configuration. This is optional. */
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
+    /** Sleeper options. */
+    public final Struct.StructRef<FFISleeperOptions> sleeper_options = new Struct.StructRef<>(FFISleeperOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         this(runtime, null);
