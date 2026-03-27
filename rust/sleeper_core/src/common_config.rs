@@ -140,7 +140,7 @@ pub struct CommonConfigBuilder<'a> {
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
     output: OutputType,
-    modify_output_scheme: bool,
+    modify_s3_output_url_scheme: bool,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -157,7 +157,7 @@ impl Default for CommonConfigBuilder<'_> {
             sort_key_cols: Vec::default(),
             region: SleeperRegion::default(),
             output: OutputType::default(),
-            modify_output_scheme: false,
+            modify_s3_output_url_scheme: true,
             aggregates: Vec::default(),
             filters: Vec::default(),
         }
@@ -229,8 +229,8 @@ impl<'a> CommonConfigBuilder<'a> {
     /// from "s3" to "s3w", ensuring `DataFusion` chooses the correct object
     /// store for reading/writing.
     #[must_use]
-    pub fn with_modified_output_scheme(mut self, modify: bool) -> Self {
-        self.modify_output_scheme = modify;
+    pub fn with_modify_s3_output_url_scheme(mut self, modify: bool) -> Self {
+        self.modify_s3_output_url_scheme = modify;
         self
     }
 
@@ -256,7 +256,7 @@ impl<'a> CommonConfigBuilder<'a> {
         self.validate()?;
         self.normalise_s3a_urls();
 
-        let output = if self.modify_output_scheme {
+        let output = if self.modify_s3_output_url_scheme {
             self.output.modified_scheme()
         } else {
             self.output
@@ -529,7 +529,6 @@ mod tests {
                 write_sketch_file: true,
                 opts: SleeperParquetOptions::default(),
             })
-            .with_modified_output_scheme(true)
             .region(region);
 
         // When
