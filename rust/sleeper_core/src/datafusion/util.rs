@@ -133,7 +133,7 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 /// # Errors
 /// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
 ///
-pub fn register_store(
+pub async fn register_store(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
     output_path: Option<&Url>,
@@ -142,6 +142,7 @@ pub fn register_store(
     for input_path in input_paths {
         let in_store = store_factory
             .get_object_store(input_path)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
             .register_object_store(input_path, in_store);
@@ -150,6 +151,7 @@ pub fn register_store(
     if let Some(output) = output_path {
         let out_store = store_factory
             .get_object_store(output)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env().register_object_store(output, out_store);
     }
@@ -168,6 +170,7 @@ pub async fn retrieve_object_metas(
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
         metas.push(store.head(&p.into()).await?);

@@ -34,11 +34,12 @@ pub mod sleeper_context;
 mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
-pub use common_config::{AwsConfig, CommonConfig, CommonConfigBuilder};
+pub use common_config::{CommonConfig, CommonConfigBuilder};
 pub use datafusion::{
     ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
     SleeperRegion, sketch::DataSketchVariant, stream_to_ffi_arrow_stream,
 };
+pub use objectstore_ext::s3::AwsConfig;
 
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
@@ -82,7 +83,7 @@ pub async fn run_compaction(
     config: &CommonConfig<'_>,
     sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult> {
-    let store_factory = config.create_object_store_factory().await;
+    let store_factory = config.create_object_store_factory();
     let rt = sleeper_context.retrieve_runtime_env()?;
     crate::datafusion::compact(&store_factory, config, rt)
         .await
@@ -143,7 +144,7 @@ pub async fn run_query(
     config: &LeafPartitionQueryConfig<'_>,
     sleeper_context: &SleeperContext,
 ) -> Result<CompletedOutput> {
-    let store_factory = config.common.create_object_store_factory().await;
+    let store_factory = config.common.create_object_store_factory();
     let rt = sleeper_context.retrieve_runtime_env()?;
 
     LeafPartitionQuery::new(config, &store_factory, rt)
