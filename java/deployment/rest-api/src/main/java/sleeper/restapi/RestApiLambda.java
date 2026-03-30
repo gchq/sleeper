@@ -16,12 +16,9 @@
 package sleeper.restapi;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sleeper.core.SleeperVersion;
 
 /**
  * A lambda that controls a REST API for Sleeper.
@@ -34,36 +31,16 @@ public class RestApiLambda {
 
     /**
      * Used by the lambda handler to handle API Gateway requests that have been sent to the REST API.
+     * Stub method to be expanded later.
      *
      * @param  event the event
      * @return       the response from the API request
      */
     public APIGatewayV2HTTPResponse handleEvent(APIGatewayV2HTTPEvent event) {
-        String requestPath = event.getRequestContext().getHttp().getPath();
-        LOGGER.info("Recieved request for: " + requestPath);
-        switch (requestPath) {
-            case "addTable":
-                return addTable(event.getRequestContext());
-            case "getVersion":
-                return requestSleeperVersion();
-            default:
-                return APIGatewayV2HTTPResponse.builder()
-                        .withBody(String.format("Method requested \" %s \" does not match any found withing the API.", requestPath))
-                        .build();
-        }
-    }
-
-    private APIGatewayV2HTTPResponse requestSleeperVersion() {
+        LOGGER.info(String.format("REST API Request recieved: %s", event.toString()));
         return APIGatewayV2HTTPResponse.builder()
-                .withBody(SleeperVersion.getVersion())
+                .withBody("API successfully interacted with. Further expansion for functionality required.")
                 .build();
-    }
 
-    //TODO: Sample additional method call to the api
-    private APIGatewayV2HTTPResponse addTable(RequestContext context) {
-        return APIGatewayV2HTTPResponse.builder()
-                .withBody("Method not yet implemented.")
-                .build();
     }
-
 }
