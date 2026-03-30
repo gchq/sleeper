@@ -26,7 +26,6 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-arrow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
