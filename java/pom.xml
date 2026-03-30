@@ -128,7 +128,7 @@
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
         -->
-        <log4j.version>2.25.3</log4j.version>
+        <log4j.version>2.25.4</log4j.version>
         <aws-java-sdk-v2.version>2.42.22</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
