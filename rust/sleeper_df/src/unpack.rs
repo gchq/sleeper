@@ -14,11 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::objects::RowKeySchemaType;
-use color_eyre::{
-    Report,
-    eyre::{Result, bail, eyre},
-};
+use crate::objects::{FFIBytes, RowKeySchemaType};
+use color_eyre::eyre::{Result, bail, eyre};
 use sleeper_core::PartitionBound;
 use std::{
     ffi::{CStr, c_char, c_void},
@@ -33,57 +30,18 @@ pub fn unpack_string(pointer: *const c_char) -> Result<String> {
     unpack_str(pointer).map(ToOwned::to_owned)
 }
 
-/// Create a vector from a C pointer to an array of strings.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-pub fn unpack_string_array(
-    array_base: *const *const c_char,
-    len: usize,
-) -> Result<Vec<&'static str>> {
-    if len == 0 {
-        return Ok(Vec::new());
-    }
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in string array");
-    }
-    unsafe {
-        // create a slice from the pointer
-        slice::from_raw_parts(array_base, len)
-    }
-    .iter()
-    // transform pointer to a non-owned string
-    .map(|s| {
-        if s.is_null() {
-            Err(eyre!("Found NULL pointer in string array"))
-        } else {
-            //unpack length (signed because it's from Java)
-            // This will have been allocated in Java so alignment will be ok
-            #[allow(clippy::cast_ptr_alignment)]
-            let str_len = unsafe { *(*s).cast::<i32>() };
-            if str_len < 0 {
-                bail!("Illegal string length in FFI array: {str_len}");
-            }
-            // convert to string and check it's valid
-            std::str::from_utf8(unsafe {
-                #[allow(clippy::cast_sign_loss)]
-                slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
-            })
-            .map_err(Into::into)
-        }
-    })
-    // now convert to a vector if all strings OK, else Err
-    .collect()
-}
-
 /// Create a vector of a generic type.
 ///
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
 pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> Result<Vec<T>> {
+    if len == 0 {
+        return Ok(Vec::new());
+    }
     if array_base.is_null() {
         bail!("NULL pointer for array_base in generic typed array");
     }
+
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .map(|p| {
@@ -138,42 +96,16 @@ pub fn unpack_variant_array<'a>(
                         None => PartitionBound::Unbounded,
                     }),
                     RowKeySchemaType::String => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
+                        match unsafe { bptr.cast::<FFIBytes>().as_ref() } {
                             //unpack length (signed because it's from Java)
-                            Some(str_len) => {
-                                if *str_len < 0 {
-                                    bail!("Illegal string variant length in FFI array: {str_len}");
-                                }
-                                std::str::from_utf8(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *str_len as usize,
-                                    )
-                                })
-                                .map_err(Report::from)
-                                .map(PartitionBound::String)
-                            }
+                            Some(bytes) => Ok(PartitionBound::String(bytes.try_into()?)),
                             None => Ok(PartitionBound::Unbounded),
                         }
                     }
                     RowKeySchemaType::ByteArray => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
+                        match unsafe { bptr.cast::<FFIBytes>().as_ref() } {
                             //unpack length (signed because it's from Java)
-                            Some(byte_len) => {
-                                if *byte_len < 0 {
-                                    bail!(
-                                        "Illegal byte array variant length in FFI array: {byte_len}"
-                                    );
-                                }
-                                Ok(PartitionBound::ByteArray(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *byte_len as usize,
-                                    )
-                                }))
-                            }
+                            Some(bytes) => Ok(PartitionBound::ByteArray(bytes.into())),
                             None => Ok(PartitionBound::Unbounded),
                         }
                     }

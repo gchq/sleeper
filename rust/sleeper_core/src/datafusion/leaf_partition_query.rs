@@ -201,10 +201,12 @@ impl<'a> LeafPartitionQuery<'a> {
         let object_metas =
             retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
         let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
-        let ctx = ops.configure_context(
-            SessionContext::new_with_config_rt(sf, self.runtime.clone()),
-            self.store_factory,
-        )?;
+        let ctx = ops
+            .configure_context(
+                SessionContext::new_with_config_rt(sf, self.runtime.clone()),
+                self.store_factory,
+            )
+            .await?;
         let mut frame = ops
             .create_initial_partitioned_read(&ctx, &object_metas)
             .await?;

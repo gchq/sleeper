@@ -42,6 +42,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -222,6 +223,36 @@ public class DataFusionCompactionRunnerIT {
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle data types in split points")
+    class HandleDataTypesInSplitPoints {
+
+        @Test
+        void shouldFilterDataByStringKey() throws Exception {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "abc\0def")
+                    .buildList());
+            Row row1 = new Row(Map.of("key", "abc\0abc"));
+            Row row2 = new Row(Map.of("key", "abc\0ghi"));
+            String input = writeFileForPartition("root", List.of(row1, row2));
+            SplitFileReferences.from(stateStore).split();
+            CompactionJob job = createCompactionForPartition("test-job", "L", List.of(input));
+
+            // When
+            runTask(job);
+
+            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(1, 1));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(row1);
+            assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1)));
         }
     }
 

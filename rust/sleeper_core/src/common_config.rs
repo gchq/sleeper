@@ -17,11 +17,8 @@ use crate::{
     datafusion::{OutputType, SleeperRegion},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
-use aws_config::Region;
-use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail};
-use object_store::aws::AmazonS3Builder;
-use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
+use objectstore_ext::s3::{AwsConfig, ObjectStoreFactory};
 use std::fmt::{Display, Formatter};
 use url::Url;
 
@@ -68,12 +65,8 @@ impl CommonConfig<'_> {
         self.sorting_columns_iter().collect::<Vec<_>>()
     }
 
-    pub(crate) async fn create_object_store_factory(&self) -> ObjectStoreFactory {
-        let s3_config = match &self.aws_config {
-            Some(aws_config) => Some(aws_config.to_s3_config()),
-            None => default_creds_store().await.ok(),
-        };
-        ObjectStoreFactory::new(s3_config, self.use_readahead_store)
+    pub(crate) fn create_object_store_factory(&self) -> ObjectStoreFactory {
+        ObjectStoreFactory::new(self.aws_config.clone(), self.use_readahead_store)
     }
 
     pub(crate) fn output(&self) -> &OutputType {
@@ -136,6 +129,7 @@ impl Display for CommonConfig<'_> {
 }
 
 /// Builder for `CommonConfig`.
+#[allow(clippy::struct_excessive_bools)]
 pub struct CommonConfigBuilder<'a> {
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
@@ -250,6 +244,11 @@ impl<'a> CommonConfigBuilder<'a> {
         self.validate()?;
         self.normalise_s3a_urls();
 
+        // This will cause the output file URL scheme to be changed
+        // from "s3" to "s3w", ensuring `DataFusion` chooses the correct object
+        // store for reading/writing.
+        let output = self.output.modified_scheme();
+
         Ok(CommonConfig {
             aws_config: self.aws_config,
             input_files: self.input_files,
@@ -259,7 +258,7 @@ impl<'a> CommonConfigBuilder<'a> {
             row_key_cols: self.row_key_cols,
             sort_key_cols: self.sort_key_cols,
             region: self.region,
-            output: self.output,
+            output,
             aggregates: self.aggregates,
             filters: self.filters,
         })
@@ -304,42 +303,11 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 }
 
-#[derive(Debug)]
-pub struct AwsConfig {
-    pub region: String,
-    pub endpoint: String,
-    pub access_key: String,
-    pub secret_key: String,
-    pub session_token: Option<String>,
-    pub allow_http: bool,
-}
-
-impl AwsConfig {
-    /// Create an [`AmazonS3Builder`] from the given configuration object.
-    ///
-    /// Credentials are extracted from the given configuration object.
-    #[must_use]
-    fn to_s3_config(&self) -> AmazonS3Builder {
-        let creds = Credentials::from_keys(
-            &self.access_key,
-            &self.secret_key,
-            self.session_token.clone(),
-        );
-        let region = Region::new(String::from(&self.region));
-        let mut builder = config_for_s3_module(&creds, &region);
-        if !self.endpoint.is_empty() {
-            builder = builder.with_endpoint(&self.endpoint);
-        }
-        builder.with_allow_http(self.allow_http)
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::datafusion::{ColRange, PartitionBound, SleeperParquetOptions};
     use std::collections::HashMap;
-
-    use super::*;
     use url::Url;
 
     fn normalise_s3a_urls(input_files: Vec<Url>, output: OutputType) -> (Vec<Url>, OutputType) {
@@ -415,7 +383,7 @@ mod tests {
 
         // Then
         if let OutputType::File { output_file, .. } = new_output {
-            assert_eq!(output_file.scheme(), "s3");
+            assert_eq!(output_file.scheme(), "s3w");
         } else {
             panic!("Unexpected output option type")
         }
@@ -523,5 +491,45 @@ mod tests {
 
         // Then
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn should_modify_output_scheme_s3() -> Result<()> {
+        // Given
+        let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
+        let row_key_cols = vec!["key".to_string()];
+        let region = SleeperRegion::new(HashMap::from([(
+            "col".to_string(),
+            ColRange {
+                lower: PartitionBound::String("a"),
+                lower_inclusive: true,
+                upper: PartitionBound::String("z"),
+                upper_inclusive: true,
+            },
+        )]));
+
+        let builder = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .row_key_cols(row_key_cols)
+            .output(OutputType::File {
+                output_file: Url::parse("s3://bucket/path/file.parquet")?,
+                write_sketch_file: true,
+                opts: SleeperParquetOptions::default(),
+            })
+            .region(region);
+
+        // When
+        let result = builder.build()?;
+
+        // Then
+        assert_eq!(
+            result.output(),
+            &OutputType::File {
+                output_file: Url::parse("s3w://bucket/path/file.parquet")?,
+                write_sketch_file: true,
+                opts: SleeperParquetOptions::default()
+            }
+        );
+        Ok(())
     }
 }
