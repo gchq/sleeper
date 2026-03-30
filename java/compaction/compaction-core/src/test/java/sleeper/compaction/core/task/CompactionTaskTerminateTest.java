@@ -87,14 +87,11 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             Supplier<Instant> supplier = timeSupplier(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:01Z"), // First check
-                    Instant.parse("2024-02-22T13:50:02Z"), // Job started
-                    Instant.parse("2024-02-22T13:50:03Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:03Z"), // Job committed
-                    Instant.parse("2024-02-22T13:50:04Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:04Z"), // Second check
-                    Instant.parse("2024-02-22T13:50:05Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:06Z")); // Third check + finish
+                    Instant.parse("2024-02-22T13:50:01Z"), // Job started
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Keep alive check
+                    Instant.parse("2024-02-22T13:50:05Z")); // Idle time check with empty queue and finish
 
             CompactionJob job = createJobOnQueue("job1");
 
