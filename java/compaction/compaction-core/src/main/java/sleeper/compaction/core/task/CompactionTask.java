@@ -136,6 +136,7 @@ public class CompactionTask {
         while (consecutiveFailuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime, currentTime)) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
+                currentTime = timeSupplier.get();
                 if (idleTimeTracker.isLookForNextMessage(currentTime)) {
                     continue;
                 } else {

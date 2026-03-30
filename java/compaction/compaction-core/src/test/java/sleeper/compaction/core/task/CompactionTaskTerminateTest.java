@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
@@ -45,15 +46,15 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Supplier<Instant> supplier = timeSupplier(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:03Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:03Z")); // Finish
 
             // When
-            runTask(processNoJobs(), times::poll);
+            runTask(processNoJobs(), supplier);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(assertSupplierEmpty(supplier)).isTrue();
             assertThat(sleeps).isEmpty();
         }
 
@@ -62,16 +63,16 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Queue<Instant> times = new LinkedList<>(List.of(
+            Supplier<Instant> supplier = timeSupplier(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Second idle time check + finish
+                    Instant.parse("2024-02-22T13:50:04Z")); // Second idle time check + finish
 
             // When
-            runTask(processNoJobs(), times::poll);
+            runTask(processNoJobs(), supplier);
 
             // Then
-            assertThat(times).isEmpty();
+            assertThat(assertSupplierEmpty(supplier)).isTrue();
             assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
