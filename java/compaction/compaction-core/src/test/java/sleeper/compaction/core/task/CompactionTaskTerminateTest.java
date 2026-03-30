@@ -116,11 +116,11 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:01Z"), // First check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job started
-                    Instant.parse("2024-02-22T13:50:03Z"), // Job completed
-                    Instant.parse("2024-02-22T13:50:03Z"), // Job committed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job completed
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job committed
                     Instant.parse("2024-02-22T13:50:04Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:04Z"), // Second check
-                    Instant.parse("2024-02-22T13:50:06Z")); // Third check + finish
+                    Instant.parse("2024-02-22T13:50:06Z"), // Second check
+                    Instant.parse("2024-02-22T13:50:06Z")); // Finish
             CompactionJob job = createJob("job1");
 
             // When
