@@ -132,11 +132,10 @@ public class CompactionTask {
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties);
-        Instant currentTime = timeSupplier.get();
-        while (consecutiveFailuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime, currentTime)) {
+        while (consecutiveFailuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime)) {
             Optional<MessageHandle> messageOpt = messageReceiver.receiveMessage();
             if (!messageOpt.isPresent()) {
-                currentTime = timeSupplier.get();
+                Instant currentTime = timeSupplier.get();
                 if (idleTimeTracker.isLookForNextMessage(currentTime)) {
                     continue;
                 } else {
@@ -149,13 +148,12 @@ public class CompactionTask {
                     processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
                 }
             }
-            currentTime = timeSupplier.get();
         }
-        return currentTime;
+        return timeSupplier.get();
     }
 
-    private boolean hasNotReachedMaxAliveTime(Instant startTime, Instant currentTime) {
-        Duration aliveTime = Duration.between(startTime, currentTime);
+    private boolean hasNotReachedMaxAliveTime(Instant startTime) {
+        Duration aliveTime = Duration.between(startTime, timeSupplier.get());
         return aliveTime.toSeconds() < instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS);
     }
 
