@@ -64,6 +64,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.testutils.TestSupplier;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -309,7 +310,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
-        Supplier<Instant> times = supplyTimes(
+        TestSupplier times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
                 Instant.parse("2024-05-09T12:53:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
@@ -357,7 +358,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
-        Supplier<Instant> times = supplyTimes(
+        TestSupplier times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
                 Instant.parse("2024-05-09T12:53:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started

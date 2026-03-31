@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.testutils.TestSupplier;
 import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
@@ -90,7 +90,7 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
         Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
         Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-        Supplier<Instant> supplier = supplyTimes(
+        TestSupplier supplier = supplyTimes(
                 Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                 Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                 startTime1, finishTime1,

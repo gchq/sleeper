@@ -111,8 +111,8 @@ public class SupplierTestHelper {
      * @param  times the times
      * @return       the supplier
      */
-    public static Supplier<Instant> supplyTimes(Instant... times) {
-        return List.of(times).iterator()::next;
+    public static TestSupplier supplyTimes(Instant... times) {
+        return new TestSupplier(List.of(times));
     }
 
     /**

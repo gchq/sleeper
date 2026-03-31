@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.core.testutils.TestSupplier;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
@@ -43,7 +43,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:03Z")); // First check
@@ -52,7 +52,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(processNoJobs(), supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).isEmpty();
         }
 
@@ -61,7 +61,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
@@ -72,7 +72,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(processNoJobs(), supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).containsExactly(Duration.ofSeconds(2));
         }
 
@@ -81,7 +81,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:01Z"), // Job started
@@ -96,7 +96,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(jobsSucceed(1), supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(consumedJobs).containsExactly(job);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -108,7 +108,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:01Z"), // First check no job
@@ -130,7 +130,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(consumedJobs).containsExactly(job);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -142,7 +142,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:01Z"), // First check no job
@@ -167,7 +167,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
                     supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(consumedJobs).containsExactly(job);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
@@ -179,7 +179,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, 3);
             instanceProperties.setNumber(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:02Z"), // First idle time check
@@ -190,7 +190,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(processNoJobs(), supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).isEmpty();
         }
     }
@@ -242,7 +242,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         void shouldStopTaskAfterMaxAliveTime() throws Exception {
             //Given
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS, 2);
-            Supplier<Instant> supplier = supplyTimes(
+            TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job1 started
@@ -257,7 +257,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(jobsSucceed(2), supplier);
 
             // Then
-            assertThat(assertSupplierEmpty(supplier)).isTrue();
+            assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).isEmpty();
             assertThat(consumedJobs).containsExactly(job1);
             assertThat(jobsOnQueue).containsExactly(job2);
