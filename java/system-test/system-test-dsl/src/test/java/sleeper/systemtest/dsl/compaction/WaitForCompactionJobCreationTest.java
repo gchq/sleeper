@@ -100,7 +100,8 @@ public class WaitForCompactionJobCreationTest {
 
         // When / Then
         assertThatThrownBy(() -> createJobsGetIds(1, createJobs))
-                .isInstanceOf(TooManyCompactionsCreatedException.class);
+                .isInstanceOf(TooManyCompactionsCreatedException.class)
+                .hasMessage("Expected 1 new compaction jobs, found 2");
     }
 
     @Test
