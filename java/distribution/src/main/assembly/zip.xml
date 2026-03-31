@@ -226,6 +226,13 @@
         </file>
         <file>
             <source>
+                ${project.basedir}/../deployment/rest-api/target/rest-api-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>rest-api-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
                 ${project.basedir}/../deployment/cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
