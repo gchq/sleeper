@@ -23,9 +23,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
@@ -90,13 +89,17 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
         Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
         Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-        Queue<Instant> times = new LinkedList<>(List.of(
+        Supplier<Instant> supplier = timeSupplier(
                 Instant.parse("2024-02-22T13:50:00Z"),   // Task start
-                startTime1, finishTime1, startTime2, finishTime2,
-                Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
+                Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
+                startTime1, finishTime1,
+                Instant.parse("2024-02-22T13:50:03Z"), // Keep alive check
+                startTime2, finishTime2,
+                Instant.parse("2024-02-22T13:50:07Z"), // Keep alive check
+                Instant.parse("2024-02-22T13:50:07Z")); // Task finish
 
         // When
-        runTask(processNoJobs(), times::poll);
+        runTask(processNoJobs(), supplier);
 
         // Then
         assertThat(consumedJobs).containsExactly(job1, job2);
