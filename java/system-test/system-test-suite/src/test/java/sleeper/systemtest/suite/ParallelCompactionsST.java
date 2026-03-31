@@ -70,7 +70,7 @@ public class ParallelCompactionsST {
 
         // When we run compaction
         sleeper.compaction()
-                .putTableOnlineWaitForJobCreation(40960,
+                .putTableOnlineWaitForMinJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForTasks(200,

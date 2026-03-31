@@ -102,6 +102,16 @@ public class CompactionDsl {
         return this;
     }
 
+    public CompactionDsl putTableOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
+        return putTablesOnlineWaitForMinJobCreation(expectedJobs, poll);
+    }
+
+    public CompactionDsl putTablesOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
+        lastJobIds = waitForJobCreation.createMinJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
+        return this;
+    }
+
     public CompactionDsl forceCreateJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
