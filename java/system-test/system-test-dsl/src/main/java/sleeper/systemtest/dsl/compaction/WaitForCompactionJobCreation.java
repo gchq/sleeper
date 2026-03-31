@@ -54,6 +54,10 @@ public class WaitForCompactionJobCreation {
         return createJobsGetIds(poll, createJobs, meetsExpectedJobs(expectedJobs));
     }
 
+    public List<String> createMinJobsGetIds(int expectedJobs, PollWithRetries poll, Runnable createJobs) {
+        return createJobsGetIds(poll, createJobs, meetsExpectedMinJobs(expectedJobs));
+    }
+
     private List<String> createJobsGetIds(PollWithRetries poll, Runnable createJobs, Predicate<List<String>> checkNewJobIds) {
         Set<String> jobsBefore = allJobIds()
                 .collect(Collectors.toSet());
@@ -85,6 +89,10 @@ public class WaitForCompactionJobCreation {
                 return jobIds.size() == expectedJobs;
             }
         };
+    }
+
+    private static Predicate<List<String>> meetsExpectedMinJobs(int expectedJobs) {
+        return jobIds -> jobIds.size() >= expectedJobs;
     }
 
     private Stream<String> allJobIds() {
