@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.util.PollWithRetries;
@@ -26,6 +27,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,22 +38,29 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class WaitForCompactionJobCreation {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobCreation.class);
 
-    private final SystemTestInstanceContext instance;
-    private final CompactionJobTracker store;
+    private final Supplier<Stream<TableProperties>> getTableProperties;
+    private final CompactionJobTracker jobTracker;
 
     public WaitForCompactionJobCreation(SystemTestInstanceContext instance, CompactionDriver driver) {
-        this.instance = instance;
-        this.store = driver.getJobTracker();
+        this(instance::streamTableProperties, driver.getJobTracker());
+    }
+
+    public WaitForCompactionJobCreation(Supplier<Stream<TableProperties>> getTableProperties, CompactionJobTracker jobTracker) {
+        this.getTableProperties = getTableProperties;
+        this.jobTracker = jobTracker;
     }
 
     public List<String> createJobsGetIds(int expectedJobs, PollWithRetries poll, Runnable createJobs) {
+        return createJobsGetIds(poll, createJobs, meetsExpectedJobs(expectedJobs));
+    }
+
+    public List<String> createJobsGetIds(PollWithRetries poll, Runnable createJobs, Predicate<List<String>> checkNewJobIds) {
         Set<String> jobsBefore = allJobIds()
                 .collect(Collectors.toSet());
         createJobs.run();
         try {
             List<String> newJobs = poll.queryUntil("compaction jobs were created",
-                    () -> newJobIds(jobsBefore),
-                    meetsExpectedJobs(expectedJobs));
+                    () -> newJobIds(jobsBefore), checkNewJobIds);
             LOGGER.info("Created {} new compaction jobs", newJobs.size());
             return newJobs;
         } catch (InterruptedException e) {
@@ -79,10 +88,10 @@ public class WaitForCompactionJobCreation {
     }
 
     private Stream<String> allJobIds() {
-        return instance.streamTableProperties()
+        return getTableProperties.get()
                 .map(properties -> properties.get(TABLE_ID))
                 .parallel()
-                .flatMap(tableId -> store.streamAllJobs(tableId)
+                .flatMap(tableId -> jobTracker.streamAllJobs(tableId)
                         .map(CompactionJobStatus::getJobId));
     }
 
