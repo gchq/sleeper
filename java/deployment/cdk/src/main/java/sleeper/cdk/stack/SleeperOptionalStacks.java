@@ -170,7 +170,7 @@ public class SleeperOptionalStacks {
             new IngestBatcherStack(scope, "IngestBatcher", props, coreStacks, ingestStacks);
         }
 
-        // Stack to allow provide a Rest API
+        // Stack to provide a Rest API for sleeper
         if (optionalStacks.contains(OptionalStack.RestApiStack)) {
             new RestApiStack(scope, "RestApi", instanceProperties, artefacts, coreStacks);
         }

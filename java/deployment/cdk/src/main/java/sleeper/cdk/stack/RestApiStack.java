@@ -41,7 +41,7 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
- * RESTs API for interacting with the Sleeper instance.
+ * REST API for interacting with the Sleeper instance.
  * Utilises API Gateway.
  */
 public class RestApiStack extends NestedStack {
@@ -49,10 +49,10 @@ public class RestApiStack extends NestedStack {
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        setUpRestApi(scope, instanceProperties, id, artefacts, coreStacks);
+        setUpRestApi(instanceProperties, id, artefacts, coreStacks);
     }
 
-    private void setUpRestApi(Construct scope, InstanceProperties instanceProperties, String constructId,
+    private void setUpRestApi(InstanceProperties instanceProperties, String constructId,
             SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
@@ -66,7 +66,7 @@ public class RestApiStack extends NestedStack {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.REST_API_HANDLER))
                 .timeout(Duration.seconds(29)));
 
-        HttpApi restHttpApi = setupApiGateway(this, instanceId, lambda.getFunctionName());
+        HttpApi restHttpApi = setupApiGateway(instanceId, lambda.getFunctionName());
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
         restHttpApi.addRoutes(AddRoutesOptions.builder()
                 .path("/sleeper")
@@ -79,10 +79,10 @@ public class RestApiStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restHttpApi.getApiEndpoint());
     }
 
-    private HttpApi setupApiGateway(Construct scope, String instanceId, String lambdaName) {
-        return HttpApi.Builder.create(scope, "RestApi")
+    private HttpApi setupApiGateway(String instanceId, String lambdaName) {
+        return HttpApi.Builder.create(this, "RestApi")
                 .description("Sleeper REST API")
-                .apiName(String.format("sleeper-%s-%s", instanceId, lambdaName))
+                .apiName(lambdaName)
                 .build();
     }
 }
