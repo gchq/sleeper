@@ -50,7 +50,7 @@ public class UploadDockerImagesToEcr {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
-                .filter(image -> imageDoesNotExistInRepositoryWithDiges(image, request))
+                .filter(image -> imageDoesNotExistInRepositoryWithDigest(image, request))
                 .collect(Collectors.toUnmodifiableList());
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
         if (!imagesToUpload.isEmpty()) {
@@ -61,7 +61,7 @@ public class UploadDockerImagesToEcr {
         uploader.upload(repositoryPrefix, imagesToUpload);
     }
 
-    private boolean imageDoesNotExistInRepositoryWithDiges(
+    private boolean imageDoesNotExistInRepositoryWithDigest(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
         //TODO need some way to get the digest for each image to be able to compare to ecr. StackDockerImage/DockerDeployment made need a change
         if (request.isOverwriteExistingTag()) {
