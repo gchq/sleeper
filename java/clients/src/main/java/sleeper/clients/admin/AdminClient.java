@@ -33,7 +33,7 @@ import sleeper.clients.admin.screen.IngestBatcherReportScreen;
 import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.CheckDigestExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -103,7 +103,7 @@ public class AdminClient {
             AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient),
+                    CheckDigestExistsInEcr.withEcrClient(ecrClient),
                     stsClient.getCallerIdentity().account(), regionProvider.getRegion().id());
             errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir,
                     uploadDockerImages, DockerImageConfiguration.getDefault(), out, in,

@@ -22,17 +22,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
-    private final Map<String, Set<String>> versionsByRepositoryName = new HashMap<>();
+public class InMemoryEcrRepositories implements CheckDigestExistsInEcr {
+    private final Map<String, Set<String>> digestsByRepositoryName = new HashMap<>();
 
-    public void addVersionToRepository(String repository, String version) {
-        versionsByRepositoryName.computeIfAbsent(repository, r -> new HashSet<>()).add(version);
+    public void addDigestToRepository(String repository, String digest) {
+        digestsByRepositoryName.computeIfAbsent(repository, r -> new HashSet<>()).add(digest);
     }
 
     @Override
-    public boolean versionExistsInRepository(String repository, String version) {
-        return Optional.ofNullable(versionsByRepositoryName.get(repository))
-                .map(versions -> versions.contains(version))
+    public boolean digestExistsInRepository(String repository, String digest) {
+        return Optional.ofNullable(digestsByRepositoryName.get(repository))
+                .map(digests -> digests.contains(digest))
                 .orElse(false);
     }
 }

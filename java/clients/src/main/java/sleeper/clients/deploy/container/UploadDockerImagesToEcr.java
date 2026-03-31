@@ -33,12 +33,12 @@ public class UploadDockerImagesToEcr {
     public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
 
     private final UploadDockerImages uploader;
-    private final CheckVersionExistsInEcr repositoryChecker;
+    private final CheckDigestExistsInEcr repositoryChecker;
     private final String account;
     private final String region;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker, String account, String region) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckDigestExistsInEcr repositoryChecker, String account, String region) {
         this.uploader = uploader;
         this.repositoryChecker = repositoryChecker;
         this.account = account;
@@ -50,7 +50,7 @@ public class UploadDockerImagesToEcr {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
-                .filter(image -> imageDoesNotExistInRepositoryWithVersion(image, request))
+                .filter(image -> imageDoesNotExistInRepositoryWithDiges(image, request))
                 .collect(Collectors.toUnmodifiableList());
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
         if (!imagesToUpload.isEmpty()) {
@@ -61,14 +61,15 @@ public class UploadDockerImagesToEcr {
         uploader.upload(repositoryPrefix, imagesToUpload);
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(
+    private boolean imageDoesNotExistInRepositoryWithDiges(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
+        //TODO need some way to get the digest for each image to be able to compare to ecr. StackDockerImage/DockerDeployment made need a change
         if (request.isOverwriteExistingTag()) {
             return true;
         }
         String repository = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (repositoryChecker.versionExistsInRepository(repository, uploader.getVersion())) {
-            LOGGER.info("ECR repository {} already contains version {}",
+        if (repositoryChecker.digestExistsInRepository(repository, uploader.getVersion())) {
+            LOGGER.info("ECR repository {} already contains digest {}",
                     repository, uploader.getVersion());
             return false;
         } else {

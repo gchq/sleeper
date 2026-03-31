@@ -456,10 +456,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     @DisplayName("Handle existing images")
     class HandleExistingImages {
         @Test
-        void shouldBuildAndPushImageIfImageWithDifferentVersionExists() throws Exception {
+        void shouldBuildAndPushImageIfImageWithDifferentDigestExists() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
+            ecrClient.addDigestToRepository("test-instance/ingest", "sha256:abc123");
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -473,10 +473,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws Exception {
+        void shouldNotBuildAndPushImageIfImageWithMatchingDigestExists() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
+            ecrClient.addDigestToRepository("test-instance/ingest", "sha256:abc123");
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -486,10 +486,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        void shouldForceUploadWhenVersionAlreadyExists() throws Exception {
+        void shouldForceUploadWhenDigestAlreadyExists() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
+            ecrClient.addDigestToRepository("test-instance/ingest", "sha256:abc123");
 
             // When
             uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerDeploymentImageConfig())
