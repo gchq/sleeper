@@ -75,11 +75,11 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Supplier<Instant> supplier = timeSupplier(
-                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Task start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     startTime, finishTime,
                     Instant.parse("2024-02-22T13:50:05Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:05Z")); // First check
+                    Instant.parse("2024-02-22T13:50:05Z")); // Task finished
             CompactionJob job1 = createJobOnQueue("job1");
             RowsProcessed job1Summary = new RowsProcessed(10L, 5L);
 
