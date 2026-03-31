@@ -29,22 +29,28 @@ public class S3BucketName {
     /**
      * Build an S3 Bucket name.
      *
+     * @param  stsClient  the AWS StsClient
      * @param  instanceId the AWS instance id
      * @param  args       elements to include in the bucket name
-     * @param  stsClient  the AWS StsClient
      * @return            an S3 bucket name
      */
-    public static String parse(String instanceId, String args, StsClient stsClient) {
+    public static String parse(StsClient stsClient, String instanceId, String... args) {
         String account = stsClient.getCallerIdentity(r -> r.build()).account();
 
+        String namePortion = String.join("-", args);
+
         String bucketName = String.join("-", "sleeper", instanceId,
-                args, account).toLowerCase(Locale.ROOT);
+                namePortion, account).toLowerCase(Locale.ROOT);
 
         if (bucketName.length() > 63) {
-            throw new IllegalArgumentException("Bucket name exceeds 63 characters.");
+            throw new IllegalArgumentException("Complete bucket name exceeds 63 characters.");
         }
-        return bucketName;
 
+        if (namePortion.length() > 20) {
+            throw new IllegalArgumentException("Name portion exceeds 20 characters.");
+        }
+
+        return bucketName;
     }
 
     /**
@@ -56,7 +62,7 @@ public class S3BucketName {
      */
     public static String parse(String instanceId, String args) {
         try (StsClient stsClient = StsClient.create()) {
-            return parse(instanceId, args, stsClient);
+            return parse(stsClient, instanceId, args);
         }
     }
 

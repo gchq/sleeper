@@ -37,13 +37,6 @@ public class S3BucketNameTest {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         stsClient = wiremockAwsV2Client(runtimeInfo, StsClient.builder());
-    }
-
-    @Test
-    void shouldRefuseBucketNameWithMoreThan63Characters() {
-
-        // Given
-        // 1. Arrange - Define the mock STS XML response
         String mockAccountId = "123456789012";
         stubFor(post(urlEqualTo("/"))
                 .withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
@@ -60,11 +53,25 @@ public class S3BucketNameTest {
                                         "  </GetCallerIdentityResult>" +
                                         "  <ResponseMetadata><RequestId>test-id</RequestId></ResponseMetadata>" +
                                         "</GetCallerIdentityResponse>")));
+    }
 
-        // When / Then
-        assertThatThrownBy(() -> S3BucketName.parse("123456789", "thisisaverylongbucketnameandwillexceed63characters", stsClient))
+    @Test
+    void shouldRefuseBucketNameWithMoreThan63Characters() {
+
+        // Given / When / Then
+        assertThatThrownBy(() -> S3BucketName.parse(stsClient, "123456789", "this", "is", "a", "very", "long", "bucket",
+                "name", "and", "will", "exceed63characters"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Bucket name exceeds 63 characters.");
+                .hasMessage("Complete bucket name exceeds 63 characters.");
+    }
+
+    @Test
+    void shouldRefuseNamePortionLongerThan20Characters() {
+
+        // Given / When / Then
+        assertThatThrownBy(() -> S3BucketName.parse(stsClient, "123456789", "bucket", "name", "longer", "than", "20", "chars"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Name portion exceeds 20 characters.");
     }
 
 }
