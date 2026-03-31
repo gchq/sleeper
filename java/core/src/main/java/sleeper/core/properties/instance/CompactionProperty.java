@@ -127,7 +127,7 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.keep.alive.jitter.minutes")
-            .description("The max ammount of jitter to add to a new compaction tasks keep alive time.\n" +
+            .description("The max ammount of jitter to add to a new compaction task's keep alive time.\n" +
                     "A random number of minutes between 0 and this value will be added to the keep alive time above " +
                     "for each new compaction task.\n" +
                     "This lowers the chance that all the compaction tasks stop at the same time.")
