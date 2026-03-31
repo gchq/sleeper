@@ -66,7 +66,11 @@ public class RestApiStack extends NestedStack {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.REST_API_HANDLER))
                 .timeout(Duration.seconds(29)));
 
-        HttpApi restHttpApi = setupApiGateway(instanceId, lambda.getFunctionName());
+        HttpApi restHttpApi = HttpApi.Builder.create(this, "RestApi")
+                .description("Sleeper REST API")
+                .apiName(lambda.getFunctionName())
+                .build();
+
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
         restHttpApi.addRoutes(AddRoutesOptions.builder()
                 .path("/sleeper")
@@ -77,12 +81,5 @@ public class RestApiStack extends NestedStack {
                 .value(restHttpApi.getApiEndpoint())
                 .build());
         instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restHttpApi.getApiEndpoint());
-    }
-
-    private HttpApi setupApiGateway(String instanceId, String lambdaName) {
-        return HttpApi.Builder.create(this, "RestApi")
-                .description("Sleeper REST API")
-                .apiName(lambdaName)
-                .build();
     }
 }
