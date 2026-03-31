@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 
 public class CompactionTaskTest extends CompactionTaskTestBase {
@@ -89,7 +90,7 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
         Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
         Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-        Supplier<Instant> supplier = timeSupplier(
+        Supplier<Instant> supplier = supplyTimes(
                 Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                 Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                 startTime1, finishTime1,

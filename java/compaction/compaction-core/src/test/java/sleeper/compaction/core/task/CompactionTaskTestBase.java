@@ -399,14 +399,6 @@ public class CompactionTaskTestBase {
                 .iterator()::next;
     }
 
-    public static Supplier<Instant> timeSupplier(Instant... times) {
-        return timeSupplier(List.of(times));
-    }
-
-    public static Supplier<Instant> timeSupplier(List<Instant> times) {
-        return times.iterator()::next;
-    }
-
     public static boolean assertSupplierEmpty(Supplier<Instant> supplier) {
         try {
             supplier.get();

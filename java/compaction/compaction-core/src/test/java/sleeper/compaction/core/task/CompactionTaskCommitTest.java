@@ -49,6 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
@@ -74,7 +75,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             setAsyncCommitNoBatching(tableProperties);
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Task start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     startTime, finishTime,
@@ -110,7 +111,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime1, finishTime1,
@@ -160,7 +161,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant commitTime2 = Instant.parse("2024-02-22T13:50:05Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime1, finishTime1,
@@ -208,7 +209,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant commitTime = Instant.parse("2024-02-22T13:50:10Z");
             Instant commitFailTime = Instant.parse("2024-02-22T13:50:10Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime1, finishTime1,
@@ -260,7 +261,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime, finishTime,
@@ -315,7 +316,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:05Z");
             Instant commitTime2 = Instant.parse("2024-02-22T13:50:06Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime1, finishTime1, commitTime1,
@@ -362,7 +363,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime, finishTime, failTime,
@@ -394,7 +395,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime, finishTime, failTime,
@@ -422,7 +423,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     startTime, finishTime, failTime,
@@ -460,7 +461,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant jobFinishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant jobCommitTime = Instant.parse("2024-02-22T13:50:03Z");
             Instant taskFinishTime = Instant.parse("2024-02-22T13:50:05Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     taskStartTime,
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     jobStartTime, jobFinishTime, jobCommitTime,
@@ -495,7 +496,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant job2FinishTime = Instant.parse("2024-02-22T13:50:05Z");
             Instant job2CommitTime = Instant.parse("2024-02-22T13:50:06Z");
             Instant taskFinishTime = Instant.parse("2024-02-22T13:50:07Z");
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     taskStartTime,
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     job1StartTime, job1FinishTime, job1CommitTime,
@@ -531,7 +532,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSaveTaskAndJobWhenOneJobFails() throws Exception {
             // Given
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
@@ -563,7 +564,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSaveTaskWhenNoJobsFound() throws Exception {
             // Given
-            Supplier<Instant> supplier = timeSupplier(
+            Supplier<Instant> supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:05Z")); // Finish
