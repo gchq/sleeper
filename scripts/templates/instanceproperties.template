@@ -1376,7 +1376,7 @@ sleeper.subnets=set-automatically
 # A new task will then begin running to process remaining compaction jobs.
 # This allows the user to gracefully upgrade Sleeper to a newer version.
 # (default value shown below, uncomment to set a value)
-# sleeper.compaction.task.max.alive.time.seconds=1800
+# sleeper.compaction.task.max.alive.time.minutes=720
 
 # The maximum number of times that a compaction task can fail to process consecutive compaction jobs
 # before it terminates.

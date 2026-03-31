@@ -52,7 +52,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
@@ -154,7 +154,7 @@ public class CompactionTask {
 
     private boolean hasNotReachedMaxAliveTime(Instant startTime) {
         Duration aliveTime = Duration.between(startTime, timeSupplier.get());
-        return aliveTime.toSeconds() < instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS);
+        return aliveTime.toMinutes() < instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES);
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {

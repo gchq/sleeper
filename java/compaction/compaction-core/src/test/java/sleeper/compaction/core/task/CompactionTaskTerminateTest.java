@@ -27,7 +27,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
@@ -241,15 +241,15 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         @Test
         void shouldStopTaskAfterMaxAliveTime() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_SECONDS, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
             TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job1 started
                     Instant.parse("2024-02-22T13:50:03Z"), // Job1 completed
                     Instant.parse("2024-02-22T13:50:03Z"), // Job1 committed
-                    Instant.parse("2024-02-22T13:50:03Z"), // Keep alive check
-                    Instant.parse("2024-02-22T13:50:04Z")); // Finish
+                    Instant.parse("2024-02-22T13:52:00Z"), // Keep alive check
+                    Instant.parse("2024-02-22T13:52:04Z")); // Finish
             CompactionJob job1 = createJobOnQueue("job1");
             CompactionJob job2 = createJobOnQueue("job2");
 
