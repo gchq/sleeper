@@ -28,12 +28,12 @@ import software.constructs.Construct;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.S3BucketName;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
@@ -55,8 +55,8 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
-        String bucketName = String.join("-", "sleeper", properties.get(ID),
-                "system", "test", "ingest").toLowerCase(Locale.ROOT);
+        String bucketName = S3BucketName.parse(properties.get(ID), "system", "test", "ingest");
+
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
         bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, autoDeleteS3ObjectsStack);

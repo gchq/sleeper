@@ -29,6 +29,19 @@ public class S3BucketName {
     /**
      * Build an S3 Bucket name.
      *
+     * @param  instanceId the AWS instance id
+     * @param  args       elements to include in the bucket name
+     * @return            an S3 bucket name
+     */
+    public static String parse(String instanceId, String... args) {
+        try (StsClient stsClient = StsClient.create()) {
+            return parse(stsClient, instanceId, args);
+        }
+    }
+
+    /**
+     * Build an S3 Bucket name.
+     *
      * @param  stsClient  the AWS StsClient
      * @param  instanceId the AWS instance id
      * @param  args       elements to include in the bucket name
@@ -51,19 +64,6 @@ public class S3BucketName {
         }
 
         return bucketName;
-    }
-
-    /**
-     * Build an S3 Bucket name.
-     *
-     * @param  instanceId the AWS instance id
-     * @param  args       elements to include in the bucket name
-     * @return            an S3 bucket name
-     */
-    public static String parse(String instanceId, String args) {
-        try (StsClient stsClient = StsClient.create()) {
-            return parse(stsClient, instanceId, args);
-        }
     }
 
 }
