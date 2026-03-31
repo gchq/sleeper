@@ -81,6 +81,28 @@ public class WaitForCompactionJobCreationTest {
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
+    @Test
+    void shouldFindMoreThanExpectedJobsCreated() {
+        // Given
+        TableProperties table = createTable();
+        Runnable createJobs = () -> {
+            jobTracker.jobCreated(CompactionJobCreatedEvent.builder()
+                    .jobId("test-job-1")
+                    .tableId(table.get(TABLE_ID))
+                    .partitionId("L").inputFilesCount(2)
+                    .build(), Instant.parse("2026-03-31T14:00:01Z"));
+            jobTracker.jobCreated(CompactionJobCreatedEvent.builder()
+                    .jobId("test-job-2")
+                    .tableId(table.get(TABLE_ID))
+                    .partitionId("R").inputFilesCount(2)
+                    .build(), Instant.parse("2026-03-31T14:00:02Z"));
+        };
+
+        // When / Then
+        assertThatThrownBy(() -> createJobsGetIds(1, createJobs))
+                .isInstanceOf(TooManyCompactionsCreatedException.class);
+    }
+
     private TableProperties createTable() {
         TableProperties properties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         tables.add(properties);

@@ -54,7 +54,7 @@ public class WaitForCompactionJobCreation {
         return createJobsGetIds(poll, createJobs, meetsExpectedJobs(expectedJobs));
     }
 
-    public List<String> createJobsGetIds(PollWithRetries poll, Runnable createJobs, Predicate<List<String>> checkNewJobIds) {
+    private List<String> createJobsGetIds(PollWithRetries poll, Runnable createJobs, Predicate<List<String>> checkNewJobIds) {
         Set<String> jobsBefore = allJobIds()
                 .collect(Collectors.toSet());
         createJobs.run();
@@ -80,7 +80,7 @@ public class WaitForCompactionJobCreation {
     private static Predicate<List<String>> meetsExpectedJobs(int expectedJobs) {
         return jobIds -> {
             if (jobIds.size() > expectedJobs) {
-                throw new IllegalStateException("Expected " + expectedJobs + " new compaction jobs, found " + jobIds.size());
+                throw new TooManyCompactionsCreatedException(expectedJobs, jobIds);
             } else {
                 return jobIds.size() == expectedJobs;
             }
