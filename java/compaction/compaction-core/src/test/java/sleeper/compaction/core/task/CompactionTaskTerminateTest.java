@@ -243,8 +243,8 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         void shouldGenerateUniqueMaxAliveTimesForUniqueTasks() {
             //Given
             instanceProperties.setNumber(COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES, Integer.MAX_VALUE);
-            CompactionTask task1 = generateNewCompactionTask(DEFAULT_TASK_ID);
-            CompactionTask task2 = generateNewCompactionTask(DEFAULT_TASK_ID);
+            CompactionTask task1 = generateNewCompactionTask("task1");
+            CompactionTask task2 = generateNewCompactionTask("task2");
 
             //When/Then
             assertThat(task1.getMaxAliveTime()).isNotEqualTo(task2.getMaxAliveTime());
