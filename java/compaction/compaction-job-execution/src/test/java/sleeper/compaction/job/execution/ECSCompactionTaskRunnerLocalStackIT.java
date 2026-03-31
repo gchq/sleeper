@@ -311,8 +311,10 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         sendJob(job);
         Supplier<Instant> times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:53:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:57:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
         Supplier<String> jobRunIds = fixIds("job-run-id");
 
@@ -357,8 +359,10 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         sendJob(job);
         Supplier<Instant> times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:53:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:57:00Z"),      // Keep alive check
                 Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
         Supplier<String> jobRunIds = fixIds("job-run-id");
 
