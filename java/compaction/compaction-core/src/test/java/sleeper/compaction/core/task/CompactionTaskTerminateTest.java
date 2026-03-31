@@ -27,7 +27,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_KEEP_ALIVE_TIME_IN_MINMUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
@@ -235,13 +236,25 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
     }
 
     @Nested
-    @DisplayName("Stop after max alive time")
-    class StopAfterMaxAliveTime {
+    @DisplayName("Max alive time")
+    class MaxAliveTime {
+
+        @Test
+        void shouldGenerateUniqueMaxAliveTimesForUniqueTasks() {
+            //Given
+            instanceProperties.setNumber(COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES, Integer.MAX_VALUE);
+            CompactionTask task1 = generateNewCompactionTask(DEFAULT_TASK_ID);
+            CompactionTask task2 = generateNewCompactionTask(DEFAULT_TASK_ID);
+
+            //When/Then
+            assertThat(task1.getMaxAliveTime()).isNotEqualTo(task2.getMaxAliveTime());
+        }
 
         @Test
         void shouldStopTaskAfterMaxAliveTime() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_KEEP_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES, 0);
             TestSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Keep alive check
@@ -261,6 +274,14 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             assertThat(sleeps).isEmpty();
             assertThat(consumedJobs).containsExactly(job1);
             assertThat(jobsOnQueue).containsExactly(job2);
+        }
+
+        private CompactionTask generateNewCompactionTask(String taskId) {
+            return new CompactionTask(instanceProperties, null,
+                    null, null,
+                    null, null,
+                    null, null,
+                    null, null, taskId);
         }
     }
 }

@@ -91,7 +91,7 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
         Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
         TestSupplier supplier = supplyTimes(
-                Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                Instant.parse("2024-02-22T13:50:00Z"), // Task start
                 Instant.parse("2024-02-22T13:50:00Z"), // Keep alive check
                 startTime1, finishTime1,
                 Instant.parse("2024-02-22T13:50:03Z"), // Keep alive check

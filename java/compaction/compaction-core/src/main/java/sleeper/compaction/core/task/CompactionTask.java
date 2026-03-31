@@ -52,7 +52,8 @@ import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_KEEP_ALIVE_TIME_IN_MINMUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
@@ -77,6 +78,7 @@ public class CompactionTask {
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
+    private final Long maxAliveTime;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -113,6 +115,7 @@ public class CompactionTask {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
+        maxAliveTime = randomiseKeepAliveTime();
     }
 
     public void run() throws IOException {
@@ -154,7 +157,7 @@ public class CompactionTask {
 
     private boolean hasNotReachedMaxAliveTime(Instant startTime) {
         Duration aliveTime = Duration.between(startTime, timeSupplier.get());
-        return aliveTime.toMinutes() < instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES);
+        return aliveTime.toMinutes() < maxAliveTime;
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
@@ -246,6 +249,15 @@ public class CompactionTask {
                 summary.getRowsRead(), String.format("%.1f", summary.getRowsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} rows at {} per second", job.getId(),
                 summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
+    }
+
+    private Long randomiseKeepAliveTime() {
+        return instanceProperties.getLong(COMPACTION_TASK_KEEP_ALIVE_TIME_IN_MINMUTES)
+                + (long) (Math.random() * instanceProperties.getLong(COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES));
+    }
+
+    public Long getMaxAliveTime() {
+        return maxAliveTime;
     }
 
     @FunctionalInterface
