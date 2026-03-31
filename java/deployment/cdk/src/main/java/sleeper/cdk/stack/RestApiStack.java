@@ -49,11 +49,11 @@ public class RestApiStack extends NestedStack {
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        setUpRestApi(instanceProperties, id, artefacts, coreStacks);
+        setUpRestApi(instanceProperties, artefacts, coreStacks);
     }
 
-    private void setUpRestApi(InstanceProperties instanceProperties, String constructId,
-            SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
+    private void setUpRestApi(InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts,
+            SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);

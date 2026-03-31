@@ -37,10 +37,9 @@ public class RestApiLambda {
      * @return       the response from the API request
      */
     public APIGatewayV2HTTPResponse handleEvent(APIGatewayV2HTTPEvent event) {
-        LOGGER.info("REST API Request recieved: {}", event.toString());
+        LOGGER.info("REST API request recieved: {}", event);
         return APIGatewayV2HTTPResponse.builder()
                 .withBody("API successfully interacted with. Further expansion for functionality required.")
                 .build();
-
     }
 }
