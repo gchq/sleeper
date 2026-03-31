@@ -28,6 +28,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.S3BucketName;
 
 import java.util.List;
 
@@ -45,8 +46,8 @@ public class TableDataStack extends NestedStack {
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "table-data");
+        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "table-data");
+
         dataBucket = Bucket.Builder
                 .create(this, "TableDataBucket")
                 .bucketName(bucketName)
@@ -55,10 +56,9 @@ public class TableDataStack extends NestedStack {
                 .encryption(BucketEncryption.S3_MANAGED)
                 .removalPolicy(removalPolicy)
                 .metrics(List.of(
-                    BucketMetrics.builder()
-                        .id("all")
-                        .build()
-                ))
+                        BucketMetrics.builder()
+                                .id("all")
+                                .build()))
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {

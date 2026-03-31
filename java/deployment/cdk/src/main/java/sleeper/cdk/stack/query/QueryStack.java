@@ -54,6 +54,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
+import sleeper.core.util.S3BucketName;
 
 import java.util.List;
 import java.util.Objects;
@@ -290,8 +291,8 @@ public class QueryStack extends NestedStack {
 
     private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "query-results");
+        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "query-results");
+
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
                 .bucketName(bucketName)

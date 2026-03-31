@@ -44,6 +44,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
+import sleeper.core.util.S3BucketName;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -179,8 +180,8 @@ public class BulkExportStack extends NestedStack {
     private IBucket setupExportBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
             SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
+        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
+
         Bucket exportBucket = Bucket.Builder
                 .create(this, "BulkExportResultsBucket")
                 .bucketName(bucketName)
