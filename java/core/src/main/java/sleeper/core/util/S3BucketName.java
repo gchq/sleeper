@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import software.amazon.awssdk.services.sts.StsClient;
+
 import java.util.Locale;
 
 /**
@@ -29,13 +31,33 @@ public class S3BucketName {
      *
      * @param  instanceId the AWS instance id
      * @param  args       elements to include in the bucket name
+     * @param  stsClient  the AWS StsClient
+     * @return            an S3 bucket name
+     */
+    public static String parse(String instanceId, String args, StsClient stsClient) {
+        String account = stsClient.getCallerIdentity(r -> r.build()).account();
+
+        String bucketName = String.join("-", "sleeper", instanceId,
+                args, account).toLowerCase(Locale.ROOT);
+
+        if (bucketName.length() > 63) {
+            throw new IllegalArgumentException("Bucket name exceeds 63 characters.");
+        }
+        return bucketName;
+
+    }
+
+    /**
+     * Build an S3 Bucket name.
+     *
+     * @param  instanceId the AWS instance id
+     * @param  args       elements to include in the bucket name
      * @return            an S3 bucket name
      */
     public static String parse(String instanceId, String args) {
-
-        return String.join("-", "sleeper", instanceId,
-                args).toLowerCase(Locale.ROOT);
-
+        try (StsClient stsClient = StsClient.create()) {
+            return parse(instanceId, args, stsClient);
+        }
     }
 
 }
