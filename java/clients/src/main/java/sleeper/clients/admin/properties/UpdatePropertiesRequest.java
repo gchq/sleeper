@@ -24,8 +24,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
-
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
@@ -65,8 +63,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         Set<SleeperProperty> invalidBeforeProperties = getInvalidPropertiesBefore();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
-                .filter(not(SleeperProperty::isEditable))
-                .filter(not(invalidBeforeProperties::contains));
+                .filter(prop -> prop.isEditable() || !invalidBeforeProperties.contains(prop));
     }
 
     private Set<SleeperProperty> getInvalidPropertiesBefore() {

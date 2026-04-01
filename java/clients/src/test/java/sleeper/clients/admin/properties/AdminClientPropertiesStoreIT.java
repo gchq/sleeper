@@ -30,6 +30,9 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -192,9 +195,16 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldFailUpdateTablePropertyWithInvalidSchema() {
             // Given
             createTableInS3("test-table");
+            // updateTableProperty(instanceId, "test-table", SCHEMA, "{}");
 
-            // When/Then
-            assertThatThrownBy(() -> updateTableProperty(instanceId, "test-table", SCHEMA, "{}"))
+            // When
+            Schema newSchema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new StringType()))
+                    .build();
+
+            // Then
+            assertThatThrownBy(() -> updateTableProperty(instanceId, "test-table", SCHEMA, newSchema.toString()))
                     .hasMessageContaining("Could not save properties for table test-table");
         }
 

@@ -673,6 +673,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             String output = editTableConfiguration(properties, before, after)
                     .exitGetOutput();
 
+            System.out.println(output);
+
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
                     TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
