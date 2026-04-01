@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.S3BucketName;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class NewInstanceValidator {
@@ -42,14 +43,14 @@ public class NewInstanceValidator {
     }
 
     private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
-        String bucketName = S3BucketName.parse(instanceProperties.get(ID), "query", "results");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceProperties.get(ID), "query", "results");
         if (doesBucketExist(bucketName)) {
             throw new IllegalArgumentException("Sleeper query results bucket exists: " + bucketName);
         }
     }
 
     private void checkDataBucketDoesNotExist(InstanceProperties instanceProperties) {
-        String bucketName = S3BucketName.parse(instanceProperties.get(ID), "table", "data");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceProperties.get(ID), "table", "data");
         if (doesBucketExist(bucketName)) {
             throw new IllegalArgumentException("Sleeper data bucket exists: " + bucketName);
         }

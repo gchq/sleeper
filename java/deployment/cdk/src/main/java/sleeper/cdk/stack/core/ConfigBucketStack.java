@@ -28,6 +28,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.S3BucketName;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -42,7 +43,7 @@ public class ConfigBucketStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
-        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "config");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "config");
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
                 .bucketName(bucketName)

@@ -65,7 +65,7 @@ public class AthenaStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
-        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "spill-bucket");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "spill-bucket");
 
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)

@@ -35,6 +35,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -55,7 +56,7 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
-        String bucketName = S3BucketName.parse(properties.get(ID), "system", "test", "ingest");
+        String bucketName = S3BucketName.parse(properties.get(ACCOUNT), properties.get(ID), "system", "test", "ingest");
 
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));

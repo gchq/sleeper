@@ -15,51 +15,25 @@
  */
 package sleeper.core.util;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sts.StsClient;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.containing;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
-@WireMockTest
 public class S3BucketNameTest {
 
-    private StsClient stsClient;
+    private String mockAccountId;
 
     @BeforeEach
-    void setUp(WireMockRuntimeInfo runtimeInfo) {
-        stsClient = wiremockAwsV2Client(runtimeInfo, StsClient.builder());
-        String mockAccountId = "123456789012";
-        stubFor(post(urlEqualTo("/"))
-                .withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
-                .withRequestBody(containing("Action=GetCallerIdentity"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "text/xml")
-                        .withBody(
-                                "<GetCallerIdentityResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\">" +
-                                        "  <GetCallerIdentityResult>" +
-                                        "    <Account>" + mockAccountId + "</Account>" +
-                                        "    <Arn>arn:aws:iam::" + mockAccountId + ":user/MockUser</Arn>" +
-                                        "    <UserId>AKIAI44QH8DHBEXAMPLE</UserId>" +
-                                        "  </GetCallerIdentityResult>" +
-                                        "  <ResponseMetadata><RequestId>test-id</RequestId></ResponseMetadata>" +
-                                        "</GetCallerIdentityResponse>")));
+    void setUp() {
+        mockAccountId = "123456789012";
     }
 
     @Test
     void shouldRefuseBucketNameWithMoreThan63Characters() {
 
         // Given / When / Then
-        assertThatThrownBy(() -> S3BucketName.parse(stsClient, "123456789", "this", "is", "a", "very", "long", "bucket",
+        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789", "this", "is", "a", "very", "long", "bucket",
                 "name", "and", "will", "exceed63characters"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Complete bucket name exceeds 63 characters.");
@@ -69,7 +43,7 @@ public class S3BucketNameTest {
     void shouldRefuseNamePortionLongerThan20Characters() {
 
         // Given / When / Then
-        assertThatThrownBy(() -> S3BucketName.parse(stsClient, "123456789", "bucket", "name", "longer", "than", "20", "chars"))
+        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789", "bucket", "name", "longer", "than", "20", "chars"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Name portion exceeds 20 characters.");
     }

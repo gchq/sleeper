@@ -33,6 +33,7 @@ import sleeper.core.util.S3BucketName;
 import java.util.List;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class TableDataStack extends NestedStack {
@@ -46,7 +47,7 @@ public class TableDataStack extends NestedStack {
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "table-data");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "table-data");
 
         dataBucket = Bucket.Builder
                 .create(this, "TableDataBucket")

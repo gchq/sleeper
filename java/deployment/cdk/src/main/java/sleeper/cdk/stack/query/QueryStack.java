@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -291,7 +292,7 @@ public class QueryStack extends NestedStack {
 
     private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "query-results");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "query-results");
 
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")

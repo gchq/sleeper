@@ -56,6 +56,7 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LA
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -180,7 +181,7 @@ public class BulkExportStack extends NestedStack {
     private IBucket setupExportBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
             SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = S3BucketName.parse(Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
 
         Bucket exportBucket = Bucket.Builder
                 .create(this, "BulkExportResultsBucket")

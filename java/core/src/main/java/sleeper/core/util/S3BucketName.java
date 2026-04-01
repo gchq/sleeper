@@ -15,8 +15,6 @@
  */
 package sleeper.core.util;
 
-import software.amazon.awssdk.services.sts.StsClient;
-
 import java.util.Locale;
 
 /**
@@ -29,27 +27,12 @@ public class S3BucketName {
     /**
      * Build an S3 Bucket name.
      *
+     * @param  account    the AWS account
      * @param  instanceId the AWS instance id
      * @param  args       elements to include in the bucket name
      * @return            an S3 bucket name
      */
-    public static String parse(String instanceId, String... args) {
-        try (StsClient stsClient = StsClient.create()) {
-            return parse(stsClient, instanceId, args);
-        }
-    }
-
-    /**
-     * Build an S3 Bucket name.
-     *
-     * @param  stsClient  the AWS StsClient
-     * @param  instanceId the AWS instance id
-     * @param  args       elements to include in the bucket name
-     * @return            an S3 bucket name
-     */
-    public static String parse(StsClient stsClient, String instanceId, String... args) {
-        String account = stsClient.getCallerIdentity(r -> r.build()).account();
-
+    public static String parse(String account, String instanceId, String... args) {
         String namePortion = String.join("-", args);
 
         String bucketName = String.join("-", "sleeper", instanceId,
