@@ -201,7 +201,7 @@ public class LambdaHandler {
             .core().add();
     public static final LambdaHandler REST_API_HANDLER = builder()
             .jar(LambdaJar.REST_API)
-            .handler("sleeper.restapi.RestApiLambda::handleRequest")
+            .handler("sleeper.restapi.RestApiLambda::handleEvent")
             .core().add();
 
     private final LambdaJar jar;
