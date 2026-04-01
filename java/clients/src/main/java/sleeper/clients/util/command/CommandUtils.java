@@ -27,9 +27,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -93,6 +97,38 @@ public class CommandUtils {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static List<String> runCommandReturnOutput(String... commands) throws IOException, InterruptedException, ExecutionException {
+        return runCommandReturnOutput(pipeline(command(commands)));
+    }
+
+    public static List<String> runCommandReturnOutput(CommandPipeline pipeline) throws IOException, InterruptedException, ExecutionException {
+        LOGGER.info("Running command: {}", pipeline);
+        return pipeline.startProcesses().stream()
+                .map(CommandUtils::returnOutput)
+                .map(CompletableFuture::join)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private static CompletableFuture<List<String>> returnOutput(Process process) {
+        return CompletableFuture.supplyAsync(() -> returnOutput(process.getInputStream()));
+    }
+
+    private static List<String> returnOutput(InputStream stream) {
+        List<String> output = new ArrayList<>();
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            String line = reader.readLine();
+            while (line != null) {
+                output.add(line);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return output;
     }
 
     public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {

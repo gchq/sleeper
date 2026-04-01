@@ -107,6 +107,8 @@ public class UploadDockerImages {
             } else {
                 commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
             }
+            //This step needs to get the digest of the just built image
+            commandRunner.runOrThrow("docker", "images", "--format", "\"{{.Repository}}: {{.Digest}}\"", ">>", "temp.txt");
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }
