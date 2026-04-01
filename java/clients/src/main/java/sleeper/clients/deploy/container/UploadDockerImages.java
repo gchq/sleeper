@@ -28,7 +28,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -107,8 +109,16 @@ public class UploadDockerImages {
             } else {
                 commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
             }
-            //This step needs to get the digest of the just built image
-            commandRunner.runOrThrow("docker", "images", "--format", "\"{{.Repository}}: {{.Digest}}\"", ">>", "temp.txt");
+            List<String> digests = new ArrayList<>();
+            try {
+                //TODO possible to filter this by image name?
+                digests = CommandUtils.runCommandReturnOutput("docker", "images", "--format", "{{.Repository}}: {{.Digest}}");
+            } catch (IOException | InterruptedException | ExecutionException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            //For each digest, check if doesn't exists before pushing
+
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }
