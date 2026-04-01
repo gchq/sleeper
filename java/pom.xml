@@ -82,7 +82,7 @@
         We upgraded to the latest version from woodstox-core 5.4.0.
         -->
         <woodstox.version>7.1.1</woodstox.version>
-        <woodstox.stax2.version>4.2.2</woodstox.stax2.version>
+        <woodstox.stax2.version>4.3.0</woodstox.stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.5.3</ivy.version>
         <!--
@@ -129,7 +129,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.4</log4j.version>
-        <aws-java-sdk-v2.version>2.42.24</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.42.25</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -186,7 +186,7 @@
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.80.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.245.0</cdk.version>
+        <cdk.version>2.246.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.6.0</constructs.version>
         <jsii.version>1.127.0</jsii.version>
@@ -218,7 +218,7 @@
         <apfloat.version>1.15.0</apfloat.version>
         <joda-time.version>2.14.1</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.2.18</jnr.ffi.version>
+        <jnr.ffi.version>2.2.19</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
