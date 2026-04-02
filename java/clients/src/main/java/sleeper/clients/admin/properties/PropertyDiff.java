@@ -62,13 +62,16 @@ public class PropertyDiff {
     /**
      * Writes a description of the change to the console.
      *
-     * @param out               the console output
-     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
-     * @param invalidProperties which properties have validation failures caused by the larger update to all values
+     * @param out                     the console output
+     * @param propertyIndex           an index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties       which properties have validation failures caused by the larger update to all
+     *                                values
+     * @param invalidBeforeProperties which properties already had validation failures
      */
     public void print(ConsoleOutput out,
             SleeperPropertyIndex<?> propertyIndex,
-            Set<SleeperProperty> invalidProperties) {
+            Set<SleeperProperty> invalidProperties,
+            Set<SleeperProperty> invalidBeforeProperties) {
         out.println(propertyName);
         var propertyOpt = propertyIndex.getByName(propertyName);
         String description = propertyOpt.map(SleeperProperty::getDescription)
@@ -84,12 +87,15 @@ public class PropertyDiff {
         } else {
             out.printf("Before: %s%n", oldValue);
         }
-        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), invalidProperties), newValue);
+        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), invalidProperties, invalidBeforeProperties), newValue);
         out.println();
     }
 
-    private String invalidNote(SleeperProperty property, Set<SleeperProperty> invalidProperties) {
+    private String invalidNote(SleeperProperty property, Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
         if (property == null) {
+            return "";
+        }
+        if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
             return "";
         }
         if (!property.isEditable()) {

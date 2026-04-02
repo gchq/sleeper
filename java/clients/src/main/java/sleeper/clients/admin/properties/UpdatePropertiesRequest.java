@@ -29,6 +29,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
+    private Set<SleeperProperty> invalidBeforeProperties;
 
     public UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
@@ -46,6 +47,10 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     public T getUpdatedProperties() {
         return updatedProperties;
+    }
+
+    public Set<SleeperProperty> getInvalidBeforeProperties() {
+        return invalidBeforeProperties;
     }
 
     public Set<SleeperProperty> getInvalidProperties() {
@@ -71,7 +76,8 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
             beforeProperties.validate();
             return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
-            return e.getInvalidValues().keySet();
+            invalidBeforeProperties = e.getInvalidValues().keySet();
+            return invalidBeforeProperties;
         }
     }
 

@@ -671,6 +671,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // When
             String output = editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
             System.out.println(output);
@@ -686,7 +687,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
                             "further details.\n" +
                             "Before: {}\n" +
-                            "After (cannot be changed, please undo): {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n"
+                            "After: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n"
                             +
                             "\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);

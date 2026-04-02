@@ -68,12 +68,13 @@ public class PropertiesDiff {
     /**
      * Writes a description of the changes to the console.
      *
-     * @param out               the console output
-     * @param propertyIndex     the index of all properties of the type being changed (e.g. instance properties)
-     * @param invalidProperties which properties have validation failures caused by this diff
+     * @param out                     the console output
+     * @param propertyIndex           the index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties       which properties have validation failures caused by this diff
+     * @param invalidBeforeProperties which properties already had validation failures prior to this diff
      */
     public void print(
-            ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties) {
+            ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
         out.println("Found changes to properties:");
         out.println();
 
@@ -81,14 +82,14 @@ public class PropertiesDiff {
         propertyIndex.getAll().stream()
                 .filter(property -> changes.containsKey(property.getPropertyName()))
                 .map(property -> changes.get(property.getPropertyName()))
-                .forEach(diff -> diff.print(out, propertyIndex, invalidProperties));
+                .forEach(diff -> diff.print(out, propertyIndex, invalidProperties, invalidBeforeProperties));
 
         // Print unknown properties
         List<String> unknownPropertyNames = changes.keySet().stream()
                 .filter(property -> propertyIndex.getByName(property).isEmpty())
                 .sorted().collect(Collectors.toList());
         for (String propertyName : unknownPropertyNames) {
-            changes.get(propertyName).print(out, propertyIndex, invalidProperties);
+            changes.get(propertyName).print(out, propertyIndex, invalidProperties, invalidBeforeProperties);
         }
 
         if (!invalidProperties.isEmpty()) {
