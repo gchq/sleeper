@@ -688,7 +688,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "Before: {}\n" +
                             "After (cannot be changed, please undo): {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n"
                             +
-                            "\n");
+                            "\n")
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
 
     }
