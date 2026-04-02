@@ -24,9 +24,9 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.S3BucketName;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.S3BucketName;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;

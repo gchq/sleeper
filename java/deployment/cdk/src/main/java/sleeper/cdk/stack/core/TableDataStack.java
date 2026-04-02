@@ -26,9 +26,9 @@ import software.amazon.awscdk.services.s3.BucketMetrics;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.S3BucketName;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.S3BucketName;
 
 import java.util.List;
 
