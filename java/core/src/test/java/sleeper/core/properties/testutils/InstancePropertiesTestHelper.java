@@ -89,9 +89,9 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
-        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data-test-account");
+        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
-        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results-test-account");
+        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
