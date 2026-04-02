@@ -73,7 +73,7 @@ public class CompactionCreationST {
 
         // When
         FoundCompactionJobs jobs = sleeper.compaction()
-                .putTableOnlineWaitForJobCreation(65536,
+                .putCurrentTablesOnlineWaitForJobCreation(65536,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .drainJobsQueueForWholeInstance(65536);
 
