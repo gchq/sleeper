@@ -133,7 +133,7 @@ public class UploadDockerImages {
         try {
             return CommandUtils.runCommandReturnOutput("docker", "images",
                     "--filter", "reference=" + image.getDirectoryName(), //6671 TODO - directory name might not be the correct one
-                    "--format", "{{.Repository}}: {{.Digest}}").get(0);
+                    "--format", "{{.Digest}}").get(0);
         } catch (IOException | InterruptedException | ExecutionException e) {
             // 6671 TODO - This exception handling could be moved into CommandUtils
             // and/or we could just not check ECR for the digest if not found. Doing so would probably help 5852
