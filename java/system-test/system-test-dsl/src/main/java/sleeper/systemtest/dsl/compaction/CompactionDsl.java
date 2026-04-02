@@ -77,36 +77,24 @@ public class CompactionDsl {
         return this;
     }
 
-    public CompactionDsl putTableOnlineUntilJobsAreCreated(int expectedJobs) {
-        putTablesOnlineWaitForJobCreation(expectedJobs);
+    public CompactionDsl putCurrentTablesOnlineUntilJobsAreCreated(int expectedJobs) {
+        putCurrentTablesOnlineWaitForJobCreation(expectedJobs);
         instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
         return this;
     }
 
-    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs);
-    }
-
-    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs,
+    public CompactionDsl putCurrentTablesOnlineWaitForJobCreation(int expectedJobs) {
+        return putCurrentTablesOnlineWaitForJobCreation(expectedJobs,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(15), Duration.ofMinutes(2)));
     }
 
-    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs, poll);
-    }
-
-    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+    public CompactionDsl putCurrentTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
                 () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
         return this;
     }
 
-    public CompactionDsl putTableOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
-        return putTablesOnlineWaitForMinJobCreation(expectedJobs, poll);
-    }
-
-    public CompactionDsl putTablesOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
+    public CompactionDsl putCurrentTablesOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
         lastJobIds = waitForJobCreation.createMinJobsGetIds(expectedJobs, pollDriver.poll(poll),
                 () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
         return this;
