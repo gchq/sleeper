@@ -32,12 +32,14 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -51,6 +53,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -192,20 +195,22 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldFailUpdateTablePropertyWithInvalidSchema() {
+        void shouldUpdateTableWithInvalidBeforeSchema() {
             // Given
-            createTableInS3("test-table");
-            // updateTableProperty(instanceId, "test-table", SCHEMA, "{}");
+            createTableInS3WithEmptySchema("test-table");
 
             // When
             Schema newSchema = Schema.builder()
                     .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("value", new StringType()))
                     .build();
+            SchemaSerDe serDe = new SchemaSerDe();
 
             // Then
-            assertThatThrownBy(() -> updateTableProperty(instanceId, "test-table", SCHEMA, newSchema.toString()))
-                    .hasMessageContaining("Could not save properties for table test-table");
+            updateTableProperty(instanceId, "test-table", SCHEMA, serDe.toJson(newSchema));
+            assertThat(store().loadTableProperties(instanceProperties, "test-table").get(SCHEMA))
+                    .isEqualTo(serDe.toJson(newSchema));
+
         }
 
     }
@@ -449,6 +454,15 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
         saveTableProperties(tableProperties);
+    }
+
+    private void createTableInS3WithEmptySchema(String tableName) {
+        TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
+        Properties properties = loadProperties("" +
+                "sleeper.table.name=" + tableName + "\n" +
+                "sleeper.table.schema={}\n");
+        TableProperties tablePropertiesNoSchema = TableProperties.recreateWithoutValidation(tableProperties, properties);
+        saveTableProperties(tablePropertiesNoSchema);
     }
 
     private void deleteTableInS3(String tableName) {
