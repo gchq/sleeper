@@ -30,7 +30,7 @@ public interface CheckDigestExistsInEcr {
             try {
                 ListImagesResponse response = ecrClient.listImages(request -> request.repositoryName(repository));
                 // Note that the image tag can be null. In particular, a multiplatform image has multiple images but
-                // only the image index is tagged. TODO - Still relevant?
+                // only the image index is tagged. 6671 TODO - Is this comment still relevant
                 return response.imageIds().stream()
                         .anyMatch(imageIdentifier -> Objects.equals(digest, imageIdentifier.imageDigest()));
             } catch (RepositoryNotFoundException e) {

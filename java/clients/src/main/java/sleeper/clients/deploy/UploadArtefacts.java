@@ -153,9 +153,10 @@ public class UploadArtefacts {
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
+                            .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckDigestExistsInEcr.withEcrClient(ecrClient), account, region);
+                    account, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())

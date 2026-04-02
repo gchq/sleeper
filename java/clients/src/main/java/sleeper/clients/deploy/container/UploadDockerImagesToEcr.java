@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -33,14 +32,12 @@ public class UploadDockerImagesToEcr {
     public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
 
     private final UploadDockerImages uploader;
-    private final CheckDigestExistsInEcr repositoryChecker;
     private final String account;
     private final String region;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckDigestExistsInEcr repositoryChecker, String account, String region) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, String account, String region) {
         this.uploader = uploader;
-        this.repositoryChecker = repositoryChecker;
         this.account = account;
         this.region = region;
         this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", this.account, this.region);
@@ -49,34 +46,12 @@ public class UploadDockerImagesToEcr {
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
-        List<StackDockerImage> imagesToUpload = requestedImages.stream()
-                .filter(image -> imageDoesNotExistInRepositoryWithDigest(image, request))
-                .collect(Collectors.toUnmodifiableList());
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
-        if (!imagesToUpload.isEmpty()) {
+        if (requestedImages.isEmpty()) {
             uploader.getCommandRunner().runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
-        uploader.upload(repositoryPrefix, imagesToUpload);
+        uploader.upload(repositoryPrefix, requestedImages, request.isOverwriteExistingTag());
     }
-
-    private boolean imageDoesNotExistInRepositoryWithDigest(
-            StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
-        //TODO need some way to get the digest for each image to be able to compare to ecr. StackDockerImage/DockerDeployment made need a change
-        if (request.isOverwriteExistingTag()) {
-            return true;
-        }
-        String repository = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (repositoryChecker.digestExistsInRepository(repository, uploader.getVersion())) {
-            LOGGER.info("ECR repository {} already contains digest {}",
-                    repository, uploader.getVersion());
-            return false;
-        } else {
-            LOGGER.info("ECR repository {} does not contain version {}",
-                    repository, uploader.getVersion());
-            return true;
-        }
-    }
-
 }

@@ -82,13 +82,14 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         return new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .deployConfig(DeployConfiguration.fromLocalBuild())
+                        .repositoryChecker(ecrClient)
                         .commandRunner(recordCommandsRun(dockerCommandsThatRan))
                         .copyFile((source, target) -> {
                         })
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version(version)
                         .build(),
-                ecrClient, account, region);
+                account, region);
     }
 
     @Override

@@ -28,7 +28,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -39,6 +38,7 @@ public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
+    private final CheckDigestExistsInEcr repositoryChecker;
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final String version;
@@ -48,6 +48,7 @@ public class UploadDockerImages {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         deployConfig = requireNonNull(builder.deployConfig, "deployConfig must not be null");
+        repositoryChecker = requireNonNull(builder.repositoryChecker, "repositoryChecker must not be null");
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         version = requireNonNull(builder.version, "version must not be null");
@@ -65,7 +66,7 @@ public class UploadDockerImages {
                 .build();
     }
 
-    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
+    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, boolean overwriteExisting) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
@@ -109,15 +110,6 @@ public class UploadDockerImages {
             } else {
                 commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
             }
-            List<String> digests = new ArrayList<>();
-            try {
-                //TODO possible to filter this by image name?
-                digests = CommandUtils.runCommandReturnOutput("docker", "images", "--format", "{{.Repository}}: {{.Digest}}");
-            } catch (IOException | InterruptedException | ExecutionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            //For each digest, check if doesn't exists before pushing
 
             commandRunner.runOrThrow("docker", "push", tag);
         }
@@ -126,12 +118,45 @@ public class UploadDockerImages {
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
         String sourceTag = buildTag(deployConfig.dockerRepositoryPrefix(), image);
         commandRunner.runOrThrow("docker", "pull", sourceTag);
-        commandRunner.runOrThrow("docker", "tag", sourceTag, tag);
-        commandRunner.runOrThrow("docker", "push", tag);
+        String digest = getDigestForImage(image);
+        if (imageDoesNotExistInRepositoryWithDigest(image, null, digest)) {
+            commandRunner.runOrThrow("docker", "tag", sourceTag, tag);
+            commandRunner.runOrThrow("docker", "push", tag);
+        }
     }
 
     private String buildTag(String repositoryPrefix, StackDockerImage image) {
         return repositoryPrefix + "/" + image.getImageName() + ":" + version;
+    }
+
+    private String getDigestForImage(StackDockerImage image) {
+        try {
+            return CommandUtils.runCommandReturnOutput("docker", "images",
+                    "--filter", "reference=" + image.getDirectoryName(), //6671 TODO - directory name might not be the correct one
+                    "--format", "{{.Repository}}: {{.Digest}}").get(0);
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            // 6671 TODO - This exception handling could be moved into CommandUtils
+            // and/or we could just not check ECR for the digest if not found. Doing so would probably help 5852
+            return "";
+        }
+    }
+
+    private boolean imageDoesNotExistInRepositoryWithDigest(
+            StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request, String digest) {
+        if (request.isOverwriteExistingTag()) {
+            return true;
+        }
+
+        String repository = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (repositoryChecker.digestExistsInRepository(repository, digest)) {
+            LOGGER.info("ECR repository {} already contains digest {}",
+                    repository, digest);
+            return false;
+        } else {
+            LOGGER.info("ECR repository {} does not contain version {}",
+                    repository, digest);
+            return true;
+        }
     }
 
     public CommandPipelineRunner getCommandRunner() {
@@ -146,6 +171,7 @@ public class UploadDockerImages {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private DeployConfiguration deployConfig;
+        private CheckDigestExistsInEcr repositoryChecker;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private String version = SleeperVersion.getVersion();
@@ -171,6 +197,11 @@ public class UploadDockerImages {
 
         public Builder deployConfig(DeployConfiguration deployConfig) {
             this.deployConfig = deployConfig;
+            return this;
+        }
+
+        public Builder repositoryChecker(CheckDigestExistsInEcr repositoryChecker) {
+            this.repositoryChecker = repositoryChecker;
             return this;
         }
 

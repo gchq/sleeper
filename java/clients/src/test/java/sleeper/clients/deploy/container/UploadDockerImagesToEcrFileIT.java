@@ -88,10 +88,11 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                 UploadDockerImages.builder()
                         .commandRunner(commandRunner)
                         .deployConfig(DeployConfiguration.fromLocalBuild())
+                        .repositoryChecker(ecrClient)
                         .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                         .version("1.0.0")
                         .build(),
-                ecrClient, "123", "test-region");
+                "123", "test-region");
     }
 
     private static Map<Path, String> fileToContentUnder(Path directory) throws Exception {

@@ -615,11 +615,12 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         return new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .deployConfig(deployConfig)
+                        .repositoryChecker(ecrClient)
                         .commandRunner(commandRunner)
                         .copyFile((source, target) -> files.put(target, files.get(source)))
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version("1.0.0")
                         .build(),
-                ecrClient, "123", "test-region");
+                "123", "test-region");
     }
 }

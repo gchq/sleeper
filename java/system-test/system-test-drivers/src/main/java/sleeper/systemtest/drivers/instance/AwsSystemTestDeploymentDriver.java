@@ -128,9 +128,10 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 UploadDockerImages.builder()
                         .scriptsDirectory(parameters.getScriptsDirectory())
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
+                        .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecr))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
-                CheckDigestExistsInEcr.withEcrClient(ecr), parameters.getAccount(), parameters.getRegion());
+                parameters.getAccount(), parameters.getRegion());
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
                 .images(List.of(SYSTEM_TEST_IMAGE))

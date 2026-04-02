@@ -41,13 +41,14 @@ public class UploadDockerImagesToRepository {
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
                 .deployConfig(DeployConfiguration.fromLocalBuild())
+                //6671 TODO - We need an ecrClient here
                 .createMultiplatformBuilder(createMultiplatformBuilder)
                 .build();
         uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);
     }
 
     public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
-        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload());
+        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), true); //6671 TODO - We may want to have the user pass in this
     }
 
 }

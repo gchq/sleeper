@@ -107,10 +107,11 @@ public class DeployExistingInstance {
                         UploadDockerImages.builder()
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                                .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecr))
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckDigestExistsInEcr.withEcrClient(ecr), sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
+                        sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
