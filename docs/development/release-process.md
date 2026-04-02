@@ -5,13 +5,14 @@ The following steps explain how to prepare and publish a release for Sleeper.
 
 1. Create the following issues in GitHub:
    - Update changelog for `<version>`
-     - Update [CHANGELOG.md](../../CHANGELOG.md) with a summary of the issues fixed and improvements made in this version.
+     - Update [CHANGELOG.md](https://github.com/gchq/sleeper/blob/develop/CHANGELOG.md) with a summary of the issues
+       fixed and improvements made in this version.
    - Update roadmap for `<version>`
-     - Update the [roadmap](roadmap.md) to remove any planned features that have been implemented in this release, and
-       give an up to date view of upcoming work.
+     - Update the [roadmap](https://github.com/gchq/sleeper/blob/develop/docs/development/roadmap.md) to remove any
+       planned features that have been implemented in this release, and give an up to date view of upcoming work.
    - Prepare release `<version>`
      - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
-     - Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks).
+     - Update the performance figures in the [system tests guide](https://github.com/gchq/sleeper/blob/develop/docs/development/system-tests.md#performance-benchmarks).
    - Update version number to `<next-version>-SNAPSHOT`
      - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
      - This will be done immediately after the release.
@@ -19,8 +20,12 @@ The following steps explain how to prepare and publish a release for Sleeper.
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
    design that has changed in this release. Whilst doing this, check that new/changed features work as documented.
 
-3. Check for any work in the release that has only been partially implemented so far. Decide if those parts can either be
-   temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to work yet.
+3. Check for any work in the release that has only been partially implemented so far. Decide if those parts can either
+   be temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to
+   work yet.
+
+4. Check for anything that might break backwards compatibility. See [Support for in-place upgrade](upgrade-support.md)
+   for details of checks to make.
 
 4. Make sure the [NOTICES](../../NOTICES) file is up to date.
 
