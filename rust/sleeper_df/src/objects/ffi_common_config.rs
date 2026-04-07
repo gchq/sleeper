@@ -18,7 +18,7 @@ use crate::{
     objects::{
         FFIBytes, RowKeySchemaType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
-        ffi_sleeper_options::FFISleeperOptions,
+        ffi_sleeper_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
     },
     unpack::{unpack_str, unpack_string, unpack_typed_array},
@@ -45,6 +45,7 @@ pub struct FFICommonConfig {
     pub input_files_sorted: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
+    pub use_readahead_store: bool,
     pub row_key_cols_len: usize,
     pub row_key_cols: *const *const FFIBytes,
     pub row_key_schema_len: usize,
@@ -55,7 +56,7 @@ pub struct FFICommonConfig {
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
     // If this field is NULL, then use defaults
-    pub sleeper_options: *const FFISleeperOptions,
+    pub sleeper_options: *const FFIParquetOptions,
 }
 
 impl FFICommonConfig {
@@ -104,7 +105,7 @@ impl FFICommonConfig {
         let sleeper_options = if let Some(options) = unsafe { self.sleeper_options.as_ref() } {
             options
         } else {
-            &FFISleeperOptions::default()
+            &FFIParquetOptions::default()
         };
         sleeper_options.check_for_nulls()?;
 
@@ -150,7 +151,7 @@ impl FFICommonConfig {
             )
             .input_files_sorted(self.input_files_sorted)
             .read_page_indexes(sleeper_options.read_page_indexes)
-            .use_readahead_store(sleeper_options.use_readahead_store)
+            .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
                 unpack_typed_array(self.sort_key_cols, self.sort_key_cols_len)?

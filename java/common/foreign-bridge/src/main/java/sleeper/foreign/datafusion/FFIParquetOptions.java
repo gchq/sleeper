@@ -21,7 +21,6 @@ import java.util.Objects;
 
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
@@ -39,9 +38,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STAT
  * order and types of the fields must match exactly.
  */
 @SuppressWarnings("checkstyle:membername")
-public class FFISleeperOptions extends Struct {
-    /** Whether we should use readahead when reading from S3. */
-    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
+public class FFIParquetOptions extends Struct {
     /** Whether Parquet page indexes should be read. */
     public final Struct.Boolean read_page_indexes = new Struct.Boolean();
     /** Maximum size of output Parquet row group in rows. */
@@ -63,9 +60,8 @@ public class FFISleeperOptions extends Struct {
     /** Should value fields use dictionary encoding in output Parquet. */
     public final Struct.Boolean dict_enc_values = new Struct.Boolean();
 
-    public FFISleeperOptions(jnr.ffi.Runtime runtime) {
+    public FFIParquetOptions(jnr.ffi.Runtime runtime) {
         super(runtime);
-        use_readahead_store.set(java.lang.Boolean.parseBoolean(DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED.getDefaultValue()));
         read_page_indexes.set(false);
         max_row_group_size.set(java.lang.Long.parseLong(DEFAULT_PARQUET_ROWGROUP_ROWS.getDefaultValue()));
         max_page_size.set(java.lang.Long.parseLong(DEFAULT_PAGE_SIZE.getDefaultValue()));

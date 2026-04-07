@@ -17,7 +17,6 @@
 use color_eyre::eyre::bail;
 use std::ffi::{CStr, c_char};
 
-pub const USE_READAHEAD_STORE: bool = false;
 pub const READ_PAGE_INDEXES: bool = false;
 pub const MAX_ROW_GROUP_SIZE: usize = 100_000;
 pub const MAX_PAGE_SIZE: usize = 128 * 1024;
@@ -33,12 +32,11 @@ pub const DICT_ENCODE_VALUES: bool = false;
 /// so come with reasonable defaults. See Java side documentation for explanation of fields.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFISleeperOptions.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFIParquetOptions.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Debug)]
-pub struct FFISleeperOptions {
-    pub use_readahead_store: bool,
+pub struct FFIParquetOptions {
     pub read_page_indexes: bool,
     pub max_row_group_size: usize,
     pub max_page_size: usize,
@@ -51,10 +49,9 @@ pub struct FFISleeperOptions {
     pub dict_enc_values: bool,
 }
 
-impl Default for FFISleeperOptions {
+impl Default for FFIParquetOptions {
     fn default() -> Self {
         Self {
-            use_readahead_store: USE_READAHEAD_STORE,
             read_page_indexes: READ_PAGE_INDEXES,
             max_row_group_size: MAX_ROW_GROUP_SIZE,
             max_page_size: MAX_PAGE_SIZE,
@@ -69,7 +66,7 @@ impl Default for FFISleeperOptions {
     }
 }
 
-impl FFISleeperOptions {
+impl FFIParquetOptions {
     /// Checks string pointers are not null.
     pub fn check_for_nulls(&self) -> color_eyre::Result<()> {
         if self.compression.is_null() {
@@ -84,15 +81,15 @@ impl FFISleeperOptions {
 
 #[cfg(test)]
 mod tests {
-    use crate::objects::ffi_sleeper_options::FFISleeperOptions;
+    use crate::objects::ffi_sleeper_options::FFIParquetOptions;
     use std::ptr::null;
 
     #[test]
     pub fn should_fail_on_null_compression() {
         // Given
-        let options = FFISleeperOptions {
+        let options = FFIParquetOptions {
             compression: null(),
-            ..FFISleeperOptions::default()
+            ..FFIParquetOptions::default()
         };
 
         // When
@@ -105,9 +102,9 @@ mod tests {
     #[test]
     pub fn should_fail_on_writer_version() {
         // Given
-        let options = FFISleeperOptions {
+        let options = FFIParquetOptions {
             writer_version: null(),
-            ..FFISleeperOptions::default()
+            ..FFIParquetOptions::default()
         };
 
         // When

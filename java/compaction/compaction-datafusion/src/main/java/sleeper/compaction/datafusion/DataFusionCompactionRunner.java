@@ -35,7 +35,7 @@ import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
-import sleeper.foreign.datafusion.FFISleeperOptions;
+import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
@@ -108,8 +108,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFISleeperOptions sleeperOptions = new FFISleeperOptions(runtime);
-        sleeperOptions.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
+        FFIParquetOptions sleeperOptions = new FFIParquetOptions(runtime);
         sleeperOptions.read_page_indexes.set(false);
         sleeperOptions.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
         sleeperOptions.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
@@ -129,6 +128,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Reading page indexes are not useful for compactions
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
+        params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);

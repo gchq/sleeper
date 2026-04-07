@@ -31,7 +31,7 @@ import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
-import sleeper.foreign.datafusion.FFISleeperOptions;
+import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
@@ -154,8 +154,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
             jnr.ffi.Runtime runtime) {
-        FFISleeperOptions sleeperOptions = new FFISleeperOptions(runtime);
-        sleeperOptions.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
+        FFIParquetOptions sleeperOptions = new FFIParquetOptions(runtime);
         sleeperOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
@@ -168,6 +167,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
         common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
+        common.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         common.aggregation_config.set(Optional.ofNullable(tableProperties.get(AGGREGATION_CONFIG)).orElse(""));
         common.filtering_config.set(Optional.ofNullable(tableProperties.get(FILTERING_CONFIG)).orElse(""));
         common.validate();

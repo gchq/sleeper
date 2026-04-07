@@ -26,7 +26,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnZeroRowGroupSize() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.max_row_group_size.set(0);
 
         // Then
@@ -36,7 +36,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnZeroPageSize() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.max_page_size.set(0);
 
         // Then
@@ -46,7 +46,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnZeroColumnTruncateLength() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.column_truncate_length.set(0);
 
         // Then
@@ -56,7 +56,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnZeroStatsTruncateLength() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.stats_truncate_length.set(0);
 
         // Then
@@ -66,7 +66,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnNullCompressionCodec() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.compression.set(null);
 
         // Then
@@ -76,7 +76,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldFailOnNullWriterVersion() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.writer_version.set(null);
 
         // Then
@@ -86,7 +86,7 @@ public class FFISleeperOptionsTest {
     @Test
     void shouldValidate() {
         // Given
-        FFISleeperOptions options = new FFISleeperOptions(RUNTIME);
+        FFIParquetOptions options = new FFIParquetOptions(RUNTIME);
         options.max_row_group_size.set(10);
         options.max_page_size.set(10);
         options.column_truncate_length.set(10);

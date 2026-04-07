@@ -49,6 +49,8 @@ public class FFICommonConfig extends Struct {
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Specifies if sketch output is enabled. Can only be used with file output. */
     public final Struct.Boolean write_sketch_file = new Struct.Boolean();
+    /** Whether we should use readahead when reading from S3. */
+    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
     /** Names of Sleeper row key fields from schema. */
     public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
     /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
@@ -62,7 +64,7 @@ public class FFICommonConfig extends Struct {
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
     /** Sleeper options. Set to NULL if defaults are suitable. */
-    public final Struct.StructRef<FFISleeperOptions> sleeper_options = new Struct.StructRef<>(FFISleeperOptions.class);
+    public final Struct.StructRef<FFIParquetOptions> sleeper_options = new Struct.StructRef<>(FFIParquetOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         this(runtime, null);
