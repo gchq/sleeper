@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -662,7 +661,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "\n");
         }
 
-        @Disabled
         @Test
         void shouldRecoverFromInvalidSchema() throws Exception {
             // Given

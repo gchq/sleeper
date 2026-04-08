@@ -85,7 +85,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private boolean isEligibleForStream(SleeperProperty property) {
         if (invalidBeforeProperties.contains(property) && !property.isEditable()) {
-            return true;
+            return false;
         }
         return !property.isEditable();
     }
