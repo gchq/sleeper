@@ -30,11 +30,10 @@ public class S3BucketNameTest {
     }
 
     @Test
-    void shouldRefuseBucketNameWithMoreThan63Characters() {
+    void shouldRefuseNamePortionLessThan20CharactersAndBucketNameExceeds63Characters() {
 
         // Given / When / Then
-        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789", "this", "is", "a", "very", "long", "bucket",
-                "name", "and", "will", "exceed63characters"))
+        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789123456789012345678901234567890", "bucket", "name"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Complete bucket name exceeds 63 characters.");
     }

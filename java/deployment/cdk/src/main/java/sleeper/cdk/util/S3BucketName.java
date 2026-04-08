@@ -35,15 +35,15 @@ public class S3BucketName {
     public static String parse(String account, String instanceId, String... args) {
         String namePortion = String.join("-", args);
 
+        if (namePortion.length() > 20) {
+            throw new IllegalArgumentException("Name portion exceeds 20 characters.");
+        }
+
         String bucketName = String.join("-", "sleeper", instanceId,
                 namePortion, account).toLowerCase(Locale.ROOT);
 
         if (bucketName.length() > 63) {
             throw new IllegalArgumentException("Complete bucket name exceeds 63 characters.");
-        }
-
-        if (namePortion.length() > 20) {
-            throw new IllegalArgumentException("Name portion exceeds 20 characters.");
         }
 
         return bucketName;
