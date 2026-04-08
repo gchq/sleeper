@@ -9,6 +9,12 @@ vulnerabilities:
   - id: CVE-2026-25679
   - id: CVE-2026-27139
   - id: CVE-2026-27142
+  - id: CVE-2026-32280
+  - id: CVE-2026-32281
+  - id: CVE-2026-32282
+  - id: CVE-2026-32283
+  - id: CVE-2026-32288
+  - id: CVE-2026-32289
   # github.com/sigstore/rekor
   - id: CVE-2026-23831
   - id: CVE-2026-24117
