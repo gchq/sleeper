@@ -146,7 +146,7 @@ impl<'a> SleeperOperations<'a> {
     }
 
     // Configure a [`SessionContext`].
-    pub fn configure_context(
+    pub async fn configure_context(
         &self,
         mut ctx: SessionContext,
         store_factory: &ObjectStoreFactory,
@@ -165,7 +165,8 @@ impl<'a> SleeperOperations<'a> {
                 } => Some(output_file),
             },
             &ctx,
-        )?;
+        )
+        .await?;
         Ok(ctx)
     }
 

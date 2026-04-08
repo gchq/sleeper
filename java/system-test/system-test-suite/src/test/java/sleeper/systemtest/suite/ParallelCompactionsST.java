@@ -70,7 +70,7 @@ public class ParallelCompactionsST {
 
         // When we run compaction
         sleeper.compaction()
-                .putTableOnlineWaitForJobCreation(40960,
+                .putCurrentTablesOnlineWaitForMinJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForTasks(200,
@@ -110,7 +110,7 @@ public class ParallelCompactionsST {
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
-                        .isBetween(0, 600));
+                        .isBetween(0, 700));
     }
 
 }

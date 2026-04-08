@@ -104,7 +104,8 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.compaction().putCurrentTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES)
+                .waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one file reference with the expected rows, and none ready for GC

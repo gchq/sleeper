@@ -150,7 +150,6 @@ public class FFICommonConfig extends Struct {
             } else {
                 throw new IllegalStateException("Unsupported field type found " + type.getClass());
             }
-        }).boxed()
-                .toArray(Integer[]::new);
+        }).boxed().toArray(Integer[]::new);
     }
 }
