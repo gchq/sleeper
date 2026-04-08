@@ -102,12 +102,12 @@ impl FFICommonConfig {
             bail!("FFICommonConfig region is NULL");
         }
 
-        let sleeper_options = if let Some(options) = unsafe { self.parquet_options.as_ref() } {
+        let parquet_options = if let Some(options) = unsafe { self.parquet_options.as_ref() } {
             options
         } else {
             &FFIParquetOptions::default()
         };
-        sleeper_options.check_for_nulls()?;
+        parquet_options.check_for_nulls()?;
 
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
@@ -119,15 +119,15 @@ impl FFICommonConfig {
 
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
-                max_row_group_size: sleeper_options.max_row_group_size,
-                max_page_size: sleeper_options.max_page_size,
-                compression: unpack_string(sleeper_options.compression)?,
-                writer_version: unpack_string(sleeper_options.writer_version)?,
-                column_truncate_length: sleeper_options.column_truncate_length,
-                stats_truncate_length: sleeper_options.stats_truncate_length,
-                dict_enc_row_keys: sleeper_options.dict_enc_row_keys,
-                dict_enc_sort_keys: sleeper_options.dict_enc_sort_keys,
-                dict_enc_values: sleeper_options.dict_enc_values,
+                max_row_group_size: parquet_options.max_row_group_size,
+                max_page_size: parquet_options.max_page_size,
+                compression: unpack_string(parquet_options.compression)?,
+                writer_version: unpack_string(parquet_options.writer_version)?,
+                column_truncate_length: parquet_options.column_truncate_length,
+                stats_truncate_length: parquet_options.stats_truncate_length,
+                dict_enc_row_keys: parquet_options.dict_enc_row_keys,
+                dict_enc_sort_keys: parquet_options.dict_enc_sort_keys,
+                dict_enc_values: parquet_options.dict_enc_values,
             };
             OutputType::File {
                 output_file: unpack_str(self.output_file).map(Url::parse)??,
@@ -150,7 +150,7 @@ impl FFICommonConfig {
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
-            .read_page_indexes(sleeper_options.read_page_indexes)
+            .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
