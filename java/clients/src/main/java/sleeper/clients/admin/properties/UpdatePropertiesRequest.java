@@ -35,6 +35,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
+        this.invalidBeforeProperties = Collections.emptySet();
     }
 
     public PropertiesDiff getDiff() {
@@ -65,20 +66,27 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     private Stream<? extends SleeperProperty> getUneditableProperties() {
-        Set<SleeperProperty> invalidBeforeProperties = getInvalidPropertiesBefore();
+        invalidBeforeProperties = getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
-                .filter(prop -> prop.isEditable() || !invalidBeforeProperties.contains(prop));
+                .filter(prop -> isEligibleForStream(prop));
+
     }
 
-    private Set<SleeperProperty> getInvalidPropertiesBefore() {
+    private Set<SleeperProperty> getInvalidBeforeProperty() {
         try {
             beforeProperties.validate();
-            return Collections.emptySet();
+            return invalidBeforeProperties;
         } catch (SleeperPropertiesInvalidException e) {
             invalidBeforeProperties = e.getInvalidValues().keySet();
             return invalidBeforeProperties;
         }
     }
 
+    private boolean isEligibleForStream(SleeperProperty property) {
+        if (invalidBeforeProperties.contains(property) && !property.isEditable()) {
+            return true;
+        }
+        return !property.isEditable();
+    }
 }

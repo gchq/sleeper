@@ -158,7 +158,6 @@ public class InstanceConfigurationScreen {
                 Set<SleeperProperty> invalidProperties = request.getInvalidProperties();
                 Set<SleeperProperty> invalidBeforeProperties = request.getInvalidBeforeProperties();
                 changes.print(out, properties.getPropertiesIndex(), invalidProperties, invalidBeforeProperties);
-
                 chooseFromOptions(request.getUpdatedProperties(), changes, invalidProperties.isEmpty());
             }
         }
