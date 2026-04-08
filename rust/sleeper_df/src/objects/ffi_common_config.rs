@@ -56,7 +56,7 @@ pub struct FFICommonConfig {
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
     // If this field is NULL, then use defaults
-    pub sleeper_options: *const FFIParquetOptions,
+    pub parquet_options: *const FFIParquetOptions,
 }
 
 impl FFICommonConfig {
@@ -102,7 +102,7 @@ impl FFICommonConfig {
             bail!("FFICommonConfig region is NULL");
         }
 
-        let sleeper_options = if let Some(options) = unsafe { self.sleeper_options.as_ref() } {
+        let sleeper_options = if let Some(options) = unsafe { self.parquet_options.as_ref() } {
             options
         } else {
             &FFIParquetOptions::default()
