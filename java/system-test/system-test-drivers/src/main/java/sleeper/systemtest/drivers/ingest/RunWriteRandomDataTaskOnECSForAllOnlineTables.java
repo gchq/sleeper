@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,16 +52,16 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         RunWriteRandomDataTaskOnECS runner = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
 
         List<RunTaskResponse> responses = tablePropertiesProvider.streamOnlineTables()
-            .flatMap(tableProperties -> {
-                String tableName = tableProperties.get(TableProperty.TABLE_NAME);
-                LOGGER.info("Submitting an ingest job with {} writers for table {}", numWritersPerTable, tableName);
-                SystemTestDataGenerationJob job = jobSpec
-                    .tableName(tableName)
-                    .build();
-                List<RunTaskResponse> response = runner.runTasks(numWritersPerTable, job);
-                return response.stream();
-            })
-            .toList();
+                .flatMap(tableProperties -> {
+                    String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+                    LOGGER.info("Submitting an ingest job with {} writers for table {}", numWritersPerTable, tableName);
+                    SystemTestDataGenerationJob job = jobSpec
+                            .tableName(tableName)
+                            .build();
+                    List<RunTaskResponse> response = runner.runTasks(numWritersPerTable, job);
+                    return response.stream();
+                })
+                .toList();
 
         return responses;
     }
@@ -75,17 +75,16 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         String instanceId = args[0];
 
         try (
-            S3Client s3Client = S3Client.create();
-            DynamoDbClient dynamoClient = DynamoDbClient.create();
-            EcsClient ecsClient = EcsClient.create();
-        ) {
+                S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                EcsClient ecsClient = EcsClient.create();) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
 
             SystemTestDataGenerationJob.Builder jobSpec = SystemTestDataGenerationJob.builder()
-                .instanceProperties(systemTestProperties)
-                .testProperties(systemTestProperties.testPropertiesOnly());
+                    .instanceProperties(systemTestProperties)
+                    .testProperties(systemTestProperties.testPropertiesOnly());
 
             if (args.length > 2) {
                 jobSpec.numberOfIngests(Integer.parseInt(args[2]));
