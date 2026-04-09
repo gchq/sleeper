@@ -50,6 +50,20 @@ public class CommandPipeline {
         }
     }
 
+    public List<Process> startMultipleProcesses() throws IOException {
+        if (commands.size() == 1) {
+            return startProcesses();
+        } else {
+            List<Process> processes = new ArrayList<>(commands.size());
+            for (Command command : commands) {
+                ProcessBuilder processBuilder = command.toProcessBuilder();
+                Process process = processBuilder.start();
+                processes.add(process);
+            }
+            return processes;
+        }
+    }
+
     public List<Process> startProcessesInheritIO() throws IOException {
         int size = commands.size();
         if (size == 1) {

@@ -87,16 +87,13 @@ public class CommandUtilsTest {
                 .isEqualTo(List.of("ab", "cd"));
     }
 
-    @Test //6671 TODO - Currently this test fails as only the second return seems to work.
-    // Couldn't understand why as the first comand still runs. For this ticket we only aactually need to run 1 command so multi
-    //command functionality could be scrapped for a future ticket
+    @Test
     void shouldReturnOutputForMultipleCommands() throws Exception {
         // Given
         Path path1 = Files.writeString(tempDir.resolve("test1.txt"), "ab\ncd");
-        Path path2 = Files.writeString(tempDir.resolve("test2.txt"), "ef\ngh");
 
         // When/Then
-        assertThat(CommandUtils.runCommandReturnOutput(pipeline(
+        assertThat(CommandUtils.runMultipleCommandReturnOutput(pipeline(
                 command("cat", path1.toString()),
                 command("echo", "ef\ngh"))))
                 .isEqualTo(List.of("ab", "cd", "ef", "gh"));
