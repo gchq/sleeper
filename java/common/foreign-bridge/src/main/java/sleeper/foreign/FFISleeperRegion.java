@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ import java.util.List;
  * All arrays MUST be same length.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/sleeper_region.rs. The order and types of
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/sleeper_region.rs. The order and
+ * types of
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
