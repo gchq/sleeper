@@ -213,8 +213,8 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.list_with_delimiter(prefix).await
     }
 
-    async fn copy_opt(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
-        self.store.copy_opt(from, to, options).await
+    async fn copy_opts(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
+        self.store.copy_opts(from, to, options).await
     }
 
     async fn put_opts(
