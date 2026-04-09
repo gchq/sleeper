@@ -323,7 +323,7 @@ AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.*)
 
 - Apache License, Version 2.0
 
-CDK Lambda Layer KUBECTL V32 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v32:2.*)
+CDK Lambda Layer KUBECTL V32 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v35:2.*)
 
 - Apache License, Version 2.0
 
