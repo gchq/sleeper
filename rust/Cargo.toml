@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ tempfile = { version = "3.26.0" }                   # Create temporary files
 test-log = { version = "0.2.19" }
 testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
 thiserror = { version = "2.0.18" }                  # Derivable error enums
-tokio = { version = "1.51.0", features = ["full"] } # Async runtime
+tokio = { version = "1.51.1", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.5" }                  # Doc tests
 url = { version = "2.5.8" }                         # URL processing for S3
 mockall = { version = "0.14.0" }                    # Mock trait library
