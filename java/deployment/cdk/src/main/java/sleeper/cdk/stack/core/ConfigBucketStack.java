@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,11 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.S3BucketName;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -41,8 +43,8 @@ public class ConfigBucketStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "config");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "config");
+
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
                 .bucketName(bucketName)
                 .versioned(false)
