@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,23 @@ class FFIArrayTest {
     }
 
     @Test
+    void shouldPopulateAndReadBackWithStringsWithEmbeddedNulls() {
+        // Given
+        Struct struct = new Struct(Runtime.getSystemRuntime()) {
+        };
+        FFIArray<String> array = new FFIArray<>(struct);
+        String[] input = {"te\0st", "", "str\0\0\0ing", null, "test string\0", "\0", "\0hello"};
+
+        // When
+        array.populate(input, true);
+        array.validate();
+        String[] output = (String[]) array.readBack(String.class, true);
+
+        // Then
+        assertArrayEquals(input, output);
+    }
+
+    @Test
     void shouldPopulateAndReadBackWithByteArrays() {
         // Given
         Struct struct = new Struct(Runtime.getSystemRuntime()) {
@@ -137,7 +154,8 @@ class FFIArrayTest {
         byte[] a = {1, 2, 3};
         byte[] b = {};
         byte[] c = {127, -128, 0};
-        byte[][] input = {a, b, c, null};
+        byte[] d = {0, 0};
+        byte[][] input = {a, b, c, d, null};
 
         // When
         array.populate(input, true);

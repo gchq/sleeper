@@ -1,7 +1,7 @@
 //! This module provides some extra required wrappers around sketches
 //! functionality such as common traits.
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -403,7 +403,7 @@ pub async fn serialise_sketches(
     let store_path = object_store::path::Path::from(path.path());
 
     // Save to object store
-    let store = store_factory.get_object_store(path)?;
+    let store = store_factory.get_object_store(path).await?;
 
     store.put(&store_path, buf.into_inner().into()).await?;
 

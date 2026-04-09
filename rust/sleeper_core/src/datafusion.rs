@@ -3,7 +3,7 @@
 //!
 //! This allows for multi-threaded data processing and optimised Parquet reading.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ impl<'a> SleeperOperations<'a> {
     }
 
     // Configure a [`SessionContext`].
-    pub fn configure_context(
+    pub async fn configure_context(
         &self,
         mut ctx: SessionContext,
         store_factory: &ObjectStoreFactory,
@@ -165,7 +165,8 @@ impl<'a> SleeperOperations<'a> {
                 } => Some(output_file),
             },
             &ctx,
-        )?;
+        )
+        .await?;
         Ok(ctx)
     }
 
