@@ -125,7 +125,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
         try (
                 S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());) {
+                EcsClient ecsClient = buildAwsV2Client(EcsClient.builder())) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);

@@ -77,7 +77,7 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         try (
                 S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                EcsClient ecsClient = EcsClient.create();) {
+                EcsClient ecsClient = EcsClient.create()) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
 
             int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
