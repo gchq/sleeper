@@ -21,8 +21,9 @@ use futures::stream::BoxStream;
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
-    PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
+    CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
+    ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart,
+    path::Path,
 };
 use std::{pin::Pin, sync::Mutex};
 
@@ -212,12 +213,8 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.list_with_delimiter(prefix).await
     }
 
-    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
-        self.store.copy(from, to).await
-    }
-
-    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
-        self.store.copy_if_not_exists(from, to).await
+    async fn copy_opt(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
+        self.store.copy_opt(from, to, options).await
     }
 
     async fn put_opts(
