@@ -68,8 +68,8 @@ use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     Attributes, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
-    MultipartUpload, ObjectMeta, ObjectStore, PutMultipartOptions, PutOptions, PutPayload,
-    PutResult, Result, path::Path,
+    MultipartUpload, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions,
+    PutPayload, PutResult, Result, path::Path,
 };
 use std::{
     collections::{BTreeMap, HashMap},

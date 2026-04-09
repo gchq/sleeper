@@ -22,8 +22,8 @@ use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
-    ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart,
-    path::Path,
+    ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result,
+    UploadPart, path::Path,
 };
 use std::{pin::Pin, sync::Mutex};
 
