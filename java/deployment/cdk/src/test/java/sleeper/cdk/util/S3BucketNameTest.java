@@ -18,6 +18,8 @@ package sleeper.cdk.util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.S3BucketName;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class S3BucketNameTest {

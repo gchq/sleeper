@@ -20,17 +20,18 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.util.S3BucketName;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
@@ -182,7 +183,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @return            the config bucket name
      */
     public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceId, "config");
+        return bucketName;
     }
 
     /**
