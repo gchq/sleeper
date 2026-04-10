@@ -27,6 +27,7 @@ use datafusion::{
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
+use object_store::ObjectStoreExt;
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{
     byte::{byte_sketch_t, new_byte_sketch},
