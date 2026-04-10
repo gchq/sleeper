@@ -24,7 +24,6 @@ use crate::{
         util::{explain_plan, retrieve_object_metas},
     },
 };
-#[cfg(doc)]
 use datafusion::{
     arrow::record_batch::RecordBatch,
     common::plan_err,
