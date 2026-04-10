@@ -4198,6 +4198,7 @@ dependencies = [
  "cbindgen",
  "chrono",
  "color-eyre",
+ "datafusion",
  "env_logger",
  "libc",
  "log",

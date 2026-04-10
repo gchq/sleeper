@@ -34,6 +34,7 @@ crate-type = ["cdylib", "rlib"]
 aws-types = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
+datafusion = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 libc = { workspace = true }
