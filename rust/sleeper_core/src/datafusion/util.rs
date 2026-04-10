@@ -33,7 +33,7 @@ use datafusion::{
 };
 use log::debug;
 use num_format::{Locale, ToFormattedString};
-use object_store::ObjectMeta;
+use object_store::{ObjectMeta, ObjectStoreExt};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
