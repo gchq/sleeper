@@ -32,7 +32,7 @@ use datafusion::{
         GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
         expr::{AggregateFunction, AggregateFunctionParams},
         function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
-        simplify::SimplifyInfo,
+        simplify::SimplifyContext,
         utils::AggregateOrderSensitivity,
     },
     scalar::ScalarValue,
@@ -275,7 +275,7 @@ impl AggregateUDFImpl for NonNullable {
     fn simplify(&self) -> Option<AggregateFunctionSimplification> {
         self.inner.simplify().map(|inner_func| {
             Box::new(
-                move |func: AggregateFunction, simplify_info: &dyn SimplifyInfo| {
+                move |func: AggregateFunction, simplify_info: &SimplifyContext| {
                     inner_func(func, simplify_info).and_then(|original_expr| match original_expr {
                         Expr::AggregateFunction(AggregateFunction { func, params }) => {
                             let AggregateFunctionParams {
@@ -301,7 +301,7 @@ impl AggregateUDFImpl for NonNullable {
                         }
                     })
                 },
-            ) as Box<dyn Fn(AggregateFunction, &dyn SimplifyInfo) -> Result<Expr>>
+            ) as Box<dyn Fn(AggregateFunction, &SimplifyContext) -> Result<Expr>>
         })
     }
 
@@ -1104,10 +1104,7 @@ mod tests {
         // When
         let simplified_expr = nonnull.simplify().expect("couldn't unwrap simplify result");
         // call the function
-        let simplified_result = simplified_expr(
-            test_agg_function,
-            &SimplifyContext::new(&ExecutionProps::new()),
-        );
+        let simplified_result = simplified_expr(test_agg_function, &SimplifyContext::default());
 
         // Then - check called function returns a non-null with the correct inner expression
         if let Ok(Expr::AggregateFunction(AggregateFunction { func, params: _ })) =
