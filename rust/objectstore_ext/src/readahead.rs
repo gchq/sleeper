@@ -645,7 +645,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     ) -> BoxStream<'static, Result<Path>> {
         locations
             .map(move |location| async move {
-                let path = &location.unwrap();
+                let path = &location.unwrap().clone();
                 self.remove_cache_for(path);
                 self.inner.delete(path).await
             })
