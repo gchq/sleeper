@@ -62,12 +62,13 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
+use futures::StreamExt;
 use futures::stream::{BoxStream, empty};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    Attributes, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
+    Attributes, CopyOptions, Error, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
     MultipartUpload, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions,
     PutPayload, PutResult, Result, path::Path,
 };
@@ -638,9 +639,17 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         }
     }
 
-    async fn delete(&self, location: &Path) -> Result<()> {
-        self.remove_cache_for(location);
-        self.inner.delete(location).await
+    fn delete_stream(
+        &self,
+        locations: BoxStream<'static, Result<Path>>,
+    ) -> BoxStream<'static, Result<Path>> {
+        locations
+            .map(move |location| async move {
+                let path = &location.unwrap();
+                self.remove_cache_for(path);
+                self.inner.delete(path).await
+            })
+            .into_inner()
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
