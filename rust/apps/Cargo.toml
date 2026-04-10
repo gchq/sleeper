@@ -29,6 +29,7 @@ publish = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
+datafusion = { workspace = true }
 sleeper_core = { path = "../sleeper_core" }
 env_logger = { workspace = true }
 futures = { workspace = true }

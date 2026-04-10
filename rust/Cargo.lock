@@ -144,6 +144,7 @@ dependencies = [
  "chrono",
  "clap",
  "color-eyre",
+ "datafusion",
  "env_logger",
  "futures",
  "human-panic",
