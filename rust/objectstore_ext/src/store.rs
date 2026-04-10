@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 use async_trait::async_trait;
-use futures::stream::BoxStream;
+use futures::{StreamExt, stream::BoxStream};
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
@@ -182,23 +182,13 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.get_opts(location, options).await
     }
 
-    async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-        {
-            let stats = &mut *self
-                .internal
-                .lock()
-                .expect("LoggingObjectStore stats lock poisoned");
-            stats.head_count += 1;
-        }
-        debug!(
-            "{} HEAD request {}/{}",
-            self.prefix, self.path_prefix, location
-        );
-        self.store.head(location).await
-    }
-
-    async fn delete(&self, location: &Path) -> Result<()> {
-        self.store.delete(location).await
+    fn delete_stream(
+        &self,
+        locations: BoxStream<'static, Result<Path>>,
+    ) -> BoxStream<'static, Result<Path>> {
+        locations
+            .map(move |location| async move { self.store.delete(&location.unwrap()).await })
+            .into_inner()
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
