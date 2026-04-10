@@ -25,7 +25,6 @@ use crate::{
     },
 };
 use datafusion::{
-    arrow::record_batch::RecordBatch,
     common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
