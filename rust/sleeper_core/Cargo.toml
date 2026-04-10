@@ -25,7 +25,7 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-arrow_array = {workspace = true, features = ["ffi"]}
+arrow_array = { features = ["ffi"] }
 aggregator_udfs = { path = "../aggregator_udfs" }
 async-trait = { workspace = true }
 aws-config = { workspace = true }
