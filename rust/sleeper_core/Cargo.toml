@@ -25,6 +25,7 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
+arrow_array = {workspace = true, features = ["ffi"]}
 aggregator_udfs = { path = "../aggregator_udfs" }
 async-trait = { workspace = true }
 aws-config = { workspace = true }
@@ -34,7 +35,7 @@ bytes = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
 cxx = { workspace = true }
-datafusion = { workspace = true, features = ["ffi"] }
+datafusion = { workspace = true}
 filter_udfs = { path = "../filter_udfs" }
 futures = { workspace = true }
 log = { workspace = true }
