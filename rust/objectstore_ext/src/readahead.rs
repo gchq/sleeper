@@ -68,7 +68,7 @@ use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    Attributes, CopyOptions, Error, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
+    Attributes, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
     MultipartUpload, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions,
     PutPayload, PutResult, Result, path::Path,
 };

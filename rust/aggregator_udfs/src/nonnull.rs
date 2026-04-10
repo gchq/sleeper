@@ -466,7 +466,7 @@ mod tests {
         },
         common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
-        execution::{SessionStateBuilder, context::ExecutionProps},
+        execution::SessionStateBuilder,
         functions_aggregate::{
             min_max::{max_udaf, min_udaf},
             sum::{sum, sum_udaf},
