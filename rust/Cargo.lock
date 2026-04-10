@@ -364,6 +364,7 @@ version = "58.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b47e0ca91cc438d2c7879fe95e0bca5329fff28649e30a88c6f760b1faeddcb"
 dependencies = [
+ "bitflags",
  "serde_core",
  "serde_json",
 ]
@@ -4161,6 +4162,7 @@ name = "sleeper_core"
 version = "0.35.3-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
+ "arrow",
  "async-trait",
  "aws-config",
  "aws-credential-types",
