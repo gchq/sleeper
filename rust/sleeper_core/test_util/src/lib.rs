@@ -34,6 +34,7 @@ use datafusion::{
     },
 };
 use futures::StreamExt;
+use object_store::ObjectStoreExt;
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
