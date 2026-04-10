@@ -35,7 +35,7 @@ bytes = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
 cxx = { workspace = true }
-datafusion = { workspace = true}
+datafusion = { workspace = true }
 filter_udfs = { path = "../filter_udfs" }
 futures = { workspace = true }
 log = { workspace = true }
