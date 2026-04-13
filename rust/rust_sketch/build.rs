@@ -21,12 +21,20 @@ fn main() {
     println!("cargo:rerun-if-changed=src/quantiles.rs");
 
     let datasketches_version = get_datasketch_version();
-
     let out_dir = std::env::var_os("CARGO_MANIFEST_DIR")
         .expect("CARGO_MANIFEST_DIR environment variable not set!");
     let path = std::path::Path::new(&out_dir)
-        .join("vendored/datasketches-cpp")
+        .join("../../vendored/datasketches-cpp")
         .join(datasketches_version);
+
+    let version_marker_file = path.join("version.cfg.in");
+    println!(
+        "cargo:rerun-if-changed={}",
+        version_marker_file
+            .into_os_string()
+            .into_string()
+            .expect("Invalid UTF-8 string")
+    );
 
     cxx_build::bridges(vec!["src/quantiles.rs"])
         .warnings_into_errors(true)
