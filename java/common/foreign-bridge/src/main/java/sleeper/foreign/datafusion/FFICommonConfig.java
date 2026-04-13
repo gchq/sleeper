@@ -63,7 +63,7 @@ public class FFICommonConfig extends Struct {
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
-    /** Sleeper options. Set to NULL if defaults are suitable. */
+    /** Parquet options for Sleeper. Set to NULL if defaults are suitable. */
     public final Struct.StructRef<FFIParquetOptions> parquet_options = new Struct.StructRef<>(FFIParquetOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
