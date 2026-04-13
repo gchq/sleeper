@@ -9,7 +9,7 @@ chunks:
       - deployment/cdk-custom-resources
       - deployment/cdk-environment
       - deployment/build-uptime-lambda
-      - deployment/rest-api
+      - rest-api
       - system-test/system-test-cdk
       - system-test/system-test-configuration
       - system-test/system-test-data-generation

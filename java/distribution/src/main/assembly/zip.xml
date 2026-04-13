@@ -226,7 +226,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../deployment/rest-api/target/rest-api-${project.version}-utility.jar
+                ${project.basedir}/../rest-api/target/rest-api-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>rest-api-${project.version}.jar</destName>
