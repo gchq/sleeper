@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -53,7 +52,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -455,12 +453,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void createTableInS3WithEmptySchema(String tableName) {
-        TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
-        Properties properties = loadProperties("" +
-                "sleeper.table.name=" + tableName + "\n" +
-                "sleeper.table.schema={}\n");
-        TableProperties tablePropertiesNoSchema = TableProperties.recreateWithoutValidation(tableProperties, properties);
-        saveTableProperties(tablePropertiesNoSchema);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(SCHEMA, "{}");
+        saveTableProperties(tableProperties);
     }
 
     private void deleteTableInS3(String tableName) {
