@@ -236,7 +236,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
     }
 
     @Nested
-    @DisplayName("Max alive time time")
+    @DisplayName("Max alive time")
     class MaxAliveTime {
 
         @Test
