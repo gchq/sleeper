@@ -503,6 +503,11 @@ impl<T: ObjectStore> ReadaheadStore<T> {
         cache.remove(location);
     }
 
+    /// # Panics
+    /// If abc
+    ///
+    /// # Errors
+    /// If def
     pub async fn head(&self, location: &Path) -> Result<ObjectMeta> {
         let cached_meta = {
             let cache = self
