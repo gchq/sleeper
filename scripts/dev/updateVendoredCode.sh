@@ -26,18 +26,17 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 DATASKETCHES_VENDORED_DIR="${PROJECT_ROOT}/vendored/datasketches-cpp/"
 
 NEW_VERSION=$1
-echo "${DATASKETCHES_VENDORED_DIR} Updating Apache DataSketches CPP to version: ${NEW_VERSION}"
+echo "Updating Apache DataSketches CPP to version: ${NEW_VERSION}"
 
 # Remove version already present if directory not-empty
 if [ ! -z "$(find "${DATASKETCHES_VENDORED_DIR}" -mindepth 1 -print -quit 2>/dev/null)" ]; then
-    echo "Deleting current version"
-    # find "${DATASKETCHES_VENDORED_DIR}" -mindepth 1 -delete
+    find "${DATASKETCHES_VENDORED_DIR}" -mindepth 1 -delete
 fi
 
 # Retrieve the named version and place in correct directory
-git clone --depth 1 --branch "${NEW_VERSION}" https://github.com/apache/datasketches-cpp.git /tmp/datasketches-cpp
+git clone --quiet --depth 1 --branch "${NEW_VERSION}" https://github.com/apache/datasketches-cpp.git /tmp/datasketches-cpp
 rm -rf /tmp/datasketches-cpp/.git
-mv /tmp/datasketches-cpp "${DATASKETCHES_VENDORED_DIR}"
+mv /tmp/datasketches-cpp "${DATASKETCHES_VENDORED_DIR}/${NEW_VERSION}"
 
 source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 
