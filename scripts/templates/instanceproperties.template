@@ -1376,14 +1376,14 @@ sleeper.subnets=set-automatically
 # A new task will then begin running to process remaining compaction jobs.
 # This allows the user to gracefully upgrade Sleeper to a newer version.
 # (default value shown below, uncomment to set a value)
-# sleeper.compaction.task.keep.alive.time.minutes=720
+# sleeper.compaction.task.max.alive.time.minutes=720
 
-# The max ammount of jitter to add to a new compaction task's keep alive time.
-# A random number of minutes between 0 and this value will be added to the keep alive time above for
-# each new compaction task.
+# The max amount of jitter to add to a new compaction task's max alive time.
+# A random number of minutes between 0 and this value will be subtracted from the max alive time
+# property above for each new compaction task.
 # This lowers the chance that all the compaction tasks stop at the same time.
 # (default value shown below, uncomment to set a value)
-# sleeper.compaction.task.keep.alive.jitter.minutes=120
+# sleeper.compaction.task.max.alive.jitter.minutes=120
 
 # The maximum number of times that a compaction task can fail to process consecutive compaction jobs
 # before it terminates.
