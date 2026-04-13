@@ -41,6 +41,7 @@
         <module>metrics</module>
         <module>partitions</module>
         <module>query</module>
+        <module>rest-api</module>
         <module>statestore</module>
         <module>statestore-committer-core</module>
         <module>statestore-committer</module>
