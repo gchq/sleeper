@@ -28,7 +28,7 @@ pub const DICT_ENCODE_ROW_KEYS: bool = false;
 pub const DICT_ENCODE_SORT_KEYS: bool = false;
 pub const DICT_ENCODE_VALUES: bool = false;
 
-/// Contains all the Sleeper options for `DataFusion` operation. These may not be needed for every `DataFusion` usage,
+/// Contains all the Parquet options for Sleeper `DataFusion` operation. These may not be needed for every `DataFusion` usage,
 /// so come with reasonable defaults. See Java side documentation for explanation of fields.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
@@ -81,7 +81,7 @@ impl FFIParquetOptions {
 
 #[cfg(test)]
 mod tests {
-    use crate::objects::ffi_sleeper_options::FFIParquetOptions;
+    use crate::objects::ffi_parquet_options::FFIParquetOptions;
     use std::ptr::null;
 
     #[test]

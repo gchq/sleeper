@@ -64,7 +64,7 @@ public class FFICommonConfig extends Struct {
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
     /** Sleeper options. Set to NULL if defaults are suitable. */
-    public final Struct.StructRef<FFIParquetOptions> sleeper_options = new Struct.StructRef<>(FFIParquetOptions.class);
+    public final Struct.StructRef<FFIParquetOptions> parquet_options = new Struct.StructRef<>(FFIParquetOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         this(runtime, null);
@@ -82,7 +82,7 @@ public class FFICommonConfig extends Struct {
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
         output_file.set("");
         // Null here tells Rust to use defaults.
-        sleeper_options.set(0);
+        parquet_options.set(0);
     }
 
     /**

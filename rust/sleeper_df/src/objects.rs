@@ -20,7 +20,7 @@ use color_eyre::{Report, eyre::eyre};
 
 pub mod aws_config;
 pub mod ffi_common_config;
-pub mod ffi_sleeper_options;
+pub mod ffi_parquet_options;
 pub mod query;
 pub mod sleeper_region;
 

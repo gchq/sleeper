@@ -18,7 +18,7 @@ use crate::{
     objects::{
         FFIBytes, RowKeySchemaType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
-        ffi_sleeper_options::FFIParquetOptions,
+        ffi_parquet_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
     },
     unpack::{unpack_str, unpack_string, unpack_typed_array},

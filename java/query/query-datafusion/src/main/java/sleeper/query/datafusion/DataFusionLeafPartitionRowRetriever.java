@@ -154,11 +154,11 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
             jnr.ffi.Runtime runtime) {
-        FFIParquetOptions sleeperOptions = new FFIParquetOptions(runtime);
-        sleeperOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
+        FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
+        parquetOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
-        common.sleeper_options.set(sleeperOptions);
+        common.parquet_options.set(parquetOptions);
         common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
         common.input_files_sorted.set(true);

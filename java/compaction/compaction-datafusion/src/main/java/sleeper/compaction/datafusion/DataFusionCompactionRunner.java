@@ -108,20 +108,20 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFIParquetOptions sleeperOptions = new FFIParquetOptions(runtime);
-        sleeperOptions.read_page_indexes.set(false);
-        sleeperOptions.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
-        sleeperOptions.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
-        sleeperOptions.compression.set(tableProperties.get(COMPRESSION_CODEC));
-        sleeperOptions.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
-        sleeperOptions.column_truncate_length.set(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
-        sleeperOptions.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
-        sleeperOptions.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
-        sleeperOptions.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
-        sleeperOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
+        parquetOptions.read_page_indexes.set(false);
+        parquetOptions.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
+        parquetOptions.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
+        parquetOptions.compression.set(tableProperties.get(COMPRESSION_CODEC));
+        parquetOptions.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
+        parquetOptions.column_truncate_length.set(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+        parquetOptions.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+        parquetOptions.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+        parquetOptions.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+        parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
 
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
-        params.sleeper_options.set(sleeperOptions);
+        params.parquet_options.set(parquetOptions);
         params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
