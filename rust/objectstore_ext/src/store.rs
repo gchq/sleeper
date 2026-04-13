@@ -102,6 +102,25 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
             .expect("LoggingObjectStore stats lock poisoned")
             .get_bytes_read
     }
+
+    /// # Panics
+    /// To add
+    /// # Errors
+    /// To add
+    pub async fn head(&self, location: &Path) -> Result<ObjectMeta> {
+        {
+            let stats = &mut *self
+                .internal
+                .lock()
+                .expect("LoggingObjectStore stats lock poisoned");
+            stats.head_count += 1;
+        }
+        debug!(
+            "{} HEAD request {}/{}",
+            self.prefix, self.path_prefix, location
+        );
+        self.store.head(location).await
+    }
 }
 
 impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
