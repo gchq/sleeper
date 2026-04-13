@@ -31,14 +31,15 @@ Bear in mind the old code will still be active for some time after the deploymen
 For example, compaction tasks and bulk import jobs will continue to submit state store commits to SQS, and large
 transactions to S3, with the old version of the code.
 
-#### JSON formats
+#### Format changes
 
-For every JSON format, ensure that any change does not:
+For every JSON format, every properties file, and for binary formats e.g. Arrow files, ensure that any change does not:
 
 - Remove any pre-existing fields
 - Stop populating any pre-existing fields
 - Rename any pre-existing fields
 - Change any existing structure
+- Change the behaviour of existing fields
 
 For the values serialised in a format, ensure that all previously supported values will still result in the expected
 behaviour after an upgrade. For example, if there's an enum, we should not remove any enum values, because there may be
@@ -51,3 +52,28 @@ afterwards.
 Ensure that unit test coverage is still present for support for the format as it was before any change.
 
 This includes all SQS messages, all JSON files held in S3, all JSON data held in DynamoDB tables.
+
+#### Renaming/removing configuration properties
+
+If instance/table properties are renamed, the old name should still work.
+
+If properties need to be removed, they should be first documented as deprecated, with an explanation of why and
+recommendations for how to proceed. Deprecated properties should be retained for a significant period. When a property
+is removed, the system should continue to behave as the user would expect. Nothing should fail because a property has
+been removed. Ideally the property should still be recognised so the user can be informed of what happened.
+
+At time of writing we don't have specific mechanisms to manage these changes. When we deprecate a property we can just
+state in the property description. If we want to rename any properties we'll need to add a mechanism to support the old
+name as an alias.
+
+#### Default values
+
+If we want to change the default value of a property or JSON field, we need to make sure this will not produce
+unexpected behaviour if the user has an instance deployed with this property unset. For example, if we want to change
+the default state store implementation, we would need some handling to remember what the default implementation was when
+a table was created. If we didn't do that, existing tables would suddenly forget their table state, because there's no
+state stored in the new implementation type.
+
+We can distinguish between external formats and internal formats. Usually internal formats should not use default
+values, so that once the data has been created its behaviour will not change. This is particularly relevant for internal
+SQS messages. For external formats where data is supplied by the user, it can be more practical to use defaults.
