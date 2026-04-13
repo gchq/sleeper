@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -157,7 +158,7 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps))
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), () -> Math.random())
                 .run();
     }
 
@@ -396,6 +397,10 @@ public class CompactionTaskTestBase {
         return Stream.iterate(firstTime,
                 time -> time.plus(Duration.ofMinutes(1)))
                 .iterator()::next;
+    }
+
+    protected DoubleSupplier noJitter() {
+        return () -> 0.0;
     }
 
     protected class ProcessJob {

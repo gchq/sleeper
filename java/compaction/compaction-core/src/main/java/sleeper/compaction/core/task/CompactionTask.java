@@ -48,6 +48,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -78,7 +79,7 @@ public class CompactionTask {
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
-    private final Long maxAliveTime;
+    private final long maxAliveTimeMinutes;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -88,7 +89,7 @@ public class CompactionTask {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskTracker, selector, taskId,
-                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep);
+                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, () -> Math.random());
     }
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
@@ -100,7 +101,8 @@ public class CompactionTask {
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
-            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep) {
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep,
+            DoubleSupplier randomJitterFunction) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
@@ -115,7 +117,7 @@ public class CompactionTask {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
-        maxAliveTime = randomiseKeepAliveTime();
+        maxAliveTimeMinutes = generateMaxAliveTimeWithJitter(randomJitterFunction);
     }
 
     public void run() throws IOException {
@@ -157,7 +159,7 @@ public class CompactionTask {
 
     private boolean hasNotReachedMaxAliveTime(Instant startTime) {
         Duration aliveTime = Duration.between(startTime, timeSupplier.get());
-        return aliveTime.toMinutes() < maxAliveTime;
+        return aliveTime.toMinutes() < maxAliveTimeMinutes;
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
@@ -251,13 +253,13 @@ public class CompactionTask {
                 summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 
-    private Long randomiseKeepAliveTime() {
+    private long generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
         return instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES)
-                - (long) (Math.random() * instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
+                - (long) (randomJitterFunction.getAsDouble() * instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
     }
 
-    public Long getMaxAliveTime() {
-        return maxAliveTime;
+    public Long getMaxAliveTimeMinutes() {
+        return maxAliveTimeMinutes;
     }
 
     @FunctionalInterface

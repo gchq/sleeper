@@ -247,7 +247,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             CompactionTask task2 = generateNewCompactionTask("task2");
 
             //When/Then
-            assertThat(task1.getMaxAliveTime()).isNotEqualTo(task2.getMaxAliveTime());
+            assertThat(task1.getMaxAliveTimeMinutes()).isNotEqualTo(task2.getMaxAliveTimeMinutes());
         }
 
         @Test
