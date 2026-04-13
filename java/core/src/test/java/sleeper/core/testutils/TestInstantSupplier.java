@@ -24,11 +24,11 @@ import java.util.function.Supplier;
  * Wrapper class around the Supplier Instant interface to be able to assert cleanly there are no remaining expected
  * time calls.
  */
-public class TestSupplier implements Supplier<Instant> {
+public class TestInstantSupplier implements Supplier<Instant> {
 
     List<Instant> remainingTimes;
 
-    public TestSupplier(List<Instant> initialTimes) {
+    public TestInstantSupplier(List<Instant> initialTimes) {
         this.remainingTimes = new ArrayList<>(initialTimes);
     }
 

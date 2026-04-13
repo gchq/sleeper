@@ -117,7 +117,7 @@ public interface CompactionProperty {
             .defaultValue("60")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_KEEP_ALIVE_TIME_IN_MINMUTES = Index.propertyBuilder("sleeper.compaction.task.keep.alive.time.minutes")
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.time.minutes")
             .description("The total time in minutes that a compaction task can be alive for before it is terminated.\n" +
                     "When the task has finished it's current job, it will calculate how long it's been running and " +
                     "if it's been running longer than the max alive time it will terminate.\n" +
@@ -126,9 +126,9 @@ public interface CompactionProperty {
             .defaultValue("720") //12 hours
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_KEEP_ALIVE_JITTER_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.keep.alive.jitter.minutes")
-            .description("The max ammount of jitter to add to a new compaction task's keep alive time.\n" +
-                    "A random number of minutes between 0 and this value will be added to the keep alive time above " +
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.jitter.minutes")
+            .description("The max amount of jitter to add to a new compaction task's max alive time.\n" +
+                    "A random number of minutes between 0 and this value will be subtracted from the max alive time property above " +
                     "for each new compaction task.\n" +
                     "This lowers the chance that all the compaction tasks stop at the same time.")
             .defaultValue("120") //2 hours
