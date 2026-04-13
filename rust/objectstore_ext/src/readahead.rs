@@ -1364,6 +1364,7 @@ mod tests {
         );
 
         // When 2 - delete file
+        ps.remove_cache_for(&"test_file".into());
         ps.delete(&"test_file".into()).await?;
 
         // Then 2 - cache should be empty
