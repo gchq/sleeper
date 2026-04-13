@@ -210,9 +210,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateTableProperty(instanceId, "test-table", SCHEMA, serDe.toJson(newSchema));
             assertThat(store().loadTableProperties(instanceProperties, "test-table").get(SCHEMA))
                     .isEqualTo(serDe.toJson(newSchema));
-
         }
-
     }
 
     @DisplayName("Deploy instance property change with CDK")
