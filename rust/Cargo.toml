@@ -52,7 +52,7 @@ num-traits = { version = "0.2.19" }                 # Unified traits for integra
 object_store = { version = "0.12.4" }               # Remote cloud storage access
 owo-colors = { version = "4.3.0" }                  # Colourised output
 predicates = { version = "3.1.4" }                  # Test assertions
-rand = { version = "0.10.0" }                        # Random number generation
+rand = { version = "0.10.1" }                        # Random number generation
 regex = { version = "1.12.3" }                      # Regular expressions
 serde_json = { version = "1.0.149" }                # Process metadata JSON
 tempfile = { version = "3.26.0" }                   # Create temporary files
