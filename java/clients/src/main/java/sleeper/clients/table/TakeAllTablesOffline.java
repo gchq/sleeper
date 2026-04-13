@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,8 @@ public class TakeAllTablesOffline {
         }
 
         try (
-            S3Client s3Client = buildAwsV2Client(S3Client.builder());
-            DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())
-        ) {
+                S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             TakeAllTablesOffline offliner = new TakeAllTablesOffline(s3Client, dynamoClient);
             for (int i = 0; i < args.length; i++) {
                 offliner.takeAllOffline(args[i]);

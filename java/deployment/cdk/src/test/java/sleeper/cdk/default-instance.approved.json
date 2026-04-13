@@ -7704,7 +7704,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-table-data",
+            "BucketName": "sleeper-test-instance-table-data-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {
@@ -13194,7 +13194,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-bulk-import",
+            "BucketName": "sleeper-test-instance-bulk-import-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {
@@ -22984,7 +22984,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-query-results",
+            "BucketName": "sleeper-test-instance-query-results-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {

@@ -9,6 +9,17 @@ vulnerabilities:
   - id: CVE-2026-25679
   - id: CVE-2026-27139
   - id: CVE-2026-27142
+  - id: CVE-2026-32280
+  - id: CVE-2026-32281
+  - id: CVE-2026-32282
+  - id: CVE-2026-32283
+  - id: CVE-2026-32288
+  - id: CVE-2026-32289
+  - id: CVE-2026-33810
+  # Node.js/node-pkg
+  - id: CVE-2026-33671
+  - id: CVE-2026-33672
+  - id: CVE-2026-33750
   # github.com/sigstore/rekor
   - id: CVE-2026-23831
   - id: CVE-2026-24117
@@ -25,6 +36,13 @@ vulnerabilities:
   # google.golang.org/grpc
   - id: CVE-2026-33186
 
+  # docker-compose/gobinary
+  - id: CVE-2026-39882
+  - id: CVE-2026-39883
+  - id: CVE-2026-34040
+  - id: CVE-2026-33997
+  - id: CVE-2026-33747
+  - id: CVE-2026-33748
 
   # Dependencies of the latest version of AWS CDK/CLI:
 
