@@ -502,6 +502,31 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .expect("ReadaheadStore cache lock poisoned");
         cache.remove(location);
     }
+
+    pub async fn head(&self, location: &Path) -> Result<ObjectMeta> {
+        let cached_meta = {
+            let cache = self
+                .cache
+                .lock()
+                .expect("ReadaheadStore cache lock poisoned");
+            cache.get(location).map(|cache_ob| cache_ob.meta.clone())
+        };
+
+        // If we retrieved something from the cache, return it
+        // otherwise re-direct to GET which will call inner get_opts
+        // and cache result
+        Ok(if let Some(meta) = cached_meta {
+            meta
+        } else {
+            let options = GetOptions {
+                head: true,
+                ..Default::default()
+            };
+            self.underlying_heads
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.get_opts(location, options).await?.meta
+        })
+    }
 }
 
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
@@ -1267,7 +1292,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_cached_head_objectmeta() -> Result<()> {
         // Given
-        let ps = make_store();
+        let ps: ReadaheadStore<InMemory> = make_store();
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
