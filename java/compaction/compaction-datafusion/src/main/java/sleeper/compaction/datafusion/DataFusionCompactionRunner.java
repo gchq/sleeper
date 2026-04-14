@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,16 +72,16 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-        // Get the filesystem object
-        FileSystem fs = FileSystem.get(hadoopConf);
-        Path outputPath = new Path(job.getOutputFile());
-
-        if (result.getRowsWritten() < 1 && !fs.exists(outputPath)) {
-            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                    outputPath, tableProperties, hadoopConf)) {
-                // Write an empty file. This should be temporary, as we expect DataFusion to add
-                // support for this.
-                // See the test should_merge_empty_files in compaction_test.rs
+        if (result.getRowsWritten() < 1) {
+            Path outputPath = new Path(job.getOutputFile());
+            FileSystem fs = outputPath.getFileSystem(hadoopConf);
+            if (!fs.exists(outputPath)) {
+                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                        outputPath, tableProperties, hadoopConf)) {
+                    // Write an empty file. This should be temporary, as we expect DataFusion to add
+                    // support for this.
+                    // See the test should_merge_empty_files in compaction_test.rs
+                }
             }
         }
 
