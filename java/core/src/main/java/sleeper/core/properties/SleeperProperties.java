@@ -88,7 +88,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      *
      * @param reporter the reporter to receive failures
      */
-    public void validate(SleeperPropertiesValidationReporter reporter) {
+    public final void validate(SleeperPropertiesValidationReporter reporter) {
         getPropertiesIndex().getUserDefined().forEach(property -> {
             String value = get(property);
             if (!property.getValidationPredicate().test(value)) {
