@@ -34,5 +34,5 @@ By default we can make sure we don't make changes to existing infrastructure.
 ### Changes to names of deployed resources
 
 If we want to change names of anything deployed via the CDK, or IDs of any CDK constructs, by default this will involve
-deleting the old resources and creating new ones. This usually not desirable, and would result in massive disruption
+deleting the old resources and creating new ones. This usually not desirable, and could result in massive disruption
 and potential data loss.
