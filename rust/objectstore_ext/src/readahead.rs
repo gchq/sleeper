@@ -63,16 +63,24 @@ mod stream;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::StreamExt;
+use futures::TryStreamExt;
+use futures::future::ready;
 use futures::stream::BoxStream;
 use futures::stream::empty;
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
+use object_store::CopyMode;
+use object_store::OBJECT_STORE_COALESCE_DEFAULT;
+use object_store::RenameOptions;
+use object_store::RenameTargetMode;
+use object_store::coalesce_ranges;
 use object_store::{
     Attributes, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
     MultipartUpload, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions,
     PutPayload, PutResult, Result, path::Path,
 };
+use std::ops::Range;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
@@ -707,6 +715,44 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
 
     async fn copy_opts(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
         self.inner.copy_opts(from, to, options).await
+    }
+
+    async fn get_ranges(&self, location: &Path, ranges: &[Range<u64>]) -> Result<Vec<Bytes>> {
+        coalesce_ranges(
+            ranges,
+            |range| self.get_range(location, range),
+            OBJECT_STORE_COALESCE_DEFAULT,
+        )
+        .await
+    }
+
+    fn list_with_offset(
+        &self,
+        prefix: Option<&Path>,
+        offset: &Path,
+    ) -> BoxStream<'static, Result<ObjectMeta>> {
+        let offset = offset.clone();
+        self.list(prefix)
+            .try_filter(move |f| ready(f.location > offset))
+            .boxed()
+    }
+
+    async fn rename_opts(&self, from: &Path, to: &Path, options: RenameOptions) -> Result<()> {
+        let RenameOptions {
+            target_mode,
+            extensions,
+        } = options;
+        let copy_mode = match target_mode {
+            RenameTargetMode::Overwrite => CopyMode::Overwrite,
+            RenameTargetMode::Create => CopyMode::Create,
+        };
+        let copy_options = CopyOptions {
+            mode: copy_mode,
+            extensions,
+        };
+        self.copy_opts(from, to, copy_options).await?;
+        self.delete(from).await?;
+        Ok(())
     }
 }
 
