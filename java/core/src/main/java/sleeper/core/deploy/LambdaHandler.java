@@ -199,6 +199,10 @@ public class LambdaHandler {
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
             .core().add();
+    public static final LambdaHandler REST_API_HANDLER = builder()
+            .jar(LambdaJar.REST_API)
+            .handler("sleeper.restapi.RestApiLambda::handleEvent")
+            .core().add();
 
     private final LambdaJar jar;
     private final String handler;
