@@ -102,15 +102,6 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
             .expect("LoggingObjectStore stats lock poisoned")
             .get_bytes_read
     }
-
-    // /// # Panics
-    // /// To add
-    // /// # Errors
-    // /// To add
-    // pub async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-    //
-    //     self.store.head(location).await
-    // }
 }
 
 impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
