@@ -149,6 +149,24 @@ public class PersistentEMRManagedScalingBoundsTest {
             // When / Then
             assertThatCode(() -> instanceProperties.validate()).doesNotThrowAnyException();
         }
+
+        @Test
+        void shouldNotValidateWhenMaxIsUnreadable() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true");
+            instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 5);
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "abc");
+
+            // When / Then
+            assertThatThrownBy(() -> instanceProperties.validate())
+                    .isInstanceOfSatisfying(SleeperPropertiesInvalidException.class, e -> {
+                        assertThat(e.getInvalidValues()).isEqualTo(Map.of(
+                                BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "abc"));
+                        assertThat(e.getMessage()).isEqualTo(String.format(
+                                "Property %s was invalid. It was \"abc\".",
+                                BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
+                    });
+        }
     }
 
     @Test

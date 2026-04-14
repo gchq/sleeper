@@ -27,16 +27,16 @@ import java.util.function.Predicate;
 public interface SleeperPropertiesValidationCriteria<T extends SleeperProperty> extends Predicate<SleeperProperties<T>> {
 
     /**
-     * Reports which properties are validated by this criteria.
+     * Reports which properties are invalid if this criteria is not met.
      *
      * @return the property definitions
      */
     List<T> getPropertiesValidated();
 
     /**
-     * Creates a validation criteria based on the properties validated.
+     * Creates a validation criteria that will report a given set of properties as invalid.
      *
-     * @param  properties the properties validated
+     * @param  properties the properties that are invalid if the criteria is not met
      * @param  predicate  the predicate
      * @return            the validation criteria
      */

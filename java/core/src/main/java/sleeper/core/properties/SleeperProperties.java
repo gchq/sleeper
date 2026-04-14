@@ -96,6 +96,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
             }
         });
         getValidationCriteria().forEach(criteria -> {
+            // If we've already found a value is invalid, don't check it again
+            for (T property : criteria.getPropertiesValidated()) {
+                if (!reporter.isValid(property)) {
+                    return;
+                }
+            }
             if (!criteria.test(this)) {
                 for (T property : criteria.getPropertiesValidated()) {
                     reporter.invalidProperty(property, get(property));
