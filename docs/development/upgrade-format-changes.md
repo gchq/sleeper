@@ -1,7 +1,7 @@
 Changes to data formats during upgrade
 ======================================
 
-Whenever we want to make a change to a peristence format or a communication format, we need to ensure this is backwards
+Whenever we want to make a change to a persistence format or a communication format, we need to ensure this is backwards
 compatible. For example:
 
 - DynamoDB tables
