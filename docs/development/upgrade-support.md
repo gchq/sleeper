@@ -33,7 +33,8 @@ transactions to S3, with the old version of the code.
 
 #### Format changes
 
-For every JSON format, every properties file, and for binary formats e.g. Arrow files, ensure that any change does not:
+For every JSON format, every properties file, every DynamoDB table, and for binary formats e.g. Arrow files, ensure that
+any change does not:
 
 - Remove any pre-existing fields
 - Stop populating any pre-existing fields
@@ -77,3 +78,13 @@ state stored in the new implementation type.
 We can distinguish between external formats and internal formats. Usually internal formats should not use default
 values, so that once the data has been created its behaviour will not change. This is particularly relevant for internal
 SQS messages. For external formats where data is supplied by the user, it can be more practical to use defaults.
+
+#### DynamoDB schemas
+
+DynamoDB tables have a partially defined schema, in the sense that they have a partition key and sort key which are
+defined when the table is created. We will not be able to change this aspect of the table definition.
+
+We also need to treat the tables has having an implied schema. We need to maintain support for all existing data
+held in a table. Because different components are deployed in parallel, we also need to assume that old processes will
+continue to run and read from and write to the table. That means that any new data needs to be readable by old
+processes, as well as old data readable by new processes.
