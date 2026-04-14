@@ -137,6 +137,7 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
 }
 
 #[async_trait]
+#[deny(clippy::missing_trait_methods)]
 impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         {
