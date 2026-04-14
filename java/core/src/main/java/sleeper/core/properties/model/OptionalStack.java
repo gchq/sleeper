@@ -51,6 +51,9 @@ public enum OptionalStack {
     GarbageCollectorStack,
     PartitionSplittingStack,
 
+    // Rest Api
+    RestApiStack,
+
     // Metrics
     DashboardStack,
     TableMetricsStack;
