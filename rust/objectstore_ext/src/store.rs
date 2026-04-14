@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 use async_trait::async_trait;
-use futures::stream::BoxStream;
+use bytes::Bytes;
+use futures::{StreamExt, TryStreamExt, future::ready, stream::BoxStream};
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
-    ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart,
-    path::Path,
+    CopyMode, CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
+    OBJECT_STORE_COALESCE_DEFAULT, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions,
+    PutOptions, PutPayload, PutResult, RenameOptions, RenameTargetMode, Result, UploadPart,
+    coalesce_ranges, path::Path,
 };
-use std::{pin::Pin, sync::Mutex};
+use std::{ops::Range, pin::Pin, sync::Mutex};
 
 /// Simple struct for storing various statistics about the operation of the store.
 #[derive(Debug, Default, Eq, PartialOrd, Ord, PartialEq, Clone)]
@@ -251,6 +253,44 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
             &self.prefix,
             format!("{}/{}", self.path_prefix, location),
         )) as Box<dyn MultipartUpload>)
+    }
+
+    async fn get_ranges(&self, location: &Path, ranges: &[Range<u64>]) -> Result<Vec<Bytes>> {
+        coalesce_ranges(
+            ranges,
+            |range| self.get_range(location, range),
+            OBJECT_STORE_COALESCE_DEFAULT,
+        )
+        .await
+    }
+
+    fn list_with_offset(
+        &self,
+        prefix: Option<&Path>,
+        offset: &Path,
+    ) -> BoxStream<'static, Result<ObjectMeta>> {
+        let offset = offset.clone();
+        self.list(prefix)
+            .try_filter(move |f| ready(f.location > offset))
+            .boxed()
+    }
+
+    async fn rename_opts(&self, from: &Path, to: &Path, options: RenameOptions) -> Result<()> {
+        let RenameOptions {
+            target_mode,
+            extensions,
+        } = options;
+        let copy_mode = match target_mode {
+            RenameTargetMode::Overwrite => CopyMode::Overwrite,
+            RenameTargetMode::Create => CopyMode::Create,
+        };
+        let copy_options = CopyOptions {
+            mode: copy_mode,
+            extensions,
+        };
+        self.copy_opts(from, to, copy_options).await?;
+        self.delete(from).await?;
+        Ok(())
     }
 }
 

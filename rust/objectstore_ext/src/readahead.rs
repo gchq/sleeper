@@ -62,28 +62,24 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::StreamExt;
-use futures::TryStreamExt;
-use futures::future::ready;
-use futures::stream::BoxStream;
-use futures::stream::empty;
+use futures::{
+    StreamExt, TryStreamExt,
+    future::ready,
+    stream::{BoxStream, empty},
+};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use object_store::CopyMode;
-use object_store::OBJECT_STORE_COALESCE_DEFAULT;
-use object_store::RenameOptions;
-use object_store::RenameTargetMode;
-use object_store::coalesce_ranges;
 use object_store::{
-    Attributes, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
-    MultipartUpload, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions, PutOptions,
-    PutPayload, PutResult, Result, path::Path,
+    Attributes, CopyMode, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload,
+    ListResult, MultipartUpload, OBJECT_STORE_COALESCE_DEFAULT, ObjectMeta, ObjectStore,
+    ObjectStoreExt, PutMultipartOptions, PutOptions, PutPayload, PutResult, RenameOptions,
+    RenameTargetMode, Result, coalesce_ranges, path::Path,
 };
-use std::ops::Range;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
+    ops::Range,
     sync::{
         Arc, Mutex, Weak,
         atomic::{AtomicUsize, Ordering},
@@ -518,7 +514,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     ///
     /// # Panics
     /// If the mutex lock that guards the cache has become poisoned.
-    async fn head_impl(&self, location: &Path) -> Option<GetResult> {
+    fn head_impl(&self, location: &Path) -> Option<GetResult> {
         let cached_meta = self
             .cache
             .lock()
@@ -636,13 +632,12 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         // If this is a HEAD request and we have the cached data available then use it
         if options.head {
-            if let Some(result) = self.head_impl(location).await {
+            if let Some(result) = self.head_impl(location) {
                 return Ok(result);
-            } else {
-                // increment specific HEAD request count when not cached
-                self.underlying_heads
-                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             }
+            // increment specific HEAD request count when not cached
+            self.underlying_heads
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
 
         // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
@@ -758,9 +753,8 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::store::LoggingObjectStore;
-
     use super::*;
+    use crate::store::LoggingObjectStore;
     use futures::{StreamExt, stream};
     use object_store::{integration::*, local::LocalFileSystem, memory::InMemory};
     use tempfile::TempDir;
