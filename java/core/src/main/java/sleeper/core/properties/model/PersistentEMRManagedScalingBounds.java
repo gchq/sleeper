@@ -48,7 +48,7 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
      * @param  instanceProperties Sleeper instance properties
      * @return                    scaling bounds for EMR
      */
-    public static PersistentEMRManagedScalingBounds createManagedScalingBounds(InstanceProperties instanceProperties) {
+    public static PersistentEMRManagedScalingBounds create(InstanceProperties instanceProperties) {
         int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
         int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
         return new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
