@@ -29,13 +29,18 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
-    private Set<SleeperProperty> invalidBeforeProperties;
+    private final Set<SleeperProperty> invalidBeforeProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
+    private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
-        this.invalidBeforeProperties = Collections.emptySet();
+        this.invalidBeforeProperties = getInvalidBeforeProperty();
+    }
+
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T beforeProperties, T updatedProperties) {
+        PropertiesDiff propertiesDiff = new PropertiesDiff(beforeProperties, updatedProperties);
+        return new UpdatePropertiesRequest<>(propertiesDiff, beforeProperties, updatedProperties);
     }
 
     public PropertiesDiff getDiff() {
@@ -66,7 +71,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     private Stream<? extends SleeperProperty> getUneditableProperties() {
-        invalidBeforeProperties = getInvalidBeforeProperty();
+        //invalidBeforeProperties = getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
                 .filter(prop -> isEligibleForStream(prop));
@@ -76,10 +81,12 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private Set<SleeperProperty> getInvalidBeforeProperty() {
         try {
             beforeProperties.validate();
-            return invalidBeforeProperties;
+            //return invalidBeforeProperties;
+            return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
-            invalidBeforeProperties = e.getInvalidValues().keySet();
-            return invalidBeforeProperties;
+            //invalidBeforeProperties = e.getInvalidValues().keySet();
+            //return invalidBeforeProperties;
+            return e.getInvalidValues().keySet();
         }
     }
 
