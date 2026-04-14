@@ -18,6 +18,7 @@ use crate::{
     objects::{
         FFIBytes, RowKeySchemaType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
+        ffi_parquet_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
     },
     unpack::{unpack_str, unpack_string, unpack_typed_array},
@@ -37,33 +38,25 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
-    pub override_aws_config: bool,
+    // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const FFIBytes,
     pub input_files_sorted: bool,
-    pub use_readahead_store: bool,
-    pub read_page_indexes: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
+    pub use_readahead_store: bool,
     pub row_key_cols_len: usize,
     pub row_key_cols: *const *const FFIBytes,
     pub row_key_schema_len: usize,
     pub row_key_schema: *const *const usize,
     pub sort_key_cols_len: usize,
     pub sort_key_cols: *const *const FFIBytes,
-    pub max_row_group_size: usize,
-    pub max_page_size: usize,
-    pub compression: *const c_char,
-    pub writer_version: *const c_char,
-    pub column_truncate_length: usize,
-    pub stats_truncate_length: usize,
-    pub dict_enc_row_keys: bool,
-    pub dict_enc_sort_keys: bool,
-    pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
+    // If this field is NULL, then use defaults
+    pub parquet_options: *const FFIParquetOptions,
 }
 
 impl FFICommonConfig {
@@ -105,15 +98,17 @@ impl FFICommonConfig {
         if self.filtering_config.is_null() {
             bail!("FFICommonConfig filtering_config is NULL");
         }
-        if self.compression.is_null() {
-            bail!("FFICommonConfig compression is NULL");
-        }
-        if self.writer_version.is_null() {
-            bail!("FFICommonConfig writer_version is NULL");
-        }
         if self.region.is_null() {
             bail!("FFICommonConfig region is NULL");
         }
+
+        let parquet_options = if let Some(options) = unsafe { self.parquet_options.as_ref() } {
+            options
+        } else {
+            &FFIParquetOptions::default()
+        };
+        parquet_options.check_for_nulls()?;
+
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
         // Contains numeric types to indicate schema types
@@ -124,15 +119,15 @@ impl FFICommonConfig {
 
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
-                max_row_group_size: self.max_row_group_size,
-                max_page_size: self.max_page_size,
-                compression: unpack_string(self.compression)?,
-                writer_version: unpack_string(self.writer_version)?,
-                column_truncate_length: self.column_truncate_length,
-                stats_truncate_length: self.stats_truncate_length,
-                dict_enc_row_keys: self.dict_enc_row_keys,
-                dict_enc_sort_keys: self.dict_enc_sort_keys,
-                dict_enc_values: self.dict_enc_values,
+                max_row_group_size: parquet_options.max_row_group_size,
+                max_page_size: parquet_options.max_page_size,
+                compression: unpack_string(parquet_options.compression)?,
+                writer_version: unpack_string(parquet_options.writer_version)?,
+                column_truncate_length: parquet_options.column_truncate_length,
+                stats_truncate_length: parquet_options.stats_truncate_length,
+                dict_enc_row_keys: parquet_options.dict_enc_row_keys,
+                dict_enc_sort_keys: parquet_options.dict_enc_sort_keys,
+                dict_enc_values: parquet_options.dict_enc_values,
             };
             OutputType::File {
                 output_file: unpack_str(self.output_file).map(Url::parse)??,
@@ -144,7 +139,7 @@ impl FFICommonConfig {
         };
 
         CommonConfigBuilder::new()
-            .aws_config(unpack_aws_config(self)?)
+            .aws_config(unpack_aws_config(self))
             .input_files(
                 unpack_typed_array(self.input_files, self.input_files_len)?
                     .iter()
@@ -155,7 +150,7 @@ impl FFICommonConfig {
                     .collect::<Result<Vec<_>, _>>()?,
             )
             .input_files_sorted(self.input_files_sorted)
-            .read_page_indexes(self.read_page_indexes)
+            .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
