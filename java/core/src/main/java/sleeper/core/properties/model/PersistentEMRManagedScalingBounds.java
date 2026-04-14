@@ -59,6 +59,11 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
         return new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
     }
 
+    /**
+     * Creates a validation criteria to compare the EMR managed scaling bounds against one another.
+     *
+     * @return a validation criteria that fails if the min and max capacity are not valid in relation to one another
+     */
     public static SleeperPropertiesValidationCriteria<InstanceProperty> validationCriteria() {
         return SleeperPropertiesValidationCriteria.forProperties(
                 List.of(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY),
