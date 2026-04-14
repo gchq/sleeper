@@ -127,6 +127,10 @@ public class CompactionTaskTestBase {
         runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
+    protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence(), maxTimeAliveJitter);
+    }
+
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdSupplier);
     }
@@ -140,25 +144,28 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(
-            MessageReceiver messageReceiver,
-            CompactionRunner compactor,
-            Supplier<Instant> timeSupplier) throws Exception {
+            MessageReceiver messageReceiver, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
         runTask(messageReceiver, noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
-            MessageReceiver messageReceiver,
-            StateStoreWaitForFiles fileAssignmentCheck,
-            CompactionRunner compactor,
-            Supplier<Instant> timeSupplier,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles fileAssignmentCheck,
+            CompactionRunner compactor, Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
+        runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId, jobRunIdSupplier, noJitter());
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver, StateStoreWaitForFiles fileAssignmentCheck,
+            CompactionRunner compactor, Supplier<Instant> timeSupplier,
+            String taskId, Supplier<String> jobRunIdSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
                 jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), () -> Math.random())
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter)
                 .run();
     }
 

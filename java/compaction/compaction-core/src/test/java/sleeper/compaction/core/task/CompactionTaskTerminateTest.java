@@ -24,6 +24,8 @@ import sleeper.core.testutils.TestInstantSupplier;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
@@ -236,24 +238,13 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
     }
 
     @Nested
-    @DisplayName("Max alive time")
+    @DisplayName("Stop if reached max alive time")
     class MaxAliveTime {
 
         @Test
-        void shouldGenerateUniqueMaxAliveTimesForUniqueTasks() {
+        void shouldStopTaskAfterMaxAliveTimeNoJitter() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, Integer.MAX_VALUE);
-            CompactionTask task1 = generateNewCompactionTask("task1");
-            CompactionTask task2 = generateNewCompactionTask("task2");
-
-            //When/Then
-            assertThat(task1.getMaxAliveTimeMinutes()).isNotEqualTo(task2.getMaxAliveTimeMinutes());
-        }
-
-        @Test
-        void shouldStopTaskAfterMaxAliveTime() throws Exception {
-            //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 1);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 0);
             TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -276,12 +267,33 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             assertThat(jobsOnQueue).containsExactly(job2);
         }
 
-        private CompactionTask generateNewCompactionTask(String taskId) {
-            return new CompactionTask(instanceProperties, null,
-                    null, null,
-                    null, null,
-                    null, null,
-                    null, null, taskId);
+        @Test
+        void shouldStopTaskAfterMaxAliveTimeWithJitter() throws Exception {
+            //Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 1);
+            List<Instant> instants = List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:02Z"), // Job1 started
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job1 completed
+                    Instant.parse("2024-02-22T13:50:03Z"), // Job1 committed
+                    Instant.parse("2024-02-22T13:52:00Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:52:04Z")); // Finish
+            TestInstantSupplier supplier1 = new TestInstantSupplier(instants);
+            TestInstantSupplier supplier2 = new TestInstantSupplier(instants);
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+            DoubleSupplier oneMinuteMaxAliveJitter = () -> 1.0;
+            DoubleSupplier zeroMinutesMaxAliveJitter = () -> 2.0;
+
+            // When
+            runTask("task-1", jobsSucceed(2), supplier1, oneMinuteMaxAliveJitter); // Will have time to process one job
+            runTask("task-2", jobsSucceed(2), supplier2, zeroMinutesMaxAliveJitter); // Won't have time to process any jobs
+
+            // Then
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(jobsOnQueue).containsExactly(job2);
         }
     }
 }

@@ -254,12 +254,8 @@ public class CompactionTask {
     }
 
     private long generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
-        return instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES)
-                - (long) (randomJitterFunction.getAsDouble() * instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
-    }
-
-    public Long getMaxAliveTimeMinutes() {
-        return maxAliveTimeMinutes;
+        return instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES) -
+                (long) (randomJitterFunction.getAsDouble() * instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
     }
 
     @FunctionalInterface
