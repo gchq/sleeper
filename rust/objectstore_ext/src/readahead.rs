@@ -627,13 +627,14 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         // If this is a HEAD request and we have the cached data available then use it
-        if options.head
-            && let Some(result) = self.head_impl(location).await
-        {
-            return Ok(result);
-        } else {
-            self.underlying_heads
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if options.head {
+            if let Some(result) = self.head_impl(location).await {
+                return Ok(result);
+            } else {
+                // increment specific HEAD request count when not cached
+                self.underlying_heads
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
         }
 
         // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
