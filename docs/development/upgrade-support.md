@@ -18,3 +18,21 @@ Here are some changes we might want to make to Sleeper that could cause problems
 We can look at some checks you can do before a release to make it less likely problems will occur.
 
 We have a separate document for checks on [changes to data formats during upgrade](upgrade-format-changes.md).
+
+### Joining components together
+
+Changes to how components communicate can easily cause problems. For example, if we wish to replace an SQS queue with
+a different mechanism, we need to ensure that existing messages on the queue will be processed. If we simply replace
+the queue in a CDK stack, any existing messages would likely be lost. One potential approach would be to leave the old
+infrastructure in place and add the new mechanism alongside it. This could easily become difficult to manage.
+
+We'd need to think very carefully about the potential use cases and options for migration, and how we can guarantee that
+the CDK will do the right thing to ensure existing data is processed correctly.
+
+By default we can make sure we don't make changes to existing infrastructure.
+
+### Changes to names of deployed resources
+
+If we want to change names of anything deployed via the CDK, or IDs of any CDK constructs, by default this will involve
+deleting the old resources and creating new ones. This usually not desirable, and would result in massive disruption
+and potential data loss.
