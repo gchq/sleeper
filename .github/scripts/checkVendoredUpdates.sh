@@ -29,6 +29,7 @@ popd
 rm -rf ./latest
 popd
 
+echo "Checked version of datasketches-cpp"
 echo "Found current version: $CURRENT_VERSION"
 echo "Found latest version: $LATEST_VERSION"
 if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
