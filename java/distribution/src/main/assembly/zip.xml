@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2022-2025 Crown Copyright
+  ~ Copyright 2022-2026 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -223,6 +223,13 @@
             <source>${project.basedir}/../deployment/cdk/target/cdk-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>cdk-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../rest-api/target/rest-api-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>rest-api-${project.version}.jar</destName>
         </file>
         <file>
             <source>

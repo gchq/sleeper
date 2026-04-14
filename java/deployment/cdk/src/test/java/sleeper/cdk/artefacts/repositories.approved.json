@@ -1,0 +1,454 @@
+{
+  "StackIdToTemplate": {
+    "TestArtefacts": {
+      "Resources": {
+        "JarsBucket9C9D7616": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "AccessControl": "Private",
+            "BucketEncryption": {
+              "ServerSideEncryptionConfiguration": [
+                {
+                  "ServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": "AES256"
+                  }
+                }
+              ]
+            },
+            "BucketName": "sleeper-test-deployment-jars",
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": true,
+              "BlockPublicPolicy": true,
+              "IgnorePublicAcls": true,
+              "RestrictPublicBuckets": true
+            },
+            "Tags": [
+              {
+                "Key": "aws-cdk:auto-delete-objects",
+                "Value": "true"
+              }
+            ],
+            "VersioningConfiguration": {
+              "Status": "Enabled"
+            }
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "JarsBucketPolicy42DA793A": {
+          "Type": "AWS::S3::BucketPolicy",
+          "Properties": {
+            "Bucket": {
+              "Ref": "JarsBucket9C9D7616"
+            },
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:PutBucketPolicy",
+                    "s3:GetBucket*",
+                    "s3:List*",
+                    "s3:DeleteObject*"
+                  ],
+                  "Effect": "Allow",
+                  "Principal": {
+                    "AWS": {
+                      "Fn::GetAtt": [
+                        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                        "Arn"
+                      ]
+                    }
+                  },
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "JarsBucket9C9D7616",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "JarsBucket9C9D7616",
+                              "Arn"
+                            ]
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "Version": "2012-10-17"
+            }
+          }
+        },
+        "JarsBucketAutoDeleteObjectsCustomResourceEB5D3934": {
+          "Type": "Custom::S3AutoDeleteObjects",
+          "Properties": {
+            "ServiceToken": {
+              "Fn::GetAtt": [
+                "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+                "Arn"
+              ]
+            },
+            "BucketName": {
+              "Ref": "JarsBucket9C9D7616"
+            }
+          },
+          "DependsOn": [
+            "JarsBucketPolicy42DA793A"
+          ],
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            },
+            "ManagedPolicyArns": [
+              {
+                "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              }
+            ]
+          }
+        },
+        "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
+              "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+            },
+            "Timeout": 900,
+            "MemorySize": 128,
+            "Handler": "index.handler",
+            "Role": {
+              "Fn::GetAtt": [
+                "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                "Arn"
+              ]
+            },
+            "Runtime": "nodejs22.x",
+            "Description": {
+              "Fn::Join": [
+                "",
+                [
+                  "Lambda function for auto-deleting objects in ",
+                  {
+                    "Ref": "JarsBucket9C9D7616"
+                  },
+                  " S3 bucket."
+                ]
+              ]
+            }
+          },
+          "DependsOn": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+          ]
+        },
+        "Repositoryathenalambda37B1EEB6": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/athena-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorybulkimportstarterlambda6CF30AD9": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/bulk-import-starter-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorybulkexportplanner2F89A3A5": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/bulk-export-planner"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositorybulkexporttaskcreatorF56950B7": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/bulk-export-task-creator"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositoryingesttaskcreatorlambda81263E19": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/ingest-task-creator-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositoryingestbatchersubmitterlambda739B2AA7": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/ingest-batcher-submitter-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositoryingestbatcherjobcreatorlambdaC1FAE38E": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/ingest-batcher-job-creator-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositorygarbagecollectorlambdaF1738FC8": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/garbage-collector-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositorycompactionjobcreatorlambdaDFC4127C": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/compaction-job-creator-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorycompactiontaskcreatorlambda5A2A8B0E": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/compaction-task-creator-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorypartitionsplitterlambda08F44E9D": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/partition-splitter-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositoryquerylambdaA1001168": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/query-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorycustomresourceslambda720E28DF": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/custom-resources-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorymetricslambda1412FECD": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/metrics-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorystatestorelambda12EA24CF": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/statestore-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositoryrestapilambda2BEFC68A": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/rest-api-lambda"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositoryingest2C547FF9": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/ingest"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorybulkimportrunner98E12C2F": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/bulk-import-runner"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorycompactionjobexecution6237214C": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/compaction-job-execution"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "RepositorybulkexporttaskexecutionEFE3C226": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/bulk-export-task-execution"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
+        "Repositorystatestorecommitter3B711295": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/statestore-committer"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        }
+      },
+      "Parameters": {
+        "BootstrapVersion": {
+          "Type": "AWS::SSM::Parameter::Value\u003cString\u003e",
+          "Default": "/cdk-bootstrap/hnb659fds/version",
+          "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+        }
+      },
+      "Rules": {
+        "CheckBootstrapVersion": {
+          "Assertions": [
+            {
+              "Assert": {
+                "Fn::Not": [
+                  {
+                    "Fn::Contains": [
+                      [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5"
+                      ],
+                      {
+                        "Ref": "BootstrapVersion"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "AssertDescription": "CDK bootstrap stack version 6 required. Please run \u0027cdk bootstrap\u0027 with a recent version of the CDK CLI."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 //! Structs and trait to handle output of Sleeper data processing.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ use datafusion::{
     physical_plan::{ExecutionPlan, collect, execute_stream},
     prelude::DataFrame,
 };
+use objectstore_ext::s3::modify_output_path_scheme;
 use std::{
     fmt::{Debug, Formatter},
     sync::Arc,
@@ -34,7 +35,7 @@ use std::{
 use url::Url;
 
 /// Defines how operation output should be given.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum OutputType {
     /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
     #[default]
@@ -63,10 +64,26 @@ impl OutputType {
             } => Box::new(FileOutputCompleter::new(ops)),
         }
     }
+
+    #[must_use]
+    pub fn modified_scheme(&self) -> Self {
+        match self {
+            Self::ArrowRecordBatch => Self::ArrowRecordBatch,
+            Self::File {
+                output_file,
+                write_sketch_file,
+                opts,
+            } => Self::File {
+                output_file: modify_output_path_scheme(output_file),
+                write_sketch_file: *write_sketch_file,
+                opts: opts.clone(),
+            },
+        }
+    }
 }
 
 /// All Parquet output options supported by Sleeper.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SleeperParquetOptions {
     pub max_row_group_size: usize,
     pub max_page_size: usize,

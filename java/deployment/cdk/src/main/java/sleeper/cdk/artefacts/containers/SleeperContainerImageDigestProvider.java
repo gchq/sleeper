@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.ecr.model.DescribeImagesResponse;
 import software.amazon.awssdk.services.ecr.model.ImageDetail;
 import software.amazon.awssdk.services.ecr.model.ImageIdentifier;
 
-import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -41,7 +40,7 @@ public class SleeperContainerImageDigestProvider {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperContainerImageDigestProvider.class);
 
     private final GetDigest getDigest;
-    private final Map<DockerDeployment, String> latestDigestByContainer = new HashMap<>();
+    private final Map<String, String> latestDigestByImageName = new HashMap<>();
 
     public SleeperContainerImageDigestProvider(GetDigest getDigest) {
         this.getDigest = getDigest;
@@ -61,13 +60,14 @@ public class SleeperContainerImageDigestProvider {
     }
 
     /**
-     * Get the digest of the image in the Docker deployment.
+     * Get the digest of the Docker image.
      *
-     * @param  deployment the Docker deployment
-     * @return            the digest for the given deployment
+     * @param  imageName         the name of the image
+     * @param  ecrRepositoryName the name of the ECR repository
+     * @return                   the digest for the given deployment
      */
-    public String getDigestToDeploy(DockerDeployment deployment) {
-        return latestDigestByContainer.computeIfAbsent(deployment, getDigest::getDigest);
+    public String getDigestToDeploy(String imageName, String ecrRepositoryName) {
+        return latestDigestByImageName.computeIfAbsent(imageName, name -> getDigest.getDigest(imageName, ecrRepositoryName));
     }
 
     /**
@@ -76,12 +76,13 @@ public class SleeperContainerImageDigestProvider {
      */
     public interface GetDigest {
         /**
-         * Get the digest of the image in the Docker deployment.
+         * Get the digest of the Docker image.
          *
-         * @param  deployment the Docker deployment
-         * @return            the digest for the given deployment
+         * @param  imageName         the name of the image
+         * @param  ecrRepositoryName the name of the ECR repository
+         * @return                   the digest for the given deployment
          */
-        String getDigest(DockerDeployment deployment);
+        String getDigest(String imageName, String ecrRepositoryName);
 
         /**
          * Implementation of GetDigest that checks the digest for the latest version of a given image in an ECR
@@ -92,12 +93,11 @@ public class SleeperContainerImageDigestProvider {
          * @return                    the get digest implementation
          */
         static GetDigest fromEcrRepository(EcrClient ecrClient, InstanceProperties instanceProperties) {
-            return deployment -> {
-                String image = deployment.getDeploymentName();
-                LOGGER.info("Checking latest digest for image: {}", image);
+            return (imageName, ecrRepositoryName) -> {
+                LOGGER.info("Checking latest digest for image: {}", imageName);
 
                 DescribeImagesResponse response = ecrClient.describeImages(DescribeImagesRequest.builder()
-                        .repositoryName(deployment.getEcrRepositoryName(instanceProperties))
+                        .repositoryName(ecrRepositoryName)
                         .imageIds(ImageIdentifier.builder().imageTag(instanceProperties.get(VERSION)).build())
                         .build());
 
@@ -105,7 +105,7 @@ public class SleeperContainerImageDigestProvider {
                         .findFirst()
                         .map(ImageDetail::imageDigest)
                         .orElseThrow(() -> new RuntimeException("No image digest found!"));
-                LOGGER.info("Found latest digest for image {}: {}", image, digest);
+                LOGGER.info("Found latest digest for image {}: {}", imageName, digest);
                 return digest;
             };
         }

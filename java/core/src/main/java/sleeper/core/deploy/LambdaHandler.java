@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -198,6 +198,10 @@ public class LambdaHandler {
     public static final LambdaHandler TRANSACTION_FOLLOWER = builder()
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
+            .core().add();
+    public static final LambdaHandler REST_API_HANDLER = builder()
+            .jar(LambdaJar.REST_API)
+            .handler("sleeper.restapi.RestApiLambda::handleEvent")
             .core().add();
 
     private final LambdaJar jar;

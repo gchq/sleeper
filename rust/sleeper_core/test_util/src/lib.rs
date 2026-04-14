@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ async fn deserialise_sketches_with_factory(
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let store_path = object_store::path::Path::from(path.path());
-    let store = store_factory.get_object_store(path)?;
+    let store = store_factory.get_object_store(path).await?;
     let result = store.get(&store_path).await?;
     read_sketches_from_result(result, key_types).await
 }

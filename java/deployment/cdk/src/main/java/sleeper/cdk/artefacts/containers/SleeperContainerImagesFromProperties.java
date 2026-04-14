@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-
 public class SleeperContainerImagesFromProperties implements SleeperContainerImages {
 
     private final InstanceProperties instanceProperties;
-    private final SleeperContainerImageDigestProvider digest;
+    private final SleeperContainerImageDigestProvider digestProvider;
 
-    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties, SleeperContainerImageDigestProvider digest) {
+    public SleeperContainerImagesFromProperties(InstanceProperties instanceProperties, SleeperContainerImageDigestProvider digestProvider) {
         this.instanceProperties = instanceProperties;
-        this.digest = digest;
+        this.digestProvider = digestProvider;
     }
 
     @Override
@@ -41,7 +39,8 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
         SleeperEcrRepositoriesAtScope repositories = new SleeperEcrRepositoriesAtScope(scope, instanceProperties);
         return deployment -> EcrImage.fromEcrRepository(
                 repositories.getRepository(deployment),
-                digest.getDigestToDeploy(deployment));
+                digestProvider.getDigestToDeploy(deployment.getDeploymentName(),
+                        deployment.getEcrRepositoryName(instanceProperties)));
     }
 
     @Override
@@ -51,7 +50,8 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
                 repositories.getRepository(handler.getJar()),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
-                        .tagOrDigest(instanceProperties.get(VERSION))
+                        .tagOrDigest(digestProvider.getDigestToDeploy(handler.getJar().getImageName(),
+                                handler.getJar().getEcrRepositoryName(instanceProperties)))
                         .build());
     }
 

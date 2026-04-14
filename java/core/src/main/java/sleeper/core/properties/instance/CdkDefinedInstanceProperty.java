@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -779,6 +779,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
             .description("The endpoint of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+
+    // REST API
+    CdkDefinedInstanceProperty REST_API_URL = Index.propertyBuilder("sleeper.rest.api.url")
+            .description("The URL for the Sleeper REST API.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     @Override

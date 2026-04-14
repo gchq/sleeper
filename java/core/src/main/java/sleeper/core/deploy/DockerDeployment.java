@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,6 +171,12 @@ public class DockerDeployment {
      */
     public String getEcrRepositoryName(InstanceProperties instanceProperties) {
         return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + deploymentName;
+    }
+
+    @Override
+    public String toString() {
+        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", multiplatform=" + multiplatform
+                + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
     }
 
     /**

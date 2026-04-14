@@ -1,7 +1,7 @@
 //! Contains the implementation for performing Sleeper leaf queries
 //! using Apache `DataFusion`.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -201,10 +201,12 @@ impl<'a> LeafPartitionQuery<'a> {
         let object_metas =
             retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
         let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
-        let ctx = ops.configure_context(
-            SessionContext::new_with_config_rt(sf, self.runtime.clone()),
-            self.store_factory,
-        )?;
+        let ctx = ops
+            .configure_context(
+                SessionContext::new_with_config_rt(sf, self.runtime.clone()),
+                self.store_factory,
+            )
+            .await?;
         let mut frame = ops
             .create_initial_partitioned_read(&ctx, &object_metas)
             .await?;
