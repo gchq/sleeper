@@ -22,7 +22,6 @@ import java.util.function.Predicate;
  * A validation criteria for Sleeper configuration properties that compares multiple properties.
  *
  * @param <T> the type of property definitions
- * @param <P> the type of property values
  */
 public interface SleeperPropertiesValidationCriteria<T extends SleeperProperty> extends Predicate<SleeperProperties<T>> {
 
@@ -36,11 +35,12 @@ public interface SleeperPropertiesValidationCriteria<T extends SleeperProperty> 
     /**
      * Creates a validation criteria that will report a given set of properties as invalid.
      *
+     * @param  <T>        the type of property definitions
      * @param  properties the properties that are invalid if the criteria is not met
      * @param  predicate  the predicate
      * @return            the validation criteria
      */
-    public static <T extends SleeperProperty> SleeperPropertiesValidationCriteria<T> forProperties(List<T> properties, Predicate<SleeperProperties<T>> predicate) {
+    static <T extends SleeperProperty> SleeperPropertiesValidationCriteria<T> forProperties(List<T> properties, Predicate<SleeperProperties<T>> predicate) {
         return new SleeperPropertiesValidationCriteria<T>() {
             @Override
             public boolean test(SleeperProperties<T> properties) {
