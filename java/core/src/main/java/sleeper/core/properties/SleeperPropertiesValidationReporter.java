@@ -63,7 +63,7 @@ public class SleeperPropertiesValidationReporter {
      * @return          true if the value was valid
      */
     public boolean isValid(SleeperProperty property) {
-        return invalidValues.containsKey(property);
+        return !invalidValues.containsKey(property);
     }
 
 }
