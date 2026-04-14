@@ -1352,7 +1352,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_cached_head_objectmeta() -> Result<()> {
         // Given
-        let ps: ReadaheadStore<InMemory> = make_store();
+        let ps = make_store();
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
