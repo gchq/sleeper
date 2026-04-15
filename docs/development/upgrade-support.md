@@ -26,6 +26,9 @@ a different mechanism, we need to ensure that existing messages on the queue wil
 the queue in a CDK stack, any existing messages would likely be lost. One potential approach would be to leave the old
 infrastructure in place and add the new mechanism alongside it. This could easily become difficult to manage.
 
+This also applies to cases where we save a file to S3, and then read it from another process. If we ever stop writing
+the file, or change when we delete it, that can easily cause similar problems.
+
 We'd need to think very carefully about the potential use cases and options for migration, and how we can guarantee that
 the CDK will do the right thing to ensure existing data is processed correctly.
 
