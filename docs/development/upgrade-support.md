@@ -11,9 +11,8 @@ Here are some changes we might want to make to Sleeper that could cause problems
 
 - Changes to communication or persistence formats, e.g. DynamoDB tables, SQS messages, JSON files, properties files, Arrow files
 - Changes to how components join together, e.g. restructuring SQS queues, tracking mechanisms, temporary files in S3
+- Changes to CDK deployment that may trigger CloudFormation to recreate resources (e.g. renaming resources, modifying an EMR cluster)
 - Changes to how clients communicate with Sleeper
-- Changes to names of deployed resources
-- Changes to CDK deployment that may trigger CloudFormation to recreate resources (e.g. EMR cluster)
 
 We can look at some checks you can do before a release to make it less likely problems will occur.
 
@@ -34,8 +33,19 @@ the CDK will do the right thing to ensure existing data is processed correctly.
 
 By default we can make sure we don't make changes to existing infrastructure.
 
-### Changes to names of deployed resources
+### Changes to CDK deployment triggering resource recreation
 
-If we want to change names of anything deployed via the CDK, or IDs of any CDK constructs, by default this will involve
-deleting the old resources and creating new ones. This usually not desirable, and could result in massive disruption
-and potential data loss.
+There are a number of changes we could make that would cause CloudFormation to delete and recreate resources in AWS.
+For certain resources this can have a big impact on a Sleeper instance. We'll look at a couple of examples.
+
+If we rename an S3 bucket this would delete the old bucket, which could result in data loss.
+
+If we applied a change that caused CloudFormation to recreate a persistent EMR cluster, that would result in any
+in-progress bulk import jobs being aborted. That could be a significant disruption, and potentially result in data
+loss.
+
+By default we can check that we don't change any resource names or construct IDs.
+
+Ideally we could test an upgrade with all optional components included, and have some automated process to warn us when
+resources are recreated as part of an upgrade. We don't have that right now, and it could be difficult to find such a
+problem.
