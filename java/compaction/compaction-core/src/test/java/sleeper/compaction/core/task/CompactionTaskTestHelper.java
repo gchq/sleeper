@@ -54,7 +54,7 @@ public class CompactionTaskTestHelper {
             StateStoreProvider stateStoreProvider, CompactionJobTracker jobTracker) {
         this(instanceProperties, tablePropertiesProvider, stateStoreProvider, jobTracker,
                 timePassesAMinuteAtATimeFrom(Instant.parse("2025-08-28T12:00:00Z")),
-                noWaits(), () -> Math.random());
+                noWaits(), Math::random);
     }
 
     public CompactionTaskTestHelper(
