@@ -81,14 +81,14 @@ public class PropertiesDiff {
         propertyIndex.getAll().stream()
                 .filter(property -> changes.containsKey(property.getPropertyName()))
                 .map(property -> changes.get(property.getPropertyName()))
-                .forEach(diff -> diff.print(out, propertyIndex, result.getInvalidProperties(), result.getInvalidBeforeProperties()));
+                .forEach(diff -> diff.print(out, propertyIndex, result));
 
         // Print unknown properties
         List<String> unknownPropertyNames = changes.keySet().stream()
                 .filter(property -> propertyIndex.getByName(property).isEmpty())
                 .sorted().collect(Collectors.toList());
         for (String propertyName : unknownPropertyNames) {
-            changes.get(propertyName).print(out, propertyIndex, result.getInvalidProperties(), result.getInvalidBeforeProperties());
+            changes.get(propertyName).print(out, propertyIndex, result);
         }
 
         if (!result.isInvalidPropertiesEmpty()) {

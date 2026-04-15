@@ -25,11 +25,6 @@ public class UpdatePropertiesValidationResult {
     private Set<SleeperProperty> invalidProperties;
     private Set<SleeperProperty> invalidBeforeProperties;
 
-    public UpdatePropertiesValidationResult(Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
-        this.invalidProperties = invalidProperties;
-        this.invalidBeforeProperties = invalidBeforeProperties;
-    }
-
     public UpdatePropertiesValidationResult() {
         this.invalidProperties = Collections.emptySet();
         this.invalidBeforeProperties = Collections.emptySet();
@@ -37,10 +32,6 @@ public class UpdatePropertiesValidationResult {
 
     public Set<SleeperProperty> getInvalidProperties() {
         return invalidProperties;
-    }
-
-    public Set<SleeperProperty> getInvalidBeforeProperties() {
-        return invalidBeforeProperties;
     }
 
     public Boolean checkInvalidBeforeProperty(SleeperProperty property) {
