@@ -182,7 +182,7 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.5.0-jre</guava.version>
+        <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.49.0</google.errorprone.version>
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.80.0</google.grpc.version>
