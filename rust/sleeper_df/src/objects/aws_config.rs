@@ -19,17 +19,12 @@ use color_eyre::eyre::bail;
 use sleeper_core::AwsConfig;
 use std::ffi::c_char;
 
-pub fn unpack_aws_config(
-    params: &FFICommonConfig,
-) -> Result<Option<AwsConfig>, color_eyre::Report> {
-    Ok(if params.override_aws_config {
-        let Some(ffi_aws) = (unsafe { params.aws_config.as_ref() }) else {
-            bail!("override_aws_config is true, but aws_config pointer is NULL");
-        };
+pub fn unpack_aws_config(params: &FFICommonConfig) -> Option<AwsConfig> {
+    if let Some(ffi_aws) = unsafe { params.aws_config.as_ref() } {
         AwsConfig::try_from(ffi_aws).ok()
     } else {
         None
-    })
+    }
 }
 
 /// Contains the FFI compatible configuration data for AWS.
