@@ -112,6 +112,15 @@ public class CommandUtils {
                 .collect(Collectors.toList());
     }
 
+    public static List<String> runMultipleCommandReturnOutput(CommandPipeline pipeline) throws IOException, InterruptedException, ExecutionException {
+        LOGGER.info("Running commands: {}", pipeline);
+        return pipeline.startMultipleProcesses().stream()
+                .map(CommandUtils::returnOutput)
+                .map(CompletableFuture::join)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
     private static CompletableFuture<List<String>> returnOutput(Process process) {
         return CompletableFuture.supplyAsync(() -> returnOutput(process.getInputStream()));
     }
