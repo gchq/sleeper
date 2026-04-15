@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
+use datafusion::arrow::datatypes::{DataType, Field, Schema};
 use sleeper_core::{
     CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::aggregate::Aggregate, run_compaction,

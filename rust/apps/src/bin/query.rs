@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 use apps::path_absolute;
-use arrow::util::pretty::print_batches;
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
+use datafusion::arrow::util::pretty::print_batches;
 use env_logger::Env;
 use futures::StreamExt;
 use human_panic::setup_panic;

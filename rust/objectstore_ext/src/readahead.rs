@@ -62,18 +62,24 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::stream::{BoxStream, empty};
+use futures::{
+    StreamExt, TryStreamExt,
+    future::ready,
+    stream::{BoxStream, empty},
+};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult, MultipartUpload,
-    ObjectMeta, ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result,
-    path::Path,
+    Attributes, CopyMode, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload,
+    ListResult, MultipartUpload, OBJECT_STORE_COALESCE_DEFAULT, ObjectMeta, ObjectStore,
+    ObjectStoreExt, PutMultipartOptions, PutOptions, PutPayload, PutResult, RenameOptions,
+    RenameTargetMode, Result, coalesce_ranges, path::Path,
 };
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
+    ops::Range,
     sync::{
         Arc, Mutex, Weak,
         atomic::{AtomicUsize, Ordering},
@@ -173,7 +179,7 @@ impl CacheInserter {
 #[allow(clippy::module_name_repetitions)]
 pub struct ReadaheadStore<T: ObjectStore> {
     /// Underlying `object_store` implementation.
-    inner: T,
+    inner: Arc<T>,
     /// Path prefix for logging purposes
     path_prefix: String,
     /// Cache for object meta-data and streams.
@@ -195,7 +201,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     #[must_use]
     pub fn new(inner: T, path_prefix: impl Into<String>) -> Self {
         Self {
-            inner,
+            inner: Arc::new(inner),
             path_prefix: path_prefix.into(),
             cache: Arc::new(Mutex::new(HashMap::new())),
             max_readahead: DEFAULT_READAHEAD,
@@ -495,11 +501,35 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     /// # Panics
     /// If the mutex lock that guards the cache has become poisoned.
     pub fn remove_cache_for(&self, location: &Path) {
-        let mut cache = self
+        Self::remove_cache_for_impl(&self.cache, location);
+    }
+
+    /// Helper function for cache removal. Has no "self" receiver.
+    fn remove_cache_for_impl(cache: &Arc<Mutex<HashMap<Path, CacheObject>>>, location: &Path) {
+        let mut cache = cache.lock().expect("ReadaheadStore cache lock poisoned");
+        cache.remove(location);
+    }
+
+    /// Attempts to retrieve object metadata from internal cache.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    fn head_impl(&self, location: &Path) -> Option<GetResult> {
+        let cached_meta = self
             .cache
             .lock()
             .expect("ReadaheadStore cache lock poisoned");
-        cache.remove(location);
+        let cache_ob = cached_meta.get(location);
+
+        // If we retrieved something from the cache, return it
+        // otherwise re-direct to GET which will call inner get_opts
+        // and cache result
+        cache_ob.map(|cache_ob| GetResult {
+            payload: GetResultPayload::Stream(Box::pin(empty())),
+            attributes: cache_ob.attrs.clone(),
+            meta: cache_ob.meta.clone(),
+            range: 0..cache_ob.meta.size,
+        })
     }
 }
 
@@ -578,6 +608,7 @@ impl<T: ObjectStore> Display for ReadaheadStore<T> {
 }
 
 #[async_trait]
+#[deny(clippy::missing_trait_methods)]
 impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     async fn put_opts(
         &self,
@@ -599,6 +630,16 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     }
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
+        // If this is a HEAD request and we have the cached data available then use it
+        if options.head {
+            if let Some(result) = self.head_impl(location) {
+                return Ok(result);
+            }
+            // increment specific HEAD request count when not cached
+            self.underlying_heads
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+
         // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
         // to do anything with it
         if should_skip_readahead(&options) {
@@ -638,9 +679,25 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         }
     }
 
-    async fn delete(&self, location: &Path) -> Result<()> {
-        self.remove_cache_for(location);
-        self.inner.delete(location).await
+    fn delete_stream(
+        &self,
+        locations: BoxStream<'static, Result<Path>>,
+    ) -> BoxStream<'static, Result<Path>> {
+        let inner = self.inner.clone();
+        let cache = self.cache.clone();
+        locations
+            .map(move |location| {
+                let inner = inner.clone();
+                let cache = cache.clone();
+                async move {
+                    let p = location?;
+                    Self::remove_cache_for_impl(&cache, &p);
+                    inner.delete(&p).await?;
+                    Ok(p)
+                }
+            })
+            .buffered(10)
+            .boxed()
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
@@ -651,45 +708,53 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         self.inner.list_with_delimiter(prefix).await
     }
 
-    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
-        self.inner.copy(from, to).await
+    async fn copy_opts(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
+        self.inner.copy_opts(from, to, options).await
     }
 
-    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
-        self.inner.copy_if_not_exists(from, to).await
+    async fn get_ranges(&self, location: &Path, ranges: &[Range<u64>]) -> Result<Vec<Bytes>> {
+        coalesce_ranges(
+            ranges,
+            |range| self.get_range(location, range),
+            OBJECT_STORE_COALESCE_DEFAULT,
+        )
+        .await
     }
 
-    async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-        let cached_meta = {
-            let cache = self
-                .cache
-                .lock()
-                .expect("ReadaheadStore cache lock poisoned");
-            cache.get(location).map(|cache_ob| cache_ob.meta.clone())
+    fn list_with_offset(
+        &self,
+        prefix: Option<&Path>,
+        offset: &Path,
+    ) -> BoxStream<'static, Result<ObjectMeta>> {
+        let offset = offset.clone();
+        self.list(prefix)
+            .try_filter(move |f| ready(f.location > offset))
+            .boxed()
+    }
+
+    async fn rename_opts(&self, from: &Path, to: &Path, options: RenameOptions) -> Result<()> {
+        let RenameOptions {
+            target_mode,
+            extensions,
+        } = options;
+        let copy_mode = match target_mode {
+            RenameTargetMode::Overwrite => CopyMode::Overwrite,
+            RenameTargetMode::Create => CopyMode::Create,
         };
-
-        // If we retrieved something from the cache, return it
-        // otherwise re-direct to GET which will call inner get_opts
-        // and cache result
-        Ok(if let Some(meta) = cached_meta {
-            meta
-        } else {
-            let options = GetOptions {
-                head: true,
-                ..Default::default()
-            };
-            self.underlying_heads
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            self.get_opts(location, options).await?.meta
-        })
+        let copy_options = CopyOptions {
+            mode: copy_mode,
+            extensions,
+        };
+        self.copy_opts(from, to, copy_options).await?;
+        self.delete(from).await?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::store::LoggingObjectStore;
-
     use super::*;
+    use crate::store::LoggingObjectStore;
     use futures::{StreamExt, stream};
     use object_store::{integration::*, local::LocalFileSystem, memory::InMemory};
     use tempfile::TempDir;
