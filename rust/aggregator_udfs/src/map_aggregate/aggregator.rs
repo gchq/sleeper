@@ -44,11 +44,11 @@ use crate::map_aggregate::{
         string_group_accumulator::StringGroupMapAccumulator,
     },
 };
-use arrow::{
-    array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
-    datatypes::{DataType, Fields},
-};
 use datafusion::{
+    arrow::{
+        array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
+        datatypes::{DataType, Fields},
+    },
     common::{exec_err, plan_err},
     error::Result,
     logical_expr::{
@@ -260,7 +260,7 @@ impl AggregateUDFImpl for MapAggregator {
 
 #[cfg(test)]
 pub mod map_test_common {
-    use arrow::datatypes::{DataType, Field, Fields};
+    use datafusion::arrow::datatypes::{DataType, Field, Fields};
     use std::sync::Arc;
 
     pub fn make_map_datatype(key_type: DataType, value_type: DataType) -> DataType {
@@ -280,20 +280,19 @@ pub mod map_test_common {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use arrow::{
-        array::{
-            ArrowPrimitiveType, BinaryBuilder, Int64Builder, MapBuilder, MapFieldNames,
-            StringBuilder,
-        },
-        datatypes::{DataType, Field, Fields, Schema},
-    };
     use datafusion::{
+        arrow::{
+            array::{
+                ArrowPrimitiveType, BinaryBuilder, Int64Builder, MapBuilder, MapFieldNames,
+                StringBuilder,
+            },
+            datatypes::{DataType, Field, Fields, Schema},
+        },
         error::DataFusionError,
         logical_expr::{AggregateUDFImpl, function::AccumulatorArgs},
         physical_expr::PhysicalSortExpr,
     };
+    use std::sync::Arc;
 
     use crate::{assert_error, map_aggregate::aggregator::map_test_common::make_map_datatype};
 

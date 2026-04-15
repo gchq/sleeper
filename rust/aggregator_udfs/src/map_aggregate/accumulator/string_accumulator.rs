@@ -15,14 +15,14 @@
 * limitations under the License.
 */
 use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType};
-use arrow::{
-    array::{
-        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames,
-        StringBuilder, StructArray,
-    },
-    datatypes::DataType,
-};
 use datafusion::{
+    arrow::{
+        array::{
+            ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames,
+            StringBuilder, StructArray,
+        },
+        datatypes::DataType,
+    },
     common::{HashMap, exec_err, plan_err},
     error::Result,
     logical_expr::Accumulator,
@@ -186,15 +186,18 @@ mod tests {
             aggregator::map_test_common::make_map_datatype,
         },
     };
-    use arrow::{
-        array::{
-            AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
-            UInt16Builder,
-        },
-        datatypes::{DataType, Field, Fields, Int64Type},
-    };
     use datafusion::{
-        common::HashMap, error::DataFusionError, logical_expr::Accumulator, scalar::ScalarValue,
+        arrow::{
+            array::{
+                AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
+                UInt16Builder,
+            },
+            datatypes::{DataType, Field, Fields, Int64Type},
+        },
+        common::HashMap,
+        error::DataFusionError,
+        logical_expr::Accumulator,
+        scalar::ScalarValue,
     };
     use std::sync::Arc;
 

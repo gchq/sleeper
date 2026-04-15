@@ -14,11 +14,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{AsArray, BooleanBuilder},
-    datatypes::{DataType, Int64Type},
-};
 use datafusion::{
+    arrow::{
+        array::{AsArray, BooleanBuilder},
+        datatypes::{DataType, Int64Type},
+    },
     common::{exec_err, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
     logical_expr::{
@@ -184,11 +184,11 @@ impl ScalarUDFImpl for AgeOff {
 mod tests {
     use super::AgeOff;
     use crate::assert_error;
-    use arrow::{
-        array::{AsArray, Int64Builder},
-        datatypes::{DataType, Field},
-    };
     use datafusion::{
+        arrow::{
+            array::{AsArray, Int64Builder},
+            datatypes::{DataType, Field},
+        },
         common::exec_err,
         config::ConfigOptions,
         error::DataFusionError,

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::{
-    array::{Array, ArrayRef, Int32Array, RecordBatch},
-    datatypes::{DataType, Field, Schema},
-};
 use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
+    arrow::{
+        array::{Array, ArrayRef, Int32Array, RecordBatch},
+        datatypes::{DataType, Field, Schema},
+    },
     execution::SendableRecordBatchStream,
     parquet::{
         arrow::{
@@ -34,6 +34,7 @@ use datafusion::{
     },
 };
 use futures::StreamExt;
+use object_store::ObjectStoreExt;
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
