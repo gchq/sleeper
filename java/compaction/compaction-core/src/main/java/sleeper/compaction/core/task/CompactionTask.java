@@ -89,7 +89,7 @@ public class CompactionTask {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskTracker, selector, taskId,
-                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, () -> Math.random());
+                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, Math::random);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
