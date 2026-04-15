@@ -56,4 +56,14 @@ public class SleeperPropertiesValidationReporter {
         return invalidValues.isEmpty();
     }
 
+    /**
+     * Checks if a specific property value was valid.
+     *
+     * @param  property the property definition
+     * @return          true if the value was valid
+     */
+    public boolean isValid(SleeperProperty property) {
+        return !invalidValues.containsKey(property);
+    }
+
 }
