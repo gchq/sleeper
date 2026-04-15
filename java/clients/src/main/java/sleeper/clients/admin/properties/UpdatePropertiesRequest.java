@@ -37,8 +37,8 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
-        this.invalidBeforeProperties = getInvalidBeforeProperty();
         this.updatePropertiesValidationResult = updatePropertiesValidationResult;
+        this.invalidBeforeProperties = getInvalidBeforeProperty();
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T beforeProperties,
@@ -77,9 +77,13 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     public Set<SleeperProperty> getInvalidProperties() {
         try {
             updatedProperties.validate();
+            updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
+                    .collect(Collectors.toSet()));
             return getUneditableProperties()
                     .collect(Collectors.toSet());
         } catch (SleeperPropertiesInvalidException e) {
+            updatePropertiesValidationResult.setInvalidProperties(Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
+                    .collect(Collectors.toSet()));
             return Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
                     .collect(Collectors.toSet());
         }
@@ -96,11 +100,10 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private Set<SleeperProperty> getInvalidBeforeProperty() {
         try {
             beforeProperties.validate();
-            // return invalidBeforeProperties;
+            updatePropertiesValidationResult.setInvalidBeforeProperties(Collections.emptySet());
             return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
-            // invalidBeforeProperties = e.getInvalidValues().keySet();
-            // return invalidBeforeProperties;
+            updatePropertiesValidationResult.setInvalidBeforeProperties(e.getInvalidValues().keySet());
             return e.getInvalidValues().keySet();
         }
     }
