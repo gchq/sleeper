@@ -39,6 +39,10 @@ public class UpdatePropertiesValidationResult {
         return invalidProperties;
     }
 
+    public Set<SleeperProperty> getInvalidBeforeProperties() {
+        return invalidBeforeProperties;
+    }
+
     public Boolean checkInvalidBeforeProperty(SleeperProperty property) {
         if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
             return true;

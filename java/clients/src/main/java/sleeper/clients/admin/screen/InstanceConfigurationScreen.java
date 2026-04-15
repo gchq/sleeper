@@ -23,6 +23,7 @@ import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.properties.PropertyGroupSelectHelper;
 import sleeper.clients.admin.properties.PropertyGroupWithCategory;
 import sleeper.clients.admin.properties.UpdatePropertiesRequest;
+import sleeper.clients.admin.properties.UpdatePropertiesValidationResult;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.util.console.ConsoleInput;
@@ -155,8 +156,9 @@ public class InstanceConfigurationScreen {
             UpdatePropertiesRequest<T> request = openPropertiesFile();
             PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
             if (changes.isChanged()) {
-                Set<SleeperProperty> invalidProperties = request.getInvalidProperties();
-                Set<SleeperProperty> invalidBeforeProperties = request.getInvalidBeforeProperties();
+                UpdatePropertiesValidationResult updatePropertiesValidationResult = request.getInvalidProperties();
+                Set<SleeperProperty> invalidProperties = updatePropertiesValidationResult.getInvalidProperties();
+                Set<SleeperProperty> invalidBeforeProperties = updatePropertiesValidationResult.getInvalidBeforeProperties();
                 changes.print(out, properties.getPropertiesIndex(), invalidProperties, invalidBeforeProperties);
                 chooseFromOptions(request.getUpdatedProperties(), changes, invalidProperties.isEmpty());
             }

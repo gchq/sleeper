@@ -29,7 +29,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
-    private final Set<SleeperProperty> invalidBeforeProperties;
+    //private final Set<SleeperProperty> invalidBeforeProperties;
     private final UpdatePropertiesValidationResult updatePropertiesValidationResult;
 
     private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties,
@@ -38,7 +38,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
         this.updatePropertiesValidationResult = updatePropertiesValidationResult;
-        this.invalidBeforeProperties = getInvalidBeforeProperty();
+        // this.invalidBeforeProperties = getInvalidBeforeProperty();
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T beforeProperties,
@@ -70,22 +70,16 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return updatePropertiesValidationResult;
     }
 
-    public Set<SleeperProperty> getInvalidBeforeProperties() {
-        return invalidBeforeProperties;
-    }
-
-    public Set<SleeperProperty> getInvalidProperties() {
+    public UpdatePropertiesValidationResult getInvalidProperties() {
         try {
             updatedProperties.validate();
             updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
                     .collect(Collectors.toSet()));
-            return getUneditableProperties()
-                    .collect(Collectors.toSet());
+            return updatePropertiesValidationResult;
         } catch (SleeperPropertiesInvalidException e) {
             updatePropertiesValidationResult.setInvalidProperties(Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
                     .collect(Collectors.toSet()));
-            return Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
-                    .collect(Collectors.toSet());
+            return updatePropertiesValidationResult;
         }
     }
 
