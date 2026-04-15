@@ -90,7 +90,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     private Stream<? extends SleeperProperty> getUneditableProperties() {
-        // invalidBeforeProperties = getInvalidBeforeProperty();
+        getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
                 .filter(prop -> isEligibleForStream(prop));
@@ -109,7 +109,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     private boolean isEligibleForStream(SleeperProperty property) {
-        if (invalidBeforeProperties.contains(property) && !property.isEditable()) {
+        if (updatePropertiesValidationResult.checkInvalidBeforeProperty(property)) {
             return false;
         }
         return !property.isEditable();
