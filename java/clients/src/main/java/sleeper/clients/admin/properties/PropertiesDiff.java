@@ -68,13 +68,12 @@ public class PropertiesDiff {
     /**
      * Writes a description of the changes to the console.
      *
-     * @param out                     the console output
-     * @param propertyIndex           the index of all properties of the type being changed (e.g. instance properties)
-     * @param invalidProperties       which properties have validation failures caused by this diff
-     * @param invalidBeforeProperties which properties already had validation failures prior to this diff
+     * @param out           the console output
+     * @param propertyIndex the index of all properties of the type being changed (e.g. instance properties)
+     * @param result        property validation results
      */
     public void print(
-            ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
+            ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, UpdatePropertiesValidationResult result) {
         out.println("Found changes to properties:");
         out.println();
 
@@ -82,20 +81,20 @@ public class PropertiesDiff {
         propertyIndex.getAll().stream()
                 .filter(property -> changes.containsKey(property.getPropertyName()))
                 .map(property -> changes.get(property.getPropertyName()))
-                .forEach(diff -> diff.print(out, propertyIndex, invalidProperties, invalidBeforeProperties));
+                .forEach(diff -> diff.print(out, propertyIndex, result.getInvalidProperties(), result.getInvalidBeforeProperties()));
 
         // Print unknown properties
         List<String> unknownPropertyNames = changes.keySet().stream()
                 .filter(property -> propertyIndex.getByName(property).isEmpty())
                 .sorted().collect(Collectors.toList());
         for (String propertyName : unknownPropertyNames) {
-            changes.get(propertyName).print(out, propertyIndex, invalidProperties, invalidBeforeProperties);
+            changes.get(propertyName).print(out, propertyIndex, result.getInvalidProperties(), result.getInvalidBeforeProperties());
         }
 
-        if (!invalidProperties.isEmpty()) {
+        if (!result.isInvalidPropertiesEmpty()) {
             out.println("Found invalid properties:");
             propertyIndex.getAll().stream()
-                    .filter(invalidProperties::contains)
+                    .filter(result.getInvalidProperties()::contains)
                     .forEach(property -> out.println(property.getPropertyName()));
             out.println();
         }

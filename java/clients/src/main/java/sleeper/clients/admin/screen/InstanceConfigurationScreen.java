@@ -155,7 +155,7 @@ public class InstanceConfigurationScreen {
             PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
             if (changes.isChanged()) {
                 UpdatePropertiesValidationResult result = request.validateProperties();
-                changes.print(out, properties.getPropertiesIndex(), result.getInvalidProperties(), result.getInvalidBeforeProperties());
+                changes.print(out, properties.getPropertiesIndex(), result);
                 chooseFromOptions(request.getUpdatedProperties(), changes, result.isInvalidPropertiesEmpty());
             }
         }
