@@ -50,6 +50,10 @@ public class UpdatePropertiesValidationResult {
         return false;
     }
 
+    public Boolean isInvalidPropertiesEmpty() {
+        return invalidProperties.isEmpty();
+    }
+
     public void setInvalidBeforeProperties(Set<SleeperProperty> invalidBeforeProperties) {
         this.invalidBeforeProperties = invalidBeforeProperties;
     }

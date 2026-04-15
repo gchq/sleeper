@@ -32,14 +32,12 @@ import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
-import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
-import java.util.Set;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
@@ -156,11 +154,9 @@ public class InstanceConfigurationScreen {
             UpdatePropertiesRequest<T> request = openPropertiesFile();
             PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
             if (changes.isChanged()) {
-                UpdatePropertiesValidationResult updatePropertiesValidationResult = request.getInvalidProperties();
-                Set<SleeperProperty> invalidProperties = updatePropertiesValidationResult.getInvalidProperties();
-                Set<SleeperProperty> invalidBeforeProperties = updatePropertiesValidationResult.getInvalidBeforeProperties();
-                changes.print(out, properties.getPropertiesIndex(), invalidProperties, invalidBeforeProperties);
-                chooseFromOptions(request.getUpdatedProperties(), changes, invalidProperties.isEmpty());
+                UpdatePropertiesValidationResult result = request.validateProperties();
+                changes.print(out, properties.getPropertiesIndex(), result.getInvalidProperties(), result.getInvalidBeforeProperties());
+                chooseFromOptions(request.getUpdatedProperties(), changes, result.isInvalidPropertiesEmpty());
             }
         }
 

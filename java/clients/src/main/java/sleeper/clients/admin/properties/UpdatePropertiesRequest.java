@@ -29,7 +29,6 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
-    //private final Set<SleeperProperty> invalidBeforeProperties;
     private final UpdatePropertiesValidationResult updatePropertiesValidationResult;
 
     private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties,
@@ -38,7 +37,6 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
         this.updatePropertiesValidationResult = updatePropertiesValidationResult;
-        // this.invalidBeforeProperties = getInvalidBeforeProperty();
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T beforeProperties,
@@ -58,19 +56,11 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return diff;
     }
 
-    public T getBeforeProperties() {
-        return beforeProperties;
-    }
-
     public T getUpdatedProperties() {
         return updatedProperties;
     }
 
-    public UpdatePropertiesValidationResult getUpdatePropertiesValidationResult() {
-        return updatePropertiesValidationResult;
-    }
-
-    public UpdatePropertiesValidationResult getInvalidProperties() {
+    public UpdatePropertiesValidationResult validateProperties() {
         try {
             updatedProperties.validate();
             updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
