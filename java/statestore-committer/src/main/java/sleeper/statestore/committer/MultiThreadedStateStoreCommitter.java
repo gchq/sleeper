@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 /**
@@ -377,18 +378,17 @@ public class MultiThreadedStateStoreCommitter {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1 || args.length > 2) {
-            throw new IllegalArgumentException("Syntax: " + MultiThreadedStateStoreCommitter.class.getSimpleName() + " <instanceId> [<stateStoreCommitQueueUrl>]");
+        if (args.length > 1) {
+            throw new IllegalArgumentException("Usage: " + MultiThreadedStateStoreCommitter.class.getSimpleName() + " [<stateStoreCommitQueueUrl>]");
         }
 
-        String instanceId = args[0];
-        String qUrl = args.length > 1 ? args[1] : null;
+        String queueUrl = args.length > 0 ? args[0] : null;
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            String configBucketName = InstanceProperties.getConfigBucketFromInstanceId(instanceId);
-            MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucketName, qUrl);
+            String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+            MultiThreadedStateStoreCommitter committer = new MultiThreadedStateStoreCommitter(s3Client, dynamoClient, sqsClient, configBucketName, queueUrl);
             committer.run();
         }
     }

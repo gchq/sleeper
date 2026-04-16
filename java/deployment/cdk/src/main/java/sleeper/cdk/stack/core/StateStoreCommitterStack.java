@@ -74,7 +74,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_INSTANCE_TYPE;
@@ -156,7 +155,6 @@ public class StateStoreCommitterStack extends NestedStack {
     private void ecsTaskToCommitStateStoreUpdates(
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks, SleeperEcsImages ecsImages, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
-        String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -214,7 +212,7 @@ public class StateStoreCommitterStack extends NestedStack {
         taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
                 .containerName("committer")
                 .image(containerImage)
-                .command(List.of(instanceId, commitQueue.getQueueUrl()))
+                .command(List.of(commitQueue.getQueueUrl()))
                 .environment(environmentVariables)
                 .memoryReservationMiB(1024)
                 .logging(Utils.createECSContainerLogDriver(logGroup))
