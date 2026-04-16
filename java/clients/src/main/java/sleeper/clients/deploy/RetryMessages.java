@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -93,20 +94,24 @@ public class RetryMessages {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> [compaction|ingest|query] <max-messages>");
         }
+        String instanceId = args[0];
+        String stack = args[1];
+        int maxMessages = Integer.parseInt(args[2]);
+
         Set<String> validStacks = new HashSet<>();
         validStacks.add("compaction");
         validStacks.add("ingest");
         validStacks.add("query");
-        String stack = args[1];
         if (!validStacks.contains(stack)) {
             System.out.println("Invalid stack: must be one of compaction, ingest, query.");
             return;
         }
-        int maxMessages = Integer.parseInt(args[2]);
 
         InstanceProperties instanceProperties;
-        try (S3Client s3Client = buildAwsV2Client(S3Client.builder())) {
-            instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
         }
 
         try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
