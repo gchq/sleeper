@@ -43,6 +43,7 @@ vulnerabilities:
   - id: CVE-2026-33997
   - id: CVE-2026-33747
   - id: CVE-2026-33748
+  - id: CVE-2026-39984
 
   # Dependencies of the latest version of AWS CDK/CLI:
 
