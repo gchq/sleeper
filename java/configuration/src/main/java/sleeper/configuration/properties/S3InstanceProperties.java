@@ -55,6 +55,18 @@ public class S3InstanceProperties {
     }
 
     /**
+     * Loads and validates instance properties from the config bucket of the given Sleeper instance.
+     *
+     * @param  s3Client    the S3 client
+     * @param  instanceId  the Sleeper instance ID
+     * @param  accountName the AWS account name
+     * @return             the loaded instance properties
+     */
+    public static InstanceProperties loadGivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
+        return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceIdAndAccount(s3Client, instanceId, accountName));
+    }
+
+    /**
      * Loads instance properties from the config bucket of the given Sleeper instance, with no validation.
      *
      * @param  s3Client   the S3 client
@@ -137,6 +149,10 @@ public class S3InstanceProperties {
 
     private static Properties loadPropertiesGivenInstanceId(S3Client s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+    }
+
+    private static Properties loadPropertiesGivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
+        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
     }
 
     private static Properties loadPropertiesFromBucket(S3Client s3Client, String bucket) {
