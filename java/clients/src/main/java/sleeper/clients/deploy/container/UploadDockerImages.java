@@ -38,7 +38,7 @@ public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
-    private final CheckDigestExistsInEcr repositoryChecker;
+    private final CheckVersionExistsInEcr repositoryChecker;
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final String version;
@@ -171,7 +171,7 @@ public class UploadDockerImages {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private DeployConfiguration deployConfig;
-        private CheckDigestExistsInEcr repositoryChecker;
+        private CheckVersionExistsInEcr repositoryChecker;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private String version = SleeperVersion.getVersion();
@@ -200,7 +200,7 @@ public class UploadDockerImages {
             return this;
         }
 
-        public Builder repositoryChecker(CheckDigestExistsInEcr repositoryChecker) {
+        public Builder repositoryChecker(CheckVersionExistsInEcr repositoryChecker) {
             this.repositoryChecker = repositoryChecker;
             return this;
         }

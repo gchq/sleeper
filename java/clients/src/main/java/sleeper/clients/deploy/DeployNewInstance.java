@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckDigestExistsInEcr;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -122,7 +122,7 @@ public class DeployNewInstance {
                         UploadDockerImages.builder()
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
-                                .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecrClient))
+                                .repositoryChecker(CheckVersionExistsInEcr.withEcrClient(ecrClient))
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),

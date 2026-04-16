@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class InMemoryEcrRepositories implements CheckDigestExistsInEcr {
+public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
     private final Map<String, Set<String>> digestsByRepositoryName = new HashMap<>();
 
     public void addDigestToRepository(String repository, String digest) {
