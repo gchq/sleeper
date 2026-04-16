@@ -1,5 +1,5 @@
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 use apps::path_absolute;
-use arrow::util::pretty::print_batches;
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
+use datafusion::arrow::util::pretty::print_batches;
 use env_logger::Env;
 use futures::StreamExt;
 use human_panic::setup_panic;

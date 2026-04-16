@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
@@ -97,11 +96,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     protected void init() {
         setSchema(get(SCHEMA));
         super.init();
-    }
-
-    @Override
-    public void validate(SleeperPropertiesValidationReporter reporter) {
-        super.validate(reporter);
     }
 
     @Override

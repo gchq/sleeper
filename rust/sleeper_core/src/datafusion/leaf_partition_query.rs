@@ -1,7 +1,7 @@
 //! Contains the implementation for performing Sleeper leaf queries
 //! using Apache `DataFusion`.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ use crate::{
         util::{explain_plan, retrieve_object_metas},
     },
 };
-#[cfg(doc)]
-use arrow::record_batch::RecordBatch;
 use datafusion::{
     common::plan_err,
     dataframe::DataFrame,

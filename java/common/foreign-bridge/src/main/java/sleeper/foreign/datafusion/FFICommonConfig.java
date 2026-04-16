@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,52 +39,32 @@ import java.util.Objects;
 @SuppressWarnings("checkstyle:membername")
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class FFICommonConfig extends Struct {
-    /** Specifies AWS default configuration been overriden. */
-    public final Struct.Boolean override_aws_config = new Struct.Boolean();
-    /** Optional AWS configuration. */
+    /** Optional AWS configuration. Set to NULL if not used. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
-    /** Whether we should use readahead when reading from S3. */
-    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
-    /** Whether Parquet page indexes should be read. */
-    public final Struct.Boolean read_page_indexes = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Specifies if sketch output is enabled. Can only be used with file output. */
     public final Struct.Boolean write_sketch_file = new Struct.Boolean();
+    /** Whether we should use readahead when reading from S3. */
+    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
     /** Names of Sleeper row key fields from schema. */
     public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
     /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
     public final FFIArray<java.lang.Integer> row_key_schema = new FFIArray<>(this);
     /** Names of Sleeper sort key fields from schema. */
     public final FFIArray<java.lang.String> sort_key_cols = new FFIArray<>(this);
-    /** Maximum size of output Parquet row group in rows. */
-    public final Struct.size_t max_row_group_size = new Struct.size_t();
-    /** Maximum size of output Parquet page size in bytes. */
-    public final Struct.size_t max_page_size = new Struct.size_t();
-    /** Output Parquet compression codec. */
-    public final Struct.UTF8StringRef compression = new Struct.UTF8StringRef();
-    /** Output Parquet writer version. Must be 1.0 or 2.0 */
-    public final Struct.UTF8StringRef writer_version = new Struct.UTF8StringRef();
-    /** Column min/max values truncation length in output Parquet. */
-    public final Struct.size_t column_truncate_length = new Struct.size_t();
-    /** Max sizeof statistics block in output Parquet. */
-    public final Struct.size_t stats_truncate_length = new Struct.size_t();
-    /** Should row key fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_row_keys = new Struct.Boolean();
-    /** Should sort key fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
-    /** Should value fields use dictionary encoding in output Parquet. */
-    public final Struct.Boolean dict_enc_values = new Struct.Boolean();
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
     /** Compaction aggregation configuration. This is optional. */
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
+    /** Parquet options for Sleeper. Set to NULL if defaults are suitable. */
+    public final Struct.StructRef<FFIParquetOptions> parquet_options = new Struct.StructRef<>(FFIParquetOptions.class);
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         this(runtime, null);
@@ -93,16 +73,16 @@ public class FFICommonConfig extends Struct {
     public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
         if (awsConfig != null) {
-            this.override_aws_config.set(true);
-            this.aws_config.set(awsConfig.toFfi(runtime));
+            aws_config.set(awsConfig.toFfi(runtime));
         } else {
-            this.override_aws_config.set(false);
+            // Null will use default AWS credentials
+            aws_config.set(0);
         }
         // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
         output_file.set("");
-        compression.set("");
-        writer_version.set("");
+        // Null here tells Rust to use defaults.
+        parquet_options.set(0);
     }
 
     /**
@@ -120,8 +100,6 @@ public class FFICommonConfig extends Struct {
         }
         // Check strings non null
         Objects.requireNonNull(output_file.get(), "Output file is null");
-        Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
-        Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
         Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
         Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
     }

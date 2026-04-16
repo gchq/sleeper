@@ -15,10 +15,15 @@
  */
 package sleeper.core.properties.model;
 
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperPropertiesValidationCriteria;
+import sleeper.core.properties.SleeperPropertyValues;
+import sleeper.core.properties.instance.InstanceProperty;
+
+import java.util.List;
 
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 
 /**
  * Stores information about the EMR managed scaling parameters for persistent EMR bulk import stacks.
@@ -48,9 +53,26 @@ public record PersistentEMRManagedScalingBounds(int minCapacityUnits, int maxCap
      * @param  instanceProperties Sleeper instance properties
      * @return                    scaling bounds for EMR
      */
-    public static PersistentEMRManagedScalingBounds createManagedScalingBounds(InstanceProperties instanceProperties) {
+    public static PersistentEMRManagedScalingBounds create(SleeperPropertyValues<InstanceProperty> instanceProperties) {
         int minEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
         int maxEmrCapacity = instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
         return new PersistentEMRManagedScalingBounds(minEmrCapacity, maxEmrCapacity);
+    }
+
+    /**
+     * Creates a validation criteria to compare the EMR managed scaling bounds against one another.
+     *
+     * @return a validation criteria that fails if the min and max capacity are not valid in relation to one another
+     */
+    public static SleeperPropertiesValidationCriteria<InstanceProperty> validationCriteria() {
+        return SleeperPropertiesValidationCriteria.forProperties(
+                List.of(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY),
+                properties -> {
+                    if (!properties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
+                        return true;
+                    }
+                    PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.create(properties);
+                    return bounds.maxCapacityUnits() > bounds.minCapacityUnits();
+                });
     }
 }
