@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 use crate::datafusion::sketch_udf::SketchUDF;
-use arrow::{array::ArrayAccessor, datatypes::DataType};
 use bytes::BufMut;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
+    arrow::{array::ArrayAccessor, datatypes::DataType},
     common::DFSchema,
     dataframe::DataFrame,
     error::DataFusionError,
@@ -27,6 +27,7 @@ use datafusion::{
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
+use object_store::ObjectStoreExt;
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{
     byte::{byte_sketch_t, new_byte_sketch},

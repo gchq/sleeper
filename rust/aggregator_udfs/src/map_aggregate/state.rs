@@ -15,11 +15,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{Array, BooleanArray, BooleanBufferBuilder, MapArray, StructArray},
-    buffer::{BooleanBuffer, NullBuffer},
+use datafusion::{
+    arrow::{
+        array::{Array, BooleanArray, BooleanBufferBuilder, MapArray, StructArray},
+        buffer::{BooleanBuffer, NullBuffer},
+    },
+    logical_expr::EmitTo,
 };
-use datafusion::logical_expr::EmitTo;
 
 #[cfg(doc)]
 use datafusion::physical_expr::NullState;
