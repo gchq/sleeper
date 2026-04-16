@@ -123,12 +123,12 @@ public class CompactionTaskTestBase {
         runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
-    protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
-        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
+    protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence(), maxTimeAliveJitter);
     }
 
-    protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
-        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence(), maxTimeAliveJitter);
+    protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
 
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) throws Exception {

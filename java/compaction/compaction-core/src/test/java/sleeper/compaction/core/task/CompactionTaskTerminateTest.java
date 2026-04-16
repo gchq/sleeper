@@ -273,25 +273,65 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
             DoubleSupplier oneMinuteMaxAliveJitter = () -> 0.5;
-            DoubleSupplier zeroMinutesMaxAliveJitter = () -> 1.0;
-            TestInstantSupplier supplier1 = new TestInstantSupplier(List.of(
+            TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
                     Instant.parse("2024-02-22T13:50:01Z"), // Max alive time check
                     Instant.parse("2024-02-22T13:50:02Z"), // Job1 started
                     Instant.parse("2024-02-22T13:50:03Z"), // Job1 completed
                     Instant.parse("2024-02-22T13:50:03Z"), // Job1 committed
-                    Instant.parse("2024-02-22T13:52:00Z"), // Max alive time check
-                    Instant.parse("2024-02-22T13:52:04Z"))); //Finish
-            TestInstantSupplier supplier2 = new TestInstantSupplier(List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:51:01Z"), // Max alive time check
-                    Instant.parse("2024-02-22T13:51:04Z"))); //Fiish
+                    Instant.parse("2024-02-22T13:51:00Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:51:04Z"))); //Finish
             CompactionJob job1 = createJobOnQueue("job1");
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            runTask("task-1", jobsSucceed(2), supplier1, oneMinuteMaxAliveJitter); // Will have time to process one job
-            runTask("task-2", jobsSucceed(2), supplier2, zeroMinutesMaxAliveJitter); // Won't have time to process any jobs
+            runTask(jobsSucceed(2), timeSupplier, oneMinuteMaxAliveJitter); // Will have time to process one job
+
+            // Then
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(jobsOnQueue).containsExactly(job2);
+        }
+
+        @Test
+        void shouldStopTaskBeforeAnyJobsIfJitterTooHigh() throws Exception {
+            //Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
+            DoubleSupplier zeroMinutesMaxAliveJitter = () -> 1.0;
+            TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:04Z"))); //Fiish
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When
+            runTask(jobsSucceed(2), timeSupplier, zeroMinutesMaxAliveJitter); // Won't have time to process any jobs
+
+            // Then
+            assertThat(consumedJobs).isEmpty();
+            assertThat(jobsOnQueue).containsExactly(job1, job2);
+        }
+
+        @Test
+        void shouldCalculateJitterInMilliseconds() throws Exception {
+            //Given
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
+            DoubleSupplier jitterForMillis = () -> 0.456; //This will set max alive time to 1m 5s 280 milli
+            TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(
+                    Instant.parse("2024-02-22T13:50:00.000Z"), // Start
+                    Instant.parse("2024-02-22T13:51:05.279Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:51:05.279Z"), // Job1 started
+                    Instant.parse("2024-02-22T13:51:05.279Z"), // Job1 completed
+                    Instant.parse("2024-02-22T13:51:05.279Z"), // Job1 committed
+                    Instant.parse("2024-02-22T13:51:05.280Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:51:06.000Z"))); //Finish
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When
+            runTask(jobsSucceed(2), timeSupplier, jitterForMillis); // Will have time to process one job
 
             // Then
             assertThat(consumedJobs).containsExactly(job1);
