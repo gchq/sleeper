@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ import software.amazon.awscdk.services.s3.BucketMetrics;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.S3BucketName;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class TableDataStack extends NestedStack {
@@ -45,8 +47,8 @@ public class TableDataStack extends NestedStack {
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "table-data");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "table-data");
+
         dataBucket = Bucket.Builder
                 .create(this, "TableDataBucket")
                 .bucketName(bucketName)
@@ -55,10 +57,9 @@ public class TableDataStack extends NestedStack {
                 .encryption(BucketEncryption.S3_MANAGED)
                 .removalPolicy(removalPolicy)
                 .metrics(List.of(
-                    BucketMetrics.builder()
-                        .id("all")
-                        .build()
-                ))
+                        BucketMetrics.builder()
+                                .id("all")
+                                .build()))
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {

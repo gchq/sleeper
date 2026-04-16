@@ -1,7 +1,7 @@
 //! A specialised version of [`NullState`] for map column types.
 //! Adapted from <`https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html`>
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{Array, BooleanArray, BooleanBufferBuilder, MapArray, StructArray},
-    buffer::{BooleanBuffer, NullBuffer},
+use datafusion::{
+    arrow::{
+        array::{Array, BooleanArray, BooleanBufferBuilder, MapArray, StructArray},
+        buffer::{BooleanBuffer, NullBuffer},
+    },
+    logical_expr::EmitTo,
 };
-use datafusion::logical_expr::EmitTo;
 
 #[cfg(doc)]
 use datafusion::physical_expr::NullState;

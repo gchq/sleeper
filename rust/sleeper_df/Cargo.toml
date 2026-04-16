@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ test = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-arrow = { workspace = true, features = [ "ffi" ] }
 aws-types = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
+datafusion = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 libc = { workspace = true }

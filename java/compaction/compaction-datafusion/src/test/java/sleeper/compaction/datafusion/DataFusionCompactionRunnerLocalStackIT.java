@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,6 +106,26 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                 .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+    }
+
+    @Test
+    void shouldCompactEmptyFiles() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        String file1 = writeFileForPartition("root", List.of());
+        String file2 = writeFileForPartition("root", List.of());
+        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+        // When
+        runTask(job);
+
+        // Then
+        assertThat(readDataFile(schema, job.getOutputFile())).isEmpty();
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.from(schema, List.of()));
+        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(0, 0));
     }
 
     private void runTask(CompactionJob job) throws Exception {

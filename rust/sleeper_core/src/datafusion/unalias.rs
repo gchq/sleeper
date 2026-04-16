@@ -1,7 +1,7 @@
 //! Functions to remove aliasing added by `DataFusion` when it converts
 //! Arrow view columns back to their normal counterpart.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::datatypes::SchemaRef;
 use datafusion::{
+    arrow::datatypes::SchemaRef,
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
     physical_plan::{
@@ -84,11 +84,11 @@ pub fn unalias_view_projection_columns(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::unalias::{unalias, unalias_view_projection_columns};
-    use arrow::{
-        array::RecordBatch,
-        datatypes::{DataType, Field, Schema},
-    };
     use datafusion::{
+        arrow::{
+            array::RecordBatch,
+            datatypes::{DataType, Field, Schema},
+        },
         catalog::memory::MemorySourceConfig,
         physical_plan::{
             PhysicalExpr, displayable, expressions::Column, projection::ProjectionExec,
@@ -213,7 +213,7 @@ mod tests {
     fn should_return_same_plan_if_no_projection_exec_found() {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
 
@@ -235,7 +235,7 @@ mod tests {
     fn should_stop_after_first_projection_exec() {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         // Inner projection

@@ -1,6 +1,6 @@
 //! Sleeper `DataFusion` utility functions.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{datatypes::DataType, util::pretty::pretty_format_batches};
 use datafusion::{
+    arrow::{datatypes::DataType, util::pretty::pretty_format_batches},
     common::{
         DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
@@ -33,7 +33,7 @@ use datafusion::{
 };
 use log::debug;
 use num_format::{Locale, ToFormattedString};
-use object_store::ObjectMeta;
+use object_store::{ObjectMeta, ObjectStoreExt};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
@@ -133,7 +133,7 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 /// # Errors
 /// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
 ///
-pub fn register_store(
+pub async fn register_store(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
     output_path: Option<&Url>,
@@ -142,6 +142,7 @@ pub fn register_store(
     for input_path in input_paths {
         let in_store = store_factory
             .get_object_store(input_path)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
             .register_object_store(input_path, in_store);
@@ -150,6 +151,7 @@ pub fn register_store(
     if let Some(output) = output_path {
         let out_store = store_factory
             .get_object_store(output)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env().register_object_store(output, out_store);
     }
@@ -168,6 +170,7 @@ pub async fn retrieve_object_metas(
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
+            .await
             .map_err(|e| DataFusionError::External(e.into()))?;
         let p = input_path.path();
         metas.push(store.head(&p.into()).await?);
@@ -334,13 +337,13 @@ mod tests {
         MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
         calculate_upload_size, remove_coalesce_physical_stage,
     };
-    use arrow::{
-        array::RecordBatch,
-        compute::SortOptions,
-        datatypes::{DataType, Field, Schema},
-    };
     use color_eyre::eyre::Error;
     use datafusion::{
+        arrow::{
+            array::RecordBatch,
+            compute::SortOptions,
+            datatypes::{DataType, Field, Schema},
+        },
         catalog::memory::MemorySourceConfig,
         common::{DFSchema, tree_node::TreeNode},
         dataframe,
@@ -471,7 +474,7 @@ mod tests {
     fn should_return_same_plan_if_no_coalesce_found() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let ordering = build_ordering(&schema, 1);
@@ -490,7 +493,7 @@ mod tests {
     fn should_stop_replacement_after_first_coalesce() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
@@ -527,7 +530,7 @@ mod tests {
             Field::new("b", DataType::Int32, false),
             Field::new("c", DataType::Int32, false),
         ]));
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let ordering = build_ordering(&schema, 3);
@@ -551,7 +554,7 @@ mod tests {
             Field::new("c", DataType::Int32, false),
         ]));
 
-        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let input_batch = datafusion::arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         // Create two sort stages that only apply ordering to first column

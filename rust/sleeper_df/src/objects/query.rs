@@ -1,6 +1,6 @@
 //! Query related FFI structs.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
 * limitations under the License.
 */
 use crate::{
-    objects::{ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
-    unpack::unpack_string_array,
+    objects::{FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
+    unpack::unpack_typed_array,
 };
-use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::bail;
+use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
 use sleeper_core::LeafPartitionQueryConfig;
-use std::{ffi::c_char, slice};
+use std::slice;
 
 /// Contains all information needed for a Sleeper leaf partition query from a foreign function.
 ///
@@ -41,7 +41,7 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of requested value fields
     pub requested_value_fields_len: usize,
     /// Requested value fields.
-    pub requested_value_fields: *const *const c_char,
+    pub requested_value_fields: *const *const FFIBytes,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
@@ -76,12 +76,13 @@ impl FFILeafPartitionQueryConfig {
             .collect::<Result<Vec<_>, _>>()?;
 
         let requested_value_columns = if self.requested_value_fields_set {
-            Some(
-                unpack_string_array(self.requested_value_fields, self.requested_value_fields_len)?
-                    .into_iter()
-                    .map(String::from)
-                    .collect(),
-            )
+            let t =
+                unpack_typed_array(self.requested_value_fields, self.requested_value_fields_len)?
+                    .iter()
+                    .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+                    .collect::<Result<Vec<_>, color_eyre::Report>>()?;
+
+            Some(t)
         } else {
             None
         };

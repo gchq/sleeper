@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,9 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
-        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
+        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data-test-account");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
-        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
+        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results-test-account");
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
