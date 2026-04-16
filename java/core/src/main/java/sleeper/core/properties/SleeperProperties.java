@@ -88,11 +88,24 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      *
      * @param reporter the reporter to receive failures
      */
-    public void validate(SleeperPropertiesValidationReporter reporter) {
+    public final void validate(SleeperPropertiesValidationReporter reporter) {
         getPropertiesIndex().getUserDefined().forEach(property -> {
             String value = get(property);
             if (!property.getValidationPredicate().test(value)) {
                 reporter.invalidProperty(property, value);
+            }
+        });
+        getValidationCriteria().forEach(criteria -> {
+            // If we've already found a value is invalid, don't check it again
+            for (T property : criteria.getPropertiesValidated()) {
+                if (!reporter.isValid(property)) {
+                    return;
+                }
+            }
+            if (!criteria.test(this)) {
+                for (T property : criteria.getPropertiesValidated()) {
+                    reporter.invalidProperty(property, get(property));
+                }
             }
         });
     }
@@ -115,6 +128,15 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @return the index
      */
     public abstract SleeperPropertyIndex<T> getPropertiesIndex();
+
+    /**
+     * Retrieves validation criteria to be checked against multiple properties.
+     *
+     * @return the validation criteria
+     */
+    protected List<SleeperPropertiesValidationCriteria<T>> getValidationCriteria() {
+        return List.of();
+    }
 
     /**
      * Retrieves a printer to output the property values in a human-readable string format.

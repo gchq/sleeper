@@ -25,7 +25,6 @@ rust-version = { workspace = true }
 publish = false
 
 [dependencies]
-arrow = { workspace = true }
 bytes = { workspace = true }
 color-eyre = { workspace = true }
 datafusion = { workspace = true }

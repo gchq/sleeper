@@ -17,8 +17,7 @@
 use crate::datafusion::{
     ParquetWriterConfigurer, SleeperOperations, metrics::RowCounts, util::collect_stats,
 };
-#[cfg(doc)]
-use arrow::record_batch::RecordBatch;
+
 use async_trait::async_trait;
 use datafusion::{
     common::plan_err,

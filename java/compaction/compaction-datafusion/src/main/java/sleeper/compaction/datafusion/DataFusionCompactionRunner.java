@@ -35,6 +35,7 @@ import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
+import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
@@ -72,16 +73,16 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-        // Get the filesystem object
-        FileSystem fs = FileSystem.get(hadoopConf);
-        Path outputPath = new Path(job.getOutputFile());
-
-        if (result.getRowsWritten() < 1 && !fs.exists(outputPath)) {
-            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                    outputPath, tableProperties, hadoopConf)) {
-                // Write an empty file. This should be temporary, as we expect DataFusion to add
-                // support for this.
-                // See the test should_merge_empty_files in compaction_test.rs
+        if (result.getRowsWritten() < 1) {
+            Path outputPath = new Path(job.getOutputFile());
+            FileSystem fs = outputPath.getFileSystem(hadoopConf);
+            if (!fs.exists(outputPath)) {
+                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                        outputPath, tableProperties, hadoopConf)) {
+                    // Write an empty file. This should be temporary, as we expect DataFusion to add
+                    // support for this.
+                    // See the test should_merge_empty_files in compaction_test.rs
+                }
             }
         }
 
@@ -107,27 +108,31 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
+        FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
+        parquetOptions.read_page_indexes.set(false);
+        parquetOptions.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
+        parquetOptions.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
+        parquetOptions.compression.set(tableProperties.get(COMPRESSION_CODEC));
+        parquetOptions.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
+        parquetOptions.column_truncate_length.set(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+        parquetOptions.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+        parquetOptions.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+        parquetOptions.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+        parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
+        params.parquet_options.set(parquetOptions);
         params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
-        params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         // Reading page indexes are not useful for compactions
-        params.read_page_indexes.set(false);
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
+        params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);
-        params.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
-        params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
-        params.compression.set(tableProperties.get(COMPRESSION_CODEC));
-        params.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
-        params.column_truncate_length.set(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
-        params.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
-        params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
-        params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
-        params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
         params.region.set(FFISleeperRegion.from(region, schema, runtime));

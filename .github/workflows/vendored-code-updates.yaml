@@ -1,0 +1,18 @@
+name: Check for updates to vendored code
+on:
+  workflow_dispatch: # Allow manual running
+  schedule:
+    - cron: '16 2 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/vendored-code-updates.yaml'
+      - '.github/scripts/checkVendoredUpdates.sh'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for updates to vendored code
+        run: .github/scripts/checkVendoredUpdates.sh

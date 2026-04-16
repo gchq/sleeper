@@ -31,10 +31,10 @@ test = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-arrow = { workspace = true, features = [ "ffi" ] }
 aws-types = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
+datafusion = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 libc = { workspace = true }
