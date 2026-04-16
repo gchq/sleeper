@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
@@ -51,8 +52,10 @@ public class DispatchCompactionJobsClient {
         String instanceId = args[0];
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             CompactionJobDispatcher dispatcher = AwsCompactionJobDispatcher.from(s3Client, dynamoClient, sqsClient, instanceProperties, Instant::now);
             CompactionJobDispatchRequestSerDe requestSerDe = new CompactionJobDispatchRequestSerDe();
 
