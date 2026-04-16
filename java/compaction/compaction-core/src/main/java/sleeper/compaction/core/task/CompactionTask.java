@@ -79,7 +79,7 @@ public class CompactionTask {
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
-    private final Duration maxAliveTimeMinutes;
+    private final Duration maxAliveTimeDuration;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -117,7 +117,7 @@ public class CompactionTask {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
-        maxAliveTimeMinutes = generateMaxAliveTimeWithJitter(randomJitterFunction);
+        maxAliveTimeDuration = generateMaxAliveTimeWithJitter(randomJitterFunction);
     }
 
     public void run() throws IOException {
@@ -159,7 +159,7 @@ public class CompactionTask {
 
     private boolean hasNotReachedMaxAliveTime(Instant startTime) {
         Duration aliveTime = Duration.between(startTime, timeSupplier.get());
-        return aliveTime.compareTo(maxAliveTimeMinutes) < 0;
+        return aliveTime.compareTo(maxAliveTimeDuration) < 0;
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
