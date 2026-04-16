@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedUuidsWithPrefix;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
@@ -54,7 +55,7 @@ public class CompactionTaskTestHelper {
             StateStoreProvider stateStoreProvider, CompactionJobTracker jobTracker) {
         this(instanceProperties, tablePropertiesProvider, stateStoreProvider, jobTracker,
                 timePassesAMinuteAtATimeFrom(Instant.parse("2025-08-28T12:00:00Z")),
-                noWaits(), Math::random);
+                noWaits(), noJitter());
     }
 
     public CompactionTaskTestHelper(

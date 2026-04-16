@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  */
 public class TestInstantSupplier implements Supplier<Instant> {
 
-    List<Instant> remainingTimes;
+    private final List<Instant> remainingTimes;
 
     public TestInstantSupplier(List<Instant> initialTimes) {
         this.remainingTimes = new ArrayList<>(initialTimes);
