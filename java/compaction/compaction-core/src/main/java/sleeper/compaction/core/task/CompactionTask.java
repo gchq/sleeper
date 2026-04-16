@@ -255,10 +255,9 @@ public class CompactionTask {
 
     private Duration generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
         Duration maxAlive = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES));
-        Duration jitter = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
-        jitter = Duration.ofMillis((long) (randomJitterFunction.getAsDouble() * jitter.toMillis()));
-        Duration calculated = maxAlive.minus(jitter);
-        return calculated;
+        Duration maxJitter = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
+        Duration jitter = Duration.ofMillis((long) (randomJitterFunction.getAsDouble() * maxJitter.toMillis()));
+        return maxAlive.minus(jitter);
     }
 
     @FunctionalInterface
