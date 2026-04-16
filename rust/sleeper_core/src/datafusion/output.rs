@@ -1,6 +1,6 @@
 //! Structs and trait to handle output of Sleeper data processing.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 use crate::datafusion::{
     ParquetWriterConfigurer, SleeperOperations, metrics::RowCounts, util::collect_stats,
 };
-#[cfg(doc)]
-use arrow::record_batch::RecordBatch;
+
 use async_trait::async_trait;
 use datafusion::{
     common::plan_err,

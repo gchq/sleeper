@@ -1,7 +1,7 @@
 //! Contains code and functions for implementation of a non-nullable wrapper
 //! for aggregate UDF that may be nullable.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{Array, ArrayRef, BooleanArray},
-    datatypes::{DataType, Field, FieldRef},
-};
 use datafusion::{
+    arrow::{
+        array::{Array, ArrayRef, BooleanArray},
+        datatypes::{DataType, Field, FieldRef},
+    },
     common::{exec_err, plan_err},
     error::Result,
     execution::FunctionRegistry,
@@ -32,7 +32,7 @@ use datafusion::{
         GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
         expr::{AggregateFunction, AggregateFunctionParams},
         function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
-        simplify::SimplifyInfo,
+        simplify::SimplifyContext,
         utils::AggregateOrderSensitivity,
     },
     scalar::ScalarValue,
@@ -275,7 +275,7 @@ impl AggregateUDFImpl for NonNullable {
     fn simplify(&self) -> Option<AggregateFunctionSimplification> {
         self.inner.simplify().map(|inner_func| {
             Box::new(
-                move |func: AggregateFunction, simplify_info: &dyn SimplifyInfo| {
+                move |func: AggregateFunction, simplify_info: &SimplifyContext| {
                     inner_func(func, simplify_info).and_then(|original_expr| match original_expr {
                         Expr::AggregateFunction(AggregateFunction { func, params }) => {
                             let AggregateFunctionParams {
@@ -301,7 +301,7 @@ impl AggregateUDFImpl for NonNullable {
                         }
                     })
                 },
-            ) as Box<dyn Fn(AggregateFunction, &dyn SimplifyInfo) -> Result<Expr>>
+            ) as Box<dyn Fn(AggregateFunction, &SimplifyContext) -> Result<Expr>>
         })
     }
 
@@ -459,14 +459,14 @@ mod tests {
             non_null_sum, non_nullable, nullable_check, register_non_nullable_aggregate_udfs,
         },
     };
-    use arrow::{
-        array::{ArrayRef, BooleanArray, Int64Builder},
-        datatypes::{DataType, Field, Schema},
-    };
     use datafusion::{
+        arrow::{
+            array::{ArrayRef, BooleanArray, Int64Builder},
+            datatypes::{DataType, Field, Schema},
+        },
         common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
-        execution::{SessionStateBuilder, context::ExecutionProps},
+        execution::SessionStateBuilder,
         functions_aggregate::{
             min_max::{max_udaf, min_udaf},
             sum::{sum, sum_udaf},
@@ -1104,10 +1104,7 @@ mod tests {
         // When
         let simplified_expr = nonnull.simplify().expect("couldn't unwrap simplify result");
         // call the function
-        let simplified_result = simplified_expr(
-            test_agg_function,
-            &SimplifyContext::new(&ExecutionProps::new()),
-        );
+        let simplified_result = simplified_expr(test_agg_function, &SimplifyContext::default());
 
         // Then - check called function returns a non-null with the correct inner expression
         if let Ok(Expr::AggregateFunction(AggregateFunction { func, params: _ })) =

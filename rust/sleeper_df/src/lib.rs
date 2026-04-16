@@ -1,6 +1,6 @@
 //! All Foreign Function Interface logic is in this crate.
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ use crate::{
 };
 use ::log::{error, warn};
 #[cfg(doc)]
-use arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
+use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::c_int;

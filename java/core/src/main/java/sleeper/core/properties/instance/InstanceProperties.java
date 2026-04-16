@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
+import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -32,9 +34,6 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
-import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 
 /**
  * Contains values of the properties to configure an instance of Sleeper.
@@ -74,21 +73,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return instanceProperties;
     }
 
-    /**
-     * Overridden to check EMR managed scaling bounds are correct.
-     */
     @Override
-    public void validate(SleeperPropertiesValidationReporter reporter) {
-        super.validate(reporter);
-        // Validate EMR managed scaling max is greater than min
-        int minEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY);
-        int maxEmrCapacity = getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY);
-        boolean managedScaling = getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING);
-        if (managedScaling && maxEmrCapacity <= minEmrCapacity) {
-            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, String.valueOf(managedScaling));
-            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, String.valueOf(minEmrCapacity));
-            reporter.invalidProperty(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, String.valueOf(maxEmrCapacity));
-        }
+    protected List<SleeperPropertiesValidationCriteria<InstanceProperty>> getValidationCriteria() {
+        return List.of(PersistentEMRManagedScalingBounds.validationCriteria());
     }
 
     /**

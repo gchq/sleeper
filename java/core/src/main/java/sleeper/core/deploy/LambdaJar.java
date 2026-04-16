@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,9 @@ public class LambdaJar {
     public static final LambdaJar STATESTORE = builder().filenameFormat("statestore-lambda-%s.jar")
             .imageName("statestore-lambda")
             .artifactId("statestore-lambda").add();
+    public static final LambdaJar REST_API = builder().filenameFormat("rest-api-%s.jar")
+            .imageName("rest-api-lambda")
+            .artifactId("rest-api").add();
 
     private final String filenameFormat;
     private final String imageName;

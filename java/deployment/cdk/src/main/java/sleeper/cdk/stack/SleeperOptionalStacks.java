@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,6 +168,11 @@ public class SleeperOptionalStacks {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
             new IngestBatcherStack(scope, "IngestBatcher", props, coreStacks, ingestStacks);
+        }
+
+        // Stack to provide a Rest API for sleeper
+        if (optionalStacks.contains(OptionalStack.RestApiStack)) {
+            new RestApiStack(scope, "RestApi", instanceProperties, artefacts, coreStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {

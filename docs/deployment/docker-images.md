@@ -64,6 +64,7 @@ Docker image for each lambda jar.
 | cdk-custom-resources-`<version-number>`.jar         | custom-resources-lambda           | false                |
 | metrics-`<version-number>`.jar                      | metrics-lambda                    | false                |
 | statestore-lambda-`<version-number>`.jar            | statestore-lambda                 | false                |
+| rest-api-`<version-number>`.jar                     | rest-api-lambda                   | false                |
 
 
 ## Building and pushing

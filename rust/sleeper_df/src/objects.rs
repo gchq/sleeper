@@ -2,7 +2,7 @@
 use std::{ffi::c_uchar, slice};
 
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ use color_eyre::{Report, eyre::eyre};
 
 pub mod aws_config;
 pub mod ffi_common_config;
+pub mod ffi_parquet_options;
 pub mod query;
 pub mod sleeper_region;
 
