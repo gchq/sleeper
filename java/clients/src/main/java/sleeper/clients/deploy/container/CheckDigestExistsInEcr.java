@@ -21,11 +21,11 @@ import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
 import java.util.Objects;
 
-public interface CheckVersionExistsInEcr {
+public interface CheckDigestExistsInEcr {
 
     boolean digestExistsInRepository(String repository, String digest);
 
-    static CheckVersionExistsInEcr withEcrClient(EcrClient ecrClient) {
+    static CheckDigestExistsInEcr withEcrClient(EcrClient ecrClient) {
         return (repository, digest) -> {
             try {
                 ListImagesResponse response = ecrClient.listImages(request -> request.repositoryName(repository));

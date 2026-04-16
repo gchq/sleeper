@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
-    private final CheckVersionExistsInEcr repositoryChecker;
+    private final CheckDigestExistsInEcr repositoryChecker;
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final String version;
@@ -171,7 +171,7 @@ public class UploadDockerImages {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private DeployConfiguration deployConfig;
-        private CheckVersionExistsInEcr repositoryChecker;
+        private CheckDigestExistsInEcr repositoryChecker;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private String version = SleeperVersion.getVersion();
@@ -200,7 +200,7 @@ public class UploadDockerImages {
             return this;
         }
 
-        public Builder repositoryChecker(CheckVersionExistsInEcr repositoryChecker) {
+        public Builder repositoryChecker(CheckDigestExistsInEcr repositoryChecker) {
             this.repositoryChecker = repositoryChecker;
             return this;
         }

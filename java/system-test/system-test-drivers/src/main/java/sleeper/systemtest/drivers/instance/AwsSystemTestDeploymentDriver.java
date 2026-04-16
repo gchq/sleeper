@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployConfiguration;
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.CheckDigestExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -128,7 +128,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 UploadDockerImages.builder()
                         .scriptsDirectory(parameters.getScriptsDirectory())
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
-                        .repositoryChecker(CheckVersionExistsInEcr.withEcrClient(ecr))
+                        .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecr))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
                 parameters.getAccount(), parameters.getRegion());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
+public class InMemoryEcrRepositories implements CheckDigestExistsInEcr {
     private final Map<String, Set<String>> digestsByRepositoryName = new HashMap<>();
 
     public void addDigestToRepository(String repository, String digest) {

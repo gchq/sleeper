@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2026 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.CheckDigestExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -153,7 +153,7 @@ public class UploadArtefacts {
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
-                            .repositoryChecker(CheckVersionExistsInEcr.withEcrClient(ecrClient))
+                            .repositoryChecker(CheckDigestExistsInEcr.withEcrClient(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
                     account, region);
