@@ -110,7 +110,6 @@ public class UploadDockerImages {
             } else {
                 commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
             }
-
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }
@@ -119,7 +118,7 @@ public class UploadDockerImages {
         String sourceTag = buildTag(deployConfig.dockerRepositoryPrefix(), image);
         commandRunner.runOrThrow("docker", "pull", sourceTag);
         String digest = getDigestForImage(image);
-        if (imageDoesNotExistInRepositoryWithDigest(image, null, digest)) {
+        if (digest.isEmpty() || imageDoesNotExistInRepositoryWithDigest(image, null, digest)) {
             commandRunner.runOrThrow("docker", "tag", sourceTag, tag);
             commandRunner.runOrThrow("docker", "push", tag);
         }
