@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -49,12 +50,13 @@ public class ReinitialiseTableFromExportedPartitions {
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
+            String accountName,
             S3Client s3Client,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String partitionsFile) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(accountName, s3Client, dynamoClient, instanceId, tableName, true);
         this.partitionsFile = partitionsFile;
     }
 
@@ -99,9 +101,11 @@ public class ReinitialiseTableFromExportedPartitions {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
             ReinitialiseTableFromExportedPartitions reinitialiseTable = new ReinitialiseTableFromExportedPartitions(
-                    s3Client, dynamoClient, instanceId, tableName, exportedPartitionsFile);
+                    accountName, s3Client, dynamoClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         }
