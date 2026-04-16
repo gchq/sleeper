@@ -18,7 +18,7 @@ Here are some changes we might want to make to Sleeper that could cause problems
 - Changes to CDK deployment that may trigger CloudFormation to recreate resources (e.g. renaming resources, modifying an EMR cluster)
 - Changes to how clients communicate with Sleeper
 
-We can look at some checks you can do before a release to make it less likely problems will occur.
+We will look at some checks you can do before a release to make it less likely problems will occur.
 
 We have a separate document for checks on [changes to data formats during upgrade](upgrade-format-changes.md).
 
@@ -76,3 +76,19 @@ persistence, rather than protecting the interaction points in any way against fu
 we will need to be very clear about the process. Before we change the underlying infrastructure we will want to have
 confidence that all deployed instances in practice are on a version that has protections against the change we want to
 make.
+
+### Making breaking changes non-breaking
+
+It may be necessary in the future to make changes that currently would need to be backwards incompatible. We have a
+couple of options for how to do that:
+
+1. Introduce a mechanism to support the change we want to make, then wait for that to be deployed everywhere before we
+   make the change
+2. Introduce a backwards incompatible change with a plan for migration, and rely on existing deployments applying that
+   migration
+
+We will try to ensure we never introduce changes that would be backwards incompatible for any known deployed instance.
+We will try to avoid ever using option 2 in a way where any manual steps are required for migration.
+
+Any necessary migration should be applied automatically, either by a CDK deployment, or in slower time after a
+deployment with continued support for unmigrated data.
