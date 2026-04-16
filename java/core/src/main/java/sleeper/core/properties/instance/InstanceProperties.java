@@ -173,6 +173,17 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     /**
+     * Infers the name of the config bucket for a given Sleeper instance.
+     *
+     * @param  instanceId  the Sleeper instance ID
+     * @param  accountName the AWS account name
+     * @return             the config bucket name
+     */
+    public static String getConfigBucketFromInstanceIdAndAccount(String instanceId, String accountName) {
+        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * Creates a printer to be used to display instance properties in a given group.
      *
      * @param  writer the writer to write to

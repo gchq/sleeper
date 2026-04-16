@@ -60,7 +60,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
-        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, DeployDockerInstance.LOCALSTACK_AWS_ACCOUNT))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);

@@ -60,6 +60,8 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYN
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployDockerInstance {
+    public static final String LOCALSTACK_AWS_ACCOUNT = "test-account";
+
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final SqsClient sqsClient;
@@ -125,9 +127,10 @@ public class DeployDockerInstance {
 
     private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+        String accountName = LOCALSTACK_AWS_ACCOUNT;
+        instanceProperties.set(ACCOUNT, accountName);
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
-        instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
