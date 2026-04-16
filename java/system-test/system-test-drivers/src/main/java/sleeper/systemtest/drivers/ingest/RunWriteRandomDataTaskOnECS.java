@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.common.task.RunECSTasks;
 import sleeper.configuration.properties.S3TableProperties;
@@ -142,8 +143,10 @@ public class RunWriteRandomDataTaskOnECS {
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 SqsClient sqsClient = SqsClient.create();
-                EcsClient ecsClient = EcsClient.create()) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+                EcsClient ecsClient = EcsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, args[0], accountName);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
             SystemTestDataGenerationJob job = SystemTestDataGenerationJob.getDefaultJob(systemTestProperties, tableProperties);

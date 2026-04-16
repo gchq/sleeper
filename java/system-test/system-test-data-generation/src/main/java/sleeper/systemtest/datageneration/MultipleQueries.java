@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.query.QueryLambdaClient;
 import sleeper.configuration.properties.S3TableProperties;
@@ -147,8 +148,10 @@ public class MultipleQueries {
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
             multipleQueries.run();
         }

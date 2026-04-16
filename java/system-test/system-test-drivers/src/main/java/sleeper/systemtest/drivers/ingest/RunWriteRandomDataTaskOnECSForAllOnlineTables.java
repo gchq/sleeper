@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -77,8 +78,10 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         try (
                 S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                EcsClient ecsClient = EcsClient.create()) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+                EcsClient ecsClient = EcsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, instanceId, accountName);
 
             int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
 

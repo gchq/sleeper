@@ -62,8 +62,8 @@ public class SystemTestProperties extends InstanceProperties {
         return properties;
     }
 
-    public static SystemTestProperties loadFromS3GivenInstanceId(S3Client s3Client, String instanceId) {
-        return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+    public static SystemTestProperties loadFromS3GivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
+        return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
     }
 
     private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {
