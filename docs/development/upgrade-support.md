@@ -60,8 +60,13 @@ problem.
 
 There are a number of ways that changes to Sleeper could affect support for clients that interact with an instance.
 When we upgrade an instance, any old versions of clients need to continue to interact with both the old and new version
-as the upgrade proceeds. Otherwise we'd need downtime to do the upgrade, and we'd need to make sure to upgrade all
-clients during this downtime. It's important to avoid that to allow for frequent updates with minimal disruption.
+as the upgrade proceeds.
+
+If we didn't support old client code, you'd need downtime during an upgrade, to upgrade all applications that use client
+code to interact with Sleeper. It's important to avoid that to allow for frequent updates with minimal disruption.
+
+This would also impact any users interacting with Sleeper directly. While we can expect users to try to keep their
+client code up to date, that might not happen in practice until they notice a problem.
 
 Whichever data formats the clients interact with, we need to maintain support for those interactions as they were in an
 old version.
