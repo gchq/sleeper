@@ -69,6 +69,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATime;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 
 public class CompactionTaskTestBase {
@@ -394,20 +396,6 @@ public class CompactionTaskTestBase {
             table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
             table.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         }
-    }
-
-    private Supplier<Instant> timePassesAMinuteAtATime() {
-        return timePassesAMinuteAtATimeFrom(Instant.parse("2024-09-04T09:50:00Z"));
-    }
-
-    protected Supplier<Instant> timePassesAMinuteAtATimeFrom(Instant firstTime) {
-        return Stream.iterate(firstTime,
-                time -> time.plus(Duration.ofMinutes(1)))
-                .iterator()::next;
-    }
-
-    protected DoubleSupplier noJitter() {
-        return () -> 0.0;
     }
 
     protected class ProcessJob {

@@ -36,6 +36,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_B
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;

@@ -83,6 +83,16 @@ public class SupplierTestHelper {
     }
 
     /**
+     * Creates a supplier that would usually be defined as Instant::now. The supplied times will start at the set time,
+     * then each subsequent time will be a minute later than the last.
+     *
+     * @return the supplier
+     */
+    public static Supplier<Instant> timePassesAMinuteAtATime() {
+        return timePassesAMinuteAtATimeFrom(Instant.parse("2026-01-01T00:00:00Z"));
+    }
+
+    /**
      * Creates a supplier that would usually be defined as Instant::now. The supplied times will start at the given
      * time, then each subsequent time will be a minute later than the last.
      *
