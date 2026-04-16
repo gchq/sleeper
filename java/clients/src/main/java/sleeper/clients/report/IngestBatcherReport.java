@@ -18,6 +18,7 @@ package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.report.ingest.batcher.IngestBatcherReporter;
@@ -108,8 +109,10 @@ public class IngestBatcherReport {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
             IngestBatcherReporter reporter;
