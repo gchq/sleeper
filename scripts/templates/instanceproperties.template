@@ -1371,8 +1371,8 @@ sleeper.subnets=set-automatically
 # sleeper.compaction.task.max.idle.time.seconds=60
 
 # The total time in minutes that a compaction task can be alive for before it is terminated.
-# When the task has finished it's current job, it will calculate how long it's been running and if
-# it's been running longer than the max alive time it will terminate.
+# When the task has finished its current job, it will calculate how long it's been running and if it's
+# been running longer than the max alive time it will terminate.
 # A new task will then begin running to process remaining compaction jobs.
 # This allows the user to gracefully upgrade Sleeper to a newer version.
 # (default value shown below, uncomment to set a value)
