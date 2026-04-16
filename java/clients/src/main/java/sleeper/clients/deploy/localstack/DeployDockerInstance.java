@@ -20,6 +20,7 @@ import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
 import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
@@ -60,14 +61,15 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYN
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployDockerInstance {
-    public static final String LOCALSTACK_AWS_ACCOUNT = "test-account";
 
+    private final String accountName;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final SqsClient sqsClient;
     private final Consumer<TableProperties> extraTableProperties;
 
     private DeployDockerInstance(Builder builder) {
+        accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
         dynamoClient = Objects.requireNonNull(builder.dynamoClient, "dynamoClient must not be null");
         sqsClient = Objects.requireNonNull(builder.sqsClient, "sqsClient must not be null");
@@ -88,8 +90,10 @@ public class DeployDockerInstance {
         String instanceId = args[0];
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             DeployDockerInstance.builder()
+                    .accountName(stsClient.getCallerIdentity().account())
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient).sqsClient(sqsClient).build()
                     .deploy(new InstanceProperties(), instanceId);
@@ -125,9 +129,8 @@ public class DeployDockerInstance {
         }
     }
 
-    private static void setForcedInstanceProperties(InstanceProperties instanceProperties) {
+    private void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
-        String accountName = LOCALSTACK_AWS_ACCOUNT;
         instanceProperties.set(ACCOUNT, accountName);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
@@ -151,6 +154,7 @@ public class DeployDockerInstance {
     }
 
     public static final class Builder {
+        private String accountName;
         private S3Client s3Client;
         private DynamoDbClient dynamoClient;
         private SqsClient sqsClient;
@@ -158,6 +162,11 @@ public class DeployDockerInstance {
         };
 
         private Builder() {
+        }
+
+        public Builder accountName(String accountName) {
+            this.accountName = accountName;
+            return this;
         }
 
         public Builder s3Client(S3Client s3Client) {

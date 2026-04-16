@@ -62,6 +62,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder()
+                .accountName(stsClient.getCallerIdentity().account())
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient).sqsClient(sqsClient)
                 .extraTableProperties(extraProperties)

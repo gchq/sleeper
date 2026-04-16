@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import sleeper.clients.deploy.localstack.DeployDockerInstance;
+import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -25,7 +25,7 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
     private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
             SystemTestParametersTestHelper.parametersBuilder()
-                    .account(DeployDockerInstance.LOCALSTACK_AWS_ACCOUNT)
+                    .account(SleeperLocalStackClients.STS_CLIENT.getCallerIdentity().account())
                     .shortTestId("localstack")
                     .region(SleeperLocalStackContainer.INSTANCE.getRegion())
                     .build(),
