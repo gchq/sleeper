@@ -18,6 +18,7 @@ package sleeper.clients.query;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -133,11 +134,14 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                SqsClient sqsClient = SqsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+                SqsClient sqsClient = SqsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, instanceProperties);
             queryLambdaClient.run();
         }

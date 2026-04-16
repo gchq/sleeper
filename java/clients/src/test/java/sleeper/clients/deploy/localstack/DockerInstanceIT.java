@@ -88,7 +88,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoClient, sqsClient);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoClient, sqsClient, stsClient);
 
             // Then
             assertThatThrownBy(() -> s3Client.headBucket(request -> request.bucket(instanceProperties.get(CONFIG_BUCKET))))

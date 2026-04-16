@@ -19,6 +19,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -92,9 +93,11 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
         String instanceId = args[0];
 
         try (S3Client s3Client = S3Client.create();
-                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                StsClient stsClient = StsClient.create()) {
             AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.builder().build();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             QueryWebSocketClient webSocketClient = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, credentialsProvider);
             QueryWebSocketCommandLineClient commandLineClient = new QueryWebSocketCommandLineClient(instanceProperties,
