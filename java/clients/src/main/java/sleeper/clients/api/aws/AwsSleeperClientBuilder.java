@@ -16,7 +16,6 @@
 package sleeper.clients.api.aws;
 
 import org.apache.hadoop.conf.Configuration;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
@@ -59,7 +58,7 @@ public class AwsSleeperClientBuilder {
      */
     public SleeperClient build() {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
-        InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
+        InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
         ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
@@ -83,12 +82,12 @@ public class AwsSleeperClientBuilder {
                 .build();
     }
 
-    private InstanceProperties loadInstanceProperties(S3Client s3Client) {
+    private InstanceProperties loadInstanceProperties(SleeperClientAwsClients awsClients) {
         if (instanceProperties != null) {
             return instanceProperties;
         }
         Objects.requireNonNull(instanceId, "instanceId must not be null");
-        return S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        return S3InstanceProperties.loadGivenInstanceIdAndAccount(awsClients.s3(), instanceId, awsClients.account());
     }
 
     /**
