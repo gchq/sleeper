@@ -15,14 +15,14 @@
 * limitations under the License.
 */
 use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
-use arrow::{
-    array::{
-        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
-        MapFieldNames, StringBuilder, StructArray,
-    },
-    datatypes::{DataType, Field},
-};
 use datafusion::{
+    arrow::{
+        array::{
+            ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
+            MapFieldNames, StringBuilder, StructArray,
+        },
+        datatypes::{DataType, Field},
+    },
     common::{HashMap, exec_err, plan_err},
     error::Result,
     logical_expr::{EmitTo, GroupsAccumulator},
@@ -301,14 +301,14 @@ mod tests {
             state::MapNullState,
         },
     };
-    use arrow::{
-        array::{
-            AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
-            UInt16Builder,
-        },
-        datatypes::{DataType, Field, Fields, Int64Type},
-    };
     use datafusion::{
+        arrow::{
+            array::{
+                AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
+                UInt16Builder,
+            },
+            datatypes::{DataType, Field, Fields, Int64Type},
+        },
         common::HashMap,
         error::DataFusionError,
         logical_expr::{EmitTo, GroupsAccumulator},

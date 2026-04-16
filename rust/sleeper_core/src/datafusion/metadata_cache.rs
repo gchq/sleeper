@@ -29,7 +29,10 @@ use datafusion::{
         physical_plan::parquet::metadata::CachedParquetMetaData,
     },
     error::DataFusionError,
-    execution::{cache::cache_manager::FileMetadataCache, context::SessionContext},
+    execution::{
+        cache::cache_manager::{CachedFileMetadataEntry, FileMetadataCache},
+        context::SessionContext,
+    },
     parquet::file::metadata::{PageIndexPolicy, ParquetMetaDataReader},
 };
 use log::debug;
@@ -48,7 +51,7 @@ async fn load_metadata(
     meta: ObjectMeta,
     metadata_size_hint: Option<usize>,
 ) -> Result<bool, DataFusionError> {
-    Ok(if cache.contains_key(&meta) {
+    Ok(if cache.contains_key(&meta.location.clone()) {
         false
     } else {
         debug!("Pre-fetching {} to metadata cache", meta.location);
@@ -59,8 +62,11 @@ async fn load_metadata(
             .await?;
 
         cache.put(
-            &meta,
-            Arc::new(CachedParquetMetaData::new(Arc::new(metadata))),
+            &meta.location.clone(),
+            CachedFileMetadataEntry::new(
+                meta,
+                Arc::new(CachedParquetMetaData::new(Arc::new(metadata))),
+            ),
         );
         true
     })
