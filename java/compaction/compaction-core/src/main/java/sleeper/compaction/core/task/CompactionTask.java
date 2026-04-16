@@ -79,7 +79,7 @@ public class CompactionTask {
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
-    private final long maxAliveTimeMinutes;
+    private final Duration maxAliveTimeMinutes;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -159,7 +159,7 @@ public class CompactionTask {
 
     private boolean hasNotReachedMaxAliveTime(Instant startTime) {
         Duration aliveTime = Duration.between(startTime, timeSupplier.get());
-        return aliveTime.toMinutes() < maxAliveTimeMinutes;
+        return aliveTime.compareTo(maxAliveTimeMinutes) < 0;
     }
 
     private boolean prepareCompactionMessage(String jobRunId, MessageHandle message, ConsecutiveFailuresTracker failureTracker) {
@@ -253,9 +253,12 @@ public class CompactionTask {
                 summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 
-    private long generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
-        return instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES) -
-                (long) (randomJitterFunction.getAsDouble() * instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
+    private Duration generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
+        Duration maxAlive = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES));
+        Duration jitter = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
+        jitter = Duration.ofMillis((long) (randomJitterFunction.getAsDouble() * jitter.toMillis()));
+        Duration calculated = maxAlive.minus(jitter);
+        return calculated;
     }
 
     @FunctionalInterface
