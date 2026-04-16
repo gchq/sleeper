@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -72,7 +73,7 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     private String runReport() throws Exception {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3Client, dynamoClient, out.getPrintStream());
+                .runReport(instanceProperties.get(ACCOUNT), s3Client, dynamoClient, out.getPrintStream());
         return out.toString();
     }
 

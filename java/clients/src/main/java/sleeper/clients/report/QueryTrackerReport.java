@@ -18,6 +18,7 @@ package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.query.JsonQueryTrackerReporter;
 import sleeper.clients.report.query.QueryTrackerReporter;
@@ -73,17 +74,20 @@ public class QueryTrackerReport {
     }
 
     public static void main(String[] args) {
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Wrong number of arguments");
+        }
+        String instanceId = args[0];
+        QueryTrackerReporter reporter = getReporter(args, 1);
+        TrackerQuery queryType = optionalArgument(args, 2)
+                .map(QueryTrackerReport::readTypeArgument)
+                .orElseGet(QueryTrackerReport::promptForQueryType);
+
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            if (args.length < 2 || args.length > 3) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            QueryTrackerReporter reporter = getReporter(args, 1);
-            TrackerQuery queryType = optionalArgument(args, 2)
-                    .map(QueryTrackerReport::readTypeArgument)
-                    .orElseGet(QueryTrackerReport::promptForQueryType);
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
             QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
             new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
         } catch (IllegalArgumentException e) {
