@@ -16,6 +16,8 @@ vulnerabilities:
   - id: CVE-2026-32288
   - id: CVE-2026-32289
   - id: CVE-2026-33810
+
+  - id: CVE-2026-39984
   # Node.js/node-pkg
   - id: CVE-2026-33671
   - id: CVE-2026-33672
