@@ -3,12 +3,7 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
-  - id: CVE-2025-15558
   # Golang stdlib
-  - id: CVE-2025-68121
-  - id: CVE-2026-25679
-  - id: CVE-2026-27139
-  - id: CVE-2026-27142
   - id: CVE-2026-32280
   - id: CVE-2026-32281
   - id: CVE-2026-32282
@@ -16,26 +11,6 @@ vulnerabilities:
   - id: CVE-2026-32288
   - id: CVE-2026-32289
   - id: CVE-2026-33810
-
-  # Node.js/node-pkg
-  - id: CVE-2026-33671
-  - id: CVE-2026-33672
-  - id: CVE-2026-33750
-  # github.com/sigstore/rekor
-  - id: CVE-2026-23831
-  - id: CVE-2026-24117
-  # github.com/sigstore/sigstore
-  - id: CVE-2026-24137
-  # github.com/theupdateframework/go-tuf/v2
-  - id: CVE-2026-23991
-  - id: CVE-2026-23992
-  - id: CVE-2026-24686
-  # github.com/cloudflare/circl
-  - id: CVE-2026-1229
-  # go.opentelemetry.io/otel/sdk
-  - id: CVE-2026-24051
-  # google.golang.org/grpc
-  - id: CVE-2026-33186
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
@@ -47,9 +22,8 @@ vulnerabilities:
 
   # Dependencies of the latest version of AWS CDK/CLI:
 
-  # minimatch NodeJS package
-  - id: CVE-2026-27903
-  - id: CVE-2026-27904
-  # tar NodeJS package
-  - id: CVE-2026-29786
-  - id: CVE-2026-31802
+  # picomatch NodeJS package
+  - id: CVE-2026-33671
+  - id: CVE-2026-33672
+  # brace-expansion NodeJS package
+  - id: CVE-2026-33750
