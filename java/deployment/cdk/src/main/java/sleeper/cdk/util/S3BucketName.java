@@ -27,13 +27,12 @@ public class S3BucketName {
     /**
      * Build an S3 Bucket name.
      *
-     * @param  account    the AWS account
-     * @param  instanceId the AWS instance id
-     * @param  args       elements to include in the bucket name
-     * @return            an S3 bucket name
+     * @param  account     the AWS account
+     * @param  instanceId  the AWS instance id
+     * @param  namePortion the name identifying this bucket within the Sleeper instance (must not exceed 20 characters)
+     * @return             an S3 bucket name
      */
-    public static String parse(String account, String instanceId, String... args) {
-        String namePortion = String.join("-", args);
+    public static String parse(String account, String instanceId, String namePortion) {
 
         if (namePortion.length() > 20) {
             throw new IllegalArgumentException("Name portion exceeds 20 characters.");

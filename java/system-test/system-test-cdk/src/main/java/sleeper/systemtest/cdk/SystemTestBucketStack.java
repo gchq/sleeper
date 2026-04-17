@@ -56,7 +56,7 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
-        String bucketName = S3BucketName.parse(properties.get(ACCOUNT), properties.get(ID), "system", "test", "ingest");
+        String bucketName = S3BucketName.parse(properties.get(ACCOUNT), properties.get(ID), "system-test-ingest");
 
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));

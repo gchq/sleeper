@@ -33,7 +33,7 @@ public class S3BucketNameTest {
     void shouldRefuseNamePortionLessThan20CharactersAndBucketNameExceeds63Characters() {
 
         // Given / When / Then
-        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789123456789012345678901234567890", "bucket", "name"))
+        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789123456789012345678901234567890", "bucket-name"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Complete bucket name exceeds 63 characters.");
     }
@@ -42,7 +42,7 @@ public class S3BucketNameTest {
     void shouldRefuseNamePortionLongerThan20Characters() {
 
         // Given / When / Then
-        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789", "bucket", "name", "longer", "than", "20", "chars"))
+        assertThatThrownBy(() -> S3BucketName.parse(mockAccountId, "123456789", "bucket-name-longer-than-20-chars"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Name portion exceeds 20 characters.");
     }
