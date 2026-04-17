@@ -164,12 +164,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     /**
      * Infers the name of the config bucket for a given Sleeper instance.
-     *
-     * @param  instanceId  the Sleeper instance ID
+     * 
      * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
      * @return             the config bucket name
      */
-    public static String getConfigBucketFromInstanceIdAndAccount(String instanceId, String accountName) {
+    public static String getConfigBucketFromAccountAndInstanceId(String accountName, String instanceId) {
         return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 

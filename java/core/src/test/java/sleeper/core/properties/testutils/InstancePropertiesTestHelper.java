@@ -89,7 +89,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(id, accountName));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data-" + accountName);
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results-" + accountName);

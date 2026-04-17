@@ -132,7 +132,7 @@ public class DeployDockerInstance {
     private void setForcedInstanceProperties(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         instanceProperties.set(ACCOUNT, accountName);
-        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
         instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");

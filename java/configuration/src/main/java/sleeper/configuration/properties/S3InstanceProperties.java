@@ -52,7 +52,7 @@ public class S3InstanceProperties {
      * @return             the loaded instance properties
      */
     public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
-        return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceIdAndAccount(s3Client, instanceId, accountName));
+        return InstanceProperties.createAndValidate(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId));
     }
 
     /**
@@ -64,7 +64,7 @@ public class S3InstanceProperties {
      * @return             the loaded instance properties
      */
     public static InstanceProperties loadGivenAccountAndInstanceIdNoValidation(S3Client s3Client, String accountName, String instanceId) {
-        return InstanceProperties.createWithoutValidation(loadPropertiesGivenInstanceIdAndAccount(s3Client, instanceId, accountName));
+        return InstanceProperties.createWithoutValidation(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId));
     }
 
     /**
@@ -114,7 +114,7 @@ public class S3InstanceProperties {
      * @param accountName the AWS account name
      */
     public static void reloadGivenInstanceIdAndAccount(S3Client s3Client, InstanceProperties properties, String instanceId, String accountName) {
-        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName)));
+        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId)));
     }
 
     /**
@@ -138,8 +138,8 @@ public class S3InstanceProperties {
         return instanceProperties;
     }
 
-    private static Properties loadPropertiesGivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
-        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceIdAndAccount(instanceId, accountName));
+    private static Properties loadPropertiesGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
+        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
     }
 
     private static Properties loadPropertiesFromBucket(S3Client s3Client, String bucket) {
