@@ -146,7 +146,7 @@ public class RunWriteRandomDataTaskOnECS {
                 EcsClient ecsClient = EcsClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, args[0], accountName);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenAccountAndInstanceId(s3Client, accountName, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
             SystemTestDataGenerationJob job = SystemTestDataGenerationJob.getDefaultJob(systemTestProperties, tableProperties);

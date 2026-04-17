@@ -62,7 +62,7 @@ public class SystemTestProperties extends InstanceProperties {
         return properties;
     }
 
-    public static SystemTestProperties loadFromS3GivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
+    public static SystemTestProperties loadFromS3GivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
         return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
     }
 

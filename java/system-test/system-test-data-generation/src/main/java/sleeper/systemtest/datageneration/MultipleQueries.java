@@ -151,7 +151,7 @@ public class MultipleQueries {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenAccountAndInstanceId(s3Client, accountName, instanceId);
             MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
             multipleQueries.run();
         }

@@ -129,7 +129,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
                 EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
             int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
 

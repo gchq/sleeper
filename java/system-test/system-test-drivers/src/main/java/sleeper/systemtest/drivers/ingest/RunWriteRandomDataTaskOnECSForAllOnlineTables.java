@@ -81,7 +81,7 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
                 EcsClient ecsClient = EcsClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
             int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
 
