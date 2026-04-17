@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def load_instance_properties(s3: S3ServiceResource, instance_id: str) -> InstanceProperties:
-    bucket_name = config_bucket_for_instance(instance_id)
+def load_instance_properties(s3: S3ServiceResource, account_name: str, instance_id: str) -> InstanceProperties:
+    bucket_name = config_bucket_for_account_instance(account_name, instance_id)
     return load_instance_properties_from_bucket(s3, bucket_name)
 
 
@@ -26,9 +26,5 @@ def save_instance_properties(s3: S3ServiceResource, properties: InstanceProperti
     config_obj.put(Body=properties.as_properties_str())
 
 
-def config_bucket_for_instance(instance_id: str) -> str:
-    return "sleeper-" + instance_id + "-config"
-
-
 def config_bucket_for_account_instance(account_name: str, instance_id: str) -> str:
-    return "sleeper-" + clean_instance_id(instance_id) + "-config"
+    return "sleeper-" + clean_instance_id(instance_id) + "-config-" + account_name
