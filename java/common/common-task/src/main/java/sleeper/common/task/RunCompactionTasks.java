@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,15 +35,17 @@ public class RunCompactionTasks {
             System.out.println("Usage: <instance-id> <number-of-tasks>");
             return;
         }
+        String instanceId = args[0];
+        int numberOfTasks = Integer.parseInt(args[1]);
 
         try (S3Client s3Client = S3Client.create();
                 EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
-                Ec2Client ec2Client = Ec2Client.create()) {
-            String instanceId = args[0];
-            int numberOfTasks = Integer.parseInt(args[1]);
+                Ec2Client ec2Client = Ec2Client.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
 
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
 
             RunDataProcessingTasks.createForCompactions(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);

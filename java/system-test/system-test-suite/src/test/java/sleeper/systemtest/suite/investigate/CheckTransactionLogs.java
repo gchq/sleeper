@@ -69,12 +69,12 @@ public class CheckTransactionLogs {
         this.partitionsLog = partitionsLog;
     }
 
-    public static CheckTransactionLogs load(String instanceId, String tableId, boolean cacheTransactions, S3Client s3Client, DynamoDbClient dynamoClient) {
+    public static CheckTransactionLogs load(String accountName, String instanceId, String tableId, boolean cacheTransactions, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
         if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
             return from(OnDiskTransactionLogs.load(cacheDirectory));
         }
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
         TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(tableId);
         TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
