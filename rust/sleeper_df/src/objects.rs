@@ -1,6 +1,4 @@
 //! All Foreign Function Interface compatible structs are here.
-use std::{ffi::c_uchar, slice};
-
 /*
  * Copyright 2022-2026 Crown Copyright
  *
@@ -17,6 +15,11 @@ use std::{ffi::c_uchar, slice};
  * limitations under the License.
  */
 use color_eyre::{Report, eyre::eyre};
+use std::{
+    ffi::{c_char, c_uchar},
+    fmt::Display,
+    slice,
+};
 
 pub mod aws_config;
 pub mod ffi_common_config;
@@ -38,7 +41,6 @@ pub struct FFIFileResult {
 }
 
 /// Data type for row key fields in Sleeper schema.
-/// Encoded as integer type for FFI compatibility.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
 /// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementType.java.
@@ -50,6 +52,17 @@ pub enum FFIElementType {
     Int64 = 2,
     String = 3,
     ByteArray = 4,
+}
+
+impl FFIElementType {
+    pub fn display_type(&self) -> &str {
+        match self {
+            FFIElementType::Int32 => "i32",
+            FFIElementType::Int64 => "i64",
+            FFIElementType::String => "*const c_char",
+            FFIElementType::ByteArray => "*const c_uchar",
+        }
+    }
 }
 
 impl TryFrom<&usize> for FFIElementType {
@@ -66,13 +79,18 @@ impl TryFrom<&usize> for FFIElementType {
     }
 }
 
+impl Display for FFIElementType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FFIElementType {}", self.display_type())
+    }
+}
+
 /// Variant type for encoding a Sleeper row key element of a specific type.
 /// This is a union type, storage for all members overlaps!
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
 /// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementData.java.
 /// The order and types of the fields must match exactly.
-#[derive(Debug)]
 #[repr(C)]
 pub union FFIElementData {
     int32: i32,
@@ -86,11 +104,60 @@ pub union FFIElementData {
 ///  *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
 /// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElement.java.
 /// The order and types of the fields must match exactly.
-#[derive(Debug)]
 #[repr(C)]
 pub struct FFIElement {
     contained: FFIElementType,
     item: FFIElementData,
+}
+
+impl TryFrom<&FFIElement> for i32 {
+    type Error = Report;
+
+    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
+        match value.contained {
+            FFIElementType::Int32 => Ok(unsafe { value.item.int32 }),
+            _ => Err(eyre!("Can't extract i32 from {}", value.contained)),
+        }
+    }
+}
+
+impl TryFrom<&FFIElement> for i64 {
+    type Error = Report;
+
+    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
+        match value.contained {
+            FFIElementType::Int64 => Ok(unsafe { value.item.int64 }),
+            _ => Err(eyre!("Can't extract i64 from {}", value.contained)),
+        }
+    }
+}
+
+impl TryFrom<&FFIElement> for *const c_char {
+    type Error = Report;
+
+    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
+        match value.contained {
+            FFIElementType::String => Ok(unsafe { value.item.string }),
+            _ => Err(eyre!(
+                "Can't extract *const c_char from {}",
+                value.contained
+            )),
+        }
+    }
+}
+
+impl TryFrom<&FFIElement> for *const c_uchar {
+    type Error = Report;
+
+    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
+        match value.contained {
+            FFIElementType::ByteArray => Ok(unsafe { value.item.bytes }),
+            _ => Err(eyre!(
+                "Can't extract *const c_uchar from {}",
+                value.contained
+            )),
+        }
+    }
 }
 
 /// Represents an array of bytes (unsigned char in C, u8 in Rust) with a length.
