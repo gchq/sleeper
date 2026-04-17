@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::objects::{FFIBytes, RowKeySchemaType};
+use crate::objects::{FFIBytes, FFIElementType};
 use color_eyre::eyre::{Result, bail, eyre};
 use sleeper_core::PartitionBound;
 use std::{
@@ -69,7 +69,7 @@ pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> R
 pub fn unpack_variant_array<'a>(
     array_base: *const *const c_void,
     len: usize,
-    schema_types: &[RowKeySchemaType],
+    schema_types: &[FFIElementType],
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>> {
     assert!(
@@ -87,22 +87,22 @@ pub fn unpack_variant_array<'a>(
                 Err(eyre!("Found NULL pointer in variant array"))
             } else {
                 match type_id {
-                    RowKeySchemaType::Int32 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
+                    FFIElementType::Int32 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
                         Some(v) => PartitionBound::Int32(*v),
                         None => PartitionBound::Unbounded,
                     }),
-                    RowKeySchemaType::Int64 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
+                    FFIElementType::Int64 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
                         Some(v) => PartitionBound::Int64(*v),
                         None => PartitionBound::Unbounded,
                     }),
-                    RowKeySchemaType::String => {
+                    FFIElementType::String => {
                         match unsafe { bptr.cast::<FFIBytes>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(bytes) => Ok(PartitionBound::String(bytes.try_into()?)),
                             None => Ok(PartitionBound::Unbounded),
                         }
                     }
-                    RowKeySchemaType::ByteArray => {
+                    FFIElementType::ByteArray => {
                         match unsafe { bptr.cast::<FFIBytes>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(bytes) => Ok(PartitionBound::ByteArray(bytes.into())),

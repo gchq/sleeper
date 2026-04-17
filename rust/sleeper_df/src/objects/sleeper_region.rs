@@ -19,7 +19,7 @@ use sleeper_core::{ColRange, SleeperRegion};
 use std::{borrow::Borrow, collections::HashMap, ffi::c_void};
 
 use crate::{
-    objects::RowKeySchemaType,
+    objects::FFIElementType,
     unpack::{unpack_typed_array, unpack_variant_array},
 };
 
@@ -51,7 +51,7 @@ impl<'a> FFISleeperRegion {
     pub fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &[RowKeySchemaType],
+        schema_types: &[FFIElementType],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len

@@ -16,7 +16,7 @@
 */
 use crate::{
     objects::{
-        FFIBytes, RowKeySchemaType,
+        FFIBytes, FFIElementType,
         aws_config::{FFIAwsConfig, unpack_aws_config},
         ffi_parquet_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
@@ -64,10 +64,10 @@ impl FFICommonConfig {
     ///
     /// # Errors
     /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`RowKeySchemaType`].
-    pub fn schema_types(&self) -> Result<Vec<RowKeySchemaType>, color_eyre::Report> {
+    pub fn schema_types(&self) -> Result<Vec<FFIElementType>, color_eyre::Report> {
         unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
             .iter()
-            .map(RowKeySchemaType::try_from)
+            .map(FFIElementType::try_from)
             .collect::<Result<Vec<_>, _>>()
     }
 

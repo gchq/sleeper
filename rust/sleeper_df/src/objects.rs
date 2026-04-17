@@ -39,26 +39,58 @@ pub struct FFIFileResult {
 
 /// Data type for row key fields in Sleeper schema.
 /// Encoded as integer type for FFI compatibility.
-#[derive(Copy, Clone)]
-pub enum RowKeySchemaType {
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementType.java.
+/// The order and types of the fields must match exactly.
+#[derive(Copy, Clone, Debug)]
+#[repr(C)]
+pub enum FFIElementType {
     Int32 = 1,
     Int64 = 2,
     String = 3,
     ByteArray = 4,
 }
 
-impl TryFrom<&usize> for RowKeySchemaType {
+impl TryFrom<&usize> for FFIElementType {
     type Error = color_eyre::Report;
 
     fn try_from(ordinal: &usize) -> Result<Self, Self::Error> {
         match ordinal {
-            1 => Ok(RowKeySchemaType::Int32),
-            2 => Ok(RowKeySchemaType::Int64),
-            3 => Ok(RowKeySchemaType::String),
-            4 => Ok(RowKeySchemaType::ByteArray),
-            _ => Err(eyre!("Invalid FFIRowKeySchemaType ordinal value")),
+            1 => Ok(FFIElementType::Int32),
+            2 => Ok(FFIElementType::Int64),
+            3 => Ok(FFIElementType::String),
+            4 => Ok(FFIElementType::ByteArray),
+            _ => Err(eyre!("Invalid FFIElementType ordinal value")),
         }
     }
+}
+
+/// Variant type for encoding a Sleeper row key element of a specific type.
+/// This is a union type, storage for all members overlaps!
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementData.java.
+/// The order and types of the fields must match exactly.
+#[derive(Debug)]
+#[repr(C)]
+pub union FFIElementData {
+    int32: i32,
+    int64: i64,
+    string: *const c_char,
+    bytes: *const c_uchar,
+}
+
+/// Describes a single Sleeper row key item. This uses an explicit tagged union that determines that active union member.
+///
+///  *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElement.java.
+/// The order and types of the fields must match exactly.
+#[derive(Debug)]
+#[repr(C)]
+pub struct FFIElement {
+    contained: FFIElementType,
+    item: FFIElementData,
 }
 
 /// Represents an array of bytes (unsigned char in C, u8 in Rust) with a length.
