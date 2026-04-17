@@ -24,13 +24,16 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class UploadDockerImagesToEcrRequest {
+    private final String instanceId;
     private final String ecrPrefix;
     private final List<StackDockerImage> images;
     private final boolean overwriteExistingTag;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
+        instanceId = requireNonNull(builder.instanceId, "instanceId must not be null");
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         images = requireNonNull(builder.images(), "images must not be null");
         overwriteExistingTag = builder.overwriteExistingTag;
@@ -57,6 +60,10 @@ public class UploadDockerImagesToEcrRequest {
             return this;
         }
         return toBuilder().extraImages(extraImages).build();
+    }
+
+    public String getInstanceId() {
+        return instanceId;
     }
 
     public String getEcrPrefix() {
@@ -94,6 +101,7 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public static final class Builder {
+        private String instanceId;
         private String ecrPrefix;
         private List<StackDockerImage> images;
         private List<StackDockerImage> extraImages;
@@ -103,6 +111,7 @@ public class UploadDockerImagesToEcrRequest {
         }
 
         public Builder properties(InstanceProperties properties) {
+            instanceId = properties.get(ID);
             return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX));
         }
 

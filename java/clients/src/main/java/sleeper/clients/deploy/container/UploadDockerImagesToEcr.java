@@ -18,8 +18,13 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.command.CommandUtils;
+
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -53,5 +58,24 @@ public class UploadDockerImagesToEcr {
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
         uploader.upload(repositoryPrefix, requestedImages, request.isOverwriteExistingTag());
+    }
+
+    private void populateDockerDigests(String instanceId, List<StackDockerImage> images) {
+        //Run docker images --filter "reference=* /* /{{INSTANT_ID}}/*" --digests --format "{{.Repository}} {{.Tag}} {{.Digest}}"
+        try {
+            List<String> digests = CommandUtils.runCommandReturnOutput("docker", "images",
+                    "--filter", "reference=*/" + instanceId + "/*", "--format", "{{.Repository}},{{.Digest}}");
+
+            Map<String, String> imageNameToDigest = new HashMap<>();
+            for (String s : digests) {
+                String imageName = s.split(",")[0];
+                imageName = imageName.split("/")[2].split(":")[0];
+                String digest = s.split(",")[1];
+                imageNameToDigest.put(imageName, digest);
+            }
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            // 6671 TODO - This exception handling could be moved into CommandUtils
+            // and/or we could just not check ECR for the digest if not found. Doing so would probably help 5852
+        }
     }
 }

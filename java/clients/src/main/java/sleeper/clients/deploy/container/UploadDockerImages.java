@@ -131,13 +131,17 @@ public class UploadDockerImages {
     private String getDigestForImage(StackDockerImage image) {
         try {
             return CommandUtils.runCommandReturnOutput("docker", "images",
-                    "--filter", "reference=" + image.getDirectoryName(), //6671 TODO - directory name might not be the correct one
+                    "--filter", "reference=*/{{InstanceName}/{{imageName}}" + image.getDirectoryName(), //6671 TODO - directory name might not be the correct one
                     "--format", "{{.Digest}}").get(0);
         } catch (IOException | InterruptedException | ExecutionException e) {
             // 6671 TODO - This exception handling could be moved into CommandUtils
             // and/or we could just not check ECR for the digest if not found. Doing so would probably help 5852
             return "";
         }
+        /*
+         * docker images --filter "reference=* /* /*ingest*:0*" --digests --format
+         * "{{.Repository}} {{.Tag}} {{.Digest}}"
+         */
     }
 
     private boolean imageDoesNotExistInRepositoryWithDigest(

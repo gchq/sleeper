@@ -31,6 +31,7 @@ public class StackDockerImage {
     private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
     private final LambdaJar lambdaJar;
+    private String digest = "";
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
@@ -106,9 +107,17 @@ public class StackDockerImage {
         return Optional.ofNullable(lambdaJar);
     }
 
+    public String getDigest() {
+        return digest;
+    }
+
+    public void setDigest(String digest) {
+        this.digest = digest;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(imageName, directoryName, multiplatform, createEmrServerlessPolicy, lambdaJar);
+        return Objects.hash(imageName, directoryName, multiplatform, createEmrServerlessPolicy, lambdaJar, digest);
     }
 
     @Override
@@ -121,14 +130,15 @@ public class StackDockerImage {
         }
         StackDockerImage other = (StackDockerImage) obj;
         return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && multiplatform == other.multiplatform
-                && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar);
+                && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar)
+                && Objects.equals(digest, other.digest);
     }
 
     @Override
     public String toString() {
         return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
                 ", isBuildx=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
-                ", lambdaJar=" + lambdaJar + "}";
+                ", lambdaJar=" + lambdaJar + ", digest=" + digest + "}";
     }
 
     /**
