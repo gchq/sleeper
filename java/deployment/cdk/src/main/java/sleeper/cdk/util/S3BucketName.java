@@ -15,7 +15,11 @@
  */
 package sleeper.cdk.util;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
 import java.util.Locale;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 
 /**
  * Build a bucket name to use on S3.
@@ -27,19 +31,18 @@ public class S3BucketName {
     /**
      * Build an S3 Bucket name.
      *
-     * @param  account     the AWS account
-     * @param  instanceId  the AWS instance id
-     * @param  namePortion the name identifying this bucket within the Sleeper instance (must not exceed 20 characters)
-     * @return             an S3 bucket name
+     * @param  instanceProperties the Sleeper instance properties
+     * @param  namePortion        the name identifying this bucket within the instance (must not exceed 20 characters)
+     * @return                    an S3 bucket name
      */
-    public static String parse(String account, String instanceId, String namePortion) {
-
+    public static String create(InstanceProperties instanceProperties, String namePortion) {
         if (namePortion.length() > 20) {
             throw new IllegalArgumentException("Name portion exceeds 20 characters.");
         }
 
-        String bucketName = String.join("-", "sleeper", instanceId,
-                namePortion, account).toLowerCase(Locale.ROOT);
+        String bucketName = String.join("-",
+                "sleeper", instanceProperties.cleanInstanceId(), namePortion, instanceProperties.get(ACCOUNT))
+                .toLowerCase(Locale.ROOT);
 
         if (bucketName.length() > 63) {
             throw new IllegalArgumentException("Complete bucket name exceeds 63 characters.");
