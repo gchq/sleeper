@@ -151,6 +151,7 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
                         .s3Client(s3Client)
                         .dynamoClient(dynamoClient)
                         .sqsClient(sqsClient)
+                        .stsClient(stsClient)
                         .awsCredentialsProvider(credentialsProvider))
                 .hadoopConf(hadoopConf)
                 .build();

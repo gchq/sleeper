@@ -49,11 +49,8 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         s3ClientWrapper = Objects.requireNonNull(builder.s3ClientWrapper, "s3Client must not be null");
         dynamoClientWrapper = Objects.requireNonNull(builder.dynamoClientWrapper, "dynamoClient must not be null");
         sqsClientWrapper = Objects.requireNonNull(builder.sqsClientWrapper, "sqsClient must not be null");
-        stsClientWrapper = builder.stsClientWrapper;
+        stsClientWrapper = Objects.requireNonNull(builder.stsClientWrapper, "stsClient must not be null");
         awsCredentialsProvider = Objects.requireNonNull(builder.awsCredentialsProvider, "awsCredentialsProvider must not be null");
-        if (accountName == null && stsClientWrapper == null) {
-            throw new NullPointerException("accountName or stsClient must not be null");
-        }
     }
 
     public static Builder builder() {
