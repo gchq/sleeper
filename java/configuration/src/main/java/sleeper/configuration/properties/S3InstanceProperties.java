@@ -46,17 +46,6 @@ public class S3InstanceProperties {
     /**
      * Loads and validates instance properties from the config bucket of the given Sleeper instance.
      *
-     * @param  s3Client   the S3 client
-     * @param  instanceId the Sleeper instance ID
-     * @return            the loaded instance properties
-     */
-    public static InstanceProperties loadGivenInstanceId(S3Client s3Client, String instanceId) {
-        return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceId(s3Client, instanceId));
-    }
-
-    /**
-     * Loads and validates instance properties from the config bucket of the given Sleeper instance.
-     *
      * @param  s3Client    the S3 client
      * @param  instanceId  the Sleeper instance ID
      * @param  accountName the AWS account name
