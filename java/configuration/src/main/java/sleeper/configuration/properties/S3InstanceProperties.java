@@ -147,6 +147,27 @@ public class S3InstanceProperties {
         return instanceProperties;
     }
 
+    /**
+     * Retrieves instance and table properties from the config bucket and saves the configuration to the local file
+     * system.
+     *
+     * @param  s3          the S3 client
+     * @param  dynamoDB    the DynamoDB client
+     * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
+     * @param  directory   the directory to save the configuration to
+     * @return             the instance properties
+     * @throws IOException if the configuration could not be saved to the local file system
+     */
+    public static InstanceProperties saveToLocalWithTableProperties(
+            S3Client s3, DynamoDbClient dynamoDB, String accountName, String instanceId, Path directory) throws IOException {
+        InstanceProperties instanceProperties = loadGivenInstanceIdAndAccount(s3, instanceId, accountName);
+        SaveLocalProperties.saveToDirectory(directory, instanceProperties,
+                S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
+                        .streamAllTables());
+        return instanceProperties;
+    }
+
     private static Properties loadPropertiesGivenInstanceId(S3Client s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
     }
