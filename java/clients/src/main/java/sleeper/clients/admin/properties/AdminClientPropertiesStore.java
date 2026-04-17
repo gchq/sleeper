@@ -73,7 +73,7 @@ public class AdminClientPropertiesStore {
 
     public InstanceProperties loadInstanceProperties(String instanceId) throws CouldNotLoadInstanceProperties {
         try {
-            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3Client, instanceId);
+            return S3InstanceProperties.loadGivenAccountAndInstanceIdNoValidation(s3Client, accountName, instanceId);
         } catch (RuntimeException e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }

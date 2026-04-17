@@ -165,16 +165,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     /**
      * Infers the name of the config bucket for a given Sleeper instance.
      *
-     * @param  instanceId the Sleeper instance ID
-     * @return            the config bucket name
-     */
-    public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
-    }
-
-    /**
-     * Infers the name of the config bucket for a given Sleeper instance.
-     *
      * @param  instanceId  the Sleeper instance ID
      * @param  accountName the AWS account name
      * @return             the config bucket name
