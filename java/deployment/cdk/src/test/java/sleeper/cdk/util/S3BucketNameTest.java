@@ -42,6 +42,16 @@ public class S3BucketNameTest {
     }
 
     @Test
+    void shouldMatchExpectedConfigBucketName() {
+        // Given
+        String expectedBucketName = InstanceProperties.getConfigBucketFromAccountAndInstanceId("my-account", "my-instance");
+
+        // When / Then
+        assertThat(S3BucketName.create(instanceProperties, "config"))
+                .isEqualTo(expectedBucketName);
+    }
+
+    @Test
     void shouldRefuseNamePortionLessThan20CharactersAndBucketNameExceeds63Characters() {
         // Given sleeper-my-instance-test- is 25 characters
         // And I add 39 more characters to get a total of 64
