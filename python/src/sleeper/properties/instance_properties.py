@@ -43,3 +43,7 @@ def load_instance_properties_from_string(properties_str: str) -> InstancePropert
     properties = Properties()
     properties.load(properties_str, encoding="utf-8")
     return InstanceProperties(properties.properties)
+
+
+def clean_instance_id(id: str) -> str:
+    return id.lower().replace(".", "-")

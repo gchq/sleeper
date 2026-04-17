@@ -3,7 +3,7 @@ import logging
 from mypy_boto3_s3 import S3ServiceResource
 
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties, load_instance_properties_from_string
+from sleeper.properties.instance_properties import InstanceProperties, clean_instance_id, load_instance_properties_from_string
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,3 +28,7 @@ def save_instance_properties(s3: S3ServiceResource, properties: InstanceProperti
 
 def config_bucket_for_instance(instance_id: str) -> str:
     return "sleeper-" + instance_id + "-config"
+
+
+def config_bucket_for_account_instance(account_name: str, instance_id: str) -> str:
+    return "sleeper-" + clean_instance_id(instance_id) + "-config"
