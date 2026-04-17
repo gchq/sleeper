@@ -75,7 +75,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        S3InstanceProperties.reloadGivenInstanceIdAndAccount(s3, instanceProperties, instanceId, parameters.getAccount());
+        S3InstanceProperties.reloadGivenAccountAndInstanceId(s3, instanceProperties, parameters.getAccount(), instanceId);
     }
 
     public void saveInstanceProperties(InstanceProperties instanceProperties) {

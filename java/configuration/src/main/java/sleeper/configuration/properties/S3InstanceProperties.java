@@ -110,10 +110,10 @@ public class S3InstanceProperties {
      *
      * @param s3Client    the S3 client
      * @param properties  the instance properties
-     * @param instanceId  the Sleeper instance ID
      * @param accountName the AWS account name
+     * @param instanceId  the Sleeper instance ID
      */
-    public static void reloadGivenInstanceIdAndAccount(S3Client s3Client, InstanceProperties properties, String instanceId, String accountName) {
+    public static void reloadGivenAccountAndInstanceId(S3Client s3Client, InstanceProperties properties, String accountName, String instanceId) {
         properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId)));
     }
 
