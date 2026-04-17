@@ -19,6 +19,8 @@ vulnerabilities:
   - id: CVE-2026-39882
   # go.opentelemetry.io/otel/sdk
   - id: CVE-2026-39883
+  # sigstore/timestamp-authority
+  - id: CVE-2026-39984
 
   # Dependencies of the latest version of AWS CDK/CLI:
 
