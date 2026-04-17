@@ -64,6 +64,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.testutils.TestInstantSupplier;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -114,6 +115,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
@@ -309,10 +311,12 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
-        Supplier<Instant> times = supplyTimes(
+        TestInstantSupplier times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:53:00Z"),      // Max alive time check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:57:00Z"),      // Max alive time check
                 Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
         Supplier<String> jobRunIds = fixIds("job-run-id");
 
@@ -355,10 +359,12 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
-        Supplier<Instant> times = supplyTimes(
+        TestInstantSupplier times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:53:00Z"),      // Max alive time check
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:57:00Z"),      // Max alive time check
                 Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
         Supplier<String> jobRunIds = fixIds("job-run-id");
 
@@ -469,7 +475,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
-                jobRunIdSupplier, timeSupplier, noWaits());
+                jobRunIdSupplier, timeSupplier, noWaits(), noJitter());
         return task;
     }
 

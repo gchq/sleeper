@@ -26,9 +26,9 @@ import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
+import static sleeper.core.testutils.JitterTestHelper.fixJitterSeed;
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
 
 public class ExponentialBackoffWithJitterTest {
 
