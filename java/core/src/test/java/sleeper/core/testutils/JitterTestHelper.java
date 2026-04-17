@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.testutils;
 
 import java.util.Random;
 import java.util.function.DoubleSupplier;
 
 /**
- * Helpers to create parameters for ExponentialBackoffWithJitter in tests.
+ * Helpers to create parameters for jitter in tests.
  */
-public class ExponentialBackoffWithJitterTestHelper {
+public class JitterTestHelper {
 
-    private ExponentialBackoffWithJitterTestHelper() {
+    private JitterTestHelper() {
     }
 
     /**

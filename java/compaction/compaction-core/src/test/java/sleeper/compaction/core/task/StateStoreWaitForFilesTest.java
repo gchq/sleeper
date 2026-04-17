@@ -48,8 +48,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
+import static sleeper.core.testutils.JitterTestHelper.fixJitterSeed;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();

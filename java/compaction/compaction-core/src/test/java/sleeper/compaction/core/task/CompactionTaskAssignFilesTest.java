@@ -36,6 +36,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_B
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
@@ -176,9 +177,9 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID,
-                                Instant.parse("2024-10-28T11:51:00Z"),
                                 Instant.parse("2024-10-28T11:52:00Z"),
                                 Instant.parse("2024-10-28T11:53:00Z"),
+                                Instant.parse("2024-10-28T11:54:00Z"),
                                 List.of("1 replace file reference requests failed to update the state store",
                                         "File not found: " + job.getInputFiles().get(0)))));
     }
@@ -201,7 +202,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         JobRunSummary expectedSummary = summary(
-                Instant.parse("2024-10-28T11:51:00Z"), Duration.ofMinutes(1), 10, 5);
+                Instant.parse("2024-10-28T11:52:00Z"), Duration.ofMinutes(1), 10, 5);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
