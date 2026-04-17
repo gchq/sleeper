@@ -46,7 +46,7 @@ public class TableDefinerStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "table-definer");
+                instanceProperties.cleanInstanceId(), "table-definer");
 
         IFunction tableDefinerLambda = lambdaCode.buildFunction(LambdaHandler.TABLE_DEFINER, "TableDefinerLambda", builder -> builder
                 .functionName(functionName)

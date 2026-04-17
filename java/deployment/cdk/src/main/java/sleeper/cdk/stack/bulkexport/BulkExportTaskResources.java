@@ -83,7 +83,7 @@ public class BulkExportTaskResources {
     }
 
     private IFunction lambdaToCreateTasks(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export-tasks-creator");
 
@@ -131,7 +131,7 @@ public class BulkExportTaskResources {
     private Cluster ecsClusterForBulkExportTasks(
             SleeperCoreStacks coreStacks, SleeperEcsImages ecsImages, IBucket jarsBucket, IBucket resultsBucket) {
         String clusterName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-export-cluster");
+                instanceProperties.cleanInstanceId(), "bulk-export-cluster");
         Cluster cluster = Cluster.Builder
                 .create(stack, "BulkExportCluster")
                 .clusterName(clusterName)

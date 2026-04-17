@@ -122,7 +122,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, TrackDeadLetters deadLetters) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "StateStoreCommitterDLQ")
                 .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterDLQ.fifo"))
@@ -160,7 +160,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build());
         String clusterName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
+                instanceProperties.cleanInstanceId(), "statestore-commit-cluster");
         Cluster cluster = Cluster.Builder.create(this, "cluster")
                 .clusterName(clusterName)
                 .vpc(vpc)
@@ -206,7 +206,7 @@ public class StateStoreCommitterStack extends NestedStack {
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
-                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
+                .family(String.join("-", instanceProperties.cleanInstanceId(), "StateStoreCommitterOnEC2"))
                 .build();
 
         taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
@@ -237,7 +237,7 @@ public class StateStoreCommitterStack extends NestedStack {
             IngestTrackerResources ingestTracker) {
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "statestore-committer");
+                instanceProperties.cleanInstanceId(), "statestore-committer");
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 

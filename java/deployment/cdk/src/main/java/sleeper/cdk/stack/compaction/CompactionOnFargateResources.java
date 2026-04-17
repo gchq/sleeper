@@ -64,7 +64,7 @@ public class CompactionOnFargateResources {
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(stack, "CompactionFargateTaskDefinition")
-                .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
+                .family(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), "CompactionTaskOnFargate"))
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
                 .runtimePlatform(RuntimePlatform.builder()

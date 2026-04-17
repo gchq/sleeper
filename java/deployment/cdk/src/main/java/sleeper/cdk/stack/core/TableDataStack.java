@@ -47,7 +47,7 @@ public class TableDataStack extends NestedStack {
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "table-data");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceProperties.cleanInstanceId(), "table-data");
 
         dataBucket = Bucket.Builder
                 .create(this, "TableDataBucket")

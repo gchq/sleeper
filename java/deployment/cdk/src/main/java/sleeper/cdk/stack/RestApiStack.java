@@ -29,7 +29,6 @@ import software.constructs.Construct;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -37,8 +36,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
-
-import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * REST API for interacting with the Sleeper instance.
@@ -54,7 +51,7 @@ public class RestApiStack extends NestedStack {
 
     private void setUpRestApi(InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts,
             SleeperCoreStacks coreStacks) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties.get(ID));
+        String instanceId = instanceProperties.cleanInstanceId();
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "rest-api-handler");

@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
 
 /**
@@ -164,13 +165,37 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     /**
      * Infers the name of the config bucket for a given Sleeper instance.
-     * 
+     *
      * @param  accountName the AWS account name
      * @param  instanceId  the Sleeper instance ID
      * @return             the config bucket name
      */
     public static String getConfigBucketFromAccountAndInstanceId(String accountName, String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
+        return String.join("-", "sleeper", cleanInstanceId(instanceId), "config", accountName).toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
+     * has a maximum length of 20 characters. See
+     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     *
+     * @return the cleaned up instance ID
+     */
+    public String cleanInstanceId() {
+        return cleanInstanceId(get(ID));
+    }
+
+    /**
+     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
+     * has a maximum length of 20 characters. See
+     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     *
+     * @param  instanceId the instance ID
+     * @return            the cleaned up instance ID
+     */
+    public static String cleanInstanceId(String instanceId) {
+        return instanceId.toLowerCase(Locale.ROOT)
+                .replace(".", "-");
     }
 
     /**

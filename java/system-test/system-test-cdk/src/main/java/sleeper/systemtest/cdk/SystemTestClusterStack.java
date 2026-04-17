@@ -81,7 +81,7 @@ public class SystemTestClusterStack extends NestedStack {
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
             InstanceProperties instanceProperties, SleeperNetworking networking,
             SystemTestBucketStack bucketStack, EcsClusterTasksStack autoStopEcsClusterTasksStack) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
 
         // ECS cluster for tasks to write data
         String clusterName = String.join("-", "sleeper", instanceId, "system-test-cluster");

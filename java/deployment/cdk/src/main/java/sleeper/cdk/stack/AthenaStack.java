@@ -65,7 +65,7 @@ public class AthenaStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
-        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "spill-bucket");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceProperties.cleanInstanceId(), "spill-bucket");
 
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)
@@ -98,7 +98,7 @@ public class AthenaStack extends NestedStack {
         if (!instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES).contains(className)) {
             return;
         }
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String simpleClassName = getSimpleClassName(className);
 
         String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");

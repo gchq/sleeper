@@ -25,7 +25,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.S3BucketName;
-import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
@@ -36,7 +35,7 @@ public class BulkImportBucketStack extends NestedStack {
 
     public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), Utils.cleanInstanceId(instanceProperties), "bulk-import");
+        String bucketName = S3BucketName.parse(instanceProperties.get(ACCOUNT), instanceProperties.cleanInstanceId(), "bulk-import");
 
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                 .bucketName(bucketName)
