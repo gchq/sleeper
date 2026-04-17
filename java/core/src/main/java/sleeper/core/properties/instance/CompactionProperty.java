@@ -117,7 +117,7 @@ public interface CompactionProperty {
             .defaultValue("60")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.time.minutes")
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.time.minutes")
             .description("The total time in minutes that a compaction task can be alive for before it is terminated.\n" +
                     "When the task has finished its current job, it will calculate how long it's been running and " +
                     "if it's been running longer than the max alive time it will terminate.\n" +

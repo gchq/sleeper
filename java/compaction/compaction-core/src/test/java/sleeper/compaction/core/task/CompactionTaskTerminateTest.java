@@ -30,7 +30,7 @@ import java.util.function.DoubleSupplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
@@ -244,7 +244,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         @Test
         void shouldStopTaskAfterMaxAliveTimeNoJitter() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 1);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES, 1);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 0);
             TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -270,7 +270,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         @Test
         void shouldStopTaskAfterMaxAliveTimeWithJitter() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES, 2);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
             DoubleSupplier oneMinuteMaxAliveJitter = () -> 0.5;
             TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(
@@ -295,7 +295,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         @Test
         void shouldStopTaskBeforeAnyJobsIfJitterTooHigh() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES, 2);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
             DoubleSupplier zeroMinutesMaxAliveJitter = () -> 1.0;
             TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(
@@ -316,7 +316,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         @Test
         void shouldCalculateJitterInMilliseconds() throws Exception {
             //Given
-            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES, 2);
+            instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES, 2);
             instanceProperties.setNumber(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 2);
             DoubleSupplier jitterForMillis = () -> 0.456; //This will set max alive time to 1m 5s 280 milli
             TestInstantSupplier timeSupplier = new TestInstantSupplier(List.of(

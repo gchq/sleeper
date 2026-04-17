@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
@@ -254,7 +254,7 @@ public class CompactionTask {
     }
 
     private Duration generateMaxAliveTimeWithJitter(DoubleSupplier randomJitterFunction) {
-        Duration maxAlive = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINMUTES));
+        Duration maxAlive = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES));
         Duration maxJitter = Duration.ofMinutes(instanceProperties.getLong(COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
         Duration jitter = Duration.ofMillis((long) (randomJitterFunction.getAsDouble() * maxJitter.toMillis()));
         return maxAlive.minus(jitter);
