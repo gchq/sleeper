@@ -52,7 +52,7 @@ public class TearDownDockerInstance {
 
     public static void tearDown(String instanceId, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, StsClient stsClient) {
         String accountName = stsClient.getCallerIdentity().account();
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, s3Client, dynamoClient).tearDown();

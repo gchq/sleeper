@@ -104,7 +104,7 @@ public class DeadLettersStatusReport {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             DeadLettersStatusReport statusReport = new DeadLettersStatusReport(
                     sqsClient, QueueMessageCount.withSqsClient(sqsClient), instanceProperties, tablePropertiesProvider);

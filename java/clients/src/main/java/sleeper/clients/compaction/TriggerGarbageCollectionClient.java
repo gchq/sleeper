@@ -53,7 +53,7 @@ public class TriggerGarbageCollectionClient {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
             InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, tableNames);

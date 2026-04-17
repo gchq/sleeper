@@ -45,7 +45,7 @@ public class TrackedQueryProgressReport {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
             System.out.println(queryTracker.getStatus(queryId));
         }

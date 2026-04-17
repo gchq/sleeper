@@ -141,7 +141,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 SqsClient sqsClient = SqsClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, instanceProperties);
             queryLambdaClient.run();
         }

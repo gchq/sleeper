@@ -110,7 +110,7 @@ public class CompactionJobStatusReport {
                     DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                     StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
                 String accountName = stsClient.getCallerIdentity().account();
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));

@@ -71,7 +71,7 @@ public class IngestTaskStatusReport {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, arguments.getInstanceId(), accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, arguments.getInstanceId());
             IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
             new IngestTaskStatusReport(tracker, arguments.getReporter(), arguments.getQuery()).run();
         }

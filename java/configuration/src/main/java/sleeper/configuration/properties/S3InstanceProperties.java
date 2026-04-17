@@ -47,11 +47,11 @@ public class S3InstanceProperties {
      * Loads and validates instance properties from the config bucket of the given Sleeper instance.
      *
      * @param  s3Client    the S3 client
-     * @param  instanceId  the Sleeper instance ID
      * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
      * @return             the loaded instance properties
      */
-    public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String instanceId, String accountName) {
+    public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
         return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceIdAndAccount(s3Client, instanceId, accountName));
     }
 
@@ -131,7 +131,7 @@ public class S3InstanceProperties {
      */
     public static InstanceProperties saveToLocalWithTableProperties(
             S3Client s3, DynamoDbClient dynamoDB, String accountName, String instanceId, Path directory) throws IOException {
-        InstanceProperties instanceProperties = loadGivenAccountAndInstanceId(s3, instanceId, accountName);
+        InstanceProperties instanceProperties = loadGivenAccountAndInstanceId(s3, accountName, instanceId);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                         .streamAllTables());

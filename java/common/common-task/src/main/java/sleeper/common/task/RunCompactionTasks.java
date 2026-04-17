@@ -45,7 +45,7 @@ public class RunCompactionTasks {
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
 
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
             RunDataProcessingTasks.createForCompactions(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);

@@ -78,7 +78,7 @@ public class PartitionsStatusReportArguments {
      * @param out          the output to write to
      */
     public void runReport(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);

@@ -63,7 +63,7 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         instanceId = (String) optionsMap.get("instanceid");
         tableName = (String) optionsMap.get("tablename");
         loadClients();
-        instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+        instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         tableProperties = provider.getByName(tableName);
         Schema schema = tableProperties.getSchema();

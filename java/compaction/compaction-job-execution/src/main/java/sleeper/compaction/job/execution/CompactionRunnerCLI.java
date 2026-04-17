@@ -74,7 +74,7 @@ public class CompactionRunnerCLI {
 
     public static CompactionRunnerCLI createForInstance(
             String instanceId, String accountName, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) throws ObjectFactoryException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         return new CompactionRunnerCLI(
                 S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
                 new DefaultCompactionRunnerFactory(

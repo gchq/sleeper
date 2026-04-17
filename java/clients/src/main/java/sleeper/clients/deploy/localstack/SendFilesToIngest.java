@@ -57,7 +57,7 @@ public class SendFilesToIngest {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
         }
     }

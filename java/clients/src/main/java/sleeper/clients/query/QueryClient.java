@@ -135,7 +135,7 @@ public class QueryClient extends QueryCommandLineClient {
                 BufferAllocator allocator = new RootAllocator();
                 FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             new QueryClient(
                     instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),

@@ -75,7 +75,7 @@ public class CreateCompactionJobsClient {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             List<TableProperties> tables = tableNames.stream()
                     .map(name -> tablePropertiesProvider.getByName(name))
