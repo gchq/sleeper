@@ -56,6 +56,10 @@ Ideally we could test an upgrade with all optional components included, and have
 resources are recreated as part of an upgrade. We don't have that right now, and it could be difficult to find such a
 problem.
 
+We have an issue to system test this:
+
+https://github.com/gchq/sleeper/issues/7003
+
 ### Changes to how clients communicate with Sleeper
 
 There are a number of ways that changes to Sleeper could affect support for clients that interact with an instance.
