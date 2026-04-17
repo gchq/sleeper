@@ -188,8 +188,8 @@
         <google.grpc.version>1.80.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.250.0</cdk.version>
-        <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.6.0</constructs.version>
+        <cdk.kubectl.35.version>2.2.0</cdk.kubectl.35.version>
         <jsii.version>1.128.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -324,8 +324,8 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
-                <artifactId>cdk-lambda-layer-kubectl-v32</artifactId>
-                <version>${cdk.kubectl.32.version}</version>
+                <artifactId>cdk-lambda-layer-kubectl-v35</artifactId>
+                <version>${cdk.kubectl.35.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.constructs</groupId>

@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.cdk.lambdalayer.kubectl.v32.KubectlV32Layer;
+import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
@@ -138,8 +138,8 @@ public final class EksBulkImportStack extends NestedStack {
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
         Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
                 .clusterName(uniqueBulkImportId)
-                .version(KubernetesVersion.V1_32)
-                .kubectlLayer(new KubectlV32Layer(this, "KubectlLayer"))
+                .version(KubernetesVersion.V1_35)
+                .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"))
                 .vpc(coreStacks.getVpc())
                 .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
                 .build();
