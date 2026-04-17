@@ -32,6 +32,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -73,6 +74,7 @@ public class SleeperClientIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceId(instanceProperties.get(ID))
                 .awsClients(clients -> clients
+                        .accountName(instanceProperties.get(ACCOUNT))
                         .s3Client(s3Client)
                         .dynamoClient(dynamoClient)
                         .sqsClient(sqsClient)
