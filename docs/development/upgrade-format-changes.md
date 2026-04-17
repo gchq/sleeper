@@ -57,7 +57,9 @@ been removed. Ideally the property should still be recognised so the user can be
 
 At time of writing we don't have specific mechanisms to manage these changes. When we deprecate a property we can just
 state in the property description. If we want to rename any properties we'll need to add a mechanism to support the old
-name as an alias.
+name as an alias. We have an issue for these mechanisms:
+
+https://github.com/gchq/sleeper/issues/7002
 
 #### Default values
 
@@ -70,6 +72,10 @@ state stored in the new implementation type.
 We can distinguish between external formats and internal formats. Usually internal formats should not use default
 values, so that once the data has been created its behaviour will not change. This is particularly relevant for internal
 SQS messages. For external formats where data is supplied by the user, it can be more practical to use defaults.
+
+We have an issue for a mechanism for this for configuration properties:
+
+https://github.com/gchq/sleeper/issues/6190
 
 #### DynamoDB schemas
 
