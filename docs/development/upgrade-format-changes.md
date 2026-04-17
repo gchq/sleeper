@@ -76,7 +76,7 @@ SQS messages. For external formats where data is supplied by the user, it can be
 DynamoDB tables have a partially defined schema, in the sense that they have a partition key and sort key which are
 defined when the table is created. We will not be able to change this aspect of the table definition.
 
-We also need to treat the tables has having an implied schema. We need to maintain support for all existing data
+We also need to treat the tables as having an implied schema. We need to maintain support for all existing data
 held in a table. Because different components are deployed in parallel, we also need to assume that old processes will
 continue to run and read from and write to the table. That means that any new data needs to be readable by old
 processes, as well as old data readable by new processes. All the usual restrictions on persistent data formats (e.g.
