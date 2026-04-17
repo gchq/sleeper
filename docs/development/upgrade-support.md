@@ -97,3 +97,6 @@ We will try to avoid ever using option 2 in a way where any manual steps are req
 
 Any necessary migration should be applied automatically, either by a CDK deployment, or in slower time after a
 deployment with continued support for unmigrated data.
+
+In general we will try to avoid any need for migration. The bulk of data held in Sleeper will make some types of
+migration impractical to begin with.
