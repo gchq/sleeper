@@ -71,7 +71,7 @@ public class CompactionTaskStatusReport {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, arguments.getInstanceId(), accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, arguments.getInstanceId(), accountName);
             CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
             new CompactionTaskStatusReport(tracker, arguments.getReporter(), arguments.getQuery()).run();
         }

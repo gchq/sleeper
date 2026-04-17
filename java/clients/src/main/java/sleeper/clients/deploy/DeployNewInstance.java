@@ -136,7 +136,7 @@ public class DeployNewInstance {
                 .instanceType(instanceType)
                 .build());
 
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, deployInstanceConfiguration.getInstanceId(), accountName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, deployInstanceConfiguration.getInstanceId(), accountName);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(instanceProperties, tableProperties,

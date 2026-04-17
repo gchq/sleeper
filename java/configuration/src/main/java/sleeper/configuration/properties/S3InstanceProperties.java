@@ -51,7 +51,7 @@ public class S3InstanceProperties {
      * @param  accountName the AWS account name
      * @return             the loaded instance properties
      */
-    public static InstanceProperties loadGivenInstanceIdAndAccount(S3Client s3Client, String instanceId, String accountName) {
+    public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String instanceId, String accountName) {
         return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceIdAndAccount(s3Client, instanceId, accountName));
     }
 
@@ -131,7 +131,7 @@ public class S3InstanceProperties {
      */
     public static InstanceProperties saveToLocalWithTableProperties(
             S3Client s3, DynamoDbClient dynamoDB, String accountName, String instanceId, Path directory) throws IOException {
-        InstanceProperties instanceProperties = loadGivenInstanceIdAndAccount(s3, instanceId, accountName);
+        InstanceProperties instanceProperties = loadGivenAccountAndInstanceId(s3, instanceId, accountName);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                         .streamAllTables());

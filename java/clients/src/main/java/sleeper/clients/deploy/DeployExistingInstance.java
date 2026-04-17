@@ -191,7 +191,7 @@ public class DeployExistingInstance {
         }
 
         public Builder loadPropertiesFromS3(S3Client s3Client, DynamoDbClient dynamoCient) {
-            properties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
             tablePropertiesList = S3TableProperties.createStore(properties, s3Client, dynamoCient)
                     .streamAllTables().collect(Collectors.toList());
             return this;

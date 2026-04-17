@@ -126,7 +126,7 @@ public class QueryStateStoreCommitterLogs {
                 CloudWatchLogsClient cwClient = CloudWatchLogsClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, input.instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, input.instanceId, accountName);
             QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cwClient);
             List<StateStoreCommitterLogEntry> entries = queryLogs.getLogsInPeriod(input.startTime, input.endTime);
             LOGGER.info("Found {} entries", entries.size());

@@ -67,7 +67,7 @@ public class TakeAllTablesOffline {
             String accountName = stsClient.getCallerIdentity().account();
             TakeAllTablesOffline offliner = new TakeAllTablesOffline(s3Client, dynamoClient);
             for (int i = 0; i < args.length; i++) {
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, args[i], accountName);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, args[i], accountName);
                 offliner.takeAllOffline(instanceProperties);
             }
         }

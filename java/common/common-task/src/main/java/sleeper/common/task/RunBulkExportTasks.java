@@ -41,7 +41,7 @@ public class RunBulkExportTasks {
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
 
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
 
             RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient)
                     .runToMeetTargetTasks(numberOfTasks);

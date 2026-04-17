@@ -121,7 +121,7 @@ public class IngestJobStatusReport {
                     EmrClient emrClient = buildAwsV2Client(EmrClient.builder());
                     StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
                 String accountName = stsClient.getCallerIdentity().account();
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));

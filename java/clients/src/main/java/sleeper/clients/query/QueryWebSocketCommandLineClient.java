@@ -97,7 +97,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
                 StsClient stsClient = StsClient.create()) {
             AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.builder().build();
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             QueryWebSocketClient webSocketClient = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, credentialsProvider);
             QueryWebSocketCommandLineClient commandLineClient = new QueryWebSocketCommandLineClient(instanceProperties,

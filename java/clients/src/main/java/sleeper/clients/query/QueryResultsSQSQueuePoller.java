@@ -85,7 +85,7 @@ public class QueryResultsSQSQueuePoller {
         try (S3Client s3Client = S3Client.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
         }
 
         try (SqsClient sqsClient = SqsClient.create()) {

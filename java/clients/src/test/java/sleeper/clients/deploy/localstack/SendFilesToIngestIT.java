@@ -41,7 +41,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         // Given
         String instanceId = UUID.randomUUID().toString().substring(0, 18);
         deployInstance(instanceId);
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");

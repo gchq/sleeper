@@ -111,7 +111,7 @@ public class RetryMessages {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            instanceProperties = S3InstanceProperties.loadGivenInstanceIdAndAccount(s3Client, instanceId, accountName);
+            instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, instanceId, accountName);
         }
 
         try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
