@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.testutil;
 
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -29,6 +30,7 @@ import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
 public class SleeperStackTestBase {
@@ -39,6 +41,11 @@ public class SleeperStackTestBase {
     private final SleeperJarVersionIdProvider jarVersionIdProvider = new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     private final SleeperContainerImageDigestProvider imageDigestProvider = new SleeperContainerImageDigestProvider((image, ecrRepository) -> image + "-test-digest");
     private final SleeperArtefacts artefacts = SleeperArtefacts.fromProperties(jarVersionIdProvider, imageDigestProvider);
+
+    @BeforeEach
+    void setUpBase() {
+        instanceProperties.unset(JARS_BUCKET);
+    }
 
     protected SleeperInstanceProps instanceProps() {
         return SleeperInstanceProps.builder()
