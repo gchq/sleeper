@@ -80,8 +80,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         //getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
-                .filter(prop -> isEligibleForStream(prop, invalidBeforeProperties));
-
+                .filter(prop -> UpdatePropertiesValidationResult.checkInvalidBeforeProperty(prop, invalidBeforeProperties));
     }
 
     private Set<SleeperProperty> getInvalidBeforeProperty() {
@@ -93,12 +92,5 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
             //updatePropertiesValidationResult.setInvalidBeforeProperties(e.getInvalidValues().keySet());
             return e.getInvalidValues().keySet();
         }
-    }
-
-    private boolean isEligibleForStream(SleeperProperty property, Set<SleeperProperty> invalidBeforeProperties) {
-        if (UpdatePropertiesValidationResult.checkInvalidBeforeProperty(property, invalidBeforeProperties)) {
-            return false;
-        }
-        return !property.isEditable();
     }
 }
