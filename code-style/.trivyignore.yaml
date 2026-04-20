@@ -9,11 +9,6 @@ vulnerabilities:
   # AWS Lambda Runtime Interface Emulator hasn't yet updated to the latest version of Go.
   # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
   # interface emulator is only used for testing.
-  - id: CVE-2026-25679
-  - id: CVE-2026-27139
-  - id: CVE-2026-27142
-
-  # GoLang stdlib
   - id: CVE-2026-32280
   - id: CVE-2026-32281
   - id: CVE-2026-32282

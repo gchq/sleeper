@@ -27,8 +27,8 @@ import java.time.Instant;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
 import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.noRetriesOnThrottling;
 import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.retryOnThrottlingException;
 
