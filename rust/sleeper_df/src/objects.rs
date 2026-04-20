@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 use color_eyre::{Report, eyre::eyre};
+use sleeper_core::PartitionBound;
 use std::{
     ffi::{c_char, c_uchar},
     fmt::Display,
@@ -52,6 +53,7 @@ pub enum FFIElementType {
     Int64 = 2,
     String = 3,
     ByteArray = 4,
+    Empty = 5,
 }
 
 impl FFIElementType {
@@ -61,6 +63,7 @@ impl FFIElementType {
             FFIElementType::Int64 => "i64",
             FFIElementType::String => "*const c_char",
             FFIElementType::ByteArray => "*const c_uchar",
+            FFIElementType::Empty => "<<<empty>>>",
         }
     }
 }
@@ -74,6 +77,7 @@ impl TryFrom<&usize> for FFIElementType {
             2 => Ok(FFIElementType::Int64),
             3 => Ok(FFIElementType::String),
             4 => Ok(FFIElementType::ByteArray),
+            5 => Ok(FFIElementType::Empty),
             _ => Err(eyre!("Invalid FFIElementType ordinal value")),
         }
     }
@@ -95,8 +99,8 @@ impl Display for FFIElementType {
 pub union FFIElementData {
     int32: i32,
     int64: i64,
-    string: *const c_char,
-    bytes: *const c_uchar,
+    string: *const FFIBytes,
+    bytes: *const FFIBytes,
 }
 
 /// Describes a single Sleeper row key item. This uses an explicit tagged union that determines that active union member.
@@ -106,57 +110,27 @@ pub union FFIElementData {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIElement {
+    /// Specifies the active type inside the element data
     contained: FFIElementType,
+    /// Element data unspecified if contained type is [`FFIElementType::Empty`]
     item: FFIElementData,
 }
 
-impl TryFrom<&FFIElement> for i32 {
+impl TryFrom<&FFIElement> for PartitionBound {
     type Error = Report;
 
     fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
-        match value.contained {
-            FFIElementType::Int32 => Ok(unsafe { value.item.int32 }),
-            _ => Err(eyre!("Can't extract i32 from {}", value.contained)),
-        }
-    }
-}
-
-impl TryFrom<&FFIElement> for i64 {
-    type Error = Report;
-
-    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
-        match value.contained {
-            FFIElementType::Int64 => Ok(unsafe { value.item.int64 }),
-            _ => Err(eyre!("Can't extract i64 from {}", value.contained)),
-        }
-    }
-}
-
-impl TryFrom<&FFIElement> for *const c_char {
-    type Error = Report;
-
-    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
-        match value.contained {
-            FFIElementType::String => Ok(unsafe { value.item.string }),
-            _ => Err(eyre!(
-                "Can't extract *const c_char from {}",
-                value.contained
-            )),
-        }
-    }
-}
-
-impl TryFrom<&FFIElement> for *const c_uchar {
-    type Error = Report;
-
-    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
-        match value.contained {
-            FFIElementType::ByteArray => Ok(unsafe { value.item.bytes }),
-            _ => Err(eyre!(
-                "Can't extract *const c_uchar from {}",
-                value.contained
-            )),
-        }
+        Ok(match value.contained {
+            FFIElementType::Int32 => PartitionBound::Int32(unsafe { value.item.int32 }),
+            FFIElementType::Int64 => PartitionBound::Int64(unsafe { value.item.int64 }),
+            FFIElementType::String => {
+                PartitionBound::String(unsafe { value.item.string.try_into()? })
+            }
+            FFIElementType::ByteArray => {
+                PartitionBound::ByteArray(unsafe { value.item.bytes.try_into()? })
+            }
+            FFIElementType::Empty => PartitionBound::Unbounded,
+        })
     }
 }
 

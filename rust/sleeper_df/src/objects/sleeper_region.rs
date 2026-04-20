@@ -15,8 +15,8 @@
 * limitations under the License.
 */
 use color_eyre::eyre::bail;
-use sleeper_core::{ColRange, SleeperRegion};
-use std::{borrow::Borrow, collections::HashMap, ffi::c_void};
+use sleeper_core::{ColRange, PartitionBound, SleeperRegion};
+use std::{borrow::Borrow, collections::HashMap, ffi::c_void, slice};
 
 use crate::{
     objects::{FFIElement, FFIElementType},
@@ -33,16 +33,13 @@ use crate::{
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    pub min_max_len: usize,
+    pub len: usize,
     // The mins array may NOT contain null pointers
     pub mins: *const FFIElement,
     // The maxs array may contain null pointers!!
     pub maxs: *const FFIElement,
-    pub mins_inclusive_len: usize,
     pub mins_inclusive: *const bool,
-    pub maxs_inclusive_len: usize,
     pub maxs_inclusive: *const bool,
-    pub dimension_indexes_len: usize,
     pub dimension_indexes: *const i32,
 }
 
@@ -52,24 +49,49 @@ impl<'a> FFISleeperRegion {
         row_key_cols: &[T],
         schema_types: &[FFIElementType],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
-        if region.mins_len != region.maxs_len
-            || region.mins_len != region.mins_inclusive_len
-            || region.mins_len != region.maxs_inclusive_len
-            || region.mins_len != region.dimension_indexes_len
-        {
-            bail!("All array lengths in a SleeperRegion must be same length");
+        if region.len < 1 {
+            bail!("FFISleeperRegion len cannot be 0");
         }
+        if region.mins.is_null() {
+            bail!("FFISleeperRegion mins cannot be NULL");
+        }
+        if region.maxs.is_null() {
+            bail!("FFISleeperRegion maxs cannot be NULL");
+        }
+        if region.mins_inclusive.is_null() {
+            bail!("FFISleeperRegion mins_inclusive cannot be NULL");
+        }
+        if region.maxs_inclusive.is_null() {
+            bail!("FFISleeperRegion maxs_inclusive cannot be NULL");
+        }
+        if region.dimension_indexes.is_null() {
+            bail!("FFISleeperRegion dimension_indexes cannot be NULL");
+        }
+
         let region_mins_inclusive =
-            unpack_typed_array(region.mins_inclusive, region.mins_inclusive_len)?;
+            unsafe { slice::from_raw_parts(region.mins_inclusive, region.len) };
         let region_maxs_inclusive =
-            unpack_typed_array(region.maxs_inclusive, region.maxs_inclusive_len)?;
+            unsafe { slice::from_raw_parts(region.maxs_inclusive, region.len) };
 
-        let region_mins = unpack_variant_array(region.mins, region.mins_len, schema_types, false)?;
+        let region_mins = unsafe { slice::from_raw_parts(region.mins, region.len) }
+            .iter()
+            .map(PartitionBound::from)
+            .collect::<Vec<_>>();
+        // Sleeper region minimums cannot contain unbounded values
+        if region_mins
+            .iter()
+            .any(|e| matches!(e, PartitionBound::Unbounded))
+        {
+            bail!("FFISleeperRegion mins array contained unbounded element");
+        }
+        // but maximums can
+        let region_maxs = unsafe { slice::from_raw_parts(region.maxs, region.len) }
+            .iter()
+            .map(PartitionBound::from)
+            .collect::<Vec<_>>();
 
-        let region_maxs = unpack_variant_array(region.maxs, region.maxs_len, schema_types, true)?;
-
-        let dimension_indexes =
-            unpack_typed_array(region.dimension_indexes, region.dimension_indexes_len)?;
+        let dimensions_indexes =
+            unsafe { slice::from_raw_parts(region.dimension_indexes, region.len) };
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
