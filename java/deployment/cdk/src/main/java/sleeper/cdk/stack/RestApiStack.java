@@ -19,6 +19,7 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpIamAuthorizer;
 import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
 import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
@@ -66,6 +67,7 @@ public class RestApiStack extends NestedStack {
         HttpApi restHttpApi = HttpApi.Builder.create(this, "RestApi")
                 .description("Sleeper REST API")
                 .apiName(lambda.getFunctionName())
+                .defaultAuthorizer(new HttpIamAuthorizer())
                 .build();
 
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
