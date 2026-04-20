@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -48,6 +49,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
  */
 public class ReinitialiseTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class);
+    private final String accountName;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final boolean deletePartitions;
@@ -55,11 +57,13 @@ public class ReinitialiseTable {
     private final String tableName;
 
     public ReinitialiseTable(
+            String accountName,
             S3Client s3Client,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             boolean deletePartitions) {
+        this.accountName = accountName;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.deletePartitions = deletePartitions;
@@ -76,7 +80,7 @@ public class ReinitialiseTable {
     }
 
     public void run(Function<TableProperties, InitialisePartitionsTransaction> buildPartitions) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
@@ -119,8 +123,10 @@ public class ReinitialiseTable {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, deletePartitions);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(accountName, s3Client, dynamoClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException e) {

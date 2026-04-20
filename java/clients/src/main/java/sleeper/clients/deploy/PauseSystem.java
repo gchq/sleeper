@@ -17,6 +17,7 @@ package sleeper.clients.deploy;
 
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -33,8 +34,10 @@ public class PauseSystem {
         String instanceId = args[0];
 
         try (S3Client s3Client = S3Client.create();
-                CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                CloudWatchEventsClient cwClient = CloudWatchEventsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             new AwsScheduleRules(cwClient).pauseInstance(instanceProperties);
         }
     }

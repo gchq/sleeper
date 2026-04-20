@@ -19,6 +19,7 @@ package sleeper.clients.deploy.localstack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
 import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
@@ -43,13 +44,15 @@ public class TearDownDockerInstance {
         String instanceId = args[0];
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            tearDown(instanceId, s3Client, dynamoClient, sqsClient);
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            tearDown(instanceId, s3Client, dynamoClient, sqsClient, stsClient);
         }
     }
 
-    public static void tearDown(String instanceId, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+    public static void tearDown(String instanceId, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, StsClient stsClient) {
+        String accountName = stsClient.getCallerIdentity().account();
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, s3Client, dynamoClient).tearDown();

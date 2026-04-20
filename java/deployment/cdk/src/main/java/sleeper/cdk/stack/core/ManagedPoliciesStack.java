@@ -140,7 +140,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
-                .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
+                .managedPolicyName(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), id))
                 .build();
     }
 
@@ -155,7 +155,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private Role createAdminRole() {
         Role role = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-admin-" + Utils.cleanInstanceId(instanceProperties))
+                .roleName("sleeper-admin-" + instanceProperties.cleanInstanceId())
                 .build();
 
         instanceAdminPolicies().forEach(policy -> policy.attachToRole(role));
@@ -176,7 +176,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private Role createIngestByQueueRole() {
         Role role = Role.Builder.create(this, "IngestByQueueRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-ingest-by-queue-" + Utils.cleanInstanceId(instanceProperties))
+                .roleName("sleeper-ingest-by-queue-" + instanceProperties.cleanInstanceId())
                 .build();
         ingestByQueuePolicy.attachToRole(role);
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, role.getRoleArn());
@@ -186,7 +186,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private Role createDirectIngestRole() {
         Role role = Role.Builder.create(this, "DirectIngestRole")
                 .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-ingest-direct-" + Utils.cleanInstanceId(instanceProperties))
+                .roleName("sleeper-ingest-direct-" + instanceProperties.cleanInstanceId())
                 .build();
         directIngestPolicy.attachToRole(role);
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, role.getRoleArn());

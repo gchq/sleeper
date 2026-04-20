@@ -42,7 +42,7 @@ public class TopicStack extends NestedStack {
         this.topic = Topic.Builder
                 .create(this, "ErrorsTopic")
                 .topicName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "ErrorsTopic"))
+                        instanceProperties.cleanInstanceId(), "ErrorsTopic"))
                 .build();
         String emailAddress = instanceProperties.get(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION);
         if (null != emailAddress && !emailAddress.isEmpty()) {

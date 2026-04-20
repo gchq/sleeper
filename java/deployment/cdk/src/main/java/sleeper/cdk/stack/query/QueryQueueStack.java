@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -58,7 +57,7 @@ public class QueryQueueStack extends NestedStack {
      * @return                    the queue to be used for queries
      */
     private Queue setupQueryQueue(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String dlQueueName = String.join("-", "sleeper", instanceId, "QueryDLQ");
         Queue queryDlq = Queue.Builder
                 .create(this, "QueryDeadLetterQueue")

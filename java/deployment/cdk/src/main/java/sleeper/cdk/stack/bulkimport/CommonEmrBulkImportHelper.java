@@ -32,7 +32,6 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -67,7 +66,7 @@ public class CommonEmrBulkImportHelper {
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
     public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + platform + "JobDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + platform + "DLQ"))
@@ -108,7 +107,7 @@ public class CommonEmrBulkImportHelper {
         env.put("BULK_IMPORT_PLATFORM", platform.toString());
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-import", platform.toString(), "start");
+                instanceProperties.cleanInstanceId(), "bulk-import", platform.toString(), "start");
 
         IFunction function = lambdaCode.buildFunction(LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)

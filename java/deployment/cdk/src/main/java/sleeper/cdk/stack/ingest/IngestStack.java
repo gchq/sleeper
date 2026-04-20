@@ -115,7 +115,7 @@ public class IngestStack extends NestedStack {
 
     private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks) {
         // Create queue for ingest job definitions
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String dlQueueName = String.join("-", "sleeper", instanceId, "IngestJobDLQ");
 
         ingestDLQ = Queue.Builder
@@ -168,7 +168,7 @@ public class IngestStack extends NestedStack {
             SleeperEcsImages ecsImages,
             SleeperLambdaCode lambdaCode) {
 
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String clusterName = String.join("-", "sleeper", instanceId, "ingest-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "IngestCluster")
@@ -223,7 +223,7 @@ public class IngestStack extends NestedStack {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "ingest-create-tasks");
+                instanceProperties.cleanInstanceId(), "ingest-create-tasks");
 
         IFunction handler = lambdaCode.buildFunction(LambdaHandler.INGEST_TASK_CREATOR, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)

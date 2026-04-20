@@ -29,6 +29,7 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.HashMap;
@@ -51,7 +52,7 @@ public class SystemTestPropertiesStack extends NestedStack {
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("properties", systemTestProperties.saveAsString());
 
-        String functionName = String.join("-", "sleeper", Utils.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
+        String functionName = String.join("-", "sleeper", InstanceProperties.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
 
         IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(LambdaHandler.INSTANCE_PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)

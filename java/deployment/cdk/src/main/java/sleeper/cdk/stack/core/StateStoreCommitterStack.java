@@ -74,7 +74,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_INSTANCE_TYPE;
@@ -123,7 +122,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, TrackDeadLetters deadLetters) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "StateStoreCommitterDLQ")
                 .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterDLQ.fifo"))
@@ -156,13 +155,12 @@ public class StateStoreCommitterStack extends NestedStack {
     private void ecsTaskToCommitStateStoreUpdates(
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks, SleeperEcsImages ecsImages, SecurityGroup ecsSecurityGroup, Queue commitQueue) {
-        String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build());
         String clusterName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
+                instanceProperties.cleanInstanceId(), "statestore-commit-cluster");
         Cluster cluster = Cluster.Builder.create(this, "cluster")
                 .clusterName(clusterName)
                 .vpc(vpc)
@@ -208,13 +206,13 @@ public class StateStoreCommitterStack extends NestedStack {
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
-                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
+                .family(String.join("-", instanceProperties.cleanInstanceId(), "StateStoreCommitterOnEC2"))
                 .build();
 
         taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
                 .containerName("committer")
                 .image(containerImage)
-                .command(List.of(instanceId, commitQueue.getQueueUrl()))
+                .command(List.of(commitQueue.getQueueUrl()))
                 .environment(environmentVariables)
                 .memoryReservationMiB(1024)
                 .logging(Utils.createECSContainerLogDriver(logGroup))
@@ -239,7 +237,7 @@ public class StateStoreCommitterStack extends NestedStack {
             IngestTrackerResources ingestTracker) {
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "statestore-committer");
+                instanceProperties.cleanInstanceId(), "statestore-committer");
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 

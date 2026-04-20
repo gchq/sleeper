@@ -65,7 +65,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        return new LocalStackSleeperInstanceDriver(clients);
+        return new LocalStackSleeperInstanceDriver(parameters, clients);
     }
 
     @Override

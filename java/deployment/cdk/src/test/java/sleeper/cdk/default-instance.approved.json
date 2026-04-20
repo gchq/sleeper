@@ -8313,7 +8313,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-config",
+            "BucketName": "sleeper-test-instance-config-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {

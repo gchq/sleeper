@@ -46,7 +46,7 @@ public class PropertiesStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "properties-writer");
+                instanceProperties.cleanInstanceId(), "properties-writer");
 
         IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
