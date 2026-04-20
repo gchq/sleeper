@@ -47,11 +47,6 @@ public class RestApiStack extends NestedStack {
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        setUpRestApi(instanceProperties, artefacts, coreStacks);
-    }
-
-    private void setUpRestApi(InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts,
-            SleeperCoreStacks coreStacks) {
         String instanceId = instanceProperties.cleanInstanceId();
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);

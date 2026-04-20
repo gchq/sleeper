@@ -21,7 +21,9 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperArtefacts;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,8 +36,28 @@ public class SleeperStackTestBase {
     protected final InstanceProperties instanceProperties = createTestInstancePropertiesWithId("test-instance");
     protected final SleeperInstancePrinter printer = new SleeperInstancePrinter();
     protected final Stack rootStack = createRootStack();
+    private final SleeperJarVersionIdProvider jarVersionIdProvider = new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
+    private final SleeperContainerImageDigestProvider imageDigestProvider = new SleeperContainerImageDigestProvider((image, ecrRepository) -> image + "-test-digest");
+    private final SleeperArtefacts artefacts = SleeperArtefacts.fromProperties(jarVersionIdProvider, imageDigestProvider);
 
-    protected Stack createRootStack() {
+    protected SleeperInstanceProps instanceProps() {
+        return SleeperInstanceProps.builder()
+                .instanceProperties(instanceProperties)
+                .version("1.2.3")
+                .artefacts(artefacts())
+                .skipCheckingVersionMatchesProperties(true)
+                .build();
+    }
+
+    protected SleeperInstanceArtefacts instanceArtefacts() {
+        return artefacts.forInstance(instanceProperties);
+    }
+
+    protected SleeperArtefacts artefacts() {
+        return artefacts;
+    }
+
+    private Stack createRootStack() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -48,18 +70,6 @@ public class SleeperStackTestBase {
                 .env(environment)
                 .build();
         return new Stack(app, "TestInstance", stackProps);
-    }
-
-    protected SleeperArtefacts artefacts() {
-        return SleeperArtefacts.fromProperties(jarVersionIds(), imageDigestProvider());
-    }
-
-    protected SleeperJarVersionIdProvider jarVersionIds() {
-        return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
-    }
-
-    protected SleeperContainerImageDigestProvider imageDigestProvider() {
-        return new SleeperContainerImageDigestProvider((image, ecrRepository) -> image + "-test-digest");
     }
 
 }
