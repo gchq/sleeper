@@ -29,6 +29,6 @@ public class EmrJarLocation {
 
     public static String getJarLocation(InstanceProperties instanceProperties) {
         return "s3a://" + instanceProperties.get(JARS_BUCKET)
-                + "/" + ClientJar.BULK_IMPORT_RUNNER.getFormattedFilename(instanceProperties.get(VERSION)) + ".jar";
+                + "/" + ClientJar.BULK_IMPORT_RUNNER.getFormattedFilename(instanceProperties.get(VERSION));
     }
 }
