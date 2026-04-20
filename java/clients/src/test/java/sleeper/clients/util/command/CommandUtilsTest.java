@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.util.command.Command.command;
@@ -74,6 +75,28 @@ public class CommandUtilsTest {
         // When/Then
         assertThat(CommandUtils.runCommandLogOutput(command))
                 .isEqualTo(new CommandPipelineResult(0, 0));
+    }
+
+    @Test
+    void shouldReturnOutput() throws Exception {
+        // Given
+        Path path = Files.writeString(tempDir.resolve("test.txt"), "ab\ncd");
+
+        // When/Then
+        assertThat(CommandUtils.runCommandReturnOutput("cat", path.toString()))
+                .isEqualTo(List.of("ab", "cd"));
+    }
+
+    @Test
+    void shouldReturnOutputForMultipleCommands() throws Exception {
+        // Given
+        Path path1 = Files.writeString(tempDir.resolve("test1.txt"), "ab\ncd");
+
+        // When/Then
+        assertThat(CommandUtils.runMultipleCommandReturnOutput(pipeline(
+                command("cat", path1.toString()),
+                command("echo", "ef\ngh"))))
+                .isEqualTo(List.of("ab", "cd", "ef", "gh"));
     }
 
     @Test
