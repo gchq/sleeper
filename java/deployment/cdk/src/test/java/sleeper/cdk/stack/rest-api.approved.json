@@ -1,0 +1,200 @@
+{
+  "StackIdToTemplate": {
+    "RestApi": {
+      "Parameters": {
+        "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Ref": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingrestapihandlerC192B1C1Ref": {
+          "Type": "String"
+        }
+      },
+      "Outputs": {
+        "RestApiUrl": {
+          "Value": {
+            "Fn::GetAtt": [
+              "RestApi0C43BF4B",
+              "ApiEndpoint"
+            ]
+          }
+        }
+      },
+      "Resources": {
+        "RestApi0C43BF4B": {
+          "Type": "AWS::ApiGatewayV2::Api",
+          "Properties": {
+            "Description": "Sleeper REST API",
+            "ProtocolType": "HTTP",
+            "Name": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "RestApiHandlerlambda15DA15D8"
+                  },
+                  ":",
+                  {
+                    "Fn::GetAtt": [
+                      "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea",
+                      "Version"
+                    ]
+                  }
+                ]
+              ]
+            }
+          }
+        },
+        "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "RestApiHandlerlambda15DA15D8"
+            }
+          }
+        },
+        "RestApiHandlerlambda15DA15D8": {
+          "Type": "AWS::Lambda::Function",
+          "DependsOn": [
+            "RestApiHandlerlambdaServiceRoleEB7ED2C9"
+          ],
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "RestApiHandlerlambdaServiceRoleEB7ED2C9",
+                "Arn"
+              ]
+            },
+            "FunctionName": "sleeper-test-instance-rest-api-handler",
+            "MemorySize": 1024,
+            "Runtime": "java17",
+            "Description": "Implements a REST API for interacting with Sleeper",
+            "Timeout": 29,
+            "LoggingConfig": {
+              "LogGroup": {
+                "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingrestapihandlerC192B1C1Ref"
+              }
+            },
+            "Environment": {
+              "Variables": {
+                "JAVA_TOOL_OPTIONS": "--add-opens\u003djava.base/java.nio\u003dALL-UNNAMED --add-opens\u003djava.base/sun.nio.ch\u003dALL-UNNAMED --add-opens\u003djava.base/java.util\u003dALL-UNNAMED --add-opens\u003djava.base/java.lang.invoke\u003dALL-UNNAMED",
+                "SLEEPER_CONFIG_BUCKET": {
+                  "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Ref"
+                }
+              }
+            },
+            "Handler": "sleeper.restapi.RestApiLambda::handleEvent",
+            "Code": {
+              "S3ObjectVersion": "rest-api-test-version",
+              "S3Bucket": "sleeper-test-instance-jars",
+              "S3Key": "rest-api-1.2.3.jar"
+            }
+          }
+        },
+        "RestApiGETsleepertestinstance7ACA8C30": {
+          "Type": "AWS::ApiGatewayV2::Integration",
+          "Properties": {
+            "IntegrationUri": {
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea"
+            },
+            "PayloadFormatVersion": "2.0",
+            "ApiId": {
+              "Ref": "RestApi0C43BF4B"
+            },
+            "IntegrationType": "AWS_PROXY"
+          }
+        },
+        "RestApiDefaultStage58DF1C1E": {
+          "Type": "AWS::ApiGatewayV2::Stage",
+          "Properties": {
+            "AutoDeploy": true,
+            "StageName": "$default",
+            "ApiId": {
+              "Ref": "RestApi0C43BF4B"
+            }
+          }
+        },
+        "RestApiHandlerlambdaServiceRoleEB7ED2C9": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "RestApiGETsleeper0E7FB094": {
+          "Type": "AWS::ApiGatewayV2::Route",
+          "Properties": {
+            "Target": {
+              "Fn::Join": [
+                "",
+                [
+                  "integrations/",
+                  {
+                    "Ref": "RestApiGETsleepertestinstance7ACA8C30"
+                  }
+                ]
+              ]
+            },
+            "RouteKey": "GET /sleeper",
+            "AuthorizationType": "AWS_IAM",
+            "ApiId": {
+              "Ref": "RestApi0C43BF4B"
+            }
+          }
+        },
+        "RestApiGETsleepertestinstancePermission92BC46E3": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea"
+            },
+            "Action": "lambda:InvokeFunction",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:test-region:test-account:",
+                  {
+                    "Ref": "RestApi0C43BF4B"
+                  },
+                  "/*/*/sleeper"
+                ]
+              ]
+            },
+            "Principal": "apigateway.amazonaws.com"
+          }
+        }
+      }
+    }
+  }
+}

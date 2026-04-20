@@ -15,10 +15,12 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpIamAuthorizer;
 import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
 import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
@@ -41,16 +43,12 @@ import java.util.Map;
  * REST API for interacting with the Sleeper instance.
  * Utilises API Gateway.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class RestApiStack extends NestedStack {
 
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
             SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        setUpRestApi(instanceProperties, artefacts, coreStacks);
-    }
-
-    private void setUpRestApi(InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts,
-            SleeperCoreStacks coreStacks) {
         String instanceId = instanceProperties.cleanInstanceId();
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
@@ -66,6 +64,7 @@ public class RestApiStack extends NestedStack {
         HttpApi restHttpApi = HttpApi.Builder.create(this, "RestApi")
                 .description("Sleeper REST API")
                 .apiName(lambda.getFunctionName())
+                .defaultAuthorizer(new HttpIamAuthorizer())
                 .build();
 
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
