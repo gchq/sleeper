@@ -91,13 +91,10 @@ public class PropertyDiff {
         if (property == null) {
             return "";
         }
-        if (!property.isEditable()) {
-            if (result.checkInvalidBeforeProperty(property)) {
-                return "";
-            }
+        if (!result.isUpdatable(property)) {
             return " (cannot be changed, please undo)";
         }
-        if (result.getInvalidProperties().contains(property)) {
+        if (!result.isValid(property)) {
             return " (not valid, please change)";
         }
         return "";

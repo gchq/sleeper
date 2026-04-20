@@ -28,50 +28,28 @@ public class UpdatePropertiesValidationResult {
     private final Set<SleeperProperty> invalidBeforeProperties;
 
     public UpdatePropertiesValidationResult(Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
-        // this.invalidProperties = Collections.emptySet();
-        // this.invalidBeforeProperties = Collections.emptySet();
         this.invalidProperties = invalidProperties;
         this.invalidBeforeProperties = invalidBeforeProperties;
     }
 
-    public Set<SleeperProperty> getInvalidProperties() {
-        return invalidProperties;
-    }
-
-    /**
-     * Checks if a property was invalid and non editable before it was changed.
-     *
-     * @param  property a Sleeper property
-     * @return          the result of the check
-     */
-    public boolean checkInvalidBeforeProperty(SleeperProperty property) {
-        return checkInvalidBeforeProperty(property, invalidBeforeProperties);
-    }
-
-    /**
-     * Checks if a property was invalid and non editable before it was changed.
-     *
-     * @param  property                a Sleeper property
-     * @param  invalidBeforeProperties set of invalid properties before update
-     * @return                         the result of the check
-     */
-    public static boolean checkInvalidBeforeProperty(SleeperProperty property, Set<SleeperProperty> invalidBeforeProperties) {
-        if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isInvalidPropertiesEmpty() {
+    public boolean isValid() {
         return invalidProperties.isEmpty();
     }
 
-    // public void setInvalidBeforeProperties(Set<SleeperProperty> invalidBeforeProperties) {
-    //     this.invalidBeforeProperties = invalidBeforeProperties;
-    // }
+    public boolean isUpdatable(SleeperProperty property) {
+        if (property.isEditable()) {
+            return true;
+        }
+        // If an uneditable property was invalid before, still allow editing
+        return invalidBeforeProperties.contains(property);
+    }
 
-    // public void setInvalidProperties(Set<SleeperProperty> invalidProperties) {
-    //     this.invalidProperties = invalidProperties;
-    // }
+    public boolean isValid(SleeperProperty property) {
+        return !invalidProperties.contains(property);
+    }
+
+    public boolean isInvalid(SleeperProperty property) {
+        return invalidProperties.contains(property);
+    }
 
 }

@@ -91,10 +91,10 @@ public class PropertiesDiff {
             changes.get(propertyName).print(out, propertyIndex, result);
         }
 
-        if (!result.isInvalidPropertiesEmpty()) {
+        if (!result.isValid()) {
             out.println("Found invalid properties:");
             propertyIndex.getAll().stream()
-                    .filter(result.getInvalidProperties()::contains)
+                    .filter(result::isInvalid)
                     .forEach(property -> out.println(property.getPropertyName()));
             out.println();
         }

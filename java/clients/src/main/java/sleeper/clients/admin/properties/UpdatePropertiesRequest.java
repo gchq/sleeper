@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
+
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
@@ -62,14 +64,9 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperty();
         try {
             updatedProperties.validate();
-            // updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
-            //         .collect(Collectors.toSet()));
             return new UpdatePropertiesValidationResult(getUneditableProperties(invalidBeforeProperties)
                     .collect(Collectors.toSet()), invalidBeforeProperties);
         } catch (SleeperPropertiesInvalidException e) {
-            // updatePropertiesValidationResult.setInvalidProperties(Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
-            //         .collect(Collectors.toSet()));
-            // return updatePropertiesValidationResult;
             return new UpdatePropertiesValidationResult(Stream.concat(getUneditableProperties(invalidBeforeProperties), e.getInvalidValues().keySet().stream())
                     .collect(Collectors.toSet()), invalidBeforeProperties);
 
@@ -77,19 +74,17 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     private Stream<? extends SleeperProperty> getUneditableProperties(Set<SleeperProperty> invalidBeforeProperties) {
-        //getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
-                .filter(prop -> UpdatePropertiesValidationResult.checkInvalidBeforeProperty(prop, invalidBeforeProperties));
+                .filter(not(SleeperProperty::isEditable))
+                .filter(not(invalidBeforeProperties::contains));
     }
 
     private Set<SleeperProperty> getInvalidBeforeProperty() {
         try {
             beforeProperties.validate();
-            //updatePropertiesValidationResult.setInvalidBeforeProperties(Collections.emptySet());
             return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
-            //updatePropertiesValidationResult.setInvalidBeforeProperties(e.getInvalidValues().keySet());
             return e.getInvalidValues().keySet();
         }
     }
