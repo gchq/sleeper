@@ -23,10 +23,10 @@ public class UpdatePropertiesRequestTestHelper {
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> noChanges(T properties) {
-        return UpdatePropertiesRequest.buildRequest(properties, properties);
+        return UpdatePropertiesRequest.fromBeforeAndAfter(properties, properties);
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {
-        return UpdatePropertiesRequest.buildRequest(before, after);
+        return UpdatePropertiesRequest.fromBeforeAndAfter(before, after);
     }
 }
