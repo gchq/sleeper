@@ -49,7 +49,6 @@ public interface CommonProperty {
             .description("The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set " +
                     "by the CDK during deployment, based on `sleeper.artefacts.deployment` if it is set, or " +
                     "`sleeper.id` if it is not.")
-            .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
