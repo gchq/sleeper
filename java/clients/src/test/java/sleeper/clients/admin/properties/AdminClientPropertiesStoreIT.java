@@ -48,7 +48,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -335,8 +334,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void setup() {
             dockerImageConfiguration = DockerImageConfiguration.getDefault();
             instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
-            ecrClient.addVersionToRepository(instanceId + "/compaction-job-execution", instanceProperties.get(VERSION));
-            ecrClient.addVersionToRepository(instanceId + "/query-lambda", instanceProperties.get(VERSION));
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 

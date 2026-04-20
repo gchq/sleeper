@@ -24,7 +24,6 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
-import sleeper.clients.deploy.container.InMemoryEcrRepositories;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -55,7 +54,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdk cdk = mock(InvokeCdk.class);
-    protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
