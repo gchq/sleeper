@@ -24,32 +24,28 @@ import java.util.Set;
  */
 public class UpdatePropertiesValidationResult {
 
-    private final Set<SleeperProperty> invalidProperties;
-    private final Set<SleeperProperty> invalidBeforeProperties;
+    private final Set<SleeperProperty> invalidValueProperties;
+    private final Set<SleeperProperty> nonUpdateableProperties;
 
-    public UpdatePropertiesValidationResult(Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
-        this.invalidProperties = invalidProperties;
-        this.invalidBeforeProperties = invalidBeforeProperties;
+    public UpdatePropertiesValidationResult(Set<SleeperProperty> invalidValueProperties, Set<SleeperProperty> nonUpdateableProperties) {
+        this.invalidValueProperties = invalidValueProperties;
+        this.nonUpdateableProperties = nonUpdateableProperties;
     }
 
     public boolean isValid() {
-        return invalidProperties.isEmpty();
-    }
-
-    public boolean isUpdatable(SleeperProperty property) {
-        if (property.isEditable()) {
-            return true;
-        }
-        // If an uneditable property was invalid before, still allow editing
-        return invalidBeforeProperties.contains(property);
-    }
-
-    public boolean isValid(SleeperProperty property) {
-        return !invalidProperties.contains(property);
+        return invalidValueProperties.isEmpty() && nonUpdateableProperties.isEmpty();
     }
 
     public boolean isInvalid(SleeperProperty property) {
-        return invalidProperties.contains(property);
+        return invalidValueProperties.contains(property) || nonUpdateableProperties.contains(property);
+    }
+
+    public boolean isNonUpdateable(SleeperProperty property) {
+        return nonUpdateableProperties.contains(property);
+    }
+
+    public boolean isValueInvalid(SleeperProperty property) {
+        return invalidValueProperties.contains(property);
     }
 
 }

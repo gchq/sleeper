@@ -21,10 +21,9 @@ import sleeper.core.properties.SleeperProperty;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
@@ -61,23 +60,22 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     public UpdatePropertiesValidationResult validateProperties() {
-        Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperties();
         try {
             updatedProperties.validate();
-            return new UpdatePropertiesValidationResult(getUneditableProperties(invalidBeforeProperties)
-                    .collect(Collectors.toSet()), invalidBeforeProperties);
+            return new UpdatePropertiesValidationResult(Set.of(), getNonUpdateableProperties());
         } catch (SleeperPropertiesInvalidException e) {
-            return new UpdatePropertiesValidationResult(Stream.concat(getUneditableProperties(invalidBeforeProperties), e.getInvalidValues().keySet().stream())
-                    .collect(Collectors.toSet()), invalidBeforeProperties);
+            return new UpdatePropertiesValidationResult(e.getInvalidValues().keySet(), getNonUpdateableProperties());
 
         }
     }
 
-    private Stream<? extends SleeperProperty> getUneditableProperties(Set<SleeperProperty> invalidBeforeProperties) {
+    private Set<SleeperProperty> getNonUpdateableProperties() {
+        Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperties();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
                 .filter(not(SleeperProperty::isEditable))
-                .filter(not(invalidBeforeProperties::contains));
+                .filter(not(invalidBeforeProperties::contains)) // If an uneditable property was invalid before, allow editing
+                .collect(toUnmodifiableSet());
     }
 
     private Set<SleeperProperty> getInvalidBeforeProperties() {
