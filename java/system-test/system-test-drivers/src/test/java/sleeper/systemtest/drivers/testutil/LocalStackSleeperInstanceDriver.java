@@ -29,6 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.List;
 import java.util.Map;
@@ -40,16 +41,18 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSleeperInstanceDriver.class);
 
+    private final SystemTestParameters parameters;
     private final SystemTestClients clients;
 
-    public LocalStackSleeperInstanceDriver(SystemTestClients clients) {
+    public LocalStackSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
+        this.parameters = parameters;
         this.clients = clients;
     }
 
     @Override
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        S3InstanceProperties.reloadGivenInstanceId(clients.getS3(), instanceProperties, instanceId);
+        S3InstanceProperties.reloadGivenAccountAndInstanceId(clients.getS3(), instanceProperties, parameters.getAccount(), instanceId);
     }
 
     @Override
@@ -60,7 +63,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
-        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromAccountAndInstanceId(parameters.getAccount(), instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
@@ -69,6 +72,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
+                .accountName(parameters.getAccount())
                 .s3Client(clients.getS3())
                 .dynamoClient(clients.getDynamo())
                 .sqsClient(clients.getSqs())

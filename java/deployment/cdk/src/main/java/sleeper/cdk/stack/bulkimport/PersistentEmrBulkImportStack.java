@@ -149,7 +149,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
 
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
                 .name(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "bulk-import-persistent-emr"))
+                        instanceProperties.cleanInstanceId(), "bulk-import-persistent-emr"))
                 .visibleToAllUsers(true)
                 .securityConfiguration(commonStack.getSecurityConfiguration().getName())
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL))

@@ -76,7 +76,7 @@ public class IngestBatcherStack extends NestedStack {
             IngestStacks ingestStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
 
         // Queue to submit files to the batcher
         Queue submitDLQ = Queue.Builder

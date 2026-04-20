@@ -18,6 +18,7 @@ package sleeper.compaction.job.execution;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -72,8 +73,8 @@ public class CompactionRunnerCLI {
     }
 
     public static CompactionRunnerCLI createForInstance(
-            String instanceId, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) throws ObjectFactoryException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            String instanceId, String accountName, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) throws ObjectFactoryException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         return new CompactionRunnerCLI(
                 S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
                 new DefaultCompactionRunnerFactory(
@@ -152,11 +153,13 @@ public class CompactionRunnerCLI {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
 
             CompactionRunnerCLI cli;
             if (args.instanceId() != null) {
-                cli = createForInstance(args.instanceId(), s3Client, s3TransferManager, dynamoClient);
+                cli = createForInstance(args.instanceId(), accountName, s3Client, s3TransferManager, dynamoClient);
             } else {
                 cli = createForFiles(args.schemaPath(), args.regionPath(), s3Client, s3TransferManager);
             }

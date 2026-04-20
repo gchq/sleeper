@@ -60,7 +60,7 @@ public class TableMetricsStack extends NestedStack {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
         SleeperLambdaCode lambdaCode = props.getArtefacts().lambdaCodeAtScope(this);
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
         String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");
         // Metrics generation and publishing

@@ -38,7 +38,7 @@ def should_save_load_instance_properties():
     save_instance_properties(LocalStack.s3_resource(), properties)
 
     # When
-    loaded = load_instance_properties(LocalStack.s3_resource(), properties.get(CommonProperty.ID))
+    loaded = load_instance_properties(LocalStack.s3_resource(), properties.get(CommonCdkProperty.ACCOUNT), properties.get(CommonProperty.ID))
 
     # Then
     assert properties.as_dict() == loaded.as_dict()

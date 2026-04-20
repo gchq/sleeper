@@ -52,9 +52,9 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
+    private final String accountName;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final StsClient stsClient;
     private final AwsRegionProvider regionProvider;
     private final Path scriptsDirectory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
@@ -65,9 +65,9 @@ public class DeployNewInstance {
     private final boolean createMultiPlatformBuilder;
 
     private DeployNewInstance(Builder builder) {
+        accountName = builder.accountName;
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
-        stsClient = builder.stsClient;
         regionProvider = builder.regionProvider;
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
@@ -122,7 +122,7 @@ public class DeployNewInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()),
+                        accountName, regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -133,7 +133,7 @@ public class DeployNewInstance {
                 .instanceType(instanceType)
                 .build());
 
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, deployInstanceConfiguration.getInstanceId());
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(instanceProperties, tableProperties,
@@ -145,8 +145,8 @@ public class DeployNewInstance {
     }
 
     public static final class Builder {
+        private String accountName;
         private S3Client s3Client;
-        private StsClient stsClient;
         private DynamoDbClient dynamoClient;
         private AwsRegionProvider regionProvider;
         private Path scriptsDirectory;
@@ -166,7 +166,7 @@ public class DeployNewInstance {
         }
 
         public Builder stsClient(StsClient stsClient) {
-            this.stsClient = stsClient;
+            accountName = stsClient.getCallerIdentity().account();
             return this;
         }
 

@@ -52,7 +52,7 @@ public class DeployExistingInstance {
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
-    private final StsClient sts;
+    private final String accountName;
     private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
@@ -63,7 +63,7 @@ public class DeployExistingInstance {
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
-        sts = builder.sts;
+        accountName = builder.accountName;
         regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
@@ -107,7 +107,7 @@ public class DeployExistingInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
+                        accountName, regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -125,8 +125,8 @@ public class DeployExistingInstance {
         private String instanceId;
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
+        private String accountName;
         private S3Client s3;
-        private StsClient sts;
         private AwsRegionProvider regionProvider;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
@@ -161,7 +161,7 @@ public class DeployExistingInstance {
 
         public Builder clients(S3Client s3, StsClient sts) {
             this.s3 = s3;
-            this.sts = sts;
+            this.accountName = sts.getCallerIdentity().account();
             return this;
         }
 
@@ -186,7 +186,7 @@ public class DeployExistingInstance {
         }
 
         public Builder loadPropertiesFromS3(S3Client s3Client, DynamoDbClient dynamoCient) {
-            properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             tablePropertiesList = S3TableProperties.createStore(properties, s3Client, dynamoCient)
                     .streamAllTables().collect(Collectors.toList());
             return this;

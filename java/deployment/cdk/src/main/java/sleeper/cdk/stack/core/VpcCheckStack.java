@@ -50,7 +50,7 @@ public class VpcCheckStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "vpc-check");
+                instanceProperties.cleanInstanceId(), "vpc-check");
 
         IFunction vpcCheckLambda = lambdaCode.buildFunction(LambdaHandler.VPC_CHECK, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)

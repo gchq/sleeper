@@ -66,7 +66,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Override
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
-        AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImagesToEcr(), dockerImageConfiguration,
+        AdminClient.start(instanceId, store(), AdminClientTrackerFactory.from(dynamoDB),
                 out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
     }
 
@@ -75,7 +75,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImagesToEcr(), dockerImageConfiguration);
+        return new AdminClientPropertiesStore(account, s3, dynamoDB, cdk, path, uploadDockerImagesToEcr(), dockerImageConfiguration);
     }
 
     private UploadDockerImagesToEcr uploadDockerImagesToEcr() {

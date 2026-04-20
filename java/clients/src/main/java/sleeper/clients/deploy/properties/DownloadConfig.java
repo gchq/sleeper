@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 
@@ -40,9 +41,11 @@ public class DownloadConfig {
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
             LOGGER.info("Downloading configuration from S3");
-            S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, basePath);
+            S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, accountName, instanceId, basePath);
             LOGGER.info("Download complete");
         }
     }

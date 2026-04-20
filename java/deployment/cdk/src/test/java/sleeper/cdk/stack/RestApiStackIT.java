@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.stack;
 
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
@@ -21,24 +21,19 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.testutil.SleeperStackTestBase;
 
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
-
-public class SleeperInstanceIT extends SleeperStackTestBase {
+public class RestApiStackIT extends SleeperStackTestBase {
 
     @Test
-    void shouldGenerateCloudFormationTemplatesWithDefaultOptionalStacks() {
+    void shouldGenerateCloudFormationTemplate() {
         // Given
-        instanceProperties.unset(OPTIONAL_STACKS);
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_RELEASE, "emr-1.2.3");
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
 
         // When
-        SleeperInstance.create(rootStack, instanceProps());
+        RestApiStack stack = new RestApiStack(rootStack, "RestApi", instanceProperties, instanceArtefacts(), core);
 
         // Then
-        Approvals.verify(printer.toJson(rootStack), new Options()
-                .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
-                .forFile().withName("default-instance", ".json"));
+        Approvals.verify(printer.toJson(stack), new Options()
+                .forFile().withName("rest-api", ".json"));
     }
 
 }
