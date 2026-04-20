@@ -29,14 +29,13 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
-    private final UpdatePropertiesValidationResult updatePropertiesValidationResult;
+    // private final UpdatePropertiesValidationResult updatePropertiesValidationResult;
 
-    private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties,
-            UpdatePropertiesValidationResult updatePropertiesValidationResult) {
+    private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
-        this.updatePropertiesValidationResult = updatePropertiesValidationResult;
+        // this.updatePropertiesValidationResult = updatePropertiesValidationResult;
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> fromBeforeAndAfter(T beforeProperties,
@@ -47,9 +46,8 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         } else {
             propertiesDiff = new PropertiesDiff(beforeProperties, updatedProperties);
         }
-        UpdatePropertiesValidationResult updatePropertiesValidationResult = new UpdatePropertiesValidationResult();
-        return new UpdatePropertiesRequest<>(propertiesDiff, beforeProperties, updatedProperties,
-                updatePropertiesValidationResult);
+        // UpdatePropertiesValidationResult updatePropertiesValidationResult = new UpdatePropertiesValidationResult();
+        return new UpdatePropertiesRequest<>(propertiesDiff, beforeProperties, updatedProperties);
     }
 
     public PropertiesDiff getDiff() {
@@ -61,39 +59,44 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     public UpdatePropertiesValidationResult validateProperties() {
+        Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperty();
         try {
             updatedProperties.validate();
-            updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
-                    .collect(Collectors.toSet()));
-            return updatePropertiesValidationResult;
+            // updatePropertiesValidationResult.setInvalidProperties(getUneditableProperties()
+            //         .collect(Collectors.toSet()));
+            return new UpdatePropertiesValidationResult(getUneditableProperties(invalidBeforeProperties)
+                    .collect(Collectors.toSet()), invalidBeforeProperties);
         } catch (SleeperPropertiesInvalidException e) {
-            updatePropertiesValidationResult.setInvalidProperties(Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
-                    .collect(Collectors.toSet()));
-            return updatePropertiesValidationResult;
+            // updatePropertiesValidationResult.setInvalidProperties(Stream.concat(getUneditableProperties(), e.getInvalidValues().keySet().stream())
+            //         .collect(Collectors.toSet()));
+            // return updatePropertiesValidationResult;
+            return new UpdatePropertiesValidationResult(Stream.concat(getUneditableProperties(invalidBeforeProperties), e.getInvalidValues().keySet().stream())
+                    .collect(Collectors.toSet()), invalidBeforeProperties);
+
         }
     }
 
-    private Stream<? extends SleeperProperty> getUneditableProperties() {
-        getInvalidBeforeProperty();
+    private Stream<? extends SleeperProperty> getUneditableProperties(Set<SleeperProperty> invalidBeforeProperties) {
+        //getInvalidBeforeProperty();
         return diff.getChanges().stream()
                 .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
-                .filter(prop -> isEligibleForStream(prop));
+                .filter(prop -> isEligibleForStream(prop, invalidBeforeProperties));
 
     }
 
     private Set<SleeperProperty> getInvalidBeforeProperty() {
         try {
             beforeProperties.validate();
-            updatePropertiesValidationResult.setInvalidBeforeProperties(Collections.emptySet());
+            //updatePropertiesValidationResult.setInvalidBeforeProperties(Collections.emptySet());
             return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
-            updatePropertiesValidationResult.setInvalidBeforeProperties(e.getInvalidValues().keySet());
+            //updatePropertiesValidationResult.setInvalidBeforeProperties(e.getInvalidValues().keySet());
             return e.getInvalidValues().keySet();
         }
     }
 
-    private boolean isEligibleForStream(SleeperProperty property) {
-        if (updatePropertiesValidationResult.checkInvalidBeforeProperty(property)) {
+    private boolean isEligibleForStream(SleeperProperty property, Set<SleeperProperty> invalidBeforeProperties) {
+        if (UpdatePropertiesValidationResult.checkInvalidBeforeProperty(property, invalidBeforeProperties)) {
             return false;
         }
         return !property.isEditable();

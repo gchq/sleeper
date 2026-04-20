@@ -17,7 +17,6 @@ package sleeper.clients.admin.properties;
 
 import sleeper.core.properties.SleeperProperty;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -25,12 +24,14 @@ import java.util.Set;
  */
 public class UpdatePropertiesValidationResult {
 
-    private Set<SleeperProperty> invalidProperties;
-    private Set<SleeperProperty> invalidBeforeProperties;
+    private final Set<SleeperProperty> invalidProperties;
+    private final Set<SleeperProperty> invalidBeforeProperties;
 
-    public UpdatePropertiesValidationResult() {
-        this.invalidProperties = Collections.emptySet();
-        this.invalidBeforeProperties = Collections.emptySet();
+    public UpdatePropertiesValidationResult(Set<SleeperProperty> invalidProperties, Set<SleeperProperty> invalidBeforeProperties) {
+        // this.invalidProperties = Collections.emptySet();
+        // this.invalidBeforeProperties = Collections.emptySet();
+        this.invalidProperties = invalidProperties;
+        this.invalidBeforeProperties = invalidBeforeProperties;
     }
 
     public Set<SleeperProperty> getInvalidProperties() {
@@ -44,6 +45,17 @@ public class UpdatePropertiesValidationResult {
      * @return          the result of the check
      */
     public boolean checkInvalidBeforeProperty(SleeperProperty property) {
+        return checkInvalidBeforeProperty(property, invalidBeforeProperties);
+    }
+
+    /**
+     * Checks if a property was invalid and non editable before it was changed.
+     *
+     * @param  property                a Sleeper property
+     * @param  invalidBeforeProperties set of invalid properties before update
+     * @return                         the result of the check
+     */
+    public static boolean checkInvalidBeforeProperty(SleeperProperty property, Set<SleeperProperty> invalidBeforeProperties) {
         if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
             return true;
         }
@@ -54,12 +66,12 @@ public class UpdatePropertiesValidationResult {
         return invalidProperties.isEmpty();
     }
 
-    public void setInvalidBeforeProperties(Set<SleeperProperty> invalidBeforeProperties) {
-        this.invalidBeforeProperties = invalidBeforeProperties;
-    }
+    // public void setInvalidBeforeProperties(Set<SleeperProperty> invalidBeforeProperties) {
+    //     this.invalidBeforeProperties = invalidBeforeProperties;
+    // }
 
-    public void setInvalidProperties(Set<SleeperProperty> invalidProperties) {
-        this.invalidProperties = invalidProperties;
-    }
+    // public void setInvalidProperties(Set<SleeperProperty> invalidProperties) {
+    //     this.invalidProperties = invalidProperties;
+    // }
 
 }
