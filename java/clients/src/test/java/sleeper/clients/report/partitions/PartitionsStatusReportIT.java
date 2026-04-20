@@ -15,10 +15,11 @@
  */
 package sleeper.clients.report.partitions;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
@@ -26,8 +27,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -35,24 +34,35 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
-import java.util.function.Consumer;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class PartitionsStatusReportIT extends LocalStackTestBase {
 
-    private final InstanceProperties instanceProperties = createTestInstance();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final TableProperties tableProperties = createTestTable(
-            tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
+
+    @BeforeEach
+    void setUp() {
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
+        tablePropertiesStore.save(tableProperties);
+    }
 
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
@@ -72,27 +82,12 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     private String runReport() throws Exception {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3Client, dynamoClient, out.getPrintStream());
+                .runReport(instanceProperties.get(ACCOUNT), s3Client, dynamoClient, out.getPrintStream());
         return out.toString();
     }
 
     private StateStore stateStore() {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
-    }
-
-    private InstanceProperties createTestInstance() {
-        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
-        createBucket(properties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClient, properties);
-        new TransactionLogStateStoreCreator(properties, dynamoClient).create();
-        return properties;
-    }
-
-    private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableConfig.accept(tableProperties);
-        tablePropertiesStore.save(tableProperties);
-        return tableProperties;
     }
 }

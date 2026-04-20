@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -101,6 +102,7 @@ public class DeleteTable {
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
         }
+        String instanceId = args[0];
         String tableName = args[1];
         boolean force = optionalArgument(args, 2).map("--force"::equals).orElse(false);
         if (!force) {
@@ -111,8 +113,10 @@ public class DeleteTable {
             }
         }
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             new DeleteTable(instanceProperties, s3Client, dynamoClient).delete(tableName);
         }
     }

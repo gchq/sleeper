@@ -96,7 +96,7 @@ public class CompactionOnEc2Resources {
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder
                 .create(stack, "CompactionEC2TaskDefinition")
-                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnEC2"))
+                .family(String.join("-", instanceProperties.cleanInstanceId(), "CompactionTaskOnEC2"))
                 .networkMode(NetworkMode.BRIDGE)
                 .build();
         instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, taskDefinition.getFamily());
@@ -196,7 +196,7 @@ public class CompactionOnEc2Resources {
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "compaction-custom-termination");
+                instanceProperties.cleanInstanceId(), "compaction-custom-termination");
 
         IFunction handler = lambdaCode.buildFunction(LambdaHandler.COMPACTION_TASK_TERMINATOR, "CompactionTerminator", builder -> builder
                 .functionName(functionName)

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.AddTable;
 import sleeper.clients.table.TakeAllTablesOffline;
@@ -125,8 +126,10 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
         try (
                 S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                EcsClient ecsClient = buildAwsV2Client(EcsClient.builder())) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+                EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
             int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
 

@@ -64,7 +64,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
+                instanceProperties.cleanInstanceId(), "auto-delete-s3-objects");
 
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
                 .functionName(functionName)

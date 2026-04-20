@@ -133,7 +133,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
-                .name(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties)))
+                .name(String.join("-", "sleeper", instanceProperties.cleanInstanceId()))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
@@ -205,7 +205,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             SleeperCoreStacks coreStacks, IBucket jarsBucket) {
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))
+                        instanceProperties.cleanInstanceId(), "bulk-import-emr-serverless"))
                 .description("The role assumed by the Bulk import EMR Serverless Application")
                 .managedPolicies(
                         List.of(createEmrServerlessManagedPolicy(instanceProperties)))
@@ -225,7 +225,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         return ManagedPolicy.Builder.create(this, "CustomEMRServerlessServicePolicy")
                 .managedPolicyName(
                         String.join("-", "sleeper",
-                                Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))
+                                instanceProperties.cleanInstanceId(), "bulk-import-emr-serverless"))
                 .description("Policy required for Sleeper Bulk import EMR Serverless cluster, " +
                         "based on the AmazonEMRServicePolicy_v2 policy")
                 .document(PolicyDocument.Builder.create().statements(List.of(

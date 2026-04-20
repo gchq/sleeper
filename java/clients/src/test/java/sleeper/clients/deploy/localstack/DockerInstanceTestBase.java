@@ -49,6 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = new InstanceProperties();
+    String accountName = stsClient.getCallerIdentity().account();
 
     @BeforeEach
     void setUp() {
@@ -62,6 +63,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder()
+                .accountName(accountName)
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient).sqsClient(sqsClient)
                 .extraTableProperties(extraProperties)
