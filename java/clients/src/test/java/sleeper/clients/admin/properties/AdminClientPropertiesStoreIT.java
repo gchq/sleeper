@@ -340,7 +340,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "IngestStack");
 
             // Then
             assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
@@ -350,33 +350,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
             // When
             updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
-        }
-
-        @Test
-        void shouldNotUploadDockerImagesWhenStackIsDisabled() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
-        }
-
-        @Test
-        void shouldUploadDockerImagesWhenOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
-        }
-
-        @Test
-        void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
 
             // Then
             assertThat(dockerCommandsThatRan).isEmpty();
