@@ -20,6 +20,9 @@ import sleeper.core.properties.SleeperProperty;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Class to hold the validation result for properties both before and after any changes.
+ */
 public class UpdatePropertiesValidationResult {
 
     private Set<SleeperProperty> invalidProperties;
@@ -34,6 +37,12 @@ public class UpdatePropertiesValidationResult {
         return invalidProperties;
     }
 
+    /**
+     * Checks if a property was invalid and non editable before it was changed.
+     *
+     * @param  property a Sleeper property
+     * @return          the result of the check
+     */
     public boolean checkInvalidBeforeProperty(SleeperProperty property) {
         if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
             return true;
