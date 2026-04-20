@@ -101,7 +101,7 @@ pub union FFIElementData {
 
 /// Describes a single Sleeper row key item. This uses an explicit tagged union that determines that active union member.
 ///
-///  *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
 /// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElement.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]

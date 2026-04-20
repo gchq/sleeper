@@ -19,7 +19,7 @@ use sleeper_core::{ColRange, SleeperRegion};
 use std::{borrow::Borrow, collections::HashMap, ffi::c_void};
 
 use crate::{
-    objects::FFIElementType,
+    objects::{FFIElement, FFIElementType},
     unpack::{unpack_typed_array, unpack_variant_array},
 };
 
@@ -33,18 +33,17 @@ use crate::{
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    pub mins_len: usize,
+    pub min_max_len: usize,
     // The mins array may NOT contain null pointers
-    pub mins: *const *const c_void,
-    pub maxs_len: usize,
+    pub mins: *const FFIElement,
     // The maxs array may contain null pointers!!
-    pub maxs: *const *const c_void,
+    pub maxs: *const FFIElement,
     pub mins_inclusive_len: usize,
-    pub mins_inclusive: *const *const bool,
+    pub mins_inclusive: *const bool,
     pub maxs_inclusive_len: usize,
-    pub maxs_inclusive: *const *const bool,
+    pub maxs_inclusive: *const bool,
     pub dimension_indexes_len: usize,
-    pub dimension_indexes: *const *const i32,
+    pub dimension_indexes: *const i32,
 }
 
 impl<'a> FFISleeperRegion {

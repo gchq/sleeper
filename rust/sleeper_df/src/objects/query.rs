@@ -41,7 +41,7 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of requested value fields
     pub requested_value_fields_len: usize,
     /// Requested value fields.
-    pub requested_value_fields: *const *const FFIBytes,
+    pub requested_value_fields: *const FFIBytes,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
