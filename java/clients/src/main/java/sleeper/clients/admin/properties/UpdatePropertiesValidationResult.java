@@ -34,14 +34,14 @@ public class UpdatePropertiesValidationResult {
         return invalidProperties;
     }
 
-    public Boolean checkInvalidBeforeProperty(SleeperProperty property) {
+    public boolean checkInvalidBeforeProperty(SleeperProperty property) {
         if (!property.isEditable() && invalidBeforeProperties.contains(property)) {
             return true;
         }
         return false;
     }
 
-    public Boolean isInvalidPropertiesEmpty() {
+    public boolean isInvalidPropertiesEmpty() {
         return invalidProperties.isEmpty();
     }
 

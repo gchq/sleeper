@@ -105,6 +105,6 @@ public class UpdatePropertiesWithTextEditor {
     }
 
     private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
-        return UpdatePropertiesRequest.buildRequest(before, after);
+        return UpdatePropertiesRequest.fromBeforeAndAfter(before, after);
     }
 }

@@ -39,7 +39,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         this.updatePropertiesValidationResult = updatePropertiesValidationResult;
     }
 
-    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T beforeProperties,
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> fromBeforeAndAfter(T beforeProperties,
             T updatedProperties) {
         PropertiesDiff propertiesDiff;
         if (beforeProperties.equals(updatedProperties)) {
