@@ -61,7 +61,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     public UpdatePropertiesValidationResult validateProperties() {
-        Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperty();
+        Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperties();
         try {
             updatedProperties.validate();
             return new UpdatePropertiesValidationResult(getUneditableProperties(invalidBeforeProperties)
@@ -80,7 +80,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
                 .filter(not(invalidBeforeProperties::contains));
     }
 
-    private Set<SleeperProperty> getInvalidBeforeProperty() {
+    private Set<SleeperProperty> getInvalidBeforeProperties() {
         try {
             beforeProperties.validate();
             return Collections.emptySet();
