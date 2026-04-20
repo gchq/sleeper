@@ -102,7 +102,7 @@ public class DeployExistingInstance {
 
     public void update() throws IOException, InterruptedException {
         DeployInstance deployInstance = new DeployInstance(
-                SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
+                SyncJars.fromScriptsDirectory(s3, accountName, scriptsDirectory),
                 new UploadDockerImagesToEcr(
                         UploadDockerImages.builder()
                                 .scriptsDirectory(scriptsDirectory)

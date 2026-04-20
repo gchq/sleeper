@@ -148,10 +148,7 @@ public class UploadArtefacts {
 
             String accountName = stsClient.getCallerIdentity().account();
             String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
-            if (jarsBucket == null) {
-                jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(accountName, deploymentId);
-            }
-            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
+            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
@@ -167,6 +164,7 @@ public class UploadArtefacts {
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
                         .bucketName(jarsBucket)
+                        .deploymentId(deploymentId)
                         .build());
             }
             if (args.toUpload().isUploadImages()) {
