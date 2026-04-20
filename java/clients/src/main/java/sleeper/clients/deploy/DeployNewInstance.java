@@ -54,7 +54,6 @@ public class DeployNewInstance {
 
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final EcrClient ecrClient;
     private final StsClient stsClient;
     private final AwsRegionProvider regionProvider;
     private final Path scriptsDirectory;
@@ -68,7 +67,6 @@ public class DeployNewInstance {
     private DeployNewInstance(Builder builder) {
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
-        ecrClient = builder.ecrClient;
         stsClient = builder.stsClient;
         regionProvider = builder.regionProvider;
         scriptsDirectory = builder.scriptsDirectory;
@@ -150,7 +148,6 @@ public class DeployNewInstance {
         private S3Client s3Client;
         private StsClient stsClient;
         private DynamoDbClient dynamoClient;
-        private EcrClient ecrClient;
         private AwsRegionProvider regionProvider;
         private Path scriptsDirectory;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
@@ -175,11 +172,6 @@ public class DeployNewInstance {
 
         public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
-            return this;
-        }
-
-        public Builder ecrClient(EcrClient ecrClient) {
-            this.ecrClient = ecrClient;
             return this;
         }
 
@@ -232,7 +224,6 @@ public class DeployNewInstance {
                 AwsRegionProvider regionProvider) throws IOException, InterruptedException {
             s3Client(s3Client)
                     .dynamoClient(dynamoClient)
-                    .ecrClient(ecrClient)
                     .stsClient(stsClient)
                     .regionProvider(regionProvider)
                     .build().deploy();

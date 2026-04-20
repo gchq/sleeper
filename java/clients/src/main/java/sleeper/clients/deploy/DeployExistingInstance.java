@@ -52,7 +52,6 @@ public class DeployExistingInstance {
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
-    private final EcrClient ecr;
     private final StsClient sts;
     private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
@@ -64,7 +63,6 @@ public class DeployExistingInstance {
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
-        ecr = builder.ecr;
         sts = builder.sts;
         regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
@@ -89,7 +87,7 @@ public class DeployExistingInstance {
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
-            builder().clients(s3Client, ecrClient, stsClient)
+            builder().clients(s3Client, stsClient)
                     .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
@@ -128,7 +126,6 @@ public class DeployExistingInstance {
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
-        private EcrClient ecr;
         private StsClient sts;
         private AwsRegionProvider regionProvider;
         private boolean deployPaused;
@@ -162,9 +159,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, EcrClient ecr, StsClient sts) {
+        public Builder clients(S3Client s3, StsClient sts) {
             this.s3 = s3;
-            this.ecr = ecr;
             this.sts = sts;
             return this;
         }
