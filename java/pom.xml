@@ -189,7 +189,7 @@
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.250.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
-        <cdk.kubectl.35.version>2.2.0</cdk.kubectl.35.version>
+        <cdk.kubectl.35.version>2.2.1</cdk.kubectl.35.version>
         <jsii.version>1.128.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
