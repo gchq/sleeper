@@ -175,9 +175,8 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     /**
-     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
-     * has a maximum length of 20 characters. See
-     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     * Returns a version of the Sleeper instance ID for use in resource names. Will convert to lower case and replace
+     * dots with dashes.
      *
      * @return the cleaned up instance ID
      */
@@ -186,9 +185,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     /**
-     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
-     * has a maximum length of 20 characters. See
-     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     * Returns a version of the Sleeper instance ID for use in resource names. Will convert to lower case and replace
+     * dots with dashes. Note that the instance ID has a maximum length of 20 characters.
+     * See {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
      *
      * @param  instanceId the instance ID
      * @return            the cleaned up instance ID
