@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class PartitionSplittingStack extends NestedStack {
 
     private Queue createBatchQueues(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         // Create queue for batching tables
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue findPartitionsToSplitDlq = Queue.Builder
                 .create(this, "FindPartitionsToSplitDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "FindPartitionsToSplitDLQ.fifo"))
@@ -132,7 +132,7 @@ public class PartitionSplittingStack extends NestedStack {
 
     private Queue createJobQueues(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         // Create queue for partition splitting job definitions
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue partitionSplittingJobDlq = Queue.Builder
                 .create(this, "PartitionSplittingDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "PartitionSplittingJobDLQ"))
@@ -169,7 +169,7 @@ public class PartitionSplittingStack extends NestedStack {
     private void createTriggerFunction(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         String triggerFunctionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");
+                instanceProperties.cleanInstanceId(), "partition-splitting-trigger");
         IFunction triggerFunction = lambdaCode.buildFunction(LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform partition splitting for and puts them on a queue to be processed")
@@ -197,7 +197,7 @@ public class PartitionSplittingStack extends NestedStack {
 
     private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "partition-splitting-find-to-split");
+                instanceProperties.cleanInstanceId(), "partition-splitting-find-to-split");
         IFunction findPartitionsToSplitLambda = lambdaCode.buildFunction(LambdaHandler.FIND_PARTITIONS_TO_SPLIT, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state stores of the provided tables looking for partitions that need splitting")
@@ -217,7 +217,7 @@ public class PartitionSplittingStack extends NestedStack {
 
     private void createSplitPartitionFunction(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String splitFunctionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "partition-splitting-handler");
+                instanceProperties.cleanInstanceId(), "partition-splitting-handler");
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)

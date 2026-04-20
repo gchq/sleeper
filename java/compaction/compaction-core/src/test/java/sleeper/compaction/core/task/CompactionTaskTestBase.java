@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -68,6 +69,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATime;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 
 public class CompactionTaskTestBase {
@@ -122,6 +125,10 @@ public class CompactionTaskTestBase {
         runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
+    protected void runTask(CompactionRunner compactor, Supplier<Instant> timeSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
+        runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence(), maxTimeAliveJitter);
+    }
+
     protected void runTask(String taskId, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
         runTask(pollQueue(), noWaitForFileAssignment(), compactor, timeSupplier, taskId, jobRunIdsInSequence());
     }
@@ -139,25 +146,28 @@ public class CompactionTaskTestBase {
     }
 
     protected void runTask(
-            MessageReceiver messageReceiver,
-            CompactionRunner compactor,
-            Supplier<Instant> timeSupplier) throws Exception {
+            MessageReceiver messageReceiver, CompactionRunner compactor, Supplier<Instant> timeSupplier) throws Exception {
         runTask(messageReceiver, noWaitForFileAssignment(), compactor, timeSupplier, DEFAULT_TASK_ID, jobRunIdsInSequence());
     }
 
     private void runTask(
-            MessageReceiver messageReceiver,
-            StateStoreWaitForFiles fileAssignmentCheck,
-            CompactionRunner compactor,
-            Supplier<Instant> timeSupplier,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles fileAssignmentCheck,
+            CompactionRunner compactor, Supplier<Instant> timeSupplier,
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
+        runTask(messageReceiver, fileAssignmentCheck, compactor, timeSupplier, taskId, jobRunIdSupplier, noJitter());
+    }
+
+    private void runTask(
+            MessageReceiver messageReceiver, StateStoreWaitForFiles fileAssignmentCheck,
+            CompactionRunner compactor, Supplier<Instant> timeSupplier,
+            String taskId, Supplier<String> jobRunIdSupplier, DoubleSupplier maxTimeAliveJitter) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
                 jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps))
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter)
                 .run();
     }
 
@@ -386,16 +396,6 @@ public class CompactionTaskTestBase {
             table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
             table.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         }
-    }
-
-    private Supplier<Instant> timePassesAMinuteAtATime() {
-        return timePassesAMinuteAtATimeFrom(Instant.parse("2024-09-04T09:50:00Z"));
-    }
-
-    protected Supplier<Instant> timePassesAMinuteAtATimeFrom(Instant firstTime) {
-        return Stream.iterate(firstTime,
-                time -> time.plus(Duration.ofMinutes(1)))
-                .iterator()::next;
     }
 
     protected class ProcessJob {

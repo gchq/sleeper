@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import software.constructs.Construct;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper
@@ -41,8 +43,8 @@ public class ConfigBucketStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties,
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "config");
+        String bucketName = InstanceProperties.getConfigBucketFromAccountAndInstanceId(instanceProperties.get(ACCOUNT), instanceProperties.get(ID));
+
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
                 .bucketName(bucketName)
                 .versioned(false)

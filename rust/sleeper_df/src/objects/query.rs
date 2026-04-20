@@ -1,6 +1,6 @@
 //! Query related FFI structs.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ use crate::{
     objects::{FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
     unpack::unpack_typed_array,
 };
-use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::bail;
+use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
 use sleeper_core::LeafPartitionQueryConfig;
 use std::slice;
 

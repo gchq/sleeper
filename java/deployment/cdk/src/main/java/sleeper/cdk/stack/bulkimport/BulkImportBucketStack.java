@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.util.Utils;
+import sleeper.cdk.util.S3BucketName;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -34,8 +34,8 @@ public class BulkImportBucketStack extends NestedStack {
 
     public BulkImportBucketStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         super(scope, id);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-import");
+        String bucketName = S3BucketName.create(instanceProperties, "bulk-import");
+
         importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                 .bucketName(bucketName)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)

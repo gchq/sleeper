@@ -1,4 +1,4 @@
-#  Copyright 2022-2025 Crown Copyright
+#  Copyright 2022-2026 Crown Copyright
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -60,12 +60,16 @@ class SleeperClient:
         self,
         instance_id,
         use_threads=False,
+        account_name: str = None,
         s3_client: S3Client = None,
         s3_resource: S3ServiceResource = None,
         s3_fs: s3fs.S3FileSystem = None,
         sqs_resource: SQSServiceResource = None,
         dynamo_resource: DynamoDBServiceResource = None,
     ):
+        if account_name is None:
+            sts_client = boto3.client("sts")
+            account_name = sts_client.get_caller_identity().get("Account")
         if s3_client is None:
             s3_client = boto3.client("s3")
         if s3_resource is None:
@@ -77,7 +81,7 @@ class SleeperClient:
         if dynamo_resource is None:
             dynamo_resource = boto3.resource("dynamodb")
         self._instance_id = instance_id
-        self._instance_properties = load_instance_properties(s3_resource, instance_id)
+        self._instance_properties = load_instance_properties(s3_resource, account_name, instance_id)
         self._s3_client = s3_client
         self._s3_resource = s3_resource
         self._s3_fs = s3_fs
@@ -125,7 +129,7 @@ class SleeperClient:
         table_name: str,
         files: list,
         id: str = None,
-        platform: str = "EMR",
+        platform: str = "EMRServerless",
         platform_spec: dict = None,
         class_name: str = None,
     ):
@@ -139,7 +143,7 @@ class SleeperClient:
         :param table_name: the table name to write to
         :param files: list of the files containing the rows to ingest
         :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
-        :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
+        :param platform: the platform to use - either "EMRServerless", "EMR", "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
         """
         _bulk_import(

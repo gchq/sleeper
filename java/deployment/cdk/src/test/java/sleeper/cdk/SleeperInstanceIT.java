@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,13 @@ package sleeper.cdk;
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.AppProps;
-import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
 
-import sleeper.cdk.artefacts.SleeperArtefacts;
-import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
-import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
-import sleeper.cdk.testutil.SleeperInstancePrinter;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.cdk.testutil.SleeperStackTestBase;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
-public class SleeperInstanceIT {
-
-    InstanceProperties instanceProperties = createTestInstancePropertiesWithId("test-instance");
-    SleeperInstancePrinter printer = new SleeperInstancePrinter();
+public class SleeperInstanceIT extends SleeperStackTestBase {
 
     @Test
     void shouldGenerateCloudFormationTemplatesWithDefaultOptionalStacks() {
@@ -47,41 +33,12 @@ public class SleeperInstanceIT {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_RELEASE, "emr-1.2.3");
 
         // When
-        Stack stack = createSleeperInstanceAsRootStack();
+        SleeperInstance.create(rootStack, instanceProps());
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
+        Approvals.verify(printer.toJson(rootStack), new Options()
                 .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
                 .forFile().withName("default-instance", ".json"));
-    }
-
-    private Stack createSleeperInstanceAsRootStack() {
-        App app = new App(AppProps.builder()
-                .analyticsReporting(false)
-                .build());
-        Environment environment = Environment.builder()
-                .account("test-account")
-                .region("test-region")
-                .build();
-        StackProps stackProps = StackProps.builder()
-                .stackName(instanceProperties.get(ID))
-                .env(environment)
-                .build();
-        SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
-                .instanceProperties(instanceProperties)
-                .version("1.2.3")
-                .artefacts(SleeperArtefacts.fromProperties(jarVersionIds(), imageDigest()))
-                .skipCheckingVersionMatchesProperties(true)
-                .build();
-        return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
-    }
-
-    private SleeperJarVersionIdProvider jarVersionIds() {
-        return new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
-    }
-
-    private SleeperContainerImageDigestProvider imageDigest() {
-        return new SleeperContainerImageDigestProvider((image, ecrRepository) -> image + "-test-digest");
     }
 
 }

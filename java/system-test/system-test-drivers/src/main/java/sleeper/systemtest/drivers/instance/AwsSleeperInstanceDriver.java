@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        S3InstanceProperties.reloadGivenInstanceId(s3, instanceProperties, instanceId);
+        S3InstanceProperties.reloadGivenAccountAndInstanceId(s3, instanceProperties, parameters.getAccount(), instanceId);
     }
 
     public void saveInstanceProperties(InstanceProperties instanceProperties) {

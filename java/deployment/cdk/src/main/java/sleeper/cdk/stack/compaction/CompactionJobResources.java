@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -133,7 +132,7 @@ public class CompactionJobResources {
 
     private Queue sqsQueueForCompactionJobs(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job definitions
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String dlQueueName = String.join("-", "sleeper", instanceId, "CompactionJobDLQ");
         Queue compactionDLQ = Queue.Builder
                 .create(stack, "CompactionJobDefinitionsDeadLetterQueue")
@@ -176,7 +175,7 @@ public class CompactionJobResources {
     private IFunction lambdaToCreateCompactionJobBatches(
             SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
 
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-trigger");
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-handler");
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
@@ -236,7 +235,7 @@ public class CompactionJobResources {
     private IFunction lambdaToSendCompactionJobBatches(
             SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue pendingQueue) {
 
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
 
         IFunction function = lambdaCode.buildFunction(LambdaHandler.COMPACTION_JOB_DISPATCHER, "CompactionJobDispatcher", builder -> builder
@@ -259,7 +258,7 @@ public class CompactionJobResources {
 
     private Queue sqsQueueForCompactionJobCreation(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job creation invocation
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue deadLetterQueue = Queue.Builder
                 .create(stack, "CompactionJobCreationDLQ")
                 .queueName(String.join("-", "sleeper", instanceId, "CompactionJobCreationDLQ.fifo"))
@@ -288,7 +287,7 @@ public class CompactionJobResources {
 
     private Queue sqsQueueForCompactionJobBatches(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job definitions
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String dlQueueName = String.join("-", "sleeper", instanceId, "PendingCompactionJobBatchDLQ");
         Queue pendingDLQ = Queue.Builder
                 .create(stack, "PendingCompactionJobBatchDLQ")
@@ -319,7 +318,7 @@ public class CompactionJobResources {
     private void lambdaToBatchUpCompactionCommits(
             SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue batcherQueue) {
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
+                instanceProperties.cleanInstanceId(), "compaction-commit-batcher");
 
         IFunction function = lambdaCode.buildFunction(LambdaHandler.COMPACTION_COMMIT_BATCHER, "CompactionCommitBatcher", builder -> builder
                 .functionName(functionName)
@@ -340,7 +339,7 @@ public class CompactionJobResources {
     }
 
     private Queue sqsQueueForCompactionBatcher(SleeperCoreStacks coreStacks) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         Queue deadLetterQueue = Queue.Builder
                 .create(stack, "CompactionCommitDLQ")
                 .queueName(String.join("-", "sleeper", instanceId, "CompactionCommitDLQ"))

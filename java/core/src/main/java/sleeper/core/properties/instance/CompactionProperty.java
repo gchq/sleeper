@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,23 @@ public interface CompactionProperty {
                     "will check whether this idle time has elapsed since the last time it finished a job. If so, the " +
                     "task will terminate.")
             .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.time.minutes")
+            .description("The total time in minutes that a compaction task can be alive for before it is terminated.\n" +
+                    "When the task has finished its current job, it will calculate how long it's been running and " +
+                    "if it's been running longer than the max alive time it will terminate.\n" +
+                    "A new task will then begin running to process remaining compaction jobs.\n" +
+                    "This allows the user to gracefully upgrade Sleeper to a newer version.")
+            .defaultValue("1440") //24 hours
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.task.max.alive.jitter.minutes")
+            .description("The max amount of jitter to subtract from a new compaction task's max alive time.\n" +
+                    "A random number of minutes between 0 and this value will be subtracted from the max alive time property above " +
+                    "for each new compaction task.\n" +
+                    "This lowers the chance that all the compaction tasks stop at the same time.")
+            .defaultValue("120") //2 hours
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.consecutive.failures")

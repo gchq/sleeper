@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,12 +72,13 @@ public class PartitionsStatusReportArguments {
     /**
      * Retrieves the state of the Sleeper table and writes the report.
      *
+     * @param accountName  the AWS account name
      * @param s3Client     an S3 AWS SDK client
      * @param dynamoClient a DynamoDB AWS SDK client
      * @param out          the output to write to
      */
-    public void runReport(S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+    public void runReport(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
 
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
                 .name(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "bulk-import-persistent-emr"))
+                        instanceProperties.cleanInstanceId(), "bulk-import-persistent-emr"))
                 .visibleToAllUsers(true)
                 .securityConfiguration(commonStack.getSecurityConfiguration().getName())
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL))
@@ -166,7 +166,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .collect(Collectors.toList()));
 
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
-            PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.createManagedScalingBounds(instanceProperties);
+            PersistentEMRManagedScalingBounds bounds = PersistentEMRManagedScalingBounds.create(instanceProperties);
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
                             .unitType("InstanceFleetUnits")

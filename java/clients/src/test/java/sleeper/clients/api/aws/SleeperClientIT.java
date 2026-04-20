@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -73,9 +74,11 @@ public class SleeperClientIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceId(instanceProperties.get(ID))
                 .awsClients(clients -> clients
+                        .accountName(instanceProperties.get(ACCOUNT))
                         .s3Client(s3Client)
                         .dynamoClient(dynamoClient)
                         .sqsClient(sqsClient)
+                        .stsClient(stsClient)
                         .awsCredentialsProvider(credentialsProvider))
                 .hadoopConf(hadoopConf)
                 .build();

@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Lambda Runtime Interface Emulator
-RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.33/aws-lambda-rie && \
+RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
 

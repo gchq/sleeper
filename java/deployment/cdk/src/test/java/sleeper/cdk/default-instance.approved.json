@@ -3283,6 +3283,25 @@
             ]
           }
         },
+        "restapihandler6C03CFA2": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-rest-api-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
         "partitionsplittinghandler1B821F8F": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
@@ -7685,7 +7704,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-table-data",
+            "BucketName": "sleeper-test-instance-table-data-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {
@@ -8294,7 +8313,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-config",
+            "BucketName": "sleeper-test-instance-config-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {
@@ -13175,7 +13194,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-bulk-import",
+            "BucketName": "sleeper-test-instance-bulk-import-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {
@@ -22965,7 +22984,7 @@
               "BlockPublicAcls": true,
               "IgnorePublicAcls": true
             },
-            "BucketName": "sleeper-test-instance-query-results",
+            "BucketName": "sleeper-test-instance-query-results-test-account",
             "BucketEncryption": {
               "ServerSideEncryptionConfiguration": [
                 {

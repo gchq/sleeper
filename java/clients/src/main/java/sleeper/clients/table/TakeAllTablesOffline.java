@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -34,17 +35,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 public class TakeAllTablesOffline {
     private static final Logger LOGGER = LoggerFactory.getLogger(TakeAllTablesOffline.class);
 
-    private S3Client s3Client;
-    private DynamoDbClient dynamoClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
 
     public TakeAllTablesOffline(S3Client s3Client, DynamoDbClient dynamoClient) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
-    }
-
-    public void takeAllOffline(String instanceId) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        takeAllOffline(instanceProperties);
     }
 
     public void takeAllOffline(InstanceProperties instanceProperties) {
@@ -65,12 +61,14 @@ public class TakeAllTablesOffline {
         }
 
         try (
-            S3Client s3Client = buildAwsV2Client(S3Client.builder());
-            DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())
-        ) {
+                S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
             TakeAllTablesOffline offliner = new TakeAllTablesOffline(s3Client, dynamoClient);
             for (int i = 0; i < args.length; i++) {
-                offliner.takeAllOffline(args[i]);
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args[i]);
+                offliner.takeAllOffline(instanceProperties);
             }
         }
     }

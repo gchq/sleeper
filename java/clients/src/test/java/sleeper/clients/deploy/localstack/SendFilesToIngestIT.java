@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         // Given
         String instanceId = UUID.randomUUID().toString().substring(0, 18);
         deployInstance(instanceId);
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");

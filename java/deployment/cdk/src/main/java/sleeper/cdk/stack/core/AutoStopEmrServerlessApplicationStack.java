@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "auto-stop-emr-serverless");
+                instanceProperties.cleanInstanceId(), "auto-stop-emr-serverless");
 
         lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_STOP_EMR_SERVERLESS_APPLICATION, "Lambda", builder -> builder
                 .functionName(functionName)

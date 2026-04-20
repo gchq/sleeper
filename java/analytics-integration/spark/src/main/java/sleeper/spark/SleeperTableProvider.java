@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -42,11 +43,12 @@ import java.util.Map;
 public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     private String instanceId;
     private String tableName;
-    private StateStore stateStore;
+    private String accountName;
     private S3Client s3Client;
     private DynamoDbClient dynamoDbClient;
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
+    private StateStore stateStore;
 
     /**
      * A public, zero argument constuctor is required as this class implements TableProvider.
@@ -61,7 +63,7 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         instanceId = (String) optionsMap.get("instanceid");
         tableName = (String) optionsMap.get("tablename");
         loadClients();
-        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         tableProperties = provider.getByName(tableName);
         Schema schema = tableProperties.getSchema();
@@ -86,6 +88,11 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     }
 
     private void loadClients() {
+        if (null == accountName) {
+            try (StsClient stsClient = StsClient.create()) {
+                accountName = stsClient.getCallerIdentity().account();
+            }
+        }
         if (null == s3Client) {
             s3Client = S3Client.create();
         }

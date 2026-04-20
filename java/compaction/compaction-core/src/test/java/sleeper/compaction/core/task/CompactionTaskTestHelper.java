@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import static sleeper.core.testutils.JitterTestHelper.noJitter;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedUuidsWithPrefix;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
@@ -46,25 +48,27 @@ public class CompactionTaskTestHelper {
     private final CompactionJobTracker jobTracker;
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
+    private final DoubleSupplier randomJitterFunction;
 
     public CompactionTaskTestHelper(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobTracker jobTracker) {
         this(instanceProperties, tablePropertiesProvider, stateStoreProvider, jobTracker,
                 timePassesAMinuteAtATimeFrom(Instant.parse("2025-08-28T12:00:00Z")),
-                noWaits());
+                noWaits(), noJitter());
     }
 
     public CompactionTaskTestHelper(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobTracker jobTracker,
-            Supplier<Instant> timeSupplier, ThreadSleep threadSleep) {
+            Supplier<Instant> timeSupplier, ThreadSleep threadSleep, DoubleSupplier randomJitterFunction) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobTracker = jobTracker;
         this.timeSupplier = timeSupplier;
         this.threadSleep = threadSleep;
+        this.randomJitterFunction = randomJitterFunction;
     }
 
     public static MessageReceiver receiveJobsFromQueue(LinkedList<CompactionJob> queue) {
@@ -86,7 +90,8 @@ public class CompactionTaskTestHelper {
                 instanceProperties, tablePropertiesProvider, PropertiesReloader.neverReload(),
                 stateStoreProvider, messageReceiver, stateStoreWaitForFiles(), jobCommitter(),
                 jobTracker, CompactionTaskTracker.NONE,
-                runnerFactory(compactionRunner), "test-task", supplyNumberedUuidsWithPrefix("testrun"), timeSupplier, threadSleep)
+                runnerFactory(compactionRunner), "test-task", supplyNumberedUuidsWithPrefix("testrun"),
+                timeSupplier, threadSleep, randomJitterFunction)
                 .run();
     }
 

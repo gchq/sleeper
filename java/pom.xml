@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2025 Crown Copyright
+  ~ Copyright 2022-2026 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@
         <module>metrics</module>
         <module>partitions</module>
         <module>query</module>
+        <module>rest-api</module>
         <module>statestore</module>
         <module>statestore-committer-core</module>
         <module>statestore-committer</module>
@@ -129,7 +130,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.25.4</log4j.version>
-        <aws-java-sdk-v2.version>2.42.30</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.42.36</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -143,7 +144,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.44.0</aws-crt.version>
+        <aws-crt.version>0.45.1</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -151,7 +152,7 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.21.0</commons-codec.version>
         <commons-io.version>2.21.0</commons-io.version>
-        <commons-configuration.version>2.13.0</commons-configuration.version>
+        <commons-configuration.version>2.14.0</commons-configuration.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-text.version>1.15.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
@@ -161,9 +162,9 @@
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
-        <httpclient5.version>5.6</httpclient5.version>
+        <httpclient5.version>5.6.1</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.0.11</jline.version>
+        <jline.version>4.0.12</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-7</zstd-jni.version>
@@ -172,7 +173,7 @@
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.60.1</opentelemetry.version>
+        <opentelemetry.version>1.61.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.5</zookeeper.version>
@@ -181,22 +182,22 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.5.0-jre</guava.version>
+        <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.49.0</google.errorprone.version>
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.80.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.248.0</cdk.version>
-        <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
+        <cdk.version>2.250.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
-        <jsii.version>1.127.0</jsii.version>
+        <cdk.kubectl.35.version>2.2.1</cdk.kubectl.35.version>
+        <jsii.version>1.128.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
         <pty4j.version>0.13.12</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
-        <bouncycastle.version>1.83</bouncycastle.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
         <trino.version>435</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -207,15 +208,15 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.12.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.75.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.76.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
-        <jgrapht.version>1.5.2</jgrapht.version>
-        <apfloat.version>1.15.0</apfloat.version>
+        <jgrapht.version>1.5.3</jgrapht.version>
+        <apfloat.version>1.16.0</apfloat.version>
         <joda-time.version>2.14.1</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
         <jnr.ffi.version>2.2.19</jnr.ffi.version>
@@ -266,7 +267,7 @@
         <findbugs.version>3.0.2</findbugs.version>
         <dependency.plugin.version>3.10.0</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>12.2.0</dependency-check.plugin.version>
+        <dependency-check.plugin.version>12.2.1</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.6.3</exec.plugin.version>
         <resources.plugin.version>3.5.0</resources.plugin.version>
@@ -323,8 +324,8 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
-                <artifactId>cdk-lambda-layer-kubectl-v32</artifactId>
-                <version>${cdk.kubectl.32.version}</version>
+                <artifactId>cdk-lambda-layer-kubectl-v35</artifactId>
+                <version>${cdk.kubectl.35.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.constructs</groupId>

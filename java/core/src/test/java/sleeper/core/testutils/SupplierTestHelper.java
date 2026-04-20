@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,16 @@ public class SupplierTestHelper {
     }
 
     /**
+     * Creates a supplier that would usually be defined as Instant::now. The supplied times will start at the set time,
+     * then each subsequent time will be a minute later than the last.
+     *
+     * @return the supplier
+     */
+    public static Supplier<Instant> timePassesAMinuteAtATime() {
+        return timePassesAMinuteAtATimeFrom(Instant.parse("2026-01-01T00:00:00Z"));
+    }
+
+    /**
      * Creates a supplier that would usually be defined as Instant::now. The supplied times will start at the given
      * time, then each subsequent time will be a minute later than the last.
      *
@@ -111,8 +121,8 @@ public class SupplierTestHelper {
      * @param  times the times
      * @return       the supplier
      */
-    public static Supplier<Instant> supplyTimes(Instant... times) {
-        return List.of(times).iterator()::next;
+    public static TestInstantSupplier supplyTimes(Instant... times) {
+        return new TestInstantSupplier(List.of(times));
     }
 
     /**
