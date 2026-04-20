@@ -28,6 +28,7 @@ import sleeper.clients.util.UncheckedAutoCloseables;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
@@ -58,16 +59,12 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
     }
 
     /**
-     * Retrieves the AWS account name.
+     * Retrieves the AWS account name if it is known. If not, you can retrieve it with the STS client.
      *
-     * @return the account name
+     * @return the account name, if known
      */
-    public String account() {
-        if (accountName != null) {
-            return accountName;
-        } else {
-            return stsClientWrapper.get().getCallerIdentity().account();
-        }
+    public Optional<String> accountName() {
+        return Optional.ofNullable(accountName);
     }
 
     /**
@@ -95,6 +92,15 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
      */
     public SqsClient sqs() {
         return sqsClientWrapper.get();
+    }
+
+    /**
+     * Retrieves the AWS client to interact with STS.
+     *
+     * @return the client
+     */
+    public StsClient sts() {
+        return stsClientWrapper.get();
     }
 
     /**

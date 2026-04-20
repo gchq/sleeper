@@ -87,7 +87,9 @@ public class AwsSleeperClientBuilder {
             return instanceProperties;
         }
         Objects.requireNonNull(instanceId, "instanceId must not be null");
-        return S3InstanceProperties.loadGivenAccountAndInstanceId(awsClients.s3(), awsClients.account(), instanceId);
+        String accountName = awsClients.accountName()
+                .orElseGet(() -> awsClients.sts().getCallerIdentity().account());
+        return S3InstanceProperties.loadGivenAccountAndInstanceId(awsClients.s3(), accountName, instanceId);
     }
 
     /**
