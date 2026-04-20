@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -42,6 +43,7 @@ import java.util.Map;
  * REST API for interacting with the Sleeper instance.
  * Utilises API Gateway.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class RestApiStack extends NestedStack {
 
     public RestApiStack(Construct scope, String id, InstanceProperties instanceProperties,
