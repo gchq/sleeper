@@ -88,7 +88,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version(version)
                         .build(),
-                ecrClient, account, region);
+                account, region);
     }
 
     @Override

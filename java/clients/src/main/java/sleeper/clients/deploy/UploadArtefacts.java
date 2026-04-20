@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -155,7 +154,7 @@ public class UploadArtefacts {
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient), account, region);
+                    account, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())

@@ -25,21 +25,18 @@ import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 /**
- * Uploads Docker images to individual AWS ECR repositories. Authenticates with AWS ECR, creates ECR repositories, and
- * compares the images to be uploaded with those already present.
+ * Uploads Docker images to individual AWS ECR repositories. Authenticates with AWS ECR and creates ECR repositories.
  */
 public class UploadDockerImagesToEcr {
     public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
 
     private final UploadDockerImages uploader;
-    private final CheckVersionExistsInEcr repositoryChecker;
     private final String account;
     private final String region;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker, String account, String region) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, String account, String region) {
         this.uploader = uploader;
-        this.repositoryChecker = repositoryChecker;
         this.account = account;
         this.region = region;
         this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", this.account, this.region);

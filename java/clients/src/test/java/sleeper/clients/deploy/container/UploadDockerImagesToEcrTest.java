@@ -620,6 +620,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version("1.0.0")
                         .build(),
-                ecrClient, "123", "test-region");
+                "123", "test-region");
     }
 }
