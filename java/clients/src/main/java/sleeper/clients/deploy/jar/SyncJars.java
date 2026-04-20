@@ -50,10 +50,10 @@ public class SyncJars {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <jars-dir> <artefacts-deployment-id> <optional-delete-old-jars>");
+            throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <optional-delete-old-jars>");
         }
         Path jarsDirectory = Path.of(args[0]);
-        String deploymentId = args[1];
+        String bucketName = args[1];
         boolean deleteOldJars = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
@@ -62,7 +62,7 @@ public class SyncJars {
             String accountName = stsClient.getCallerIdentity().account();
             new SyncJars(s3Client, accountName, jarsDirectory)
                     .sync(SyncJarsRequest.builder()
-                            .deploymentId(deploymentId)
+                            .bucketName(bucketName)
                             .deleteOldJars(deleteOldJars)
                             .build());
         }
