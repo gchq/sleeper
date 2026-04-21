@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -53,7 +52,6 @@ public class DeployExistingInstance {
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
-    private final EcrClient ecr;
     private final String accountName;
     private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
@@ -65,7 +63,6 @@ public class DeployExistingInstance {
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
-        ecr = builder.ecr;
         accountName = builder.accountName;
         regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
@@ -90,7 +87,7 @@ public class DeployExistingInstance {
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
-            builder().clients(s3Client, ecrClient, stsClient)
+            builder().clients(s3Client, stsClient)
                     .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
@@ -110,7 +107,7 @@ public class DeployExistingInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecr), accountName, regionProvider.getRegion().id()),
+                        accountName, regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -130,7 +127,6 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private String accountName;
         private S3Client s3;
-        private EcrClient ecr;
         private AwsRegionProvider regionProvider;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
@@ -163,9 +159,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, EcrClient ecr, StsClient sts) {
+        public Builder clients(S3Client s3, StsClient sts) {
             this.s3 = s3;
-            this.ecr = ecr;
             this.accountName = sts.getCallerIdentity().account();
             return this;
         }

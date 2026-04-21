@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -56,7 +55,6 @@ public class DeployNewInstance {
     private final String accountName;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final EcrClient ecrClient;
     private final AwsRegionProvider regionProvider;
     private final Path scriptsDirectory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
@@ -70,7 +68,6 @@ public class DeployNewInstance {
         accountName = builder.accountName;
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
-        ecrClient = builder.ecrClient;
         regionProvider = builder.regionProvider;
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
@@ -125,7 +122,7 @@ public class DeployNewInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecrClient), accountName, regionProvider.getRegion().id()),
+                        accountName, regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -151,7 +148,6 @@ public class DeployNewInstance {
         private String accountName;
         private S3Client s3Client;
         private DynamoDbClient dynamoClient;
-        private EcrClient ecrClient;
         private AwsRegionProvider regionProvider;
         private Path scriptsDirectory;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
@@ -176,11 +172,6 @@ public class DeployNewInstance {
 
         public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
-            return this;
-        }
-
-        public Builder ecrClient(EcrClient ecrClient) {
-            this.ecrClient = ecrClient;
             return this;
         }
 
@@ -233,7 +224,6 @@ public class DeployNewInstance {
                 AwsRegionProvider regionProvider) throws IOException, InterruptedException {
             s3Client(s3Client)
                     .dynamoClient(dynamoClient)
-                    .ecrClient(ecrClient)
                     .stsClient(stsClient)
                     .regionProvider(regionProvider)
                     .build().deploy();

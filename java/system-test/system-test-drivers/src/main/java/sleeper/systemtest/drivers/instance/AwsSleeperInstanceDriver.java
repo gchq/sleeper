@@ -125,7 +125,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
-                    .clients(s3, ecr, sts)
+                    .clients(s3, sts)
                     .regionProvider(regionProvider)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
