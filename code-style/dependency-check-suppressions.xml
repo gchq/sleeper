@@ -186,4 +186,142 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+	file name: jetty-io-11.0.25.jar
+	file name: jetty-alpn-java-client-11.0.25.jar
+	file name: jetty-xml-11.0.25.jar
+    file name: jetty-server-11.0.25.jar
+    file name: http2-client-11.0.25.jar
+    file name: http2-http-client-transport-11.0.25.jar
+    file name: http2-server-11.0.25.jar
+    file name: jetty-alpn-server-11.0.25.jar
+    file name: jetty-util-11.0.25.jar
+    file name: jetty-http-11.0.25.jar
+    file name: http2-common-11.0.25.jar
+    file name: jetty-client-11.0.25.jar
+    file name: jetty-alpn-java-server-11.0.25.jar
+    file name: jetty-webapp-11.0.25.jar
+    file name: jetty-servlet-11.0.25.jar
+	file name: jetty-security-11.0.25.jar
+	file name: jetty-servlets-11.0.25.jar
+	file name: jetty-alpn-client-11.0.25.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-*$</packageUrl>
+        <cpe>cpe:/a:eclipse:jetty</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+	file name: jetty-io-11.0.25.jar
+	file name: jetty-alpn-java-client-11.0.25.jar
+	file name: jetty-xml-11.0.25.jar
+    file name: jetty-server-11.0.25.jar
+    file name: http2-client-11.0.25.jar
+    file name: http2-http-client-transport-11.0.25.jar
+    file name: http2-server-11.0.25.jar
+    file name: jetty-alpn-server-11.0.25.jar
+    file name: jetty-util-11.0.25.jar
+    file name: jetty-http-11.0.25.jar
+    file name: http2-common-11.0.25.jar
+    file name: jetty-client-11.0.25.jar
+    file name: jetty-alpn-java-server-11.0.25.jar
+    file name: jetty-webapp-11.0.25.jar
+    file name: jetty-servlet-11.0.25.jar
+	file name: jetty-security-11.0.25.jar
+	file name: jetty-servlets-11.0.25.jar
+	file name: jetty-alpn-client-11.0.25.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-*$</packageUrl>
+        <cpe>cpe:/a:jetty:jetty</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+	file name: jetty-io-11.0.25.jar
+	file name: jetty-alpn-java-client-11.0.25.jar
+	file name: jetty-xml-11.0.25.jar
+    file name: jetty-server-11.0.25.jar
+    file name: http2-client-11.0.25.jar
+    file name: http2-http-client-transport-11.0.25.jar
+    file name: http2-server-11.0.25.jar
+    file name: jetty-alpn-server-11.0.25.jar
+    file name: jetty-util-11.0.25.jar
+    file name: jetty-http-11.0.25.jar
+    file name: http2-common-11.0.25.jar
+    file name: jetty-client-11.0.25.jar
+    file name: jetty-alpn-java-server-11.0.25.jar
+    file name: jetty-webapp-11.0.25.jar
+    file name: jetty-servlet-11.0.25.jar
+	file name: jetty-security-11.0.25.jar
+	file name: jetty-servlets-11.0.25.jar
+	file name: jetty-alpn-client-11.0.25.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-*$</packageUrl>
+        <cpe>cpe:/a:mortbay_jetty:jetty</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: jetty-alpn-server-11.0.25.jar
+	file name: jetty-alpn-java-server-11.0.25.jar
+	file name: jetty-server-11.0.25.jar
+	file name: http2-server-11.0.25.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-server@.*$</packageUrl>
+        <cpe>cpe:/a:jetty:jetty_http_server</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: opentelemetry-semconv-1.21.0-alpha.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+        <cpe>cpe:/a:opentelemetry:opentelemetry</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: jib-build-plan-0.4.0.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.cloud\.tools/jib-build-plan@.*$</packageUrl>
+        <cpe>cpe:/a:google:cloud_build</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: cdk-asset-awscli-v1-2.2.273.jar: asset-awscli-v1@2.2.273.jsii.tgz: asset-awscli-v1@2.2.273.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+    ]]>        </notes>
+        <sha1>50270e2a59c8c6328db1af2d7854bc734db0c64e</sha1>
+        <cpe>cpe:/a:json_project:json</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: cdk-asset-awscli-v1-2.2.273.jar: asset-awscli-v1@2.2.273.jsii.tgz: asset-awscli-v1@2.2.273.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+    ]]>        </notes>
+        <sha1>50270e2a59c8c6328db1af2d7854bc734db0c64e</sha1>
+        <cpe>cpe:/a:set_project:set</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: jetty-http-11.0.25.jar
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-http@.*$</packageUrl>
+        <cve>CVE-2025-5115</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: handlebars-4.5.0.jar: handlebars-v4.7.7.js
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
+        <cve>CVE-2026-33937</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: wiremock-3.13.2.jar: swagger-ui-bundle.js
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-0540</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+    file name: wiremock-3.13.2.jar: swagger-ui-es-bundle.js
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cve>CVE-2026-0540</cve>
+    </suppress>
 </suppressions>
