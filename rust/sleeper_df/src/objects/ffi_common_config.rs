@@ -142,14 +142,16 @@ impl FFICommonConfig {
             .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
-            .sort_key_cols(
+            .sort_key_cols(if self.sort_key_cols_len == 0 {
+                Vec::new()
+            } else {
                 unsafe { slice::from_raw_parts(self.sort_key_cols, self.sort_key_cols_len) }
                     .iter()
                     .map(|bytes| {
                         Ok::<_, color_eyre::Report>(String::from(TryInto::<&str>::try_into(bytes)?))
                     })
-                    .collect::<Result<Vec<_>, _>>()?,
-            )
+                    .collect::<Result<Vec<_>, _>>()?
+            })
             .region(region)
             .output(output)
             .aggregates(Aggregate::parse_config(unpack_str(
