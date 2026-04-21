@@ -230,6 +230,11 @@ Sleeper.
 See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
 the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
 
+## Upgrade support
+
+See [support for in-place upgrade](development/upgrade-support.md) for details of how to maintain support for in-place
+upgrade.
+
 ## Release process
 
 See the [release process guide](development/release-process.md) for instructions on how to publish a release of Sleeper.

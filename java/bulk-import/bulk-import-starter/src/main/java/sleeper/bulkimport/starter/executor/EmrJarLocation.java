@@ -16,9 +16,10 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class EmrJarLocation {
@@ -27,9 +28,7 @@ public class EmrJarLocation {
     }
 
     public static String getJarLocation(InstanceProperties instanceProperties) {
-        return "s3a://"
-                + instanceProperties.get(JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + instanceProperties.get(CdkDefinedInstanceProperty.VERSION) + ".jar";
+        return "s3a://" + instanceProperties.get(JARS_BUCKET)
+                + "/" + ClientJar.BULK_IMPORT_RUNNER.getFormattedFilename(instanceProperties.get(VERSION));
     }
 }

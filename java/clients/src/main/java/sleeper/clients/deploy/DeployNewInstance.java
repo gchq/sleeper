@@ -114,7 +114,7 @@ public class DeployNewInstance {
     public void deploy() throws IOException, InterruptedException {
         deployInstanceConfiguration.validate();
         DeployInstance deployInstance = new DeployInstance(
-                SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
+                SyncJars.fromScriptsDirectory(s3Client, accountName, scriptsDirectory),
                 new UploadDockerImagesToEcr(
                         UploadDockerImages.builder()
                                 .scriptsDirectory(scriptsDirectory)

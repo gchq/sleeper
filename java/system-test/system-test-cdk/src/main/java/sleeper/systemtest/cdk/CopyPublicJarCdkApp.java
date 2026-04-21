@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.cdk;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.CfnOutput;
@@ -39,12 +40,13 @@ import java.nio.file.Path;
 /**
  * An app to test copying a jar file from a public repository to an S3 bucket with a CDK custom resource.
  */
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class CopyPublicJarCdkApp extends Stack {
 
     public CopyPublicJarCdkApp(Construct scope, String id, StackProps stackProps, Props props) {
         super(scope, id, stackProps);
 
-        IBucket bucket = SleeperArtefactRepositories.createJarsBucket(this, props.deploymentId());
+        IBucket bucket = SleeperArtefactRepositories.createJarsBucket(this, getAccount(), props.deploymentId());
         CopyJarProvider copyJarProvider = CopyJarProvider.Builder.create(this, "CopyJars")
                 .jars(props.jars())
                 .functionName("sleeper-" + props.deploymentId() + "-copy-jar")
