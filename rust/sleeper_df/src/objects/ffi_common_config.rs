@@ -16,12 +16,12 @@
 */
 use crate::{
     objects::{
-        FFIBytes, FFIElementType,
+        FFIBytes,
         aws_config::{FFIAwsConfig, unpack_aws_config},
         ffi_parquet_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
     },
-    unpack::{unpack_str, unpack_string, unpack_typed_array},
+    unpack::{unpack_str, unpack_string},
 };
 use color_eyre::eyre::{Result, bail};
 use core::slice;
@@ -59,17 +59,6 @@ pub struct FFICommonConfig {
 }
 
 impl FFICommonConfig {
-    /// The schema types for the row key fields in this Sleeper schema.
-    ///
-    /// # Errors
-    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`RowKeySchemaType`].
-    pub fn schema_types(&self) -> Result<Vec<FFIElementType>, color_eyre::Report> {
-        unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
-            .iter()
-            .map(FFIElementType::try_from)
-            .collect::<Result<Vec<_>, _>>()
-    }
-
     /// Get row key field names.
     pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
         unsafe { slice::from_raw_parts(self.row_key_cols, self.row_key_cols_len) }

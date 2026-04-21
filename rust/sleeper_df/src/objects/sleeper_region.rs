@@ -14,14 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::objects::FFIElement;
 use color_eyre::eyre::bail;
 use sleeper_core::{ColRange, PartitionBound, SleeperRegion};
-use std::{borrow::Borrow, collections::HashMap, ffi::c_void, slice};
-
-use crate::{
-    objects::{FFIElement, FFIElementType},
-    unpack::{unpack_typed_array, unpack_variant_array},
-};
+use std::{borrow::Borrow, collections::HashMap, slice};
 
 /// Represents a Sleeper region in a C ABI struct.
 ///
@@ -74,8 +70,8 @@ impl<'a> FFISleeperRegion {
 
         let region_mins = unsafe { slice::from_raw_parts(region.mins, region.len) }
             .iter()
-            .map(PartitionBound::from)
-            .collect::<Vec<_>>();
+            .map(PartitionBound::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
         // Sleeper region minimums cannot contain unbounded values
         if region_mins
             .iter()
@@ -86,16 +82,16 @@ impl<'a> FFISleeperRegion {
         // but maximums can
         let region_maxs = unsafe { slice::from_raw_parts(region.maxs, region.len) }
             .iter()
-            .map(PartitionBound::from)
-            .collect::<Vec<_>>();
+            .map(PartitionBound::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
 
-        let dimensions_indexes =
+        let dimension_indexes =
             unsafe { slice::from_raw_parts(region.dimension_indexes, region.len) };
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
         for dimension in dimension_indexes {
-            let idx = usize::try_from(dimension)?;
+            let idx = usize::try_from(*dimension)?;
             let row_key = &row_key_cols[idx];
             map.insert(
                 String::from(row_key.borrow()),

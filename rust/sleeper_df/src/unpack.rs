@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 use color_eyre::eyre::Result;
-use std::ffi::{CStr, c_char, c_void};
+use std::ffi::{CStr, c_char};
 
 pub fn unpack_str<'a>(pointer: *const c_char) -> Result<&'a str> {
     Ok(unsafe { CStr::from_ptr(pointer) }.to_str()?)

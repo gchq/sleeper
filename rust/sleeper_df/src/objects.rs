@@ -16,11 +16,7 @@
  */
 use color_eyre::{Report, eyre::eyre};
 use sleeper_core::PartitionBound;
-use std::{
-    ffi::{c_char, c_uchar},
-    fmt::Display,
-    slice,
-};
+use std::{ffi::c_uchar, fmt::Display, slice};
 
 pub mod aws_config;
 pub mod ffi_common_config;
@@ -116,19 +112,23 @@ pub struct FFIElement {
     item: FFIElementData,
 }
 
-impl TryFrom<&FFIElement> for PartitionBound {
+impl TryFrom<&FFIElement> for PartitionBound<'_> {
     type Error = Report;
 
     fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
         Ok(match value.contained {
             FFIElementType::Int32 => PartitionBound::Int32(unsafe { value.item.int32 }),
             FFIElementType::Int64 => PartitionBound::Int64(unsafe { value.item.int64 }),
-            FFIElementType::String => {
-                PartitionBound::String(unsafe { value.item.string.try_into()? })
-            }
-            FFIElementType::ByteArray => {
-                PartitionBound::ByteArray(unsafe { value.item.bytes.try_into()? })
-            }
+            FFIElementType::String => PartitionBound::String(
+                unsafe { value.item.string.as_ref() }
+                    .ok_or(eyre!("FFIElement string pointer is NULL"))?
+                    .try_into()?,
+            ),
+            FFIElementType::ByteArray => PartitionBound::ByteArray(
+                unsafe { value.item.bytes.as_ref() }
+                    .ok_or(eyre!("FFIElement byte array pointer is NULL"))?
+                    .try_into()?,
+            ),
             FFIElementType::Empty => PartitionBound::Unbounded,
         })
     }

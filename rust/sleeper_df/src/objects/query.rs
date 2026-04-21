@@ -14,9 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{
-    objects::{FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
-    unpack::unpack_typed_array,
+use crate::objects::{
+    FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion,
 };
 use color_eyre::eyre::bail;
 use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
