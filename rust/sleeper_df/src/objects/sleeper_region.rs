@@ -47,7 +47,6 @@ impl<'a> FFISleeperRegion {
     pub fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &[FFIElementType],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.len < 1 {
             bail!("FFISleeperRegion len cannot be 0");

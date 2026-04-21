@@ -24,6 +24,7 @@ use crate::{
     unpack::{unpack_str, unpack_string, unpack_typed_array},
 };
 use color_eyre::eyre::{Result, bail};
+use core::slice;
 use sleeper_core::{
     CommonConfig, CommonConfigBuilder, OutputType, SleeperParquetOptions,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
@@ -41,7 +42,7 @@ pub struct FFICommonConfig {
     // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
-    pub input_files: *const c_char,
+    pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
@@ -71,7 +72,7 @@ impl FFICommonConfig {
 
     /// Get row key field names.
     pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
-        unpack_typed_array(self.row_key_cols, self.row_key_cols_len)?
+        unsafe { slice::from_raw_parts(self.row_key_cols, self.row_key_cols_len) }
             .iter()
             .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
             .collect()
@@ -99,6 +100,12 @@ impl FFICommonConfig {
         if self.region.is_null() {
             bail!("FFICommonConfig region is NULL");
         }
+        if self.input_files.is_null() {
+            bail!("FFICommonConfig input_files is NULL");
+        }
+        if self.row_key_cols.is_null() {
+            bail!("FFICommonConfig row_key_cols is NULL");
+        }
 
         let parquet_options = if let Some(options) = unsafe { self.parquet_options.as_ref() } {
             options
@@ -109,11 +116,9 @@ impl FFICommonConfig {
 
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
-        // Contains numeric types to indicate schema types
-        let schema_types = self.schema_types()?;
 
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();
-        let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
+        let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols)?;
 
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
@@ -136,23 +141,20 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
+        let ins = unsafe { slice::from_raw_parts(self.input_files, self.input_files_len) }
+            .iter()
+            .map(|e| Url::parse(unpack_str(*e)?).map_err(color_eyre::Report::from))
+            .collect::<Result<Vec<_>, _>>()?;
+
         CommonConfigBuilder::new()
             .aws_config(unpack_aws_config(self))
-            .input_files(
-                unpack_typed_array(self.input_files, self.input_files_len)?
-                    .iter()
-                    .map(|bytes| {
-                        Url::parse(TryInto::<&str>::try_into(bytes)?)
-                            .map_err(color_eyre::Report::from)
-                    })
-                    .collect::<Result<Vec<_>, _>>()?,
-            )
+            .input_files(ins)
             .input_files_sorted(self.input_files_sorted)
             .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
-                unpack_typed_array(self.sort_key_cols, self.sort_key_cols_len)?
+                unsafe { slice::from_raw_parts(self.sort_key_cols, self.sort_key_cols_len) }
                     .iter()
                     .map(|bytes| {
                         Ok::<_, color_eyre::Report>(String::from(TryInto::<&str>::try_into(bytes)?))

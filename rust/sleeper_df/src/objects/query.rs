@@ -62,7 +62,6 @@ impl FFILeafPartitionQueryConfig {
         };
         let common = ffi_common.to_common_config(file_output_enabled)?;
         let row_key_cols = ffi_common.row_key_cols()?;
-        let schema_types = ffi_common.schema_types()?;
 
         let Some(_) = (unsafe { self.query_regions.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig query_regions is NULL");
@@ -70,19 +69,21 @@ impl FFILeafPartitionQueryConfig {
 
         let ranges = unsafe { slice::from_raw_parts(self.query_regions, self.query_regions_len) }
             .iter()
-            .map(|ffi_reg| {
-                FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
-            })
+            .map(|ffi_reg| FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols))
             .collect::<Result<Vec<_>, _>>()?;
 
         let requested_value_columns = if self.requested_value_fields_set {
-            let t =
-                unpack_typed_array(self.requested_value_fields, self.requested_value_fields_len)?
-                    .iter()
-                    .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
-                    .collect::<Result<Vec<_>, color_eyre::Report>>()?;
-
-            Some(t)
+            Some(
+                unsafe {
+                    slice::from_raw_parts(
+                        self.requested_value_fields,
+                        self.requested_value_fields_len,
+                    )
+                }
+                .iter()
+                .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+                .collect::<Result<Vec<_>, color_eyre::Report>>()?,
+            )
         } else {
             None
         };
