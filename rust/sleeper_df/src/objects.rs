@@ -124,11 +124,10 @@ impl TryFrom<&FFIElement> for PartitionBound<'_> {
                     .ok_or(eyre!("FFIElement string pointer is NULL"))?
                     .try_into()?,
             ),
-            FFIElementType::ByteArray => PartitionBound::ByteArray(
+            FFIElementType::ByteArray => PartitionBound::ByteArray(Into::<&[u8]>::into(
                 unsafe { value.item.bytes.as_ref() }
-                    .ok_or(eyre!("FFIElement byte array pointer is NULL"))?
-                    .try_into()?,
-            ),
+                    .ok_or(eyre!("FFIElement byte array pointer is NULL"))?,
+            )),
             FFIElementType::Empty => PartitionBound::Unbounded,
         })
     }
