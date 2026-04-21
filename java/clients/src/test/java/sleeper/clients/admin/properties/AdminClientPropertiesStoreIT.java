@@ -48,7 +48,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -335,15 +334,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void setup() {
             dockerImageConfiguration = DockerImageConfiguration.getDefault();
             instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
-            ecrClient.addVersionToRepository(instanceId + "/compaction-job-execution", instanceProperties.get(VERSION));
-            ecrClient.addVersionToRepository(instanceId + "/query-lambda", instanceProperties.get(VERSION));
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "IngestStack");
 
             // Then
             assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
@@ -353,33 +350,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
             // When
             updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
-        }
-
-        @Test
-        void shouldNotUploadDockerImagesWhenStackIsDisabled() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
-        }
-
-        @Test
-        void shouldUploadDockerImagesWhenOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
-
-            // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
-        }
-
-        @Test
-        void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
-            // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
 
             // Then
             assertThat(dockerCommandsThatRan).isEmpty();

@@ -15,7 +15,7 @@
                 }
               ]
             },
-            "BucketName": "sleeper-test-deployment-jars",
+            "BucketName": "sleeper-test-deployment-jars-test-account",
             "PublicAccessBlockConfiguration": {
               "BlockPublicAcls": true,
               "BlockPublicPolicy": true,
