@@ -137,7 +137,7 @@ public class UploadArtefacts {
             images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
         } else {
             deploymentId = args.deploymentId();
-            jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId());
+            jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
             images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
         }
@@ -146,16 +146,16 @@ public class UploadArtefacts {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
-            String account = stsClient.getCallerIdentity().account();
+            String accountName = stsClient.getCallerIdentity().account();
             String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
-            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
+            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient), account, region);
+                    CheckVersionExistsInEcr.withEcrClient(ecrClient), accountName, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
@@ -164,6 +164,7 @@ public class UploadArtefacts {
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
                         .bucketName(jarsBucket)
+                        .deploymentId(deploymentId)
                         .build());
             }
             if (args.toUpload().isUploadImages()) {

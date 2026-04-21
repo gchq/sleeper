@@ -116,9 +116,9 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 .runCommand(CommandUtils::runCommandLogOutput)
                 .build().invoke(ARTEFACTS,
                         CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId(), List.of(SYSTEM_TEST_IMAGE.getImageName())));
-        new SyncJars(s3, parameters.getJarsDirectory())
+        new SyncJars(s3, parameters.getAccount(), parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
-                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
+                        .deploymentId(parameters.getArtefactsDeploymentId())
                         .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                         .build());
         if (!parameters.isSystemTestClusterEnabled()) {
