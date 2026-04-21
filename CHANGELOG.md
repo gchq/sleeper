@@ -9,13 +9,13 @@ available [here](docs/development/roadmap.md).
 
 ### 23rd April, 2025
 
-This includes improvements to the deployment process, an initial REST API shell, gracefull upgrade process for
+This includes improvements to the deployment process, an initial REST API shell, graceful upgrade process for
 compaction tasks as well as some bugfixes and documentation improvements.
 
 Deployment:
- - Bucket names are now created with the AWS account number appended to them
+ - This is a breaking change: Bucket names are now created with the AWS account number appended to them.
  - Artefact and instance deployments have been combined during deployment in external repository
- - Docker images are now dpeloyed by their digest instead of tag
+ - Docker images are now deployed by their digest instead of tag
  - Docker images of the same Sleeper version will now be republished to ECR when the digest has changed
 
 REST API:
