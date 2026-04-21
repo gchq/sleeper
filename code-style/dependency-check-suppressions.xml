@@ -194,4 +194,14 @@
     ]]>        </notes>
         <cve>CVE-2020-28267</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability exists as part of latest version of library. Once a newer version is available, suppression can
+        be removed.
+
+    file name: handlebars-4.5.0.jar: handlebars-v4.7.7.js
+    ]]>        </notes>
+        <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2026-33937|CVE-2026-33938|CVE-2026-33940|CVE-2026-33939|CVE-2026-33916|CVE-2026-33941</vulnerabilityName>
+    </suppress>
 </suppressions>
