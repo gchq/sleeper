@@ -190,8 +190,9 @@
         <notes><![CDATA[
          The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
 
-    file name: cdk-asset-awscli-v1-2.2.273.jar: asset-awscli-v1@2.2.273.jsii.tgz: asset-awscli-v1@2.2.273.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
-    ]]>        </notes>
+        file name: cdk-asset-awscli-v1-2.2.273.jar: asset-awscli-v1@2.2.273.jsii.tgz: asset-awscli-v1@2.2.273.jsii.tar:
+        layer.zip: endpoint-rule-set-1.json.gz
+        ]]>        </notes>
         <cve>CVE-2020-28267</cve>
     </suppress>
     <suppress>
@@ -248,5 +249,15 @@
         ]]>        </notes>
         <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2026-39883|CVE-2026-39882</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This dependency is only used by WireMock, which is only used for tests.
+
+        file name: wiremock-3.13.2.jar: swagger-ui-bundle.js
+        file name: wiremock-3.13.2.jar: swagger-ui-es-bundle.js
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2026-0540|CVE-2025-15599</vulnerabilityName>
     </suppress>
 </suppressions>
