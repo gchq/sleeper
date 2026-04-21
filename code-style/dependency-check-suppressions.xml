@@ -199,9 +199,54 @@
         Vulnerability exists as part of latest version of library. Once a newer version is available, suppression can
         be removed.
 
-    file name: handlebars-4.5.0.jar: handlebars-v4.7.7.js
-    ]]>        </notes>
+        file name: handlebars-4.5.0.jar: handlebars-v4.7.7.js
+        ]]>        </notes>
         <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2026-33937|CVE-2026-33938|CVE-2026-33940|CVE-2026-33939|CVE-2026-33916|CVE-2026-33941</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability exists as part of packages used within spark. Unable to upgrade as need to align with
+        spark version for AWS EMR.
+
+        file name: http2-client-11.0.25.jar
+        file name: http2-http-client-transport-11.0.25.jar
+        file name: http2-server-11.0.25.jar
+        file name: jetty-io-11.0.25.jar
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-.*$|^pkg:maven/org\.eclipse\.jetty/jetty-.*$</packageUrl>
+        <cve>CVE-2025-11143</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Vulnerability exists as part of packages used within spark. Unable to upgrade as need to align with
+        spark version for AWS EMR.
+
+        file name: http2-http-client-transport-11.0.25.jar
+        file name: http2-server-11.0.25.jar
+        file name: jetty-io-11.0.25.jar
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-.*$|^pkg:maven/org\.eclipse\.jetty/jetty-.*$</packageUrl>
+        <cve>CVE-2025-5115</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Brought in as part of jib-core. Presently on the latest version, so unable to fix presently. Once a newer
+        version is available, suppression could possibly be removed.
+
+        file name: jib-build-plan-0.4.0.jar
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.cloud\.tools/jib-build-plan@.*$</packageUrl>
+        <cve>CVE-2026-3136</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Versions are contained as part of trino so are unable to be upgraded as we need to maintain version
+        compatibility.
+
+        file name: opentelemetry-semconv-1.21.0-alpha.jar
+        ]]>        </notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2026-39883|CVE-2026-39882</vulnerabilityName>
     </suppress>
 </suppressions>
