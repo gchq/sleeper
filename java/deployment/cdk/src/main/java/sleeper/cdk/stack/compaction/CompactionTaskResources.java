@@ -102,7 +102,7 @@ public class CompactionTaskResources {
     private Cluster ecsClusterForCompactionTasks(
             SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperEcsImages ecsImages, SleeperLambdaCode lambdaCode, CompactionJobResources jobResources) {
         String clusterName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "compaction-cluster");
+                instanceProperties.cleanInstanceId(), "compaction-cluster");
         Cluster cluster = Cluster.Builder
                 .create(stack, "CompactionCluster")
                 .clusterName(clusterName)
@@ -149,7 +149,7 @@ public class CompactionTaskResources {
     private IFunction lambdaToCreateCompactionTasks(
             SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "compaction-tasks-creator");
+                instanceProperties.cleanInstanceId(), "compaction-tasks-creator");
 
         IFunction handler = lambdaCode.buildFunction(LambdaHandler.COMPACTION_TASK_CREATOR, "CompactionTasksCreator", builder -> builder
                 .functionName(functionName)

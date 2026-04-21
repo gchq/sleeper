@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from sleeper.client import SleeperClient
+from sleeper.properties.cdk_defined_properties import CommonCdkProperty
 from sleeper.properties.instance_properties import InstanceProperties
 from sleeper.properties.user_defined_properties import CommonProperty
 from tests.sleeper.localstack import LocalStack
@@ -23,6 +24,7 @@ class LocalStackSleeperClient:
     def create(properties: InstanceProperties) -> SleeperClient:
         return SleeperClient(
             instance_id=properties.get(CommonProperty.ID),
+            account_name=properties.get(CommonCdkProperty.ACCOUNT),
             s3_client=LocalStack.s3_client(),
             s3_resource=LocalStack.s3_resource(),
             s3_fs=LocalStack.s3fs(),

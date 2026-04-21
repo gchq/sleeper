@@ -60,12 +60,16 @@ class SleeperClient:
         self,
         instance_id,
         use_threads=False,
+        account_name: str = None,
         s3_client: S3Client = None,
         s3_resource: S3ServiceResource = None,
         s3_fs: s3fs.S3FileSystem = None,
         sqs_resource: SQSServiceResource = None,
         dynamo_resource: DynamoDBServiceResource = None,
     ):
+        if account_name is None:
+            sts_client = boto3.client("sts")
+            account_name = sts_client.get_caller_identity().get("Account")
         if s3_client is None:
             s3_client = boto3.client("s3")
         if s3_resource is None:
@@ -77,7 +81,7 @@ class SleeperClient:
         if dynamo_resource is None:
             dynamo_resource = boto3.resource("dynamodb")
         self._instance_id = instance_id
-        self._instance_properties = load_instance_properties(s3_resource, instance_id)
+        self._instance_properties = load_instance_properties(s3_resource, account_name, instance_id)
         self._s3_client = s3_client
         self._s3_resource = s3_resource
         self._s3_fs = s3_fs

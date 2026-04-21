@@ -147,9 +147,11 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
+                        .accountName(instanceProperties.get(ACCOUNT))
                         .s3Client(s3Client)
                         .dynamoClient(dynamoClient)
                         .sqsClient(sqsClient)
+                        .stsClient(stsClient)
                         .awsCredentialsProvider(credentialsProvider))
                 .hadoopConf(hadoopConf)
                 .build();

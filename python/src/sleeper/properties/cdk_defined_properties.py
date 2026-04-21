@@ -19,6 +19,7 @@ class QueryCdkProperty:
 
 
 class CommonCdkProperty:
+    ACCOUNT = InstanceProperty("sleeper.account")
     CONFIG_BUCKET = InstanceProperty("sleeper.config.bucket")
     DATA_BUCKET = InstanceProperty("sleeper.data.bucket")
     REGION = InstanceProperty("sleeper.region")

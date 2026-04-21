@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
@@ -117,8 +118,10 @@ public class IngestJobStatusReport {
             try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                     DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                     SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder());
+                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+                String accountName = stsClient.getCallerIdentity().account();
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));

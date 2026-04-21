@@ -46,23 +46,25 @@ public class S3InstanceProperties {
     /**
      * Loads and validates instance properties from the config bucket of the given Sleeper instance.
      *
-     * @param  s3Client   the S3 client
-     * @param  instanceId the Sleeper instance ID
-     * @return            the loaded instance properties
+     * @param  s3Client    the S3 client
+     * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
+     * @return             the loaded instance properties
      */
-    public static InstanceProperties loadGivenInstanceId(S3Client s3Client, String instanceId) {
-        return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceId(s3Client, instanceId));
+    public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
+        return InstanceProperties.createAndValidate(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId));
     }
 
     /**
      * Loads instance properties from the config bucket of the given Sleeper instance, with no validation.
      *
-     * @param  s3Client   the S3 client
-     * @param  instanceId the Sleeper instance ID
-     * @return            the loaded instance properties
+     * @param  s3Client    the S3 client
+     * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
+     * @return             the loaded instance properties
      */
-    public static InstanceProperties loadGivenInstanceIdNoValidation(S3Client s3Client, String instanceId) {
-        return InstanceProperties.createWithoutValidation(loadPropertiesGivenInstanceId(s3Client, instanceId));
+    public static InstanceProperties loadGivenAccountAndInstanceIdNoValidation(S3Client s3Client, String accountName, String instanceId) {
+        return InstanceProperties.createWithoutValidation(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId));
     }
 
     /**
@@ -106,12 +108,13 @@ public class S3InstanceProperties {
     /**
      * Reloads and validates instance properties from the config bucket of the given Sleeper instance.
      *
-     * @param s3Client   the S3 client
-     * @param properties the instance properties
-     * @param instanceId the Sleeper instance ID
+     * @param s3Client    the S3 client
+     * @param properties  the instance properties
+     * @param accountName the AWS account name
+     * @param instanceId  the Sleeper instance ID
      */
-    public static void reloadGivenInstanceId(S3Client s3Client, InstanceProperties properties, String instanceId) {
-        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId)));
+    public static void reloadGivenAccountAndInstanceId(S3Client s3Client, InstanceProperties properties, String accountName, String instanceId) {
+        properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId)));
     }
 
     /**
@@ -120,22 +123,23 @@ public class S3InstanceProperties {
      *
      * @param  s3          the S3 client
      * @param  dynamoDB    the DynamoDB client
+     * @param  accountName the AWS account name
      * @param  instanceId  the Sleeper instance ID
      * @param  directory   the directory to save the configuration to
      * @return             the instance properties
      * @throws IOException if the configuration could not be saved to the local file system
      */
     public static InstanceProperties saveToLocalWithTableProperties(
-            S3Client s3, DynamoDbClient dynamoDB, String instanceId, Path directory) throws IOException {
-        InstanceProperties instanceProperties = loadGivenInstanceId(s3, instanceId);
+            S3Client s3, DynamoDbClient dynamoDB, String accountName, String instanceId, Path directory) throws IOException {
+        InstanceProperties instanceProperties = loadGivenAccountAndInstanceId(s3, accountName, instanceId);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
                         .streamAllTables());
         return instanceProperties;
     }
 
-    private static Properties loadPropertiesGivenInstanceId(S3Client s3Client, String instanceId) {
-        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+    private static Properties loadPropertiesGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
+        return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
     }
 
     private static Properties loadPropertiesFromBucket(S3Client s3Client, String bucket) {

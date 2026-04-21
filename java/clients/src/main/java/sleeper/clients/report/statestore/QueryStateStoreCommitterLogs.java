@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -121,10 +122,12 @@ public class QueryStateStoreCommitterLogs {
         Input input = gson.fromJson(Files.readString(inputFile), Input.class);
         LOGGER.info("{}", input);
 
-        try (S3Client s3 = S3Client.create();
-                CloudWatchLogsClient cw = CloudWatchLogsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, input.instanceId);
-            QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cw);
+        try (S3Client s3Client = S3Client.create();
+                CloudWatchLogsClient cwClient = CloudWatchLogsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, input.instanceId);
+            QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cwClient);
             List<StateStoreCommitterLogEntry> entries = queryLogs.getLogsInPeriod(input.startTime, input.endTime);
             LOGGER.info("Found {} entries", entries.size());
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(entries);

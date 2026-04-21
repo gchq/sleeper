@@ -42,6 +42,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>autoscaling</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

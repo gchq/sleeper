@@ -98,7 +98,7 @@ public class DashboardStack extends NestedStack {
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard")
-                .dashboardName(Utils.cleanInstanceId(instanceProperties))
+                .dashboardName(instanceProperties.cleanInstanceId())
                 .build();
 
         addErrorMetricsWidgets(errorMetrics);

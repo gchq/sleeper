@@ -64,7 +64,7 @@ public class BulkExportOnFargateResources {
         BulkExportTaskRequirements requirements = BulkExportTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(stack, "BulkExportFargateTaskDefinition")
-                .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "BulkExportTaskOnFargate"))
+                .family(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), "BulkExportTaskOnFargate"))
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
                 .runtimePlatform(RuntimePlatform.builder()

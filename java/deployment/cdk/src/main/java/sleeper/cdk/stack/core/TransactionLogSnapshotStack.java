@@ -81,7 +81,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
     private void createSnapshotCreationLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
         String creationFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation");
         IFunction snapshotCreationTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_CREATION_TRIGGER, "TransactionLogSnapshotCreationTrigger", builder -> builder
@@ -146,7 +146,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
     private void createSnapshotDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion");
         IFunction snapshotDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.SNAPSHOT_DELETION_TRIGGER, "TransactionLogSnapshotDeletionTrigger", builder -> builder
