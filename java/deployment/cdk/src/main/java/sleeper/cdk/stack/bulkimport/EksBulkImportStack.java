@@ -41,11 +41,8 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
-import software.amazon.awscdk.services.stepfunctions.Choice;
-import software.amazon.awscdk.services.stepfunctions.Condition;
 import software.amazon.awscdk.services.stepfunctions.CustomState;
 import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
-import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
@@ -232,14 +229,10 @@ public final class EksBulkImportStack extends NestedStack {
         return StateMachine.Builder.create(this, "EksBulkImportStateMachine")
                 .definitionBody(DefinitionBody.fromChainable(
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
-                                .next(Choice.Builder.create(this, "SuccessDecision").build()
-                                        .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                CustomState.Builder.create(this, "DeleteDriverPod")
-                                                        .stateJson(deleteDriverPodState).build()
-                                                        .next(CustomState.Builder.create(this, "DeleteJob")
-                                                                .stateJson(deleteJobState).build()))
-                                        .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                                .create(this, "FailedJobState").cause("Spark job failed").build())))))
+                                .next(CustomState.Builder.create(this, "DeleteDriverPod")
+                                        .stateJson(deleteDriverPodState).build()
+                                        .next(CustomState.Builder.create(this, "DeleteJob")
+                                                .stateJson(deleteJobState).build())))
                 .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
     }
