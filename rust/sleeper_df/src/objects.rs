@@ -137,9 +137,9 @@ impl TryFrom<&FFIElement> for PartitionBound<'_> {
 ///
 /// This can be converted to a byte array slice or a string slice (assuming it is valid UTF-8).
 ///
-/// Whilst this is a C compatible FFI struct. It has a pure Java definition in
-/// java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIBytes.java. If you change the ordering or types
-/// of fields in this struct, you MUST update the writeTo/readFrom methods in that class!
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIBytes.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFIBytes {

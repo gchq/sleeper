@@ -21,14 +21,18 @@ import jnr.ffi.TypeAlias;
 import java.util.Objects;
 
 /**
- * A Java implementation of FFIBytes. Whilst this class is not a JNR-FFI {@link Struct} instance, it is used
- * to write compatible data at a given memory location. Memory is dynamically allocated for the internal buffer which
- * will be automatically freed when its owning instance is garbage collected.
+ * Java implementation of FFIBytes. A simple length and pointer to a data buffer.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-public class FFIBytes {
+public class FFIBytes extends Struct {
     /** Length of stored data. */
-    private final int length;
+    public final Struct.size_t length = new Struct.size_t();
+    /** Data buffer. */
+    public final Struct.Pointer buffer = new Struct.Pointer();
     /**
      * Memory address of byte array in memory.
      */
