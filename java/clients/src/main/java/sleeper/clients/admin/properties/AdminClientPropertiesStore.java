@@ -215,31 +215,71 @@ public class AdminClientPropertiesStore {
      */
     public interface Client {
 
+        /**
+         * Loads instance properties without validation.
+         *
+         * @param  instanceId the instance ID
+         * @return            the instance properties
+         */
         InstanceProperties loadInstancePropertiesNoValidation(String instanceId);
 
+        /**
+         * Saves instance properties without validation.
+         *
+         * @param instanceProperties the instance properties
+         */
         void saveInstanceProperties(InstanceProperties instanceProperties);
 
+        /**
+         * Saves configuration properties to a local directory, rather than the underlying store.
+         *
+         * @param  instanceProperties    the instance properties
+         * @param  tablePropertiesStream a stream of table properties
+         * @throws IOException           thrown on a failure interacting with the file system
+         */
         void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException;
 
+        /**
+         * Retrieves an object to interact with the table index of a Sleeper instance.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    the table index
+         */
         TableIndex createTableIndex(InstanceProperties instanceProperties);
 
+        /**
+         * Retrieves an object to interact with the table properties of a Sleeper instance.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    the table properties store
+         */
         TablePropertiesStore createTablePropertiesStore(InstanceProperties instanceProperties);
 
+        /**
+         * Retrieves an object to interact with the state store for a table.
+         *
+         * @param  instanceProperties the instance properties
+         * @param  tableProperties    the table properties
+         * @return                    the state store
+         */
         StateStore createStateStore(InstanceProperties instanceProperties, TableProperties tableProperties);
     }
 
+    /**
+     * A client to interact with configuration in S3, DynamoDB and a local directory.
+     */
     public static class AwsClient implements Client {
 
         private final String accountName;
         private final S3Client s3Client;
         private final DynamoDbClient dynamoClient;
-        private final Path generatedDirectory;
+        private final Path localDirectory;
 
-        public AwsClient(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, Path generatedDirectory) {
+        public AwsClient(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, Path localDirectory) {
             this.accountName = accountName;
             this.s3Client = s3Client;
             this.dynamoClient = dynamoClient;
-            this.generatedDirectory = generatedDirectory;
+            this.localDirectory = localDirectory;
         }
 
         @Override
@@ -254,9 +294,9 @@ public class AdminClientPropertiesStore {
 
         @Override
         public void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException {
-            Files.createDirectories(generatedDirectory);
-            ClientUtils.clearDirectory(generatedDirectory);
-            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tablePropertiesStream);
+            Files.createDirectories(localDirectory);
+            ClientUtils.clearDirectory(localDirectory);
+            SaveLocalProperties.saveToDirectory(localDirectory, instanceProperties, tablePropertiesStream);
         }
 
         @Override
