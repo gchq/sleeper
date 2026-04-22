@@ -20,7 +20,7 @@ import sleeper.core.properties.SleeperProperty;
 import java.util.Set;
 
 /**
- * Class to hold the validation result for properties both before and after any changes.
+ * A validation result from an update to configuration properties.
  */
 public class UpdatePropertiesValidationResult {
 
