@@ -32,8 +32,11 @@ Agreement (CLA). Click the link in the comment to read and sign it. The pull req
 
 When contributing to the project, there are several ways of working that you need to be mindful of.
 Namely the coding conventions that we adhere to, as well as the testing strategy that we follow.
+
 Both of these can be found at the following locations:
+
 [Coding Conventions](docs/developer-guide.md#coding-conventions)
+
 [Testing Strategy](docs/developer-guide.md#testing)
 
 #### GitHub Actions on a fork
