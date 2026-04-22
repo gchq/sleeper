@@ -55,12 +55,6 @@ class InvokeCdkTest {
                 .version("1.0").build();
     }
 
-    @Test
-    void shouldValidateVersionMethod() {
-        // Then
-        assertThat(cdk().getVersion().equals("1.0"));
-    }
-
     @Nested
     @DisplayName("Run deploy command")
     class RunDeploy {

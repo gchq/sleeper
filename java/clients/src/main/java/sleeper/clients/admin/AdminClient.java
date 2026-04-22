@@ -82,11 +82,8 @@ public class AdminClient {
         Path scriptsDir = Path.of(args[0]);
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
-        Path jarsDir = scriptsDir.resolve("jars");
-        String version = InvokeCdk.fromScriptsDirectory(scriptsDir).getVersion();
 
-        InvokeCdk cdk = InvokeCdk.builder()
-                .jarsDirectory(jarsDir).version(version).build();
+        InvokeCdk cdk = InvokeCdk.fromScriptsDirectory(scriptsDir);
 
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());

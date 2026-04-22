@@ -92,10 +92,6 @@ public class InvokeCdk {
         }
     }
 
-    public String getVersion() {
-        return this.version;
-    }
-
     private Path cdkJarFile() {
         return jarsDirectory.resolve(ClientJar.CDK.getFormattedFilename(version));
     }
