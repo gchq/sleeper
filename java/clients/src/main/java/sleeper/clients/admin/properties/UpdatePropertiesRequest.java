@@ -39,13 +39,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> fromBeforeAndAfter(T beforeProperties,
             T updatedProperties) {
-        PropertiesDiff propertiesDiff;
-        if (beforeProperties.equals(updatedProperties)) {
-            propertiesDiff = PropertiesDiff.noChanges();
-        } else {
-            propertiesDiff = new PropertiesDiff(beforeProperties, updatedProperties);
-        }
-        return new UpdatePropertiesRequest<>(propertiesDiff, beforeProperties, updatedProperties);
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(beforeProperties, updatedProperties), beforeProperties, updatedProperties);
     }
 
     public PropertiesDiff getDiff() {
