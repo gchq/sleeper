@@ -176,7 +176,7 @@ class LoadLocalPropertiesTablesIT {
                 .forEach(table -> {
                     // Consume the stream to trigger reading the properties file
                 }))
-                .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
+                .hasMessageContainingAll("Property sleeper.table.schema was not set in file", "The property should be set in a separate schema.json file");
     }
 
     @Test
