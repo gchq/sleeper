@@ -18,6 +18,8 @@ package sleeper.foreign;
 import jnr.ffi.Struct;
 import jnr.ffi.Union;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Java mapping of union type for containing a Sleeper row key.
  * Unions in C use overlapping storage for their members. Only
@@ -32,8 +34,53 @@ public class FFIElementData extends Union {
     public final Struct.Signed64 int64 = new Struct.Signed64();
     public final Struct.StructRef<FFIBytes> string = new Struct.StructRef<>(FFIBytes.class);
     public final Struct.StructRef<FFIBytes> bytes = new Struct.StructRef<>(FFIBytes.class);
+    /** Prevent GC. */
+    FFIBytes java_holder;
 
     public FFIElementData(jnr.ffi.Runtime runtime) {
         super(runtime);
+    }
+
+    /**
+     * Set contents to an int.
+     *
+     * @param value element value
+     */
+    public void set(int value) {
+        int32.set(value);
+        java_holder = null;
+    }
+
+    /**
+     * Set contents to a long.
+     *
+     * @param value element value
+     */
+    public void set(long value) {
+        int64.set(value);
+        java_holder = null;
+    }
+
+    /**
+     * Set contents to a string.
+     *
+     * @param value element value
+     */
+    public void set(java.lang.String value) {
+        byte[] data = value.getBytes(StandardCharsets.UTF_8);
+        FFIBytes contents = new FFIBytes(getRuntime(), data);
+        string.set(contents);
+        java_holder = contents;
+    }
+
+    /**
+     * Set contents to a byte array.
+     *
+     * @param value element value
+     */
+    public void set(byte[] value) {
+        FFIBytes contents = new FFIBytes(getRuntime(), value);
+        bytes.set(contents);
+        java_holder = contents;
     }
 }

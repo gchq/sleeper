@@ -27,8 +27,45 @@ import jnr.ffi.Struct;
 public class FFIElement extends Struct {
     public final Struct.Enum<FFIElementType> contained = new Struct.Enum<>(FFIElementType.class);
     public final Struct.StructRef<FFIElementData> item = new Struct.StructRef<>(FFIElementData.class);
+    /** Prevent GC. */
+    FFIElementData java_item;
 
     public FFIElement(jnr.ffi.Runtime runtime) {
         super(runtime);
+    }
+
+     public FFIElement(jnr.ffi.Runtime runtime,Object o) {
+        this(runtime);
+        set(o);
+    }
+
+    public void set(Object o) {
+        if (o == null) {
+            contained.set(FFIElementType.Empty);
+            java_item = null;
+        } else {
+            FFIElementData elementData = new FFIElementData(getRuntime());
+            if (o instanceof Integer) {
+                int v = (Integer) o;
+                contained.set(FFIElementType.Int32);
+                elementData.set(v);
+            } else if (o instanceof Long) {
+                long v = (Long) o;
+                contained.set(FFIElementType.Int64);
+                elementData.set(v);
+            } else if (o instanceof java.lang.String) {
+                java.lang.String v = (java.lang.String) o;
+                contained.set(FFIElementType.String);
+                elementData.set(v);
+            } else if (o instanceof byte[]) {
+                byte[] v = (byte[]) o;
+                contained.set(FFIElementType.ByteArray);
+                elementData.set(v);
+            } else {
+                throw new IllegalArgumentException("can't accept " + o.getClass());
+            }
+            java_item = elementData;
+            item.set(elementData);
+        }
     }
 }
