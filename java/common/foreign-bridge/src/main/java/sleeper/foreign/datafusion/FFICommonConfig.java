@@ -18,8 +18,11 @@ package sleeper.foreign.datafusion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -39,7 +42,9 @@ public class FFICommonConfig extends Struct {
     /** Array of input files to compact. */
     public final Struct.Pointer input_files = new Struct.Pointer();
     /** Prevent GC. */
-    private jnr.ffi.Pointer java_input_files;
+    private jnr.ffi.Pointer java_input_files_ptrs;
+    /** Prevent GC. */
+    private jnr.ffi.Pointer[] java_input_files;
     /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Output file name. */
@@ -51,15 +56,15 @@ public class FFICommonConfig extends Struct {
     /** Length of row keys array. */
     public final Struct.size_t row_key_cols_len = new Struct.size_t();
     /** Names of Sleeper row key fields from schema. */
-    public final Struct.Pointer row_key_cols = new Struct.Pointer();
+    public final Struct.StructRef<FFIBytes> row_key_cols = new Struct.StructRef<>(FFIBytes.class);
     /** Prevent GC. */
-    private jnr.ffi.Pointer java_row_key_cols;
+    private FFIBytes[] java_row_key_cols;
     /** Length of sort keys array. */
     public final Struct.size_t sort_keys_cols_len = new Struct.size_t();
     /** Names of Sleeper sort key fields from schema. */
-    public final Struct.Pointer sort_key_cols = new Struct.Pointer();
+    public final Struct.StructRef<FFIBytes> sort_key_cols = new Struct.StructRef<>(FFIBytes.class);
     /** Prevent GC. */
-    private jnr.ffi.Pointer java_sort_key_cols;
+    private FFIBytes[] java_sort_key_cols;
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
     /** Compaction aggregation configuration. This is optional. */
@@ -82,8 +87,10 @@ public class FFICommonConfig extends Struct {
             aws_config.set(0);
         }
         // Set to sensible defaults all members that don't have them.
-        // Primitives will all default to false/zero, FFIArrays also have safe defaults.
+        // Primitives will all default to false/zero.
         output_file.set("");
+        aggregation_config.set("");
+        filtering_config.set("");
         // Null here tells Rust to use defaults.
         parquet_options.set(0);
     }
@@ -98,5 +105,51 @@ public class FFICommonConfig extends Struct {
         Objects.requireNonNull(output_file.get(), "Output file is null");
         Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
         Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
+    }
+
+    public void setInputFiles(java.lang.String[] files) {
+        input_files_len.set(files.length);
+        // Allocate native memory for string pointers
+        java_input_files_ptrs = getRuntime().getMemoryManager().allocateDirect(getRuntime().addressSize() * files.length);
+        java_input_files = new jnr.ffi.Pointer[files.length];
+        for (int i = 0; i < files.length; i++) {
+            byte[] file = files[i].getBytes(StandardCharsets.UTF_8);
+            file = Arrays.copyOf(file, file.length + 1); // Include NUL terminator
+            // Copy string to native buffer
+            java_input_files[i] = getRuntime().getMemoryManager().allocateDirect(file.length);
+            java_input_files[i].put(0, file, 0, file.length);
+            // Set pointer to native memory
+            java_input_files_ptrs.
+        }
+
+        input_files.set(java_input_files_ptrs);
+    }
+
+    /**
+     * Set row key column names in FFI struct.
+     *
+     * @param rowKeyCols array of row key names
+     */
+    public void setRowKeyCols(java.lang.String[] rowKeyCols) {
+        row_key_cols_len.set(rowKeyCols.length);
+        java_row_key_cols = new FFIBytes[rowKeyCols.length];
+        for (int i = 0; i < rowKeyCols.length; i++) {
+            java_row_key_cols[i] = new FFIBytes(getRuntime(), rowKeyCols[i].getBytes(StandardCharsets.UTF_8));
+        }
+        row_key_cols.set(java_row_key_cols);
+    }
+
+    /**
+     * Set sort key column names in FFI struct.
+     *
+     * @param sortKeyCols array of row key names
+     */
+    public void setSortKeyCols(java.lang.String[] sortKeyCols) {
+        sort_keys_cols_len.set(sortKeyCols.length);
+        java_sort_key_cols = new FFIBytes[sortKeyCols.length];
+        for (int i = 0; i < sortKeyCols.length; i++) {
+            java_sort_key_cols[i] = new FFIBytes(getRuntime(), sortKeyCols[i].getBytes(StandardCharsets.UTF_8));
+        }
+        sort_key_cols.set(java_sort_key_cols);
     }
 }
