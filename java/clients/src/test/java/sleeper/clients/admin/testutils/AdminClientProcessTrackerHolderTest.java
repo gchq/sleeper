@@ -28,7 +28,7 @@ import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
+class AdminClientProcessTrackerHolderTest extends AdminClientInMemoryTestBase {
 
     @Test
     void shouldSetCompactionJobTracker() {

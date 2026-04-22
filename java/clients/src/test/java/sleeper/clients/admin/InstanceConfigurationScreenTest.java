@@ -25,20 +25,27 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import sleeper.common.task.QueueMessageCount.Client;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIndex;
+
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
@@ -68,7 +75,9 @@ import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
+class InstanceConfigurationScreenTest extends AdminClientTestBase {
+    private final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
+    private final TableIndex tableIndex = new InMemoryTableIndex();
 
     @DisplayName("Navigate from main screen and back")
     @Nested
@@ -769,5 +778,26 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
     private static String outputWithValidationDisplayWhenDiscardingChanges(String expectedValidationDisplay) {
         return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
+    }
+
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties) {
+        super.setInstanceProperties(instanceProperties);
+        when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
+    }
+
+    @Override
+    public void saveTableProperties(TableProperties tableProperties) {
+        when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
+                .thenReturn(tableProperties);
+        tableIndex.create(tableProperties.getStatus());
+    }
+
+    @Override
+    public void startClient(AdminClientTrackerFactory trackers, Client queueClient) throws Exception {
+        new AdminClient(tableIndex, store, trackers,
+                editor, out.consoleOut(), in.consoleIn(),
+                queueClient, properties -> Collections.emptyMap())
+                .start(instanceId);
     }
 }
