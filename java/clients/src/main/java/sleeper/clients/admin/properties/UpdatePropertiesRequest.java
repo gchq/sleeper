@@ -30,13 +30,11 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     private final PropertiesDiff diff;
     private final T beforeProperties;
     private final T updatedProperties;
-    // private final UpdatePropertiesValidationResult updatePropertiesValidationResult;
 
     private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
         this.diff = diff;
         this.beforeProperties = beforeProperties;
         this.updatedProperties = updatedProperties;
-        // this.updatePropertiesValidationResult = updatePropertiesValidationResult;
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> fromBeforeAndAfter(T beforeProperties,
@@ -47,7 +45,6 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         } else {
             propertiesDiff = new PropertiesDiff(beforeProperties, updatedProperties);
         }
-        // UpdatePropertiesValidationResult updatePropertiesValidationResult = new UpdatePropertiesValidationResult();
         return new UpdatePropertiesRequest<>(propertiesDiff, beforeProperties, updatedProperties);
     }
 
