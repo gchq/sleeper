@@ -35,6 +35,7 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreFactory;
@@ -51,9 +52,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public class AdminClientPropertiesStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
 
-    private final String accountName;
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
+    private final Client client;
     private final InvokeCdk cdk;
     private final DockerImageConfiguration dockerImageConfiguration;
     private final UploadDockerImagesToEcr uploadDockerImages;
@@ -62,9 +61,13 @@ public class AdminClientPropertiesStore {
     public AdminClientPropertiesStore(
             String accountName, S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk, Path generatedDirectory,
             UploadDockerImagesToEcr uploadDockerImages, DockerImageConfiguration dockerImageConfiguration) {
-        this.accountName = accountName;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+        this(new AwsClient(accountName, s3Client, dynamoClient, generatedDirectory), cdk, generatedDirectory, uploadDockerImages, dockerImageConfiguration);
+    }
+
+    public AdminClientPropertiesStore(
+            Client client, InvokeCdk cdk, Path generatedDirectory,
+            UploadDockerImagesToEcr uploadDockerImages, DockerImageConfiguration dockerImageConfiguration) {
+        this.client = client;
         this.dockerImageConfiguration = dockerImageConfiguration;
         this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
@@ -73,19 +76,19 @@ public class AdminClientPropertiesStore {
 
     public InstanceProperties loadInstanceProperties(String instanceId) throws CouldNotLoadInstanceProperties {
         try {
-            return S3InstanceProperties.loadGivenAccountAndInstanceIdNoValidation(s3Client, accountName, instanceId);
+            return client.loadInstancePropertiesNoValidation(instanceId);
         } catch (RuntimeException e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
     }
 
     public TableIndex loadTableIndex(String instanceId) throws CouldNotLoadInstanceProperties {
-        return new DynamoDBTableIndex(loadInstanceProperties(instanceId), dynamoClient);
+        return client.createTableIndex(loadInstanceProperties(instanceId));
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) throws CouldNotLoadTableProperties {
         try {
-            return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
+            return client.createTablePropertiesStore(instanceProperties)
                     .loadByNameNoValidation(tableName);
         } catch (RuntimeException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
@@ -93,15 +96,13 @@ public class AdminClientPropertiesStore {
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).streamAllTables();
+        return client.createTablePropertiesStore(instanceProperties).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
         try {
             LOGGER.info("Saving to local configuration");
-            Files.createDirectories(generatedDirectory);
-            ClientUtils.clearDirectory(generatedDirectory);
-            SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            client.saveLocalProperties(properties, streamTableProperties(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
@@ -109,13 +110,14 @@ public class AdminClientPropertiesStore {
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");
-                S3InstanceProperties.saveToS3(s3Client, properties);
+                client.saveInstanceProperties(properties);
             }
         } catch (IOException | RuntimeException | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
-                S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, accountName, instanceId, generatedDirectory);
+                LOGGER.info("Reverting local configuration");
+                client.saveLocalProperties(loadInstanceProperties(instanceId), streamTableProperties(properties));
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
@@ -135,17 +137,16 @@ public class AdminClientPropertiesStore {
         String tableName = properties.get(TABLE_NAME);
         try {
             LOGGER.info("Saving to local configuration");
-            Files.createDirectories(generatedDirectory);
-            ClientUtils.clearDirectory(generatedDirectory);
-            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
+            client.saveLocalProperties(instanceProperties,
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
-            S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(properties);
+            client.createTablePropertiesStore(instanceProperties).save(properties);
         } catch (IOException | RuntimeException e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
-                S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, accountName, instanceId, generatedDirectory);
+                LOGGER.info("Reverting local configuration");
+                client.saveLocalProperties(loadInstanceProperties(instanceId), streamTableProperties(instanceProperties));
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
@@ -155,12 +156,11 @@ public class AdminClientPropertiesStore {
 
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
-        return stateStoreFactory.getStateStore(tableProperties);
+        return client.createStateStore(instanceProperties, tableProperties);
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
-        return S3TableProperties.createProvider(properties, s3Client, dynamoClient);
+        return new TablePropertiesProvider(properties, client.createTablePropertiesStore(properties));
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {
@@ -208,5 +208,72 @@ public class AdminClientPropertiesStore {
             out.println(getMessage());
             out.println("Cause: " + getCause().getMessage());
         }
+    }
+
+    /**
+     * A client to interact with the underlying storage of configuration properties.
+     */
+    public interface Client {
+
+        InstanceProperties loadInstancePropertiesNoValidation(String instanceId);
+
+        void saveInstanceProperties(InstanceProperties instanceProperties);
+
+        void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException;
+
+        TableIndex createTableIndex(InstanceProperties instanceProperties);
+
+        TablePropertiesStore createTablePropertiesStore(InstanceProperties instanceProperties);
+
+        StateStore createStateStore(InstanceProperties instanceProperties, TableProperties tableProperties);
+    }
+
+    public static class AwsClient implements Client {
+
+        private final String accountName;
+        private final S3Client s3Client;
+        private final DynamoDbClient dynamoClient;
+        private final Path generatedDirectory;
+
+        public AwsClient(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, Path generatedDirectory) {
+            this.accountName = accountName;
+            this.s3Client = s3Client;
+            this.dynamoClient = dynamoClient;
+            this.generatedDirectory = generatedDirectory;
+        }
+
+        @Override
+        public InstanceProperties loadInstancePropertiesNoValidation(String instanceId) {
+            return S3InstanceProperties.loadGivenAccountAndInstanceIdNoValidation(s3Client, accountName, instanceId);
+        }
+
+        @Override
+        public void saveInstanceProperties(InstanceProperties instanceProperties) {
+            S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        }
+
+        @Override
+        public void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException {
+            Files.createDirectories(generatedDirectory);
+            ClientUtils.clearDirectory(generatedDirectory);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, tablePropertiesStream);
+        }
+
+        @Override
+        public TableIndex createTableIndex(InstanceProperties instanceProperties) {
+            return new DynamoDBTableIndex(instanceProperties, dynamoClient);
+        }
+
+        @Override
+        public TablePropertiesStore createTablePropertiesStore(InstanceProperties instanceProperties) {
+            return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        }
+
+        @Override
+        public StateStore createStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
+            return new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
+                    .getStateStore(tableProperties);
+        }
+
     }
 }
