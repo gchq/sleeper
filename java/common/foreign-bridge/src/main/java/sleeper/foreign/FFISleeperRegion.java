@@ -23,7 +23,6 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,34 +164,54 @@ public class FFISleeperRegion extends Struct {
             throw new IllegalArgumentException("value must be >=0");
         }
         if (size_tBytes == 4) {
-            base.putInt(offset, value);
+            base.putInt(offset * size_tBytes, value);
         } else if (size_tBytes == 8) {
-            base.putLong(offset, value);
+            base.putLongLong(offset * size_tBytes, value);
         } else {
             throw new IllegalArgumentException("size_tBytes must be 4 or 8");
         }
     }
 
     /**
-     * Maps to a Sleeper region object.
+     * Read an int as a C size_t value from the given offset.
+     *
+     * @param  size_tBytes              size of size_t either 4 or 8 bytes
+     * @param  base                     array base address
+     * @param  offset                   array index
+     * @throws IllegalArgumentException if size_tBytes is not 4 or 8
+     */
+    private static int readCSize_t(int size_tBytes, jnr.ffi.Pointer base, long offset) {
+        if (size_tBytes == 4) {
+            return base.getInt(offset * size_tBytes);
+        } else if (size_tBytes == 8) {
+            return (int) base.getLongLong(offset * size_tBytes);
+        } else {
+            throw new IllegalArgumentException("size_tBytes must be 4 or 8");
+        }
+    }
+
+    /**
+     * Maps to a Sleeper region object. This only works if this objects was written to from Java.
      *
      * @param  schema the schema
      * @return        the region
      */
     public Region toSleeperRegion(Schema schema) {
+        jnr.ffi.Runtime runtime = getRuntime();
+
         List<Field> rowKeys = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        java.lang.Boolean[] minsInclusive = mins_inclusive.readBack(java.lang.Boolean.class, false);
-        java.lang.Boolean[] maxsInclusive = maxs_inclusive.readBack(java.lang.Boolean.class, false);
-        java.lang.Integer[] dimensionIndexes = dimension_indexes.readBack(java.lang.Integer.class, false);
-        List<Range> ranges = new ArrayList<>(minsInclusive.length);
-        jnr.ffi.Runtime runtime = getRuntime();
-        for (int i = 0; i < dimensionIndexes.length; i++) {
-            Field field = rowKeys.get(dimensionIndexes[i]);
-            PrimitiveType type = (PrimitiveType) field.getType();
-            Object min = mins.getFieldValue(i, type, false, runtime);
-            Object max = maxs.getFieldValue(i, type, true, runtime);
-            ranges.add(rangeFactory.createRange(field, min, minsInclusive[i], max, maxsInclusive[i]));
+        int allLength = len.intValue();
+        List<Range> ranges = new ArrayList<>(allLength);
+        int size_tBytes = runtime.findType(TypeAlias.size_t).size();
+        for (int i = 0; i < allLength; i++) {
+            int dimensionIndex = readCSize_t(size_tBytes, java_dimension_indexes, i);
+            Field field = rowKeys.get(dimensionIndex);
+            Object min = java_mins[i].get();
+            boolean minInclusive = java_mins_inclusive.getByte(i) != 0;
+            boolean maxInclusive = java_maxs_inclusive.getByte(i) != 0;
+            Object max = java_maxs[i].get();
+            ranges.add(rangeFactory.createRange(field, min, minInclusive, max, maxInclusive));
         }
         return new Region(ranges);
     }
