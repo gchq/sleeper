@@ -17,8 +17,6 @@ package sleeper.foreign;
 
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FFIElementDataTest {
@@ -33,7 +31,7 @@ public class FFIElementDataTest {
         data.set(345678);
 
         // Then
-        assertThat(data.int32.get()).isEqualTo(345678);
+        assertThat(data.getInt()).isEqualTo(345678);
     }
 
     @Test
@@ -45,7 +43,7 @@ public class FFIElementDataTest {
         data.set(987654L);
 
         // Then
-        assertThat(data.int64.get()).isEqualTo(987654L);
+        assertThat(data.getLong()).isEqualTo(987654L);
     }
 
     @Test
@@ -57,7 +55,7 @@ public class FFIElementDataTest {
         data.set("hello test test\0test");
 
         // Then
-        assertThat(data.java_holder.getData()).isEqualTo("hello test test\0test".getBytes(StandardCharsets.UTF_8));
+        assertThat(data.getString()).isEqualTo("hello test test\0test");
     }
 
     @Test
@@ -69,6 +67,6 @@ public class FFIElementDataTest {
         data.set(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});
 
         // Then
-        assertThat(data.java_holder.getData()).isEqualTo(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});
+        assertThat(data.getBytes()).isEqualTo(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});
     }
 }

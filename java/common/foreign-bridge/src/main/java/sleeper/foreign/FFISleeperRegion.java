@@ -45,26 +45,26 @@ public class FFISleeperRegion extends Struct {
     /** Region partition region minimums. May not contain "Empty" elements. */
     final Struct.StructRef<FFIElement> mins = new Struct.StructRef<>(FFIElement.class);
     /** Prevent GC. */
-    FFIElement[] java_mins;
+    private FFIElement[] java_mins;
     /** Region partition region maximums. May contain "Empty" elements. */
     final Struct.StructRef<FFIElement> maxs = new Struct.StructRef<>(FFIElement.class);
     /** Prevent GC. */
-    FFIElement[] java_maxs;
+    private FFIElement[] java_maxs;
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     final Struct.Pointer mins_inclusive = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    jnr.ffi.Pointer java_mins_inclusive;
+    private jnr.ffi.Pointer java_mins_inclusive;
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     final Struct.Pointer maxs_inclusive = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    jnr.ffi.Pointer java_maxs_inclusive;
+    private jnr.ffi.Pointer java_maxs_inclusive;
     /**
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
     final Struct.Pointer dimension_indexes = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    jnr.ffi.Pointer java_dimension_indexes;
+    private jnr.ffi.Pointer java_dimension_indexes;
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -151,7 +151,19 @@ public class FFISleeperRegion extends Struct {
         return partitionRegion;
     }
 
+    /**
+     * Write an int as a C size_t value to the given offset.
+     *
+     * @param  size_tBytes              size of size_t either 4 or 8 bytes
+     * @param  base                     array base address
+     * @param  offset                   array index
+     * @param  value                    size_t to write
+     * @throws IllegalArgumentException if size_tBytes is not 4 or 8, or value < 0
+     */
     private static void writeCSize_t(int size_tBytes, jnr.ffi.Pointer base, long offset, int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("value must be >=0");
+        }
         if (size_tBytes == 4) {
             base.putInt(offset, value);
         } else if (size_tBytes == 8) {

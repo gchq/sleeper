@@ -35,7 +35,7 @@ public class FFIElementData extends Union {
     public final Struct.StructRef<FFIBytes> string = new Struct.StructRef<>(FFIBytes.class);
     public final Struct.StructRef<FFIBytes> bytes = new Struct.StructRef<>(FFIBytes.class);
     /** Prevent GC. */
-    FFIBytes java_holder;
+    private FFIBytes java_holder;
 
     public FFIElementData(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -82,5 +82,41 @@ public class FFIElementData extends Union {
         FFIBytes contents = new FFIBytes(getRuntime(), value);
         bytes.set(contents);
         java_holder = contents;
+    }
+
+    /**
+     * Gets the int contents. Note: unions don't know their active member.
+     *
+     * @return the contents
+     */
+    public int getInt() {
+        return int32.get();
+    }
+
+    /**
+     * Gets the long contents. Note: unions don't know their active member.
+     *
+     * @return the contents
+     */
+    public long getLong() {
+        return int64.get();
+    }
+
+    /**
+     * Gets the String contents. Note: unions don't know their active member.
+     *
+     * @return the contents
+     */
+    public java.lang.String getString() {
+        return new java.lang.String(java_holder.getData(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Gets the byte array contents. Note: unions don't know their active member.
+     *
+     * @return the contents
+     */
+    public byte[] getBytes() {
+        return java_holder.getData();
     }
 }

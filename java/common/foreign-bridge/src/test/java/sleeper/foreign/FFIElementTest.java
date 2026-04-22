@@ -17,9 +17,8 @@ package sleeper.foreign;
 
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class FFIElementTest {
     private jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
@@ -34,7 +33,7 @@ public class FFIElementTest {
 
         // Then
         assertThat(element.contained.get()).isEqualTo(FFIElementType.Int32);
-        assertThat(element.java_item.int32.get()).isEqualTo(345);
+        assertThat(element.get()).isEqualTo(345);
     }
 
     @Test
@@ -47,7 +46,7 @@ public class FFIElementTest {
 
         // Then
         assertThat(element.contained.get()).isEqualTo(FFIElementType.Int64);
-        assertThat(element.java_item.int64.get()).isEqualTo(12345L);
+        assertThat(element.get()).isEqualTo(12345L);
     }
 
     @Test
@@ -60,7 +59,7 @@ public class FFIElementTest {
 
         // Then
         assertThat(element.contained.get()).isEqualTo(FFIElementType.String);
-        assertThat(element.java_item.java_holder.getData()).isEqualTo("test\0foo".getBytes(StandardCharsets.UTF_8));
+        assertThat(element.get()).isEqualTo("test\0foo");
     }
 
     @Test
@@ -73,7 +72,7 @@ public class FFIElementTest {
 
         // Then
         assertThat(element.contained.get()).isEqualTo(FFIElementType.ByteArray);
-        assertThat(element.java_item.java_holder.getData()).isEqualTo(new byte[]{4, 5, 6, 7});
+        assertThat(element.get()).isEqualTo(new byte[]{4, 5, 6, 7});
     }
 
     @Test
@@ -86,5 +85,6 @@ public class FFIElementTest {
 
         // Then
         assertThat(element.contained.get()).isEqualTo(FFIElementType.Empty);
+        assertNull(element.get());
     }
 }

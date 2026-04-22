@@ -28,17 +28,23 @@ public class FFIElement extends Struct {
     public final Struct.Enum<FFIElementType> contained = new Struct.Enum<>(FFIElementType.class);
     public final Struct.StructRef<FFIElementData> item = new Struct.StructRef<>(FFIElementData.class);
     /** Prevent GC. */
-    FFIElementData java_item;
+    private FFIElementData java_item;
 
     public FFIElement(jnr.ffi.Runtime runtime) {
         super(runtime);
     }
 
-     public FFIElement(jnr.ffi.Runtime runtime,Object o) {
+    public FFIElement(jnr.ffi.Runtime runtime, Object o) {
         this(runtime);
         set(o);
     }
 
+    /**
+     * Set the contents of this element.
+     *
+     * @param  o                        the object
+     * @throws IllegalArgumentException if o is not of valid type
+     */
     public void set(Object o) {
         if (o == null) {
             contained.set(FFIElementType.Empty);
@@ -67,5 +73,20 @@ public class FFIElement extends Struct {
             java_item = elementData;
             item.set(elementData);
         }
+    }
+
+    /**
+     * Retrieve contents.
+     *
+     * @return the contained element
+     */
+    public Object get() {
+        return switch (contained.get()) {
+            case Empty -> null;
+            case Int32 -> java_item.getInt();
+            case Int64 -> java_item.getLong();
+            case String -> java_item.getString();
+            case ByteArray -> java_item.getBytes();
+        };
     }
 }
