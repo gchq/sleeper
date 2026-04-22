@@ -42,7 +42,7 @@ public class SleeperVersion {
             throw new IllegalStateException("Sleeper version not found");
         }
         try (InputStream inputStream = resource.openStream()) {
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8).replaceAll("\\s+", "");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
