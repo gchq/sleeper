@@ -31,20 +31,28 @@ public class FFIBytes extends Struct {
     /** Length of stored data. */
     public final Struct.size_t length = new Struct.size_t();
     /** Data buffer. */
-    public final Struct.Pointer buffer = new Struct.Pointer();
+    public final Struct.Pointer data = new Struct.Pointer();
     /**
      * Memory address of byte array in memory. Stored to prevent GC until this object is collected.
      */
-    private final jnr.ffi.Pointer data;
+    private jnr.ffi.Pointer nativePointer;
+
+    public FFIBytes(jnr.ffi.Runtime runtime) {
+        super(runtime);
+    }
 
     public FFIBytes(jnr.ffi.Runtime runtime, byte[] buffer) {
-        Objects.requireNonNull(data, "data");
-        //TODO: factor this into a separate method
+        this(runtime);
+        setData(buffer);
+    }
+
+    public void setData(byte[] buffer) {
+        Objects.requireNonNull(buffer, "buffer");
         // Allocate some memory for the data
-        this.data = runtime.getMemoryManager().allocateDirect(buffer.length);
-        this.data.put(0, buffer, 0, buffer.length);
+        this.nativePointer = getRuntime().getMemoryManager().allocateDirect(buffer.length);
+        this.nativePointer.put(0, buffer, 0, buffer.length);
         this.length.set(buffer.length);
-        this.buffer.set(data);
+        this.data.set(nativePointer);
     }
 
     /**
@@ -53,8 +61,11 @@ public class FFIBytes extends Struct {
      * @return copy of internal byte array
      */
     public byte[] getData() {
+        if (nativePointer == null) {
+            throw new IllegalStateException("no data in buffer");
+        }
         byte[] result = new byte[length.intValue()];
-        data.get(0, result, 0, length.intValue());
+        nativePointer.get(0, result, 0, length.intValue());
         return result;
     }
 }
