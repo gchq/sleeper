@@ -28,6 +28,14 @@ If you have added, removed, or updated any external dependencies used in the pro
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
 Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
 
+### Working within Sleeper
+
+When contributing to the project, there are several ways of working that you need to be mindful of.
+Namely the coding conventions that we adhere to, as well as the testing strategy that we follow.
+Both of these can be found at the following locations:
+[Coding Conventions](docs/developer-guide.md#coding-conventions)
+[Testing Strategy](docs/developer-guide.md#testing)
+
 #### GitHub Actions on a fork
 
 When you raise a pull request, GitHub Actions workflows will run automatically to validate your change. Please check in
