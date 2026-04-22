@@ -88,8 +88,12 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "buildx", "rm", "sleeper"));
     }
 
-    public static CommandPipeline createNewBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
+    public static CommandPipeline createBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper"));
+    }
+
+    public static CommandPipeline useBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "use", "sleeper"));
     }
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
