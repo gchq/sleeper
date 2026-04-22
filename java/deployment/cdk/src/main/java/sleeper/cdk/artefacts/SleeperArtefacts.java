@@ -58,21 +58,6 @@ public interface SleeperArtefacts {
     }
 
     /**
-     * Retrieves existing artefacts from AWS based on settings in the instance properties. Takes container images from
-     * AWS ECR and jars from S3. Requires a provider to look up the version ID of each jar in the S3 bucket, and a
-     * provider to look up the digest of each container image in ECR.
-     *
-     * @param  versionIdProvider the provider to look up the jar version IDs
-     * @param  digestIdProvider  the provider to look up the container image digests
-     * @return                   the artefacts for deployment of Sleeper
-     */
-    static SleeperArtefacts fromProperties(SleeperJarVersionIdProvider versionIdProvider, SleeperContainerImageDigestProvider digestIdProvider) {
-        return instanceProperties -> new SleeperInstanceArtefacts(instanceProperties,
-                new SleeperJarsFromProperties(instanceProperties, versionIdProvider),
-                new SleeperContainerImagesFromProperties(instanceProperties, digestIdProvider));
-    }
-
-    /**
      * Points to artefacts by some custom method.
      *
      * @param  jars   the reference to jars to be deployed

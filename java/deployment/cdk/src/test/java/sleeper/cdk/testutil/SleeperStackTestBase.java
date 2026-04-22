@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.testutil;
 
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -25,10 +26,13 @@ import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperArtefacts;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
 import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
 public class SleeperStackTestBase {
@@ -38,7 +42,14 @@ public class SleeperStackTestBase {
     protected final Stack rootStack = createRootStack();
     private final SleeperJarVersionIdProvider jarVersionIdProvider = new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version");
     private final SleeperContainerImageDigestProvider imageDigestProvider = new SleeperContainerImageDigestProvider((image, ecrRepository) -> image + "-test-digest");
-    private final SleeperArtefacts artefacts = SleeperArtefacts.fromProperties(jarVersionIdProvider, imageDigestProvider);
+    private final SleeperArtefacts artefacts = instanceProperties -> new SleeperInstanceArtefacts(instanceProperties,
+            new SleeperJarsFromProperties(instanceProperties, jarVersionIdProvider),
+            new SleeperContainerImagesFromProperties(instanceProperties, imageDigestProvider));
+
+    @BeforeEach
+    void setUpBase() {
+        instanceProperties.unset(JARS_BUCKET);
+    }
 
     protected SleeperInstanceProps instanceProps() {
         return SleeperInstanceProps.builder()

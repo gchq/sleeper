@@ -18,6 +18,7 @@ package sleeper.cdk.artefacts;
 import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
@@ -62,17 +63,18 @@ public class SleeperArtefactRepositories {
     private SleeperArtefactRepositories(Builder builder) {
         scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
+        String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
-        jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, deploymentId) : null;
+        jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
         if (deploy.isDeployImages()) {
             deployImages();
         }
     }
 
-    public static IBucket createJarsBucket(Construct scope, String deploymentId) {
+    public static IBucket createJarsBucket(Construct scope, String accountName, String deploymentId) {
         return Bucket.Builder.create(scope, "JarsBucket")
-                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
+                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(accountName, deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -149,16 +151,25 @@ public class SleeperArtefactRepositories {
     public static class Builder {
         private final Construct scope;
         private final String deploymentId;
+        private String accountName;
         private List<String> extraEcrImages;
         private ToDeploy deploy;
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
             this.deploymentId = deploymentId;
+            if (scope instanceof Stack stack) {
+                accountName = stack.getAccount();
+            }
         }
 
         public static Builder create(Construct scope, String deploymentId) {
             return new Builder(scope, deploymentId);
+        }
+
+        public Builder accountName(String accountName) {
+            this.accountName = accountName;
+            return this;
         }
 
         public Builder extraEcrImages(List<String> extraEcrImages) {
