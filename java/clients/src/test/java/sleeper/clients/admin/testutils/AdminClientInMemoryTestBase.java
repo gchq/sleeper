@@ -121,7 +121,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
                 .build();
     }
 
-    protected UploadDockerImagesToEcr uploadDockerImages() {
+    private UploadDockerImagesToEcr uploadDockerImages() {
         return new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .deployConfig(DeployConfiguration.fromLocalBuild())
