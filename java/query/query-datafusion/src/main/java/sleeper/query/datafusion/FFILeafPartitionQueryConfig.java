@@ -18,8 +18,8 @@ package sleeper.query.datafusion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
-import sleeper.foreign.bridge.FFIArray;
 import sleeper.foreign.datafusion.FFICommonConfig;
 
 /**
@@ -40,13 +40,14 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public final Struct.StructRef<FFISleeperRegion> query_regions = new StructRef<>(FFISleeperRegion.class);
     /** Specifies if there are any requested value fields. */
     public final Struct.Boolean requested_value_fields_set = new Struct.Boolean();
+    /** Length of requested value fields array. */
+    public final Struct.size_t requested_value_fields_len = new Struct.size_t();
     /** Requested value columns. */
-    public final FFIArray<java.lang.String> requested_value_fields = new FFIArray<>(this);
+    public final Struct.StructRef<FFIBytes> requested_value_fields = new Struct.StructRef<>(FFIBytes.class);
     /** Specifies if logical and physical DataFusion query plans should be written to a log output. */
     public final Struct.Boolean explain_plans = new Struct.Boolean();
 
-    public FFILeafPartitionQueryConfig(
-            jnr.ffi.Runtime runtime) {
+    public FFILeafPartitionQueryConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
     }
 
@@ -61,11 +62,13 @@ public class FFILeafPartitionQueryConfig extends Struct {
     }
 
     /**
-     * Validate state of struct.
+     * Sets requested value fields and length.
      *
-     * @throws IllegalStateException when a invariant fails
+     * @param requestedValueFields array of fields
      */
-    public void validate() {
-        requested_value_fields.validate();
+    public void setRequestedValueFields(FFIBytes[] requestedValueFields) {
+        requested_value_fields_len.set(requestedValueFields.length);
+        requested_value_fields.set(requestedValueFields);
+        requested_value_fields_set.set(true);
     }
 }

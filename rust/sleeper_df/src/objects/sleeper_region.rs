@@ -36,7 +36,7 @@ pub struct FFISleeperRegion {
     pub maxs: *const FFIElement,
     pub mins_inclusive: *const bool,
     pub maxs_inclusive: *const bool,
-    pub dimension_indexes: *const i32,
+    pub dimension_indexes: *const usize,
 }
 
 impl<'a> FFISleeperRegion {

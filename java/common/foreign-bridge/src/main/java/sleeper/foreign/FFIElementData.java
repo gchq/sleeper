@@ -28,11 +28,12 @@ import jnr.ffi.Union;
  * the fields must match exactly.
  */
 public class FFIElementData extends Union {
-    public final Struct.Signed32 int32=new Struct.Signed32();
-    public final Struct.Signed64 int64=new Struct.Signed64();
-    public final Struct.UTF8StringRef string=new Struct.UTF8StringRef();
-    public final Struct. int32=new Struct.int32_t();
+    public final Struct.Signed32 int32 = new Struct.Signed32();
+    public final Struct.Signed64 int64 = new Struct.Signed64();
+    public final Struct.StructRef<FFIBytes> string = new Struct.StructRef<>(FFIBytes.class);
+    public final Struct.StructRef<FFIBytes> bytes = new Struct.StructRef<>(FFIBytes.class);
 
-
-
+    public FFIElementData(jnr.ffi.Runtime runtime) {
+        super(runtime);
+    }
 }
