@@ -118,6 +118,7 @@ public class FFICommonConfig extends Struct {
         java_input_files_ptrs = getRuntime().getMemoryManager().allocateDirect(getRuntime().addressSize() * files.length);
         java_input_files = new jnr.ffi.Pointer[files.length];
         for (int i = 0; i < files.length; i++) {
+            Objects.requireNonNull(files[i], "files[%d]".formatted(i));
             byte[] file = files[i].getBytes(StandardCharsets.UTF_8);
             file = Arrays.copyOf(file, file.length + 1); // Include NUL terminator
             // Copy string to native buffer
@@ -126,7 +127,6 @@ public class FFICommonConfig extends Struct {
             // Set pointer to native memory
             java_input_files_ptrs.putPointer(i * getRuntime().addressSize(), java_input_files[i]);
         }
-
         input_files.set(java_input_files_ptrs);
     }
 
@@ -139,6 +139,7 @@ public class FFICommonConfig extends Struct {
         row_key_cols_len.set(rowKeyCols.length);
         java_row_key_cols = new FFIBytes[rowKeyCols.length];
         for (int i = 0; i < rowKeyCols.length; i++) {
+            Objects.requireNonNull(rowKeyCols[i], "rowKeyCols[%d]".formatted(i));
             java_row_key_cols[i] = new FFIBytes(getRuntime(), rowKeyCols[i].getBytes(StandardCharsets.UTF_8));
         }
         row_key_cols.set(java_row_key_cols);
@@ -153,6 +154,7 @@ public class FFICommonConfig extends Struct {
         sort_keys_cols_len.set(sortKeyCols.length);
         java_sort_key_cols = new FFIBytes[sortKeyCols.length];
         for (int i = 0; i < sortKeyCols.length; i++) {
+            Objects.requireNonNull(sortKeyCols[i], "sortKeyCols[%d]".formatted(i));
             java_sort_key_cols[i] = new FFIBytes(getRuntime(), sortKeyCols[i].getBytes(StandardCharsets.UTF_8));
         }
         sort_key_cols.set(java_sort_key_cols);
