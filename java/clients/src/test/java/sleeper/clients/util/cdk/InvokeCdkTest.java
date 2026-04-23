@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandRunner;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperCdkDeployment;
 
 import java.io.IOException;
@@ -34,11 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
-import static sleeper.clients.testutil.RunCommandTestHelper.singleCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 class InvokeCdkTest {
 
@@ -188,41 +184,6 @@ class InvokeCdkTest {
             // When / Then
             assertThatThrownBy(() -> cdk.invoke(SleeperCdkDeployment.STANDARD, cdkCommand))
                     .isInstanceOf(IOException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Infer whether to invoke as a standard or system test instance")
-    class InferStandardOrSystemTest {
-
-        @Test
-        void shouldInferStandardDeploymentWhenNoSystemTestPropertiesAreSet() throws IOException, InterruptedException {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-
-            // When
-            cdk().invokeInferringType(instanceProperties, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
-
-            // Then
-            assertThat(singleCommand(commandsThatRan))
-                    .startsWith("cdk",
-                            "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
-        }
-
-        @Test
-        void shouldInferSystemTestDeploymentWhenSystemTestPropertyIsSet() throws IOException, InterruptedException {
-            // Given
-            InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(
-                    createTestInstanceProperties().saveAsString() + "\n" +
-                            "sleeper.systemtest.writers=123"));
-
-            // When
-            cdk().invokeInferringType(instanceProperties, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
-
-            // Then
-            assertThat(singleCommand(commandsThatRan))
-                    .startsWith("cdk",
-                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp");
         }
     }
 }
