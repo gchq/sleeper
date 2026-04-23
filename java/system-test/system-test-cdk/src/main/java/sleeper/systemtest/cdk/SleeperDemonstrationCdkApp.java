@@ -33,6 +33,7 @@ import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
@@ -88,7 +89,9 @@ public class SleeperDemonstrationCdkApp extends Stack {
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, ecrClient, dynamoClient);
+            SleeperInstanceProps props = SleeperInstanceProps.builderFromContext(app, s3Client, ecrClient, dynamoClient)
+                    .sleeperCdkApp(SleeperCdkDeployment.DEMONSTRATION)
+                    .build();
             InstanceProperties instanceProperties = props.getInstanceProperties();
 
             String id = instanceProperties.get(ID);

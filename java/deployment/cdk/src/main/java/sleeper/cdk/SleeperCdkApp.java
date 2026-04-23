@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
@@ -44,7 +45,9 @@ public class SleeperCdkApp {
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, ecrClient, dynamoClient);
+            SleeperInstanceProps props = SleeperInstanceProps.builderFromContext(app, s3Client, ecrClient, dynamoClient)
+                    .sleeperCdkApp(SleeperCdkDeployment.STANDARD)
+                    .build();
             InstanceProperties instanceProperties = props.getInstanceProperties();
             String id = instanceProperties.get(ID);
 

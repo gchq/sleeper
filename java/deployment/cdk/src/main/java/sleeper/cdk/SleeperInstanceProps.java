@@ -34,6 +34,7 @@ import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
@@ -60,6 +62,7 @@ public class SleeperInstanceProps {
     private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
+    private final SleeperCdkDeployment sleeperCdkApp;
     private final boolean validateProperties;
     private final boolean deployPaused;
 
@@ -69,6 +72,7 @@ public class SleeperInstanceProps {
         artefacts = builder.artefacts;
         networkingProvider = builder.networkingProvider;
         version = builder.version;
+        sleeperCdkApp = builder.sleeperCdkApp;
         validateProperties = builder.validateProperties;
         deployPaused = builder.deployPaused;
     }
@@ -118,7 +122,7 @@ public class SleeperInstanceProps {
      * @return              the configuration
      */
     public static SleeperInstanceProps fromContext(Construct scope, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
-        return fromContext(CdkContext.from(scope), s3Client, ecrClient, dynamoClient);
+        return builderFromContext(scope, s3Client, ecrClient, dynamoClient).build();
     }
 
     /**
@@ -132,6 +136,34 @@ public class SleeperInstanceProps {
      * @return              the configuration
      */
     public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
+        return builderFromContext(context, s3Client, ecrClient, dynamoClient).build();
+    }
+
+    /**
+     * Reads configuration from the CDK context and returns a builder. Usually only used when deploying a single
+     * instance of Sleeper in its own CDK app. Will read instance and table properties from the local file system.
+     *
+     * @param  scope        the scope to read context variables from
+     * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient    the ECR client, to scan for container images to deploy and validate the current state
+     * @param  dynamoClient the DynamoDB client, to validate the current state
+     * @return              the configuration
+     */
+    public static Builder builderFromContext(Construct scope, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
+        return builderFromContext(CdkContext.from(scope), s3Client, ecrClient, dynamoClient);
+    }
+
+    /**
+     * Reads configuration from the CDK context and returns a builder. Usually only used when deploying a single
+     * instance of Sleeper in its own CDK app. Will read instance and table properties from the local file system.
+     *
+     * @param  context      the context to read variables from
+     * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  ecrClient    the ECR client, to scan for container images to deploy and validate the current state
+     * @param  dynamoClient the DynamoDB client, to validate the current state
+     * @return              the configuration
+     */
+    public static Builder builderFromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         String instanceId = context.tryGetContext("id");
@@ -148,8 +180,7 @@ public class SleeperInstanceProps {
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
-                .deployPaused(context.getBooleanOrDefault("deployPaused", false))
-                .build();
+                .deployPaused(context.getBooleanOrDefault("deployPaused", false));
     }
 
     public void prepareProperties(Stack stack, SleeperNetworking networking) {
@@ -158,6 +189,7 @@ public class SleeperInstanceProps {
         instanceProperties.set(VERSION, version);
         instanceProperties.set(ACCOUNT, stack.getAccount());
         instanceProperties.set(REGION, stack.getRegion());
+        instanceProperties.setEnum(CDK_APP, sleeperCdkApp);
         instanceProperties.set(VPC_ID, networking.vpcId());
         instanceProperties.setList(SUBNETS, networking.subnetIds());
         if (!instanceProperties.isSet(JARS_BUCKET)) {
@@ -209,6 +241,7 @@ public class SleeperInstanceProps {
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
         private String version = SleeperVersion.getVersion();
+        private SleeperCdkDeployment sleeperCdkApp;
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
@@ -296,6 +329,19 @@ public class SleeperInstanceProps {
          */
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * Sets which Sleeper CDK app this deployment is part of. This will determine which CDK app will be used to
+         * automatically redeploy the instance when required in the admin client. <b>This should only be set in a CDK
+         * app in the Sleeper GitHub repository. In all other cases this should be unset or null.</b>
+         *
+         * @param  sleeperCdkApp the CDK app
+         * @return               this builder
+         */
+        public Builder sleeperCdkApp(SleeperCdkDeployment sleeperCdkApp) {
+            this.sleeperCdkApp = sleeperCdkApp;
             return this;
         }
 
