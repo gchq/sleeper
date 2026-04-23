@@ -19,6 +19,6 @@ COPY install-sccache.sh /
 RUN /install-sccache.sh
 
 ENV CC="sccache clang"
-ENV CXX="sccache clang++""
+ENV CXX="sccache clang++"
 ENV RUSTC_WRAPPER="sccache"
 ENV SCCACHE_DIR="/tmp/sccache"
