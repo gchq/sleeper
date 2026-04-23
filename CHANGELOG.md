@@ -9,40 +9,43 @@ available [here](docs/development/roadmap.md).
 
 ### 23rd April, 2025
 
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.35.3*
+
 This includes improvements to the deployment process, an initial REST API shell, graceful upgrade process for
 compaction tasks as well as some bugfixes and documentation improvements.
 
 Deployment:
- - This is a breaking change: Bucket names are now created with the AWS account number appended to them.
- - Artefact and instance deployments have been combined during deployment in external repository
- - Docker images are now deployed by their digest instead of tag
- - Docker images of the same Sleeper version will now be republished to ECR when the digest has changed
+ - This is a breaking change: bucket names are now created with the AWS account number appended to them.
+ - Artefact and instance deployments have been combined during deployment in external repository.
+ - Docker images are now deployed by their digest instead of tag.
+ - Docker images of the same Sleeper version will now be republished to ECR when the digest has changed.
 
 REST API:
  - An initial REST API shell has been created that will be built upon further in future releases for interacting
-    with Sleeper instances
+    with Sleeper instances.
 
 Compactions:
  - Compaction tasks will now stop gracefully after they reach a max alive time minus some jitter. This is so that
-   upgraded code can be picked up for future tasks
+   upgraded code can be picked up for future tasks.
 
 Bulk Import:
- - Upgraded Kubernets version to V1_35 as V1_32 has reached end of life
+ - Upgraded Kubernetes version to V1_35 as V1_32 has reached end of life.
+ - Python API now defaults to EMRServerless for bulk import.
 
 DataFusion:
- - S3 readahead has been renabled
- - Version upgraded to 53.0.0
+ - S3 readahead has been re-enabled with the property *sleeper.default.table.datafusion.s3.readahead.enabled*
+ - Version upgraded to 53.0.0.
 
 Documentation:
- - Copyright notice year has been updated to include 2026
- - Details of failure modes during an instance upgrade has been documented
+ - Details of failure modes during an instance upgrade have been documented.
 
-BugFixes:
- - Instance properities can be validated even if certain EMR managed scaling properties are unreadable
- - Tables can now be deleted/taken offline even if they have invalid configuration
- - DataFusion compactions no longer hang and will complete as successful or failed
- - ParallelCompactionsST no longer fails if the system moves to further rounds of compactions before first round is
-    fully created
+Bugfixes:
+ - Instance properties can be validated even if certain EMR managed scaling properties are unreadable.
+ - Tables can now be deleted/taken offline even if they have invalid configuration.
+ - DataFusion compactions no longer hang and will complete as successful or failed. Timeouts on AWS clients writing
+    files to S3 were re-enabled.
+ - DataFusion compacyions no longer fail if all rows are filtered out.
 
 ## Version 0.35.2
 
