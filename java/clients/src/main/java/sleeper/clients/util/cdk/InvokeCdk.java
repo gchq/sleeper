@@ -74,8 +74,12 @@ public class InvokeCdk {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        String appClassName = instanceType.deployment.getCdkAppClassName();
-        Path jarFile = instanceType.deployment.getCdkJarFile(jarsDirectory, version);
+        invoke(instanceType.deployment, cdkCommand);
+    }
+
+    public void invoke(SleeperCdkDeployment deployment, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        String appClassName = deployment.getCdkAppClassName();
+        Path jarFile = deployment.getCdkJarFile(jarsDirectory, version);
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
