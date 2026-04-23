@@ -18,7 +18,6 @@ package sleeper.clients.util.cdk;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
@@ -46,18 +45,6 @@ public class InvokeCdk {
 
     public static InvokeCdk fromScriptsDirectory(Path scriptsDirectory) {
         return builder().scriptsDirectory(scriptsDirectory).build();
-    }
-
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), cdkCommand);
-    }
-
-    private static SleeperInternalCdkApp inferType(InstanceProperties instanceProperties) {
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return SleeperInternalCdkApp.DEMONSTRATION;
-        } else {
-            return SleeperInternalCdkApp.STANDARD;
-        }
     }
 
     public void invoke(SleeperInternalCdkApp cdkApp, CdkCommand cdkCommand) throws IOException, InterruptedException {
