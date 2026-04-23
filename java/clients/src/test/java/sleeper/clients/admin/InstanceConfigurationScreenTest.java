@@ -65,6 +65,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -629,6 +630,66 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
+
+        @Test
+        void shouldFailToSetInvalidSchemaInEditor() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
+            after.set(SCHEMA, "{}");
+
+            // When
+            String output = editTableConfiguration(properties, before, after)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.schema\n" +
+                            "The schema representing the structure of this table. This should be set in a separate schema.json\n" +
+                            "file, and cannot be edited once the table has been created.\n" +
+                            "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
+                            "further details.\n" +
+                            "Before: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n" +
+                            "After (cannot be changed, please undo): {}\n" +
+                            "\n" +
+                            "Found invalid properties:\n" +
+                            "sleeper.table.schema\n" +
+                            "\n");
+        }
+
+        @Test
+        void shouldRecoverFromInvalidSchema() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
+            before.set(SCHEMA, "{}");
+
+            // When
+            String output = editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.schema\n" +
+                            "The schema representing the structure of this table. This should be set in a separate schema.json\n" +
+                            "file, and cannot be edited once the table has been created.\n" +
+                            "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
+                            "further details.\n" +
+                            "Before: {}\n" +
+                            "After: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n" +
+                            "\n")
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+        }
+
     }
 
     @DisplayName("Filter by group")
