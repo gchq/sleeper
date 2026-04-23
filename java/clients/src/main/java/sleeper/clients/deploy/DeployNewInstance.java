@@ -37,6 +37,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.statestore.StateStoreFactory;
 
@@ -59,7 +60,7 @@ public class DeployNewInstance {
     private final Path scriptsDirectory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
-    private final InvokeCdk.Type instanceType;
+    private final SleeperCdkDeployment cdkDeployment;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
     private final boolean createMultiPlatformBuilder;
@@ -72,7 +73,7 @@ public class DeployNewInstance {
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraDockerImages = builder.extraDockerImages;
-        instanceType = builder.instanceType;
+        cdkDeployment = builder.cdkDeployment;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
         createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
@@ -106,7 +107,7 @@ public class DeployNewInstance {
             builder().scriptsDirectory(scriptsDirectory)
                     .deployInstanceConfiguration(config)
                     .deployPaused(deployPaused)
-                    .instanceType(InvokeCdk.Type.STANDARD)
+                    .cdkDeployment(SleeperCdkDeployment.STANDARD)
                     .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }
@@ -130,7 +131,7 @@ public class DeployNewInstance {
                 .instanceConfig(deployInstanceConfiguration)
                 .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
                 .extraDockerImages(extraDockerImages)
-                .instanceType(instanceType)
+                .cdkDeployment(cdkDeployment)
                 .build());
 
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
@@ -152,7 +153,7 @@ public class DeployNewInstance {
         private Path scriptsDirectory;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
-        private InvokeCdk.Type instanceType;
+        private SleeperCdkDeployment cdkDeployment;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
         private boolean createMultiPlatformBuilder = true;
@@ -195,8 +196,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instanceType(InvokeCdk.Type instanceType) {
-            this.instanceType = instanceType;
+        public Builder cdkDeployment(SleeperCdkDeployment cdkDeployment) {
+            this.cdkDeployment = cdkDeployment;
             return this;
         }
 

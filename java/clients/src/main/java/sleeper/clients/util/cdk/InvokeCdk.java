@@ -34,19 +34,6 @@ public class InvokeCdk {
     private final String version;
     private final CommandRunner runCommand;
 
-    public enum Type {
-        STANDARD(SleeperCdkDeployment.STANDARD),
-        ARTEFACTS(SleeperCdkDeployment.ARTEFACTS),
-        DEMONSTRATION(SleeperCdkDeployment.DEMONSTRATION),
-        SYSTEM_TEST_INFRA(SleeperCdkDeployment.SYSTEM_TEST_INFRA);
-
-        private final SleeperCdkDeployment deployment;
-
-        Type(SleeperCdkDeployment deployment) {
-            this.deployment = deployment;
-        }
-    }
-
     private InvokeCdk(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
@@ -65,16 +52,12 @@ public class InvokeCdk {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
-    private static Type inferType(InstanceProperties instanceProperties) {
+    private static SleeperCdkDeployment inferType(InstanceProperties instanceProperties) {
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return Type.DEMONSTRATION;
+            return SleeperCdkDeployment.DEMONSTRATION;
         } else {
-            return Type.STANDARD;
+            return SleeperCdkDeployment.STANDARD;
         }
-    }
-
-    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType.deployment, cdkCommand);
     }
 
     public void invoke(SleeperCdkDeployment deployment, CdkCommand cdkCommand) throws IOException, InterruptedException {

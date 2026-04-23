@@ -17,39 +17,38 @@ package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-
-import static java.util.Objects.requireNonNull;
 
 public class DeployInstanceRequest {
 
     private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
-    private final InvokeCdk.Type instanceType;
+    private final SleeperCdkDeployment cdkDeployment;
     private final List<StackDockerImage> extraDockerImages;
 
     private DeployInstanceRequest(Builder builder) {
-        instanceConfig = requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
-        cdkCommand = requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
-        instanceType = Optional.ofNullable(builder.instanceType).orElseGet(() -> inferInstanceType(instanceConfig));
-        extraDockerImages = requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
+        instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
+        cdkCommand = Objects.requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
+        cdkDeployment = Optional.ofNullable(builder.cdkDeployment).orElseGet(() -> inferCdkDeployment(instanceConfig));
+        extraDockerImages = Objects.requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    private static InvokeCdk.Type inferInstanceType(SleeperInstanceConfiguration instanceConfig) {
+    private static SleeperCdkDeployment inferCdkDeployment(SleeperInstanceConfiguration instanceConfig) {
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return InvokeCdk.Type.DEMONSTRATION;
+            return SleeperCdkDeployment.DEMONSTRATION;
         } else {
-            return InvokeCdk.Type.STANDARD;
+            return SleeperCdkDeployment.STANDARD;
         }
     }
 
@@ -57,8 +56,8 @@ public class DeployInstanceRequest {
         return instanceConfig;
     }
 
-    public InvokeCdk.Type getInstanceType() {
-        return instanceType;
+    public SleeperCdkDeployment getCdkDeployment() {
+        return cdkDeployment;
     }
 
     public CdkCommand getCdkCommand() {
@@ -76,7 +75,7 @@ public class DeployInstanceRequest {
     public static class Builder {
         private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
-        private InvokeCdk.Type instanceType = InvokeCdk.Type.STANDARD;
+        private SleeperCdkDeployment cdkDeployment = SleeperCdkDeployment.STANDARD;
         private List<StackDockerImage> extraDockerImages = List.of();
 
         public Builder instanceConfig(SleeperInstanceConfiguration instanceConfig) {
@@ -89,13 +88,13 @@ public class DeployInstanceRequest {
             return this;
         }
 
-        public Builder instanceType(InvokeCdk.Type instanceType) {
-            this.instanceType = instanceType;
+        public Builder cdkDeployment(SleeperCdkDeployment cdkDeployment) {
+            this.cdkDeployment = cdkDeployment;
             return this;
         }
 
         public Builder inferInstanceType() {
-            return instanceType(null);
+            return cdkDeployment(null);
         }
 
         public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {

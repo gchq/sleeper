@@ -29,11 +29,11 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -93,7 +93,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
-                    .instanceType(InvokeCdk.Type.STANDARD)
+                    .cdkDeployment(SleeperCdkDeployment.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .deployWithClients(s3, dynamoDB, ecr, sts, regionProvider);
