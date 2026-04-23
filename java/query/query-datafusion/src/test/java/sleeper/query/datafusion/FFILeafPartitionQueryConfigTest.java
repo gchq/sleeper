@@ -59,7 +59,7 @@ class FFILeafPartitionQueryConfigTest {
     }
 
     @Test
-    void shouldSetRequestedValueFieldsWhenValidFieldssGiven() {
+    void shouldSetRequestedValueFieldsWhenValidFieldsGiven() {
         // Given
         Runtime runtime = Runtime.getSystemRuntime();
         FFILeafPartitionQueryConfig config = new FFILeafPartitionQueryConfig(runtime);
