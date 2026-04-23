@@ -19,7 +19,7 @@ import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.SleeperCdkDeployment;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -52,17 +52,17 @@ public class InvokeCdk {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
-    private static SleeperCdkDeployment inferType(InstanceProperties instanceProperties) {
+    private static SleeperInternalCdkApp inferType(InstanceProperties instanceProperties) {
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return SleeperCdkDeployment.DEMONSTRATION;
+            return SleeperInternalCdkApp.DEMONSTRATION;
         } else {
-            return SleeperCdkDeployment.STANDARD;
+            return SleeperInternalCdkApp.STANDARD;
         }
     }
 
-    public void invoke(SleeperCdkDeployment deployment, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        String appClassName = deployment.getCdkAppClassName();
-        Path jarFile = deployment.getCdkJarFile(jarsDirectory, version);
+    public void invoke(SleeperInternalCdkApp cdkApp, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        String appClassName = cdkApp.getCdkAppClassName();
+        Path jarFile = cdkApp.getCdkJarFile(jarsDirectory, version);
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",

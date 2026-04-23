@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 /**
  * A model of known CDK apps that are part of Sleeper.
  */
-public enum SleeperCdkDeployment {
+public enum SleeperInternalCdkApp {
     STANDARD("sleeper.cdk.SleeperCdkApp", GetJarPath.cdkJarFile(), true),
     ARTEFACTS("sleeper.cdk.SleeperArtefactsCdkApp", GetJarPath.cdkJarFile(), false),
     DEMONSTRATION("sleeper.systemtest.cdk.SleeperDemonstrationCdkApp", GetJarPath.systemTestJarFile(), true),
@@ -35,7 +35,7 @@ public enum SleeperCdkDeployment {
     private final GetJarPath getCdkJarFile;
     private final boolean deploysSleeperInstance;
 
-    SleeperCdkDeployment(String cdkAppClassName, GetJarPath getCdkJarFile, boolean deploysSleeperInstance) {
+    SleeperInternalCdkApp(String cdkAppClassName, GetJarPath getCdkJarFile, boolean deploysSleeperInstance) {
         this.cdkAppClassName = cdkAppClassName;
         this.getCdkJarFile = getCdkJarFile;
         this.deploysSleeperInstance = deploysSleeperInstance;
@@ -48,7 +48,7 @@ public enum SleeperCdkDeployment {
      * @return               true if it is a CDK app that deploys a Sleeper instance
      */
     public static boolean isCdkAppDeployingSleeperInstance(String propertyValue) {
-        SleeperCdkDeployment app = EnumUtils.getEnumIgnoreCase(SleeperCdkDeployment.class, propertyValue);
+        SleeperInternalCdkApp app = EnumUtils.getEnumIgnoreCase(SleeperInternalCdkApp.class, propertyValue);
         if (app == null) {
             return false;
         }
@@ -62,7 +62,7 @@ public enum SleeperCdkDeployment {
      * @return the valid values description
      */
     public static String describeCdkAppsDeployingSleeperInstance() {
-        return Stream.of(values()).filter(SleeperCdkDeployment::isDeploysSleeperInstance).toList().toString();
+        return Stream.of(values()).filter(SleeperInternalCdkApp::isDeploysSleeperInstance).toList().toString();
     }
 
     public String getCdkAppClassName() {

@@ -34,7 +34,7 @@ import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
-import sleeper.core.properties.model.SleeperCdkDeployment;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
@@ -62,7 +62,7 @@ public class SleeperInstanceProps {
     private final SleeperArtefacts artefacts;
     private final SleeperNetworkingProvider networkingProvider;
     private final String version;
-    private final SleeperCdkDeployment sleeperCdkApp;
+    private final SleeperInternalCdkApp sleeperCdkApp;
     private final boolean validateProperties;
     private final boolean deployPaused;
 
@@ -241,7 +241,7 @@ public class SleeperInstanceProps {
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByContext(scope, CdkContext.from(scope), instanceProperties);
         private String version = SleeperVersion.getVersion();
-        private SleeperCdkDeployment sleeperCdkApp;
+        private SleeperInternalCdkApp sleeperCdkApp;
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
@@ -340,7 +340,7 @@ public class SleeperInstanceProps {
          * @param  sleeperCdkApp the CDK app
          * @return               this builder
          */
-        public Builder sleeperCdkApp(SleeperCdkDeployment sleeperCdkApp) {
+        public Builder sleeperCdkApp(SleeperInternalCdkApp sleeperCdkApp) {
             this.sleeperCdkApp = sleeperCdkApp;
             return this;
         }

@@ -45,8 +45,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
-import static sleeper.core.properties.model.SleeperCdkDeployment.ARTEFACTS;
-import static sleeper.core.properties.model.SleeperCdkDeployment.SYSTEM_TEST_INFRA;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.SYSTEM_TEST_INFRA;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 

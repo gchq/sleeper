@@ -25,7 +25,7 @@ import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
-import sleeper.core.properties.model.SleeperCdkDeployment;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,7 +67,7 @@ public class DeployNewTestInstance {
                     .deployInstanceConfiguration(config)
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
-                    .cdkDeployment(SleeperCdkDeployment.DEMONSTRATION)
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
                     .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }
