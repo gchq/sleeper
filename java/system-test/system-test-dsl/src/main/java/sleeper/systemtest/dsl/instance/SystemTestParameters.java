@@ -192,7 +192,7 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
         properties.set(SYSTEM_TEST_REGION, getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
-        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getArtefactsDeploymentId()));
+        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getAccount(), getArtefactsDeploymentId()));
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
     }

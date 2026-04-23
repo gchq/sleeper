@@ -31,9 +31,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.createNewBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.removeOldBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
@@ -56,8 +56,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                removeOldBuildxBuilderInstanceCommand(),
-                createNewBuildxBuilderInstanceCommand(),
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
@@ -150,8 +150,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                     assertThat(e.getExitCode()).isEqualTo(42);
                 });
         assertThat(commandsThatRan).containsExactly(
-                removeOldBuildxBuilderInstanceCommand(),
-                createNewBuildxBuilderInstanceCommand(),
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
                 buildImageCommand);
     }
 

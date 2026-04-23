@@ -33,6 +33,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
@@ -45,6 +46,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
@@ -158,6 +160,9 @@ public class SleeperInstanceProps {
         instanceProperties.set(REGION, stack.getRegion());
         instanceProperties.set(VPC_ID, networking.vpcId());
         instanceProperties.setList(SUBNETS, networking.subnetIds());
+        if (!instanceProperties.isSet(JARS_BUCKET)) {
+            instanceProperties.set(JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(stack.getAccount(), instanceProperties.get(ARTEFACTS_DEPLOYMENT_ID)));
+        }
         validate();
     }
 
