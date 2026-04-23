@@ -233,7 +233,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .definitionBody(DefinitionBody.fromChainable(
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
-                                        .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
+                                        .when(Condition.numberEquals("$.jobResult.succeeded", 1),
                                                 CustomState.Builder.create(this, "DeleteDriverPod")
                                                         .stateJson(deleteDriverPodState).build()
                                                         .next(CustomState.Builder.create(this, "DeleteJob")
