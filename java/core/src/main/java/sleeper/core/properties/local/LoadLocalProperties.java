@@ -148,21 +148,6 @@ public class LoadLocalProperties {
      * @param  directory          the directory
      * @return                    the table properties found
      */
-    // public static Stream<TableProperties> loadTablesFromDirectory(
-    //         InstanceProperties instanceProperties, Path directory) {
-    //     return loadTablesFromDirectoryNoValidation(instanceProperties, directory).map(table -> {
-    //         try {
-    //             table.validate();
-    //         } catch (SleeperPropertiesInvalidException propertiesException) {
-    //             if (propertiesException.getMessage().equals("Property sleeper.table.schema was invalid. It was unset.")) {
-    //                 String errorMessage = "Property sleeper.table.schema was empty in file " + directory + "This should be set in a separate " +
-    //                         "schema.json file";
-    //                 throw new IllegalArgumentException(errorMessage);
-    //             }
-    //         }
-    //         return table;
-    //     });
-    // }
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
         return streamTablePropertiesWithLocation(instanceProperties, directory).map(tableWithLocation -> {
@@ -171,9 +156,8 @@ public class LoadLocalProperties {
                 table.validate();
             } catch (SleeperPropertiesInvalidException propertiesException) {
                 if (propertiesException.getMessage().equals("Property sleeper.table.schema was invalid. It was unset.")) {
-                    String errorMessage = "Property sleeper.table.schema was not set in file " + tableWithLocation.path
-                            + ". The property should be set in a separate schema.json file";
-                    throw new IllegalArgumentException(errorMessage);
+                    throw new IllegalArgumentException("Property sleeper.table.schema was not set in file " + tableWithLocation.path
+                            + ". The property should be set in a separate schema.json file");
                 }
                 throw propertiesException;
             }
@@ -188,12 +172,6 @@ public class LoadLocalProperties {
      * @param  directory          the directory
      * @return                    the table configurations found
      */
-    // public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
-    //         InstanceProperties instanceProperties, Path directory) {
-    //     return streamBaseAndTableFolders(directory)
-    //             .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
-    //             .filter(Objects::nonNull);
-    // }
     public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamTablePropertiesWithLocation(instanceProperties, directory)
@@ -251,14 +229,6 @@ public class LoadLocalProperties {
         return new SleeperTableConfiguration(tableProperties, initialPartitions);
     }
 
-    // private static TableProperties readTablePropertiesFolderOrNull(
-    //         InstanceProperties instanceProperties, Path folder) {
-    //     Path propertiesPath = folder.resolve("table.properties");
-    //     if (!Files.exists(propertiesPath)) {
-    //         return null;
-    //     }
-    //     return loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesPath);
-    // }
     private static Stream<PropertiesWithLocation> streamTablePropertiesWithLocation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
