@@ -33,11 +33,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.model.SleeperCdkDeployment.ARTEFACTS;
 
 public class DeployInstance {
     public static final Logger LOGGER = LoggerFactory.getLogger(DeployInstance.class);
