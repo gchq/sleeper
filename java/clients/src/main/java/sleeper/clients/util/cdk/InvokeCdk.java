@@ -18,14 +18,13 @@ package sleeper.clients.util.cdk;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,17 +35,15 @@ public class InvokeCdk {
     private final CommandRunner runCommand;
 
     public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
-        ARTEFACTS("sleeper.cdk.SleeperArtefactsCdkApp", InvokeCdk::cdkJarFile),
-        DEMONSTRATION("sleeper.systemtest.cdk.SleeperDemonstrationCdkApp", InvokeCdk::systemTestJarFile),
-        SYSTEM_TEST_INFRA("sleeper.systemtest.cdk.SystemTestInfrastructureCdkApp", InvokeCdk::systemTestJarFile);
+        STANDARD(SleeperCdkDeployment.STANDARD),
+        ARTEFACTS(SleeperCdkDeployment.ARTEFACTS),
+        DEMONSTRATION(SleeperCdkDeployment.DEMONSTRATION),
+        SYSTEM_TEST_INFRA(SleeperCdkDeployment.SYSTEM_TEST_INFRA);
 
-        private final String cdkAppClassName;
-        private final Function<InvokeCdk, Path> getCdkJarFile;
+        private final SleeperCdkDeployment deployment;
 
-        Type(String cdkAppClassName, Function<InvokeCdk, Path> getCdkJarFile) {
-            this.cdkAppClassName = cdkAppClassName;
-            this.getCdkJarFile = getCdkJarFile;
+        Type(SleeperCdkDeployment deployment) {
+            this.deployment = deployment;
         }
     }
 
@@ -77,10 +74,12 @@ public class InvokeCdk {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        String appClassName = instanceType.deployment.getCdkAppClassName();
+        Path jarFile = instanceType.deployment.getCdkJarFile(jarsDirectory, version);
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
-                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
+                        jarFile, appClassName)));
         command.addAll(cdkCommand.command());
         command.addAll(cdkCommand.arguments());
         command.add("*");
@@ -90,14 +89,6 @@ public class InvokeCdk {
         if (exitCode != 0) {
             throw new CdkFailedException(exitCode);
         }
-    }
-
-    private Path cdkJarFile() {
-        return jarsDirectory.resolve(ClientJar.CDK.getFormattedFilename(version));
-    }
-
-    private Path systemTestJarFile() {
-        return jarsDirectory.resolve(String.format("system-test-cdk-%s.jar", version));
     }
 
     public static final class Builder {
