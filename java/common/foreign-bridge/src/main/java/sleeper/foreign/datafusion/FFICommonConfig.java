@@ -107,6 +107,11 @@ public class FFICommonConfig extends Struct {
         Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
     }
 
+    /**
+     * Set the list of input file names.
+     *
+     * @param files input file array
+     */
     public void setInputFiles(java.lang.String[] files) {
         input_files_len.set(files.length);
         // Allocate native memory for string pointers
@@ -119,7 +124,7 @@ public class FFICommonConfig extends Struct {
             java_input_files[i] = getRuntime().getMemoryManager().allocateDirect(file.length);
             java_input_files[i].put(0, file, 0, file.length);
             // Set pointer to native memory
-            java_input_files_ptrs.
+            java_input_files_ptrs.putPointer(i * getRuntime().addressSize(), java_input_files[i]);
         }
 
         input_files.set(java_input_files_ptrs);
