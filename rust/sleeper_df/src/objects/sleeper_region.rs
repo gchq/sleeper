@@ -93,15 +93,14 @@ impl<'a> FFISleeperRegion {
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
         for dimension in dimension_indexes {
-            let idx = usize::try_from(*dimension)?;
-            let row_key = &row_key_cols[idx];
+            let row_key = &row_key_cols[*dimension];
             map.insert(
                 String::from(row_key.borrow()),
                 ColRange {
-                    lower: region_mins[idx],
-                    lower_inclusive: region_mins_inclusive[idx],
-                    upper: region_maxs[idx],
-                    upper_inclusive: region_maxs_inclusive[idx],
+                    lower: region_mins[*dimension],
+                    lower_inclusive: region_mins_inclusive[*dimension],
+                    upper: region_maxs[*dimension],
+                    upper_inclusive: region_maxs_inclusive[*dimension],
                 },
             );
         }
