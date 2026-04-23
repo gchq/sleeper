@@ -81,7 +81,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
                     "-c", "propertiesfile=instance.properties",
@@ -125,7 +125,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
                     "-c", "propertiesfile=instance.properties",
@@ -171,7 +171,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "destroy", "--force",
                     "-c", "propertiesfile=instance.properties",
                     "-c", "validate=false",
@@ -221,7 +221,7 @@ class InvokeCdkTest {
             // Then
             assertThat(singleCommand(commandsThatRan))
                     .startsWith("cdk",
-                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp");
+                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp");
         }
     }
 }

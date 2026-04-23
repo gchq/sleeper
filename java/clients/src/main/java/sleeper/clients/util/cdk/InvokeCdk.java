@@ -38,7 +38,7 @@ public class InvokeCdk {
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
         ARTEFACTS("sleeper.cdk.SleeperArtefactsCdkApp", InvokeCdk::cdkJarFile),
-        DEMONSTRATION("sleeper.systemtest.cdk.SystemTestApp", InvokeCdk::systemTestJarFile),
+        DEMONSTRATION("sleeper.systemtest.cdk.SleeperDemonstrationCdkApp", InvokeCdk::systemTestJarFile),
         SYSTEM_TEST_INFRA("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdk::systemTestJarFile);
 
         private final String cdkAppClassName;

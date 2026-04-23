@@ -41,14 +41,14 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
- * Deploys Sleeper and additional stacks used for large-scale system tests.
+ * Deploys Sleeper and additional stacks used for demonstration, generating example data.
  */
-public class SystemTestApp extends Stack {
+public class SleeperDemonstrationCdkApp extends Stack {
     private final SleeperInstanceProps props;
     private final SleeperInstanceArtefacts artefacts;
     private final SystemTestProperties instanceProperties;
 
-    public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
+    public SleeperDemonstrationCdkApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         super(app, id, stackProps);
         this.props = setProps(sleeperProps);
         this.artefacts = sleeperProps.getArtefacts();
@@ -97,7 +97,7 @@ public class SystemTestApp extends Stack {
                     .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
 
-            new SystemTestApp(app, id, StackProps.builder()
+            new SleeperDemonstrationCdkApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
