@@ -46,7 +46,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
-import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
+import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_INFRA;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
@@ -99,7 +99,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             InvokeCdk.builder()
                     .jarsDirectory(parameters.getJarsDirectory())
                     .runCommand(CommandUtils::runCommandLogOutput)
-                    .build().invoke(SYSTEM_TEST_STANDALONE,
+                    .build().invoke(SYSTEM_TEST_INFRA,
                             CdkCommand.deploySystemTestStandalone(propertiesFile));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
