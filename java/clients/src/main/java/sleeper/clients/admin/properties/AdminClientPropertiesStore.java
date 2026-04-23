@@ -110,7 +110,7 @@ public class AdminClientPropertiesStore {
                 uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
-                        .orElse(SleeperInternalCdkApp.STANDARD);
+                        .orElseGet(() -> SleeperInternalCdkApp.inferBySystemTestProperties(properties));
                 cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");

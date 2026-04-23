@@ -18,7 +18,6 @@ package sleeper.clients.deploy;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.util.List;
@@ -35,21 +34,12 @@ public class DeployInstanceRequest {
     private DeployInstanceRequest(Builder builder) {
         instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
         cdkCommand = Objects.requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
-        cdkApp = Optional.ofNullable(builder.cdkApp).orElseGet(() -> inferCdkApp(instanceConfig));
+        cdkApp = Optional.ofNullable(builder.cdkApp).orElseGet(() -> SleeperInternalCdkApp.inferBySystemTestProperties(instanceConfig.getInstanceProperties()));
         extraDockerImages = Objects.requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    private static SleeperInternalCdkApp inferCdkApp(SleeperInstanceConfiguration instanceConfig) {
-        InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return SleeperInternalCdkApp.DEMONSTRATION;
-        } else {
-            return SleeperInternalCdkApp.STANDARD;
-        }
     }
 
     public SleeperInstanceConfiguration getInstanceConfig() {
