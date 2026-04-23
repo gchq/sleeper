@@ -39,7 +39,7 @@ public class InvokeCdk {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
         ARTEFACTS("sleeper.cdk.SleeperArtefactsCdkApp", InvokeCdk::cdkJarFile),
         DEMONSTRATION("sleeper.systemtest.cdk.SleeperDemonstrationCdkApp", InvokeCdk::systemTestJarFile),
-        SYSTEM_TEST_INFRA("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdk::systemTestJarFile);
+        SYSTEM_TEST_INFRA("sleeper.systemtest.cdk.SystemTestInfrastructureCdkApp", InvokeCdk::systemTestJarFile);
 
         private final String cdkAppClassName;
         private final Function<InvokeCdk, Path> getCdkJarFile;
