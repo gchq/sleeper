@@ -72,6 +72,7 @@ impl<'a> FFISleeperRegion {
             .iter()
             .map(PartitionBound::try_from)
             .collect::<Result<Vec<_>, _>>()?;
+
         // Sleeper region minimums cannot contain unbounded values
         if region_mins
             .iter()
@@ -79,6 +80,7 @@ impl<'a> FFISleeperRegion {
         {
             bail!("FFISleeperRegion mins array contained unbounded element");
         }
+
         // but maximums can
         let region_maxs = unsafe { slice::from_raw_parts(region.maxs, region.len) }
             .iter()

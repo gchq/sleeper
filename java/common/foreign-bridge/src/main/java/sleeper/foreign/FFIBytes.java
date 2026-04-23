@@ -46,6 +46,11 @@ public class FFIBytes extends Struct {
         setData(buffer);
     }
 
+    /**
+     * Set the contents of the buffer for this instance.
+     *
+     * @param buffer the data to copy in
+     */
     public void setData(byte[] buffer) {
         Objects.requireNonNull(buffer, "buffer");
         // Allocate some memory for the data

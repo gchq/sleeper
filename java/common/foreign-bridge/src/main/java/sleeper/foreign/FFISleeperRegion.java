@@ -137,12 +137,12 @@ public class FFISleeperRegion extends Struct {
         partitionRegion.maxs_inclusive.set(nativeMaxsInclusive);
         partitionRegion.java_maxs_inclusive = nativeMaxsInclusive;
 
-        int size_tBytes = runtime.findType(TypeAlias.size_t).size();
+        int sizetBytes = runtime.findType(TypeAlias.size_t).size();
         jnr.ffi.Pointer nativeDimensionIndexes = runtime.getMemoryManager().allocate(
-                size_tBytes * allLength);
+                sizetBytes * allLength);
         for (int i = 0; i < dimensionIndexes.size(); i++) {
             int dimensionIndex = dimensionIndexes.get(i);
-            writeCSize_t(size_tBytes, nativeDimensionIndexes, i, dimensionIndex);
+            writeCSize_t(sizetBytes, nativeDimensionIndexes, i, dimensionIndex);
         }
         partitionRegion.dimension_indexes.set(nativeDimensionIndexes);
         partitionRegion.java_dimension_indexes = nativeDimensionIndexes;
@@ -153,40 +153,45 @@ public class FFISleeperRegion extends Struct {
     /**
      * Write an int as a C size_t value to the given offset.
      *
-     * @param  size_tBytes              size of size_t either 4 or 8 bytes
+     * @param  sizetBytes               size of size_t either 4 or 8 bytes
      * @param  base                     array base address
      * @param  offset                   array index
      * @param  value                    size_t to write
-     * @throws IllegalArgumentException if size_tBytes is not 4 or 8, or value < 0
+     * @throws IllegalArgumentException if sizetBytes is not 4 or 8, or value < 0
      */
-    private static void writeCSize_t(int size_tBytes, jnr.ffi.Pointer base, long offset, int value) {
+    private static void writeCSize_t(int sizetBytes, jnr.ffi.Pointer base, long offset, int value) {
         if (value < 0) {
             throw new IllegalArgumentException("value must be >=0");
         }
-        if (size_tBytes == 4) {
-            base.putInt(offset * size_tBytes, value);
-        } else if (size_tBytes == 8) {
-            base.putLongLong(offset * size_tBytes, value);
+        if (sizetBytes == 4) {
+            base.putInt(offset * sizetBytes, value);
+        } else if (sizetBytes == 8) {
+            base.putLongLong(offset * sizetBytes, value);
         } else {
-            throw new IllegalArgumentException("size_tBytes must be 4 or 8");
+            throw new IllegalArgumentException("sizetBytes must be 4 or 8");
         }
     }
 
     /**
      * Read an int as a C size_t value from the given offset.
      *
-     * @param  size_tBytes              size of size_t either 4 or 8 bytes
+     * @param  sizetBytes               size of size_t either 4 or 8 bytes
      * @param  base                     array base address
      * @param  offset                   array index
-     * @throws IllegalArgumentException if size_tBytes is not 4 or 8
+     * @return                          value of size_t read
+     * @throws IllegalArgumentException if sizetBytes is not 4 or 8
      */
-    private static int readCSize_t(int size_tBytes, jnr.ffi.Pointer base, long offset) {
-        if (size_tBytes == 4) {
-            return base.getInt(offset * size_tBytes);
-        } else if (size_tBytes == 8) {
-            return (int) base.getLongLong(offset * size_tBytes);
+    private static int readCSize_t(int sizetBytes, jnr.ffi.Pointer base, long offset) {
+        if (sizetBytes == 4) {
+            return base.getInt(offset * sizetBytes);
+        } else if (sizetBytes == 8) {
+            long value = base.getLongLong(offset * sizetBytes);
+            if (value > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("read value exceeds 32 bit int max");
+            }
+            return (int) value;
         } else {
-            throw new IllegalArgumentException("size_tBytes must be 4 or 8");
+            throw new IllegalArgumentException("sizetBytes must be 4 or 8");
         }
     }
 
@@ -203,9 +208,9 @@ public class FFISleeperRegion extends Struct {
         RangeFactory rangeFactory = new RangeFactory(schema);
         int allLength = len.intValue();
         List<Range> ranges = new ArrayList<>(allLength);
-        int size_tBytes = runtime.findType(TypeAlias.size_t).size();
+        int sizetBytes = runtime.findType(TypeAlias.size_t).size();
         for (int i = 0; i < allLength; i++) {
-            int dimensionIndex = readCSize_t(size_tBytes, java_dimension_indexes, i);
+            int dimensionIndex = readCSize_t(sizetBytes, java_dimension_indexes, i);
             Field field = rowKeys.get(dimensionIndex);
             Object min = java_mins[i].get();
             boolean minInclusive = java_mins_inclusive.getByte(i) != 0;

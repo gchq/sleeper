@@ -58,7 +58,7 @@ public class FFILeafPartitionQueryConfig extends Struct {
     }
 
     /**
-     * Sets the common Sleeper configuration
+     * Sets the common Sleeper configuration.
      *
      * @param config Sleeper config
      */

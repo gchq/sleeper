@@ -35,7 +35,7 @@ public class FFIElementData extends Union {
     public final Struct.StructRef<FFIBytes> string = new Struct.StructRef<>(FFIBytes.class);
     public final Struct.StructRef<FFIBytes> bytes = new Struct.StructRef<>(FFIBytes.class);
     /** Prevent GC. */
-    private FFIBytes java_holder;
+    private FFIBytes javaHolder;
 
     public FFIElementData(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -48,7 +48,7 @@ public class FFIElementData extends Union {
      */
     public void set(int value) {
         int32.set(value);
-        java_holder = null;
+        javaHolder = null;
     }
 
     /**
@@ -58,7 +58,7 @@ public class FFIElementData extends Union {
      */
     public void set(long value) {
         int64.set(value);
-        java_holder = null;
+        javaHolder = null;
     }
 
     /**
@@ -70,7 +70,7 @@ public class FFIElementData extends Union {
         byte[] data = value.getBytes(StandardCharsets.UTF_8);
         FFIBytes contents = new FFIBytes(getRuntime(), data);
         string.set(contents);
-        java_holder = contents;
+        javaHolder = contents;
     }
 
     /**
@@ -81,7 +81,7 @@ public class FFIElementData extends Union {
     public void set(byte[] value) {
         FFIBytes contents = new FFIBytes(getRuntime(), value);
         bytes.set(contents);
-        java_holder = contents;
+        javaHolder = contents;
     }
 
     /**
@@ -108,7 +108,7 @@ public class FFIElementData extends Union {
      * @return the contents
      */
     public java.lang.String getString() {
-        return new java.lang.String(java_holder.getData(), StandardCharsets.UTF_8);
+        return new java.lang.String(javaHolder.getData(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -117,6 +117,6 @@ public class FFIElementData extends Union {
      * @return the contents
      */
     public byte[] getBytes() {
-        return java_holder.getData();
+        return javaHolder.getData();
     }
 }

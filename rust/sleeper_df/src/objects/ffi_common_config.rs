@@ -105,10 +105,8 @@ impl FFICommonConfig {
 
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
-
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols)?;
-
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
                 max_row_group_size: parquet_options.max_row_group_size,
@@ -130,14 +128,14 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
-        let ins = unsafe { slice::from_raw_parts(self.input_files, self.input_files_len) }
+        let input_urls = unsafe { slice::from_raw_parts(self.input_files, self.input_files_len) }
             .iter()
             .map(|e| Url::parse(unpack_str(*e)?).map_err(color_eyre::Report::from))
             .collect::<Result<Vec<_>, _>>()?;
 
         CommonConfigBuilder::new()
             .aws_config(unpack_aws_config(self))
-            .input_files(ins)
+            .input_files(input_urls)
             .input_files_sorted(self.input_files_sorted)
             .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)

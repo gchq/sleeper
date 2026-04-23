@@ -26,9 +26,7 @@ import jnr.ffi.Struct;
  */
 public class FFIElement extends Struct {
     public final Struct.Enum<FFIElementType> contained = new Struct.Enum<>(FFIElementType.class);
-    public final Struct.StructRef<FFIElementData> item = new Struct.StructRef<>(FFIElementData.class);
-    /** Prevent GC. */
-    private FFIElementData java_item;
+    public final FFIElementData item = inner(FFIElementData.class);
 
     public FFIElement(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -48,30 +46,26 @@ public class FFIElement extends Struct {
     public void set(Object o) {
         if (o == null) {
             contained.set(FFIElementType.Empty);
-            java_item = null;
         } else {
-            FFIElementData elementData = new FFIElementData(getRuntime());
             if (o instanceof Integer) {
                 int v = (Integer) o;
                 contained.set(FFIElementType.Int32);
-                elementData.set(v);
+                item.set(v);
             } else if (o instanceof Long) {
                 long v = (Long) o;
                 contained.set(FFIElementType.Int64);
-                elementData.set(v);
+                item.set(v);
             } else if (o instanceof java.lang.String) {
                 java.lang.String v = (java.lang.String) o;
                 contained.set(FFIElementType.String);
-                elementData.set(v);
+                item.set(v);
             } else if (o instanceof byte[]) {
                 byte[] v = (byte[]) o;
                 contained.set(FFIElementType.ByteArray);
-                elementData.set(v);
+                item.set(v);
             } else {
                 throw new IllegalArgumentException("can't accept " + o.getClass());
             }
-            java_item = elementData;
-            item.set(elementData);
         }
     }
 
@@ -83,10 +77,10 @@ public class FFIElement extends Struct {
     public Object get() {
         return switch (contained.get()) {
             case Empty -> null;
-            case Int32 -> java_item.getInt();
-            case Int64 -> java_item.getLong();
-            case String -> java_item.getString();
-            case ByteArray -> java_item.getBytes();
+            case Int32 -> item.getInt();
+            case Int64 -> item.getLong();
+            case String -> item.getString();
+            case ByteArray -> item.getBytes();
         };
     }
 }
