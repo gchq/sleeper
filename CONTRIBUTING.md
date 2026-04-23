@@ -15,7 +15,9 @@ To get an overview of the project, read the [README](README.md). Read the [devel
 help setting up a development environment.
 
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
-for your change if there isn't one already.
+for your change if there isn't one already. Also for working within sleeper we adhere to several coding conventions
+that are found in the [coding conventions document](development/conventions.md), as well as this details on how and
+when to write tests, as well as the tools can be found as part of the [test strategy](development/test-strategy.md).
 
 Please fill in the pull request template as accurately as possible, and try to match the pull request naming style
 described in the template.
@@ -27,16 +29,6 @@ If you have added, removed, or updated any external dependencies used in the pro
 
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
 Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
-
-### Coding conventions within Sleeper
-
-For working within sleept we adhere to several coding conventions that are found in the
-[coding conventions document](development/conventions.md).
-
-### Testing strategy
-
-For details on how and when to write tests, as well as the tools we use please consult our
-[test strategy](development/test-strategy.md).
 
 #### GitHub Actions on a fork
 
