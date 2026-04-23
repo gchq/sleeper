@@ -47,7 +47,7 @@ public class DeployInstanceRequest {
     private static InvokeCdk.Type inferInstanceType(SleeperInstanceConfiguration instanceConfig) {
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return InvokeCdk.Type.SYSTEM_TEST;
+            return InvokeCdk.Type.DEMONSTRATION;
         } else {
             return InvokeCdk.Type.STANDARD;
         }

@@ -67,7 +67,7 @@ public class DeployNewTestInstance {
                     .deployInstanceConfiguration(config)
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
-                    .instanceType(InvokeCdk.Type.SYSTEM_TEST)
+                    .instanceType(InvokeCdk.Type.DEMONSTRATION)
                     .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }

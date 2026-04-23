@@ -77,7 +77,7 @@ class InvokeCdkTest {
         @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(propertiesFile));
+            cdk().invoke(InvokeCdk.Type.DEMONSTRATION, CdkCommand.deployPropertiesChange(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -121,7 +121,7 @@ class InvokeCdkTest {
         @Test
         void shouldSetDeployPausedFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.deployNewPaused().withPropertiesFile(propertiesFile));
+            cdk().invoke(InvokeCdk.Type.DEMONSTRATION, CdkCommand.deployNewPaused().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -167,7 +167,7 @@ class InvokeCdkTest {
         @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.destroy().withPropertiesFile(propertiesFile));
+            cdk().invoke(InvokeCdk.Type.DEMONSTRATION, CdkCommand.destroy().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
