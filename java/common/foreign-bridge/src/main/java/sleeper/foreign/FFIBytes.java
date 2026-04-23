@@ -15,6 +15,7 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 import java.util.Objects;
@@ -27,6 +28,7 @@ import java.util.Objects;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
+@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFIBytes extends Struct {
     /** Length of stored data. */
     public final Struct.size_t length = new Struct.size_t();

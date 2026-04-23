@@ -15,6 +15,7 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 /**
@@ -24,6 +25,7 @@ import jnr.ffi.Struct;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
+@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFIElement extends Struct {
     public final Struct.Enum<FFIElementType> contained = new Struct.Enum<>(FFIElementType.class);
     public final FFIElementData item = inner(FFIElementData.class);

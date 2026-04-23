@@ -15,6 +15,7 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 import jnr.ffi.Union;
 
@@ -29,6 +30,7 @@ import java.nio.charset.StandardCharsets;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
+@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class FFIElementData extends Union {
     public final Struct.Signed32 int32 = new Struct.Signed32();
     public final Struct.Signed64 int64 = new Struct.Signed64();

@@ -33,7 +33,7 @@ import java.util.Objects;
  * types of the fields must match exactly.
  */
 @SuppressWarnings("checkstyle:membername")
-@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFICommonConfig extends Struct {
     /** Optional AWS configuration. Set to NULL if not used. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);

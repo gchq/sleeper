@@ -15,6 +15,7 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 import jnr.ffi.TypeAlias;
 
@@ -38,6 +39,7 @@ import java.util.List;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
+@SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class FFISleeperRegion extends Struct {
     /** Length of arrays. All assumed to be same length. */
     final Struct.size_t len = new Struct.size_t();

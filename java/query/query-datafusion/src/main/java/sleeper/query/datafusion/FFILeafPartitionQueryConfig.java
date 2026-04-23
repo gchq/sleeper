@@ -30,7 +30,7 @@ import sleeper.foreign.datafusion.FFICommonConfig;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
+@SuppressFBWarnings(value = {"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "URF_UNREAD_FIELD"})
 public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
