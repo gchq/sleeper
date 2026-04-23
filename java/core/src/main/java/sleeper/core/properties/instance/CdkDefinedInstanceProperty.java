@@ -19,7 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.model.SleeperCdkApp;
+import sleeper.core.properties.model.SleeperCdkDeployment;
 
 import java.util.List;
 
@@ -66,7 +66,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
     CdkDefinedInstanceProperty CDK_APP = Index.propertyBuilder("sleeper.cdk.app")
             .description("Which CDK app was used to deploy the instance. If you use your own custom CDK " +
                     "app, this should be left empty.\n" +
-                    "Possible values: " + SleeperCdkApp.describeCdkAppsDeployingSleeperInstance())
+                    "Possible values: " + SleeperCdkDeployment.describeCdkAppsDeployingSleeperInstance())
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
