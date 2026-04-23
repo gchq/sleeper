@@ -12,7 +12,7 @@ available [here](docs/development/roadmap.md).
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.35.3*
 
-This includes improvements to the deployment process, an initial REST API shell, graceful upgrade process for
+This release includes improvements to the deployment process, an initial REST API shell, graceful upgrade process for
 compaction tasks as well as some bugfixes and documentation improvements.
 
 Deployment:
@@ -44,8 +44,8 @@ Bugfixes:
  - Instance properties can be validated even if certain EMR managed scaling properties are unreadable.
  - Tables can now be deleted/taken offline even if they have invalid configuration.
  - DataFusion compactions no longer hang and will complete as successful or failed. Timeouts on AWS clients writing
-    files to S3 were re-enabled.
- - DataFusion compacyions no longer fail if all rows are filtered out.
+    files to S3 were re-enabled to fix this.
+ - DataFusion compactions no longer fail if all rows are filtered out.
 
 ## Version 0.35.2
 
