@@ -28,16 +28,15 @@ If you have added, removed, or updated any external dependencies used in the pro
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
 Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
 
-### Working within Sleeper
+### Coding conventions within Sleeper
 
-When contributing to the project, there are several ways of working that you need to be mindful of.
-Namely the coding conventions that we adhere to, as well as the testing strategy that we follow.
+For working within sleept we adhere to several coding conventions that are found in the
+[coding conventions document](development/conventions.md).
 
-Both of these can be found at the following locations:
+### Testing strategy
 
-[Coding Conventions](docs/developer-guide.md#coding-conventions)
-
-[Testing Strategy](docs/developer-guide.md#testing)
+For details on how and when to write tests, as well as the tools we use please consult our
+[test strategy](development/test-strategy.md).
 
 #### GitHub Actions on a fork
 
