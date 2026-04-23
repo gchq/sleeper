@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +49,16 @@ public class S3BucketNameTest {
 
         // When / Then
         assertThat(S3BucketName.create(instanceProperties, "config"))
+                .isEqualTo(expectedBucketName);
+    }
+
+    @Test
+    void shouldMatchExpectedJarsBucketName() {
+        // Given
+        String expectedBucketName = SleeperArtefactsLocation.getDefaultJarsBucketName("my-account", "my-instance");
+
+        // When / Then
+        assertThat(S3BucketName.create(instanceProperties, "jars"))
                 .isEqualTo(expectedBucketName);
     }
 

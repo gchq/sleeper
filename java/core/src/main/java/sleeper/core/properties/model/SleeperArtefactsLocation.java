@@ -26,11 +26,12 @@ public class SleeperArtefactsLocation {
     /**
      * Computes the default jars bucket name. See the instance property `sleeper.jars.bucket`.
      *
+     * @param  accountName           the AWS account name
      * @param  artefactsDeploymentId the deployment ID
      * @return                       the bucket name
      */
-    public static String getDefaultJarsBucketName(String artefactsDeploymentId) {
-        return "sleeper-" + artefactsDeploymentId + "-jars";
+    public static String getDefaultJarsBucketName(String accountName, String artefactsDeploymentId) {
+        return "sleeper-" + artefactsDeploymentId + "-jars-" + accountName;
     }
 
     /**

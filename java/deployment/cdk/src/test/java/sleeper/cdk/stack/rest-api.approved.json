@@ -35,23 +35,12 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea",
+                      "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938",
                       "Version"
                     ]
                   }
                 ]
               ]
-            }
-          }
-        },
-        "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "RestApiHandlerlambda15DA15D8"
             }
           }
         },
@@ -88,8 +77,19 @@
             "Handler": "sleeper.restapi.RestApiLambda::handleEvent",
             "Code": {
               "S3ObjectVersion": "rest-api-test-version",
-              "S3Bucket": "sleeper-test-instance-jars",
+              "S3Bucket": "sleeper-test-instance-jars-test-account",
               "S3Key": "rest-api-1.2.3.jar"
+            }
+          }
+        },
+        "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "RestApiHandlerlambda15DA15D8"
             }
           }
         },
@@ -97,7 +97,7 @@
           "Type": "AWS::ApiGatewayV2::Integration",
           "Properties": {
             "IntegrationUri": {
-              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea"
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
             },
             "PayloadFormatVersion": "2.0",
             "ApiId": {
@@ -172,7 +172,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFb260e75526bfae58b0b50b58f61301ea"
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {

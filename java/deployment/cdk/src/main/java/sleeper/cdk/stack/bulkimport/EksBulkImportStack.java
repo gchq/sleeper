@@ -94,7 +94,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSDLQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSDLQ"))
                 .build();
 
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
@@ -108,7 +108,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSQ"))
                 .build();
 
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
@@ -233,7 +233,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .definitionBody(DefinitionBody.fromChainable(
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
-                                        .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
+                                        .when(Condition.numberEquals("$.jobResult.succeeded", 1),
                                                 CustomState.Builder.create(this, "DeleteDriverPod")
                                                         .stateJson(deleteDriverPodState).build()
                                                         .next(CustomState.Builder.create(this, "DeleteJob")

@@ -39,12 +39,12 @@ import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildA
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.createNewBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pullImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.removeOldBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.tagImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -264,8 +264,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
         }
 
@@ -282,8 +282,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
                     buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction"));
@@ -311,10 +311,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        void shouldNotFailWhenRemoveBuildxBuilderFailsForCompactionImage() throws Exception {
+        void shouldNotFailWhenCreateBuildxBuilderFailsForCompactionImage() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-            setReturnExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand());
+            setReturnExitCodeForCommand(123, createBuildxBuilderInstanceCommand());
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -323,27 +323,27 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
         }
 
         @Test
-        void shouldFailWhenCreateBuildxBuilderFails() {
+        void shouldFailWhenUseBuildxBuilderFails() {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-            setReturnExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand());
+            setReturnExitCodeForCommand(123, useBuildxBuilderInstanceCommand());
 
             // When / Then
             assertThatThrownBy(() -> uploadForDeployment(dockerDeploymentImageConfig()))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                        assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
+                        assertThat(e.getCommand()).isEqualTo(useBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand());
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand());
         }
 
         @Test
@@ -449,58 +449,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(ecrTag, "./docker/ingest"),
                     pushCommand);
-        }
-    }
-
-    @Nested
-    @DisplayName("Handle existing images")
-    class HandleExistingImages {
-        @Test
-        void shouldBuildAndPushImageIfImageWithDifferentVersionExists() throws Exception {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
-
-            // When
-            uploadForDeployment(dockerDeploymentImageConfig());
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag, "./docker/ingest"),
-                    pushImageCommand(expectedTag));
-        }
-
-        @Test
-        void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws Exception {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
-
-            // When
-            uploadForDeployment(dockerDeploymentImageConfig());
-
-            // Then
-            assertThat(commandsThatRan).isEmpty();
-        }
-
-        @Test
-        void shouldForceUploadWhenVersionAlreadyExists() throws Exception {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
-
-            // When
-            uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerDeploymentImageConfig())
-                    .toBuilder().overwriteExistingTag(true).build());
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag, "./docker/ingest"),
-                    pushImageCommand(expectedTag));
         }
     }
 
@@ -620,6 +568,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version("1.0.0")
                         .build(),
-                ecrClient, "123", "test-region");
+                "123", "test-region");
     }
 }

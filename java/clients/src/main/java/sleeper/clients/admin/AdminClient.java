@@ -33,7 +33,6 @@ import sleeper.clients.admin.screen.IngestBatcherReportScreen;
 import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -48,7 +47,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
@@ -84,10 +82,8 @@ public class AdminClient {
         Path scriptsDir = Path.of(args[0]);
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
-        Path jarsDir = scriptsDir.resolve("jars");
-        String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdk cdk = InvokeCdk.builder()
-                .jarsDirectory(jarsDir).version(version).build();
+
+        InvokeCdk cdk = InvokeCdk.fromScriptsDirectory(scriptsDir);
 
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
@@ -103,7 +99,6 @@ public class AdminClient {
             AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient),
                     accountName, regionProvider.getRegion().id());
             AdminClientPropertiesStore propertiesStore = new AdminClientPropertiesStore(
                     accountName, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, DockerImageConfiguration.getDefault());
