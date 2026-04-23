@@ -47,7 +47,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
@@ -83,10 +82,8 @@ public class AdminClient {
         Path scriptsDir = Path.of(args[0]);
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
-        Path jarsDir = scriptsDir.resolve("jars");
-        String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdk cdk = InvokeCdk.builder()
-                .jarsDirectory(jarsDir).version(version).build();
+
+        InvokeCdk cdk = InvokeCdk.fromScriptsDirectory(scriptsDir);
 
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
