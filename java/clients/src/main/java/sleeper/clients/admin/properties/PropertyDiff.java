@@ -23,7 +23,6 @@ import sleeper.core.properties.SleeperPropertyIndex;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import static sleeper.core.properties.SleeperPropertiesPrettyPrinter.formatDescription;
 
@@ -62,13 +61,13 @@ public class PropertyDiff {
     /**
      * Writes a description of the change to the console.
      *
-     * @param out               the console output
-     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
-     * @param invalidProperties which properties have validation failures caused by the larger update to all values
+     * @param out           the console output
+     * @param propertyIndex an index of all properties of the type being changed (e.g. instance properties)
+     * @param result        property validation results
      */
     public void print(ConsoleOutput out,
             SleeperPropertyIndex<?> propertyIndex,
-            Set<SleeperProperty> invalidProperties) {
+            UpdatePropertiesValidationResult result) {
         out.println(propertyName);
         var propertyOpt = propertyIndex.getByName(propertyName);
         String description = propertyOpt.map(SleeperProperty::getDescription)
@@ -84,18 +83,18 @@ public class PropertyDiff {
         } else {
             out.printf("Before: %s%n", oldValue);
         }
-        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), invalidProperties), newValue);
+        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), result), newValue);
         out.println();
     }
 
-    private String invalidNote(SleeperProperty property, Set<SleeperProperty> invalidProperties) {
+    private String invalidNote(SleeperProperty property, UpdatePropertiesValidationResult result) {
         if (property == null) {
             return "";
         }
-        if (!property.isEditable()) {
+        if (result.isNonUpdateable(property)) {
             return " (cannot be changed, please undo)";
         }
-        if (invalidProperties.contains(property)) {
+        if (result.isValueInvalid(property)) {
             return " (not valid, please change)";
         }
         return "";

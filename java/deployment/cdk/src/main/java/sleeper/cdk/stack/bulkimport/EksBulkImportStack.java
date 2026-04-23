@@ -94,7 +94,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSDLQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSDLQ"))
                 .build();
 
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
@@ -108,7 +108,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSQ"))
                 .build();
 
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());

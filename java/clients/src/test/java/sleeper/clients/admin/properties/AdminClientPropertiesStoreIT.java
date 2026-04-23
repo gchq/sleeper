@@ -30,6 +30,10 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
+import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -56,6 +60,7 @@ import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProp
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStoreIT extends AdminClientITBase {
@@ -184,6 +189,24 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("new-test-table");
+        }
+
+        @Test
+        void shouldUpdateTableWithInvalidBeforeSchema() {
+            // Given
+            createTableInS3WithEmptySchema("test-table");
+
+            // When
+            Schema newSchema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new StringType()))
+                    .build();
+            SchemaSerDe serDe = new SchemaSerDe();
+
+            // Then
+            updateTableProperty(instanceId, "test-table", SCHEMA, serDe.toJson(newSchema));
+            assertThat(store().loadTableProperties(instanceProperties, "test-table").get(SCHEMA))
+                    .isEqualTo(serDe.toJson(newSchema));
         }
     }
 
@@ -396,6 +419,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     private void createTableInS3(String tableName, Consumer<TableProperties> config) {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
+        saveTableProperties(tableProperties);
+    }
+
+    private void createTableInS3WithEmptySchema(String tableName) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(SCHEMA, "{}");
         saveTableProperties(tableProperties);
     }
 
