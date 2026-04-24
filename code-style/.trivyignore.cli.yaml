@@ -21,6 +21,8 @@ vulnerabilities:
   - id: CVE-2026-39883
   # sigstore/timestamp-authority
   - id: CVE-2026-39984
+  # moby/spdystream
+  - id: CVE-2026-35469
 
   # Dependencies of the latest version of AWS CDK/CLI:
 
