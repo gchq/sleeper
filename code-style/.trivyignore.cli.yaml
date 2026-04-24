@@ -28,6 +28,6 @@ vulnerabilities:
 
   # picomatch NodeJS package
   #- id: CVE-2026-33671
-  - id: CVE-2026-33672
+  #- id: CVE-2026-33672
   # brace-expansion NodeJS package
-  - id: CVE-2026-33750
+  #- id: CVE-2026-33750
