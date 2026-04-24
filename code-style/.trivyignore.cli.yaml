@@ -10,7 +10,6 @@ vulnerabilities:
   - id: CVE-2026-32283
   - id: CVE-2026-32288
   - id: CVE-2026-32289
-  #- id: CVE-2026-33810
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
@@ -24,10 +23,3 @@ vulnerabilities:
   # moby/spdystream
   - id: CVE-2026-35469
 
-  # Dependencies of the latest version of AWS CDK/CLI:
-
-  # picomatch NodeJS package
-  #- id: CVE-2026-33671
-  #- id: CVE-2026-33672
-  # brace-expansion NodeJS package
-  #- id: CVE-2026-33750
