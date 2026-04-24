@@ -15,17 +15,10 @@
 FROM rust:1.93-bookworm
 
 RUN apt-get update && apt-get install -y \
-    # Sleeper Rust build-time dependencies
-    build-essential \
-    # Clang installation dependencies
-    lsb-release wget software-properties-common gnupg \
+    clang \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Clang 20
-RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV CC=clang-20
-ENV CXX=clang++-20
+ENV CC=clang
+ENV CXX=clang++
 
 WORKDIR /workspace
