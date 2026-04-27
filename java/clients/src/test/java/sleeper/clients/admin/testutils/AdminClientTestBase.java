@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.properties.CommandLinePropertiesEditor;
+import sleeper.clients.admin.properties.PropertiesEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -48,7 +48,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-    protected final CommandLinePropertiesEditor editor = mock(CommandLinePropertiesEditor.class);
+    protected final PropertiesEditor editor = mock(PropertiesEditor.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
