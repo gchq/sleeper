@@ -33,6 +33,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -46,6 +47,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -107,7 +109,9 @@ public class AdminClientPropertiesStore {
             if (!propertiesDeployedByCdk.isEmpty()) {
                 uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
+                SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
+                        .orElseGet(() -> SleeperInternalCdkApp.inferBySystemTestProperties(properties));
+                cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");
                 client.saveInstanceProperties(properties);

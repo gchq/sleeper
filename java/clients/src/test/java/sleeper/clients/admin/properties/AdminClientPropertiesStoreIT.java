@@ -226,7 +226,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            verifyPropertiesDeployedWithCdk();
+            verifyAnyAppDeployedWithCdk();
             assertThat(localPropertiesWhenCdkDeployed.get().get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
             assertThat(localTablesWhenCdkDeployed)
@@ -253,7 +253,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
-            verifyAnyPropertiesDeployedWithCdk();
+            verifyAnyAppDeployedWithCdk();
             assertThat(store().loadInstanceProperties(instanceId)
                     .get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
@@ -409,7 +409,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        }).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void createTableInS3(String tableName) {
@@ -433,15 +433,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         tablePropertiesStore.deleteByName(tableName);
     }
 
-    private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
-    }
-
-    private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange(propertiesFile()));
+    private void verifyAnyAppDeployedWithCdk() throws Exception {
+        verify(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        doThrow(throwable).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 }

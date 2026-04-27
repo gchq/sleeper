@@ -120,7 +120,7 @@ cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.Sle
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
 command.
 
-If you'd like to include data generation for system tests, use the system test CDK app instead.
+If you'd like to include random data generation, use the demonstration CDK app instead.
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
@@ -132,7 +132,7 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" \
     -c id=$INSTANCE_ID -c extraEcrImages=system-test
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --extra-images system-test
-cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SystemTestApp" \
+cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SleeperDemonstrationCdkApp" \
     -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 # Write some random data

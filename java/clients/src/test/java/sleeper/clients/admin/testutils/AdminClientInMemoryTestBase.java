@@ -27,7 +27,6 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandPipeline;
-import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -49,7 +48,8 @@ import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
 
     protected final List<CommandPipeline> commandsThatRan = new ArrayList<>();
-    protected final CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+    protected final List<CommandPipeline> cdkCommandsThatRan = new ArrayList<>();
+    protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected final Map<Path, String> files = new HashMap<>();
     protected final Path scriptsDirectory = Path.of("./test");
     protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(List.of(), List.of());
@@ -117,7 +117,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
         return InvokeCdk.builder()
                 .version(version)
                 .scriptsDirectory(scriptsDirectory)
-                .runCommand(commandRunner)
+                .runCommand(recordCommandsRun(commandsThatRan, recordCommandsRun(cdkCommandsThatRan)))
                 .build();
     }
 
@@ -125,7 +125,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
         return new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .deployConfig(DeployConfiguration.fromLocalBuild())
-                        .commandRunner(commandRunner)
+                        .commandRunner(recordCommandsRun(commandsThatRan, recordCommandsRun(dockerCommandsThatRan)))
                         .copyFile((source, target) -> files.put(target, files.get(source)))
                         .scriptsDirectory(scriptsDirectory)
                         .version(version)
