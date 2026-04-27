@@ -29,16 +29,16 @@ import java.util.Queue;
 
 public class InMemoryPropertiesEditor implements PropertiesEditor, PropertiesEditorTestHarness {
 
-    private final Queue<ExpectedEdit> edits = new LinkedList<>();
+    private final Queue<ExpectedEdit> remainingExpectedEdits = new LinkedList<>();
 
     @Override
     public void expectNextEdit(UpdatePropertiesRequest<?> request) {
-        edits.add(new ExpectedEdit(request, null));
+        remainingExpectedEdits.add(new ExpectedEdit(request, null));
     }
 
     @Override
     public void expectNextEdit(UpdatePropertiesRequest<?> request, PropertyGroup group) {
-        edits.add(new ExpectedEdit(request, group));
+        remainingExpectedEdits.add(new ExpectedEdit(request, group));
     }
 
     @Override
@@ -61,8 +61,12 @@ public class InMemoryPropertiesEditor implements PropertiesEditor, PropertiesEdi
         return getNextRequest(properties, propertyGroup);
     }
 
+    public Queue<ExpectedEdit> getRemainingExpectedEdits() {
+        return remainingExpectedEdits;
+    }
+
     private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> getNextRequest(T properties, PropertyGroup propertyGroup) {
-        ExpectedEdit edit = edits.poll();
+        ExpectedEdit edit = remainingExpectedEdits.poll();
         if (edit == null || !edit.isBefore(properties) || propertyGroup != edit.group()) {
             throw new IllegalStateException("Unexpected request to open properties editor for " + properties.getClass().getSimpleName());
         }

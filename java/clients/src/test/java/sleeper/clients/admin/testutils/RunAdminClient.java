@@ -42,7 +42,7 @@ public class RunAdminClient {
     private final PropertiesEditorTestHarness editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
-    RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
+    public RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
             AdminConfigStoreTestHarness harness,
             PropertiesEditorTestHarness editor) {
         this.out = out;

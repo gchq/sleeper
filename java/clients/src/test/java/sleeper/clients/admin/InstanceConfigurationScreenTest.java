@@ -25,9 +25,12 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.PropertiesEditor;
 import sleeper.clients.admin.testutils.AdminClientTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import sleeper.clients.admin.testutils.MockProperiesEditorTestHarness;
+import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.common.task.QueueMessageCount.Client;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -78,7 +81,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class InstanceConfigurationScreenTest extends AdminClientTestBase {
     private final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
+    private final PropertiesEditor editor = mock(PropertiesEditor.class);
     private final TableIndex tableIndex = new InMemoryTableIndex();
+
+    @Override
+    protected RunAdminClient runClient() {
+        return new RunAdminClient(out, in, this, new MockProperiesEditorTestHarness(editor));
+    }
 
     @DisplayName("Navigate from main screen and back")
     @Nested
