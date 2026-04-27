@@ -25,7 +25,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.properties.CommandLinePropertiesEditor;
+import sleeper.clients.admin.properties.PropertiesEditor;
 import sleeper.clients.admin.screen.AdminMainScreen;
 import sleeper.clients.admin.screen.CompactionStatusReportScreen;
 import sleeper.clients.admin.screen.FilesStatusReportScreen;
@@ -55,14 +56,14 @@ public class AdminClient {
     private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
     private final AdminClientTrackerFactory trackers;
-    private final UpdatePropertiesWithTextEditor editor;
+    private final PropertiesEditor editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers,
-            UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
+            PropertiesEditor editor, ConsoleOutput out, ConsoleInput in,
             QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.tableIndex = tableIndex;
         this.store = store;
@@ -103,7 +104,7 @@ public class AdminClient {
             AdminClientPropertiesStore propertiesStore = new AdminClientPropertiesStore(
                     accountName, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, DockerImageConfiguration.getDefault());
             errorCode = start(instanceId, propertiesStore, AdminClientTrackerFactory.from(dynamoClient), out, in,
-                    new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
+                    new CommandLinePropertiesEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
                     properties -> PersistentEmrStepCount.byStatus(properties, emrClient));
         }
@@ -112,7 +113,7 @@ public class AdminClient {
 
     public static int start(String instanceId,
             AdminClientPropertiesStore propertiesStore, AdminClientTrackerFactory trackerFactory,
-            ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
+            ConsoleOutput out, ConsoleInput in, PropertiesEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
         TableIndex tableIndex;

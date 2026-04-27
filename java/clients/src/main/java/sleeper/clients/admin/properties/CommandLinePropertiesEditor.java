@@ -35,17 +35,17 @@ import java.util.function.Function;
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
-public class UpdatePropertiesWithTextEditor {
+public class CommandLinePropertiesEditor implements PropertiesEditor {
 
     private final Path tempDirectory;
     private final CommandRunner runCommand;
     private final UpdatePropertiesTextEditorCommand editorCommand;
 
-    public UpdatePropertiesWithTextEditor(Path tempDirectory) {
+    public CommandLinePropertiesEditor(Path tempDirectory) {
         this(tempDirectory, CommandUtils::runCommandInheritIO, System::getenv);
     }
 
-    public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand, Function<String, String> readEnvironmentVariable) {
+    public CommandLinePropertiesEditor(Path tempDirectory, CommandRunner runCommand, Function<String, String> readEnvironmentVariable) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
         this.editorCommand = new UpdatePropertiesTextEditorCommand(readEnvironmentVariable);

@@ -17,7 +17,7 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientTrackerFactory;
-import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.properties.CommandLinePropertiesEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
@@ -41,12 +41,12 @@ public class RunAdminClient {
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness harness;
     private final AdminClientProcessTrackerHolder trackers = new AdminClientProcessTrackerHolder();
-    private final UpdatePropertiesWithTextEditor editor;
+    private final CommandLinePropertiesEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
     RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
             AdminConfigStoreTestHarness harness,
-            UpdatePropertiesWithTextEditor editor) {
+            CommandLinePropertiesEditor editor) {
         this.out = out;
         this.in = in;
         this.harness = harness;

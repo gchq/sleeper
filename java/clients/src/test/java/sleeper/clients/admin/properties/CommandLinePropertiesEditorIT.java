@@ -46,16 +46,16 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class UpdatePropertiesWithTextEditorIT {
+class CommandLinePropertiesEditorIT {
 
     @TempDir
     private Path tempDir;
-    private UpdatePropertiesWithTextEditorTestHelper helper;
+    private CommandLinePropertiesEditorTestHelper helper;
     private String id = "test-instance";
 
     @BeforeEach
     void setUp() {
-        helper = new UpdatePropertiesWithTextEditorTestHelper(tempDir);
+        helper = new CommandLinePropertiesEditorTestHelper(tempDir);
     }
 
     @Nested
