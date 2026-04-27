@@ -40,16 +40,17 @@
     }
   },
   "ResultSelector": {
+    "succeeded.$": "$.status.succeeded",
     "logs.$": "$.logs..spark-submit.log"
   },
-  "ResultPath": "$.output",
+  "ResultPath": "$.jobResult",
   "Catch": [
     {
       "ErrorEquals": [
         "States.ALL"
       ],
-      "Next": "CreateErrorMessage",
-      "ResultPath": "$.error"
+      "ResultPath": "$.error",
+      "Next": "CreateErrorMessage"
     }
   ]
 }
