@@ -220,25 +220,25 @@ public class InstanceConfigurationScreen {
         }
     }
 
-    public record SaveChangesOption<T extends SleeperProperties<?>>(Runnable save, String note, String menuOption) {
+    private record SaveChangesOption<T extends SleeperProperties<?>>(Runnable save, String note, String menuOption) {
 
-        public static <T extends SleeperProperties<?>> SaveChangesOption<T> directSave(Runnable save) {
+        static <T extends SleeperProperties<?>> SaveChangesOption<T> directSave(Runnable save) {
             return new SaveChangesOption<T>(save, null, "Save changes");
         }
 
-        public static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkLater(Runnable save) {
+        static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkLater(Runnable save) {
             return new SaveChangesOption<T>(save,
                     "Your changes require a CDK deployment to apply. This must be done separately outside this tool.",
                     "Save changes (changes requiring a CDK deployment will be saved but not applied)");
         }
 
-        public static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkNow(Runnable save) {
+        static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkNow(Runnable save) {
             return new SaveChangesOption<T>(save,
                     "This change will be applied as a CDK deployment of the instance.",
                     "Save changes via CDK deployment");
         }
 
-        public void apply() {
+        void apply() {
             save.run();
         }
     }
