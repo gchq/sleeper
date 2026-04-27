@@ -225,7 +225,7 @@
         <jib.version>0.28.1</jib.version>
         <asm.version>9.9.1</asm.version>
         <!-- Testing -->
-        <junit.version>5.14.3</junit.version>
+        <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.3</junit.platform.version>
         <mockito.version>5.23.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
