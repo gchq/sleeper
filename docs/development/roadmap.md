@@ -5,11 +5,10 @@ This section documents some of the improvements that we plan to make to Sleeper.
 
 The following improvements are actively being worked on:
 
-- https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
+- https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 
 The following are likely to be worked on in the near future:
 
-- https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 - https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
 - https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
 - https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
