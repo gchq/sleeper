@@ -19,26 +19,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.PropertiesEditor;
-import sleeper.clients.admin.testutils.AdminClientTestBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
-import sleeper.clients.admin.testutils.MockProperiesEditorTestHarness;
-import sleeper.clients.admin.testutils.RunAdminClient;
-import sleeper.common.task.QueueMessageCount.Client;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIndex;
-
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
@@ -50,7 +39,6 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -59,17 +47,8 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-class InstanceConfigurationScreenTest extends AdminClientTestBase {
-    private final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
-    private final PropertiesEditor editor = mock(PropertiesEditor.class);
-    private final TableIndex tableIndex = new InMemoryTableIndex();
-
-    @Override
-    protected RunAdminClient runClient() {
-        return new RunAdminClient(out, in, this, new MockProperiesEditorTestHarness(editor));
-    }
+class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
 
     @DisplayName("Display changes to edited properties")
     @Nested
@@ -471,26 +450,5 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
 
     private static String outputWithValidationDisplayWhenDiscardingChanges(String expectedValidationDisplay) {
         return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
-    }
-
-    @Override
-    public void setInstanceProperties(InstanceProperties instanceProperties) {
-        super.setInstanceProperties(instanceProperties);
-        when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
-    }
-
-    @Override
-    public void saveTableProperties(TableProperties tableProperties) {
-        when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
-                .thenReturn(tableProperties);
-        tableIndex.create(tableProperties.getStatus());
-    }
-
-    @Override
-    public void startClient(AdminClientTrackerFactory trackers, Client queueClient) throws Exception {
-        new AdminClient(tableIndex, store, trackers,
-                editor, out.consoleOut(), in.consoleIn(),
-                queueClient, properties -> Collections.emptyMap())
-                .start(instanceId);
     }
 }
