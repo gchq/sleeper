@@ -25,22 +25,29 @@ import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChange
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TEST_TABLE_REPORT_LIST;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
@@ -429,7 +436,53 @@ class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
                             "\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
+    }
 
+    @Nested
+    @DisplayName("Handle properties requiring CDK deployment")
+    class CdkDeployment {
+
+        @Test
+        void shouldRedeployStandardCdkAppWhenCdkDeployedPropertyIsUpdated() throws Exception {
+            // Given an instance that was deployed with the standard CDK app
+            InstanceProperties before = createValidInstanceProperties();
+            before.setEnum(CDK_APP, SleeperInternalCdkApp.STANDARD);
+            // And a property change to force a redeploy
+            InstanceProperties after = InstanceProperties.copyOf(before);
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "100");
+
+            // When we apply the change
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then the properties are not saved to the instance, as the CDK will apply the change
+            assertThat(clientProperties.loadInstancePropertiesNoValidation(after.get(ID)))
+                    .isEqualTo(before);
+            // And the properties are saved to the local directory, to be read by the CDK
+            assertThat(clientProperties.getLocalInstanceProperties()).isEqualTo(after);
+            // And the CDK is invoked
+            assertThat(cdkCommandsThatRan).containsExactly(pipeline(command(
+                    "cdk",
+                    "-a", "java -cp \"./test/jars/cdk-1.2.3.jar\" sleeper.cdk.SleeperCdkApp",
+                    "deploy",
+                    "--require-approval", "never",
+                    "-c", "propertiesfile=./test/generated/instance.properties",
+                    "*")));
+            // And this is displayed to the user
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
+                    "After: 100\n" +
+                    "Note that a change to this property requires redeployment of the instance.\n" +
+                    "\n" +
+                    PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN +
+                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                    DISPLAY_MAIN_SCREEN);
+        }
     }
 
     private String editConfigurationDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
