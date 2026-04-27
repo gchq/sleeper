@@ -182,13 +182,12 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     /**
-     * Retrieves the value of a property of an enum type. Please call the getter relevant to the type of the property,
-     * see other methods on this class.
+     * Retrieves the value of a property of an enum type, if it was set.
      *
      * @param  <E>       the enum type representing valid values of the property
      * @param  property  the property
      * @param  enumClass the class of the enum representing valid values of the property
-     * @return           the value of the property
+     * @return           the value of the property, if it was set
      */
     default <E extends Enum<E>> Optional<E> getOptionalEnumValue(T property, Class<E> enumClass) {
         return Optional.ofNullable(get(property))
