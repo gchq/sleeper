@@ -18,6 +18,7 @@ package sleeper.clients.admin.properties;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Collections;
 import java.util.Set;
@@ -66,8 +67,9 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private Set<SleeperProperty> getNonUpdateableProperties() {
         Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperties();
-        return diff.getChanges().stream()
-                .flatMap(d -> d.getProperty(propertiesAfter.getPropertiesIndex()).stream())
+        SleeperPropertyIndex<?> propertyIndex = propertiesAfter.getPropertiesIndex();
+        return diff.streamChanges()
+                .flatMap(d -> propertyIndex.getByName(d.getPropertyName()).stream())
                 .filter(not(SleeperProperty::isEditable))
                 .filter(not(invalidBeforeProperties::contains)) // If an uneditable property was invalid before, allow editing
                 .collect(toUnmodifiableSet());

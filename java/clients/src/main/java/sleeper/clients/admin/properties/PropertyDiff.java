@@ -130,17 +130,6 @@ public class PropertyDiff {
         return newValue;
     }
 
-    /**
-     * Retrieves the declaration of the property changed in this diff from the index.
-     *
-     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
-     * @param  propertyIndex the index of all properties of the type being changed
-     * @return               the definition of the property changed by this diff, if it is in the index
-     */
-    public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
-        return propertyIndex.getByName(propertyName);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {

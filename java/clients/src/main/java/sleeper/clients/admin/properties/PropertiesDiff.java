@@ -22,7 +22,6 @@ import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.SleeperPropertyValues;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -109,8 +108,8 @@ public class PropertiesDiff {
      * @return               the list of changed properties requiring a CDK deployment
      */
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
-        return changes.values().stream()
-                .flatMap(diff -> diff.getProperty(propertyIndex).stream())
+        return changes.keySet().stream()
+                .flatMap(propertyName -> propertyIndex.getByName(propertyName).stream())
                 .filter(SleeperProperty::isRunCdkDeployWhenChanged)
                 .collect(Collectors.toList());
     }
@@ -163,8 +162,8 @@ public class PropertiesDiff {
         }
     }
 
-    public List<PropertyDiff> getChanges() {
-        return new ArrayList<>(changes.values());
+    public Stream<PropertyDiff> streamChanges() {
+        return changes.values().stream();
     }
 
     /**
