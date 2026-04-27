@@ -106,11 +106,10 @@ public class AdminClientPropertiesStore {
             LOGGER.info("Saving to local configuration");
             client.saveLocalProperties(properties, streamTableProperties(properties));
             List<SleeperProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
-            if (!propertiesDeployedByCdk.isEmpty()) {
+            SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class).orElse(null);
+            if (!propertiesDeployedByCdk.isEmpty() && cdkApp != null) {
                 uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
-                        .orElseGet(() -> SleeperInternalCdkApp.inferBySystemTestProperties(properties));
                 cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");

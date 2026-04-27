@@ -33,11 +33,14 @@ import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
@@ -99,23 +102,21 @@ public class InstanceConfigurationScreen {
     }
 
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {
-        return new WithProperties<>(properties, editor::openPropertiesFile, store::saveInstanceProperties);
+        return new WithProperties<>(properties, editor::openPropertiesFile, SaveChanges.forInstanceProperties(store));
     }
 
     private WithProperties<InstanceProperties> withGroupedInstanceProperties(InstanceProperties properties, PropertyGroup group) {
-        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), store::saveInstanceProperties);
+        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), SaveChanges.forInstanceProperties(store));
     }
 
     private WithProperties<TableProperties> withTableProperties(
             InstanceProperties instanceProperties, TableProperties properties) {
-        return new WithProperties<>(properties, editor::openPropertiesFile,
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
+        return new WithProperties<>(properties, editor::openPropertiesFile, SaveChanges.forTableProperties(instanceProperties, store));
     }
 
     private WithProperties<TableProperties> withGroupedTableProperties(
             InstanceProperties instanceProperties, TableProperties properties, PropertyGroup group) {
-        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
+        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), SaveChanges.forTableProperties(instanceProperties, store));
     }
 
     private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {
@@ -127,7 +128,26 @@ public class InstanceConfigurationScreen {
     }
 
     private interface SaveChanges<T extends SleeperProperties<?>> {
-        void saveChanges(T properties, PropertiesDiff diff);
+        SaveChangesOption<T> buildSaveOption(T properties, PropertiesDiff changes);
+
+        static SaveChanges<InstanceProperties> forInstanceProperties(AdminClientPropertiesStore store) {
+            return (properties, diff) -> {
+                boolean cdkDeploy = diff.isCdkDeployRequired(properties.getPropertiesIndex());
+                if (!cdkDeploy) {
+                    return SaveChangesOption.directSave(() -> store.saveInstanceProperties(properties, diff));
+                }
+                SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class).orElse(null);
+                if (cdkApp == null) {
+                    return SaveChangesOption.cdkLater(() -> store.saveInstanceProperties(properties, diff));
+                } else {
+                    return SaveChangesOption.cdkNow(() -> store.saveInstanceProperties(properties, diff));
+                }
+            };
+        }
+
+        static SaveChanges<TableProperties> forTableProperties(InstanceProperties instanceProperties, AdminClientPropertiesStore store) {
+            return (properties, diff) -> SaveChangesOption.directSave(() -> store.saveTableProperties(instanceProperties, properties));
+        }
     }
 
     private class WithProperties<T extends SleeperProperties<?>> {
@@ -162,10 +182,10 @@ public class InstanceConfigurationScreen {
 
         void chooseFromOptions(
                 T updatedProperties, PropertiesDiff changes, boolean valid) throws InterruptedException {
-            boolean cdkDeploy = changes.isCdkDeployRequired(updatedProperties.getPropertiesIndex());
-            MenuOption saveChanges = new MenuOption(cdkDeploy ? "Save changes via CDK deployment" : "Save changes", () -> {
+            SaveChangesOption<T> option = store.buildSaveOption(updatedProperties, changes);
+            MenuOption saveChanges = new MenuOption(option.menuOption(), () -> {
                 try {
-                    store.saveChanges(updatedProperties, changes);
+                    option.apply();
                     out.println("\n\n----------------------------------");
                     out.println("Saved successfully, hit enter to return to main screen");
                     in.waitForLine();
@@ -180,8 +200,8 @@ public class InstanceConfigurationScreen {
             MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
             });
             if (valid) {
-                if (cdkDeploy) {
-                    out.println("This change will be applied as a CDK deployment of the instance.");
+                if (option.note() != null) {
+                    out.println(option.note());
                 }
                 chooseOne.chooseFrom(saveChanges, returnToEditor, discardChanges)
                         .getChoice().orElse(returnToEditor).run();
@@ -197,6 +217,29 @@ public class InstanceConfigurationScreen {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+    }
+
+    public record SaveChangesOption<T extends SleeperProperties<?>>(Runnable save, String note, String menuOption) {
+
+        public static <T extends SleeperProperties<?>> SaveChangesOption<T> directSave(Runnable save) {
+            return new SaveChangesOption<T>(save, null, "Save changes");
+        }
+
+        public static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkLater(Runnable save) {
+            return new SaveChangesOption<T>(save,
+                    "This will require a CDK deployment to apply your changes. This must be done separately after saving.",
+                    "Save changes (changes requiring a CDK deployment will be saved but not applied)");
+        }
+
+        public static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkNow(Runnable save) {
+            return new SaveChangesOption<T>(save,
+                    "This change will be applied as a CDK deployment of the instance.",
+                    "Save changes via CDK deployment");
+        }
+
+        public void apply() {
+            save.run();
         }
     }
 }

@@ -33,6 +33,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TEST_TABLE_REPORT_LIST;
@@ -480,6 +481,42 @@ class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
                     "Note that a change to this property requires redeployment of the instance.\n" +
                     "\n" +
                     PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN +
+                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                    DISPLAY_MAIN_SCREEN);
+        }
+
+        @Test
+        void shouldNotifyWhenCdkRedeploymentIsRequiredWithCustomCdkApp() throws Exception {
+            // Given an instance that was deployed with a custom CDK app
+            InstanceProperties before = createValidInstanceProperties();
+            before.unset(CDK_APP);
+            // And a property change to force a redeploy
+            InstanceProperties after = InstanceProperties.copyOf(before);
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "100");
+
+            // When we apply the change
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then the properties are saved to the instance
+            assertThat(clientProperties.loadInstancePropertiesNoValidation(after.get(ID)))
+                    .isEqualTo(after);
+            // And the CDK is not invoked
+            assertThat(commandsThatRan).isEmpty();
+            // And the properties are saved to the local directory, to keep them up to date
+            assertThat(clientProperties.getLocalInstanceProperties()).isEqualTo(after);
+            // And this is displayed to the user
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
+                    "After: 100\n" +
+                    "Note that a change to this property requires redeployment of the instance.\n" +
+                    "\n" +
+                    PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN +
                     PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                     DISPLAY_MAIN_SCREEN);
         }
