@@ -162,7 +162,8 @@ public class InstanceConfigurationScreen {
 
         void chooseFromOptions(
                 T updatedProperties, PropertiesDiff changes, boolean valid) throws InterruptedException {
-            MenuOption saveChanges = new MenuOption("Save changes", () -> {
+            boolean cdkDeploy = changes.isCdkDeployRequired(updatedProperties.getPropertiesIndex());
+            MenuOption saveChanges = new MenuOption(cdkDeploy ? "Save changes via CDK deployment" : "Save changes", () -> {
                 try {
                     store.saveChanges(updatedProperties, changes);
                     out.println("\n\n----------------------------------");
@@ -179,6 +180,9 @@ public class InstanceConfigurationScreen {
             MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
             });
             if (valid) {
+                if (cdkDeploy) {
+                    out.println("This change will be applied as a CDK deployment of the instance.");
+                }
                 chooseOne.chooseFrom(saveChanges, returnToEditor, discardChanges)
                         .getChoice().orElse(returnToEditor).run();
             } else {

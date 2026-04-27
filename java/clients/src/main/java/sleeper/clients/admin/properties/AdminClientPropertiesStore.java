@@ -30,8 +30,8 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
@@ -105,7 +105,7 @@ public class AdminClientPropertiesStore {
         try {
             LOGGER.info("Saving to local configuration");
             client.saveLocalProperties(properties, streamTableProperties(properties));
-            List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
+            List<SleeperProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);

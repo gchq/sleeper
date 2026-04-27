@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -76,7 +76,7 @@ public class InstanceConfigurationScreenCdkTest extends AdminClientInMemoryTestB
                 "After: 100\n" +
                 "Note that a change to this property requires redeployment of the instance.\n" +
                 "\n" +
-                PROPERTY_SAVE_CHANGES_SCREEN +
+                PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN +
                 PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                 DISPLAY_MAIN_SCREEN);
     }

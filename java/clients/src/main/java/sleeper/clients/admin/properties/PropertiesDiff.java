@@ -103,15 +103,26 @@ public class PropertiesDiff {
      * Retrieves a list of properties changed in this diff that require a CDK deployment when they are changed. If the
      * list is not empty, a CDK redeployment will be required.
      *
-     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
      * @param  propertyIndex the index of all properties of the type being changed
      * @return               the list of changed properties requiring a CDK deployment
      */
-    public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
+    public List<SleeperProperty> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<?> propertyIndex) {
         return changes.keySet().stream()
                 .flatMap(propertyName -> propertyIndex.getByName(propertyName).stream())
                 .filter(SleeperProperty::isRunCdkDeployWhenChanged)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks whether a CDK deployment is required to apply this change.
+     *
+     * @param  propertyIndex the index of all properties of the type being changed
+     * @return               true if a CDK deployment is required
+     */
+    public boolean isCdkDeployRequired(SleeperPropertyIndex<?> propertyIndex) {
+        return changes.keySet().stream()
+                .flatMap(propertyName -> propertyIndex.getByName(propertyName).stream())
+                .anyMatch(SleeperProperty::isRunCdkDeployWhenChanged);
     }
 
     private static Map<String, PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
