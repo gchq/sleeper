@@ -57,7 +57,7 @@ class InvokeCdkTest {
     class RunDeploy {
 
         @Test
-        void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDeployStandardCdkApp() throws IOException, InterruptedException {
             // When
             cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployPropertiesChange(propertiesFile));
 
@@ -72,7 +72,7 @@ class InvokeCdkTest {
         }
 
         @Test
-        void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDeployDemonstrationCdkApp() throws IOException, InterruptedException {
             // When
             cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.deployPropertiesChange(propertiesFile));
 
@@ -148,7 +148,7 @@ class InvokeCdkTest {
     class RunDestroy {
 
         @Test
-        void shouldRunStandardCdkDestroySuccessfully() throws IOException, InterruptedException {
+        void shouldDestroyStandardCdkApp() throws IOException, InterruptedException {
             // When
             cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.destroy().withPropertiesFile(propertiesFile));
 
@@ -162,7 +162,7 @@ class InvokeCdkTest {
         }
 
         @Test
-        void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDestroyDemonstrationCdkApp() throws IOException, InterruptedException {
             // When
             cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.destroy().withPropertiesFile(propertiesFile));
 
