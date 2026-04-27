@@ -80,3 +80,6 @@ jobs:
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+      - name: Check javadoc validity
+        run: mvn javadoc:javadoc
+        working directory: ./java
