@@ -17,8 +17,8 @@ compaction tasks as well as some bugfixes and documentation improvements.
 
 Deployment:
  - This is a breaking change: bucket names are now created with the AWS account number appended to them.
- - Support for combining the two CDK apps together in an external repository has been provided through getters in the
-    Sleeper artefact repositories.
+ - Support for combining the two CDK apps together in an external repository has been provided. You can now retrieve
+    references to the artefact repositories after defining them in your own CDK app.
  - Docker images are now deployed by their digest instead of tag.
  - Docker images of the same Sleeper version will now be republished to ECR when the digest has changed.
 
@@ -36,7 +36,7 @@ Bulk Import:
 
 DataFusion:
  - S3 readahead has been re-enabled with the property. This is a change to the default value of
-    *sleeper.default.table.datafusion.s3.readahead.enabled*.
+    `sleeper.default.table.datafusion.s3.readahead.enabled`.
  - Version upgraded to 53.0.0.
 
 Documentation:
