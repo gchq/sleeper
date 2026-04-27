@@ -77,7 +77,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     }
 
     protected RunAdminClient runClient() {
-        return new RunAdminClient(out, in, this, editor);
+        return new RunAdminClient(out, in, this, new MockProperiesEditorTestHarness(editor));
     }
 
     protected InstanceProperties createValidInstanceProperties() {
