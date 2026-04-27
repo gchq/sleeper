@@ -120,13 +120,17 @@ public class RunAdminClient {
         return this;
     }
 
-    public String exitGetOutput() throws Exception {
+    public String exitGetOutput() {
         in.enterNextPrompt(EXIT_OPTION);
         return runGetOutput();
     }
 
-    public String runGetOutput() throws Exception {
-        harness.startClient(trackers, queueClient);
+    public String runGetOutput() {
+        try {
+            harness.startClient(trackers, queueClient);
+        } catch (Exception e) {
+            throw new AdminClientFailedException(out.toString(), e);
+        }
         return out.toString();
     }
 
