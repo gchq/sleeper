@@ -84,6 +84,9 @@ public class PropertyDiff {
             out.printf("Before: %s%n", oldValue);
         }
         out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), result), newValue);
+        propertyOpt.filter(SleeperProperty::isRunCdkDeployWhenChanged)
+                .filter(SleeperProperty::isEditable)
+                .ifPresent(property -> out.println("Note that a change to this property requires redeployment of the instance."));
         out.println();
     }
 

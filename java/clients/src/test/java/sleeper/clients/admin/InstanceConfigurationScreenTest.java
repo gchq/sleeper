@@ -64,11 +64,11 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
@@ -331,7 +331,7 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -340,13 +340,14 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "\n"));
         }
 
@@ -355,7 +356,7 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -370,7 +371,7 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
             after.set(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH, "def");
 
             // When
@@ -380,9 +381,10 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "sleeper.default.table.parquet.columnindex.truncate.length\n" +
@@ -393,7 +395,7 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
                     "After (not valid, please change): def\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "sleeper.default.table.parquet.columnindex.truncate.length\n" +
                     "\n"));
         }
@@ -430,7 +432,7 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
             before.set(VPC_ID, "before-vpc");
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(VPC_ID, "after-vpc");
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -444,14 +446,15 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
                     "Before: before-vpc\n" +
                     "After (cannot be changed, please undo): after-vpc\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.vpc\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "\n"));
         }
 
