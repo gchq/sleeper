@@ -101,6 +101,15 @@ public class ExpectedAdminConsoleValues {
             "[3] Discard changes and return to main menu\n" +
             "\n" +
             "Input: \n";
+    public static final String PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN = "" +
+            "This change will be applied as a CDK deployment of the instance.\n" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Save changes via CDK deployment\n" +
+            "[2] Return to editor\n" +
+            "[3] Discard changes and return to main menu\n" +
+            "\n" +
+            "Input: \n";
     public static final String PROPERTY_VALIDATION_SCREEN = "" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +

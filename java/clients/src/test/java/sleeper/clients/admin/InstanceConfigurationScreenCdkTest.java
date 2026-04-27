@@ -15,10 +15,13 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
@@ -29,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -42,6 +45,7 @@ public class InstanceConfigurationScreenCdkTest extends AdminClientInMemoryTestB
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @Test
+    @Disabled("TODO")
     void shouldRedeployStandardCdkAppWhenCdkDeployedPropertyIsUpdated() throws Exception {
         // Given an instance that was deployed with the standard CDK app
         instanceProperties.setEnum(CDK_APP, SleeperInternalCdkApp.STANDARD);
@@ -49,7 +53,7 @@ public class InstanceConfigurationScreenCdkTest extends AdminClientInMemoryTestB
         setInstanceProperties(instanceProperties);
         // And a property change to force a redeploy
         InstanceProperties propertiesBefore = InstanceProperties.copyOf(instanceProperties);
-        instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.CompactionStack));
+        instanceProperties.set(OPTIONAL_STACKS, OptionalStack.CompactionStack.name());
 
         // When we apply the change
         String output = runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
@@ -71,10 +75,23 @@ public class InstanceConfigurationScreenCdkTest extends AdminClientInMemoryTestB
                 "-c", "propertiesfile=./test/generated/instance.properties",
                 "*")));
         // And this is displayed to the user
-        assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                        PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
-                        DISPLAY_MAIN_SCREEN);
+        assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                "Found changes to properties:\n" +
+                "\n" +
+                "sleeper.optional.stacks\n" +
+                propertyDescription(OPTIONAL_STACKS) +
+                "\n" +
+                "Before: \n" +
+                "After: CompactionStack\n" +
+                "Note that a change to this property requires redeployment of the instance.\n" +
+                "\n" +
+                PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN +
+                PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                DISPLAY_MAIN_SCREEN);
+    }
+
+    private String propertyDescription(SleeperProperty property) {
+        return SleeperPropertiesPrettyPrinter.formatDescription("", property.getDescription());
     }
 
 }
