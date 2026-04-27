@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.properties;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.InMemoryAdminClientProperties;
@@ -27,6 +26,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,6 +39,7 @@ import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -56,20 +57,18 @@ public class AdminClientPropertiesStoreCdkDeployTest {
     private final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     private final Map<Path, String> files = new HashMap<>();
 
-    @BeforeEach
-    void setUp() {
-        instanceProperties.setList(OPTIONAL_STACKS, List.of());
-        clientProperties.setInstanceProperties(instanceProperties);
-    }
-
     @Test
     void shouldRedeployStandardCdkAppWhenCdkDeployedPropertyIsUpdated() {
-        // Given
+        // Given an instance that was deployed with the standard CDK app
+        instanceProperties.setEnum(CDK_APP, SleeperInternalCdkApp.STANDARD);
+        instanceProperties.setList(OPTIONAL_STACKS, List.of());
+        clientProperties.setInstanceProperties(instanceProperties);
+        // And a property change to force a redeploy
         InstanceProperties propertiesBefore = InstanceProperties.copyOf(instanceProperties);
         instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.CompactionStack));
         PropertiesDiff diff = new PropertiesDiff(propertiesBefore, instanceProperties);
 
-        // When
+        // When we apply the change
         store().saveInstanceProperties(instanceProperties, diff);
 
         // Then the properties are not saved to the instance, as the CDK will apply the change
