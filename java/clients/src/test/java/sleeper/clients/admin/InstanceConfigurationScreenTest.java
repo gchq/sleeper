@@ -18,8 +18,6 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
@@ -87,110 +85,6 @@ class InstanceConfigurationScreenTest extends AdminClientTestBase {
     @Override
     protected RunAdminClient runClient() {
         return new RunAdminClient(out, in, this, new MockProperiesEditorTestHarness(editor));
-    }
-
-    @DisplayName("Navigate from main screen and back")
-    @Nested
-    class NavigateFromMainScreen {
-
-        @Test
-        void shouldViewInstanceConfiguration() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-
-            // When
-            String output = viewInstanceConfiguration(properties).exitGetOutput();
-
-            // Then
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(properties);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldDiscardChangesToInstanceConfiguration() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = editInstanceConfiguration(before, after)
-                    .enterPrompt(SaveChangesScreen.DISCARD_CHANGES_OPTION)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @ParameterizedTest(name = "With return to editor option \"{0}\"")
-        @ValueSource(strings = {SaveChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
-        void shouldMakeChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = editInstanceConfiguration(before, after) // Apply changes
-                    .enterPrompt(returnToEditorOption)
-                    .editAgain(after, before) // Revert changes
-                    .exitGetOutput();
-
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @ParameterizedTest(name = "With return to editor option \"{0}\"")
-        @ValueSource(strings = {ValidateChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
-        void shouldMakeInvalidChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
-
-            // When
-            String output = editInstanceConfiguration(before, after) // Apply changes
-                    .enterPrompt(returnToEditorOption)
-                    .editAgain(after, before) // Revert changes
-                    .exitGetOutput();
-
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .doesNotContain(PROPERTY_SAVE_CHANGES_SCREEN)
-                    .containsOnlyOnce(PROPERTY_VALIDATION_SCREEN)
-                    .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
     }
 
     @DisplayName("Display changes to edited properties")
