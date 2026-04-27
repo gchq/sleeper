@@ -228,7 +228,7 @@ public class InstanceConfigurationScreen {
 
         public static <T extends SleeperProperties<?>> SaveChangesOption<T> cdkLater(Runnable save) {
             return new SaveChangesOption<T>(save,
-                    "This will require a CDK deployment to apply your changes. This must be done separately after saving.",
+                    "Your changes require a CDK deployment to apply. This must be done separately outside this tool.",
                     "Save changes (changes requiring a CDK deployment will be saved but not applied)");
         }
 

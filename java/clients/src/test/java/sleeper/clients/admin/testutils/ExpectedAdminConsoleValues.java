@@ -111,7 +111,7 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
     public static final String PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN = "" +
-            "This will require a CDK deployment to apply your changes. This must be done separately after saving.\n" +
+            "Your changes require a CDK deployment to apply. This must be done separately outside this tool.\n" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +
             "[1] Save changes (changes requiring a CDK deployment will be saved but not applied)\n" +
