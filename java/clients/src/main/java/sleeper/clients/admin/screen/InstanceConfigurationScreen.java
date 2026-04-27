@@ -134,13 +134,13 @@ public class InstanceConfigurationScreen {
             return (properties, diff) -> {
                 boolean cdkDeploy = diff.isCdkDeployRequired(properties.getPropertiesIndex());
                 if (!cdkDeploy) {
-                    return SaveChangesOption.directSave(() -> store.saveInstanceProperties(properties, diff));
+                    return SaveChangesOption.directSave(() -> store.saveInstanceProperties(properties));
                 }
                 SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class).orElse(null);
                 if (cdkApp == null) {
-                    return SaveChangesOption.cdkLater(() -> store.saveInstanceProperties(properties, diff));
+                    return SaveChangesOption.cdkLater(() -> store.saveInstanceProperties(properties));
                 } else {
-                    return SaveChangesOption.cdkNow(() -> store.saveInstanceProperties(properties, diff));
+                    return SaveChangesOption.cdkNow(() -> store.saveInstancePropertiesViaCdk(properties, cdkApp));
                 }
             };
         }

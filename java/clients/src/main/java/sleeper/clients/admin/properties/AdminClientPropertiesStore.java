@@ -30,7 +30,6 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
@@ -44,10 +43,8 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -101,20 +98,26 @@ public class AdminClientPropertiesStore {
         return client.createTablePropertiesStore(instanceProperties).streamAllTables();
     }
 
-    public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
+    public void saveInstanceProperties(InstanceProperties properties) {
+        saveInstanceProperties(properties, () -> {
+            LOGGER.info("Saving to AWS");
+            client.saveInstanceProperties(properties);
+        });
+    }
+
+    public void saveInstancePropertiesViaCdk(InstanceProperties properties, SleeperInternalCdkApp cdkApp) {
+        saveInstanceProperties(properties, () -> {
+            uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
+            LOGGER.info("Deploying by CDK");
+            cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
+        });
+    }
+
+    private void saveInstanceProperties(InstanceProperties properties, SaveInstanceProperties saveProperties) {
         try {
             LOGGER.info("Saving to local configuration");
             client.saveLocalProperties(properties, streamTableProperties(properties));
-            List<SleeperProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
-            SleeperInternalCdkApp cdkApp = properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class).orElse(null);
-            if (!propertiesDeployedByCdk.isEmpty() && cdkApp != null) {
-                uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
-                LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
-            } else {
-                LOGGER.info("Saving to AWS");
-                client.saveInstanceProperties(properties);
-            }
+            saveProperties.save();
         } catch (IOException | RuntimeException | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
@@ -129,6 +132,10 @@ public class AdminClientPropertiesStore {
             }
             throw wrapped;
         }
+    }
+
+    private interface SaveInstanceProperties {
+        void save() throws IOException, InterruptedException;
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties) {

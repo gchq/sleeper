@@ -46,11 +46,6 @@ public class PropertiesDiff {
         this(calculateChanges(before, after));
     }
 
-    public PropertiesDiff(SleeperProperty property, String before, String after) {
-        this(Map.of(property.getPropertyName(),
-                new PropertyDiff(property.getPropertyName(), before, after)));
-    }
-
     private PropertiesDiff(Map<String, PropertyDiff> changes) {
         this.changes = changes;
     }

@@ -28,6 +28,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Field;
@@ -356,26 +357,32 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @BeforeEach
         void setup() {
             dockerImageConfiguration = DockerImageConfiguration.getDefault();
-            instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
+            instanceProperties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
         @Test
-        void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
+        void shouldUploadDockerImageWhenOneStackEnabled() throws IOException, InterruptedException {
+            // Given
+            instanceProperties.setEnum(OPTIONAL_STACKS, OptionalStack.BulkExportStack);
+
             // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "IngestStack");
+            store().saveInstancePropertiesViaCdk(instanceProperties, SleeperInternalCdkApp.STANDARD);
 
             // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "bulk-export-task-execution"));
         }
 
         @Test
-        void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
+        void shouldReuploadDockerImagesWhenNoNewStacksAreEnabled() {
+            // Given
+            instanceProperties.set(FARGATE_VERSION, "1.2.3");
+
             // When
-            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
+            store().saveInstancePropertiesViaCdk(instanceProperties, SleeperInternalCdkApp.STANDARD);
 
             // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
         }
     }
 
@@ -385,9 +392,8 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {
         InstanceProperties properties = store.loadInstanceProperties(instanceId);
-        String valueBefore = properties.get(property);
         properties.set(property, value);
-        store.saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveInstanceProperties(properties);
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {

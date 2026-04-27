@@ -24,7 +24,6 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.properties.PropertiesEditor;
 import sleeper.clients.admin.testutils.AdminClientTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
@@ -202,7 +201,7 @@ public class InstanceConfigurationScreenMockTest extends AdminClientTestBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(store).saveInstanceProperties(after);
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -216,7 +215,7 @@ public class InstanceConfigurationScreenMockTest extends AdminClientTestBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
             doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(before.get(ID),
                     new RuntimeException("Something went wrong")))
-                    .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+                    .when(store).saveInstanceProperties(after);
 
             // When
             String output = editInstanceConfiguration(before, after)
@@ -239,7 +238,7 @@ public class InstanceConfigurationScreenMockTest extends AdminClientTestBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(store).saveInstanceProperties(after);
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -377,7 +376,7 @@ public class InstanceConfigurationScreenMockTest extends AdminClientTestBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(store).saveInstanceProperties(after);
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
