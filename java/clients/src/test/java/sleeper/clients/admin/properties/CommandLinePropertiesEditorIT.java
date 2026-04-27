@@ -105,7 +105,7 @@ class CommandLinePropertiesEditorIT {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+            InstanceProperties properties = helper.updateProperties(before, after).getPropertiesAfter();
 
             // Then
             assertThat(properties).isEqualTo(after);
@@ -155,7 +155,7 @@ class CommandLinePropertiesEditorIT {
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
-            TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+            TableProperties properties = helper.updateProperties(before, after).getPropertiesAfter();
 
             // Then
             assertThat(properties).isEqualTo(after);
@@ -208,7 +208,7 @@ class CommandLinePropertiesEditorIT {
                     before, "sleeper.logging.level=INFO", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -227,7 +227,7 @@ class CommandLinePropertiesEditorIT {
                     before, "sleeper.table.statestore.commit.async.enabled=true", TablePropertyGroup.METADATA);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -246,7 +246,7 @@ class CommandLinePropertiesEditorIT {
                     before, "", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -276,7 +276,7 @@ class CommandLinePropertiesEditorIT {
                     before, "unknown.property=value-after", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -295,7 +295,7 @@ class CommandLinePropertiesEditorIT {
                     before, "sleeper.ingest.source.bucket=bucket-after", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -315,7 +315,7 @@ class CommandLinePropertiesEditorIT {
                     before, "sleeper.logging.level=TRACE", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));

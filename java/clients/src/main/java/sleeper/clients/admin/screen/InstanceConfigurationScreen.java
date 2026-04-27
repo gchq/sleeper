@@ -156,7 +156,7 @@ public class InstanceConfigurationScreen {
             if (changes.isChanged()) {
                 UpdatePropertiesValidationResult result = request.validateProperties();
                 changes.print(out, properties.getPropertiesIndex(), result);
-                chooseFromOptions(request.getUpdatedProperties(), changes, result.isValid());
+                chooseFromOptions(request.getPropertiesAfter(), changes, result.isValid());
             }
         }
 
