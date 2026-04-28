@@ -37,8 +37,8 @@ import java.util.Objects;
  * try-with-resources</a> construct:
  *
  * <pre>
- * Class<SomeFunctionClass> functions = ...;
- * try (FFIContext<SomeFunctionClass> context = getFFIContextSafely(functions)) {
+ * Class functions = ...;
+ * try (FFIContext context = getFFIContextSafely(functions)) {
  *   ...
  * }
  * </pre>
