@@ -82,4 +82,4 @@ jobs:
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
       - name: Check javadoc validity
         run: mvn javadoc:javadoc
-        working directory: ./java
+        working-directory: ./java
