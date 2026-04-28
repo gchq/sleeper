@@ -111,8 +111,8 @@ This command will build the system and run the default, quick system test suite:
 
 The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The quick test suite
 will run on one Sleeper instance, but other test suites will deploy more. A separate system test CDK stack will also
-be deployed with `SystemTestStandaloneApp`, for resources shared between tests. The system test stack will use the short
-ID as its stack name.
+be deployed with `SystemTestInfrastructureCdkApp`, for resources shared between tests. The system test stack will use
+the short ID as its stack name.
 
 You can avoid rebuilding the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`. This is useful if
 you've only changed test code and just want to re-run tests against the same instance.
@@ -168,8 +168,8 @@ an instance with the associated instance ID if one does not exist.
 ### Performance tests
 
 Performance tests use an ECS cluster to generate data, which we call the system test cluster. This is deployed in the
-system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
-non-performance tests, the system test stack is still deployed, but the system test cluster is not.
+system test CDK stack with `SystemTestInfrastructureCdkApp`. This is a CloudFormation stack with the short ID as its
+name. For non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
 When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
 additional costs, as data generation is done in AWS Fargate in tasks started for the specific test. You can also enable

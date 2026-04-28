@@ -19,7 +19,7 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
@@ -37,12 +37,12 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
+public class IngestBatcherReportScreenTest extends AdminClientInMemoryTestBase {
     private final IngestBatcherStore ingestBatcherStore = new InMemoryIngestBatcherStore();
 
     @BeforeEach
     void setUp() {
-        tableIndex.create(TEST_TABLE);
+        setTableProperties(TEST_TABLE);
     }
 
     @Test
@@ -94,7 +94,6 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
     }
 
     private RunAdminClient runClientWithStoreDisabled() {
-        setInstanceProperties(createValidInstanceProperties());
         return runClient();
     }
 

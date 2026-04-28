@@ -33,6 +33,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -158,7 +159,7 @@ public class UploadArtefacts {
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
-                        .invoke(InvokeCdk.Type.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
             }
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
