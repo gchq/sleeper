@@ -156,7 +156,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * @param  context                  AWS Lambda context
      * @return                          set of empty instances
      * @throws NullPointerException     for clusterDetails
-     * @throws IllegalArgumentException if suggestedSize < 0
+     * @throws IllegalArgumentException if suggestedSize less than 0
      */
     public static Set<String> findEmptyInstances(Iterable<EC2InstanceDetails> detailsIt, int suggestedSize,
             Context context) {
