@@ -67,7 +67,8 @@ public class StateStoreProvider {
 
     /**
      * Creates a state store provider with no limit to the number of tables that can be cached. The cache must be
-     * managed explicitly by calling methods on the provider. Note that {@link #ensureEnoughHeapSpaceAvailable()} will
+     * managed explicitly by calling methods on the provider. Note that
+     * {@link StateStoreProvider#ensureEnoughHeapSpaceAvailable(Collection)} will
      * not have a target amount of space, so will never free any space.
      *
      * @param  stateStoreFactory the factory to create state store objects
@@ -79,7 +80,8 @@ public class StateStoreProvider {
 
     /**
      * Creates a state store provider that only removes cached tables on calls to ensure enough heap space is available.
-     * This must be triggered explicitly by calling {@link #ensureEnoughHeapSpaceAvailable()}.
+     * This must be triggered explicitly by calling
+     * {@link StateStoreProvider#ensureEnoughHeapSpaceAvailable(Collection)}.
      *
      * @param  instanceProperties the instance properties to configure the minimum heap space
      * @param  stateStoreFactory  the factory to create state store objects
