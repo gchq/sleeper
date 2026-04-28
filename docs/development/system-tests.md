@@ -222,9 +222,9 @@ All figures are in rows per second, measured by start and finish time in a singl
 directs the operation. For standard ingest and compaction this is an ECS task. For bulk import this is a Spark driver.
 
 These figures can be found by looking in the S3 bucket for the nightly dev tests. The summary.txt will tell you when the
-performance tests last ran. They are part of the expensive suites and run every other night. To find which expensive
+performance tests last ran. They are part of the expensive suites and run three times a week. To find which expensive
 suite to look into for the each test's results please check [system-test-suites](system-test-suites.md). The performance
-results for each test will be at sleeper-nightlydev-tests/{DATE_OF_TEST}/{SUITE_NAME}/{TEST_NAME}.log.
+results for each test will be at {NIGHTLY_TEST_BUCKET}/{DATE_OF_TEST}/{SUITE_NAME}/{TEST_NAME}.log.
 
 | Version number | Test date  | Java compaction | DataFusion compaction | Standard ingest | EMR bulk import |
 |----------------|------------|-----------------|-----------------------|-----------------|-----------------|
