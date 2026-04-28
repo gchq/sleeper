@@ -1803,7 +1803,7 @@
                 <version>${javadoc.plugin.version}</version>
                 <configuration>
                     <failOnError>false</failOnError>
-                    <failOnWarning>false</failOnWarning>
+                    <failOnWarnings>false</failOnWarnings>
                 </configuration>
             </plugin>
         </plugins>
