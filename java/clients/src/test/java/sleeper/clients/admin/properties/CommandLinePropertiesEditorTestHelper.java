@@ -37,12 +37,12 @@ import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.singleCommand;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
-public class UpdatePropertiesWithTextEditorTestHelper {
+public class CommandLinePropertiesEditorTestHelper {
     private final Path tempDir;
     private final Path expectedPropertiesFile;
     private final Map<String, String> environmentVariables = new HashMap<>();
 
-    public UpdatePropertiesWithTextEditorTestHelper(Path tempDir) {
+    public CommandLinePropertiesEditorTestHelper(Path tempDir) {
         this.tempDir = tempDir;
         this.expectedPropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
     }
@@ -90,7 +90,7 @@ public class UpdatePropertiesWithTextEditorTestHelper {
 
     @FunctionalInterface
     public interface OpenFile<T extends SleeperProperties<?>> {
-        UpdatePropertiesRequest<T> open(UpdatePropertiesWithTextEditor updater) throws IOException, InterruptedException;
+        UpdatePropertiesRequest<T> open(CommandLinePropertiesEditor updater) throws IOException, InterruptedException;
     }
 
     public <T extends SleeperProperties<?>> Properties openFileGetPropertiesWritten(OpenFile<T> openFile) throws Exception {
@@ -111,14 +111,14 @@ public class UpdatePropertiesWithTextEditorTestHelper {
         environmentVariables.put(name, value);
     }
 
-    private UpdatePropertiesWithTextEditor updaterSavingProperties(SleeperProperties<?> after) {
+    private CommandLinePropertiesEditor updaterSavingProperties(SleeperProperties<?> after) {
         return updaterWithCommandHandler(command -> {
             after.save(expectedPropertiesFile);
             return 0;
         });
     }
 
-    private UpdatePropertiesWithTextEditor updaterWithCommandHandler(CommandRunner runCommand) {
-        return new UpdatePropertiesWithTextEditor(tempDir, runCommand, environmentVariables::get);
+    private CommandLinePropertiesEditor updaterWithCommandHandler(CommandRunner runCommand) {
+        return new CommandLinePropertiesEditor(tempDir, runCommand, environmentVariables::get);
     }
 }
