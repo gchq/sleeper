@@ -46,7 +46,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  * - If the partition consists of a single point (i.e. the minimum equals the maximum).
  * - If the median equals the minimum then the partition cannot be split.
  * This is because it would have to be split into [min, median) and [median, max), but if the min equals the median then
- * the left one can't have any data in it as a key x in it would have to have min <= x < median = min which is a
+ * the left one can't have any data in it as a key x in it would have to have min {@literal<}= x {@literal<} median =
+ * min which is
+ * a
  * contradiction.
  */
 public class SplitPartition {
