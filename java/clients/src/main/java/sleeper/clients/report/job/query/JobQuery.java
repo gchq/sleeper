@@ -57,7 +57,7 @@ public interface JobQuery {
 
     /**
      * Creates a query for jobs based on parameters. To allow the PROMPT query type,
-     * use {@link #fromParametersOrPrompt()}.
+     * use {@link #fromParametersOrPrompt(TableStatus, Type, String, Clock, ConsoleInput)}.
      *
      * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
