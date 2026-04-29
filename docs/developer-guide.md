@@ -154,6 +154,16 @@ current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
+### Coding conventions
+
+See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
+Sleeper.
+
+### Testing
+
+See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
+testing tools used in the project.
+
 ### IDE setup
 
 Configuration is available for various development environments.
@@ -214,16 +224,6 @@ You can run both plugins together:
 cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
-
-### Testing
-
-See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
-testing tools used in the project.
-
-### Coding conventions
-
-See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
-Sleeper.
 
 ## Standalone deployment
 
