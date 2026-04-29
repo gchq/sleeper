@@ -23,6 +23,7 @@ import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.SleeperTableInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -176,6 +177,7 @@ class LoadLocalPropertiesTablesIT {
                 .forEach(table -> {
                     // Consume the stream to trigger reading the properties file
                 }))
+                .isInstanceOf(SleeperTableInvalidException.class)
                 .hasMessageContainingAll("Property sleeper.table.schema was not set in file", "The property should be set in a separate schema.json file");
     }
 

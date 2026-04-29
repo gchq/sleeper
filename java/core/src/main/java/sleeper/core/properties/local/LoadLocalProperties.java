@@ -18,7 +18,7 @@ package sleeper.core.properties.local;
 import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperTableInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -151,17 +151,14 @@ public class LoadLocalProperties {
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
         return streamTablePropertiesWithLocation(instanceProperties, directory).map(tableWithLocation -> {
-            TableProperties table = tableWithLocation.properties;
             try {
+                TableProperties table = tableWithLocation.properties;
                 table.validate();
-            } catch (SleeperPropertiesInvalidException propertiesException) {
-                if (propertiesException.getMessage().equals("Property sleeper.table.schema was invalid. It was unset.")) {
-                    throw new IllegalArgumentException("Property sleeper.table.schema was not set in file " + tableWithLocation.path
-                            + ". The property should be set in a separate schema.json file");
-                }
-                throw propertiesException;
+                return table;
+            } catch (RuntimeException rte) {
+                throw new SleeperTableInvalidException("Property sleeper.table.schema was not set in file " + tableWithLocation.path
+                        + ". The property should be set in a separate schema.json file", rte.getCause());
             }
-            return table;
         });
     }
 
