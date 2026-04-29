@@ -33,10 +33,11 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 The scripts for deployment create an instance of Sleeper either from your own configuration files, or from templates.
 
 The two scripts available to use are found in scripts/deploy and have the following usecases:
-| File            | Purpose                        | Usecase |
-|-----------------|--------------------------------|---------|
-deployNew.sh      | Deploys a new instance         | Use when deploying a new instance
-deployExisting.sh | Redeploys an existing instance | Use when you wish to re-run the CDK against an existing deployment, in case you're concerned there's drift, or when you wish to upgrade an existing instance to a newer version.
+
+| File              | Purpose                                 | Use case |
+|-------------------|-----------------------------------------|----------|
+| deployNew.sh      | Deploys a new instance                  | Use when deploying a new instance
+| deployExisting.sh | Upgrades/redeploys an existing instance | Use to upgrade an instance to a newer version, or when you wish to re-run the CDK against an existing deployment
 
 They also upload the necessary deployment artefacts to AWS. These artefacts must be available for deployment, either by
 building Sleeper locally or installing pre-published artefacts. See the [developer guide](developer-guide.md#building)
@@ -76,10 +77,10 @@ cp example/basic/* scripts/my-instance/
 ./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
-#### Redeploy existing instance
+#### Upgrade/redeploy existing instance
 
 The `deployExisting.sh` script can be used to re-run the CDK against an existing instance of Sleeper.
-This can be used to upgrade an instance of Sleeper to a newer version.
+This can be used to upgrade a previously deployed instance to the version of Sleeper you're using.
 This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
