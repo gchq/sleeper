@@ -24,7 +24,7 @@ import jnr.ffi.util.EnumMapper;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
-public enum FFIElementType implements EnumMapper.IntegerEnum {
+public enum FFIRowKeyValueType implements EnumMapper.IntegerEnum {
     Int32(1),
     Int64(2),
     String(3),
@@ -33,7 +33,7 @@ public enum FFIElementType implements EnumMapper.IntegerEnum {
 
     private final int value;
 
-    FFIElementType(int value) {
+    FFIRowKeyValueType(int value) {
         this.value = value;
     }
 

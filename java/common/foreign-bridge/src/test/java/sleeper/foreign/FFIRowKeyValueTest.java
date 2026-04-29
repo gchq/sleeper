@@ -20,71 +20,71 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class FFIElementTest {
+public class FFIRowKeyValueTest {
     private jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
 
     @Test
     void shouldSetInteger() {
         // Given
-        FFIElement element = new FFIElement(runtime);
+        FFIRowKeyValue element = new FFIRowKeyValue(runtime);
 
         // When
         element.set(345);
 
         // Then
-        assertThat(element.contained.get()).isEqualTo(FFIElementType.Int32);
+        assertThat(element.contained.get()).isEqualTo(FFIRowKeyValueType.Int32);
         assertThat(element.get()).isEqualTo(345);
     }
 
     @Test
     void shouldSetLong() {
         // Given
-        FFIElement element = new FFIElement(runtime);
+        FFIRowKeyValue element = new FFIRowKeyValue(runtime);
 
         // When
         element.set(12345L);
 
         // Then
-        assertThat(element.contained.get()).isEqualTo(FFIElementType.Int64);
+        assertThat(element.contained.get()).isEqualTo(FFIRowKeyValueType.Int64);
         assertThat(element.get()).isEqualTo(12345L);
     }
 
     @Test
     void shouldSetString() {
         // Given
-        FFIElement element = new FFIElement(runtime);
+        FFIRowKeyValue element = new FFIRowKeyValue(runtime);
 
         // When
         element.set("test\0foo");
 
         // Then
-        assertThat(element.contained.get()).isEqualTo(FFIElementType.String);
+        assertThat(element.contained.get()).isEqualTo(FFIRowKeyValueType.String);
         assertThat(element.get()).isEqualTo("test\0foo");
     }
 
     @Test
     void shouldSetBytes() {
         // Given
-        FFIElement element = new FFIElement(runtime);
+        FFIRowKeyValue element = new FFIRowKeyValue(runtime);
 
         // When
         element.set(new byte[]{4, 5, 6, 7});
 
         // Then
-        assertThat(element.contained.get()).isEqualTo(FFIElementType.ByteArray);
+        assertThat(element.contained.get()).isEqualTo(FFIRowKeyValueType.ByteArray);
         assertThat(element.get()).isEqualTo(new byte[]{4, 5, 6, 7});
     }
 
     @Test
     void shouldSetEmpty() {
         // Given
-        FFIElement element = new FFIElement(runtime);
+        FFIRowKeyValue element = new FFIRowKeyValue(runtime);
 
         // When
         element.set(null);
 
         // Then
-        assertThat(element.contained.get()).isEqualTo(FFIElementType.Empty);
+        assertThat(element.contained.get()).isEqualTo(FFIRowKeyValueType.Empty);
         assertNull(element.get());
     }
 }

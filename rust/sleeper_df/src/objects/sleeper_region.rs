@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::objects::FFIElement;
+use crate::objects::FFIRowKeyValue;
 use color_eyre::eyre::bail;
 use sleeper_core::{ColRange, PartitionBound, SleeperRegion};
 use std::{borrow::Borrow, collections::HashMap, slice};
@@ -32,9 +32,9 @@ pub struct FFISleeperRegion {
     // Length of all other arrays in struct.
     pub number_of_dimensions: usize,
     // The mins array may NOT contain null pointers
-    pub mins: *const FFIElement,
+    pub mins: *const FFIRowKeyValue,
     // The maxs array may contain null pointers!!
-    pub maxs: *const FFIElement,
+    pub maxs: *const FFIRowKeyValue,
     pub mins_inclusive: *const bool,
     pub maxs_inclusive: *const bool,
     pub dimension_indexes: *const usize,

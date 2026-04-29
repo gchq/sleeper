@@ -22,7 +22,7 @@ import jnr.ffi.Union;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Java mapping of union type for containing a Sleeper row key.
+ * Java mapping of C union type for containing a Sleeper row key value.
  * Unions in C use overlapping storage for their members. Only
  * one member may be "active" at a time.
  *
@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
  * the fields must match exactly.
  */
 @SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
-public class FFIElementData extends Union {
+public class FFIRowKeyValueData extends Union {
     public final Struct.Signed32 int32 = new Struct.Signed32();
     public final Struct.Signed64 int64 = new Struct.Signed64();
     public final Struct.StructRef<FFIBytes> string = new Struct.StructRef<>(FFIBytes.class);
@@ -39,7 +39,7 @@ public class FFIElementData extends Union {
     /** Prevent GC. */
     private FFIBytes javaHolder;
 
-    public FFIElementData(jnr.ffi.Runtime runtime) {
+    public FFIRowKeyValueData(jnr.ffi.Runtime runtime) {
         super(runtime);
     }
 

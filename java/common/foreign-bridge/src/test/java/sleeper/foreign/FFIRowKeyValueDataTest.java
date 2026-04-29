@@ -19,13 +19,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FFIElementDataTest {
+public class FFIRowKeyValueDataTest {
     private jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
 
     @Test
     void shouldSetInt() {
         // Given
-        FFIElementData data = new FFIElementData(runtime);
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
 
         // When
         data.set(345678);
@@ -37,7 +37,7 @@ public class FFIElementDataTest {
     @Test
     void shouldSetLong() {
         // Given
-        FFIElementData data = new FFIElementData(runtime);
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
 
         // When
         data.set(987654L);
@@ -49,7 +49,7 @@ public class FFIElementDataTest {
     @Test
     void shouldSetString() {
         // Given
-        FFIElementData data = new FFIElementData(runtime);
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
 
         // When
         data.set("hello test test\0test");
@@ -61,7 +61,7 @@ public class FFIElementDataTest {
     @Test
     void shouldSetBytes() {
         // Given
-        FFIElementData data = new FFIElementData(runtime);
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
 
         // When
         data.set(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});

@@ -19,22 +19,24 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 /**
- * A Sleeper row key.
+ * A value for a Sleeper row key. Row keys columns may be several different types, e.g. int, long, etc. This class is a
+ * strongly typed FFI compatible representation. It consists of the row key data in a C union type and an enum member
+ * specifying the type.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
 @SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
-public class FFIElement extends Struct {
-    public final Struct.Enum<FFIElementType> contained = new Struct.Enum<>(FFIElementType.class);
-    public final FFIElementData item = inner(FFIElementData.class);
+public class FFIRowKeyValue extends Struct {
+    public final Struct.Enum<FFIRowKeyValueType> contained = new Struct.Enum<>(FFIRowKeyValueType.class);
+    public final FFIRowKeyValueData item = inner(FFIRowKeyValueData.class);
 
-    public FFIElement(jnr.ffi.Runtime runtime) {
+    public FFIRowKeyValue(jnr.ffi.Runtime runtime) {
         super(runtime);
     }
 
-    public FFIElement(jnr.ffi.Runtime runtime, Object o) {
+    public FFIRowKeyValue(jnr.ffi.Runtime runtime, Object o) {
         this(runtime);
         set(o);
     }
@@ -47,23 +49,23 @@ public class FFIElement extends Struct {
      */
     public void set(Object o) {
         if (o == null) {
-            contained.set(FFIElementType.Empty);
+            contained.set(FFIRowKeyValueType.Empty);
         } else {
             if (o instanceof Integer) {
                 int v = (Integer) o;
-                contained.set(FFIElementType.Int32);
+                contained.set(FFIRowKeyValueType.Int32);
                 item.set(v);
             } else if (o instanceof Long) {
                 long v = (Long) o;
-                contained.set(FFIElementType.Int64);
+                contained.set(FFIRowKeyValueType.Int64);
                 item.set(v);
             } else if (o instanceof java.lang.String) {
                 java.lang.String v = (java.lang.String) o;
-                contained.set(FFIElementType.String);
+                contained.set(FFIRowKeyValueType.String);
                 item.set(v);
             } else if (o instanceof byte[]) {
                 byte[] v = (byte[]) o;
-                contained.set(FFIElementType.ByteArray);
+                contained.set(FFIRowKeyValueType.ByteArray);
                 item.set(v);
             } else {
                 throw new IllegalArgumentException("can't accept " + o.getClass());

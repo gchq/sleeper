@@ -47,13 +47,13 @@ public class FFISleeperRegion extends Struct {
      */
     final Struct.size_t number_of_dimensions = new Struct.size_t();
     /** Region partition region minimums. May not contain "Empty" elements. */
-    final Struct.StructRef<FFIElement> mins = new Struct.StructRef<>(FFIElement.class);
+    final Struct.StructRef<FFIRowKeyValue> mins = new Struct.StructRef<>(FFIRowKeyValue.class);
     /** Prevent GC. */
-    private FFIElement[] java_mins;
+    private FFIRowKeyValue[] java_mins;
     /** Region partition region maximums. May contain "Empty" elements. */
-    final Struct.StructRef<FFIElement> maxs = new Struct.StructRef<>(FFIElement.class);
+    final Struct.StructRef<FFIRowKeyValue> maxs = new Struct.StructRef<>(FFIRowKeyValue.class);
     /** Prevent GC. */
-    private FFIElement[] java_maxs;
+    private FFIRowKeyValue[] java_maxs;
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     final Struct.Pointer mins_inclusive = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
@@ -113,16 +113,16 @@ public class FFISleeperRegion extends Struct {
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
         partitionRegion.number_of_dimensions.set(allLength);
         // Convert minimums to FFIElement objects
-        FFIElement[] minArray = mins.stream()
-                .map(o -> new FFIElement(runtime, o))
-                .toArray(FFIElement[]::new);
+        FFIRowKeyValue[] minArray = mins.stream()
+                .map(o -> new FFIRowKeyValue(runtime, o))
+                .toArray(FFIRowKeyValue[]::new);
         partitionRegion.mins.set(minArray);
         partitionRegion.java_mins = minArray;
 
         // Convert maximums to FFIElement objects
-        FFIElement[] maxArray = maxs.stream()
-                .map(o -> new FFIElement(runtime, o))
-                .toArray(FFIElement[]::new);
+        FFIRowKeyValue[] maxArray = maxs.stream()
+                .map(o -> new FFIRowKeyValue(runtime, o))
+                .toArray(FFIRowKeyValue[]::new);
         partitionRegion.maxs.set(maxArray);
         partitionRegion.java_maxs = maxArray;
 

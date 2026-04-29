@@ -40,11 +40,11 @@ pub struct FFIFileResult {
 /// Data type for row key fields in Sleeper schema.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementType.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValueType.java.
 /// The order and types of the fields must match exactly.
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
-pub enum FFIElementType {
+pub enum FFIRowKeyValueType {
     Int32 = 1,
     Int64 = 2,
     String = 3,
@@ -52,34 +52,34 @@ pub enum FFIElementType {
     Empty = 5,
 }
 
-impl FFIElementType {
+impl FFIRowKeyValueType {
     pub fn display_type(&self) -> &str {
         match self {
-            FFIElementType::Int32 => "i32",
-            FFIElementType::Int64 => "i64",
-            FFIElementType::String => "*const c_char",
-            FFIElementType::ByteArray => "*const c_uchar",
-            FFIElementType::Empty => "<<<empty>>>",
+            FFIRowKeyValueType::Int32 => "i32",
+            FFIRowKeyValueType::Int64 => "i64",
+            FFIRowKeyValueType::String => "*const c_char",
+            FFIRowKeyValueType::ByteArray => "*const c_uchar",
+            FFIRowKeyValueType::Empty => "<<<empty>>>",
         }
     }
 }
 
-impl TryFrom<&usize> for FFIElementType {
+impl TryFrom<&usize> for FFIRowKeyValueType {
     type Error = color_eyre::Report;
 
     fn try_from(ordinal: &usize) -> Result<Self, Self::Error> {
         match ordinal {
-            1 => Ok(FFIElementType::Int32),
-            2 => Ok(FFIElementType::Int64),
-            3 => Ok(FFIElementType::String),
-            4 => Ok(FFIElementType::ByteArray),
-            5 => Ok(FFIElementType::Empty),
+            1 => Ok(FFIRowKeyValueType::Int32),
+            2 => Ok(FFIRowKeyValueType::Int64),
+            3 => Ok(FFIRowKeyValueType::String),
+            4 => Ok(FFIRowKeyValueType::ByteArray),
+            5 => Ok(FFIRowKeyValueType::Empty),
             _ => Err(eyre!("Invalid FFIElementType ordinal value")),
         }
     }
 }
 
-impl Display for FFIElementType {
+impl Display for FFIRowKeyValueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "FFIElementType {}", self.display_type())
     }
@@ -89,10 +89,10 @@ impl Display for FFIElementType {
 /// This is a union type, storage for all members overlaps!
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElementData.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValueData.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
-pub union FFIElementData {
+pub union FFIRowKeyValueData {
     int32: i32,
     int64: i64,
     string: *const FFIBytes,
@@ -102,33 +102,33 @@ pub union FFIElementData {
 /// Describes a single Sleeper row key item. This uses an explicit tagged union that determines that active union member.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIElement.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValue.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFIElement {
+pub struct FFIRowKeyValue {
     /// Specifies the active type inside the element data
-    contained: FFIElementType,
+    contained: FFIRowKeyValueType,
     /// Element data unspecified if contained type is [`FFIElementType::Empty`]
-    item: FFIElementData,
+    item: FFIRowKeyValueData,
 }
 
-impl TryFrom<&FFIElement> for PartitionBound<'_> {
+impl TryFrom<&FFIRowKeyValue> for PartitionBound<'_> {
     type Error = Report;
 
-    fn try_from(value: &FFIElement) -> Result<Self, Self::Error> {
+    fn try_from(value: &FFIRowKeyValue) -> Result<Self, Self::Error> {
         Ok(match value.contained {
-            FFIElementType::Int32 => PartitionBound::Int32(unsafe { value.item.int32 }),
-            FFIElementType::Int64 => PartitionBound::Int64(unsafe { value.item.int64 }),
-            FFIElementType::String => PartitionBound::String(
+            FFIRowKeyValueType::Int32 => PartitionBound::Int32(unsafe { value.item.int32 }),
+            FFIRowKeyValueType::Int64 => PartitionBound::Int64(unsafe { value.item.int64 }),
+            FFIRowKeyValueType::String => PartitionBound::String(
                 unsafe { value.item.string.as_ref() }
                     .ok_or(eyre!("FFIElement string pointer is NULL"))?
                     .try_into()?,
             ),
-            FFIElementType::ByteArray => PartitionBound::ByteArray(Into::<&[u8]>::into(
+            FFIRowKeyValueType::ByteArray => PartitionBound::ByteArray(Into::<&[u8]>::into(
                 unsafe { value.item.bytes.as_ref() }
                     .ok_or(eyre!("FFIElement byte array pointer is NULL"))?,
             )),
-            FFIElementType::Empty => PartitionBound::Unbounded,
+            FFIRowKeyValueType::Empty => PartitionBound::Unbounded,
         })
     }
 }
