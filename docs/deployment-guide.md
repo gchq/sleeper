@@ -80,7 +80,7 @@ cp example/basic/* scripts/my-instance/
 #### Upgrade/redeploy existing instance
 
 The `deployExisting.sh` script can be used to re-run the CDK against an existing instance of Sleeper.
-This can be used to upgrade an instance of Sleeper to a newer version.
+This can be used to upgrade a previously deployed instance to the version of Sleeper you're using.
 This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash

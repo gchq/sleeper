@@ -102,7 +102,7 @@ set the deployment ID in the CDK context variable `artefactsId`, or the instance
 
 You can use the same CDK apps used by the automated scripts, or your own CDK configuration. We'll give examples with the
 CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance, or upgrade a previously
-deployed instance:
+deployed instance to the version of Sleeper you're using:
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
