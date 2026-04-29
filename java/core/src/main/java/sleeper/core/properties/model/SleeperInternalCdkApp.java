@@ -21,6 +21,7 @@ import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -54,6 +55,20 @@ public enum SleeperInternalCdkApp {
             return false;
         }
         return app.isDeploysSleeperInstance();
+    }
+
+    /**
+     * Reads a string value that we expect to identify a CDK app used to deploy a Sleeper instance.
+     *
+     * @param  propertyValue the value
+     * @return               the CDK app, if one matches
+     */
+    public static Optional<SleeperInternalCdkApp> readCdkAppDeployingSleeperInstance(String propertyValue) {
+        SleeperInternalCdkApp app = EnumUtils.getEnumIgnoreCase(SleeperInternalCdkApp.class, propertyValue);
+        if (app == null) {
+            return Optional.empty();
+        }
+        return Optional.of(app).filter(SleeperInternalCdkApp::isDeploysSleeperInstance);
     }
 
     /**
