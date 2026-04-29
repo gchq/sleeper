@@ -18,6 +18,7 @@ package sleeper.clients.admin.properties;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.Collections;
 import java.util.Set;
@@ -28,13 +29,13 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
-    private final T beforeProperties;
-    private final T updatedProperties;
+    private final T propertiesBefore;
+    private final T propertiesAfter;
 
-    private UpdatePropertiesRequest(PropertiesDiff diff, T beforeProperties, T updatedProperties) {
+    private UpdatePropertiesRequest(PropertiesDiff diff, T propertiesBefore, T propertiesAfter) {
         this.diff = diff;
-        this.beforeProperties = beforeProperties;
-        this.updatedProperties = updatedProperties;
+        this.propertiesBefore = propertiesBefore;
+        this.propertiesAfter = propertiesAfter;
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> fromBeforeAndAfter(T beforeProperties,
@@ -46,13 +47,17 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return diff;
     }
 
-    public T getUpdatedProperties() {
-        return updatedProperties;
+    public T getPropertiesBefore() {
+        return propertiesBefore;
+    }
+
+    public T getPropertiesAfter() {
+        return propertiesAfter;
     }
 
     public UpdatePropertiesValidationResult validateProperties() {
         try {
-            updatedProperties.validate();
+            propertiesAfter.validate();
             return new UpdatePropertiesValidationResult(Set.of(), getNonUpdateableProperties());
         } catch (SleeperPropertiesInvalidException e) {
             return new UpdatePropertiesValidationResult(e.getInvalidValues().keySet(), getNonUpdateableProperties());
@@ -62,8 +67,9 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private Set<SleeperProperty> getNonUpdateableProperties() {
         Set<SleeperProperty> invalidBeforeProperties = getInvalidBeforeProperties();
-        return diff.getChanges().stream()
-                .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
+        SleeperPropertyIndex<?> propertyIndex = propertiesAfter.getPropertiesIndex();
+        return diff.streamChanges()
+                .flatMap(d -> propertyIndex.getByName(d.getPropertyName()).stream())
                 .filter(not(SleeperProperty::isEditable))
                 .filter(not(invalidBeforeProperties::contains)) // If an uneditable property was invalid before, allow editing
                 .collect(toUnmodifiableSet());
@@ -71,7 +77,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private Set<SleeperProperty> getInvalidBeforeProperties() {
         try {
-            beforeProperties.validate();
+            propertiesBefore.validate();
             return Collections.emptySet();
         } catch (SleeperPropertiesInvalidException e) {
             return e.getInvalidValues().keySet();
