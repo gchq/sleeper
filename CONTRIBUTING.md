@@ -14,10 +14,10 @@ Comment on an issue to let us know you're interested.
 To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/developer-guide.md) for
 help setting up a development environment.
 
+Also see our [coding conventions](development/conventions.md) and [test strategy](development/test-strategy.md).
+
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
-for your change if there isn't one already. Also for working within sleeper we adhere to several coding conventions
-that are found in the [coding conventions document](development/conventions.md), as well as this details on how and
-when to write tests, as well as the tools can be found as part of the [test strategy](development/test-strategy.md).
+for your change if there isn't one already.
 
 Please fill in the pull request template as accurately as possible, and try to match the pull request naming style
 described in the template.
