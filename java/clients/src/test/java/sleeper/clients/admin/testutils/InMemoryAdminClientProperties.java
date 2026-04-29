@@ -27,6 +27,7 @@ import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -41,6 +42,8 @@ public class InMemoryAdminClientProperties implements AdminClientPropertiesStore
     private final Map<String, InMemoryTransactionLogsPerTable> instanceIdToTransactionLogs = new HashMap<>();
     private final Map<String, StateStore> tableIdToStateStore = new HashMap<>();
     private final boolean defensiveCopy;
+    private InstanceProperties localInstanceProperties;
+    private List<TableProperties> localTableProperties = List.of();
 
     private InMemoryAdminClientProperties(boolean defensiveCopy) {
         this.defensiveCopy = defensiveCopy;
@@ -61,6 +64,14 @@ public class InMemoryAdminClientProperties implements AdminClientPropertiesStore
 
     public void setStateStore(TableProperties tableProperties, StateStore stateStore) {
         tableIdToStateStore.put(tableProperties.get(TABLE_ID), stateStore);
+    }
+
+    public InstanceProperties getLocalInstanceProperties() {
+        return localInstanceProperties;
+    }
+
+    public List<TableProperties> getLocalTableProperties() {
+        return localTableProperties;
     }
 
     private void initInstance(InstanceProperties instanceProperties) {
@@ -86,6 +97,8 @@ public class InMemoryAdminClientProperties implements AdminClientPropertiesStore
 
     @Override
     public void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException {
+        localInstanceProperties = copyIfSet(instanceProperties);
+        localTableProperties = tablePropertiesStream.map(this::copyIfSet).toList();
     }
 
     @Override
@@ -108,6 +121,14 @@ public class InMemoryAdminClientProperties implements AdminClientPropertiesStore
     private InstanceProperties copyIfSet(InstanceProperties properties) {
         if (defensiveCopy) {
             return InstanceProperties.copyOf(properties);
+        } else {
+            return properties;
+        }
+    }
+
+    private TableProperties copyIfSet(TableProperties properties) {
+        if (defensiveCopy) {
+            return TableProperties.copyOf(properties);
         } else {
             return properties;
         }

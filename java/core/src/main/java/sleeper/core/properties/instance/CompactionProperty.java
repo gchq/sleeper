@@ -164,12 +164,14 @@ public interface CompactionProperty {
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the lambda used to create compaction jobs.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the lambda used to create compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.dispatch.memory.mb")
             .description("The amount of memory in MB for the lambda that sends batches of compaction jobs.")
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
@@ -185,12 +187,14 @@ public interface CompactionProperty {
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the lambda that sends batches of compaction jobs.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.dispatch.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum concurrency allowed for the lambda that sends batches of compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.commit.batcher.memory.mb")
             .description("The amount of memory in MB for the lambda that batches up compaction commits.")
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
@@ -207,13 +211,15 @@ public interface CompactionProperty {
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .defaultValue("2")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.max")
             .defaultValue("2")
             .description("The maximum concurrency allowed for the lambda that batches up compaction commits.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -230,21 +236,24 @@ public interface CompactionProperty {
                     "This property is used to configure the maxReceiveCount of the compaction job definition queue.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_DISPATCH_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.dispatch.max.retries")
             .description("The maximum number of times that a batch of compaction jobs can be taken off the pending queue " +
                     "before it is moved to the dead letter queue.\n" +
                     "This property is used to configure the maxReceiveCount of the pending compaction job batch queue.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.commit.max.retries")
             .description("The maximum number of times that a compaction job can be taken off the batch committer queue " +
                     "before it is moved to the dead letter queue.\n" +
                     "This property is used to configure the maxReceiveCount of the compaction job committer queue.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
                     "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html\n" +
@@ -301,6 +310,7 @@ public interface CompactionProperty {
             .defaultValue("FARGATE")
             .validationPredicate(CompactionECSLaunchType::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
             .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions). " +
@@ -308,24 +318,28 @@ public interface CompactionProperty {
             .defaultValue("t4g.xlarge")
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
             .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("0")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
             .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("75")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = Index.propertyBuilder("sleeper.compaction.ec2.root.size")
             .description("The size in GiB of the root EBS volume attached to the EC2 instances (when using EC2-based compactions).")
             .defaultValue("50")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty COMPACTION_TRACKER_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
