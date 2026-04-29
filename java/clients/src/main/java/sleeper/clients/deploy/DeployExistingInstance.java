@@ -36,6 +36,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 
 public class DeployExistingInstance {
 
@@ -114,10 +116,18 @@ public class DeployExistingInstance {
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
-                .inferInstanceType()
+                .cdkApp(getCdkApp())
                 .build());
 
         LOGGER.info("Finished deployment of existing instance");
+    }
+
+    private SleeperInternalCdkApp getCdkApp() {
+        return properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
+                .orElseThrow(() -> new IllegalArgumentException("" +
+                        "Cannot find the CDK app used to deploy this instance. " +
+                        "This script can only be used if you deployed with a CDK app that is included in the main Sleeper GitHub. " +
+                        "If you did, the instance property `sleeper.cdk.app` should be set to `standard` or `demonstration` as appropriate."));
     }
 
     public static final class Builder {
