@@ -67,7 +67,7 @@ An instance will fail to deploy if it would replace log groups from a deleted in
 Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
 Currently the demonstration deployment is not included in a normal build of the system. If you've installed a pre-built
-version, see the [developer guide](developer-guide.md) for how to set up to build the system.
+version of Sleeper, see the [developer guide](developer-guide.md) for how to set up to build the system.
 
 From a command line in your EC2 instance with the dependencies to build the system available, you can run the script
 like this:
