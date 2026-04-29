@@ -107,6 +107,33 @@ example schema where there are several value fields:
 
 The field with name `value3` is a list with integer elements. The field with name `value4` is a map with integer keys and string values.
 
+Value fields can optionally be declared as nullable, meaning a row may have no value for that field. This is done by adding `"nullable": true` to the field definition:
+
+```JSON
+    {
+      "rowKeyFields": [
+        {
+          "name": "key",
+          "type": "StringType"
+        }
+      ],
+      "sortKeyFields": [],
+      "valueFields": [
+        {
+          "name": "required_value",
+          "type": "StringType"
+        },
+        {
+          "name": "optional_value",
+          "type": "StringType",
+          "nullable": true
+        }
+      ]
+    }
+```
+
+When a nullable field is absent from a row, querying that field will return null. Row key and sort key fields cannot be nullable.
+
 There may be multiple row key fields. In the following example two string fields are used as row keys:
 
 ```JSON

@@ -53,11 +53,15 @@ public class SchemaSerDe {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
+                .registerTypeAdapter(Field.class, new FieldJsonSerializer())
+                .registerTypeAdapter(Field.class, new FieldJsonDeserializer())
                 .create();
         this.gsonPrettyPrinting = new GsonBuilder()
                 .setPrettyPrinting()
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
+                .registerTypeAdapter(Field.class, new FieldJsonSerializer())
+                .registerTypeAdapter(Field.class, new FieldJsonDeserializer())
                 .create();
     }
 
@@ -185,6 +189,38 @@ public class SchemaSerDe {
                 }
             }
             throw new IllegalArgumentException("Unknown type " + jsonElement);
+        }
+    }
+
+    /**
+     * A GSON plugin to serialise a field. Omits the "nullable" property when false.
+     */
+    public static class FieldJsonSerializer implements JsonSerializer<Field> {
+
+        @Override
+        public JsonElement serialize(Field field, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject object = new JsonObject();
+            object.addProperty("name", field.getName());
+            object.add("type", context.serialize(field.getType(), Type.class));
+            if (field.isNullable()) {
+                object.addProperty("nullable", true);
+            }
+            return object;
+        }
+    }
+
+    /**
+     * A GSON plugin to deserialise a field. Treats a missing "nullable" property as false.
+     */
+    public static class FieldJsonDeserializer implements JsonDeserializer<Field> {
+
+        @Override
+        public Field deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
+            JsonObject object = jsonElement.getAsJsonObject();
+            String name = object.get("name").getAsString();
+            Type type = context.deserialize(object.get("type"), Type.class);
+            boolean nullable = object.has("nullable") && object.get("nullable").getAsBoolean();
+            return new Field(name, type, nullable);
         }
     }
 

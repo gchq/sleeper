@@ -299,6 +299,99 @@ class ParquetRowReaderIT {
     }
 
     @Test
+    void shouldWriteAndReadNullableStringValueField() throws IOException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new StringType(), true))
+                .build();
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
+
+        Row row1 = new Row(Map.of("column1", "A", "column2", "B"));
+        Row row2 = new Row(Map.of("column1", "C"));
+        writer.write(row1);
+        writer.write(row2);
+        writer.close();
+
+        // When
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).build();
+        Row readRow1 = new Row(reader.read());
+        Row readRow2 = new Row(reader.read());
+
+        // Then
+        assertThat(readRow1.get("column1")).isEqualTo("A");
+        assertThat(readRow1.get("column2")).isEqualTo("B");
+        assertThat(readRow1.getKeys()).hasSize(2);
+        assertThat(readRow2.get("column1")).isEqualTo("C");
+        assertThat(readRow2.get("column2")).isNull();
+        assertThat(readRow2.getKeys()).hasSize(1);
+    }
+
+    @Test
+    void shouldWriteAndReadNullableMapValueField() throws IOException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new MapType(new StringType(), new LongType()), true))
+                .build();
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
+
+        Map<String, Long> map = new HashMap<>();
+        map.put("key1", 10L);
+        Row row1 = new Row(Map.of("column1", "A", "column2", map));
+        Row row2 = new Row(Map.of("column1", "C"));
+        writer.write(row1);
+        writer.write(row2);
+        writer.close();
+
+        // When
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).build();
+        Row readRow1 = new Row(reader.read());
+        Row readRow2 = new Row(reader.read());
+
+        // Then
+        assertThat(readRow1.get("column1")).isEqualTo("A");
+        assertThat(readRow1.get("column2")).isEqualTo(map);
+        assertThat(readRow1.getKeys()).hasSize(2);
+        assertThat(readRow2.get("column1")).isEqualTo("C");
+        assertThat(readRow2.get("column2")).isNull();
+        assertThat(readRow2.getKeys()).hasSize(1);
+    }
+
+    @Test
+    void shouldWriteAndReadNullableListValueField() throws IOException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new ListType(new StringType()), true))
+                .build();
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
+
+        List<String> list = List.of("elem1", "elem2");
+        Row row1 = new Row(Map.of("column1", "A", "column2", list));
+        Row row2 = new Row(Map.of("column1", "C"));
+        writer.write(row1);
+        writer.write(row2);
+        writer.close();
+
+        // When
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).build();
+        Row readRow1 = new Row(reader.read());
+        Row readRow2 = new Row(reader.read());
+
+        // Then
+        assertThat(readRow1.get("column1")).isEqualTo("A");
+        assertThat(readRow1.get("column2")).isEqualTo(list);
+        assertThat(readRow1.getKeys()).hasSize(2);
+        assertThat(readRow2.get("column1")).isEqualTo("C");
+        assertThat(readRow2.get("column2")).isNull();
+        assertThat(readRow2.getKeys()).hasSize(1);
+    }
+
+    @Test
     void shouldReadRowsCorrectlyWithASubsetOfTheSchema() throws IOException {
         // Given
         Schema writeSchema = Schema.builder()

@@ -368,7 +368,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                                 field.getName(),
                                 rowKeyColumnNameSet,
                                 sortKeyColumnNameSet,
-                                valueColumnNameSet)))
+                                valueColumnNameSet),
+                        field.isNullable()))
                 .collect(ImmutableList.toImmutableList());
         return new SleeperTableHandle(
                 new SchemaTableName(DEFAULT_TRINO_SCHEMA_NAME, tableName),

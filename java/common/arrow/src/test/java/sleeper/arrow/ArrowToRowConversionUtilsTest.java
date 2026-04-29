@@ -364,6 +364,78 @@ class ArrowToRowConversionUtilsTest {
     }
 
     @Test
+    void shouldReturnNullForNullableStringField() {
+        // Given
+        try (VarCharVector strVec = new VarCharVector("strField", allocator)) {
+            strVec.allocateNew(1);
+            strVec.setNull(0);
+            strVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(strVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("strField")).isNull();
+        }
+    }
+
+    @Test
+    void shouldReturnNullForNullableIntField() {
+        // Given
+        try (IntVector intVec = new IntVector("intField", allocator)) {
+            intVec.allocateNew(1);
+            intVec.setNull(0);
+            intVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(intVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("intField")).isNull();
+        }
+    }
+
+    @Test
+    void shouldReturnNullForNullableListField() {
+        // Given
+        try (ListVector listVec = ListVector.empty("listField", allocator)) {
+            listVec.allocateNew();
+            listVec.setNull(0);
+            listVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(listVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("listField")).isNull();
+        }
+    }
+
+    @Test
+    void shouldReturnNullForNullableMapField() {
+        // Given
+        try (MapVector mapVec = MapVector.empty("mapField", allocator, false)) {
+            mapVec.allocateNew();
+            mapVec.setNull(0);
+            mapVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(mapVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("mapField")).isNull();
+        }
+    }
+
+    @Test
     void shouldThrowExceptionOnOutOfBounds() {
         // Given
         try (

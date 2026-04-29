@@ -114,6 +114,39 @@ public class SchemaSerDeTest {
     }
 
     @Test
+    void shouldSerDeNullableValueField() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        SchemaSerDe schemaSerDe = new SchemaSerDe();
+
+        // When
+        Schema read = schemaSerDe.fromJson(schemaSerDe.toJson(schema));
+
+        // Then
+        assertThat(read).isEqualTo(schema);
+        assertThat(read.getValueFields().get(0).isNullable()).isTrue();
+    }
+
+    @Test
+    void shouldOmitNullablePropertyWhenFalse() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        SchemaSerDe schemaSerDe = new SchemaSerDe();
+
+        // When
+        String json = schemaSerDe.toJson(schema);
+
+        // Then
+        assertThat(json).doesNotContain("nullable");
+    }
+
+    @Test
     void shouldDeserialiseFromJsonStringWithMissingSortKeyAndValueFields() {
         // Given
         String input = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}";

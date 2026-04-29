@@ -34,15 +34,18 @@ public class SleeperColumnHandle implements ColumnHandle {
     private final String columnName;
     private final Type columnTrinoType;
     private final SleeperColumnHandle.SleeperColumnCategory columnCategory;
+    private final boolean nullable;
 
     @JsonCreator
     public SleeperColumnHandle(
             @JsonProperty("columnName") String columnName,
             @JsonProperty("columnTrinoType") Type columnTrinoType,
-            @JsonProperty("columnCategory") SleeperColumnHandle.SleeperColumnCategory columnCategory) {
+            @JsonProperty("columnCategory") SleeperColumnHandle.SleeperColumnCategory columnCategory,
+            @JsonProperty("nullable") boolean nullable) {
         this.columnName = requireNonNull(columnName);
         this.columnTrinoType = requireNonNull(columnTrinoType);
         this.columnCategory = requireNonNull(columnCategory);
+        this.nullable = nullable;
     }
 
     @JsonProperty
@@ -60,6 +63,11 @@ public class SleeperColumnHandle implements ColumnHandle {
         return columnCategory;
     }
 
+    @JsonProperty
+    public boolean isNullable() {
+        return nullable;
+    }
+
     /**
      * A convenience method to express this column handle as a metdata object.
      *
@@ -69,7 +77,7 @@ public class SleeperColumnHandle implements ColumnHandle {
         return ColumnMetadata.builder()
                 .setName(columnName)
                 .setType(columnTrinoType)
-                .setNullable(false) // Sleeper columns cannot contain null, although the value of this field does not seem to be reflected by Trino during a SHOW COLUMNS statement.
+                .setNullable(nullable)
                 .setComment(Optional.of(columnCategory.name()))
                 .build();
     }
@@ -83,14 +91,15 @@ public class SleeperColumnHandle implements ColumnHandle {
             return false;
         }
         SleeperColumnHandle that = (SleeperColumnHandle) o;
-        return Objects.equals(columnName, that.columnName) &&
+        return nullable == that.nullable &&
+                Objects.equals(columnName, that.columnName) &&
                 Objects.equals(columnCategory, that.columnCategory) &&
                 Objects.equals(columnTrinoType, that.columnTrinoType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(columnName, columnTrinoType, columnCategory);
+        return Objects.hash(columnName, columnTrinoType, columnCategory, nullable);
     }
 
     @Override

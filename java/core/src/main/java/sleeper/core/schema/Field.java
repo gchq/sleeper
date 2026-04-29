@@ -25,10 +25,16 @@ import java.util.Objects;
 public class Field {
     private final String name;
     private final Type type;
+    private final boolean nullable;
 
     public Field(String name, Type type) {
+        this(name, type, false);
+    }
+
+    public Field(String name, Type type, boolean nullable) {
         this.name = Objects.requireNonNull(name, "name must not be null");
         this.type = Objects.requireNonNull(type, "type must not be null");
+        this.nullable = nullable;
     }
 
     public String getName() {
@@ -39,14 +45,21 @@ public class Field {
         return type;
     }
 
+    public boolean isNullable() {
+        return nullable;
+    }
+
     @Override
     public String toString() {
+        if (nullable) {
+            return "Field{" + "name=" + name + ", type=" + type + ", nullable=true}";
+        }
         return "Field{" + "name=" + name + ", type=" + type + '}';
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type);
+        return Objects.hash(name, type, nullable);
     }
 
     @Override
@@ -59,6 +72,7 @@ public class Field {
         }
         final Field other = (Field) obj;
         return Objects.equals(name, other.name) &&
-                Objects.equals(type, other.type);
+                Objects.equals(type, other.type) &&
+                nullable == other.nullable;
     }
 }
