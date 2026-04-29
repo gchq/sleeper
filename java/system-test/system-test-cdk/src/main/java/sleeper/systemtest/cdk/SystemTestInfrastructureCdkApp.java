@@ -39,9 +39,9 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 
-public class SystemTestStandaloneApp extends Stack {
+public class SystemTestInfrastructureCdkApp extends Stack {
 
-    public SystemTestStandaloneApp(
+    public SystemTestInfrastructureCdkApp(
             App app, String id, StackProps props, SystemTestStandaloneProperties properties, SleeperInstanceArtefacts artefacts) {
         super(app, id, props);
 
@@ -77,7 +77,7 @@ public class SystemTestStandaloneApp extends Stack {
                     .account(systemTestProperties.get(SYSTEM_TEST_ACCOUNT))
                     .region(systemTestProperties.get(SYSTEM_TEST_REGION))
                     .build();
-            new SystemTestStandaloneApp(app, id,
+            new SystemTestInfrastructureCdkApp(app, id,
                     StackProps.builder().stackName(id).env(environment).build(),
                     systemTestProperties, artefacts);
             app.synth();

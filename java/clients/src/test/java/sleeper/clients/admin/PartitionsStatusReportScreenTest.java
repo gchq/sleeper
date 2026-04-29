@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -50,18 +50,19 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
+class PartitionsStatusReportScreenTest extends AdminClientInMemoryTestBase {
 
     private final Schema schema = createSchemaWithKey("key", new StringType());
     private final InstanceProperties instanceProperties = createValidInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableName = "test-table";
 
     @BeforeEach
     void setUp() {
+        tableProperties.set(TABLE_NAME, tableName);
         setInstanceProperties(instanceProperties, tableProperties);
-        setStateStoreForTable("test-table", stateStore);
+        setStateStoreForTable(tableName, stateStore);
     }
 
     @Test

@@ -32,7 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.assertj.core.api.InstanceOfAssertFactories.STREAM;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -46,16 +46,16 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class UpdatePropertiesWithTextEditorIT {
+class CommandLinePropertiesEditorIT {
 
     @TempDir
     private Path tempDir;
-    private UpdatePropertiesWithTextEditorTestHelper helper;
+    private CommandLinePropertiesEditorTestHelper helper;
     private String id = "test-instance";
 
     @BeforeEach
     void setUp() {
-        helper = new UpdatePropertiesWithTextEditorTestHelper(tempDir);
+        helper = new CommandLinePropertiesEditorTestHelper(tempDir);
     }
 
     @Nested
@@ -93,7 +93,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // When / Then
             assertThat(helper.updateProperties(before, after).getDiff())
-                    .extracting(PropertiesDiff::getChanges).asInstanceOf(LIST)
+                    .extracting(PropertiesDiff::streamChanges).asInstanceOf(STREAM)
                     .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
         }
 
@@ -105,7 +105,7 @@ class UpdatePropertiesWithTextEditorIT {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+            InstanceProperties properties = helper.updateProperties(before, after).getPropertiesAfter();
 
             // Then
             assertThat(properties).isEqualTo(after);
@@ -143,7 +143,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // Then
             assertThat(diff)
-                    .extracting(PropertiesDiff::getChanges).asInstanceOf(LIST)
+                    .extracting(PropertiesDiff::streamChanges).asInstanceOf(STREAM)
                     .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
         }
 
@@ -155,7 +155,7 @@ class UpdatePropertiesWithTextEditorIT {
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
-            TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+            TableProperties properties = helper.updateProperties(before, after).getPropertiesAfter();
 
             // Then
             assertThat(properties).isEqualTo(after);
@@ -208,7 +208,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "sleeper.logging.level=INFO", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -227,7 +227,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "sleeper.table.statestore.commit.async.enabled=true", TablePropertyGroup.METADATA);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -246,7 +246,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -276,7 +276,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "unknown.property=value-after", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -295,7 +295,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "sleeper.ingest.source.bucket=bucket-after", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
@@ -315,7 +315,7 @@ class UpdatePropertiesWithTextEditorIT {
                     before, "sleeper.logging.level=TRACE", InstancePropertyGroup.LOGGING);
 
             // Then
-            assertThat(updatePropertiesRequest.getUpdatedProperties())
+            assertThat(updatePropertiesRequest.getPropertiesAfter())
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
