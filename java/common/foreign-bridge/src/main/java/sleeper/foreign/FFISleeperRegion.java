@@ -41,8 +41,11 @@ import java.util.List;
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class FFISleeperRegion extends Struct {
-    /** Length of arrays. All assumed to be same length. */
-    final Struct.size_t len = new Struct.size_t();
+    /**
+     * Length of all component arrays, including mins, maxs, mins_inclusive, maxs_inclusive and dimension_indexes
+     * and Java counterparts. All assumed to be same length.
+     */
+    final Struct.size_t number_of_dimensions = new Struct.size_t();
     /** Region partition region minimums. May not contain "Empty" elements. */
     final Struct.StructRef<FFIElement> mins = new Struct.StructRef<>(FFIElement.class);
     /** Prevent GC. */
@@ -108,7 +111,7 @@ public class FFISleeperRegion extends Struct {
         }
 
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
-        partitionRegion.len.set(allLength);
+        partitionRegion.number_of_dimensions.set(allLength);
         // Convert minimums to FFIElement objects
         FFIElement[] minArray = mins.stream()
                 .map(o -> new FFIElement(runtime, o))
@@ -208,7 +211,7 @@ public class FFISleeperRegion extends Struct {
 
         List<Field> rowKeys = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        int allLength = len.intValue();
+        int allLength = number_of_dimensions.intValue();
         List<Range> ranges = new ArrayList<>(allLength);
         int sizetBytes = runtime.findType(TypeAlias.size_t).size();
         for (int i = 0; i < allLength; i++) {

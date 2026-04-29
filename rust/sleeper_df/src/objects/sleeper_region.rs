@@ -29,7 +29,8 @@ use std::{borrow::Borrow, collections::HashMap, slice};
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    pub len: usize,
+    // Length of all other arrays in struct.
+    pub number_of_dimensions: usize,
     // The mins array may NOT contain null pointers
     pub mins: *const FFIElement,
     // The maxs array may contain null pointers!!
@@ -44,8 +45,8 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
-        if region.len < 1 {
-            bail!("FFISleeperRegion len cannot be 0");
+        if region.number_of_dimensions < 1 {
+            bail!("FFISleeperRegion number_of_dimensions cannot be 0");
         }
         if region.mins.is_null() {
             bail!("FFISleeperRegion mins cannot be NULL");
@@ -64,14 +65,15 @@ impl<'a> FFISleeperRegion {
         }
 
         let region_mins_inclusive =
-            unsafe { slice::from_raw_parts(region.mins_inclusive, region.len) };
+            unsafe { slice::from_raw_parts(region.mins_inclusive, region.number_of_dimensions) };
         let region_maxs_inclusive =
-            unsafe { slice::from_raw_parts(region.maxs_inclusive, region.len) };
+            unsafe { slice::from_raw_parts(region.maxs_inclusive, region.number_of_dimensions) };
 
-        let region_mins = unsafe { slice::from_raw_parts(region.mins, region.len) }
-            .iter()
-            .map(PartitionBound::try_from)
-            .collect::<Result<Vec<_>, _>>()?;
+        let region_mins =
+            unsafe { slice::from_raw_parts(region.mins, region.number_of_dimensions) }
+                .iter()
+                .map(PartitionBound::try_from)
+                .collect::<Result<Vec<_>, _>>()?;
 
         // Sleeper region minimums cannot contain unbounded values
         if region_mins
@@ -82,13 +84,14 @@ impl<'a> FFISleeperRegion {
         }
 
         // but maximums can
-        let region_maxs = unsafe { slice::from_raw_parts(region.maxs, region.len) }
-            .iter()
-            .map(PartitionBound::try_from)
-            .collect::<Result<Vec<_>, _>>()?;
+        let region_maxs =
+            unsafe { slice::from_raw_parts(region.maxs, region.number_of_dimensions) }
+                .iter()
+                .map(PartitionBound::try_from)
+                .collect::<Result<Vec<_>, _>>()?;
 
         let dimension_indexes =
-            unsafe { slice::from_raw_parts(region.dimension_indexes, region.len) };
+            unsafe { slice::from_raw_parts(region.dimension_indexes, region.number_of_dimensions) };
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
