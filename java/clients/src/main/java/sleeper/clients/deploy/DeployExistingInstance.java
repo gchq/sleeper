@@ -96,8 +96,9 @@ public class DeployExistingInstance {
                         "--force-cdk-app <app>\n" +
                         "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
                         "will be automatically detected. This should only be used if the detection fails, for example if " +
-                        "you are upgrading from a version that did not have this auto-detection.\n" +
-                        "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
+                        "you are upgrading from a version that did not have this auto-detection. Do not use this if the " +
+                        "instance was deployed with a CDK app that is not listed.\n" +
+                        "Available apps from Sleeper GitHub: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
