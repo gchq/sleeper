@@ -160,3 +160,18 @@ impl From<&FFIBytes> for &[u8] {
         unsafe { slice::from_raw_parts(value.buffer, value.length) }
     }
 }
+
+/// Convert a C array of [`FFIBytes`] objects to owned strings.
+///
+/// # Errors
+/// Byte data must be valid UTF-8.
+pub fn to_strings(ffi_bytes: *const FFIBytes, len: usize) -> Result<Vec<String>, Report> {
+    if len == 0 {
+        Ok(Vec::new())
+    } else {
+        unsafe { slice::from_raw_parts(ffi_bytes, len) }
+            .iter()
+            .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+            .collect()
+    }
+}

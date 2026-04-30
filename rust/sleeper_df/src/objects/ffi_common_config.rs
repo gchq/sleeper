@@ -20,11 +20,11 @@ use crate::{
         aws_config::{FFIAwsConfig, unpack_aws_config},
         ffi_parquet_options::FFIParquetOptions,
         sleeper_region::FFISleeperRegion,
+        to_strings,
     },
     unpack::{unpack_str, unpack_string},
 };
 use color_eyre::eyre::{Result, bail};
-use core::slice;
 use sleeper_core::{
     CommonConfig, CommonConfigBuilder, OutputType, SleeperParquetOptions,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
@@ -42,7 +42,7 @@ pub struct FFICommonConfig {
     // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
-    pub input_files: *const *const c_char,
+    pub input_files: *const FFIBytes,
     pub input_files_sorted: bool,
     pub output_file: *const c_char,
     pub write_sketch_file: bool,
@@ -61,9 +61,19 @@ pub struct FFICommonConfig {
 impl FFICommonConfig {
     /// Get row key field names.
     pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
-        unsafe { slice::from_raw_parts(self.row_key_cols, self.row_key_cols_len) }
+        to_strings(self.row_key_cols, self.row_key_cols_len)
+    }
+
+    /// Get sort key field names.
+    pub fn sort_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
+        to_strings(self.sort_key_cols, self.sort_key_cols_len)
+    }
+
+    /// Get input file names.
+    pub fn input_files(&self) -> Result<Vec<Url>, color_eyre::Report> {
+        to_strings(self.input_files, self.input_files_len)?
             .iter()
-            .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+            .map(|s| Url::parse(s).map_err(color_eyre::Report::from))
             .collect()
     }
 
@@ -128,28 +138,14 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
-        let input_urls = unsafe { slice::from_raw_parts(self.input_files, self.input_files_len) }
-            .iter()
-            .map(|e| Url::parse(unpack_str(*e)?).map_err(color_eyre::Report::from))
-            .collect::<Result<Vec<_>, _>>()?;
-
         CommonConfigBuilder::new()
             .aws_config(unpack_aws_config(self))
-            .input_files(input_urls)
+            .input_files(self.input_files()?)
             .input_files_sorted(self.input_files_sorted)
             .read_page_indexes(parquet_options.read_page_indexes)
             .use_readahead_store(self.use_readahead_store)
             .row_key_cols(row_key_cols)
-            .sort_key_cols(if self.sort_key_cols_len == 0 {
-                Vec::new()
-            } else {
-                unsafe { slice::from_raw_parts(self.sort_key_cols, self.sort_key_cols_len) }
-                    .iter()
-                    .map(|bytes| {
-                        Ok::<_, color_eyre::Report>(String::from(TryInto::<&str>::try_into(bytes)?))
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-            })
+            .sort_key_cols(self.sort_key_cols()?)
             .region(region)
             .output(output)
             .aggregates(Aggregate::parse_config(unpack_str(

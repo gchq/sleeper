@@ -1835,7 +1835,7 @@ mod tests {
     async fn purge_some_when_short_duration() {
         test_cache_purge(
             99999,
-            Duration::from_secs(60),
+            Duration::from_mins(1),
             3,
             vec![
                 (
@@ -1851,9 +1851,7 @@ mod tests {
                 (
                     "test_file",
                     34,
-                    Instant::now()
-                        .checked_sub(Duration::from_secs(120))
-                        .unwrap(),
+                    Instant::now().checked_sub(Duration::from_mins(2)).unwrap(),
                 ),
                 (
                     "test_file2",
@@ -1880,7 +1878,7 @@ mod tests {
     async fn purge_some_when_short_duration_and_two_live() {
         test_cache_purge(
             2,
-            Duration::from_secs(60),
+            Duration::from_mins(1),
             2,
             vec![
                 (
@@ -1901,9 +1899,7 @@ mod tests {
                 (
                     "test_file",
                     34,
-                    Instant::now()
-                        .checked_sub(Duration::from_secs(120))
-                        .unwrap(),
+                    Instant::now().checked_sub(Duration::from_mins(2)).unwrap(),
                 ),
                 (
                     "test_file",
@@ -1927,7 +1923,7 @@ mod tests {
         let instant_to_keep = Instant::now().checked_sub(Duration::from_secs(10)).unwrap();
         test_cache_purge_and_validate(
             1,
-            Duration::from_secs(60),
+            Duration::from_mins(1),
             1,
             vec![
                 (
@@ -2068,7 +2064,7 @@ mod tests {
                 Container {
                     inner: Box::pin(stream::empty()),
                     pos: 1,
-                    last_use: Instant::now().checked_sub(Duration::from_secs(60)).unwrap(),
+                    last_use: Instant::now().checked_sub(Duration::from_mins(1)).unwrap(),
                 },
             );
         }
