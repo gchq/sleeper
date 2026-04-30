@@ -156,8 +156,7 @@ public class LoadLocalProperties {
                 table.validate();
                 return table;
             } catch (RuntimeException rte) {
-                throw new SleeperTableInvalidException("Property sleeper.table.schema was not set in file " + tableWithLocation.path
-                        + ". The property should be set in a separate schema.json file", rte.getCause());
+                throw new SleeperTableInvalidException("Sleeper table " + tableWithLocation.path + " has invalid properties:", rte);
             }
         });
     }
