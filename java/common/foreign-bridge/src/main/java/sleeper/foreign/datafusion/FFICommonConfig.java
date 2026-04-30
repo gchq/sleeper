@@ -22,7 +22,6 @@ import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -40,11 +39,9 @@ public class FFICommonConfig extends Struct {
     /** Length of input files array. */
     public final Struct.size_t input_files_len = new Struct.size_t();
     /** Array of input files to compact. */
-    public final Struct.Pointer input_files = new Struct.Pointer();
+    public final Struct.StructRef<FFIBytes> input_files = new Struct.StructRef<>(FFIBytes.class);
     /** Prevent GC. */
-    private jnr.ffi.Pointer java_input_files_ptrs;
-    /** Prevent GC. */
-    private jnr.ffi.Pointer[] java_input_files;
+    private FFIBytes[] java_input_files;
     /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Output file name. */
@@ -114,20 +111,12 @@ public class FFICommonConfig extends Struct {
      */
     public void setInputFiles(java.lang.String[] files) {
         input_files_len.set(files.length);
-        // Allocate native memory for string pointers
-        java_input_files_ptrs = getRuntime().getMemoryManager().allocateDirect(getRuntime().addressSize() * files.length);
-        java_input_files = new jnr.ffi.Pointer[files.length];
+        java_input_files = new FFIBytes[files.length];
         for (int i = 0; i < files.length; i++) {
             Objects.requireNonNull(files[i], "files[%d]".formatted(i));
-            byte[] file = files[i].getBytes(StandardCharsets.UTF_8);
-            file = Arrays.copyOf(file, file.length + 1); // Include NUL terminator
-            // Copy string to native buffer
-            java_input_files[i] = getRuntime().getMemoryManager().allocateDirect(file.length);
-            java_input_files[i].put(0, file, 0, file.length);
-            // Set pointer to native memory
-            java_input_files_ptrs.putPointer(i * getRuntime().addressSize(), java_input_files[i]);
+            java_input_files[i] = new FFIBytes(getRuntime(), files[i].getBytes(StandardCharsets.UTF_8));
         }
-        input_files.set(java_input_files_ptrs);
+        input_files.set(java_input_files);
     }
 
     /**
