@@ -132,7 +132,7 @@ public class StandardJobRunReporter {
     /**
      * Creates an update printer to print job status updates of a certain type, including information about the run it
      * occurred in. This will be used for any status update of this type. Can be combined with other update printers
-     * with {@link #updatePrinters(UpdatePrinter...)}.
+     * with {@link #updatePrinters}.
      *
      * @param  <T>     the status update type
      * @param  type    the status update type
@@ -153,7 +153,7 @@ public class StandardJobRunReporter {
 
     /**
      * Creates an update printer to print job status updates of a certain type. This will be used for any status update
-     * of this type. Can be combined with other update printers with {@link #updatePrinters(UpdatePrinter...)}.
+     * of this type. Can be combined with other update printers with {@link #updatePrinters}.
      *
      * @param  <T>     the status update type
      * @param  type    the status update type
@@ -184,7 +184,7 @@ public class StandardJobRunReporter {
 
     /**
      * An update printer that prints job status updates to a standard report. Can be combined with other update printers
-     * to handle different update types, see {@link StandardJobRunReporter#updatePrinters(UpdatePrinter...)}.
+     * to handle different update types, see {@link StandardJobRunReporter#updatePrinters}.
      */
     public interface UpdatePrinter {
 
