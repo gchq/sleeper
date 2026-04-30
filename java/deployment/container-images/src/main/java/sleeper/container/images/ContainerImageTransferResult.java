@@ -18,8 +18,9 @@ package sleeper.container.images;
 /**
  * The result of transferring a container image.
  *
- * @param digest the image digest, including the digest type prefix
+ * @param imageReference the full image reference that was uploaded to
+ * @param imageDigest    the image digest, including the digest type prefix
  */
-public record ContainerImageTransferResult(String digest) {
+public record ContainerImageTransferResult(String imageReference, String imageDigest) {
 
 }

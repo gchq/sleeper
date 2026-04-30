@@ -65,9 +65,10 @@ public class ContainerImageTransferManagerIT {
         // Then
         ManifestAndDigest<ManifestTemplate> manifest = imageClientForRegistry(DESTINATION).pullManifest("latest");
         assertThat(manifest.getManifest()).isInstanceOf(V22ManifestTemplate.class);
-        assertThat(manifest.getDigest()).hasToString(result.digest());
+        assertThat(manifest.getDigest()).hasToString(result.imageDigest());
         assertThat(cacheDir).isNotEmptyDirectory();
-        assertThat(result.digest()).matches("sha256:[a-z0-9]+");
+        assertThat(result.imageReference()).isEqualTo(imageNameInRegistry(DESTINATION));
+        assertThat(result.imageDigest()).matches("sha256:[a-z0-9]+");
     }
 
     @Test
@@ -84,9 +85,10 @@ public class ContainerImageTransferManagerIT {
         // Then
         ManifestAndDigest<ManifestTemplate> manifest = imageClientForRegistry(DESTINATION).pullManifest("target-tag");
         assertThat(manifest.getManifest()).isInstanceOf(V22ManifestTemplate.class);
-        assertThat(manifest.getDigest()).hasToString(result.digest());
+        assertThat(manifest.getDigest()).hasToString(result.imageDigest());
         assertThat(cacheDir).isNotEmptyDirectory();
-        assertThat(result.digest()).matches("sha256:[a-z0-9]+");
+        assertThat(result.imageReference()).isEqualTo(imageNameInRegistryWithTag(DESTINATION, "target-tag"));
+        assertThat(result.imageDigest()).matches("sha256:[a-z0-9]+");
     }
 
     @Test

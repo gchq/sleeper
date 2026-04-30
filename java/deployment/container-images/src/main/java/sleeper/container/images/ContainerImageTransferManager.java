@@ -62,7 +62,9 @@ public class ContainerImageTransferManager {
             ImageReference targetRef = ImageReference.parse(request.getTargetImageReference());
             JibContainer container = Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever()))
                     .containerize(configure(Containerizer.to(registryImage(targetRef, request.getTargetCredentialsRetriever()))));
-            return new ContainerImageTransferResult(container.getDigest().toString());
+            return new ContainerImageTransferResult(
+                    container.getTargetImage().toString(),
+                    container.getDigest().toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ContainerImageTransferException(request, e);
