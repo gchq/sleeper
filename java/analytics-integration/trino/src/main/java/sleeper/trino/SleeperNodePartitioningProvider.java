@@ -79,7 +79,7 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
 
     /**
      * Obtain a function which identifies which partition (bucket number) the supplied split is in. This is used during
-     * read operartions. It is also used during write operations, although in this case, the returned function is never
+     * read operations. It is also used during write operations, although in this case, the returned function is never
      * called.
      *
      * @param  transactionHandle  the transaction to run under
