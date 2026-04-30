@@ -21,8 +21,11 @@ import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * A model of known CDK apps that are part of Sleeper.
@@ -92,7 +95,11 @@ public enum SleeperInternalCdkApp {
      * @return the valid values description
      */
     public static String describeCdkAppsDeployingSleeperInstance() {
-        return Stream.of(values()).filter(SleeperInternalCdkApp::isDeploysSleeperInstance).toList().toString();
+        return Stream.of(values())
+                .filter(SleeperInternalCdkApp::isDeploysSleeperInstance)
+                .map(SleeperInternalCdkApp::toString)
+                .map(string -> string.toLowerCase(Locale.ROOT))
+                .collect(joining(", "));
     }
 
     public String getCdkAppClassName() {

@@ -93,7 +93,7 @@ public class DeployExistingInstance {
                         "If set, the instance will be deployed paused. Periodic background processes will not run until " +
                         "the instance is manually resumed.\n" +
                         "\n" +
-                        "--force-cdk-app\n" +
+                        "--force-cdk-app <app>\n" +
                         "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
                         "will be automatically detected. This should only be used if the detection fails, for example if " +
                         "you are upgrading from a version that did not have this auto-detection.\n" +
