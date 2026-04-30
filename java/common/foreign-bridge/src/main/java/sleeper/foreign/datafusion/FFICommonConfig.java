@@ -111,11 +111,7 @@ public class FFICommonConfig extends Struct {
      */
     public void setInputFiles(java.lang.String[] files) {
         input_files_len.set(files.length);
-        java_input_files = new FFIBytes[files.length];
-        for (int i = 0; i < files.length; i++) {
-            Objects.requireNonNull(files[i], "files[%d]".formatted(i));
-            java_input_files[i] = new FFIBytes(getRuntime(), files[i].getBytes(StandardCharsets.UTF_8));
-        }
+        java_input_files = toFFIBytes(files, "files");
         input_files.set(java_input_files);
     }
 
@@ -126,11 +122,7 @@ public class FFICommonConfig extends Struct {
      */
     public void setRowKeyCols(java.lang.String[] rowKeyCols) {
         row_key_cols_len.set(rowKeyCols.length);
-        java_row_key_cols = new FFIBytes[rowKeyCols.length];
-        for (int i = 0; i < rowKeyCols.length; i++) {
-            Objects.requireNonNull(rowKeyCols[i], "rowKeyCols[%d]".formatted(i));
-            java_row_key_cols[i] = new FFIBytes(getRuntime(), rowKeyCols[i].getBytes(StandardCharsets.UTF_8));
-        }
+        java_row_key_cols = toFFIBytes(rowKeyCols, "rowKeyCols");
         row_key_cols.set(java_row_key_cols);
     }
 
@@ -141,11 +133,16 @@ public class FFICommonConfig extends Struct {
      */
     public void setSortKeyCols(java.lang.String[] sortKeyCols) {
         sort_keys_cols_len.set(sortKeyCols.length);
-        java_sort_key_cols = new FFIBytes[sortKeyCols.length];
-        for (int i = 0; i < sortKeyCols.length; i++) {
-            Objects.requireNonNull(sortKeyCols[i], "sortKeyCols[%d]".formatted(i));
-            java_sort_key_cols[i] = new FFIBytes(getRuntime(), sortKeyCols[i].getBytes(StandardCharsets.UTF_8));
-        }
+        java_sort_key_cols = toFFIBytes(sortKeyCols, "sortKeyCols");
         sort_key_cols.set(java_sort_key_cols);
+    }
+
+    private FFIBytes[] toFFIBytes(java.lang.String[] values, java.lang.String name) {
+        FFIBytes[] result = new FFIBytes[values.length];
+        for (int i = 0; i < values.length; i++) {
+            Objects.requireNonNull(values[i], "%s[%d]".formatted(name, i));
+            result[i] = new FFIBytes(getRuntime(), values[i].getBytes(StandardCharsets.UTF_8));
+        }
+        return result;
     }
 }
