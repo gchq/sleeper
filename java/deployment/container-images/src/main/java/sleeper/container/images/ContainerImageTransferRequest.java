@@ -53,6 +53,30 @@ public class ContainerImageTransferRequest {
         return targetCredentialsRetriever;
     }
 
+    @Override
+    public String toString() {
+        return "ContainerImageTransferRequest{sourceImageReference=" + sourceImageReference + ", targetImageReference=" + targetImageReference + ", sourceCredentialsRetriever="
+                + sourceCredentialsRetriever + ", targetCredentialsRetriever=" + targetCredentialsRetriever + "}";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sourceImageReference, targetImageReference, sourceCredentialsRetriever, targetCredentialsRetriever);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ContainerImageTransferRequest)) {
+            return false;
+        }
+        ContainerImageTransferRequest other = (ContainerImageTransferRequest) obj;
+        return Objects.equals(sourceImageReference, other.sourceImageReference) && Objects.equals(targetImageReference, other.targetImageReference)
+                && Objects.equals(sourceCredentialsRetriever, other.sourceCredentialsRetriever) && Objects.equals(targetCredentialsRetriever, other.targetCredentialsRetriever);
+    }
+
     /**
      * A builder to create a request to transfer a container image.
      */
@@ -82,6 +106,26 @@ public class ContainerImageTransferRequest {
         public Builder targetImageReference(String targetImageReference) {
             this.targetImageReference = targetImageReference;
             return this;
+        }
+
+        /**
+         * Sets the credentials for the source registry.
+         *
+         * @param  sourceCredentials the credentials
+         * @return                   this builder
+         */
+        public Builder sourceCredentials(ContainerRegistryCredentials sourceCredentials) {
+            return sourceCredentialsRetriever(ContainerRegistryCredentials.Retriever.returning(sourceCredentials));
+        }
+
+        /**
+         * Sets the credentials for the target registry.
+         *
+         * @param  targetCredentials the credentials
+         * @return                   this builder
+         */
+        public Builder targetCredentials(ContainerRegistryCredentials targetCredentials) {
+            return targetCredentialsRetriever(ContainerRegistryCredentials.Retriever.returning(targetCredentials));
         }
 
         /**

@@ -36,5 +36,33 @@ public record ContainerRegistryCredentials(String username, String password) {
          * @return the credentials
          */
         Optional<ContainerRegistryCredentials> retrieve();
+
+        /**
+         * Creates a retriever that always returns the same credentials.
+         *
+         * @param  credentials the credentials
+         * @return             the retriever
+         */
+        static Retriever returning(ContainerRegistryCredentials credentials) {
+            return new LiteralRetriever(credentials);
+        }
+    }
+
+    /**
+     * A retriever that always returns the same credentials.
+     *
+     * @param credentials the credentials
+     */
+    private record LiteralRetriever(ContainerRegistryCredentials credentials) implements Retriever {
+
+        @Override
+        public Optional<ContainerRegistryCredentials> retrieve() {
+            return Optional.of(credentials);
+        }
+
+        @Override
+        public final String toString() {
+            return credentials.toString();
+        }
     }
 }

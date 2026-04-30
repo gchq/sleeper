@@ -27,8 +27,9 @@ import com.google.cloud.tools.jib.api.RegistryImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.container.ContainerImageTransferFailed;
+
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 
@@ -66,11 +67,9 @@ public class ContainerImageTransferManager {
             return new ContainerImageTransferResult(container.getDigest().toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
-            throw new RuntimeException(e);
+            throw new ContainerImageTransferFailed(request, e);
+        } catch (IOException | RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
+            throw new ContainerImageTransferFailed(request, e);
         }
     }
 

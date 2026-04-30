@@ -33,10 +33,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.container.ContainerImageTransferFailed;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 public class ContainerImageTransferManagerIT {
@@ -67,6 +70,39 @@ public class ContainerImageTransferManagerIT {
         assertThat(manifest.getDigest()).hasToString(result.digest());
         assertThat(cacheDir).isNotEmptyDirectory();
         assertThat(result.digest()).matches("sha256:[a-z0-9]+");
+    }
+
+    @Test
+    void shouldCopyDockerImageByTag() throws Exception {
+        // Given
+        copyImage("scratch", imageNameInRegistryWithTag(SOURCE, "source-tag"));
+
+        // When
+        ContainerImageTransferResult result = transferManager().transfer(ContainerImageTransferRequest.builder()
+                .sourceImageReference(imageNameInRegistryWithTag(SOURCE, "source-tag"))
+                .targetImageReference(imageNameInRegistryWithTag(DESTINATION, "target-tag"))
+                .build());
+
+        // Then
+        ManifestAndDigest<ManifestTemplate> manifest = imageClientForRegistry(DESTINATION).pullManifest("target-tag");
+        assertThat(manifest.getManifest()).isInstanceOf(V22ManifestTemplate.class);
+        assertThat(manifest.getDigest()).hasToString(result.digest());
+        assertThat(cacheDir).isNotEmptyDirectory();
+        assertThat(result.digest()).matches("sha256:[a-z0-9]+");
+    }
+
+    @Test
+    void shouldFailWhenSourceTagDoesNotExist() throws Exception {
+        // Given
+        copyImage("scratch", imageNameInRegistry(SOURCE));
+
+        // When / Then
+        assertThatThrownBy(() -> transferManager()
+                .transfer(ContainerImageTransferRequest.builder()
+                        .sourceImageReference(imageNameInRegistryWithTag(SOURCE, "non-existent"))
+                        .targetImageReference(imageNameInRegistry(DESTINATION))
+                        .build()))
+                .isInstanceOf(ContainerImageTransferFailed.class);
     }
 
     private ContainerImageTransferManager transferManager() {
