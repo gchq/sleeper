@@ -43,6 +43,11 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>container-images</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-core</artifactId>
         </dependency>
