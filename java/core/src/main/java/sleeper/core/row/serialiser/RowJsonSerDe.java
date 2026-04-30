@@ -219,6 +219,9 @@ public class RowJsonSerDe {
     private static void getFieldFromJsonObject(Field field, JsonObject json, Row row) {
         JsonElement element = json.get(field.getName());
         if (element == null || element.isJsonNull()) {
+            if (field.isNullable()) {
+                row.put(field.getName(), null);
+            }
             return;
         }
         if (field.getType() instanceof IntType) {

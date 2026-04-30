@@ -55,9 +55,7 @@ public class ArrowToRowConversionUtils {
         for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
             FieldVector fieldVector = vectorSchemaRoot.getVector(fieldNo);
             Object value = convertValueFromArrow(fieldVector, fieldVector.getObject(rowNo));
-            if (value != null) {
-                row.put(fieldVector.getName(), value);
-            }
+            row.put(fieldVector.getName(), value);
         }
         return row;
     }

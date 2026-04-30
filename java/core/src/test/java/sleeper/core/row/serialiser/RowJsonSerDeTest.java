@@ -132,12 +132,14 @@ public class RowJsonSerDeTest {
                 .build();
         Row row = new Row();
         row.put("key", 1);
+        row.put("value", null);
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
+        assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
     }
 
@@ -150,12 +152,14 @@ public class RowJsonSerDeTest {
                 .build();
         Row row = new Row();
         row.put("key", 1);
+        row.put("value", null);
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
+        assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
     }
 
@@ -168,12 +172,14 @@ public class RowJsonSerDeTest {
                 .build();
         Row row = new Row();
         row.put("key", 1);
+        row.put("value", null);
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
+        assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
     }
 
@@ -186,12 +192,14 @@ public class RowJsonSerDeTest {
                 .build();
         Row row = new Row();
         row.put("key", 1);
+        row.put("value", null);
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
+        assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
     }
 }

@@ -238,6 +238,7 @@ public class DataFusionCompactionRunnerIT {
             rowWithValue.put("value", "hello");
             Row rowWithNull = new Row();
             rowWithNull.put("key", "b");
+            rowWithNull.put("value", null);
             String file1 = writeFileForPartition("root", List.of(rowWithValue));
             String file2 = writeFileForPartition("root", List.of(rowWithNull));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));

@@ -717,6 +717,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         rowWithValue.put("value", "hello");
         Row rowWithNull = new Row();
         rowWithNull.put("key", "b");
+        rowWithNull.put("value", null);
         RowGenerator.RowListAndSchema rowListAndSchema = new RowGenerator.RowListAndSchema(
                 List.of(rowWithValue, rowWithNull), schema);
         setSchema(schema);

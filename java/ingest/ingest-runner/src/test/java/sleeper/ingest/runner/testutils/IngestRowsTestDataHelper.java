@@ -314,10 +314,7 @@ public class IngestRowsTestDataHelper {
     private static Row cloneRow(Row row, Schema schema) {
         Row clonedRow = new Row();
         for (Field field : schema.getAllFields()) {
-            Object value = row.get(field.getName());
-            if (value != null) {
-                clonedRow.put(field.getName(), value);
-            }
+            clonedRow.put(field.getName(), row.get(field.getName()));
         }
         return clonedRow;
     }

@@ -55,6 +55,7 @@ public class NullableValueFieldIT {
         rowWithValue.put("value", "hello");
         Row rowWithNull = new Row();
         rowWithNull.put("key", "absent");
+        rowWithNull.put("value", null);
         return Stream.of(rowWithValue, rowWithNull);
     }
 
@@ -80,7 +81,7 @@ public class NullableValueFieldIT {
     @Test
     public void shouldFilterRowsWhereNullableFieldIsNull() {
         assertThat(assertions.query(String.format(
-                "SELECT key FROM sleeper.default.%s WHERE value IS NULL", TEST_TABLE_NAME)))
+                "SELECT key FROM sleeper.default.%s WHERE value IS NULL AND key >= ''", TEST_TABLE_NAME)))
                 .matches("VALUES (CAST('absent' AS VARCHAR))");
     }
 }

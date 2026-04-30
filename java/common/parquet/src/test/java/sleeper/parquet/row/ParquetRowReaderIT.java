@@ -325,7 +325,7 @@ class ParquetRowReaderIT {
         assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2.get("column1")).isEqualTo("C");
         assertThat(readRow2.get("column2")).isNull();
-        assertThat(readRow2.getKeys()).hasSize(1);
+        assertThat(readRow2.getKeys()).hasSize(2);
     }
 
     @Test
@@ -357,7 +357,7 @@ class ParquetRowReaderIT {
         assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2.get("column1")).isEqualTo("C");
         assertThat(readRow2.get("column2")).isNull();
-        assertThat(readRow2.getKeys()).hasSize(1);
+        assertThat(readRow2.getKeys()).hasSize(2);
     }
 
     @Test
@@ -388,7 +388,7 @@ class ParquetRowReaderIT {
         assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2.get("column1")).isEqualTo("C");
         assertThat(readRow2.get("column2")).isNull();
-        assertThat(readRow2.getKeys()).hasSize(1);
+        assertThat(readRow2.getKeys()).hasSize(2);
     }
 
     @Test

@@ -264,7 +264,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
             return resultRecordStream
                     .map(record -> outputSleeperColumnHandlesInOrder.stream()
                             .map(sleeperColumnHandle -> record.get(sleeperColumnHandle.getColumnName()))
-                            .collect(ImmutableList.toImmutableList()));
+                            .collect(Collectors.toList()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

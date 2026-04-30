@@ -208,6 +208,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         rowWithValue.put("value", "hello");
         Row rowWithNull = new Row();
         rowWithNull.put("key", "b");
+        rowWithNull.put("value", null);
         FileReference file1 = ingestRowsGetFile(List.of(rowWithValue));
         FileReference file2 = ingestRowsGetFile(List.of(rowWithNull));
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");

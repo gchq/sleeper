@@ -86,7 +86,7 @@ class RowConverter extends GroupConverter {
 
     @Override
     public void start() {
-        nullableFieldNames.forEach(currentRow::remove);
+        nullableFieldNames.forEach(name -> currentRow.put(name, null));
     }
 
     @Override

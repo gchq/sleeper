@@ -358,6 +358,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         rowWithValue.put("value", "hello");
         Row rowWithNull = new Row();
         rowWithNull.put("key", "absent");
+        rowWithNull.put("value", null);
         ingestRows(instanceProperties, tableProperties, List.of(rowWithValue, rowWithNull));
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);

@@ -699,6 +699,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         rowWithValue.put("value", "hello");
         Row rowWithNull = new Row();
         rowWithNull.put("key", "b");
+        rowWithNull.put("value", null);
 
         // When
         long numWritten = ingestRows(stateStore, List.of(rowWithValue, rowWithNull)).getRowsWritten();

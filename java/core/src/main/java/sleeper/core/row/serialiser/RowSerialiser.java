@@ -107,6 +107,7 @@ public class RowSerialiser {
         Row row = new Row();
         for (Field field : schema.getAllFields()) {
             if (field.isNullable() && !dis.readBoolean()) {
+                row.put(field.getName(), null);
                 continue;
             }
             Type type = field.getType();
