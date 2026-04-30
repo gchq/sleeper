@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.container;
-
-import sleeper.container.images.ContainerImageTransferRequest;
+package sleeper.container.images;
 
 /**
  * A failure during transfer of a container image.
  */
-public class ContainerImageTransferFailed extends RuntimeException {
+public class ContainerImageTransferException extends RuntimeException {
 
-    public ContainerImageTransferFailed(ContainerImageTransferRequest request, Throwable cause) {
+    public ContainerImageTransferException(ContainerImageTransferRequest request, Throwable cause) {
         super("Failure transferring container image, source " + request.getSourceImageReference() + " target " + request.getTargetImageReference(), cause);
     }
 

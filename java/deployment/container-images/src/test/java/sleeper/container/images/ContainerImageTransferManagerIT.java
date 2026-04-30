@@ -33,8 +33,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.container.ContainerImageTransferFailed;
-
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -102,7 +100,7 @@ public class ContainerImageTransferManagerIT {
                         .sourceImageReference(imageNameInRegistryWithTag(SOURCE, "non-existent"))
                         .targetImageReference(imageNameInRegistry(DESTINATION))
                         .build()))
-                .isInstanceOf(ContainerImageTransferFailed.class);
+                .isInstanceOf(ContainerImageTransferException.class);
     }
 
     private ContainerImageTransferManager transferManager() {
