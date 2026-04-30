@@ -131,7 +131,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * Implementation dependent iterator creation code. The entire request which contains the user, split and schema is
      * passed to this method along with the table properties.
      *
-     * Note: Do not use the schema in the table properties as it could differ from the schema provided
+     * Note: Do not use the schema in the table properties as it could differ from the schema provided.
      *
      * @param  recordsRequest  the request
      * @param  schema          the table schema to use for reading
