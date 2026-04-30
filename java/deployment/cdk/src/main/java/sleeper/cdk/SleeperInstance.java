@@ -100,8 +100,7 @@ public class SleeperInstance {
      * <p>
      * A Sleeper instance consists of a number of nested stacks, which will be nested under the stack you provide. These
      * nested stacks will always have the same CDK construct IDs. For multiple instances, each Sleeper instance should
-     * be its own nested stack. Also see
-     * {@link SleeperInstance#createAsNestedStack(Construct, String, NestedStackProps, SleeperInstanceProps)}.
+     * be its own nested stack. Also see {@link #createAsNestedStack}.
      *
      * @param  stack an empty stack to contain the instance resources, usually a Stack or NestedStack
      * @param  props configuration to deploy the instance
