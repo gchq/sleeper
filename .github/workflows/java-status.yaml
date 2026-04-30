@@ -41,7 +41,7 @@ jobs:
         run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Check javadoc validity
-        run: mvn javadoc:javadoc -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn compile javadoc:javadoc -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Validate chunk build configuration
         working-directory: ./java/build
