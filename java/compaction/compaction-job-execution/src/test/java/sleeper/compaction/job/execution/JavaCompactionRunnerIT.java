@@ -24,6 +24,7 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
@@ -191,5 +192,33 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
                     .isEqualTo(CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2));
         }
+    }
+
+    @Test
+    void shouldMergeFilesWithNullableValueField() throws Exception {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row rowWithValue = new Row();
+        rowWithValue.put("key", "a");
+        rowWithValue.put("value", "hello");
+        Row rowWithNull = new Row();
+        rowWithNull.put("key", "b");
+        FileReference file1 = ingestRowsGetFile(List.of(rowWithValue));
+        FileReference file2 = ingestRowsGetFile(List.of(rowWithNull));
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        runTask(compactionJob);
+
+        // Then
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(2, 2));
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
+                .containsExactly(rowWithValue, rowWithNull);
     }
 }

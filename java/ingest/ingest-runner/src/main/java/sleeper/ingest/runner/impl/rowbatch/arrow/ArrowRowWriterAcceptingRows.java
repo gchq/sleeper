@@ -95,19 +95,35 @@ public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
             if (sleeperType instanceof IntType) {
                 IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
                 Integer value = (Integer) row.get(fieldName);
-                intVector.setSafe(insertAtRowNo, value);
+                if (value == null) {
+                    intVector.setNull(insertAtRowNo);
+                } else {
+                    intVector.setSafe(insertAtRowNo, value);
+                }
             } else if (sleeperType instanceof LongType) {
                 BigIntVector bigIntVector = (BigIntVector) vectorSchemaRoot.getVector(fieldNo);
                 Long value = (Long) row.get(fieldName);
-                bigIntVector.setSafe(insertAtRowNo, value);
+                if (value == null) {
+                    bigIntVector.setNull(insertAtRowNo);
+                } else {
+                    bigIntVector.setSafe(insertAtRowNo, value);
+                }
             } else if (sleeperType instanceof StringType) {
                 VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
                 String value = (String) row.get(fieldName);
-                varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
+                if (value == null) {
+                    varCharVector.setNull(insertAtRowNo);
+                } else {
+                    varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
+                }
             } else if (sleeperType instanceof ByteArrayType) {
                 VarBinaryVector varBinaryVector = (VarBinaryVector) vectorSchemaRoot.getVector(fieldNo);
                 byte[] value = (byte[]) row.get(fieldName);
-                varBinaryVector.setSafe(insertAtRowNo, value);
+                if (value == null) {
+                    varBinaryVector.setNull(insertAtRowNo);
+                } else {
+                    varBinaryVector.setSafe(insertAtRowNo, value);
+                }
             } else if (sleeperType instanceof ListType) {
                 writeList(
                         ((ListType) sleeperType).getElementType(),

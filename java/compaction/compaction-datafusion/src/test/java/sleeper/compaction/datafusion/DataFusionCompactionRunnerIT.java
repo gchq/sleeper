@@ -224,6 +224,32 @@ public class DataFusionCompactionRunnerIT {
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
         }
+
+        @Test
+        void shouldMergeFilesWithNullableValueField() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new StringType(), true))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row rowWithValue = new Row();
+            rowWithValue.put("key", "a");
+            rowWithValue.put("value", "hello");
+            Row rowWithNull = new Row();
+            rowWithNull.put("key", "b");
+            String file1 = writeFileForPartition("root", List.of(rowWithValue));
+            String file2 = writeFileForPartition("root", List.of(rowWithNull));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(rowWithValue, rowWithNull);
+        }
     }
 
     @Nested

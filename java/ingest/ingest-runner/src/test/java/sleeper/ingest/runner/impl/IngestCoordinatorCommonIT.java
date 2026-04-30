@@ -30,6 +30,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -701,6 +702,37 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, expectedRows));
+    }
+
+    @ParameterizedTest
+    @MethodSource("parameterObjsForTests")
+    public void shouldWriteRowsWithNullableValueField(TestIngestType ingestType) throws Exception {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        Row rowWithValue = new Row();
+        rowWithValue.put("key", "a");
+        rowWithValue.put("value", "hello");
+        Row rowWithNull = new Row();
+        rowWithNull.put("key", "b");
+        RowGenerator.RowListAndSchema rowListAndSchema = new RowGenerator.RowListAndSchema(
+                List.of(rowWithValue, rowWithNull), schema);
+        setSchema(schema);
+        PartitionTree tree = new PartitionsBuilder(schema).rootFirst("root").buildTree();
+        update(stateStore).initialise(tree.getAllPartitions());
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("rootFile"))
+                .build();
+
+        // When
+        ingestRows(rowListAndSchema, parameters, ingestType);
+
+        // Then
+        List<FileReference> actualFiles = stateStore.getFileReferences();
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(schema, actualFiles, hadoopConf);
+        assertThat(actualRows).containsExactlyInAnyOrder(rowWithValue, rowWithNull);
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
