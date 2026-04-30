@@ -53,7 +53,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     protected final Map<Path, String> files = new HashMap<>();
     protected final Path scriptsDirectory = Path.of("./test");
     protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(List.of(), List.of());
-    protected final InMemoryAdminClientProperties clientProperties = InMemoryAdminClientProperties.createReturningExactInstance();
+    protected final InMemoryAdminClientProperties clientProperties = InMemoryAdminClientProperties.create();
     protected final AdminClientPropertiesStore store = new AdminClientPropertiesStore(
             clientProperties, invokeCdk(), scriptsDirectory.resolve("generated"), uploadDockerImages(),
             dockerImageConfiguration);

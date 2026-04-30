@@ -52,11 +52,11 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
 
     static {
         Map<String, String> defaultConf = new HashMap<>();
-        defaultConf.put("spark.executor.instances", "3");
+        defaultConf.put("spark.executor.instances", "29");
         // Default Memory requests are overwritten because Fargate doesn't work with
         // Spark's default values
-        defaultConf.put("spark.driver.memory", "7g");
-        defaultConf.put("spark.executor.memory", "7g");
+        defaultConf.put("spark.driver.memory", "12g");
+        defaultConf.put("spark.executor.memory", "12g");
         // Fargate provides extra memory so no need to include extra which also messes
         // up the scheduler
         defaultConf.put("spark.driver.memoryOverhead", "1g");
