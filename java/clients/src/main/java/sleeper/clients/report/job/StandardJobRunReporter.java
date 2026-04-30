@@ -100,10 +100,8 @@ public class StandardJobRunReporter {
 
     /**
      * Prints a detailed description of a job run. Allows customisation of how individual job status updates are
-     * printed, by setting update printers, e.g. with {@link #updatePrinters(UpdatePrinter...)},
-     * {@link #printUpdateType(Class, Consumer)},
-     * {@link #printUpdateTypeInRun(Class, BiConsumer)}. Specified printers will be combined with the default, so it is
-     * not necessary to
+     * printed, by setting update printers, e.g. with {@link #updatePrinters}, {@link #printUpdateType},
+     * {@link #printUpdateTypeInRun}. Specified printers will be combined with the default, so it is not necessary to
      * handle update types common to all job runs.
      *
      * @param run           the job run to print
