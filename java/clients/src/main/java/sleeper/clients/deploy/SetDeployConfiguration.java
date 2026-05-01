@@ -78,12 +78,17 @@ public class SetDeployConfiguration {
     }
 
     private static DeployConfiguration readConfiguration(ConsoleInput input, CommandArguments arguments) {
-        DockerImageLocation imageLocation = arguments.getOptionalString("image-location").map(DockerImageLocation::parseOrNull).orElse(null);
         String imagePrefix = arguments.getOptionalString("image-repository-prefix").orElse(null);
         String imageUsername = arguments.getOptionalString("image-username").orElse(null);
-        if (imageLocation == null && imagePrefix != null) {
-            imageLocation = DockerImageLocation.REPOSITORY;
-        }
+        DockerImageLocation imageLocation = arguments.getOptionalString("image-location")
+                .map(DockerImageLocation::parseOrNull)
+                .orElseGet(() -> {
+                    if (imagePrefix != null) {
+                        return DockerImageLocation.REPOSITORY;
+                    } else {
+                        throw new IllegalArgumentException("Container image location was not set, use --help for more information.");
+                    }
+                });
         ContainerRegistryCredentials imageCredentials = imageCredentials(input, imageUsername);
         return new DeployConfiguration(imageLocation, imagePrefix, imageCredentials);
     }
