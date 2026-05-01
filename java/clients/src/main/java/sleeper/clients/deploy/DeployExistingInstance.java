@@ -103,7 +103,7 @@ public class DeployExistingInstance {
                     .instanceId(args.instanceId())
                     .deployPaused(args.deployPaused())
                     .forceCdkApp(args.forceCdkApp())
-                    .loadPropertiesFromS3(s3Client, dynamoClient)
+                    .loadPropertiesFromS3(accountName, s3Client, dynamoClient)
                     .build().update();
         }
     }
@@ -138,11 +138,15 @@ public class DeployExistingInstance {
         private String instanceId;
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
-        private String accountName;
         private boolean deployPaused;
         private SleeperInternalCdkApp forceCdkApp;
 
         private Builder() {
+        }
+
+        public Builder deployInstance(DeployInstance deployInstance) {
+            this.deployInstance = deployInstance;
+            return this;
         }
 
         public Builder instanceId(String instanceId) {
@@ -174,12 +178,7 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder deployInstance(DeployInstance deployInstance) {
-            this.deployInstance = deployInstance;
-            return this;
-        }
-
-        public Builder loadPropertiesFromS3(S3Client s3Client, DynamoDbClient dynamoCient) {
+        public Builder loadPropertiesFromS3(String accountName, S3Client s3Client, DynamoDbClient dynamoCient) {
             properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             tablePropertiesList = S3TableProperties.createStore(properties, s3Client, dynamoCient)
                     .streamAllTables().collect(Collectors.toList());
