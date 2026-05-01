@@ -40,6 +40,7 @@ import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
+
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
@@ -55,7 +56,7 @@ public class UploadDockerImages {
         deployConfig = requireNonNull(builder.deployConfig, "deployConfig must not be null");
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.withDocker(commandRunner));
+        copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.localBuildOnly());
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -70,6 +71,11 @@ public class UploadDockerImages {
                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                 .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                 .build();
+    }
+
+    public boolean isDockerCli() {
+        // Only local builds are done with the Docker CLI
+        return deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD;
     }
 
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
@@ -217,11 +223,10 @@ public class UploadDockerImages {
 
         void copy(String source, String target, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
 
-        static CopyContainerImage withDocker(CommandPipelineRunner commandRunner) {
+        static CopyContainerImage localBuildOnly() {
             return (source, target, sourceCredentials) -> {
-                commandRunner.runOrThrow("docker", "pull", source);
-                commandRunner.runOrThrow("docker", "tag", source, target);
-                commandRunner.runOrThrow("docker", "push", target);
+                throw new UnsupportedOperationException(
+                        "Copying container images is not configured correctly, expected to always build images locally.");
             };
         }
 
