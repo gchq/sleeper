@@ -99,7 +99,7 @@ public class AdminClient {
             String accountName = stsClient.getCallerIdentity().account();
             AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
-                    UploadDockerImages.fromScriptsDirectory(scriptsDir),
+                    UploadDockerImages.fromScriptsDirectory(scriptsDir, ecrClient),
                     accountName, regionProvider.getRegion().id());
             AdminClientPropertiesStore propertiesStore = new AdminClientPropertiesStore(
                     accountName, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, DockerImageConfiguration.getDefault());

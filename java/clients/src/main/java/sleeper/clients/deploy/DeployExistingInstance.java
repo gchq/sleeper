@@ -30,8 +30,6 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
@@ -52,28 +50,19 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_AP
 public class DeployExistingInstance {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployExistingInstance.class);
-    private final Path scriptsDirectory;
+
+    private final DeployInstance deployInstance;
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
-    private final S3Client s3;
-    private final String accountName;
-    private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
     private final SleeperInternalCdkApp forceCdkApp;
-    private final CommandPipelineRunner runCommand;
-    private final boolean createMultiPlatformBuilder;
 
     private DeployExistingInstance(Builder builder) {
-        scriptsDirectory = builder.scriptsDirectory;
+        deployInstance = builder.deployInstance;
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
-        s3 = builder.s3;
-        accountName = builder.accountName;
-        regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
         forceCdkApp = builder.forceCdkApp;
-        runCommand = builder.runCommand;
-        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -112,9 +101,17 @@ public class DeployExistingInstance {
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
-            builder().clients(s3Client, stsClient)
-                    .regionProvider(DefaultAwsRegionProviderChain.builder().build())
-                    .scriptsDirectory(args.scriptsDirectory())
+            String accountName = stsClient.getCallerIdentity().account();
+            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
+            DeployInstance deployInstance = new DeployInstance(
+                    SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDirectory()),
+                    new UploadDockerImagesToEcr(
+                            UploadDockerImages.fromScriptsDirectory(args.scriptsDirectory(), ecrClient),
+                            accountName, regionProvider.getRegion().id()),
+                    DeployInstance.WriteLocalProperties.underScriptsDirectory(args.scriptsDirectory()),
+                    InvokeCdk.fromScriptsDirectory(args.scriptsDirectory()));
+            builder()
+                    .deployInstance(deployInstance)
                     .instanceId(args.instanceId())
                     .deployPaused(args.deployPaused())
                     .forceCdkApp(args.forceCdkApp())
@@ -127,19 +124,6 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
-        DeployInstance deployInstance = new DeployInstance(
-                SyncJars.fromScriptsDirectory(s3, accountName, scriptsDirectory),
-                new UploadDockerImagesToEcr(
-                        UploadDockerImages.builder()
-                                .scriptsDirectory(scriptsDirectory)
-                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
-                                .commandRunner(runCommand)
-                                .createMultiplatformBuilder(createMultiPlatformBuilder)
-                                .build(),
-                        accountName, regionProvider.getRegion().id()),
-                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
-
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
@@ -162,24 +146,15 @@ public class DeployExistingInstance {
     }
 
     public static final class Builder {
-        private Path scriptsDirectory;
+        private DeployInstance deployInstance;
         private String instanceId;
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
         private String accountName;
-        private S3Client s3;
-        private AwsRegionProvider regionProvider;
         private boolean deployPaused;
         private SleeperInternalCdkApp forceCdkApp;
-        private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
-        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
-        }
-
-        public Builder scriptsDirectory(Path scriptsDirectory) {
-            this.scriptsDirectory = scriptsDirectory;
-            return this;
         }
 
         public Builder instanceId(String instanceId) {
@@ -201,17 +176,6 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, StsClient sts) {
-            this.s3 = s3;
-            this.accountName = sts.getCallerIdentity().account();
-            return this;
-        }
-
-        public Builder regionProvider(AwsRegionProvider regionProvider) {
-            this.regionProvider = regionProvider;
-            return this;
-        }
-
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
             return this;
@@ -222,13 +186,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder runCommand(CommandPipelineRunner runCommand) {
-            this.runCommand = runCommand;
-            return this;
-        }
-
-        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
-            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
+        public Builder deployInstance(DeployInstance deployInstance) {
+            this.deployInstance = deployInstance;
             return this;
         }
 

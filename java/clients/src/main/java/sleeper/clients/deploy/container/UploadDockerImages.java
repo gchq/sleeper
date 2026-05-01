@@ -17,10 +17,15 @@ package sleeper.clients.deploy.container;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
 
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.container.images.ContainerImageTransferManager;
+import sleeper.container.images.ContainerImageTransferRequest;
+import sleeper.container.images.ContainerRegistryCredentials;
+import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
@@ -29,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,6 +45,7 @@ public class UploadDockerImages {
     private final DeployConfiguration deployConfig;
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
+    private final CopyContainerImage copyImage;
     private final String version;
     private final boolean createMultiplatformBuilder;
 
@@ -48,6 +55,7 @@ public class UploadDockerImages {
         deployConfig = requireNonNull(builder.deployConfig, "deployConfig must not be null");
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
+        copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.withDocker(commandRunner));
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -60,6 +68,14 @@ public class UploadDockerImages {
         return builder()
                 .scriptsDirectory(scriptsDirectory)
                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                .build();
+    }
+
+    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory, EcrClient ecrClient) throws IOException {
+        return builder()
+                .scriptsDirectory(scriptsDirectory)
+                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                 .build();
     }
 
@@ -113,9 +129,7 @@ public class UploadDockerImages {
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
         String sourceTag = buildTag(deployConfig.dockerRepositoryPrefix(), image);
-        commandRunner.runOrThrow("docker", "pull", sourceTag);
-        commandRunner.runOrThrow("docker", "tag", sourceTag, tag);
-        commandRunner.runOrThrow("docker", "push", tag);
+        copyImage.copy(sourceTag, tag, deployConfig.dockerCredentials());
     }
 
     private String buildTag(String repositoryPrefix, StackDockerImage image) {
@@ -136,6 +150,7 @@ public class UploadDockerImages {
         private DeployConfiguration deployConfig;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+        private CopyContainerImage copyImage;
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
 
@@ -172,6 +187,11 @@ public class UploadDockerImages {
             return this;
         }
 
+        public Builder copyImage(CopyContainerImage copyImage) {
+            this.copyImage = copyImage;
+            return this;
+        }
+
         public Builder version(String version) {
             this.version = version;
             return this;
@@ -197,6 +217,35 @@ public class UploadDockerImages {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+    }
+
+    public interface CopyContainerImage {
+
+        void copy(String source, String target, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
+
+        static CopyContainerImage withDocker(CommandPipelineRunner commandRunner) {
+            return (source, target, sourceCredentials) -> {
+                commandRunner.runOrThrow("docker", "pull", source);
+                commandRunner.runOrThrow("docker", "tag", source, target);
+                commandRunner.runOrThrow("docker", "push", target);
+            };
+        }
+
+        static CopyContainerImage withTransferManager(EcrClient ecrClient) {
+            return withTransferManager(ContainerImageTransferManager.builder().build(), ecrClient);
+        }
+
+        static CopyContainerImage withTransferManager(ContainerImageTransferManager transferManager, EcrClient ecrClient) {
+            EcrCredentialRetriever ecrCredentialRetriever = new EcrCredentialRetriever(ecrClient);
+            return (source, target, sourceCredentials) -> {
+                transferManager.transfer(ContainerImageTransferRequest.builder()
+                        .sourceImageReference(source)
+                        .targetImageReference(target)
+                        .sourceCredentials(sourceCredentials)
+                        .targetCredentialsRetriever(ecrCredentialRetriever)
+                        .build());
+            };
         }
     }
 }
