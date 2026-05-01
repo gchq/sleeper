@@ -57,9 +57,9 @@ public class SetDeployConfiguration {
                         "\n" +
                         "--image-repository-prefix <prefix>\n" +
                         "The shared prefix for container images in a remote registry to deploy in an instance of " +
-                        "Sleeper. Infers \"--image-location repository\". See the Sleeper documentation for the " +
-                        "images that should be found under this prefix: " +
+                        "Sleeper. See the Sleeper documentation for the images that should be found under this prefix:\n" +
                         "https://github.com/gchq/sleeper/blob/develop/docs/deployment/docker-images.md\n" +
+                        "Implies \"--image-location repository\".\n" +
                         "\n" +
                         "--image-username <username>\n" +
                         "Sets the username to authenticate with the container image registry. If this is set, the " +
