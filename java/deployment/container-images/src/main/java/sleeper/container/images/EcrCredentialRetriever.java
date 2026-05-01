@@ -38,7 +38,7 @@ public class EcrCredentialRetriever implements ContainerRegistryCredentials.Retr
     public Optional<ContainerRegistryCredentials> retrieve() {
         List<AuthorizationData> auths = ecrClient.getAuthorizationToken().authorizationData();
         if (auths.size() != 1) {
-            throw new RuntimeException("Expected 1 auth from ECR, found " + auths.size());
+            throw new RuntimeException("Expected 1 authorization token object from ECR, found " + auths.size());
         }
         AuthorizationData data = auths.get(0);
         String decoded = new String(Base64.getDecoder().decode(data.authorizationToken()), StandardCharsets.UTF_8);
