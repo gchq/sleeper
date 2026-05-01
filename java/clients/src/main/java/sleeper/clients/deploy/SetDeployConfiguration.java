@@ -1,0 +1,95 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.clients.deploy;
+
+import sleeper.clients.deploy.container.DockerImageLocation;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.container.images.ContainerRegistryCredentials;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+/**
+ * A command line tool to set the deployment configuration for Sleeper. Saves the configuration to the local file
+ * system.
+ */
+public class SetDeployConfiguration {
+
+    private SetDeployConfiguration() {
+    }
+
+    public static void main(String[] rawArgs) throws IOException {
+        writeConfigurationFile(new ConsoleInput(System.console()), rawArgs);
+    }
+
+    public static void writeConfigurationFile(ConsoleInput input, String... args) throws IOException {
+        CommandLineUsage usage = CommandLineUsage.builder()
+                .systemArguments(List.of("scripts directory"))
+                .options(List.of(
+                        CommandOption.longOption("image-location"),
+                        CommandOption.longOption("image-repository-prefix"),
+                        CommandOption.longOption("image-username"),
+                        CommandOption.longFlag("image-password-stdin")))
+                .helpSummary("" +
+                        "Sets the configuration to deploy Sleeper. Saves the configuration to the local file system.\n" +
+                        "\n" +
+                        "--image-location <location>\n" +
+                        "Sets the location of container images to deploy in an instance of Sleeper.\n" +
+                        "Available options: " + DockerImageLocation.describeOptions() + "\n" +
+                        "\n" +
+                        "--image-repository-prefix <prefix>\n" +
+                        "The shared prefix for container images in a remote registry to deploy in an instance of " +
+                        "Sleeper. See the Sleeper documentation for the images that should be found under this prefix: " +
+                        "https://github.com/gchq/sleeper/blob/develop/docs/deployment/docker-images.md\n" +
+                        "\n" +
+                        "--image-username <username>\n" +
+                        "Sets the username to authenticate with the container image registry. If this is set, the " +
+                        "password will be read from stdin as a prompt. If this is not set, no authentication will be " +
+                        "sent when communicating with the registry. Important: the credentials will be stored in " +
+                        "plain text in the local file system.")
+                .build();
+        Arguments arguments = CommandArguments.parseAndValidateOrExit(usage, args, commandArgs -> new Arguments(
+                Path.of(commandArgs.getString("scripts directory")),
+                DockerImageLocation.parseOrNull(commandArgs.getString("image-location")),
+                commandArgs.getString("image-repository-prefix"),
+                commandArgs.getString("image-username")));
+
+        Files.writeString(
+                arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
+                new DeployConfigurationSerDe().toJson(arguments.createConfiguration(input)));
+    }
+
+    private record Arguments(Path scriptsDirectory, DockerImageLocation imageLocation, String imagePrefix, String imageUsername) {
+
+        private DeployConfiguration createConfiguration(ConsoleInput input) {
+            return new DeployConfiguration(imageLocation, imagePrefix, imageCredentials(input));
+        }
+
+        private ContainerRegistryCredentials imageCredentials(ConsoleInput input) {
+            if (imageUsername == null) {
+                return null;
+            }
+            String password = input.promptPassword("Please enter the image registry password: ");
+            return new ContainerRegistryCredentials(imageUsername, password);
+        }
+    }
+
+}

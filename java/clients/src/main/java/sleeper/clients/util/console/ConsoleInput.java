@@ -29,6 +29,10 @@ public class ConsoleInput {
         return console.readLine(prompt);
     }
 
+    public String promptPassword(String prompt) {
+        return new String(console.readPassword());
+    }
+
     public void waitForLine() {
         console.readLine();
     }
