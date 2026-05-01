@@ -57,7 +57,8 @@ public class SetDeployConfiguration {
                         "\n" +
                         "--image-repository-prefix <prefix>\n" +
                         "The shared prefix for container images in a remote registry to deploy in an instance of " +
-                        "Sleeper. See the Sleeper documentation for the images that should be found under this prefix: " +
+                        "Sleeper. Infers \"--image-location repository\". See the Sleeper documentation for the " +
+                        "images that should be found under this prefix: " +
                         "https://github.com/gchq/sleeper/blob/develop/docs/deployment/docker-images.md\n" +
                         "\n" +
                         "--image-username <username>\n" +
@@ -68,28 +69,33 @@ public class SetDeployConfiguration {
                 .build();
         Arguments arguments = CommandArguments.parseAndValidateOrExit(usage, args, commandArgs -> new Arguments(
                 Path.of(commandArgs.getString("scripts directory")),
-                DockerImageLocation.parseOrNull(commandArgs.getString("image-location")),
-                commandArgs.getString("image-repository-prefix"),
-                commandArgs.getString("image-username")));
+                readConfiguration(input, commandArgs)));
 
         Files.writeString(
                 arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
-                new DeployConfigurationSerDe().toJson(arguments.createConfiguration(input)));
+                new DeployConfigurationSerDe().toJson(arguments.configuration()));
     }
 
-    private record Arguments(Path scriptsDirectory, DockerImageLocation imageLocation, String imagePrefix, String imageUsername) {
-
-        private DeployConfiguration createConfiguration(ConsoleInput input) {
-            return new DeployConfiguration(imageLocation, imagePrefix, imageCredentials(input));
+    private static DeployConfiguration readConfiguration(ConsoleInput input, CommandArguments arguments) {
+        DockerImageLocation imageLocation = arguments.getOptionalString("image-location").map(DockerImageLocation::parseOrNull).orElse(null);
+        String imagePrefix = arguments.getOptionalString("image-repository-prefix").orElse(null);
+        String imageUsername = arguments.getOptionalString("image-username").orElse(null);
+        if (imageLocation == null && imagePrefix != null) {
+            imageLocation = DockerImageLocation.REPOSITORY;
         }
+        ContainerRegistryCredentials imageCredentials = imageCredentials(input, imageUsername);
+        return new DeployConfiguration(imageLocation, imagePrefix, imageCredentials);
+    }
 
-        private ContainerRegistryCredentials imageCredentials(ConsoleInput input) {
-            if (imageUsername == null) {
-                return null;
-            }
-            String password = input.promptPassword("Please enter the image registry password: ");
-            return new ContainerRegistryCredentials(imageUsername, password);
+    private static ContainerRegistryCredentials imageCredentials(ConsoleInput input, String imageUsername) {
+        if (imageUsername == null) {
+            return null;
         }
+        String password = input.promptPassword("Please enter the image registry password: ");
+        return new ContainerRegistryCredentials(imageUsername, password);
+    }
+
+    private record Arguments(Path scriptsDirectory, DeployConfiguration configuration) {
     }
 
 }
