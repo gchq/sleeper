@@ -84,6 +84,9 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
                     .physicalResourceId(target)
                     .value(Map.of("digest", digest))
                     .build();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         } catch (RuntimeException e) {
             LOGGER.error("Failed to copy container image", e);
             return Response.builder()
@@ -95,7 +98,7 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     }
 
     public interface Client {
-        String transferGetDigest(String source, String target);
+        String transferGetDigest(String source, String target) throws InterruptedException;
     }
 
     public static class Builder {

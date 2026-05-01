@@ -56,7 +56,7 @@ public class ContainerImageTransferManager {
      * @param  request the request
      * @return         the result
      */
-    public ContainerImageTransferResult transfer(ContainerImageTransferRequest request) {
+    public ContainerImageTransferResult transfer(ContainerImageTransferRequest request) throws InterruptedException {
         try {
             ImageReference sourceRef = ImageReference.parse(request.getSourceImageReference());
             ImageReference targetRef = ImageReference.parse(request.getTargetImageReference());
@@ -65,9 +65,6 @@ public class ContainerImageTransferManager {
             return new ContainerImageTransferResult(
                     container.getTargetImage().toString(),
                     container.getDigest().toString());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ContainerImageTransferException(request, e);
         } catch (IOException | RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
             throw new ContainerImageTransferException(request, e);
         }
