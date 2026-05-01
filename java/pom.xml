@@ -187,7 +187,7 @@
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.80.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.251.0</cdk.version>
+        <cdk.version>2.252.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
         <cdk.kubectl.35.version>2.2.1</cdk.kubectl.35.version>
         <jsii.version>1.128.0</jsii.version>
