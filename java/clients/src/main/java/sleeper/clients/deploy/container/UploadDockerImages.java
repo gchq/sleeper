@@ -64,13 +64,6 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) throws IOException {
-        return builder()
-                .scriptsDirectory(scriptsDirectory)
-                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
-                .build();
-    }
-
     public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory, EcrClient ecrClient) throws IOException {
         return builder()
                 .scriptsDirectory(scriptsDirectory)

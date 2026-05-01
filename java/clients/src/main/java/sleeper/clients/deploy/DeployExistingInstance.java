@@ -18,18 +18,13 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
@@ -102,16 +97,9 @@ public class DeployExistingInstance {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
-            DeployInstance deployInstance = new DeployInstance(
-                    SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDirectory()),
-                    new UploadDockerImagesToEcr(
-                            UploadDockerImages.fromScriptsDirectory(args.scriptsDirectory(), ecrClient),
-                            accountName, regionProvider.getRegion().id()),
-                    DeployInstance.WriteLocalProperties.underScriptsDirectory(args.scriptsDirectory()),
-                    InvokeCdk.fromScriptsDirectory(args.scriptsDirectory()));
+            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
             builder()
-                    .deployInstance(deployInstance)
+                    .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, s3Client, ecrClient))
                     .instanceId(args.instanceId())
                     .deployPaused(args.deployPaused())
                     .forceCdkApp(args.forceCdkApp())

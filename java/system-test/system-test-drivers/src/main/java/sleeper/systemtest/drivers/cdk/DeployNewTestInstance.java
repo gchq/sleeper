@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -25,10 +24,6 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
-import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
@@ -68,22 +63,15 @@ public class DeployNewTestInstance {
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
+            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
-            DeployInstance deployInstance = new DeployInstance(
-                    SyncJars.fromScriptsDirectory(s3Client, accountName, scriptsDirectory),
-                    new UploadDockerImagesToEcr(
-                            UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
-                            accountName, regionProvider.getRegion().id()),
-                    DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                    InvokeCdk.fromScriptsDirectory(scriptsDirectory));
             DeployNewInstance.builder()
-                    .deployInstance(deployInstance)
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, s3Client, ecrClient))
                     .accountName(accountName)
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient)
