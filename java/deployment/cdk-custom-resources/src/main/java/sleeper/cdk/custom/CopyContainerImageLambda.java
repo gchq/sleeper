@@ -41,20 +41,11 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
     private final Client client;
 
     public CopyContainerImageLambda() {
-        this(builder()
-                .targetCredentialRetriever(new EcrCredentialRetriever(EcrClient.create())));
-    }
-
-    protected CopyContainerImageLambda(Builder builder) {
-        this(builder.createClient());
+        this(Client.transferManagerWithSourceCredentials(null));
     }
 
     public CopyContainerImageLambda(Client client) {
         this.client = client;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     @Override
@@ -99,34 +90,22 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
 
     public interface Client {
         String transferGetDigest(String source, String target) throws InterruptedException;
-    }
 
-    public static class Builder {
-        private ContainerImageTransferManager transferManager;
-        private ContainerRegistryCredentials.Retriever sourceCredentialRetriever;
-        private ContainerRegistryCredentials.Retriever targetCredentialRetriever;
-
-        public Builder transferManager(ContainerImageTransferManager transferManager) {
-            this.transferManager = transferManager;
-            return this;
+        static Client transferManagerWithSourceCredentials(
+                ContainerRegistryCredentials.Retriever sourceCredentialRetriever) {
+            return transferManager(
+                    ContainerImageTransferManager.builder()
+                            .allowInsecureRegistries(false)
+                            .cacheDir(createTemporaryDirectory())
+                            .build(),
+                    sourceCredentialRetriever,
+                    new EcrCredentialRetriever(EcrClient.create()));
         }
 
-        public Builder sourceCredentialRetriever(ContainerRegistryCredentials.Retriever sourceCredentialRetriever) {
-            this.sourceCredentialRetriever = sourceCredentialRetriever;
-            return this;
-        }
-
-        public Builder targetCredentialRetriever(ContainerRegistryCredentials.Retriever targetCredentialRetriever) {
-            this.targetCredentialRetriever = targetCredentialRetriever;
-            return this;
-        }
-
-        public CopyContainerImageLambda build() {
-            return new CopyContainerImageLambda(this);
-        }
-
-        private Client createClient() {
-            ContainerImageTransferManager transferManager = transferManager();
+        static Client transferManager(
+                ContainerImageTransferManager transferManager,
+                ContainerRegistryCredentials.Retriever sourceCredentialRetriever,
+                ContainerRegistryCredentials.Retriever targetCredentialRetriever) {
             return (source, target) -> transferManager.transfer(ContainerImageTransferRequest.builder()
                     .sourceImageReference(source)
                     .targetImageReference(target)
@@ -134,24 +113,13 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
                     .targetCredentialsRetriever(targetCredentialRetriever)
                     .build()).imageDigest();
         }
+    }
 
-        private ContainerImageTransferManager transferManager() {
-            if (transferManager != null) {
-                return transferManager;
-            } else {
-                return ContainerImageTransferManager.builder()
-                        .allowInsecureRegistries(false)
-                        .cacheDir(createTemporaryDirectory())
-                        .build();
-            }
-        }
-
-        private static Path createTemporaryDirectory() {
-            try {
-                return Files.createTempDirectory(null);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+    private static Path createTemporaryDirectory() {
+        try {
+            return Files.createTempDirectory(null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
