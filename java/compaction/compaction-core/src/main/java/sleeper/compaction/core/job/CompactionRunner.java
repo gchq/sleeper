@@ -25,7 +25,6 @@ import java.io.IOException;
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
  */
-@FunctionalInterface
 public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
@@ -39,4 +38,32 @@ public interface CompactionRunner {
      * @throws IteratorCreationException a problem creating any configured iterators
      */
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
+
+    /**
+     * Gets whether a compaction is in progress.
+     *
+     * @implNote this method MUST be thread safe! It must be safe to call this method while another thread is
+     *           executing
+     *           {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+     *
+     * @return   true if a compaction has been started, but not yet finished
+     */
+    boolean isCompactionInProgress();
+
+    /**
+     * Gets the number of input rows read by a currently in progress compaction.
+     *
+     * The compactor should regularly update the count of the number of rows read during a compaction. By polling this
+     * method,
+     * it is possible to determine if a compaction is making progress.
+     *
+     * @implNote                       this method MUST be thread safe! It must be safe to call this method while
+     *                                 another thread is executing
+     *                                 {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+     *
+     * @return                         the number of rows read by the currently executing compaction
+     * @throws   IllegalStateException if this method is called when {@link CompactionRunner#isCompactionInProgress()}
+     *                                 returns false
+     */
+    long getRowsReadByCurrentCompaction() throws IllegalStateException;
 }
