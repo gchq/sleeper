@@ -24,18 +24,22 @@ use crate::{
         sketch::{Sketcher, output_sketch},
         util::{explain_plan, retrieve_object_metas},
     },
+    sleeper_context::SleeperContext,
 };
 use datafusion::{
-    common::plan_err,
+    common::{
+        plan_err,
+        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    },
     dataframe::DataFrame,
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     physical_expr::LexOrdering,
-    physical_plan::displayable,
+    physical_plan::{ExecutionPlan, displayable, filter::FilterExec},
 };
 use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 /// Contains compaction results.
 ///
@@ -57,10 +61,12 @@ pub struct CompactionResult {
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
     config: &CommonConfig<'_>,
-    runtime: Arc<RuntimeEnv>,
+    sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult, DataFusionError> {
     let ops = SleeperOperations::new(config);
     info!("DataFusion compaction: {ops}");
+
+    let runtime = sleeper_context.retrieve_runtime_env()?;
 
     // Retrieve Parquet output options
     let OutputType::File {
@@ -82,8 +88,14 @@ pub async fn compact(
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats =
-        execute_compaction_plan(&ops, completer.as_ref(), frame, sort_ordering.as_ref()).await?;
+    let stats = execute_compaction_plan(
+        sleeper_context,
+        &ops,
+        completer.as_ref(),
+        frame,
+        sort_ordering.as_ref(),
+    )
+    .await?;
 
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
@@ -142,6 +154,7 @@ fn add_completion_stage<'a>(
 /// # Errors
 /// Any error that occurs during execution will be returned.
 async fn execute_compaction_plan<'a>(
+    sleeper_context: &SleeperContext,
     ops: &SleeperOperations<'_>,
     completer: &(dyn Completer + 'a),
     frame: DataFrame,
@@ -153,10 +166,33 @@ async fn execute_compaction_plan<'a>(
         "Physical plan\n{}",
         displayable(physical_plan.as_ref()).indent(true)
     );
+
+    // Update pointer to filter stage in sleeper context
+    {
+        let filter_stage = find_filter_exec_stage(physical_plan.clone())?;
+        sleeper_context.set_filter(filter_stage);
+    }
+
     match completer.execute_frame(physical_plan, task_ctx).await? {
         CompletedOutput::File(stats) => Ok(stats),
         CompletedOutput::ArrowRecordBatch(_) => {
             panic!("FileOutputCompleter did not return a CompletedOutput::File")
         }
     }
+}
+
+/// Traverses a plan
+fn find_filter_exec_stage(
+    plan: Arc<dyn ExecutionPlan>,
+) -> Result<Option<Weak<dyn ExecutionPlan>>, DataFusionError> {
+    let mut filter_exec = None;
+    plan.transform_up(|node| {
+        Ok(if node.as_any().downcast_ref::<FilterExec>().is_some() {
+            filter_exec = Some(Arc::downgrade(&node));
+            Transformed::new(node, false, TreeNodeRecursion::Stop)
+        } else {
+            Transformed::new(node, false, TreeNodeRecursion::Continue)
+        })
+    })?;
+    Ok(filter_exec)
 }

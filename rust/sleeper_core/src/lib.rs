@@ -84,8 +84,7 @@ pub async fn run_compaction(
     sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult> {
     let store_factory = config.create_object_store_factory();
-    let rt = sleeper_context.retrieve_runtime_env()?;
-    crate::datafusion::compact(&store_factory, config, rt)
+    crate::datafusion::compact(&store_factory, config, sleeper_context)
         .await
         .map_err(Into::into)
 }

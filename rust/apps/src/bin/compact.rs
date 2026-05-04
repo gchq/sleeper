@@ -28,7 +28,7 @@ use sleeper_core::{
     run_compaction,
     sleeper_context::SleeperContext,
 };
-use std::{collections::HashMap, io::Write};
+use std::{collections::HashMap, io::Write, sync::Arc, time::Duration};
 use url::Url;
 
 /// Runs a Sleeper compaction algorithm.
@@ -166,7 +166,18 @@ async fn main() -> color_eyre::Result<()> {
         )?)
         .build()?;
 
-    let result = run_compaction(&details, &SleeperContext::default()).await?;
+    let context = Arc::new(SleeperContext::default());
+    let ic = context.clone();
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            if let Some(ap) = ic.get_filter_count() {
+                println!("Read {ap} rows");
+            }
+        }
+    });
+
+    let result = run_compaction(&details, &context).await?;
     info!(
         "Compaction read {} rows and wrote {} rows",
         result.rows_read.to_formatted_string(&Locale::en),

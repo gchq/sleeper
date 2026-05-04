@@ -20,8 +20,9 @@ use datafusion::execution::object_store::ObjectStoreRegistry;
 use datafusion::{
     error::DataFusionError,
     execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
+    physical_plan::{ExecutionPlan, metrics::MetricsSet},
 };
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 /// A thread-safe class containing internal `DataFusion` context that needs to be
 /// persisted between queries/compactions.
@@ -29,6 +30,8 @@ use std::sync::{Arc, Mutex};
 pub struct SleeperContext {
     // Interior mutable runtime
     inner: Mutex<RuntimeEnv>,
+    // Weak pointer to currently executing filter stage
+    filter_stage: Mutex<Option<Weak<dyn ExecutionPlan>>>,
 }
 
 /// The maximum size of `DataFusion`'s file metadata cache.
@@ -55,5 +58,21 @@ impl SleeperContext {
                 .with_metadata_cache_limit(METADATA_CACHE_SIZE)
                 .build()?,
         ))
+    }
+
+    pub fn get_filter_count(&self) -> Option<usize> {
+        self.filter_stage
+            .lock()
+            .expect("SleeperContext lock poisoned")
+            .as_ref()
+            .and_then(Weak::upgrade)
+            .as_deref()
+            .and_then(ExecutionPlan::metrics)
+            .as_ref()
+            .and_then(MetricsSet::output_rows)
+    }
+
+    pub fn set_filter(&self, filter: Option<Weak<dyn ExecutionPlan>>) {
+        *self.filter_stage.lock().unwrap() = filter;
     }
 }
