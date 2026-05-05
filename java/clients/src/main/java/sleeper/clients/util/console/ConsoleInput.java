@@ -16,29 +16,49 @@
 package sleeper.clients.util.console;
 
 import java.io.Console;
+import java.io.PrintStream;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class ConsoleInput {
 
     private final Console console;
+    private final PrintStream out;
+    private final Scanner scanner;
 
-    public ConsoleInput(Console console) {
-        this.console = Objects.requireNonNull(console, "console must not be null");
+    public ConsoleInput(Console console, PrintStream out, Scanner scanner) {
+        this.console = console;
+        this.out = Objects.requireNonNull(out, "out must not be null");
+        this.scanner = Objects.requireNonNull(scanner, "scanner must not be null");
     }
 
     public static ConsoleInput stdIn() {
-        return new ConsoleInput(System.console());
+        return new ConsoleInput(System.console(), System.out, new Scanner(System.in));
     }
 
     public String promptLine(String prompt) {
-        return console.readLine(prompt);
+        if (console == null) {
+            out.print(prompt);
+            return scanner.nextLine();
+        } else {
+            return console.readLine(prompt);
+        }
     }
 
     public String promptPassword(String prompt) {
-        return new String(console.readPassword(prompt));
+        if (console == null) {
+            out.print(prompt);
+            return scanner.nextLine();
+        } else {
+            return new String(console.readPassword(prompt));
+        }
     }
 
     public void waitForLine() {
-        console.readLine();
+        if (console == null) {
+            scanner.nextLine();
+        } else {
+            console.readLine();
+        }
     }
 }
