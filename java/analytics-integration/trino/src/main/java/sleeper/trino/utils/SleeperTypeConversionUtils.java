@@ -86,14 +86,8 @@ public class SleeperTypeConversionUtils {
     /**
      * Returns the minimum value of the specified Trino type.
      *
-<<<<<<< Updated upstream
-     * @param  trinoType   the type of the object
-     * @param  trinoObject the object to convert
-     * @return             the converted object
-=======
      * @param  trinoType the type of the object
-     * @return           the minimum value
->>>>>>> Stashed changes
+     * @return           the converted object
      */
     public static Object getMinimumValueForTrinoType(io.trino.spi.type.Type trinoType) {
         if (trinoType.equals(IntegerType.INTEGER)) {
