@@ -106,7 +106,7 @@ public class DeleteTable {
         String tableName = args[1];
         boolean force = optionalArgument(args, 2).map("--force"::equals).orElse(false);
         if (!force) {
-            ConsoleInput input = new ConsoleInput(System.console());
+            ConsoleInput input = ConsoleInput.stdIn();
             String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
             if (!"y".equalsIgnoreCase(result)) {
                 return;

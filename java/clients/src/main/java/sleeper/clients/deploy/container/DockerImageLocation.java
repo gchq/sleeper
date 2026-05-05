@@ -15,7 +15,25 @@
  */
 package sleeper.clients.deploy.container;
 
+import org.apache.commons.lang3.EnumUtils;
+
+import java.util.Locale;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
+
 public enum DockerImageLocation {
     LOCAL_BUILD,
-    REPOSITORY
+    REPOSITORY;
+
+    public static DockerImageLocation parseOrNull(String string) {
+        return EnumUtils.getEnumIgnoreCase(DockerImageLocation.class, string);
+    }
+
+    public static String describeOptions() {
+        return Stream.of(values())
+                .map(DockerImageLocation::toString)
+                .map(string -> string.toLowerCase(Locale.ROOT))
+                .collect(joining(", "));
+    }
 }

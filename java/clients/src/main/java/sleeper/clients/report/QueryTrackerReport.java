@@ -117,7 +117,7 @@ public class QueryTrackerReport {
     }
 
     private static TrackerQuery promptForQueryType() {
-        return TrackerQueryPrompt.from(new ConsoleInput(System.console()));
+        return TrackerQueryPrompt.from(ConsoleInput.stdIn());
     }
 
     private static void printUsage() {
