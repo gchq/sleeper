@@ -46,8 +46,7 @@ public class SetDeployConfiguration {
                 .options(List.of(
                         CommandOption.longOption("image-location"),
                         CommandOption.longOption("image-repository-prefix"),
-                        CommandOption.longOption("image-username"),
-                        CommandOption.longFlag("image-password-stdin")))
+                        CommandOption.longOption("image-username")))
                 .helpSummary("" +
                         "Sets the configuration to deploy Sleeper. Saves the configuration to the local file system.\n" +
                         "\n" +
