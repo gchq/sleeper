@@ -15,6 +15,7 @@
  */
 package sleeper.clients.deploy.container;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -231,7 +232,10 @@ public class UploadDockerImages {
         }
 
         static CopyContainerImage withTransferManager(EcrClient ecrClient) {
-            return withTransferManager(ContainerImageTransferManager.builder().build(), ecrClient);
+            return withTransferManager(ContainerImageTransferManager.builder()
+                    .cacheDir(SystemUtils.getUserHomePath().resolve(".sleeper").resolve("container-cache"))
+                    .allowInsecureRegistries(false)
+                    .build(), ecrClient);
         }
 
         static CopyContainerImage withTransferManager(ContainerImageTransferManager transferManager, EcrClient ecrClient) {
