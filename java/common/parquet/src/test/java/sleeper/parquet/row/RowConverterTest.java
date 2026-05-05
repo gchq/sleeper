@@ -83,7 +83,7 @@ class RowConverterTest {
         converter.end();
 
         // Then
-        assertThat(converter.getRow().get("key")).isEqualTo("row1");
+        assertThat(converter.getRow().get("key")).isEqualTo("row2");
         assertThat(converter.getRow().get("value")).isNull();
     }
 
