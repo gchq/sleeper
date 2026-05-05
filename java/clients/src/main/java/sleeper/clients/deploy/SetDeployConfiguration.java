@@ -37,7 +37,7 @@ public class SetDeployConfiguration {
     }
 
     public static void main(String[] args) throws IOException {
-        writeConfigurationFile(new ConsoleInput(System.console()), args);
+        writeConfigurationFile(ConsoleInput.stdIn(), args);
     }
 
     public static void writeConfigurationFile(ConsoleInput input, String... args) throws IOException {

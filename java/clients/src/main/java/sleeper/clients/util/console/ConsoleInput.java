@@ -26,6 +26,10 @@ public class ConsoleInput {
         this.console = Objects.requireNonNull(console, "console must not be null");
     }
 
+    public static ConsoleInput stdIn() {
+        return new ConsoleInput(System.console());
+    }
+
     public String promptLine(String prompt) {
         return console.readLine(prompt);
     }

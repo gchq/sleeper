@@ -86,8 +86,8 @@ public class AdminClient {
 
         InvokeCdk cdk = InvokeCdk.fromScriptsDirectory(scriptsDir);
 
-        ConsoleOutput out = new ConsoleOutput(System.out);
-        ConsoleInput in = new ConsoleInput(System.console());
+        ConsoleOutput out = ConsoleOutput.stdOut();
+        ConsoleInput in = ConsoleInput.stdIn();
 
         int errorCode;
         try (S3Client s3Client = AwsV2ClientHelper.buildAwsV2Client(S3Client.builder());

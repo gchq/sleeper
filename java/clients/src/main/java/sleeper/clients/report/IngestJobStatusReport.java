@@ -74,7 +74,7 @@ public class IngestJobStatusReport {
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this(tracker, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
+                Clock.systemUTC(), ConsoleInput.stdIn(), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
 

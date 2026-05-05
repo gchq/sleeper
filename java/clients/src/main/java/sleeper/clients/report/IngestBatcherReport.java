@@ -70,7 +70,7 @@ public class IngestBatcherReport {
             BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
-        this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
+        this.query = BatcherQuery.from(queryType, ConsoleInput.stdIn());
         this.queryType = query.getType();
         this.tableProvider = tableProvider;
     }

@@ -72,7 +72,7 @@ public class CompactionJobStatusReport {
             TableStatus table, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobTracker, reporter,
                 JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                        Clock.systemUTC(), new ConsoleInput(System.console())));
+                        Clock.systemUTC(), ConsoleInput.stdIn()));
     }
 
     public CompactionJobStatusReport(
