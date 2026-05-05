@@ -233,7 +233,7 @@ public class UploadDockerImages {
 
         static CopyContainerImage withTransferManager(EcrClient ecrClient) {
             return withTransferManager(ContainerImageTransferManager.builder()
-                    .cacheDir(SystemUtils.getUserHomePath().resolve(".sleeper").resolve("container-cache"))
+                    .cacheDir(SystemUtils.getUserHomePath().resolve(".cache").resolve("sleeper").resolve("container-cache"))
                     .allowInsecureRegistries(false)
                     .build(), ecrClient);
         }
