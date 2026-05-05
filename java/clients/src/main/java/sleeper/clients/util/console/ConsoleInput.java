@@ -16,13 +16,14 @@
 package sleeper.clients.util.console;
 
 import java.io.Console;
+import java.util.Objects;
 
 public class ConsoleInput {
 
     private final Console console;
 
     public ConsoleInput(Console console) {
-        this.console = console;
+        this.console = Objects.requireNonNull(console, "console must not be null");
     }
 
     public String promptLine(String prompt) {
