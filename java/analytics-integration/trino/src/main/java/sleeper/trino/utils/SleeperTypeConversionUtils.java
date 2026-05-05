@@ -84,11 +84,16 @@ public class SleeperTypeConversionUtils {
     }
 
     /**
-     * Convert an object of a specified Trino type into an object which can be used as a row key in Sleeper.
+     * Returns the minimum value of the specified Trino type.
      *
+<<<<<<< Updated upstream
      * @param  trinoType   the type of the object
      * @param  trinoObject the object to convert
      * @return             the converted object
+=======
+     * @param  trinoType the type of the object
+     * @return           the minimum value
+>>>>>>> Stashed changes
      */
     public static Object getMinimumValueForTrinoType(io.trino.spi.type.Type trinoType) {
         if (trinoType.equals(IntegerType.INTEGER)) {
@@ -103,6 +108,13 @@ public class SleeperTypeConversionUtils {
         throw new UnsupportedOperationException("Trino column type " + trinoType + " is not handled");
     }
 
+    /**
+     * Convert an object of a specified Trino type into an object which can be used as a row key in Sleeper.
+     *
+     * @param  trinoType   the type of the object
+     * @param  trinoObject the object to convert
+     * @return             the converted object
+     */
     public static Object convertTrinoObjectToSleeperRowKeyObject(io.trino.spi.type.Type trinoType, Object trinoObject) {
         if (trinoType.equals(IntegerType.INTEGER)) {
             return trinoObject;
