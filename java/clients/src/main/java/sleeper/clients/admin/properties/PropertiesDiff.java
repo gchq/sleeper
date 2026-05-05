@@ -22,7 +22,6 @@ import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.SleeperPropertyValues;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -45,11 +44,6 @@ public class PropertiesDiff {
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
         this(calculateChanges(before, after));
-    }
-
-    public PropertiesDiff(SleeperProperty property, String before, String after) {
-        this(Map.of(property.getPropertyName(),
-                new PropertyDiff(property.getPropertyName(), before, after)));
     }
 
     private PropertiesDiff(Map<String, PropertyDiff> changes) {
@@ -101,18 +95,15 @@ public class PropertiesDiff {
     }
 
     /**
-     * Retrieves a list of properties changed in this diff that require a CDK deployment when they are changed. If the
-     * list is not empty, a CDK redeployment will be required.
+     * Checks whether a CDK deployment is required to apply this change.
      *
-     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
      * @param  propertyIndex the index of all properties of the type being changed
-     * @return               the list of changed properties requiring a CDK deployment
+     * @return               true if a CDK deployment is required
      */
-    public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
-        return changes.values().stream()
-                .flatMap(diff -> diff.getProperty(propertyIndex).stream())
-                .filter(SleeperProperty::isRunCdkDeployWhenChanged)
-                .collect(Collectors.toList());
+    public boolean isCdkDeployRequired(SleeperPropertyIndex<?> propertyIndex) {
+        return changes.keySet().stream()
+                .flatMap(propertyName -> propertyIndex.getByName(propertyName).stream())
+                .anyMatch(SleeperProperty::isRunCdkDeployWhenChanged);
     }
 
     private static Map<String, PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
@@ -163,8 +154,8 @@ public class PropertiesDiff {
         }
     }
 
-    public List<PropertyDiff> getChanges() {
-        return new ArrayList<>(changes.values());
+    public Stream<PropertyDiff> streamChanges() {
+        return changes.values().stream();
     }
 
     /**

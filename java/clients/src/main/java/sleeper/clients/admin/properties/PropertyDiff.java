@@ -84,6 +84,9 @@ public class PropertyDiff {
             out.printf("Before: %s%n", oldValue);
         }
         out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), result), newValue);
+        propertyOpt.filter(SleeperProperty::isRunCdkDeployWhenChanged)
+                .filter(SleeperProperty::isEditable)
+                .ifPresent(property -> out.println("Note that a change to this property requires redeployment of the instance."));
         out.println();
     }
 
@@ -125,17 +128,6 @@ public class PropertyDiff {
 
     public String getNewValue() {
         return newValue;
-    }
-
-    /**
-     * Retrieves the declaration of the property changed in this diff from the index.
-     *
-     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
-     * @param  propertyIndex the index of all properties of the type being changed
-     * @return               the definition of the property changed by this diff, if it is in the index
-     */
-    public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
-        return propertyIndex.getByName(propertyName);
     }
 
     @Override

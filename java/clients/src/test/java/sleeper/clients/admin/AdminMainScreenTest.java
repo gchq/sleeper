@@ -15,16 +15,22 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_INPUT_NOT_RECOGNISED;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
-class AdminMainScreenTest extends AdminClientMockStoreBase {
+class AdminMainScreenTest extends AdminClientInMemoryTestBase {
+
+    @BeforeEach
+    void setUp() {
+        setInstanceProperties(createValidInstanceProperties());
+    }
 
     @Test
     void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {

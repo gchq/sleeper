@@ -143,7 +143,7 @@ class StateMachinePlatformExecutorWiremockIT {
         findInputJson(input -> assertThatJson(input)
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.driver.memory="))
-                .containsExactly("spark.driver.memory=7g"));
+                .containsExactly("spark.driver.memory=12g"));
     }
 
     @Test

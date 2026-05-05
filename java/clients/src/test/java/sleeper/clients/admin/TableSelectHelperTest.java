@@ -18,7 +18,7 @@ package sleeper.clients.admin;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.util.console.UserExitedException;
 
@@ -30,7 +30,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-class TableSelectHelperTest extends AdminClientMockStoreBase {
+class TableSelectHelperTest extends AdminClientInMemoryTestBase {
     @Test
     void shouldContinueIfTableExists() {
         // Given
@@ -77,7 +77,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     }
 
     private String runTableSelectHelperGetOutput() {
-        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store, new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex))
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store, new TableNamesReport(out.consoleOut(), in.consoleIn(), clientProperties.createTableIndex(instanceProperties)))
                 .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> out.consoleOut().println("\n" +
                         "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

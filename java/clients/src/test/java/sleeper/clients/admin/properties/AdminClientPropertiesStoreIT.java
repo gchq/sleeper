@@ -28,6 +28,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Field;
@@ -50,7 +51,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -214,7 +214,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @Nested
     class DeployWithCdk {
         @Test
-        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedInstancePropertyUpdated() throws Exception {
+        void shouldRunCdkDeployWithLocalPropertiesFiles() throws Exception {
             // Given
             createTableInS3("test-table");
             AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
@@ -222,25 +222,16 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            updateInstancePropertyViaCdk(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            verifyPropertiesDeployedWithCdk();
+            verifyAnyAppDeployedWithCdk();
             assertThat(localPropertiesWhenCdkDeployed.get().get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
             assertThat(localTablesWhenCdkDeployed)
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("test-table");
-        }
-
-        @Test
-        void shouldNotRunCdkDeployWhenUnflaggedInstancePropertyUpdated() {
-            // When
-            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
-
-            // Then
-            verifyNoInteractions(cdk);
         }
 
         @Test
@@ -250,10 +241,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             S3InstanceProperties.saveToS3(s3, instanceProperties);
 
             // When
-            updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+            updateInstancePropertyViaCdk(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
-            verifyAnyPropertiesDeployedWithCdk();
+            verifyAnyAppDeployedWithCdk();
             assertThat(store().loadInstanceProperties(instanceId)
                     .get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
@@ -266,7 +257,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             doThrowWhenPropertiesDeployedWithCdk(thrown);
 
             // When / Then
-            assertThatThrownBy(() -> updateInstanceProperty(
+            assertThatThrownBy(() -> updateInstancePropertyViaCdk(
                     instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
                     .cause().isSameAs(thrown);
@@ -281,7 +272,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+                updateInstancePropertyViaCdk(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -356,26 +347,26 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @BeforeEach
         void setup() {
             dockerImageConfiguration = DockerImageConfiguration.getDefault();
-            instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.CompactionStack));
+            instanceProperties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         }
 
         @Test
-        void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
+        void shouldUploadDockerImageWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "IngestStack");
+            updateInstancePropertyViaCdk(instanceId, OPTIONAL_STACKS, "BulkExportStack");
 
             // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "bulk-export-task-execution"));
         }
 
         @Test
-        void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
+        void shouldReuploadDockerImagesWhenNoNewStacksAreEnabled() {
             // When
-            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
+            updateInstancePropertyViaCdk(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
-            assertThat(dockerCommandsThatRan).isEmpty();
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
         }
     }
 
@@ -385,9 +376,18 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {
         InstanceProperties properties = store.loadInstanceProperties(instanceId);
-        String valueBefore = properties.get(property);
         properties.set(property, value);
-        store.saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveInstanceProperties(properties);
+    }
+
+    private void updateInstancePropertyViaCdk(String instanceId, InstanceProperty property, String value) {
+        updateInstancePropertyViaCdk(store(), instanceId, property, value);
+    }
+
+    private void updateInstancePropertyViaCdk(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {
+        InstanceProperties properties = store.loadInstanceProperties(instanceId);
+        properties.set(property, value);
+        store.saveInstancePropertiesViaCdk(properties, SleeperInternalCdkApp.STANDARD);
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
@@ -409,7 +409,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        }).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void createTableInS3(String tableName) {
@@ -433,15 +433,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         tablePropertiesStore.deleteByName(tableName);
     }
 
-    private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
-    }
-
-    private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange(propertiesFile()));
+    private void verifyAnyAppDeployedWithCdk() throws Exception {
+        verify(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        doThrow(throwable).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 }

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.clients.report.ingest.task.IngestTaskStatusReportTestHelper;
 import sleeper.common.task.QueueMessageCount;
@@ -63,7 +63,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStar
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
-class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
+class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
     @DisplayName("Ingest job status report")
     @Nested
     class IngestJobStatusReport {

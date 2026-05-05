@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.custom.containers;
+package sleeper.container.images;
 
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.LogEvent;
@@ -33,12 +33,25 @@ public class JibEvents {
     private JibEvents() {
     }
 
+    /**
+     * Configures Jib to send log events and progress events to SLF4J.
+     *
+     * @param  logger        the SLF4J logger
+     * @param  containerizer the Jib containerizer
+     * @return               the same containerizer
+     */
     public static Containerizer logEvents(Logger logger, Containerizer containerizer) {
         return containerizer
                 .addEventHandler(LogEvent.class, logEventHandler(logger))
                 .addEventHandler(ProgressEvent.class, progressEventHandler(logger));
     }
 
+    /**
+     * Creates event handlers to send Jib log events and progress events to SLF4J.
+     *
+     * @param  logger the SLF4J logger
+     * @return        the event handlers
+     */
     public static EventHandlers createEventHandlers(Logger logger) {
         return EventHandlers.builder()
                 .add(LogEvent.class, logEventHandler(logger))
@@ -46,10 +59,22 @@ public class JibEvents {
                 .build();
     }
 
+    /**
+     * Creates a consumer to send Jib log events to SLF4J.
+     *
+     * @param  logger the SLF4J logger
+     * @return        the consumer
+     */
     public static Consumer<LogEvent> logEventHandler(Logger logger) {
         return log -> logger.info("From Jib: {}", log);
     }
 
+    /**
+     * Creates a consumer to send Jib progress events to SLF4J.
+     *
+     * @param  logger the SLF4J logger
+     * @return        the consumer
+     */
     public static Consumer<ProgressEvent> progressEventHandler(Logger logger) {
         return new ProgressEventHandler(
                 update -> logger.info("Jib progress {}, unfinished tasks: {}", progressToString(update), update.getUnfinishedLeafTasks()));

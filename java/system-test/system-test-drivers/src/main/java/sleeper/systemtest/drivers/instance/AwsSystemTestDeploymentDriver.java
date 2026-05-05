@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
-import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployConfiguration;
@@ -45,9 +44,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
-import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.SYSTEM_TEST_INFRA;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
@@ -56,13 +55,11 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
 
     private final SystemTestParameters parameters;
     private final S3Client s3;
-    private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
-        this.ecr = clients.getEcr();
         this.cloudFormation = clients.getCloudFormation();
     }
 
@@ -99,7 +96,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             InvokeCdk.builder()
                     .jarsDirectory(parameters.getJarsDirectory())
                     .runCommand(CommandUtils::runCommandLogOutput)
-                    .build().invoke(SYSTEM_TEST_STANDALONE,
+                    .build().invoke(SYSTEM_TEST_INFRA,
                             CdkCommand.deploySystemTestStandalone(propertiesFile));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

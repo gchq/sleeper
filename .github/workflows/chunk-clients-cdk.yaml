@@ -17,6 +17,7 @@ on:
       - 'java/deployment/cdk-custom-resources/**'
       - 'java/deployment/cdk-environment/**'
       - 'java/deployment/build-uptime-lambda/**'
+      - 'java/deployment/container-images/**'
       - 'java/rest-api/**'
       - 'java/system-test/system-test-cdk/**'
       - 'java/system-test/system-test-configuration/**'
