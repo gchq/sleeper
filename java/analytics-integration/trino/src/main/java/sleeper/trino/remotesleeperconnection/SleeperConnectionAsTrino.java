@@ -297,15 +297,20 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         // Convert the Trino Range objects into Sleeper Range objects
         Schema sleeperSchema = sleeperRawAwsConnection.getSleeperSchema(sleeperTableHandle.getSchemaTableName().getTableName());
         sleeper.core.range.Range.RangeFactory rangeFactory = new sleeper.core.range.Range.RangeFactory(sleeperSchema);
+        io.trino.spi.type.Type rowKeyTrinoType = rowKeySleeperColumnHandle.getColumnTrinoType();
         List<Region> sleeperRegionList = trinoRangeList.stream().map(
-                trinoRange -> rangeFactory.createRange(
-                        rowKeySleeperColumnHandle.getColumnName(),
-                        SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
-                                rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getLowBoundedValue()),
-                        trinoRange.isLowInclusive(),
-                        SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(
-                                rowKeySleeperColumnHandle.getColumnTrinoType(), trinoRange.getHighBoundedValue()),
-                        trinoRange.isHighInclusive()))
+                trinoRange -> {
+                    Object min = trinoRange.isLowUnbounded()
+                            ? SleeperTypeConversionUtils.getMinimumValueForTrinoType(rowKeyTrinoType)
+                            : SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(rowKeyTrinoType, trinoRange.getLowBoundedValue());
+                    Object max = trinoRange.isHighUnbounded()
+                            ? null
+                            : SleeperTypeConversionUtils.convertTrinoObjectToSleeperRowKeyObject(rowKeyTrinoType, trinoRange.getHighBoundedValue());
+                    return rangeFactory.createRange(
+                            rowKeySleeperColumnHandle.getColumnName(),
+                            min, trinoRange.isLowInclusive(),
+                            max, trinoRange.isHighInclusive());
+                })
                 .map(sleeperRange -> new Region(ImmutableList.of(sleeperRange)))
                 .collect(ImmutableList.toImmutableList());
 
