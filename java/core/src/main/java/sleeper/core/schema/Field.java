@@ -51,10 +51,7 @@ public class Field {
 
     @Override
     public String toString() {
-        if (nullable) {
-            return "Field{" + "name=" + name + ", type=" + type + ", nullable=true}";
-        }
-        return "Field{" + "name=" + name + ", type=" + type + '}';
+        return "Field{" + "name=" + name + ", type=" + type + ", nullable=" + nullable + "}";
     }
 
     @Override

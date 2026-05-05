@@ -27,8 +27,6 @@ import sleeper.query.core.model.LeafPartitionQuery;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -85,7 +83,10 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
     }
 
     private static Row mapToReadSchema(Row row, Schema dataReadSchema) {
-        return new Row(dataReadSchema.getAllFieldNames().stream()
-                .collect(Collectors.toMap(Function.identity(), row::get)));
+        Row result = new Row();
+        for (String fieldName : dataReadSchema.getAllFieldNames()) {
+            result.put(fieldName, row.get(fieldName));
+        }
+        return result;
     }
 }
