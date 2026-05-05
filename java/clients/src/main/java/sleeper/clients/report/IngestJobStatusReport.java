@@ -81,6 +81,16 @@ public class IngestJobStatusReport {
         this.persistentEmrStepCount = persistentEmrStepCount;
     }
 
+    /**
+     * Creates a query for ingest and bulk import jobs to include in a report.
+     *
+     * @param  table           the Sleeper table to include jobs for
+     * @param  queryType       the type of query
+     * @param  queryParameters parameters for the query, as specified on the command line
+     * @param  clock           a clock to get the current time, to read relative time ranges
+     * @param  input           the console input, to prompt for further parameters
+     * @return                 the query
+     */
     public static JobQuery queryfromParametersOrPrompt(
             TableStatus table, JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
         return JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, clock, input,
