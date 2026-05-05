@@ -35,7 +35,7 @@ public class ConsoleInput {
     }
 
     public String promptPassword(String prompt) {
-        return new String(console.readPassword());
+        return new String(console.readPassword(prompt));
     }
 
     public void waitForLine() {
