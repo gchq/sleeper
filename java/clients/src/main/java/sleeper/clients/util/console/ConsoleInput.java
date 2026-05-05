@@ -17,6 +17,7 @@ package sleeper.clients.util.console;
 
 import java.io.Console;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -33,7 +34,7 @@ public class ConsoleInput {
     }
 
     public static ConsoleInput stdIn() {
-        return new ConsoleInput(System.console(), System.out, new Scanner(System.in));
+        return new ConsoleInput(System.console(), System.out, new Scanner(System.in, StandardCharsets.UTF_8));
     }
 
     public String promptLine(String prompt) {
