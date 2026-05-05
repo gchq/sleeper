@@ -36,14 +36,18 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 
 public class DeployExistingInstance {
 
@@ -55,6 +59,7 @@ public class DeployExistingInstance {
     private final String accountName;
     private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
+    private final SleeperInternalCdkApp forceCdkApp;
     private final CommandPipelineRunner runCommand;
     private final boolean createMultiPlatformBuilder;
 
@@ -66,6 +71,7 @@ public class DeployExistingInstance {
         accountName = builder.accountName;
         regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
+        forceCdkApp = builder.forceCdkApp;
         runCommand = builder.runCommand;
         createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
@@ -74,14 +80,33 @@ public class DeployExistingInstance {
         return new Builder();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <optional-paused-true-or-false>");
-        }
-
-        boolean deployPaused = optionalArgument(args, 2)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        CommandLineUsage usage = CommandLineUsage.builder()
+                .positionalArguments(List.of("scripts directory", "instance ID"))
+                .systemArguments(List.of("scripts directory"))
+                .options(List.of(CommandOption.longFlag("paused"), CommandOption.longOption("force-cdk-app")))
+                .helpSummary("" +
+                        "Redeploys an existing Sleeper instance. This can only be used with an instance that was deployed " +
+                        "with the standard scripts or CDK app from the main Sleeper GitHub.\n" +
+                        "\n" +
+                        "--paused\n" +
+                        "If set, the instance will be deployed paused. Periodic background processes will not run until " +
+                        "the instance is manually resumed.\n" +
+                        "\n" +
+                        "--force-cdk-app <app>\n" +
+                        "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
+                        "will be automatically detected. This should only be used if the detection fails, for example if " +
+                        "you are upgrading from a version that did not have this auto-detection. Do not use this if the " +
+                        "instance was deployed with a CDK app that is not listed.\n" +
+                        "Available apps from Sleeper GitHub: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
+                .build();
+        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+                Path.of(arguments.getString("scripts directory")),
+                arguments.getString("instance ID"),
+                arguments.isFlagSet("paused"),
+                arguments.getOptionalString("force-cdk-app")
+                        .flatMap(SleeperInternalCdkApp::readCdkAppDeployingSleeperInstance)
+                        .orElse(null)));
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
@@ -89,12 +114,16 @@ public class DeployExistingInstance {
                 StsClient stsClient = StsClient.create()) {
             builder().clients(s3Client, stsClient)
                     .regionProvider(DefaultAwsRegionProviderChain.builder().build())
-                    .scriptsDirectory(Path.of(args[0]))
-                    .instanceId(args[1])
-                    .deployPaused(deployPaused)
+                    .scriptsDirectory(args.scriptsDirectory())
+                    .instanceId(args.instanceId())
+                    .deployPaused(args.deployPaused())
+                    .forceCdkApp(args.forceCdkApp())
                     .loadPropertiesFromS3(s3Client, dynamoClient)
                     .build().update();
         }
+    }
+
+    public record Arguments(Path scriptsDirectory, String instanceId, boolean deployPaused, SleeperInternalCdkApp forceCdkApp) {
     }
 
     public void update() throws IOException, InterruptedException {
@@ -114,10 +143,22 @@ public class DeployExistingInstance {
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
-                .inferInstanceType()
+                .cdkApp(getCdkApp())
                 .build());
 
         LOGGER.info("Finished deployment of existing instance");
+    }
+
+    private SleeperInternalCdkApp getCdkApp() {
+        if (forceCdkApp != null) {
+            return forceCdkApp;
+        }
+        return properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
+                .orElseThrow(() -> new IllegalArgumentException("" +
+                        "Cannot find the CDK app used to deploy this instance. " +
+                        "This script can only be used if you deployed with a CDK app that is included in the main Sleeper GitHub. " +
+                        "If you did, this failure may happen when upgrading from a version that did not have autodetection of the CDK app. " +
+                        "You can force which CDK app to use with the --force-cdk-app command line option. Use --help for more details."));
     }
 
     public static final class Builder {
@@ -129,6 +170,7 @@ public class DeployExistingInstance {
         private S3Client s3;
         private AwsRegionProvider regionProvider;
         private boolean deployPaused;
+        private SleeperInternalCdkApp forceCdkApp;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean createMultiPlatformBuilder = true;
 
@@ -172,6 +214,11 @@ public class DeployExistingInstance {
 
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
+            return this;
+        }
+
+        public Builder forceCdkApp(SleeperInternalCdkApp forceCdkApp) {
+            this.forceCdkApp = forceCdkApp;
             return this;
         }
 

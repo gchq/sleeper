@@ -18,7 +18,7 @@ Here are some changes we might want to make to Sleeper that could cause problems
 - Changes to CDK deployment that may trigger CloudFormation to recreate resources (e.g. renaming resources, modifying an EMR cluster)
 - Changes to how clients communicate with Sleeper
 
-We will look at some checks you can do before a release to make it less likely problems will occur.
+We will look at some checks we can do before a release to make it less likely problems will occur.
 
 We have a separate document for checks on [changes to data formats during upgrade](upgrade-format-changes.md).
 
