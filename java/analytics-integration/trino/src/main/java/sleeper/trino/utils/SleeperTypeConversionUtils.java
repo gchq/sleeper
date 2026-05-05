@@ -90,12 +90,6 @@ public class SleeperTypeConversionUtils {
      * @param  trinoObject the object to convert
      * @return             the converted object
      */
-    /**
-     * Returns the minimum possible row key value for the given Trino type, which maps to the Sleeper minimum.
-     *
-     * @param  trinoType the Trino type
-     * @return           the minimum value
-     */
     public static Object getMinimumValueForTrinoType(io.trino.spi.type.Type trinoType) {
         if (trinoType.equals(IntegerType.INTEGER)) {
             return Integer.MIN_VALUE;
