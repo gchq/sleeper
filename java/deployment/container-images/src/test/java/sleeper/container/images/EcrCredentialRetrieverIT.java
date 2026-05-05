@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.custom.containers;
+package sleeper.container.images;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.google.cloud.tools.jib.api.Credential;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.ecr.EcrClient;
 
@@ -54,7 +53,7 @@ public class EcrCredentialRetrieverIT {
 
         // When / Then
         assertThat(credentialRetriever(runtimeInfo).retrieve())
-                .get().isEqualTo(Credential.from("test-user", "test-password"));
+                .get().isEqualTo(new ContainerRegistryCredentials("test-user", "test-password"));
         assertThat(findUnmatchedRequests()).isEmpty();
     }
 
