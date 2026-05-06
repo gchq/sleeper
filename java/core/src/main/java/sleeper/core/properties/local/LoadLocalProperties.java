@@ -156,7 +156,7 @@ public class LoadLocalProperties {
                 table.validate();
                 return table;
             } catch (RuntimeException rte) {
-                throw new SleeperTableInvalidException("Sleeper file " + tableWithLocation.path.getFileName() + " has invalid properties.", rte);
+                throw new SleeperTableInvalidException("Sleeper configuration file has invalid properties: " + tableWithLocation.path, rte);
             }
         });
     }

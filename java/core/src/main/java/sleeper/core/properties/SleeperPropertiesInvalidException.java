@@ -46,7 +46,7 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
         SleeperProperty property = failure.getKey();
         String value = failure.getValue();
         return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value) + ". " +
-                "\nDescription: " + property.getDescription();
+                "\nDescription:\n" + property.getDescription();
     }
 
     private static String quoteIfSet(String value) {
