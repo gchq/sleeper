@@ -27,11 +27,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -68,21 +63,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         this.dynamoDB = clients.getDynamo();
         this.cloudFormationClient = clients.getCloudFormation();
         this.resetInstance = new AwsResetInstanceOnFirstConnect(clients);
-        this.deployInstance = new DeployInstance(
-                SyncJars.fromScriptsDirectory(s3, parameters.getAccount(), parameters.getScriptsDirectory()),
-                new UploadDockerImagesToEcr(
-                        UploadDockerImages.builder()
-                                .scriptsDirectory(parameters.getScriptsDirectory())
-                                .copyImage(CopyContainerImage.withTransferManager(clients.getEcr()))
-                                .commandRunner(clients.getCommandRunner())
-                                .createMultiplatformBuilder(parameters.isCreateMultiPlatformBuilder())
-                                .build(),
-                        parameters.getAccount(), clients.getRegionProvider().getRegion().id()),
-                DeployInstance.WriteLocalProperties.underScriptsDirectory(parameters.getScriptsDirectory()),
-                InvokeCdk.builder()
-                        .scriptsDirectory(parameters.getScriptsDirectory())
-                        .runCommand(clients.getCommandRunner())
-                        .build());
+        this.deployInstance = SystemTestDeploymentFactory.createDeployInstance(parameters, clients);
     }
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {

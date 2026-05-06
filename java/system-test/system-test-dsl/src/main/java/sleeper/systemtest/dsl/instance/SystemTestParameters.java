@@ -122,14 +122,6 @@ public class SystemTestParameters {
         return scriptsDirectory;
     }
 
-    public Path getJarsDirectory() {
-        return scriptsDirectory.resolve("jars");
-    }
-
-    public Path getDockerDirectory() {
-        return scriptsDirectory.resolve("docker");
-    }
-
     public Path getGeneratedDirectory() {
         return scriptsDirectory.resolve("generated");
     }
