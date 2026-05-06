@@ -100,8 +100,8 @@ public class StandardJobRunReporter {
 
     /**
      * Prints a detailed description of a job run. Allows customisation of how individual job status updates are
-     * printed, by setting update printers, e.g. with {@link #updatePrinters()}, {@link #printUpdateType()},
-     * {@link #printUpdateTypeInRun()}. Specified printers will be combined with the default, so it is not necessary to
+     * printed, by setting update printers, e.g. with {@link #updatePrinters}, {@link #printUpdateType},
+     * {@link #printUpdateTypeInRun}. Specified printers will be combined with the default, so it is not necessary to
      * handle update types common to all job runs.
      *
      * @param run           the job run to print
@@ -132,7 +132,7 @@ public class StandardJobRunReporter {
     /**
      * Creates an update printer to print job status updates of a certain type, including information about the run it
      * occurred in. This will be used for any status update of this type. Can be combined with other update printers
-     * with {@link #updatePrinters()}.
+     * with {@link #updatePrinters}.
      *
      * @param  <T>     the status update type
      * @param  type    the status update type
@@ -153,7 +153,7 @@ public class StandardJobRunReporter {
 
     /**
      * Creates an update printer to print job status updates of a certain type. This will be used for any status update
-     * of this type. Can be combined with other update printers with {@link #updatePrinters()}.
+     * of this type. Can be combined with other update printers with {@link #updatePrinters}.
      *
      * @param  <T>     the status update type
      * @param  type    the status update type
@@ -184,7 +184,7 @@ public class StandardJobRunReporter {
 
     /**
      * An update printer that prints job status updates to a standard report. Can be combined with other update printers
-     * to handle different update types, see {@link #updatePrinters()}.
+     * to handle different update types, see {@link StandardJobRunReporter#updatePrinters}.
      */
     public interface UpdatePrinter {
 
