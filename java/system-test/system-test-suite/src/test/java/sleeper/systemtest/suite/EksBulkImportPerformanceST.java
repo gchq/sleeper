@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create512StringPartitions;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
@@ -40,7 +40,7 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 public class EksBulkImportPerformanceST {
     @BeforeEach
     void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_PERFORMANCE);
+        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_EKS);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
