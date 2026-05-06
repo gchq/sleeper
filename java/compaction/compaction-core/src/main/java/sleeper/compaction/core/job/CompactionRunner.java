@@ -21,6 +21,7 @@ import sleeper.core.range.Region;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
@@ -40,30 +41,29 @@ public interface CompactionRunner {
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
 
     /**
-     * Gets whether a compaction is in progress.
-     *
-     * @implNote this method MUST be thread safe! It must be safe to call this method while another thread is
-     *           executing
-     *           {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
-     *
-     * @return   true if a compaction has been started, but not yet finished
-     */
-    boolean isCompactionInProgress();
-
-    /**
-     * Gets the number of input rows read by a currently in progress compaction.
+     * Gets the number of input rows read by a compaction that is currently executing.
      *
      * The compactor should regularly update the count of the number of rows read during a compaction. By polling this
-     * method,
-     * it is possible to determine if a compaction is making progress.
+     * method, it is possible to determine if a compaction is making progress. It is intended to use this to report
+     * on currently running compactions. Once a compaction is finished, it may not be possible to get a count. An empty
+     * optional is returned if no information is available for the given job.
      *
-     * @implNote                       this method MUST be thread safe! It must be safe to call this method while
-     *                                 another thread is executing
-     *                                 {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
-     *
-     * @return                         the number of rows read by the currently executing compaction
-     * @throws   IllegalStateException if this method is called when {@link CompactionRunner#isCompactionInProgress()}
-     *                                 returns false
+     * @implNote                      this method MUST be thread safe! It must be safe to call this method while
+     *                                another thread is executing
+     *                                {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+     * @param    compactionJobId      id for compaction job to lookup
+     * @return                        the number of rows read by the requested compaction, if available
+     * @throws   NullPointerException if compactionJobId is null
      */
-    long getRowsReadByCurrentCompaction() throws IllegalStateException;
+    Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException;
+
+    /**
+     * Convenience method for {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+     *
+     * @param  job compaction job to look up
+     * @return     the number of rows read by the requested compaction, if available
+     */
+    default Optional<Long> getCompactionRowsRead(CompactionJob job) {
+        return getCompactionRowsRead(job.getId());
+    }
 }

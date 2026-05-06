@@ -30,7 +30,7 @@ use std::sync::{Arc, Mutex, Weak};
 pub struct SleeperContext {
     // Interior mutable runtime
     inner: Mutex<RuntimeEnv>,
-    // Weak pointer to currently executing filter stage
+    // Weak pointers to currently executing compactions
     filter_stage: Mutex<Option<Weak<dyn ExecutionPlan>>>,
 }
 

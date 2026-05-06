@@ -40,6 +40,7 @@ import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -171,5 +172,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+    }
+
+    @Override
+    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getCompactionRowsRead'");
     }
 }
