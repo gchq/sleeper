@@ -17,7 +17,7 @@
 use color_eyre::eyre::bail;
 use std::ffi::{CStr, c_char};
 
-pub const READ_PAGE_INDEXES: bool = false;
+pub const READ_PAGE_INDEXES: bool = true;
 pub const MAX_ROW_GROUP_SIZE: usize = 100_000;
 pub const MAX_PAGE_SIZE: usize = 128 * 1024;
 pub const COMPRESSION_CODEC: &CStr = c"zstd";

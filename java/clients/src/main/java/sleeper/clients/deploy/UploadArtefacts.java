@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -153,6 +154,7 @@ public class UploadArtefacts {
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
+                            .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
                     accountName, region);

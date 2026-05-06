@@ -32,6 +32,10 @@ public class ConsoleOutput {
         this.out = out;
     }
 
+    public static ConsoleOutput stdOut() {
+        return new ConsoleOutput(System.out);
+    }
+
     /**
      * Clears the console screen and prints a message followed by a line delimiter.
      *

@@ -38,7 +38,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode verify javadoc:javadoc -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Validate chunk build configuration
         working-directory: ./java/build
@@ -80,3 +80,4 @@ jobs:
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+

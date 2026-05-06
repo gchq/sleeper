@@ -31,7 +31,7 @@ public class AverageRowRateReport {
 
     /**
      * Outputs the average rate that rows were read and written. Takes a format string as used in
-     * {@link PrintStream#printf()}.
+     * {@link PrintStream#printf}.
      *
      * @param format  the format string, including the row rate string with %s
      * @param average the average row rate

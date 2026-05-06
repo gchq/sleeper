@@ -20,10 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -56,11 +58,13 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private final SystemTestParameters parameters;
     private final S3Client s3;
     private final CloudFormationClient cloudFormation;
+    private final EcrClient ecr;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
         this.cloudFormation = clients.getCloudFormation();
+        this.ecr = clients.getEcr();
     }
 
     @Override
@@ -125,6 +129,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                         .scriptsDirectory(parameters.getScriptsDirectory())
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
                         .commandRunner(CommandUtils::runCommandLogOutput)
+                        .copyImage(CopyContainerImage.withTransferManager(ecr))
                         .build(),
                 parameters.getAccount(), parameters.getRegion());
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()

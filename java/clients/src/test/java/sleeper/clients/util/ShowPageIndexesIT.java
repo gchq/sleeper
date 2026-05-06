@@ -180,7 +180,7 @@ public class ShowPageIndexesIT {
 
     private String runShowPageIndexes(Path file) throws Exception {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
-        new ShowPageIndexes(output.getPrintStream()).run(file.toString());
+        new ShowPageIndexes(output.consoleOut()).run(file.toString());
         return output.toString();
     }
 }
