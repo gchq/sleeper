@@ -7,7 +7,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.35.3
 
-### 23rd April, 2025
+### 6th May, 2025
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.35.3*
@@ -16,38 +16,45 @@ This release includes improvements to the deployment process, an initial REST AP
 compaction tasks as well as some bugfixes and documentation improvements.
 
 Deployment:
- - This is a breaking change: bucket names are now created with the AWS account number appended to them.
- - Support for combining the two CDK apps together in an external repository has been provided. You can now retrieve
-    references to the artefact repositories after defining them in your own CDK app.
- - Docker images are now deployed by their digest instead of tag.
- - Docker images of the same Sleeper version will now be republished to ECR when the digest has changed.
+- This is a breaking change: S3 bucket names are now created with the AWS account number appended to them.
+- Support for combining the two CDK apps together in an external repository has been provided. You can now retrieve
+  references to the artefact repositories after defining them in your own CDK app.
+- Docker images are now deployed by their digest instead of tag.
+- Docker images of the same Sleeper version will now be republished to ECR when the digest has changed.
+- The script `scripts/deploy/setDeployFromRemoteDocker.sh` has been replaced with `scripts/deploy/setDeployConfig.sh`.
+- Improved the error message when loading invalid configuration properties from the local file system.
 
 REST API:
- - An initial REST API shell has been created that will be built upon further in future releases for interacting
-    with Sleeper instances.
+- An initial REST API shell has been created that will be built upon further in future releases for interacting
+  with Sleeper instances.
 
 Compactions:
- - Compaction tasks will now stop gracefully after they reach a max alive time minus some jitter. This is so that
-   upgraded code can be picked up for future tasks.
+- Compaction tasks will now stop gracefully after they reach a max alive time minus some jitter. This is so that
+  upgraded code can be picked up for future tasks.
 
 Bulk Import:
- - Upgraded Kubernetes version to V1_35 as V1_32 has reached end of life.
- - Python API now defaults to EMRServerless for bulk import.
+- Upgraded Kubernetes version to V1_35 as V1_32 has reached end of life.
+- Python API now defaults to EMRServerless for bulk import.
 
 DataFusion:
- - S3 readahead has been re-enabled with the property. This is a change to the default value of
-    `sleeper.default.table.datafusion.s3.readahead.enabled`.
- - Version upgraded to 53.0.0.
+- S3 readahead has been re-enabled with the property. This is a change to the default value of
+  `sleeper.default.table.datafusion.s3.readahead.enabled`.
+- Version upgraded to 53.0.0.
 
 Documentation:
- - Details of failure modes during an instance upgrade have been documented.
+- Details of failure modes during an instance upgrade have been documented.
 
 Bugfixes:
- - Instance properties can be validated even if certain EMR managed scaling properties are unreadable.
- - Tables can now be deleted/taken offline even if they have invalid configuration.
- - DataFusion compactions no longer hang and will complete as successful or failed. Timeouts on AWS clients writing
-    files to S3 were re-enabled to fix this.
- - DataFusion compactions no longer fail if all rows are filtered out.
+- Instance properties can be validated even if certain EMR managed scaling properties are unreadable.
+- Tables can now be deleted/taken offline even if they have invalid configuration.
+- DataFusion compactions no longer hang and will complete as successful or failed. Timeouts on AWS clients writing
+  files to S3 were re-enabled to fix this.
+- DataFusion compactions no longer fail if all rows are filtered out.
+- If you deploy with your own custom CDK app, this will no longer be overwritten by the admin client or deploy existing
+  instance script.
+- When deploying a pre-published version of Sleeper, multiplatform container images are now correctly retrieved and
+  pushed to ECR. Previously this was done with `docker push` which does not support multiplatform images. This affects
+  any deployment of the compaction stack.
 
 ## Version 0.35.2
 
