@@ -18,18 +18,20 @@ package sleeper.systemtest.drivers.instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
+import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.util.command.CommandUtils;
+import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
+import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -56,21 +58,31 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final SystemTestParameters parameters;
     private final S3Client s3;
     private final DynamoDbClient dynamoDB;
-    private final StsClient sts;
-    private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
-    private final EcrClient ecr;
     private final AwsResetInstanceOnFirstConnect resetInstance;
+    private final DeployInstance deployInstance;
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
         this.dynamoDB = clients.getDynamo();
-        this.sts = clients.getSts();
-        this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
-        this.ecr = clients.getEcr();
         this.resetInstance = new AwsResetInstanceOnFirstConnect(clients);
+        this.deployInstance = new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3, parameters.getAccount(), parameters.getScriptsDirectory()),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.builder()
+                                .scriptsDirectory(parameters.getScriptsDirectory())
+                                .copyImage(CopyContainerImage.withTransferManager(clients.getEcr()))
+                                .commandRunner(clients.getCommandRunner())
+                                .createMultiplatformBuilder(parameters.isCreateMultiPlatformBuilder())
+                                .build(),
+                        parameters.getAccount(), clients.getRegionProvider().getRegion().id()),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(parameters.getScriptsDirectory()),
+                InvokeCdk.builder()
+                        .scriptsDirectory(parameters.getScriptsDirectory())
+                        .runCommand(clients.getCommandRunner())
+                        .build());
     }
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
@@ -91,12 +103,14 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
         try {
-            DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
+            DeployNewInstance.builder()
+                    .deployInstance(deployInstance)
+                    .accountName(parameters.getAccount())
+                    .s3Client(s3)
+                    .dynamoClient(dynamoDB)
                     .deployInstanceConfiguration(deployConfig)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .runCommand(CommandUtils::runCommandLogOutput)
-                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
-                    .deployWithClients(s3, dynamoDB, ecr, sts, regionProvider);
+                    .build().deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -125,13 +139,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
-                    .clients(s3, sts)
-                    .regionProvider(regionProvider)
+                    .deployInstance(deployInstance)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
-                    .scriptsDirectory(parameters.getScriptsDirectory())
-                    .runCommand(CommandUtils::runCommandLogOutput)
-                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

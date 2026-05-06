@@ -28,7 +28,7 @@ the local file system.
 ### Publishing Docker images
 
 There is a script [`scripts/dev/publishDocker.sh`](/scripts/dev/publishDocker.sh) to publish the Docker images to a
-repository. It can be used like this:
+registry. It can be used like this:
 
 ```bash
 ./scripts/dev/publishDocker.sh my.registry.com/path
@@ -55,7 +55,7 @@ Docker Hub. To install your own artefacts published as in the sections above, yo
 
 1. Prepare a clone of this Git repository.
 2. Use `scripts/deploy/installJarsFromMaven.sh` to retrieve the jars from Maven.
-3. Use `scripts/deploy/setDeployFromRemoteDocker.sh` to configure the Sleeper scripts to pull published Docker images.
+3. Use `scripts/deploy/setDeployConfig.sh` to configure the Sleeper scripts to pull published Docker images.
 4. Use the Sleeper scripts as though you had built from scratch.
 
 The `installJarsFromMaven.sh` script can be used like this:
@@ -69,12 +69,15 @@ authentication. Here's a guide to set this up: https://www.baeldung.com/maven-se
 
 The version must be the Maven version as it was in the Sleeper `java/pom.xml` when it was published to the repository.
 
-The `setDeployFromRemoteDocker.sh` script can be used like this:
+The `setDeployConfig.sh` script can be used like this:
 
 ```bash
-./scripts/deploy/setDeployFromRemoteDocker.sh my.registry.com/path
+./scripts/deploy/setDeployConfig.sh --image-repository-prefix my.registry.com/path
 ```
 
 The argument to the script must be the prefix you used to publish the images. This script will create a configuration
 file under the templates directory that will adjust the way Docker images are pushed to AWS ECR during deployment, to
-pull them from your repository instead of building them locally.
+pull them from your registry instead of building them locally.
+
+If your Docker registry requires authentication, use the `--help` option on this script for information on how to
+authenticate.
