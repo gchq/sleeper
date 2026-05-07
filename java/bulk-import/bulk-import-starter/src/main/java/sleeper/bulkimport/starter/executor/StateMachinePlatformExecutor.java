@@ -16,7 +16,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.google.gson.Gson;
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
@@ -25,7 +24,6 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +31,14 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
@@ -45,29 +51,9 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
-    private static final Map<String, String> DEFAULT_CONFIG;
 
     private final SfnClient stepFunctions;
     private final InstanceProperties instanceProperties;
-
-    static {
-        Map<String, String> defaultConf = new HashMap<>();
-        defaultConf.put("spark.executor.instances", "3");
-        // Default Memory requests are overwritten because Fargate doesn't work with
-        // Spark's default values
-        defaultConf.put("spark.driver.memory", "7g");
-        defaultConf.put("spark.executor.memory", "7g");
-        // Fargate provides extra memory so no need to include extra which also messes
-        // up the scheduler
-        defaultConf.put("spark.driver.memoryOverhead", "1g");
-        defaultConf.put("spark.executor.memoryOverhead", "1g");
-        defaultConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
-        // Hadoop Configuration
-        defaultConf.put("spark.hadoop.fs.s3a.aws.credentials.provider",
-                WebIdentityTokenFileCredentialsProvider.class.getName());
-        defaultConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", "sequential");
-        DEFAULT_CONFIG = Collections.unmodifiableMap(defaultConf);
-    }
 
     public StateMachinePlatformExecutor(SfnClient stepFunctions,
             InstanceProperties instanceProperties) {
@@ -103,7 +89,14 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);
         defaultConfig.put("spark.kubernetes.executor.podNamePrefix", jobPodPrefix);
 
-        defaultConfig.putAll(DEFAULT_CONFIG);
+        defaultConfig.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES));
+        defaultConfig.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY));
+        defaultConfig.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY));
+        defaultConfig.put("spark.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD));
+        defaultConfig.put("spark.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD));
+        defaultConfig.put("spark.kubernetes.authenticate.driver.serviceAccountName", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME));
+        defaultConfig.put("spark.hadoop.fs.s3a.aws.credentials.provider", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER));
+        defaultConfig.put("spark.hadoop.fs.s3a.experimental.input.fadvise", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE));
 
         return defaultConfig;
     }

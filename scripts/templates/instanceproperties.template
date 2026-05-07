@@ -1156,6 +1156,52 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.is.native.libs.image=false
 
+# (EKS mode only) The number of Spark executors. Used to set spark.executor.instances.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.instances=3
+
+# (EKS mode only) The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.
+# Default values are overridden because Fargate doesn't work with Spark's default values.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.memory=7g
+
+# (EKS mode only) The amount of memory allocated to a Spark executor. Used to set
+# spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's
+# default values.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.memory=7g
+
+# (EKS mode only) The memory overhead for the Spark driver. Used to set spark.driver.memoryOverhead.
+# Fargate provides extra memory so no need to include extra which also messes up the scheduler.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.memory.overhead=1g
+
+# (EKS mode only) The memory overhead for a Spark executor. Used to set spark.executor.memoryOverhead.
+# Fargate provides extra memory so no need to include extra which also messes up the scheduler.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.memory.overhead=1g
+
+# (EKS mode only) The Kubernetes service account used by the Spark driver pod. Used to set
+# spark.kubernetes.authenticate.driver.serviceAccountName.
+# See https://spark.apache.org/docs/latest/running-on-kubernetes.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.kubernetes.driver.service.account.name=spark
+
+# (EKS mode only) The AWS credentials provider class used by the S3A Hadoop filesystem. Used to set
+# spark.hadoop.fs.s3a.aws.credentials.provider.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.hadoop.fs.s3a.aws.credentials.provider=software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider
+
+# (EKS mode only) The S3A input read policy. Used to set
+# spark.hadoop.fs.s3a.experimental.input.fadvise.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.hadoop.fs.s3a.experimental.input.fadvise=sequential
+
 
 ## The following instance properties relate to the splitting of partitions.
 
