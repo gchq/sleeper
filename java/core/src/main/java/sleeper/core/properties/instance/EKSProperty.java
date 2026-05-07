@@ -38,21 +38,21 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.instances")
             .description("(EKS mode only) The number of Spark executors. Used to set spark.executor.instances.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("3")
+            .defaultValue("29")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.memory")
             .description("(EKS mode only) The amount of memory allocated to the Spark driver. Used to set " +
                     "spark.driver.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("7g")
+            .defaultValue("12g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.memory")
             .description("(EKS mode only) The amount of memory allocated to a Spark executor. Used to set " +
                     "spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("7g")
+            .defaultValue("12g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.memory.overhead")
             .description("(EKS mode only) The memory overhead for the Spark driver. Used to set " +
