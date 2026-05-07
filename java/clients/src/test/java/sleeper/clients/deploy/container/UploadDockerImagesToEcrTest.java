@@ -17,7 +17,6 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -490,12 +489,12 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     }
 
     @Nested
-    @DisplayName("An image specific to a CDK app")
-    class ImageForCdkApp {
+    @DisplayName("Behaviour depending on which CDK app is being used")
+    class SpecificCdkApp {
 
         private final DockerImageConfiguration imageConfig = new DockerImageConfiguration(
                 List.of(DockerDeployment.builder()
-                        .deploymentName("demo-only")
+                        .deploymentName("data-generation")
                         .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
                         .build()),
                 List.of());
@@ -511,15 +510,14 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             uploadForDeployment(imageConfig, SleeperInternalCdkApp.DEMONSTRATION);
 
             // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/demo-only:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/data-generation:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag, "./docker/demo-only"),
+                    buildImageCommand(expectedTag, "./docker/data-generation"),
                     pushImageCommand(expectedTag));
         }
 
         @Test
-        @Disabled("TODO")
         void shouldNotPushImageWhenCdkAppDoesNotMatch() throws Exception {
             // When
             uploadForDeployment(imageConfig, SleeperInternalCdkApp.STANDARD);

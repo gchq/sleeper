@@ -130,11 +130,15 @@ public class DockerDeployment {
     /**
      * Checks whether this deployment is deployed given some configuration.
      *
+     * @param  cdkApp            the CDK app being deployed
      * @param  committerPlatform the platform used to deploy the state store committer
      * @param  optionalStacks    the enabled optional stacks in the instance
      * @return                   true if this is deployed
      */
-    public boolean isDeployed(StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+    public boolean isDeployed(SleeperInternalCdkApp cdkApp, StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+        if (this.cdkApps != null && !this.cdkApps.contains(cdkApp)) {
+            return false;
+        }
         if (this.committerPlatform != null && this.committerPlatform != committerPlatform) {
             return false;
         }

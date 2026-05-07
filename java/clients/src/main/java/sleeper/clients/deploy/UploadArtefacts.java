@@ -135,7 +135,7 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
+            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), SleeperInternalCdkApp.STANDARD);
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
