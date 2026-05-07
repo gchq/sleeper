@@ -330,6 +330,39 @@ pub extern "C" fn native_query_file(
     }
 }
 
+/// Provides the C FFI interface to query the number of rows read so far by an in-progress compaction.
+///
+/// This function looks up the compaction identified by `c_job_id` in the [`FFIContext`]'s Sleeper
+/// context and writes the current rows read count into the `output_ptr`'s `rows_read` field. The
+/// `rows_written` field is set to 0, as this function only reports progress on the read side.
+///
+/// The `c_job_id` parameter is a pointer to a null-terminated C string identifying the job whose
+/// progress is being queried.
+///
+/// The `output_ptr` field is an out parameter. It is assumed the caller has allocated valid
+/// memory at the address pointed to!
+///
+/// This function validates the pointers are valid strings (or at least attempts to), but undefined behaviour will
+/// result if bad pointers are passed.
+///
+/// # Safety
+///
+/// It is the callers responsibility to ensure all pointers are valid and point
+/// to valid data before calling this function. While null pointers are detected,
+/// invalid pointers cannot be.
+///
+/// The `ctx_ptr` value must point to a valid [`FFIContext`].
+///
+/// # Errors
+/// The following result codes are returned.
+///
+/// | Code | Meaning |
+/// |-|-|
+/// | 0 | Success |
+/// | -1 | No compaction is registered for the given job ID |
+/// | EFAULT | if pointers are NULL
+/// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
+///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
 pub extern "C" fn get_compaction_rows_read(
