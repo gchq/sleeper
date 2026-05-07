@@ -84,6 +84,37 @@ public interface EKSProperty {
                     "spark.hadoop.fs.s3a.experimental.input.fadvise.")
             .defaultValue("sequential")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.cores")
+            .description("(EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores. " +
+                    "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("5")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.cores")
+            .description("(EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. " +
+                    "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM = Index.propertyBuilder("sleeper.bulk.import.eks.spark.default.parallelism")
+            .description("(EKS mode only) The default parallelism for the Spark job. Used to set spark.default.parallelism. " +
+                    "Should scale with the total cores across the EKS cluster, which may differ from EMR.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("290")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS = Index.propertyBuilder("sleeper.bulk.import.eks.spark.sql.shuffle.partitions")
+            .description("(EKS mode only) The number of partitions used in a Spark SQL/dataframe shuffle operation. " +
+                    "Used to set spark.sql.shuffle.partitions.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.eks.spark.dynamic.allocation.enabled")
+            .description("(EKS mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
+                    "Used to set spark.dynamicAllocation.enabled. Kubernetes support for dynamic allocation is more " +
+                    "limited than YARN's; consider leaving this disabled on EKS.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("false")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

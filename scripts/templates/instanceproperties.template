@@ -1202,6 +1202,37 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.spark.hadoop.fs.s3a.experimental.input.fadvise=sequential
 
+# (EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores.
+# Should reflect the Fargate task shape rather than the EMR EC2 instance type.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.cores=5
+
+# (EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. Should
+# reflect the Fargate task shape rather than the EMR EC2 instance type.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.cores=5
+
+# (EKS mode only) The default parallelism for the Spark job. Used to set spark.default.parallelism.
+# Should scale with the total cores across the EKS cluster, which may differ from EMR.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.default.parallelism=290
+
+# (EKS mode only) The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to
+# set spark.sql.shuffle.partitions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.sql.shuffle.partitions=290
+
+# (EKS mode only) Whether Spark should use dynamic allocation to scale resources up and down. Used to
+# set spark.dynamicAllocation.enabled. Kubernetes support for dynamic allocation is more limited than
+# YARN's; consider leaving this disabled on EKS.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.dynamic.allocation.enabled=false
+
 
 ## The following instance properties relate to the splitting of partitions.
 
