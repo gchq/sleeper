@@ -57,18 +57,20 @@ public interface CompactionRunner {
      * @param    compactionJobId      id for compaction job to lookup
      * @return                        the number of rows read by the requested compaction, if available
      * @throws   NullPointerException if compactionJobId is null
+     * @throws   IOException          if trying to read the row count fails on IO
      */
-    default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
+    default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
         return Optional.empty();
     }
 
     /**
      * Convenience method for calling with a job object.
      *
-     * @param  job compaction job to look up
-     * @return     the number of rows read by the requested compaction, if available
+     * @param  job         compaction job to look up
+     * @return             the number of rows read by the requested compaction, if available
+     * @throws IOException if trying to read the row count fails on IO
      */
-    default Optional<Long> getCompactionRowsRead(CompactionJob job) {
+    default Optional<Long> getCompactionRowsRead(CompactionJob job) throws IOException {
         return getCompactionRowsRead(job.getId());
     }
 }

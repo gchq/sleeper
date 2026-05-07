@@ -40,6 +40,7 @@ import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -174,8 +175,21 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getCompactionRowsRead'");
+    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
+        FFIFileResult rowData = new FFIFileResult(runtime);
+
+        int result = context.getFunctions().get_compaction_rows_read(context,
+                Objects.requireNonNull(compactionJobId, "compactionJobId"),
+                rowData);
+
+        if (result == 0) {
+            return Optional.of(rowData.rows_read.get());
+        } else if (result == -1) {
+            return Optional.empty();
+        } else {
+            LOGGER.error("Failed reading compaction row progress count, return code: {}", result);
+            throw new IOException("Failed reading compaction row progress count, return code " + result);
+        }
     }
 }
