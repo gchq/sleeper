@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -34,6 +35,10 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
 
     protected void uploadForDeployment(DockerImageConfiguration imageConfig) throws Exception {
         uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, imageConfig));
+    }
+
+    protected void uploadForDeployment(DockerImageConfiguration imageConfig, SleeperInternalCdkApp cdkApp) throws Exception {
+        uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, cdkApp, imageConfig));
     }
 
     protected abstract UploadDockerImagesToEcr uploader();

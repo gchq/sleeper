@@ -17,6 +17,7 @@
 package sleeper.clients.deploy.container;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,10 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
+        return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
+    }
+
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, SleeperInternalCdkApp cdkApp, DockerImageConfiguration configuration) {
         return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
     }
 

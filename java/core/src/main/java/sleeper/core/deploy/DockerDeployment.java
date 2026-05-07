@@ -63,7 +63,7 @@ public class DockerDeployment {
     private final String deploymentName;
     private final OptionalStack optionalStack;
     private final StateStoreCommitterPlatform committerPlatform;
-    private final SleeperInternalCdkApp cdkApp;
+    private final Collection<SleeperInternalCdkApp> cdkApps;
     private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
 
@@ -71,7 +71,7 @@ public class DockerDeployment {
         deploymentName = builder.deploymentName;
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
-        cdkApp = builder.cdkApp;
+        cdkApps = builder.cdkApps;
         multiplatform = builder.multiplatform;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
@@ -118,13 +118,13 @@ public class DockerDeployment {
     }
 
     /**
-     * Retrieves which CDK app uses this deployment. If null, the deployment is used by any CDK app that deploys a
-     * standard Sleeper instance.
+     * Retrieves which CDK apps use this deployment. If null, the deployment is used by any CDK app that deploys a
+     * Sleeper instance.
      *
-     * @return the CDK app, or null if applicable to all CDK apps
+     * @return the CDK app, or null if applicable to all Sleeper instances
      */
-    public SleeperInternalCdkApp getCdkApp() {
-        return cdkApp;
+    public Collection<SleeperInternalCdkApp> getCdkApps() {
+        return cdkApps;
     }
 
     /**
@@ -199,7 +199,7 @@ public class DockerDeployment {
         private String deploymentName;
         private OptionalStack optionalStack;
         private StateStoreCommitterPlatform committerPlatform;
-        private SleeperInternalCdkApp cdkApp;
+        private Collection<SleeperInternalCdkApp> cdkApps;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
 
@@ -238,14 +238,14 @@ public class DockerDeployment {
         }
 
         /**
-         * Sets which CDK app uses this deployment. If unset, the deployment is included for any CDK app that deploys a
-         * standard Sleeper instance.
+         * Sets which CDK apps use this deployment. If unset, the deployment is included for any CDK app that deploys a
+         * Sleeper instance.
          *
-         * @param  cdkApp the CDK app
-         * @return        this builder
+         * @param  cdkApps the CDK apps
+         * @return         this builder
          */
-        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
-            this.cdkApp = cdkApp;
+        public Builder cdkApps(Collection<SleeperInternalCdkApp> cdkApps) {
+            this.cdkApps = cdkApps;
             return this;
         }
 
