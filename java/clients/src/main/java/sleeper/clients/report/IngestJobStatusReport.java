@@ -69,16 +69,6 @@ public class IngestJobStatusReport {
     private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
-            IngestJobTracker tracker,
-            TableStatus table, JobQuery.Type queryType, String queryParameters,
-            IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
-            Map<String, Integer> persistentEmrStepCount) {
-        this(tracker, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
-                reporter, queueClient, properties, persistentEmrStepCount);
-    }
-
-    public IngestJobStatusReport(
             IngestJobTracker tracker, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
@@ -89,6 +79,22 @@ public class IngestJobStatusReport {
         this.queueClient = queueClient;
         this.properties = properties;
         this.persistentEmrStepCount = persistentEmrStepCount;
+    }
+
+    /**
+     * Creates a query for ingest and bulk import jobs to include in a report.
+     *
+     * @param  table           the Sleeper table to include jobs for
+     * @param  queryType       the type of query
+     * @param  queryParameters parameters for the query, as specified on the command line
+     * @param  clock           a clock to get the current time, to read relative time ranges
+     * @param  input           the console input, to prompt for further parameters
+     * @return                 the query
+     */
+    public static JobQuery queryfromParametersOrPrompt(
+            TableStatus table, JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, clock, input,
+                Map.of("n", new RejectedJobsQuery()));
     }
 
     /**
@@ -126,8 +132,9 @@ public class IngestJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                new IngestJobStatusReport(tracker, table, queryType, queryParameters,
-                        reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                new IngestJobStatusReport(tracker, query, reporter,
+                        QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                         PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
             }
         } catch (IllegalArgumentException e) {

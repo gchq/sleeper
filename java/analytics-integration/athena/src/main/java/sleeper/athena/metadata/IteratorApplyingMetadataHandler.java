@@ -92,6 +92,10 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
      * Used to create splits from partitions. The partitionId is added to the
      * split.
      *
+     * Note: A Split is a mostly opaque object to Amazon Athena.
+     * Amazon Athena will use the optional SpillLocation and optional EncryptionKey for pipelined reads but all
+     * properties you set on the Split are passed to your read function to help you perform the read.
+     *
      * @param  blockAllocator   Tool for creating and managing Apache Arrow Blocks.
      * @param  getSplitsRequest Provides details of the catalog, database, table,
      *                          and partition(s) being queried as well as any filter predicate.
@@ -99,10 +103,6 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
      *                          which represent read operations Amazon Athena must perform by calling
      *                          your read function. 2. (Optional) A continuation token which allows you
      *                          to paginate the generation of splits for large queries.
-     * @note                    A Split is a mostly opaque object to Amazon Athena. Amazon Athena
-     *                          will use the optional SpillLocation and optional EncryptionKey for
-     *                          pipelined reads but all properties you set on the Split are passed to
-     *                          your read function to help you perform the read.
      */
     @Override
     public GetSplitsResponse doGetSplits(BlockAllocator blockAllocator, GetSplitsRequest getSplitsRequest) {

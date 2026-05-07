@@ -28,7 +28,6 @@ import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 import sleeper.clients.util.console.ConsoleOutput;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 /**
  * A utility class to show the page indexes in a Parquet file.
@@ -38,11 +37,11 @@ public class ShowPageIndexes {
     private final ConsoleOutput out;
 
     private ShowPageIndexes() {
-        this(System.out);
+        this(ConsoleOutput.stdOut());
     }
 
-    ShowPageIndexes(PrintStream out) {
-        this.out = new ConsoleOutput(out);
+    ShowPageIndexes(ConsoleOutput out) {
+        this.out = out;
     }
 
     public void run(String file) throws IOException {

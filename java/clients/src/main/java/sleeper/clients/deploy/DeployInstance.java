@@ -17,7 +17,10 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -52,6 +55,16 @@ public class DeployInstance {
         this.dockerImageUploader = dockerImageUploader;
         this.writeLocalProperties = writeLocalProperties;
         this.invokeCdk = invokeCdk;
+    }
+
+    public static DeployInstance fromScriptsDirectory(Path scriptsDirectory, String account, String region, S3Client s3Client, EcrClient ecrClient) throws IOException {
+        return new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3Client, account, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
+                        account, region),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdk.fromScriptsDirectory(scriptsDirectory));
     }
 
     public void deploy(DeployInstanceRequest request) throws IOException, InterruptedException {

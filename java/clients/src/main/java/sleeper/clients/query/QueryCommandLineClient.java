@@ -61,7 +61,7 @@ public abstract class QueryCommandLineClient {
     protected ConsoleOutput out;
 
     protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties) {
-        this(s3Client, dynamoClient, instanceProperties, new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+        this(s3Client, dynamoClient, instanceProperties, ConsoleInput.stdIn(), ConsoleOutput.stdOut());
     }
 
     protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties,
