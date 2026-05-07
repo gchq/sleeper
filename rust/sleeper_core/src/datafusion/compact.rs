@@ -39,7 +39,7 @@ use datafusion::{
 };
 use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 /// Contains compaction results.
 ///
@@ -167,10 +167,11 @@ async fn execute_compaction_plan<'a>(
         displayable(physical_plan.as_ref()).indent(true)
     );
 
-    // Update pointer to filter stage in sleeper context
+    // Put pointer to filter stage in sleeper context
+    if let Some(compaction_job_id) = ops.config.job_id()
+        && let Some(filter_stage) = find_filter_exec_stage(physical_plan.clone())?
     {
-        let filter_stage = find_filter_exec_stage(physical_plan.clone())?;
-        sleeper_context.set_filter(filter_stage);
+        sleeper_context.set_filter_stage(compaction_job_id, &filter_stage);
     }
 
     match completer.execute_frame(physical_plan, task_ctx).await? {
@@ -181,14 +182,13 @@ async fn execute_compaction_plan<'a>(
     }
 }
 
-/// Traverses a plan
 fn find_filter_exec_stage(
     plan: Arc<dyn ExecutionPlan>,
-) -> Result<Option<Weak<dyn ExecutionPlan>>, DataFusionError> {
+) -> Result<Option<Arc<dyn ExecutionPlan>>, DataFusionError> {
     let mut filter_exec = None;
     plan.transform_up(|node| {
         Ok(if node.as_any().downcast_ref::<FilterExec>().is_some() {
-            filter_exec = Some(Arc::downgrade(&node));
+            filter_exec = Some(node.clone());
             Transformed::new(node, false, TreeNodeRecursion::Stop)
         } else {
             Transformed::new(node, false, TreeNodeRecursion::Continue)

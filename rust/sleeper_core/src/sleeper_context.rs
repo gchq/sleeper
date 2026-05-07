@@ -18,6 +18,7 @@
 #[cfg(doc)]
 use datafusion::execution::object_store::ObjectStoreRegistry;
 use datafusion::{
+    common::HashMap,
     error::DataFusionError,
     execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
     physical_plan::{ExecutionPlan, metrics::MetricsSet},
@@ -31,7 +32,7 @@ pub struct SleeperContext {
     // Interior mutable runtime
     inner: Mutex<RuntimeEnv>,
     // Weak pointers to currently executing compactions
-    filter_stage: Mutex<Option<Weak<dyn ExecutionPlan>>>,
+    compaction_filter_stages: Mutex<HashMap<String, Weak<dyn ExecutionPlan>>>,
 }
 
 /// The maximum size of `DataFusion`'s file metadata cache.
@@ -60,19 +61,47 @@ impl SleeperContext {
         ))
     }
 
-    pub fn get_filter_count(&self) -> Option<usize> {
-        self.filter_stage
-            .lock()
-            .expect("SleeperContext lock poisoned")
-            .as_ref()
-            .and_then(Weak::upgrade)
-            .as_deref()
-            .and_then(ExecutionPlan::metrics)
-            .as_ref()
-            .and_then(MetricsSet::output_rows)
+    /// Retrieves number of compaction rows read for given compaction job.
+    ///
+    /// If this compaction job id is recognised, then the number of input rows read from it
+    /// is returned. This function will only return results from currently executing compactions.
+    ///
+    /// # Panics
+    /// If the lock protecting the runtime can't be unlocked due to a lock posion.
+    pub fn get_compaction_row_read(&self, compaction_job_id: impl AsRef<str>) -> Option<usize> {
+        let plan = {
+            let mut guard = self
+                .compaction_filter_stages
+                .lock()
+                .expect("SleeperContext lock poisoned");
+
+            Self::purge_dropped_values(&mut guard);
+
+            guard.get(compaction_job_id.as_ref())?.upgrade()?
+        };
+
+        plan.metrics().as_ref().and_then(MetricsSet::output_rows)
     }
 
-    pub fn set_filter(&self, filter: Option<Weak<dyn ExecutionPlan>>) {
-        *self.filter_stage.lock().unwrap() = filter;
+    fn purge_dropped_values(map: &mut HashMap<String, Weak<dyn ExecutionPlan>>) {
+        map.retain(|_, weak| weak.strong_count() > 0);
+    }
+
+    /// Insert a filter stage from a compaction into this context.
+    ///
+    /// The filter stage is stored using a weak pointer so it won't prevent dropping of the
+    /// stage when the reference count drops to zero.
+    ///
+    /// # Panics
+    /// If the lock protecting the runtime can't be unlocked due to a lock posion.
+    pub fn set_filter_stage(
+        &self,
+        compaction_job_id: impl Into<String>,
+        filter_plan_stage: &Arc<dyn ExecutionPlan>,
+    ) {
+        self.compaction_filter_stages
+            .lock()
+            .expect("SleeperContext lock poisoned")
+            .insert(compaction_job_id.into(), Arc::downgrade(filter_plan_stage));
     }
 }

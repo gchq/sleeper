@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
@@ -61,7 +61,11 @@ public class JavaCompactionRunner implements CompactionRunner {
     private final Configuration configuration;
     private final SketchesStore sketchesStore;
     /* Progress counts using weak values. Once the value is GC'd, the entry is removed from the map. */
-    private final ConcurrentMap<String, AtomicLong> progressCounts = new MapMaker().weakValues().makeMap();
+    private final ConcurrentMap<String, AtomicLong> progressCounts = CacheBuilder
+            .newBuilder()
+            .weakValues()
+            .<String, AtomicLong>build()
+            .asMap();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaCompactionRunner.class);
 

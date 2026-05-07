@@ -31,6 +31,8 @@ use sleeper_core::{
 use std::{collections::HashMap, io::Write, sync::Arc, time::Duration};
 use url::Url;
 
+const JOB_ID: &str = "compact_job";
+
 /// Runs a Sleeper compaction algorithm.
 ///
 /// A sequence of Parquet files is read and compacted into a single output Parquet file. The input
@@ -147,6 +149,7 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let details = CommonConfigBuilder::new()
+        .job_id(Some(JOB_ID.into()))
         .aws_config(None)
         .input_files(input_urls)
         .input_files_sorted(true)
@@ -167,12 +170,12 @@ async fn main() -> color_eyre::Result<()> {
         .build()?;
 
     let context = Arc::new(SleeperContext::default());
-    let ic = context.clone();
+    let context_clone = context.clone();
     tokio::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            if let Some(ap) = ic.get_filter_count() {
-                println!("Read {ap} rows");
+            if let Some(row_count) = context_clone.get_compaction_row_read(JOB_ID) {
+                println!("Read {row_count} rows");
             }
         }
     });

@@ -26,6 +26,8 @@ use url::Url;
 /// work for Sleeper.
 #[derive(Debug)]
 pub struct CommonConfig<'a> {
+    /// Job ID
+    job_id: Option<String>,
     /// Aws credentials configuration
     aws_config: Option<AwsConfig>,
     /// Input file URLs
@@ -104,6 +106,10 @@ impl CommonConfig<'_> {
     pub(crate) fn filters(&self) -> &Vec<Filter> {
         &self.filters
     }
+
+    pub(crate) fn job_id(&self) -> &Option<String> {
+        &self.job_id
+    }
 }
 
 impl Display for CommonConfig<'_> {
@@ -131,6 +137,7 @@ impl Display for CommonConfig<'_> {
 /// Builder for `CommonConfig`.
 #[allow(clippy::struct_excessive_bools)]
 pub struct CommonConfigBuilder<'a> {
+    job_id: Option<String>,
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
     input_files_sorted: bool,
@@ -147,6 +154,7 @@ pub struct CommonConfigBuilder<'a> {
 impl Default for CommonConfigBuilder<'_> {
     fn default() -> Self {
         Self {
+            job_id: None,
             aws_config: None,
             input_files: Vec::default(),
             input_files_sorted: true,
@@ -166,6 +174,12 @@ impl<'a> CommonConfigBuilder<'a> {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[must_use]
+    pub fn job_id(mut self, job_id: Option<String>) -> Self {
+        self.job_id = job_id;
+        self
     }
 
     #[must_use]
@@ -250,6 +264,7 @@ impl<'a> CommonConfigBuilder<'a> {
         let output = self.output.modified_scheme();
 
         Ok(CommonConfig {
+            job_id: self.job_id,
             aws_config: self.aws_config,
             input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
