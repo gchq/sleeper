@@ -218,6 +218,44 @@ public class ConfigurationUtils {
         return sparkConf;
     }
 
+    public static Map<String, String> getSparkEMRConfiguration() {
+        Map<String, String> sparkEmrConf = new HashMap<>();
+        sparkEmrConf.put("maximizeResourceAllocation", "false");
+
+        return sparkEmrConf;
+    }
+
+    public static Map<String, String> getYarnConfiguration() {
+        Map<String, String> yarnConf = new HashMap<>();
+        yarnConf.put("yarn.nodemanager.vmem-check-enabled", "false");
+        yarnConf.put("yarn.nodemanager.pmem-check-enabled", "false");
+
+        return yarnConf;
+    }
+
+    public static Map<String, String> getMapRedSiteConfiguration() {
+        Map<String, String> mapRedSiteConf = new HashMap<>();
+        mapRedSiteConf.put("mapreduce.map.output.compress", "true");
+
+        return mapRedSiteConf;
+    }
+
+    public static Map<String, String> getJavaHomeConfiguration(EmrInstanceArchitecture arch) {
+        Map<String, String> javaHomeConf = new HashMap<>();
+        javaHomeConf.put("JAVA_HOME", getJavaHome(arch));
+        return javaHomeConf;
+    }
+
+    public static String getJavaHome(EmrInstanceArchitecture arch) {
+        if (arch == X86_64) {
+            return String.format(JAVA_HOME, "x86_64");
+        } else if (arch == ARM64) {
+            return String.format(JAVA_HOME, "aarch64");
+        } else {
+            throw new IllegalArgumentException("Unrecognised architecture: " + arch);
+        }
+    }
+
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
         Map<String, String> sparkConf = new HashMap<>();
 
@@ -260,43 +298,5 @@ public class ConfigurationUtils {
         sparkConf.put("spark.hadoop.fs.s3a.create.performance", "true");
 
         return sparkConf;
-    }
-
-    public static Map<String, String> getSparkEMRConfiguration() {
-        Map<String, String> sparkEmrConf = new HashMap<>();
-        sparkEmrConf.put("maximizeResourceAllocation", "false");
-
-        return sparkEmrConf;
-    }
-
-    public static Map<String, String> getYarnConfiguration() {
-        Map<String, String> yarnConf = new HashMap<>();
-        yarnConf.put("yarn.nodemanager.vmem-check-enabled", "false");
-        yarnConf.put("yarn.nodemanager.pmem-check-enabled", "false");
-
-        return yarnConf;
-    }
-
-    public static Map<String, String> getMapRedSiteConfiguration() {
-        Map<String, String> mapRedSiteConf = new HashMap<>();
-        mapRedSiteConf.put("mapreduce.map.output.compress", "true");
-
-        return mapRedSiteConf;
-    }
-
-    public static Map<String, String> getJavaHomeConfiguration(EmrInstanceArchitecture arch) {
-        Map<String, String> javaHomeConf = new HashMap<>();
-        javaHomeConf.put("JAVA_HOME", getJavaHome(arch));
-        return javaHomeConf;
-    }
-
-    public static String getJavaHome(EmrInstanceArchitecture arch) {
-        if (arch == X86_64) {
-            return String.format(JAVA_HOME, "x86_64");
-        } else if (arch == ARM64) {
-            return String.format(JAVA_HOME, "aarch64");
-        } else {
-            throw new IllegalArgumentException("Unrecognised architecture: " + arch);
-        }
     }
 }
