@@ -31,7 +31,7 @@ use sleeper_core::{
 use std::{collections::HashMap, io::Write, sync::Arc, time::Duration};
 use url::Url;
 
-const JOB_ID: &str = "compact_job";
+const JOB_ID: &str = "CLI_job";
 
 /// Runs a Sleeper compaction algorithm.
 ///
