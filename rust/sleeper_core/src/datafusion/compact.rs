@@ -66,7 +66,7 @@ pub async fn compact(
     let ops = SleeperOperations::new(config);
     info!(
         "DataFusion compaction for job ID {}: {ops}",
-        config.job_id().unwrap_or("<unknown>".into())
+        config.job_id().unwrap_or(&"<unknown>".to_owned())
     );
 
     let runtime = sleeper_context.retrieve_runtime_env()?;
@@ -254,8 +254,7 @@ mod tests {
         let filter = filter_over(empty_input());
 
         // When
-        let result =
-            find_filter_exec_stage(filter.clone()).expect("traversal should succeed");
+        let result = find_filter_exec_stage(filter.clone()).expect("traversal should succeed");
 
         // Then
         let found = result.expect("filter should be found");
