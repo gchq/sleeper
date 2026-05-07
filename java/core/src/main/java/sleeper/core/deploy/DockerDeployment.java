@@ -102,7 +102,7 @@ public class DockerDeployment {
      * Retrieves which optional stack uses this deployment. If the optional stack is not enabled, this Docker image is
      * not needed.
      *
-     * @return the optional stack
+     * @return the optional stack, or null if it's not specific to an optional stack
      */
     public OptionalStack getOptionalStack() {
         return optionalStack;
@@ -111,7 +111,7 @@ public class DockerDeployment {
     /**
      * Retrieves which state store committer platform uses this deployment.
      *
-     * @return the platform
+     * @return the platform, or null if it's used for every platform
      */
     public StateStoreCommitterPlatform getCommitterPlatform() {
         return committerPlatform;
@@ -121,7 +121,7 @@ public class DockerDeployment {
      * Retrieves which CDK app uses this deployment. If null, the deployment is used by any CDK app that deploys a
      * standard Sleeper instance.
      *
-     * @return the CDK app, or null if applicable to all standard instance deployments
+     * @return the CDK app, or null if applicable to all CDK apps
      */
     public SleeperInternalCdkApp getCdkApp() {
         return cdkApp;
