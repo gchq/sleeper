@@ -1159,20 +1159,20 @@ sleeper.subnets=set-automatically
 # (EKS mode only) The number of Spark executors. Used to set spark.executor.instances.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.instances=3
+# sleeper.bulk.import.eks.spark.executor.instances=29
 
 # (EKS mode only) The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.
 # Default values are overridden because Fargate doesn't work with Spark's default values.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.driver.memory=7g
+# sleeper.bulk.import.eks.spark.driver.memory=12g
 
 # (EKS mode only) The amount of memory allocated to a Spark executor. Used to set
 # spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's
 # default values.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.memory=7g
+# sleeper.bulk.import.eks.spark.executor.memory=12g
 
 # (EKS mode only) The memory overhead for the Spark driver. Used to set spark.driver.memoryOverhead.
 # Fargate provides extra memory so no need to include extra which also messes up the scheduler.
