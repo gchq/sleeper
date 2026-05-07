@@ -59,6 +59,10 @@ public class DockerDeployment {
             .committerPlatform(StateStoreCommitterPlatform.EC2)
             .multiplatform(true)
             .add();
+    public static final DockerDeployment SYSTEM_TEST = builder()
+            .deploymentName("system-test")
+            .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+            .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;
