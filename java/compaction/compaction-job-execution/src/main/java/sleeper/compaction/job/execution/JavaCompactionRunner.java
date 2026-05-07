@@ -48,6 +48,7 @@ import sleeper.sketches.store.SketchesStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -187,7 +188,7 @@ public class JavaCompactionRunner implements CompactionRunner {
     public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
         return Optional
                 .ofNullable(
-                        progressCounts.getOrDefault(compactionJobId, null))
+                        progressCounts.getOrDefault(Objects.requireNonNull(compactionJobId, "compactionJobId"), null))
                 .map(AtomicLong::get);
     }
 }
