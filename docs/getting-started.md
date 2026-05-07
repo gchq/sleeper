@@ -66,10 +66,6 @@ An instance will fail to deploy if it would replace log groups from a deleted in
 
 Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
-The demonstration deployment is built as part of a normal build of the system. If you've installed a pre-built version
-of Sleeper, the demonstration artefacts are included alongside the rest. If you haven't built or installed Sleeper yet,
-see the [developer guide](developer-guide.md).
-
 From a command line in your EC2 instance, you can run the script like this:
 
 ```bash
@@ -84,10 +80,10 @@ You may prefer to run this script in the background and redirect output to a fil
 less -R test.log # Press shift+F to follow the output in less
 ```
 
-This should take around 20 minutes to deploy the instance with the CDK. Once
-it finishes, you can watch the random data generation tasks in the AWS console by finding the ECS cluster
-named `sleeper-${ID}-system-test-cluster`. You can view logs for tasks in the cluster. It takes around 10 minutes to
-generate data. The data will appear in Sleeper in large batches as the tasks finish.
+This should take around 20 minutes to deploy the instance with the CDK. Once it finishes, you can watch the random data
+generation tasks in the AWS console by finding the ECS cluster named `sleeper-${ID}-system-test-cluster`. You can view
+logs for tasks in the cluster. It takes around 10 minutes to generate data. The data will appear in Sleeper in large
+batches as the tasks finish.
 
 Note that you can still use the method described in the deployment guide to upgrade a demonstration instance to a later
 version of Sleeper: [Upgrade/redeploy existing instance](deployment-guide.md#upgraderedeploy-existing-instance)
