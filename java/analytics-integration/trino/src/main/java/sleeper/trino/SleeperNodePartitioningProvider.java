@@ -42,10 +42,10 @@ import java.util.stream.IntStream;
  * Determines which splits are read from which node, and which rows are written to which node. These two related
  * purposes appear to operate as follows:
  * <ul>
- * <li>During a SELECT statement, the methods {@link #getBucketNodeMap}, {@link #listPartitionHandles} and
- * {@link #getSplitBucketFunction} are called. These are (presumably) used to allow a split to be read on a specific
- * node, such as when the data is local to that node.</li>
- * <li>During an INSERT statement, the methods {@link #getBucketNodeMap}, {@link #getBucketFunction} and
+ * <li>During a SELECT statement, the methods {@link #getBucketNodeMapping} and {@link #getSplitBucketFunction} are
+ * called. These are (presumably) used to allow a split to be read on a specific node, such as when the data is local
+ * to that node.</li>
+ * <li>During an INSERT statement, the methods {@link #getBucketNodeMapping}, {@link #getBucketFunction} and
  * {@link #getSplitBucketFunction} are called, although the split-bucket function that is returned is never called by
  * the framework. These allow individual rows of data to be allocated to a specific bucket, and hence a specific
  * node.</li>
@@ -59,7 +59,7 @@ import java.util.stream.IntStream;
  * <p>
  * Note that the Trino implementation is a little confused: some of the methods refer to the Trino partition a bucket
  * number, which is an integer, whereas other functions refer to the Trino partition as a
- * {@link ConnectorPartitionHandle}.
+ * {@link ConnectorPartitioningHandle}.
  */
 public class SleeperNodePartitioningProvider implements ConnectorNodePartitioningProvider {
     /**
@@ -79,8 +79,8 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
 
     /**
      * Obtain a function which identifies which partition (bucket number) the supplied split is in. This is used during
-     * read operartions, even when the {@link #listPartitionHandles} method returns NOT_PARTITIONED. It is also used
-     * during write operations, although in this case, the returned function is never called.
+     * read operations. It is also used during write operations, although in this case, the returned function is never
+     * called.
      *
      * @param  transactionHandle  the transaction to run under
      * @param  session            the session to run under

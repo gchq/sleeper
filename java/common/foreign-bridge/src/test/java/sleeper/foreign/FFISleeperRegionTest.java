@@ -32,90 +32,10 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class FFISleeperRegionTest {
-    jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
-
-    @Test
-    void shouldThrowOnRegionValidateMaxsIncorrectLength() {
-        // Given
-        FFISleeperRegion region = new FFISleeperRegion(runtime);
-        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.maxs.populate(new Integer[]{1, 2, 3, 4}, false);
-        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-
-        // When / Then
-        assertThatIllegalStateException()
-                .isThrownBy(() -> region.validate())
-                .withMessage("region maxs has length 4 but there are 5 row keys in region");
-    }
-
-    @Test
-    void shouldThrowOnRegionValidateMinsInclusiveIncorrectLength() {
-        // Given
-        FFISleeperRegion region = new FFISleeperRegion(runtime);
-        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.mins_inclusive.populate(new Boolean[]{false, false, false, false}, false);
-        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-
-        // When / Then
-        assertThatIllegalStateException()
-                .isThrownBy(() -> region.validate())
-                .withMessage("region mins inclusive has length 4 but there are 5 row keys in region");
-    }
-
-    @Test
-    void shouldThrowOnRegionValidateMaxsInclusiveIncorrectLength() {
-        // Given
-        FFISleeperRegion region = new FFISleeperRegion(runtime);
-        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false}, false);
-        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-
-        // When / Then
-        assertThatIllegalStateException()
-                .isThrownBy(() -> region.validate())
-                .withMessage("region maxs inclusive has length 4 but there are 5 row keys in region");
-    }
-
-    @Test
-    void shouldThrowOnRegionValidateDimensionIndexesIncorrectLength() {
-        // Given
-        FFISleeperRegion region = new FFISleeperRegion(runtime);
-        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4}, false);
-
-        // When / Then
-        assertThatIllegalStateException()
-                .isThrownBy(() -> region.validate())
-                .withMessage("region dimension indexes has length 4 but there are 5 row keys in region");
-    }
-
-    @Test
-    void shouldValidate() {
-        // Given
-        FFISleeperRegion region = new FFISleeperRegion(runtime);
-        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
-        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
-
-        // When / Then
-        assertThatCode(() -> region.validate())
-                .doesNotThrowAnyException();
-    }
+    private jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
 
     @Nested
     @DisplayName("Map to and from a Sleeper region")

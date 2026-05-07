@@ -112,7 +112,6 @@ public class Region {
      * @param  schema                   the schema that dictates returned order
      * @return                          a List of Ranges in schema order.
      * @throws IllegalArgumentException if a row key in the given schema is not present in this region
-     * @see                             getPartialRangesOrdered
      */
     public List<Range> getRangesOrdered(Schema schema) {
         List<String> rowKeysOrdered = schema.getRowKeyFieldNames();

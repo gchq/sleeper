@@ -18,6 +18,7 @@ package sleeper.core.properties.local;
 import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.SleeperTableInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -149,9 +150,14 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directory).map(table -> {
-            table.validate();
-            return table;
+        return streamTablePropertiesWithLocation(instanceProperties, directory).map(tableWithLocation -> {
+            try {
+                TableProperties table = tableWithLocation.properties;
+                table.validate();
+                return table;
+            } catch (RuntimeException rte) {
+                throw new SleeperTableInvalidException("Sleeper configuration file has invalid properties: " + tableWithLocation.path, rte);
+            }
         });
     }
 
@@ -164,9 +170,8 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
-        return streamBaseAndTableFolders(directory)
-                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
-                .filter(Objects::nonNull);
+        return streamTablePropertiesWithLocation(instanceProperties, directory)
+                .map(PropertiesWithLocation::properties);
     }
 
     /**
@@ -220,13 +225,21 @@ public class LoadLocalProperties {
         return new SleeperTableConfiguration(tableProperties, initialPartitions);
     }
 
-    private static TableProperties readTablePropertiesFolderOrNull(
+    private static Stream<PropertiesWithLocation> streamTablePropertiesWithLocation(
+            InstanceProperties instanceProperties, Path directory) {
+        return streamBaseAndTableFolders(directory)
+                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
+                .filter(Objects::nonNull);
+    }
+
+    private static PropertiesWithLocation readTablePropertiesFolderOrNull(
             InstanceProperties instanceProperties, Path folder) {
         Path propertiesPath = folder.resolve("table.properties");
         if (!Files.exists(propertiesPath)) {
             return null;
         }
-        return loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesPath);
+        TableProperties properties = loadTablePropertiesFromFileNoValidation(instanceProperties, propertiesPath);
+        return new PropertiesWithLocation(properties, propertiesPath);
     }
 
     private static Path directoryOf(Path filePath) {
@@ -258,5 +271,14 @@ public class LoadLocalProperties {
             throw new UncheckedIOException("Failed to list table configuration directories", e);
         }
         return tables.stream().sorted();
+    }
+
+    /**
+     * Holds table properties alongside their file path location.
+     *
+     * @param properties the table properties
+     * @param path       the file path where the properties were loaded from
+     */
+    private record PropertiesWithLocation(TableProperties properties, Path path) {
     }
 }

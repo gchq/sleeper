@@ -15,10 +15,10 @@
  */
 package sleeper.foreign;
 
-import jnr.ffi.Pointer;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 public class FFIBytesTest {
@@ -27,11 +27,11 @@ public class FFIBytesTest {
     @Test
     void shouldThrowOnNullBytes() {
         // When - Then
-        assertThatNullPointerException().isThrownBy(() -> new FFIBytes(RUNTIME, null)).withMessage("data");
+        assertThatNullPointerException().isThrownBy(() -> new FFIBytes(RUNTIME, null)).withMessage("buffer");
     }
 
     @Test
-    void shouldAcceptAndGetZeroBytes() {
+    void shouldAcceptAndGetZeroBytesConstructor() {
         // Given
         FFIBytes zero = new FFIBytes(RUNTIME, new byte[0]);
 
@@ -43,7 +43,7 @@ public class FFIBytesTest {
     }
 
     @Test
-    void shouldAcceptAndGetSomeBytes() {
+    void shouldAcceptAndGetSomeBytesConstructor() {
         // Given
         byte[] expected = {0, 1, 2, 3, 4, 5, 6};
         FFIBytes data = new FFIBytes(RUNTIME, expected);
@@ -56,30 +56,37 @@ public class FFIBytesTest {
     }
 
     @Test
-    void shouldWriteToReadFromMemoryZeroBytes() {
+    void shouldAcceptAndGetZeroBytesSetData() {
         // Given
-        FFIBytes zero = new FFIBytes(RUNTIME, new byte[0]);
-        Pointer memoryBuffer = RUNTIME.getMemoryManager().allocateTemporary(FFIBytes.size(RUNTIME), true);
-        zero.writeTo(memoryBuffer);
-
+        FFIBytes zero = new FFIBytes(RUNTIME);
+        zero.setData(new byte[0]);
         // When
-        FFIBytes returned = FFIBytes.readFrom(memoryBuffer);
+        byte[] returned = zero.getData();
 
         // Then
-        assertThat(zero).isEqualTo(returned);
+        assertThat(returned).hasSize(0);
     }
 
     @Test
-    void shouldWriteToReadFromMemoryManyBytes() {
+    void shouldAcceptAndGetSomeBytesSetData() {
         // Given
-        FFIBytes data = new FFIBytes(RUNTIME, new byte[]{1, 2, 3, 4, 5, 6, 7, 8});
-        Pointer memoryBuffer = RUNTIME.getMemoryManager().allocateTemporary(FFIBytes.size(RUNTIME), true);
-        data.writeTo(memoryBuffer);
+        byte[] expected = {0, 1, 2, 3, 4, 5, 6};
+        FFIBytes data = new FFIBytes(RUNTIME);
+        data.setData(expected);
 
         // When
-        FFIBytes returned = FFIBytes.readFrom(memoryBuffer);
+        byte[] returned = data.getData();
 
         // Then
-        assertThat(data).isEqualTo(returned);
+        assertThat(returned).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldThrowOnGetDataWithEmptyBuffer() {
+        // Given
+        FFIBytes bytes = new FFIBytes(RUNTIME);
+
+        // When - Then
+        assertThatIllegalStateException().isThrownBy(() -> bytes.getData()).withMessage("no data in buffer");
     }
 }

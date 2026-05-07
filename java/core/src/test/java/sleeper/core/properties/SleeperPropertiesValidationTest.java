@@ -145,7 +145,7 @@ public class SleeperPropertiesValidationTest {
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
             // When / Then
             assertThatThrownBy(tableProperties::validate)
-                    .hasMessage("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\".");
+                    .hasMessageContaining("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\".");
         }
 
         @Test
@@ -156,7 +156,7 @@ public class SleeperPropertiesValidationTest {
             tableProperties.unset(TABLE_NAME);
             // When / Then
             assertThatThrownBy(tableProperties::validate)
-                    .hasMessage("Property sleeper.table.name was invalid. It was unset.");
+                    .hasMessageContaining("Property sleeper.table.name was invalid. It was unset.");
         }
     }
 
@@ -173,7 +173,8 @@ public class SleeperPropertiesValidationTest {
             // When
             assertThatThrownBy(instanceProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessage("Property sleeper.log.retention.days was invalid. It was \"abc\". Failure 1 of 2.")
+                    .hasMessageContaining("Property sleeper.log.retention.days was invalid. It was \"abc\".")
+                    .hasMessageContaining("Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
                             LOG_RETENTION_IN_DAYS, "abc",
@@ -191,7 +192,8 @@ public class SleeperPropertiesValidationTest {
             // When/Then
             assertThatThrownBy(tableProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessage("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\". Failure 1 of 2.")
+                    .hasMessageContaining("Property sleeper.table.parquet.compression.codec was invalid. It was \"madeUp\".")
+                    .hasMessageContaining("Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
                             COMPRESSION_CODEC, "madeUp",
