@@ -199,3 +199,109 @@ fn find_filter_exec_stage(
     })?;
     Ok(filter_exec)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
+    use datafusion::physical_expr::expressions::lit;
+    use datafusion::physical_plan::empty::EmptyExec;
+    use datafusion::physical_plan::projection::ProjectionExec;
+
+    fn schema() -> SchemaRef {
+        Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]))
+    }
+
+    fn empty_input() -> Arc<dyn ExecutionPlan> {
+        Arc::new(EmptyExec::new(schema()))
+    }
+
+    fn filter_over(input: Arc<dyn ExecutionPlan>) -> Arc<dyn ExecutionPlan> {
+        Arc::new(FilterExec::try_new(lit(true), input).expect("FilterExec should build"))
+    }
+
+    fn projection_over(input: Arc<dyn ExecutionPlan>) -> Arc<dyn ExecutionPlan> {
+        let projection_schema = input.schema();
+        let exprs = projection_schema
+            .fields()
+            .iter()
+            .enumerate()
+            .map(|(idx, field)| {
+                let col: Arc<dyn datafusion::physical_expr::PhysicalExpr> = Arc::new(
+                    datafusion::physical_expr::expressions::Column::new(field.name(), idx),
+                );
+                (col, field.name().to_owned())
+            })
+            .collect::<Vec<_>>();
+        Arc::new(ProjectionExec::try_new(exprs, input).expect("ProjectionExec should build"))
+    }
+
+    #[test]
+    fn find_filter_exec_stage_should_return_none_when_plan_has_no_filter() {
+        // Given
+        let plan = empty_input();
+
+        // When
+        let result = find_filter_exec_stage(plan).expect("traversal should succeed");
+
+        // Then
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn find_filter_exec_stage_should_return_filter_when_plan_is_filter_only() {
+        // Given
+        let filter = filter_over(empty_input());
+
+        // When
+        let result =
+            find_filter_exec_stage(filter.clone()).expect("traversal should succeed");
+
+        // Then
+        let found = result.expect("filter should be found");
+        assert!(Arc::ptr_eq(&found, &filter));
+    }
+
+    #[test]
+    fn find_filter_exec_stage_should_find_filter_nested_below_other_node() {
+        // Given a Projection wrapping a Filter wrapping an EmptyExec
+        let filter = filter_over(empty_input());
+        let plan = projection_over(filter.clone());
+
+        // When
+        let result = find_filter_exec_stage(plan).expect("traversal should succeed");
+
+        // Then the inner FilterExec is returned, not the Projection
+        let found = result.expect("filter should be found");
+        assert!(found.as_any().downcast_ref::<FilterExec>().is_some());
+        assert!(Arc::ptr_eq(&found, &filter));
+    }
+
+    #[test]
+    fn find_filter_exec_stage_should_return_innermost_filter_when_filters_are_nested() {
+        // Given Filter(Filter(Empty))
+        let inner_filter = filter_over(empty_input());
+        let outer_filter = filter_over(inner_filter.clone());
+
+        // When
+        let result = find_filter_exec_stage(outer_filter).expect("traversal should succeed");
+
+        // Then the deeper (post-order first) filter is returned
+        let found = result.expect("filter should be found");
+        assert!(Arc::ptr_eq(&found, &inner_filter));
+    }
+
+    #[test]
+    fn find_filter_exec_stage_should_skip_filter_buried_under_other_nodes_above_first_match() {
+        // Given Projection(Projection(Filter(Empty))) — only one filter, deeply nested
+        let filter = filter_over(empty_input());
+        let plan = projection_over(projection_over(filter.clone()));
+
+        // When
+        let result = find_filter_exec_stage(plan).expect("traversal should succeed");
+
+        // Then the filter is still located even when wrapped in multiple non-filter nodes
+        let found = result.expect("filter should be found");
+        assert!(Arc::ptr_eq(&found, &filter));
+    }
+}
