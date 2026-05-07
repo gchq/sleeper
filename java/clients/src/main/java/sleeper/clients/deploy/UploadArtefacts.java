@@ -68,7 +68,8 @@ public class UploadArtefacts {
                         CommandOption.longFlag("create-builder"),
                         CommandOption.longFlag("create-deployment"),
                         CommandOption.longFlag("overwrite-existing"),
-                        CommandOption.shortOption('u', "upload")))
+                        CommandOption.shortOption('u', "upload"),
+                        CommandOption.longOption("cdk-app")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
@@ -105,7 +106,13 @@ public class UploadArtefacts {
                         "\n" +
                         "--upload, -u\n" +
                         "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
-                        "jars, or \"--upload images\" to only upload the container images.")
+                        "jars, or \"--upload images\" to only upload the container images.\n" +
+                        "\n" +
+                        "--cdk-app\n" +
+                        "By default we include images required for a normal Sleeper instance deployment. Other " +
+                        "deployment types may need different Docker images, in which case you can set this to a CDK " +
+                        "app that requires extra images.\n" +
+                        "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
@@ -115,6 +122,12 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
+                arguments.getOptionalString("cdk-app")
+                        .map(string -> SleeperInternalCdkApp.readCdkAppDeployingSleeperInstance(string)
+                                .orElseThrow(() -> new CommandArgumentsException(
+                                        "Unknown CDK app: " + string + ". Valid values: " +
+                                                SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())))
+                        .orElse(SleeperInternalCdkApp.STANDARD),
                 arguments.getOptionalString("extra-images")
                         .map(string -> SleeperPropertyValueUtils.readList(string).stream()
                                 .map(StackDockerImage::dockerBuildImage).toList())
@@ -135,7 +148,7 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), SleeperInternalCdkApp.STANDARD);
+            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
@@ -161,7 +174,7 @@ public class UploadArtefacts {
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
-                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId));
             }
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
@@ -184,6 +197,7 @@ public class UploadArtefacts {
             Path scriptsDir,
             InstanceProperties instanceProperties,
             String deploymentId,
+            SleeperInternalCdkApp cdkApp,
             List<StackDockerImage> extraImages,
             boolean createMultiplatformBuilder,
             boolean createDeployment,

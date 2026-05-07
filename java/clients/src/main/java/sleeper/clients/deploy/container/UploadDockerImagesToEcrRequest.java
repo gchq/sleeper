@@ -49,13 +49,6 @@ public class UploadDockerImagesToEcrRequest {
         return builder().ecrPrefix(ecrPrefix).images(images).overwriteExistingTag(overwriteExistingTag);
     }
 
-    public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
-        if (extraImages.isEmpty()) {
-            return this;
-        }
-        return toBuilder().extraImages(extraImages).build();
-    }
-
     public String getEcrPrefix() {
         return ecrPrefix;
     }

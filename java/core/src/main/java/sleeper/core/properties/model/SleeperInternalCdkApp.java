@@ -18,7 +18,6 @@ package sleeper.core.properties.model;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.deploy.ClientJar;
-import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -72,20 +71,6 @@ public enum SleeperInternalCdkApp {
             return Optional.empty();
         }
         return Optional.of(app).filter(SleeperInternalCdkApp::isDeploysSleeperInstance);
-    }
-
-    /**
-     * Infers which app was used based on whether any system test properties are set.
-     *
-     * @param  instanceProperties the instance properties
-     * @return                    the CDK app
-     */
-    public static SleeperInternalCdkApp inferBySystemTestProperties(InstanceProperties instanceProperties) {
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return SleeperInternalCdkApp.DEMONSTRATION;
-        } else {
-            return SleeperInternalCdkApp.STANDARD;
-        }
     }
 
     /**
