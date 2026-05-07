@@ -104,7 +104,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
             rowsRead++;
-            if (0 == rowsRead % 100_000) {
+            if (0 == rowsRead % 50_000) {
                 valueHolder.set(rowsRead);
             }
             sketches.update(row);
@@ -115,6 +115,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                 LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
+        valueHolder.set(rowsRead);
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 

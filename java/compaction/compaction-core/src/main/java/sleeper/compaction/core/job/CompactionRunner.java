@@ -26,6 +26,7 @@ import java.util.Optional;
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
  */
+@FunctionalInterface
 public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
@@ -48,6 +49,8 @@ public interface CompactionRunner {
      * on currently running compactions. Once a compaction is finished, it may not be possible to get a count. An empty
      * optional is returned if no information is available for the given job.
      *
+     * The default implementation simply returns an empty value.
+     *
      * @implNote                      this method MUST be thread safe! It must be safe to call this method while
      *                                another thread is executing
      *                                {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
@@ -55,7 +58,9 @@ public interface CompactionRunner {
      * @return                        the number of rows read by the requested compaction, if available
      * @throws   NullPointerException if compactionJobId is null
      */
-    Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException;
+    default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
+        return Optional.empty();
+    }
 
     /**
      * Convenience method for {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
