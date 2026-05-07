@@ -102,20 +102,6 @@ public class DockerImageConfiguration {
                 .map(StackDockerImage::lambdaImage);
     }
 
-    /**
-     * Finds the prefix of an ECR repository that may be a Sleeper instance ID. This assumes that the repository was
-     * created during the deployment of a Sleeper instance with no ECR repository prefix set.
-     *
-     * @param  repositoryName the ECR repository name
-     * @return                the detected Sleeper instance ID, if one was found
-     */
-    public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
-        return dockerDeployments.stream()
-                .filter(image -> repositoryName.endsWith("/" + image.getDeploymentName()))
-                .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
-                .findFirst();
-    }
-
     public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
         return lambdaHandlers.stream()
                 .map(LambdaHandler::getJar)
