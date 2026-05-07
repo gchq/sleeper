@@ -27,6 +27,7 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
@@ -38,6 +39,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
@@ -159,12 +161,11 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
         common.parquet_options.set(parquetOptions);
-        common.input_files.populate(query.getFiles().toArray(String[]::new), false);
+        common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
-        common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new), false);
-        common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
-        common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
+        common.setRowKeyCols(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new));
+        common.setSortKeyCols(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new));
         common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
         common.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
@@ -173,23 +174,28 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
-        queryConfig.common.set(common);
+        queryConfig.setCommonConfig(common);
 
         // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
         // requested value fields, if it does, grab the value fields from the dataReadSchema, since this
         // will include extra value fields needed for Java iterators to execute
         if (query.getRequestedValueFields() != null) {
-            queryConfig.requested_value_fields.populate(dataReadSchema.getValueFieldNames().toArray(String[]::new), false);
-            queryConfig.requested_value_fields_set.set(true);
+            FFIBytes[] requestedValueBytes = dataReadSchema.getValueFieldNames()
+                    .stream()
+                    .map(s -> new FFIBytes(runtime, s.getBytes(StandardCharsets.UTF_8)))
+                    .toArray(FFIBytes[]::new);
+            queryConfig.setRequestedValueFields(requestedValueBytes);
         } else {
             queryConfig.requested_value_fields_set.set(false);
         }
 
-        FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> FFISleeperRegion.from(region, dataReadSchema, runtime)).toArray(FFISleeperRegion[]::new);
+        FFISleeperRegion[] ffiRegions = query.getRegions()
+                .stream()
+                .map(region -> FFISleeperRegion.from(region, dataReadSchema, runtime))
+                .toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffiRegions);
         queryConfig.explain_plans.set(true);
 
-        queryConfig.validate();
         return queryConfig;
     }
 

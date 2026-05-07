@@ -67,10 +67,10 @@ public class IngestBatcherReport {
 
     public IngestBatcherReport(
             IngestBatcherStore batcherStore, IngestBatcherReporter reporter,
-            BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+            BatcherQuery query, TableStatusProvider tableProvider) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
-        this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
+        this.query = query;
         this.queryType = query.getType();
         this.tableProvider = tableProvider;
     }
@@ -124,7 +124,7 @@ public class IngestBatcherReport {
                 default:
                     reporter = new StandardIngestBatcherReporter();
             }
-            new IngestBatcherReport(store, reporter, queryType,
+            new IngestBatcherReport(store, reporter, BatcherQuery.from(queryType, ConsoleInput.stdIn()),
                     new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoClient)))
                     .run();
         }

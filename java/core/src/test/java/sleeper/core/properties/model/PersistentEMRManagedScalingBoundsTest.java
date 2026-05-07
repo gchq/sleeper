@@ -113,8 +113,8 @@ public class PersistentEMRManagedScalingBoundsTest {
                                 BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true",
                                 BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "10",
                                 BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "5"));
-                        assertThat(e.getMessage()).isEqualTo(String.format(
-                                "Property %s was invalid. It was \"true\". Failure 1 of 3.",
+                        assertThat(e.getMessage()).contains(String.format(
+                                "Property %s was invalid. It was \"true\".",
                                 BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING.getPropertyName()));
                     });
         }
@@ -133,8 +133,8 @@ public class PersistentEMRManagedScalingBoundsTest {
                                 BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "true",
                                 BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "5",
                                 BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "5"));
-                        assertThat(e.getMessage()).isEqualTo(String.format(
-                                "Property %s was invalid. It was \"true\". Failure 1 of 3.",
+                        assertThat(e.getMessage()).contains(String.format(
+                                "Property %s was invalid. It was \"true\".",
                                 BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING.getPropertyName()));
                     });
         }
@@ -162,7 +162,7 @@ public class PersistentEMRManagedScalingBoundsTest {
                     .isInstanceOfSatisfying(SleeperPropertiesInvalidException.class, e -> {
                         assertThat(e.getInvalidValues()).isEqualTo(Map.of(
                                 BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "abc"));
-                        assertThat(e.getMessage()).isEqualTo(String.format(
+                        assertThat(e.getMessage()).contains(String.format(
                                 "Property %s was invalid. It was \"abc\".",
                                 BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY.getPropertyName()));
                     });

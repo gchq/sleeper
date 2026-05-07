@@ -35,7 +35,7 @@ We can use `scripts/dev/publishMaven.sh` and `scripts/dev/publishDocker.sh` to p
 repositories.
 
 We can use `scripts/deploy/installJarsFromMaven.sh` to retrieve the jars locally from Maven,
-and `scripts/deploy/setDeployFromRemoteDocker.sh` to configure our scripts to retrieve Docker images from a remote
+and `scripts/deploy/setDeployConfig.sh` to configure our scripts to retrieve Docker images from a remote
 repository during deployment.
 
 ### Potential changes

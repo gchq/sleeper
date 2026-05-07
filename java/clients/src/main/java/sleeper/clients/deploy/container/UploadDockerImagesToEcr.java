@@ -46,7 +46,7 @@ public class UploadDockerImagesToEcr {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
-        if (!requestedImages.isEmpty()) {
+        if (uploader.isDockerCli() && !requestedImages.isEmpty()) {
             uploader.getCommandRunner().runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));

@@ -140,7 +140,7 @@ public class QueryClient extends QueryCommandLineClient {
                     instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
-                    new ConsoleInput(System.console()), new ConsoleOutput(System.out),
+                    ConsoleInput.stdIn(), ConsoleOutput.stdOut(),
                     new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(

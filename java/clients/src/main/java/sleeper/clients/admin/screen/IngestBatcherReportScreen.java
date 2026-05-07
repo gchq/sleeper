@@ -75,7 +75,7 @@ public class IngestBatcherReportScreen {
 
     private void runBatcherReport(IngestBatcherStore ingestBatcherStore, BatcherQuery.Type queryType) {
         new IngestBatcherReport(ingestBatcherStore,
-                new StandardIngestBatcherReporter(out.printStream()), queryType,
+                new StandardIngestBatcherReporter(out.printStream()), BatcherQuery.from(queryType, in),
                 new TableStatusProvider(tableIndex))
                 .run();
         confirmReturnToMainScreen(out, in);

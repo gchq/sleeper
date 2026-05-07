@@ -15,15 +15,15 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
+import jnr.ffi.TypeAlias;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.foreign.bridge.FFIArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,51 +39,39 @@ import java.util.List;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
+@SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
 public class FFISleeperRegion extends Struct {
-    /** Region partition region minimums. */
-    final FFIArray<Object> mins = new FFIArray<>(this);
-    /** Region partition region maximums. MUST BE SAME LENGTH AS region_mins. */
-    final FFIArray<Object> maxs = new FFIArray<>(this);
+    /**
+     * Length of all component arrays, including mins, maxs, mins_inclusive, maxs_inclusive and dimension_indexes
+     * and Java counterparts. All assumed to be same length.
+     */
+    final Struct.size_t number_of_dimensions = new Struct.size_t();
+    /** Region partition region minimums. May not contain "Empty" elements. */
+    final Struct.StructRef<FFIRowKeyValue> mins = new Struct.StructRef<>(FFIRowKeyValue.class);
+    /** Prevent GC. */
+    private FFIRowKeyValue[] java_mins;
+    /** Region partition region maximums. May contain "Empty" elements. */
+    final Struct.StructRef<FFIRowKeyValue> maxs = new Struct.StructRef<>(FFIRowKeyValue.class);
+    /** Prevent GC. */
+    private FFIRowKeyValue[] java_maxs;
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    final FFIArray<java.lang.Boolean> mins_inclusive = new FFIArray<>(this);
+    final Struct.Pointer mins_inclusive = new Struct.Pointer();
+    /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
+    private jnr.ffi.Pointer java_mins_inclusive;
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
+    final Struct.Pointer maxs_inclusive = new Struct.Pointer();
+    /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
+    private jnr.ffi.Pointer java_maxs_inclusive;
     /**
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
-    final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
+    final Struct.Pointer dimension_indexes = new Struct.Pointer();
+    /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
+    private jnr.ffi.Pointer java_dimension_indexes;
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
-    }
-
-    /**
-     * Validate state of struct.
-     *
-     * @throws IllegalStateException when a invariant fails
-     */
-    void validate() {
-        mins.validate();
-        maxs.validate();
-        mins_inclusive.validate();
-        maxs_inclusive.validate();
-        dimension_indexes.validate();
-
-        // Check lengths
-        long rowKeys = mins.length();
-        if (rowKeys != maxs.length()) {
-            throw new IllegalStateException("region maxs has length " + maxs.length() + " but there are " + rowKeys + " row keys in region");
-        }
-        if (rowKeys != mins_inclusive.length()) {
-            throw new IllegalStateException("region mins inclusive has length " + mins_inclusive.length() + " but there are " + rowKeys + " row keys in region");
-        }
-        if (rowKeys != maxs_inclusive.length()) {
-            throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row keys in region");
-        }
-        if (rowKeys != dimension_indexes.length()) {
-            throw new IllegalStateException("region dimension indexes has length " + dimension_indexes.length() + " but there are " + rowKeys + " row keys in region");
-        }
     }
 
     /**
@@ -95,7 +83,6 @@ public class FFISleeperRegion extends Struct {
      * @return         the FFI region
      */
     public static FFISleeperRegion from(Region region, Schema schema, jnr.ffi.Runtime runtime) {
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
         int numRanges = region.getRangesUnordered().size();
         List<Object> mins = new ArrayList<>(numRanges);
         List<java.lang.Boolean> minsInclusive = new ArrayList<>(numRanges);
@@ -116,37 +103,125 @@ public class FFISleeperRegion extends Struct {
             dimensionIndexes.add(dimension);
         }
 
-        // Mins can't contain nulls
-        partitionRegion.mins.populate(mins.toArray(), false);
-        partitionRegion.mins_inclusive.populate(minsInclusive.toArray(java.lang.Boolean[]::new), false);
-        // Maxs can contain nulls
-        partitionRegion.maxs.populate(maxs.toArray(), true);
-        partitionRegion.maxs_inclusive.populate(maxsInclusive.toArray(java.lang.Boolean[]::new), false);
-        partitionRegion.dimension_indexes.populate(dimensionIndexes.toArray(java.lang.Integer[]::new), false);
+        int allLength = mins.size();
+
+        // Check no nulls in mins
+        if (mins.stream().anyMatch(o -> o == null)) {
+            throw new IllegalArgumentException("Region minimums cannot contain nulls");
+        }
+
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
+        partitionRegion.number_of_dimensions.set(allLength);
+        // Convert minimums to FFIElement objects
+        FFIRowKeyValue[] minArray = mins.stream()
+                .map(o -> new FFIRowKeyValue(runtime, o))
+                .toArray(FFIRowKeyValue[]::new);
+        partitionRegion.mins.set(minArray);
+        partitionRegion.java_mins = minArray;
+
+        // Convert maximums to FFIElement objects
+        FFIRowKeyValue[] maxArray = maxs.stream()
+                .map(o -> new FFIRowKeyValue(runtime, o))
+                .toArray(FFIRowKeyValue[]::new);
+        partitionRegion.maxs.set(maxArray);
+        partitionRegion.java_maxs = maxArray;
+
+        jnr.ffi.Pointer nativeMinsInclusive = runtime.getMemoryManager().allocateDirect(allLength);
+        for (int i = 0; i < minsInclusive.size(); i++) {
+            boolean inclusive = minsInclusive.get(i);
+            nativeMinsInclusive.putByte(i, inclusive ? (byte) 1 : (byte) 0);
+        }
+        partitionRegion.mins_inclusive.set(nativeMinsInclusive);
+        partitionRegion.java_mins_inclusive = nativeMinsInclusive;
+
+        jnr.ffi.Pointer nativeMaxsInclusive = runtime.getMemoryManager().allocateDirect(allLength);
+        for (int i = 0; i < maxsInclusive.size(); i++) {
+            boolean inclusive = maxsInclusive.get(i);
+            nativeMaxsInclusive.putByte(i, inclusive ? (byte) 1 : (byte) 0);
+        }
+        partitionRegion.maxs_inclusive.set(nativeMaxsInclusive);
+        partitionRegion.java_maxs_inclusive = nativeMaxsInclusive;
+
+        int sizetBytes = runtime.findType(TypeAlias.size_t).size();
+        jnr.ffi.Pointer nativeDimensionIndexes = runtime.getMemoryManager().allocate(
+                sizetBytes * allLength);
+        for (int i = 0; i < dimensionIndexes.size(); i++) {
+            int dimensionIndex = dimensionIndexes.get(i);
+            writeCSize_t(sizetBytes, nativeDimensionIndexes, i, dimensionIndex);
+        }
+        partitionRegion.dimension_indexes.set(nativeDimensionIndexes);
+        partitionRegion.java_dimension_indexes = nativeDimensionIndexes;
+
         return partitionRegion;
     }
 
     /**
-     * Maps to a Sleeper region object.
+     * Write an int as a C size_t value to the given offset.
+     *
+     * @param  sizetBytes               size of size_t either 4 or 8 bytes
+     * @param  base                     array base address
+     * @param  offset                   array index
+     * @param  value                    size_t to write
+     * @throws IllegalArgumentException if sizetBytes is not 4 or 8, or value < 0
+     */
+    private static void writeCSize_t(int sizetBytes, jnr.ffi.Pointer base, long offset, int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("value must be >=0");
+        }
+        if (sizetBytes == 4) {
+            base.putInt(offset * sizetBytes, value);
+        } else if (sizetBytes == 8) {
+            base.putLongLong(offset * sizetBytes, value);
+        } else {
+            throw new IllegalArgumentException("sizetBytes must be 4 or 8");
+        }
+    }
+
+    /**
+     * Read an int as a C size_t value from the given offset.
+     *
+     * @param  sizetBytes               size of size_t either 4 or 8 bytes
+     * @param  base                     array base address
+     * @param  offset                   array index
+     * @return                          value of size_t read
+     * @throws IllegalArgumentException if sizetBytes is not 4 or 8
+     */
+    private static int readCSize_t(int sizetBytes, jnr.ffi.Pointer base, long offset) {
+        if (sizetBytes == 4) {
+            return base.getInt(offset * sizetBytes);
+        } else if (sizetBytes == 8) {
+            long value = base.getLongLong(offset * sizetBytes);
+            if (value > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("read value exceeds 32 bit int max");
+            }
+            return (int) value;
+        } else {
+            throw new IllegalArgumentException("sizetBytes must be 4 or 8");
+        }
+    }
+
+    /**
+     * Maps to a Sleeper region object. This only works if this objects was written to from Java.
      *
      * @param  schema the schema
      * @return        the region
      */
     public Region toSleeperRegion(Schema schema) {
-        validate();
+        jnr.ffi.Runtime runtime = getRuntime();
+
         List<Field> rowKeys = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        java.lang.Boolean[] minsInclusive = mins_inclusive.readBack(java.lang.Boolean.class, false);
-        java.lang.Boolean[] maxsInclusive = maxs_inclusive.readBack(java.lang.Boolean.class, false);
-        java.lang.Integer[] dimensionIndexes = dimension_indexes.readBack(java.lang.Integer.class, false);
-        List<Range> ranges = new ArrayList<>(minsInclusive.length);
-        jnr.ffi.Runtime runtime = getRuntime();
-        for (int i = 0; i < dimensionIndexes.length; i++) {
-            Field field = rowKeys.get(dimensionIndexes[i]);
-            PrimitiveType type = (PrimitiveType) field.getType();
-            Object min = mins.getFieldValue(i, type, false, runtime);
-            Object max = maxs.getFieldValue(i, type, true, runtime);
-            ranges.add(rangeFactory.createRange(field, min, minsInclusive[i], max, maxsInclusive[i]));
+        int allLength = number_of_dimensions.intValue();
+        List<Range> ranges = new ArrayList<>(allLength);
+        int sizetBytes = runtime.findType(TypeAlias.size_t).size();
+        for (int i = 0; i < allLength; i++) {
+            int dimensionIndex = readCSize_t(sizetBytes, java_dimension_indexes, i);
+            Field field = rowKeys.get(dimensionIndex);
+            Object min = java_mins[i].get();
+            boolean minInclusive = java_mins_inclusive.getByte(i) != 0;
+            boolean maxInclusive = java_maxs_inclusive.getByte(i) != 0;
+            Object max = java_maxs[i].get();
+            ranges.add(rangeFactory.createRange(field, min, minInclusive, max, maxInclusive));
         }
         return new Region(ranges);
     }

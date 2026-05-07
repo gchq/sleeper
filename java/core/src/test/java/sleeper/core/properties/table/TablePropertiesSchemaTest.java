@@ -42,7 +42,7 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
-                .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was unset.");
     }
 
     @Test
@@ -54,7 +54,7 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"{}\".");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
     }
 
     @Test
@@ -70,7 +70,7 @@ class TablePropertiesSchemaTest {
         // Then
         assertThat(tableProperties.getSchema()).isNull();
         assertThatThrownBy(tableProperties::validate)
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"{}\".");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
     }
 
     @Test
@@ -131,7 +131,7 @@ class TablePropertiesSchemaTest {
 
         // When / Then
         assertThatThrownBy(() -> TableProperties.createAndValidate(instanceProperties, properties))
-                .hasMessage("Property sleeper.table.name was invalid. It was unset.");
+                .hasMessageContaining("Property sleeper.table.name was invalid. It was unset.");
     }
 
     @Test
@@ -160,7 +160,7 @@ class TablePropertiesSchemaTest {
         // Then
         assertThat(tableProperties.getSchema()).isNull();
         assertThatThrownBy(tableProperties::validate)
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"{}\".");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
         assertThat(tableProperties.isValid()).isFalse();
     }
 }

@@ -101,7 +101,7 @@ public class BulkExportQuerySplitter {
      * to the parent to the sub query.
      *
      * @param  bulkExportQuery the query to be split up
-     * @return                 a list of {@link LeafPartitionQuery}s
+     * @return                 a list of {@link BulkExportLeafPartitionQuery}s
      */
     public List<BulkExportLeafPartitionQuery> splitIntoLeafPartitionQueries(BulkExportQuery bulkExportQuery) {
         LOGGER.info("There are {} relevant leaf partitions", leafPartitions.size());

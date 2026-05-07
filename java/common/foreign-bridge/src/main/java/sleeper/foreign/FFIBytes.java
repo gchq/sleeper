@@ -15,63 +15,51 @@
  */
 package sleeper.foreign;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
-import jnr.ffi.TypeAlias;
 
 import java.util.Objects;
 
 /**
- * A Java implementation of FFIBytes. Whilst this class is not a JNR-FFI {@link Struct} instance, it is used
- * to write compatible data at a given memory location. Memory is dynamically allocated for the internal buffer which
- * will be automatically freed when its owning instance is garbage collected.
+ * Java implementation of FFIBytes. A simple length and pointer to a data buffer.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-public class FFIBytes {
+@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
+public class FFIBytes extends Struct {
     /** Length of stored data. */
-    private final int length;
+    public final Struct.size_t length = new Struct.size_t();
+    /** Data buffer. */
+    public final Struct.Pointer data = new Struct.Pointer();
     /**
-     * Memory address of byte array in memory.
+     * Memory address of byte array in memory. Stored to prevent GC until this object is collected.
      */
-    private final jnr.ffi.Pointer data;
+    private jnr.ffi.Pointer nativePointer;
 
-    public FFIBytes(jnr.ffi.Runtime runtime, byte[] data) {
-        Objects.requireNonNull(data, "data");
+    public FFIBytes(jnr.ffi.Runtime runtime) {
+        super(runtime);
+    }
+
+    public FFIBytes(jnr.ffi.Runtime runtime, byte[] buffer) {
+        this(runtime);
+        setData(buffer);
+    }
+
+    /**
+     * Set the contents of the buffer for this instance.
+     *
+     * @param buffer the data to copy in
+     */
+    public void setData(byte[] buffer) {
+        Objects.requireNonNull(buffer, "buffer");
         // Allocate some memory for the data
-        this.data = runtime.getMemoryManager().allocateDirect(data.length);
-        this.data.put(0, data, 0, data.length);
-        this.length = data.length;
-    }
-
-    private FFIBytes(int length, jnr.ffi.Pointer data) {
-        this.length = length;
-        this.data = data;
-    }
-
-    /**
-     * Writes this struct to the given memory address.
-     *
-     * The memory address must point to a valid location.
-     *
-     * @param location memory address to write to
-     */
-    public void writeTo(jnr.ffi.Pointer location) {
-        location.putLongLong(0, length);
-        location.putPointer(data.getRuntime().findType(TypeAlias.size_t).size(), data);
-    }
-
-    /**
-     * Read an instance from the given location.
-     *
-     * The internal data buffer pointer is taken from the given location. It is the callers
-     * responsibility to ensure it remains valid for the life of this object.
-     *
-     * @param  location memory to read from
-     * @return          an FFIBytes deserialised from the given memory location.
-     */
-    public static FFIBytes readFrom(jnr.ffi.Pointer location) {
-        int length = (int) location.getLongLong(0);
-        jnr.ffi.Pointer data = location.getPointer(location.getRuntime().findType(TypeAlias.size_t).size());
-        return new FFIBytes(length, data);
+        this.nativePointer = getRuntime().getMemoryManager().allocateDirect(buffer.length);
+        this.nativePointer.put(0, buffer, 0, buffer.length);
+        this.length.set(buffer.length);
+        this.data.set(nativePointer);
     }
 
     /**
@@ -80,41 +68,11 @@ public class FFIBytes {
      * @return copy of internal byte array
      */
     public byte[] getData() {
-        byte[] result = new byte[length];
-        data.get(0, result, 0, length);
+        if (nativePointer == null) {
+            throw new IllegalStateException("no data in buffer");
+        }
+        byte[] result = new byte[length.intValue()];
+        nativePointer.get(0, result, 0, length.intValue());
         return result;
-    }
-
-    /**
-     * Get the native size of this struct.
-     *
-     * @param  r the JNR FFI runtime to use
-     * @return   struct size in bytes
-     */
-    public static int size(jnr.ffi.Runtime r) {
-        return r.addressSize() + r.findType(TypeAlias.size_t).size();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(length, data);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("FFIBytes{length=%d, data=0x%x}", length, data.address());
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof FFIBytes)) {
-            return false;
-        }
-
-        FFIBytes other = (FFIBytes) obj;
-        return length == other.length && data.address() == other.data.address();
     }
 }

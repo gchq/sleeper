@@ -246,7 +246,7 @@ mod tests {
     fn try_from_should_create_from_filter_positive_time() -> Result<(), DataFusionError> {
         // Given
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_secs(2)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(1000, origin_time)?;
@@ -260,7 +260,7 @@ mod tests {
     fn try_from_should_create_from_filter_negative_time() -> Result<(), DataFusionError> {
         // Given
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_secs(2)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(-1000, origin_time)?;
