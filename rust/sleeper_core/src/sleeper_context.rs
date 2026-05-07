@@ -68,7 +68,7 @@ impl SleeperContext {
     ///
     /// # Panics
     /// If the lock protecting the runtime can't be unlocked due to a lock posion.
-    pub fn get_compaction_row_read(&self, compaction_job_id: impl AsRef<str>) -> Option<usize> {
+    pub fn get_compaction_rows_read(&self, compaction_job_id: impl AsRef<str>) -> Option<usize> {
         let plan = {
             let mut guard = self
                 .compaction_filter_stages

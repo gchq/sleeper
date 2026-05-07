@@ -174,7 +174,7 @@ async fn main() -> color_eyre::Result<()> {
     tokio::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            if let Some(row_count) = context_clone.get_compaction_row_read(JOB_ID) {
+            if let Some(row_count) = context_clone.get_compaction_rows_read(JOB_ID) {
                 println!(
                     "Compaction has read {} rows",
                     row_count.to_formatted_string(&Locale::en)

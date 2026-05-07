@@ -22,13 +22,14 @@ use crate::{
         ffi_common_config::FFICommonConfig,
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
+    unpack::unpack_string,
 };
 use ::log::{error, warn};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
-use std::ffi::c_int;
+use std::ffi::{c_char, c_int};
 
 mod context;
 mod log;
@@ -68,8 +69,8 @@ mod unpack;
 #[unsafe(no_mangle)]
 pub extern "C" fn native_compact(
     ctx_ptr: *const FFIContext,
-    input_data: *mut FFICommonConfig,
-    output_data: *mut FFIFileResult,
+    input_ptr: *mut FFICommonConfig,
+    output_ptr: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -82,7 +83,7 @@ pub extern "C" fn native_compact(
         return EFAULT;
     };
 
-    let Some(params) = (unsafe { input_data.as_ref() }) else {
+    let Some(params) = (unsafe { input_ptr.as_ref() }) else {
         error!("input data pointer is NULL");
         return EFAULT;
     };
@@ -101,7 +102,7 @@ pub extern "C" fn native_compact(
         .block_on(run_compaction(&details, &context.sleeper_context));
     match result {
         Ok(res) => {
-            if let Some(data) = unsafe { output_data.as_mut() } {
+            if let Some(data) = unsafe { output_ptr.as_mut() } {
                 data.rows_read = res.rows_read;
                 data.rows_written = res.rows_written;
             } else {
@@ -173,8 +174,8 @@ pub extern "C" fn native_compact(
 #[unsafe(no_mangle)]
 pub extern "C" fn native_query_stream(
     ctx_ptr: *const FFIContext,
-    input_data: *const FFILeafPartitionQueryConfig,
-    query_results: *mut FFIQueryResults,
+    input_ptr: *const FFILeafPartitionQueryConfig,
+    query_results_ptr: *mut FFIQueryResults,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -187,13 +188,13 @@ pub extern "C" fn native_query_stream(
         return EFAULT;
     };
 
-    let Some(params) = (unsafe { input_data.as_ref() }) else {
+    let Some(params) = (unsafe { input_ptr.as_ref() }) else {
         error!("input data pointer is NULL");
         return EFAULT;
     };
 
     // Null check the results object pointer
-    let Some(query_results) = (unsafe { query_results.as_mut() }) else {
+    let Some(query_results) = (unsafe { query_results_ptr.as_mut() }) else {
         eprintln!("query_results pointer is NULL");
         return EFAULT;
     };
@@ -276,8 +277,8 @@ pub extern "C" fn native_query_stream(
 #[unsafe(no_mangle)]
 pub extern "C" fn native_query_file(
     ctx_ptr: *const FFIContext,
-    input_data: *const FFILeafPartitionQueryConfig,
-    output_data: *mut FFIFileResult,
+    input_ptr: *const FFILeafPartitionQueryConfig,
+    output_ptr: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -290,7 +291,7 @@ pub extern "C" fn native_query_file(
         return EFAULT;
     };
 
-    let Some(params) = (unsafe { input_data.as_ref() }) else {
+    let Some(params) = (unsafe { input_ptr.as_ref() }) else {
         error!("input data pointer is NULL");
         return EFAULT;
     };
@@ -313,7 +314,7 @@ pub extern "C" fn native_query_file(
                 error!("Expected CompletedOutput::File results from query");
                 return -1;
             };
-            if let Some(data) = unsafe { output_data.as_mut() } {
+            if let Some(data) = unsafe { output_ptr.as_mut() } {
                 data.rows_read = row_counts.rows_read;
                 data.rows_written = row_counts.rows_written;
             } else {
@@ -326,5 +327,44 @@ pub extern "C" fn native_query_file(
             error!("query error {e}");
             -1
         }
+    }
+}
+
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[unsafe(no_mangle)]
+pub extern "C" fn get_compaction_rows_read(
+    ctx_ptr: *const FFIContext,
+    c_job_id: *const c_char,
+    output_ptr: *mut FFIFileResult,
+) -> c_int {
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("NULL context pointer");
+        return EFAULT;
+    };
+
+    // Null check the output pointer
+    let Some(output) = (unsafe { output_ptr.as_mut() }) else {
+        error!("NULL output pointer");
+        return EFAULT;
+    };
+
+    // Null check job ID
+    let Some(job_id_result) = unsafe { c_job_id.as_ref() }.map(|p| unpack_string(p)) else {
+        error!("NULL job_id pointer");
+        return EFAULT;
+    };
+
+    let Ok(job_id) = job_id_result else {
+        error!("Non UTF-8 job ID value");
+        return EINVAL;
+    };
+
+    if let Some(result) = context.sleeper_context.get_compaction_rows_read(job_id) {
+        output.rows_read = result;
+        output.rows_written = 0;
+        0
+    } else {
+        -1
     }
 }
