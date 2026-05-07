@@ -63,7 +63,7 @@ public interface CompactionRunner {
     }
 
     /**
-     * Convenience method for {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+     * Convenience method for calling with a job object.
      *
      * @param  job compaction job to look up
      * @return     the number of rows read by the requested compaction, if available

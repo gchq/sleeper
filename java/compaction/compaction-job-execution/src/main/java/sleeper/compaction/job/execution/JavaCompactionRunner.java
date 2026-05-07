@@ -105,7 +105,7 @@ public class JavaCompactionRunner implements CompactionRunner {
             Row row = mergingIterator.next();
             rowsRead++;
             if (0 == rowsRead % 50_000) {
-                valueHolder.set(rowsRead);
+                updateRowCount(valueHolder, rowsRead);
             }
             sketches.update(row);
             // Write out
@@ -115,7 +115,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                 LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
-        valueHolder.set(rowsRead);
+        updateRowCount(valueHolder, rowsRead);
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
@@ -169,6 +169,18 @@ public class JavaCompactionRunner implements CompactionRunner {
         return new IteratorFactory(objectFactory)
                 .getIterator(config, schema)
                 .applyTransform(mergingIterator);
+    }
+
+    /**
+     * Updates the progress counter for the currently executing compaction. Extracted so that tests can subclass and
+     * intercept progress updates (for example, to pause the compaction thread while another thread observes the
+     * reported value).
+     *
+     * @param counter     the per-job counter holding the current rows-read value
+     * @param newRowsRead the latest rows-read count to report
+     */
+    protected void updateRowCount(AtomicLong counter, long newRowsRead) {
+        counter.set(newRowsRead);
     }
 
     @Override
