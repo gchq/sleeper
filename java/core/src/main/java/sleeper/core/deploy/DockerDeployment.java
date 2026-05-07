@@ -192,7 +192,7 @@ public class DockerDeployment {
 
     @Override
     public String toString() {
-        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", cdkApp=" + cdkApp
+        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", cdkApps=" + cdkApps
                 + ", multiplatform=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
     }
 
