@@ -46,20 +46,6 @@ public enum SleeperInternalCdkApp {
     }
 
     /**
-     * Validates whether a Sleeper property value identifies a CDK app that deploys a Sleeper instance.
-     *
-     * @param  propertyValue the property value
-     * @return               true if it is a CDK app that deploys a Sleeper instance
-     */
-    public static boolean isCdkAppDeployingSleeperInstance(String propertyValue) {
-        SleeperInternalCdkApp app = EnumUtils.getEnumIgnoreCase(SleeperInternalCdkApp.class, propertyValue);
-        if (app == null) {
-            return false;
-        }
-        return app.isDeploysSleeperInstance();
-    }
-
-    /**
      * Reads a string value that we expect to identify a CDK app used to deploy a Sleeper instance.
      *
      * @param  propertyValue the value
