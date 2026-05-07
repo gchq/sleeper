@@ -36,8 +36,6 @@
     "--conf",
     "spark.driver.memory=12g",
     "--conf",
-    "spark.yarn.scheduler.reporterThread.maxFailures=5",
-    "--conf",
     "spark.speculation.quantile=0.75",
     "--conf",
     "spark.master=k8s://null",
