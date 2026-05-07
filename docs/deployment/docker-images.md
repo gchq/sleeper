@@ -28,6 +28,7 @@ are listed here.
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
 | statestore-committer       |                    | true          |
+| system-test                |                    | false         |
 
 
 ## Lambda images
