@@ -150,7 +150,7 @@ public enum SleeperInternalCdkApp {
          * @return the retriever to resolve the path
          */
         static GetJarPath systemTestJarFile() {
-            return (jarsDirectory, version) -> jarsDirectory.resolve(String.format("system-test-cdk-%s.jar", version));
+            return (jarsDirectory, version) -> jarsDirectory.resolve(ClientJar.SYSTEM_TEST_CDK.getFormattedFilename(version));
         }
     }
 
