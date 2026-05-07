@@ -64,7 +64,10 @@ pub async fn compact(
     sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult, DataFusionError> {
     let ops = SleeperOperations::new(config);
-    info!("DataFusion compaction: {ops}");
+    info!(
+        "DataFusion compaction for job ID {}: {ops}",
+        config.job_id().unwrap_or("<unknown>".into())
+    );
 
     let runtime = sleeper_context.retrieve_runtime_env()?;
 
