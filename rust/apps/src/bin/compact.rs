@@ -175,7 +175,10 @@ async fn main() -> color_eyre::Result<()> {
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
             if let Some(row_count) = context_clone.get_compaction_row_read(JOB_ID) {
-                println!("Read {row_count} rows");
+                println!(
+                    "Compaction has read {} rows",
+                    row_count.to_formatted_string(&Locale::en)
+                );
             }
         }
     });

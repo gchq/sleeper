@@ -122,6 +122,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
 
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
+        params.job_id.set(job.getId());
         params.parquet_options.set(parquetOptions);
         params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions

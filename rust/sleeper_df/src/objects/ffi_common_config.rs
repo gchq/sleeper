@@ -38,6 +38,8 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
+    // job_id can be NULL
+    pub job_id: *const c_char,
     // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
@@ -138,7 +140,12 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
+        let job_id = unsafe { self.job_id.as_ref() }
+            .map(|p| unpack_string(p))
+            .transpose()?;
+
         CommonConfigBuilder::new()
+            .job_id(job_id)
             .aws_config(unpack_aws_config(self))
             .input_files(
                 unpack_typed_array(self.input_files, self.input_files_len)?
