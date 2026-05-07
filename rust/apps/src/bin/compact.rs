@@ -173,7 +173,7 @@ async fn main() -> color_eyre::Result<()> {
     let context_clone = context.clone();
     tokio::spawn(async move {
         loop {
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_secs(5)).await;
             if let Some(row_count) = context_clone.get_compaction_rows_read(JOB_ID) {
                 println!(
                     "Compaction has read {} rows",

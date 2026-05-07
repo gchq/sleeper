@@ -56,7 +56,7 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * unspecified.
      *
      * @param  context Java context objet
-     * @param  jobId
+     * @param  jobId   compaction job ID
      * @param  result  object to populate
      * @return         0 on success, -1 if no row count could be retrieved
      */
