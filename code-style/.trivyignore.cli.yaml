@@ -13,6 +13,8 @@ vulnerabilities:
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
+  # go.opentelemetry.io/otel
+  - id: CVE-2026-29181
   # go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
   # go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
   - id: CVE-2026-39882
