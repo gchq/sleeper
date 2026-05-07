@@ -107,8 +107,8 @@ impl CommonConfig<'_> {
         &self.filters
     }
 
-    pub(crate) fn job_id(&self) -> &Option<String> {
-        &self.job_id
+    pub(crate) fn job_id(&self) -> Option<&String> {
+        self.job_id.as_ref()
     }
 }
 
