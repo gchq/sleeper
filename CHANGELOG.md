@@ -7,7 +7,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.35.3
 
-### 6th May, 2025
+### 7th May, 2025
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.35.3*
