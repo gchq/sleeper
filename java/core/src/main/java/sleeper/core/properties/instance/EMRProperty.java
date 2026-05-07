@@ -91,20 +91,6 @@ public interface EMRProperty {
             .defaultValue(BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT = Index.propertyBuilder("sleeper.bulk.import.emr.spark.network.timeout")
-            .description("(Non-persistent or persistent EMR mode only) The default timeout for network interactions in Spark. " +
-                    "Used to set spark.network.timeout.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("800s")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.heartbeat.interval")
-            .description("(Non-persistent or persistent EMR mode only) The interval between heartbeats from executors to the driver. " +
-                    "Used to set spark.executor.heartbeatInterval.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("60s")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
             .description("(Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
                     "Used to set spark.dynamicAllocation.enabled.\n" +
@@ -112,69 +98,11 @@ public interface EMRProperty {
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION = Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.fraction")
-            .description("(Non-persistent or persistent EMR mode only) The fraction of heap space used for execution and storage. " +
-                    "Used to set spark.memory.fraction.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("0.80")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION = Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.storage.fraction")
-            .description("(Non-persistent or persistent EMR mode only) The amount of storage memory immune to eviction, " +
-                    "expressed as a fraction of the heap space used for execution and storage. " +
-                    "Used to set spark.memory.storageFraction.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("0.30")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.extra.java.options")
-            .description("(Non-persistent or persistent EMR mode only) JVM options passed to the executors. " +
-                    "Used to set spark.executor.extraJavaOptions.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue(
-                    "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.extra.java.options")
-            .description("(Non-persistent or persistent EMR mode only) JVM options passed to the driver. " +
-                    "Used to set spark.driver.extraJavaOptions.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue(BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS.getDefaultValue())
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures")
             .description("(Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can fail the application. " +
                     "Used to set spark.yarn.scheduler.reporterThread.maxFailures.\n" +
                     "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("5")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.storage.level")
-            .description("(Non-persistent or persistent EMR mode only) The storage to use for temporary caching. " +
-                    "Used to set spark.storage.level.\n" +
-                    "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
-            .defaultValue("MEMORY_AND_DISK_SER")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_RDD_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.rdd.compress")
-            .description("(Non-persistent or persistent EMR mode only) Whether to compress serialized RDD partitions. " +
-                    "Used to set spark.rdd.compress.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("true")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.compress")
-            .description("(Non-persistent or persistent EMR mode only) Whether to compress map output files. " +
-                    "Used to set spark.shuffle.compress.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("true")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.spill.compress")
-            .description("(Non-persistent or persistent EMR mode only) Whether to compress data spilled during shuffles. " +
-                    "Used to set spark.shuffle.spill.compress.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.size.gb")

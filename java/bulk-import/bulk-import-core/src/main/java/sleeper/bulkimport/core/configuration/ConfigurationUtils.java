@@ -22,9 +22,19 @@ import sleeper.core.properties.model.EmrInstanceArchitecture;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_MEMORY_FRACTION;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_MEMORY_STORAGE_FRACTION;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_NETWORK_TIMEOUT;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_RDD_COMPRESS;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_COMPRESS;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_SPILL_COMPRESS;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
@@ -43,24 +53,14 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_CORES;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY_OVERHEAD;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY_OVERHEAD;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_RDD_COMPRESS;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
@@ -101,13 +101,13 @@ public class ConfigurationUtils {
 
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_CORES));
-        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
         sparkConf.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY));
 
         // spark.executor properties
         sparkConf.put("spark.executor.cores", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES));
-        sparkConf.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
-        sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
+        sparkConf.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
         sparkConf.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES));
         sparkConf.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY));
 
@@ -120,24 +120,24 @@ public class ConfigurationUtils {
         sparkConf.put("spark.default.parallelism", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM));
 
         // spark.network properties
-        sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT));
+        sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_SPARK_NETWORK_TIMEOUT));
 
         // spark.dynamicAllocation properties
         sparkConf.put("spark.dynamicAllocation.enabled", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED));
 
         // spark.memory properties
-        sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION));
-        sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION));
+        sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_SPARK_MEMORY_FRACTION));
+        sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_SPARK_MEMORY_STORAGE_FRACTION));
 
         // spark.storage properties
-        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL));
+        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_SPARK_STORAGE_LEVEL));
 
         // spark.rdd properties
-        sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_RDD_COMPRESS));
+        sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_SPARK_RDD_COMPRESS));
 
         // spark.shuffle properties
-        sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS));
-        sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS));
+        sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_COMPRESS));
+        sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_SPILL_COMPRESS));
         // The following value is not mentioned in the blog linked above, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
@@ -168,13 +168,13 @@ public class ConfigurationUtils {
 
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_CORES));
-        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
         sparkConf.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY));
 
         // spark.executor properties
         sparkConf.put("spark.executor.cores", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES));
-        sparkConf.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
-        sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
+        sparkConf.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
         sparkConf.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES));
         sparkConf.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY));
 
@@ -186,24 +186,24 @@ public class ConfigurationUtils {
         sparkConf.put("spark.default.parallelism", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM));
 
         // spark.network properties
-        sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT));
+        sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_SPARK_NETWORK_TIMEOUT));
 
         // spark.dynamicAllocation properties
         sparkConf.put("spark.dynamicAllocation.enabled", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED));
 
         // spark.memory properties
-        sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION));
-        sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION));
+        sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_SPARK_MEMORY_FRACTION));
+        sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_SPARK_MEMORY_STORAGE_FRACTION));
 
         // spark.storage properties
-        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL));
+        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_SPARK_STORAGE_LEVEL));
 
         // spark.rdd properties
-        sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_RDD_COMPRESS));
+        sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_SPARK_RDD_COMPRESS));
 
         // spark.shuffle properties
-        sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS));
-        sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS));
+        sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_COMPRESS));
+        sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_SPILL_COMPRESS));
         sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
 
         // spark.speculation properties
