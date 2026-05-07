@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -82,7 +83,7 @@ public class DeployInstance {
         }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault())
                         .withExtraImages(request.getExtraDockerImages()));
         Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");

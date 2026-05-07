@@ -41,16 +41,8 @@ public class UploadDockerImagesToEcrRequest {
         return new Builder();
     }
 
-    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
-        return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
-    }
-
     public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, SleeperInternalCdkApp cdkApp, DockerImageConfiguration configuration) {
         return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
-    }
-
-    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties) {
-        return forDeployment(properties, DockerImageConfiguration.getDefault());
     }
 
     public Builder toBuilder() {

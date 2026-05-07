@@ -34,7 +34,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
     }
 
     protected void uploadForDeployment(DockerImageConfiguration imageConfig) throws Exception {
-        uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, imageConfig));
+        uploadForDeployment(imageConfig, SleeperInternalCdkApp.STANDARD);
     }
 
     protected void uploadForDeployment(DockerImageConfiguration imageConfig, SleeperInternalCdkApp cdkApp) throws Exception {
