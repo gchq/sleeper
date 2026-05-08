@@ -66,28 +66,24 @@ An instance will fail to deploy if it would replace log groups from a deleted in
 
 Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
-Currently the demonstration deployment is not included in a normal build of the system. If you've installed a pre-built
-version of Sleeper, see the [developer guide](developer-guide.md) for how to set up to build the system.
-
-From a command line in your EC2 instance with the dependencies to build the system available, you can run the script
-like this:
+From a command line in your EC2 instance, you can run the script like this:
 
 ```bash
 cd sleeper # Navigate to this Git repository, which was checked out during installation or building
-./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc> <subnets>
+./scripts/test/deployAll/deployTest.sh <instance-id> <vpc> <subnets>
 ```
 
 You may prefer to run this script in the background and redirect output to a file:
 
 ```bash
-./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc> <subnets> &> test.log &
+./scripts/test/deployAll/deployTest.sh <instance-id> <vpc> <subnets> &> test.log &
 less -R test.log # Press shift+F to follow the output in less
 ```
 
-This should take around 20 minutes to build the code, and another 20 minutes to deploy the instance with the CDK. Once
-it finishes, you can watch the random data generation tasks in the AWS console by finding the ECS cluster
-named `sleeper-${ID}-system-test-cluster`. You can view logs for tasks in the cluster. It takes around 10 minutes to
-generate data. The data will appear in Sleeper in large batches as the tasks finish.
+This should take around 20 minutes to deploy the instance with the CDK. Once it finishes, you can watch the random data
+generation tasks in the AWS console by finding the ECS cluster named `sleeper-${ID}-system-test-cluster`. You can view
+logs for tasks in the cluster. It takes around 10 minutes to generate data. The data will appear in Sleeper in large
+batches as the tasks finish.
 
 Note that you can still use the method described in the deployment guide to upgrade a demonstration instance to a later
 version of Sleeper: [Upgrade/redeploy existing instance](deployment-guide.md#upgraderedeploy-existing-instance)
@@ -145,7 +141,7 @@ It is possible to run variations on this system test by editing the system test 
 ```bash
 cd ./scripts/test/deployAll
 editor system-test-instance.properties
-./buildDeployTest.sh  <instance-id> <vpc> <subnets>
+./deployTest.sh  <instance-id> <vpc> <subnets>
 ```
 
 To deploy your own instance of Sleeper with a particular schema, follow the [deployment guide](deployment-guide.md).

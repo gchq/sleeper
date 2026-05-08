@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -36,7 +35,6 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -51,7 +49,6 @@ public class DeployNewInstance {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
-    private final List<StackDockerImage> extraDockerImages;
     private final SleeperInternalCdkApp cdkApp;
     private final boolean deployPaused;
 
@@ -61,7 +58,6 @@ public class DeployNewInstance {
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
-        extraDockerImages = builder.extraDockerImages;
         cdkApp = builder.cdkApp;
         deployPaused = builder.deployPaused;
     }
@@ -113,7 +109,6 @@ public class DeployNewInstance {
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(deployInstanceConfiguration)
                 .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
-                .extraDockerImages(extraDockerImages)
                 .cdkApp(cdkApp)
                 .build());
 
@@ -134,7 +129,6 @@ public class DeployNewInstance {
         private S3Client s3Client;
         private DynamoDbClient dynamoClient;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
-        private List<StackDockerImage> extraDockerImages = List.of();
         private SleeperInternalCdkApp cdkApp;
         private boolean deployPaused;
 
@@ -163,11 +157,6 @@ public class DeployNewInstance {
 
         public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
-            return this;
-        }
-
-        public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {
-            this.extraDockerImages = extraDockerImages;
             return this;
         }
 

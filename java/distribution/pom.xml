@@ -196,5 +196,29 @@
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>example-iterators</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-cdk</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-data-generation</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-drivers</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 </project>

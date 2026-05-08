@@ -27,7 +27,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/build/buildForTest.sh"
+"$SCRIPTS_DIR/build/build.sh"
 END_BUILD_TIME=$(record_time)
 
 "$THIS_DIR/deployTest.sh" "$@"

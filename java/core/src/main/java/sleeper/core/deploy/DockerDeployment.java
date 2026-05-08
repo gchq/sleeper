@@ -17,6 +17,7 @@ package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
@@ -58,10 +59,15 @@ public class DockerDeployment {
             .committerPlatform(StateStoreCommitterPlatform.EC2)
             .multiplatform(true)
             .add();
+    public static final DockerDeployment SYSTEM_TEST = builder()
+            .deploymentName("system-test")
+            .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+            .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;
     private final StateStoreCommitterPlatform committerPlatform;
+    private final Collection<SleeperInternalCdkApp> cdkApps;
     private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
 
@@ -69,6 +75,7 @@ public class DockerDeployment {
         deploymentName = builder.deploymentName;
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
+        cdkApps = builder.cdkApps;
         multiplatform = builder.multiplatform;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
@@ -99,7 +106,7 @@ public class DockerDeployment {
      * Retrieves which optional stack uses this deployment. If the optional stack is not enabled, this Docker image is
      * not needed.
      *
-     * @return the optional stack
+     * @return the optional stack, or null if it's not specific to an optional stack
      */
     public OptionalStack getOptionalStack() {
         return optionalStack;
@@ -108,20 +115,34 @@ public class DockerDeployment {
     /**
      * Retrieves which state store committer platform uses this deployment.
      *
-     * @return the platform
+     * @return the platform, or null if it's used for every platform
      */
     public StateStoreCommitterPlatform getCommitterPlatform() {
         return committerPlatform;
     }
 
     /**
+     * Retrieves which CDK apps use this deployment. If null, the deployment is used by any CDK app that deploys a
+     * Sleeper instance.
+     *
+     * @return the CDK app, or null if applicable to all Sleeper instances
+     */
+    public Collection<SleeperInternalCdkApp> getCdkApps() {
+        return cdkApps;
+    }
+
+    /**
      * Checks whether this deployment is deployed given some configuration.
      *
+     * @param  cdkApp            the CDK app being deployed
      * @param  committerPlatform the platform used to deploy the state store committer
      * @param  optionalStacks    the enabled optional stacks in the instance
      * @return                   true if this is deployed
      */
-    public boolean isDeployed(StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+    public boolean isDeployed(SleeperInternalCdkApp cdkApp, StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+        if (this.cdkApps != null && !this.cdkApps.contains(cdkApp)) {
+            return false;
+        }
         if (this.committerPlatform != null && this.committerPlatform != committerPlatform) {
             return false;
         }
@@ -175,8 +196,8 @@ public class DockerDeployment {
 
     @Override
     public String toString() {
-        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", multiplatform=" + multiplatform
-                + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
+        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", cdkApps=" + cdkApps
+                + ", multiplatform=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
     }
 
     /**
@@ -186,6 +207,7 @@ public class DockerDeployment {
         private String deploymentName;
         private OptionalStack optionalStack;
         private StateStoreCommitterPlatform committerPlatform;
+        private Collection<SleeperInternalCdkApp> cdkApps;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
 
@@ -224,9 +246,21 @@ public class DockerDeployment {
         }
 
         /**
+         * Sets which CDK apps use this deployment. If unset, the deployment is included for any CDK app that deploys a
+         * Sleeper instance.
+         *
+         * @param  cdkApps the CDK apps
+         * @return         this builder
+         */
+        public Builder cdkApps(Collection<SleeperInternalCdkApp> cdkApps) {
+            this.cdkApps = cdkApps;
+            return this;
+        }
+
+        /**
          * Sets whether the Docker image should be built for multiple platforms.
          *
-         * @param  multiplatform true if the image is multiplatform
+         * @param  multiplatform true if the image should be multiplatform
          * @return               this builder
          */
         public Builder multiplatform(boolean multiplatform) {
