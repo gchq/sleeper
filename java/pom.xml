@@ -164,7 +164,7 @@
         <httpclient4.version>4.5.14</httpclient4.version>
         <httpclient5.version>5.6.1</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.0.15</jline.version>
+        <jline.version>4.1.0</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-8</zstd-jni.version>
