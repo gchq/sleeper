@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.configuration;
+package sleeper.container.images;
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.SleeperArtefactsLocation;
+/**
+ * A failure during transfer of a container image.
+ */
+public class ContainerImageTransferException extends RuntimeException {
 
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
-
-public class SystemTestDockerRepository {
-
-    private SystemTestDockerRepository() {
-    }
-
-    public static String getRepositoryName(InstanceProperties instanceProperties) {
-        return SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(instanceProperties.get(ARTEFACTS_DEPLOYMENT_ID)) + "/system-test";
+    public ContainerImageTransferException(ContainerImageTransferRequest request, Throwable cause) {
+        super("Failure transferring container image, source " + request.getSourceImageReference() + " target " + request.getTargetImageReference(), cause);
     }
 
 }

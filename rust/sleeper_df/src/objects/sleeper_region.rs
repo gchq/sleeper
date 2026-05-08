@@ -14,14 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::objects::FFIRowKeyValue;
 use color_eyre::eyre::bail;
-use sleeper_core::{ColRange, SleeperRegion};
-use std::{borrow::Borrow, collections::HashMap, ffi::c_void};
-
-use crate::{
-    objects::RowKeySchemaType,
-    unpack::{unpack_typed_array, unpack_variant_array},
-};
+use sleeper_core::{ColRange, PartitionBound, SleeperRegion};
+use std::{borrow::Borrow, collections::HashMap, slice};
 
 /// Represents a Sleeper region in a C ABI struct.
 ///
@@ -33,57 +29,81 @@ use crate::{
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    pub mins_len: usize,
+    // Length of all other arrays in struct.
+    pub number_of_dimensions: usize,
     // The mins array may NOT contain null pointers
-    pub mins: *const *const c_void,
-    pub maxs_len: usize,
+    pub mins: *const FFIRowKeyValue,
     // The maxs array may contain null pointers!!
-    pub maxs: *const *const c_void,
-    pub mins_inclusive_len: usize,
-    pub mins_inclusive: *const *const bool,
-    pub maxs_inclusive_len: usize,
-    pub maxs_inclusive: *const *const bool,
-    pub dimension_indexes_len: usize,
-    pub dimension_indexes: *const *const i32,
+    pub maxs: *const FFIRowKeyValue,
+    pub mins_inclusive: *const bool,
+    pub maxs_inclusive: *const bool,
+    pub dimension_indexes: *const usize,
 }
 
 impl<'a> FFISleeperRegion {
     pub fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &[RowKeySchemaType],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
-        if region.mins_len != region.maxs_len
-            || region.mins_len != region.mins_inclusive_len
-            || region.mins_len != region.maxs_inclusive_len
-            || region.mins_len != region.dimension_indexes_len
-        {
-            bail!("All array lengths in a SleeperRegion must be same length");
+        if region.number_of_dimensions < 1 {
+            bail!("FFISleeperRegion number_of_dimensions cannot be 0");
         }
+        if region.mins.is_null() {
+            bail!("FFISleeperRegion mins cannot be NULL");
+        }
+        if region.maxs.is_null() {
+            bail!("FFISleeperRegion maxs cannot be NULL");
+        }
+        if region.mins_inclusive.is_null() {
+            bail!("FFISleeperRegion mins_inclusive cannot be NULL");
+        }
+        if region.maxs_inclusive.is_null() {
+            bail!("FFISleeperRegion maxs_inclusive cannot be NULL");
+        }
+        if region.dimension_indexes.is_null() {
+            bail!("FFISleeperRegion dimension_indexes cannot be NULL");
+        }
+
         let region_mins_inclusive =
-            unpack_typed_array(region.mins_inclusive, region.mins_inclusive_len)?;
+            unsafe { slice::from_raw_parts(region.mins_inclusive, region.number_of_dimensions) };
         let region_maxs_inclusive =
-            unpack_typed_array(region.maxs_inclusive, region.maxs_inclusive_len)?;
+            unsafe { slice::from_raw_parts(region.maxs_inclusive, region.number_of_dimensions) };
 
-        let region_mins = unpack_variant_array(region.mins, region.mins_len, schema_types, false)?;
+        let region_mins =
+            unsafe { slice::from_raw_parts(region.mins, region.number_of_dimensions) }
+                .iter()
+                .map(PartitionBound::try_from)
+                .collect::<Result<Vec<_>, _>>()?;
 
-        let region_maxs = unpack_variant_array(region.maxs, region.maxs_len, schema_types, true)?;
+        // Sleeper region minimums cannot contain unbounded values
+        if region_mins
+            .iter()
+            .any(|e| matches!(e, PartitionBound::Unbounded))
+        {
+            bail!("FFISleeperRegion mins array contained unbounded element");
+        }
+
+        // but maximums can
+        let region_maxs =
+            unsafe { slice::from_raw_parts(region.maxs, region.number_of_dimensions) }
+                .iter()
+                .map(PartitionBound::try_from)
+                .collect::<Result<Vec<_>, _>>()?;
 
         let dimension_indexes =
-            unpack_typed_array(region.dimension_indexes, region.dimension_indexes_len)?;
+            unsafe { slice::from_raw_parts(region.dimension_indexes, region.number_of_dimensions) };
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
         for dimension in dimension_indexes {
-            let idx = usize::try_from(dimension)?;
-            let row_key = &row_key_cols[idx];
+            let row_key = &row_key_cols[*dimension];
             map.insert(
                 String::from(row_key.borrow()),
                 ColRange {
-                    lower: region_mins[idx],
-                    lower_inclusive: region_mins_inclusive[idx],
-                    upper: region_maxs[idx],
-                    upper_inclusive: region_maxs_inclusive[idx],
+                    lower: region_mins[*dimension],
+                    lower_inclusive: region_mins_inclusive[*dimension],
+                    upper: region_maxs[*dimension],
+                    upper_inclusive: region_maxs_inclusive[*dimension],
                 },
             );
         }

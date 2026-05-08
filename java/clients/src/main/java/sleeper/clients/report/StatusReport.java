@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -83,8 +83,7 @@ public class StatusReport {
         // Jobs
         new CompactionJobStatusReport(compactionJobTracker,
                 new StandardCompactionJobStatusReporter(),
-                tableProperties.getStatus(),
-                JobQuery.Type.UNFINISHED).run();
+                new UnfinishedJobsQuery(tableProperties.getStatus())).run();
 
         // Tasks
         new CompactionTaskStatusReport(compactionTaskTracker,

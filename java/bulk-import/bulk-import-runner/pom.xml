@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.35.3-SNAPSHOT</version>
+        <version>0.35.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -133,6 +133,70 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spark ships with Log4j 2 (including log4j-1.2-api, which re-implements org.apache.log4j.* -->
+            <!-- and so collides with reload4j on the classpath). bulk-import-runner binds SLF4J to Log4j 2 -->
+            <!-- instead, so reload4j and slf4j-reload4j must be kept out of every path that pulls them in: -->
+            <!--   - core declares them as runtime deps for the rest of the project. -->
+            <!--   - Hadoop 3.4 bundles them directly via hadoop-common. -->
+            <dependency>
+                <groupId>sleeper</groupId>
+                <artifactId>core</artifactId>
+                <version>${project.parent.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>sleeper</groupId>
+                <artifactId>core</artifactId>
+                <version>${project.parent.version}</version>
+                <type>test-jar</type>
+                <exclusions>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Override the parent pom's hadoop-client managed dependency to also exclude reload4j -->
+            <!-- and slf4j-reload4j. Hadoop 3.4 bundles them in several of its sub-modules (hadoop-common, -->
+            <!-- hadoop-yarn-common, ...), so excluding them at hadoop-client level cascades across the subtree. -->
+            <!-- The log4j and netty-all exclusions are inherited from the parent pom but must be repeated -->
+            <!-- here, since a child dependencyManagement entry replaces the parent's rather than merging. -->
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-all</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <!-- The following AWS SDK versions are fixed to match the version used in EMR. -->
             <!-- See the comment on the version property in the parent pom. -->
             <dependency>
@@ -246,6 +310,36 @@
                                 <!-- Plugin thinks this is unused, but BulkImportJobDataframeDriver fails to compile if it is not a compile dependency. -->
                                 <ignoredDependency>org.scala-lang:scala-reflect</ignoredDependency>
                             </ignoredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- Override the project-wide rule (which bans Log4j 2 and requires reload4j). -->
+                        <!-- This module binds SLF4J to Log4j 2 to match Spark, so we ban reload4j here instead. -->
+                        <id>enforcer-checks</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>ch.qos.reload4j:reload4j</exclude>
+                                        <exclude>org.slf4j:slf4j-reload4j</exclude>
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>log4j:log4j</exclude>
+                                    </excludes>
+                                    <message>bulk-import-runner binds SLF4J to Log4j 2 to match Spark; reload4j and Log4j 1.x must not be on the classpath</message>
+                                </bannedDependencies>
+                                <dependencyConvergence />
+                                <banDuplicatePomDependencyVersions />
+                            </rules>
                         </configuration>
                     </execution>
                 </executions>

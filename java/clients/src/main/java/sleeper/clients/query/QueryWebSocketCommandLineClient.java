@@ -102,7 +102,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             QueryWebSocketClient webSocketClient = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, credentialsProvider);
             QueryWebSocketCommandLineClient commandLineClient = new QueryWebSocketCommandLineClient(instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient), tablePropertiesProvider,
-                    new ConsoleInput(System.console()), new ConsoleOutput(System.out),
+                    ConsoleInput.stdIn(), ConsoleOutput.stdOut(),
                     webSocketClient, () -> UUID.randomUUID().toString(), Instant::now);
             commandLineClient.run();
         }

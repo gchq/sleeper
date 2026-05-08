@@ -17,7 +17,11 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -54,6 +58,16 @@ public class DeployInstance {
         this.invokeCdk = invokeCdk;
     }
 
+    public static DeployInstance fromScriptsDirectory(Path scriptsDirectory, String account, String region, S3Client s3Client, EcrClient ecrClient) throws IOException {
+        return new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3Client, account, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
+                        account, region),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdk.fromScriptsDirectory(scriptsDirectory));
+    }
+
     public void deploy(DeployInstanceRequest request) throws IOException, InterruptedException {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Running Deployment");
@@ -65,12 +79,11 @@ public class DeployInstance {
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
         if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
-            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID)));
         }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
-                        .withExtraImages(request.getExtraDockerImages()));
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
         Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");

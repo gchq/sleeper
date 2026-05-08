@@ -21,17 +21,15 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -42,33 +40,40 @@ public class DeployNewTestInstance {
     private DeployNewTestInstance() {
     }
 
-    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
-
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
+        Path scriptsDirectory = Path.of(args[0]);
+        Path propertiesFile = Path.of(args[1]);
+        String instanceId = args[2];
+        String vpcId = args[3];
+        String subnetIds = args[4];
+        boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
+        Path splitPointsFileForTemplate = optionalArgument(args, 6).map(Path::of).orElse(null);
+
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
-            Path scriptsDirectory = Path.of(args[0]);
-            Path propertiesFile = Path.of(args[1]);
+            String accountName = stsClient.getCallerIdentity().account();
+            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
 
-            boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
-            Path splitPointsFileForTemplate = optionalArgument(args, 6).map(Path::of).orElse(null);
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
-            config.getInstanceProperties().set(ID, args[2]);
-            config.getInstanceProperties().set(VPC_ID, args[3]);
-            config.getInstanceProperties().set(SUBNETS, args[4]);
-            DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
+            config.getInstanceProperties().set(ID, instanceId);
+            config.getInstanceProperties().set(VPC_ID, vpcId);
+            config.getInstanceProperties().set(SUBNETS, subnetIds);
+            DeployNewInstance.builder()
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, s3Client, ecrClient))
+                    .accountName(accountName)
+                    .s3Client(s3Client)
+                    .dynamoClient(dynamoClient)
                     .deployInstanceConfiguration(config)
-                    .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
-                    .deployPaused(deployPaused)
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
-                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
+                    .deployPaused(deployPaused)
+                    .build().deploy();
         }
     }
 

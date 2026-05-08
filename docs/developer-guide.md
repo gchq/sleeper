@@ -111,7 +111,7 @@ Provided script (recommended) - this builds the code and copies the jars into th
 work. Starting from the root of the Git repository:
 
 ```bash
-./scripts/build/buildForTest.sh
+./scripts/build/build.sh
 ```
 
 You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
