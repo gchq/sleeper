@@ -34,4 +34,5 @@ object_store = { workspace = true }
 rust_sketch = { path = "../../rust_sketch" }
 sleeper_core = { path = "../" }
 tempfile = { workspace = true }
+tokio = { workspace = true }
 url = { workspace = true }
