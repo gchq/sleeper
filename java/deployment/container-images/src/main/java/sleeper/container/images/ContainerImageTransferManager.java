@@ -80,8 +80,8 @@ public class ContainerImageTransferManager {
     }
 
     private Containerizer configure(Containerizer containerizer) {
-        containerizer.setBaseImageLayersCache(cacheDir);
-        containerizer.setApplicationLayersCache(cacheDir);
+        containerizer.setBaseImageLayersCache(cacheDir.resolve("base"));
+        containerizer.setApplicationLayersCache(cacheDir.resolve("app"));
         containerizer.setAllowInsecureRegistries(allowInsecureRegistries);
         return JibEvents.logEvents(LOGGER, containerizer);
     }

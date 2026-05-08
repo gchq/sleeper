@@ -44,6 +44,8 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
+import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
@@ -76,6 +78,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
+    private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
@@ -235,6 +238,10 @@ public class SystemTestClients {
 
     public CloudWatchEventsClient getCloudWatchEvents() {
         return cloudWatchEvents;
+    }
+
+    public CommandPipelineRunner getCommandRunner() {
+        return commandRunner;
     }
 
     public DataFusionAwsConfig createDataFusionAwsConfig() {

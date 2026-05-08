@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.35.3-SNAPSHOT</version>
+        <version>0.35.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -149,6 +149,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>common-invoke-tables</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>container-images</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

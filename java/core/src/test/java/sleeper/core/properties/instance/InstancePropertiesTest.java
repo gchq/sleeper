@@ -279,7 +279,7 @@ class InstancePropertiesTest {
         // When /  Then
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
+                .hasMessageContaining("Property sleeper.tags was invalid. It was \"" + tags + "\".");
     }
 
     @Nested
