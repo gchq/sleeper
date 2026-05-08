@@ -231,7 +231,7 @@ mod tests {
         function_reader::FunctionReaderError,
     };
     use super::FunctionReader;
-    use crate::assert_error;
+    use test_util::assert_error;
     use color_eyre::eyre::Result as EyreResult;
     use test_log::test;
 

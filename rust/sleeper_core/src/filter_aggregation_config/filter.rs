@@ -75,7 +75,7 @@ fn age_off(call: &FunctionCall) -> Result<Filter, FunctionCallError> {
 #[cfg(test)]
 mod tests {
     use super::Filter;
-    use crate::assert_error;
+    use test_util::assert_error;
     use color_eyre::eyre::Result;
     use test_log::test;
 

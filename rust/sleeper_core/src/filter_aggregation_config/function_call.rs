@@ -131,7 +131,7 @@ impl Display for FunctionParameter<'_> {
 mod tests {
 
     use super::{FunctionCall, FunctionParameter};
-    use crate::assert_error;
+    use test_util::assert_error;
     use color_eyre::eyre::Result;
     use test_log::test;
 
