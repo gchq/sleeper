@@ -72,6 +72,12 @@ public class RestApiStack extends NestedStack {
                 .path("/sleeper")
                 .methods(List.of(HttpMethod.GET))
                 .integration(integration).build());
+        restHttpApi.addRoutes(AddRoutesOptions.builder()
+                .path("/sleeper/tables")
+                .methods(List.of(HttpMethod.POST))
+                .integration(integration).build());
+
+        coreStacks.grantAddTable(lambda.getRole());
 
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
                 .value(restHttpApi.getApiEndpoint())
