@@ -1804,6 +1804,13 @@
                 <configuration>
                     <failOnError>true</failOnError>
                     <failOnWarnings>false</failOnWarnings>
+                    <tags>
+                        <tag>
+                            <name>implNote</name>
+                            <placement>a</placement>
+                            <head>Implementation Note:</head>
+                        </tag>
+                    </tags>
                 </configuration>
             </plugin>
         </plugins>
