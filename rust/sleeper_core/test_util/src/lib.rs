@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use crate::dummy_exec::DummyExec;
 use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
@@ -42,8 +43,6 @@ use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, sleeper_context:
 use std::{collections::HashMap, fs::File, sync::Arc, time::Duration};
 use tempfile::TempDir;
 use url::Url;
-
-use crate::dummy_exec::DummyExec;
 
 mod dummy_exec;
 
