@@ -300,9 +300,10 @@ pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
 /// Simulates running compactions for metric reading purposes.
 ///
 /// Creates two compactions called "compact_1" and "compact_2". Some row counts are updated after a few seconds delay.
-/// After 2 seconds both will report 10 rows read.
-/// After 4 seconds compact_1 will be dropped and compact_2 will report 20 rows read.
-/// After 6 seconds compact_2 will be dropped
+/// After 1 seconds both will report 10 rows read.
+/// After 2 seconds compact_1 will be dropped and compact_2 will report 20 rows read.
+/// After 3 seconds compact_2 will be dropped
+#[allow(clippy::doc_markdown)]
 pub async fn simulate_compaction_row_reads(sleeper_context: &SleeperContext) {
     let compact_1 = Arc::new(DummyExec::default());
     let compact_2 = Arc::new(DummyExec::default());
@@ -310,15 +311,15 @@ pub async fn simulate_compaction_row_reads(sleeper_context: &SleeperContext) {
     sleeper_context.set_filter_stage("compact_1", &(compact_1.clone() as Arc<dyn ExecutionPlan>));
     sleeper_context.set_filter_stage("compact_2", &(compact_2.clone() as Arc<dyn ExecutionPlan>));
 
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     compact_1.add_output_rows(10);
     compact_2.add_output_rows(10);
 
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     drop(compact_1);
     compact_2.add_output_rows(10);
 
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }

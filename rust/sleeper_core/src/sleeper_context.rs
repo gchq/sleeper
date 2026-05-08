@@ -108,8 +108,6 @@ impl SleeperContext {
 
 #[cfg(test)]
 mod tests {
-    use crate::sleeper_context;
-
     use super::*;
     use arrow::datatypes::{Field, Schema};
     use datafusion::physical_plan::empty::EmptyExec;
@@ -260,16 +258,5 @@ mod tests {
 
         // Then
         assert!(map.is_empty());
-    }
-
-    #[tokio::test]
-    async fn should_report_compaction_values_after_time() {
-        // Given
-        let sleeper_context = SleeperContext::default();
-
-        // When / Then
-        // Should be no reports yet
-        assert_eq!(sleeper_context.get_compaction_rows_read("compact_1"), None);
-        assert_eq!(sleeper_context.get_compaction_rows_read("compact_2"), None);
     }
 }

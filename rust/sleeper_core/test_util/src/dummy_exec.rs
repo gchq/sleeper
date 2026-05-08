@@ -51,7 +51,7 @@ impl DummyExec {
 }
 
 impl ExecutionPlan for DummyExec {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "DummyExec"
     }
 
