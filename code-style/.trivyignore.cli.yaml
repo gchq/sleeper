@@ -10,6 +10,14 @@ vulnerabilities:
   - id: CVE-2026-32283
   - id: CVE-2026-32288
   - id: CVE-2026-32289
+  - id: CVE-2026-33811
+  - id: CVE-2026-33814
+  - id: CVE-2026-39820
+  - id: CVE-2026-39823
+  - id: CVE-2026-39825
+  - id: CVE-2026-39826
+  - id: CVE-2026-39836
+  - id: CVE-2026-42499
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
