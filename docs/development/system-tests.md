@@ -123,7 +123,7 @@ and it enables resources required for performance tests. These have no additiona
 You can run specific tests like this:
 
 ```bash
-./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
+./scripts/build/build.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceST,IngestPerformanceST
 ```
 

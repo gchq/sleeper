@@ -23,6 +23,7 @@ import sleeper.core.properties.SleeperPropertyValues;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.List;
@@ -64,11 +65,12 @@ public class DockerImageConfiguration {
      * optional stacks will be deployed for the instance.
      *
      * @param  properties the instance properties
+     * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties) {
+    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
-                dockerDeploymentImages(properties),
+                dockerDeploymentImages(properties, cdkApp),
                 lambdaImages(properties))
                 .collect(toUnmodifiableList());
     }
@@ -83,11 +85,11 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties) {
+    private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
         Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(deployment -> deployment.isDeployed(committerPlatform, stacks))
+                .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
 
@@ -98,20 +100,6 @@ public class DockerImageConfiguration {
                 .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
                 .map(LambdaHandler::getJar).distinct()
                 .map(StackDockerImage::lambdaImage);
-    }
-
-    /**
-     * Finds the prefix of an ECR repository that may be a Sleeper instance ID. This assumes that the repository was
-     * created during the deployment of a Sleeper instance with no ECR repository prefix set.
-     *
-     * @param  repositoryName the ECR repository name
-     * @return                the detected Sleeper instance ID, if one was found
-     */
-    public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
-        return dockerDeployments.stream()
-                .filter(image -> repositoryName.endsWith("/" + image.getDeploymentName()))
-                .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
-                .findFirst();
     }
 
     public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {

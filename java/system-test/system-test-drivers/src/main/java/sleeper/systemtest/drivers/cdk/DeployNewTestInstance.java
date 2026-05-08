@@ -23,16 +23,13 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -42,8 +39,6 @@ public class DeployNewTestInstance {
 
     private DeployNewTestInstance() {
     }
-
-    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
@@ -76,7 +71,6 @@ public class DeployNewTestInstance {
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient)
                     .deployInstanceConfiguration(config)
-                    .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
                     .deployPaused(deployPaused)
                     .build().deploy();
