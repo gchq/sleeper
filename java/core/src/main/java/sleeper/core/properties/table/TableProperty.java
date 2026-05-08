@@ -188,7 +188,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "them as separate rows.\n" +
                     "This must be in the format `op(field),op(field)`. This must define an operation for every value " +
                     "field, passing the field name as the parameter. All value fields must be of a numeric or map " +
-                    "type. The available operations are as follows:\n" +
+                    "type, and must not be nullable. The available operations are as follows:\n" +
                     "sum: adds the values together for equal rows\n" +
                     "max: takes the maximum value out of all equal rows\n" +
                     "min: takes the minimum value out of all equal rows\n" +

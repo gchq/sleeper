@@ -77,6 +77,13 @@ public class AgeOffFilter implements Predicate<Row> {
         }
     }
 
+    /**
+     * Tests whether a row passes the age-off filter. A row with a null value in the timestamp field is treated
+     * as having no timestamp, and is excluded from the results.
+     *
+     * @param row the row to test
+     * @return    true if the row should be retained, false otherwise
+     */
     @Override
     public boolean test(Row row) {
         Long value = (Long) row.get(fieldName);

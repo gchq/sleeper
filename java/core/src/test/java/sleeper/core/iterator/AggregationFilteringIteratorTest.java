@@ -538,6 +538,21 @@ public class AggregationFilteringIteratorTest {
                     .isInstanceOf(java.lang.IllegalArgumentException.class)
                     .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
         }
+
+        @Test
+        void shouldThrowExceptionWhenAggregatingOnNullableValueField() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType(), true))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "SUM(value)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Aggregation is not supported for nullable value fields. Nullable fields: value");
+        }
     }
 
     @Nested
