@@ -38,6 +38,22 @@ public class ClientJar {
             .filenameFormat("clients-%s-utility.jar")
             .artifactId("clients")
             .add();
+    public static final ClientJar EXAMPLE_ITERATORS = builder()
+            .filenameFormat("example-iterators-%s.jar")
+            .artifactId("example-iterators")
+            .add();
+    public static final ClientJar SYSTEM_TEST_CDK = builder()
+            .filenameFormat("system-test-cdk-%s.jar")
+            .artifactId("system-test-cdk")
+            .add();
+    public static final ClientJar SYSTEM_TEST_DATA_GENERATION = builder()
+            .filenameFormat("system-test-data-generation-%s.jar")
+            .artifactId("system-test-data-generation")
+            .add();
+    public static final ClientJar SYSTEM_TEST_DRIVERS = builder()
+            .filenameFormat("system-test-%s-utility.jar")
+            .artifactId("system-test-drivers")
+            .add();
 
     private final String filenameFormat;
     private final String artifactId;
