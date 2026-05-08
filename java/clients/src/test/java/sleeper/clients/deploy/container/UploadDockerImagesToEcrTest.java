@@ -24,8 +24,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.nio.file.Path;
@@ -480,6 +482,45 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            assertThat(commandsThatRan).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Behaviour depending on which CDK app is being used")
+    class SpecificCdkApp {
+
+        private final DockerImageConfiguration imageConfig = new DockerImageConfiguration(
+                List.of(DockerDeployment.builder()
+                        .deploymentName("data-generation")
+                        .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+                        .build()),
+                List.of());
+
+        @BeforeEach
+        void setUp() {
+            properties.setList(OPTIONAL_STACKS, List.of());
+        }
+
+        @Test
+        void shouldPushImageWhenCdkAppMatches() throws Exception {
+            // When
+            uploadForDeployment(imageConfig, SleeperInternalCdkApp.DEMONSTRATION);
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/data-generation:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageCommand(expectedTag, "./docker/data-generation"),
+                    pushImageCommand(expectedTag));
+        }
+
+        @Test
+        void shouldNotPushImageWhenCdkAppDoesNotMatch() throws Exception {
+            // When
+            uploadForDeployment(imageConfig, SleeperInternalCdkApp.STANDARD);
 
             // Then
             assertThat(commandsThatRan).isEmpty();

@@ -21,9 +21,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -131,7 +134,26 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
                 Path.of("./jars/athena.jar"), "athena-jar-content",
                 Path.of("./docker/lambda/lambda.jar"), "athena-jar-content"));
+    }
 
+    @Test
+    void shouldBuildAndPushImageForDemonstrationCdkApp() throws Exception {
+        // Given
+        DockerImageConfiguration imageConfig = new DockerImageConfiguration(
+                List.of(DockerDeployment.builder()
+                        .deploymentName("data-generation")
+                        .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+                        .build()),
+                List.of());
+
+        // When
+        uploadAllImages(imageConfig);
+
+        // Then
+        String expectedTag = "www.somedocker.com/prefix/data-generation:1.0.0";
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand(expectedTag, "./docker/data-generation"),
+                pushImageCommand(expectedTag));
     }
 
     @Test

@@ -35,7 +35,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
-import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -64,11 +63,11 @@ public class UploadArtefacts {
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
-                        CommandOption.longOption("extra-images"),
                         CommandOption.longFlag("create-builder"),
                         CommandOption.longFlag("create-deployment"),
                         CommandOption.longFlag("overwrite-existing"),
-                        CommandOption.shortOption('u', "upload")))
+                        CommandOption.shortOption('u', "upload"),
+                        CommandOption.longOption("cdk-app")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
@@ -86,10 +85,6 @@ public class UploadArtefacts {
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
-                        "--extra-images\n" +
-                        "A comma-separated list of extra Docker images to upload. We will assume these are in the" +
-                        "same location as the other Docker images, and are not multiplatform.\n" +
-                        "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
                         "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
@@ -105,7 +100,13 @@ public class UploadArtefacts {
                         "\n" +
                         "--upload, -u\n" +
                         "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
-                        "jars, or \"--upload images\" to only upload the container images.")
+                        "jars, or \"--upload images\" to only upload the container images.\n" +
+                        "\n" +
+                        "--cdk-app\n" +
+                        "By default we include images required for a normal Sleeper instance deployment. Other " +
+                        "deployment types may need different Docker images, in which case you can set this to a CDK " +
+                        "app that requires extra images.\n" +
+                        "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
@@ -115,10 +116,12 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
-                arguments.getOptionalString("extra-images")
-                        .map(string -> SleeperPropertyValueUtils.readList(string).stream()
-                                .map(StackDockerImage::dockerBuildImage).toList())
-                        .orElse(List.of()),
+                arguments.getOptionalString("cdk-app")
+                        .map(string -> SleeperInternalCdkApp.readCdkAppDeployingSleeperInstance(string)
+                                .orElseThrow(() -> new CommandArgumentsException(
+                                        "Unknown CDK app: " + string + ". Valid values: " +
+                                                SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())))
+                        .orElse(SleeperInternalCdkApp.STANDARD),
                 arguments.isFlagSetWithDefault("create-builder", true),
                 arguments.isFlagSetWithDefault("create-deployment", false),
                 arguments.isFlagSetWithDefault("overwrite-existing", false),
@@ -135,7 +138,7 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
+            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
@@ -161,7 +164,7 @@ public class UploadArtefacts {
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
-                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId));
             }
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
@@ -173,7 +176,6 @@ public class UploadArtefacts {
                 uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                         .ecrPrefix(ecrPrefix)
                         .images(images)
-                        .extraImages(args.extraImages())
                         .overwriteExistingTag(args.overwriteExisting())
                         .build());
             }
@@ -184,7 +186,7 @@ public class UploadArtefacts {
             Path scriptsDir,
             InstanceProperties instanceProperties,
             String deploymentId,
-            List<StackDockerImage> extraImages,
+            SleeperInternalCdkApp cdkApp,
             boolean createMultiplatformBuilder,
             boolean createDeployment,
             boolean overwriteExisting,

@@ -131,8 +131,8 @@ SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" \
-    -c id=$INSTANCE_ID -c extraEcrImages=system-test
-"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --extra-images system-test
+    -c id=$INSTANCE_ID
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --cdk-app demonstration
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SleeperDemonstrationCdkApp" \
     -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true

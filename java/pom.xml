@@ -586,10 +586,6 @@
                 <version>${spark.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-slf4j2-impl</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
