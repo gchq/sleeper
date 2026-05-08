@@ -56,16 +56,21 @@ public class EksBulkImportPerformanceST {
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .waitForBulkImportJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         assertThat(sleeper.tableFiles().references())
                 .hasSize(2560)
-                .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
-                        "contain 5 billion rows");
+                .matches(files -> numberOfRowsIn(files) == 10_000_000_000L,
+                        "contain 10 billion rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(5),
+                .matches(stats -> stats.isAllFinishedOneRunEach(10),
                         "jobs finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 5_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 6_000_000),
                         "meets expected performance");
     }
 
