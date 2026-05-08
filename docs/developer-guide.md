@@ -154,6 +154,16 @@ current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
+### Coding conventions
+
+See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
+Sleeper.
+
+### Testing
+
+See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
+testing tools used in the project.
+
 ### IDE setup
 
 Configuration is available for various development environments.
@@ -215,20 +225,15 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
-### Testing
-
-See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
-testing tools used in the project.
-
-### Coding conventions
-
-See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
-Sleeper.
-
 ## Standalone deployment
 
 See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
 the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
+
+## Upgrade support
+
+See [support for in-place upgrade](development/upgrade-support.md) for details of how to maintain support for in-place
+upgrade.
 
 ## Release process
 

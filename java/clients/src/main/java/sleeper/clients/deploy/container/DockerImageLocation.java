@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,25 @@
  */
 package sleeper.clients.deploy.container;
 
+import org.apache.commons.lang3.EnumUtils;
+
+import java.util.Locale;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
+
 public enum DockerImageLocation {
     LOCAL_BUILD,
-    REPOSITORY
+    REPOSITORY;
+
+    public static DockerImageLocation parseOrNull(String string) {
+        return EnumUtils.getEnumIgnoreCase(DockerImageLocation.class, string);
+    }
+
+    public static String describeOptions() {
+        return Stream.of(values())
+                .map(DockerImageLocation::toString)
+                .map(string -> string.toLowerCase(Locale.ROOT))
+                .collect(joining(", "));
+    }
 }

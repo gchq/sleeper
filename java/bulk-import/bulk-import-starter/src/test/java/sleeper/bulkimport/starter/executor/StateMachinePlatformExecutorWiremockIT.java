@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ class StateMachinePlatformExecutorWiremockIT {
         findInputJson(input -> assertThatJson(input)
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.driver.memory="))
-                .containsExactly("spark.driver.memory=7g"));
+                .containsExactly("spark.driver.memory=12g"));
     }
 
     @Test

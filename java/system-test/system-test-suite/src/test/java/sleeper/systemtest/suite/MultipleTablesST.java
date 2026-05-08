@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,8 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.compaction().putCurrentTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES)
+                .waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one file reference with the expected rows, and none ready for GC

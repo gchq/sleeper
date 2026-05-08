@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,48 +17,36 @@ package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.util.List;
-import java.util.Optional;
-
-import static java.util.Objects.requireNonNull;
+import java.util.Objects;
 
 public class DeployInstanceRequest {
 
     private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
-    private final InvokeCdk.Type instanceType;
+    private final SleeperInternalCdkApp cdkApp;
     private final List<StackDockerImage> extraDockerImages;
 
     private DeployInstanceRequest(Builder builder) {
-        instanceConfig = requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
-        cdkCommand = requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
-        instanceType = Optional.ofNullable(builder.instanceType).orElseGet(() -> inferInstanceType(instanceConfig));
-        extraDockerImages = requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
+        instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
+        cdkCommand = Objects.requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
+        cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
+        extraDockerImages = Objects.requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    private static InvokeCdk.Type inferInstanceType(SleeperInstanceConfiguration instanceConfig) {
-        InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return InvokeCdk.Type.SYSTEM_TEST;
-        } else {
-            return InvokeCdk.Type.STANDARD;
-        }
-    }
-
     public SleeperInstanceConfiguration getInstanceConfig() {
         return instanceConfig;
     }
 
-    public InvokeCdk.Type getInstanceType() {
-        return instanceType;
+    public SleeperInternalCdkApp getCdkApp() {
+        return cdkApp;
     }
 
     public CdkCommand getCdkCommand() {
@@ -76,7 +64,7 @@ public class DeployInstanceRequest {
     public static class Builder {
         private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
-        private InvokeCdk.Type instanceType = InvokeCdk.Type.STANDARD;
+        private SleeperInternalCdkApp cdkApp;
         private List<StackDockerImage> extraDockerImages = List.of();
 
         public Builder instanceConfig(SleeperInstanceConfiguration instanceConfig) {
@@ -89,13 +77,9 @@ public class DeployInstanceRequest {
             return this;
         }
 
-        public Builder instanceType(InvokeCdk.Type instanceType) {
-            this.instanceType = instanceType;
+        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
+            this.cdkApp = cdkApp;
             return this;
-        }
-
-        public Builder inferInstanceType() {
-            return instanceType(null);
         }
 
         public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {

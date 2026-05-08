@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,129 +18,134 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
-import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 
 public class DeployExistingInstance {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployExistingInstance.class);
-    private final Path scriptsDirectory;
+
+    private final DeployInstance deployInstance;
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
-    private final S3Client s3;
-    private final EcrClient ecr;
-    private final StsClient sts;
-    private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
-    private final CommandPipelineRunner runCommand;
-    private final boolean createMultiPlatformBuilder;
+    private final SleeperInternalCdkApp forceCdkApp;
 
     private DeployExistingInstance(Builder builder) {
-        scriptsDirectory = builder.scriptsDirectory;
+        deployInstance = builder.deployInstance;
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
-        s3 = builder.s3;
-        ecr = builder.ecr;
-        sts = builder.sts;
-        regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
-        runCommand = builder.runCommand;
-        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
+        forceCdkApp = builder.forceCdkApp;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <optional-paused-true-or-false>");
-        }
-
-        boolean deployPaused = optionalArgument(args, 2)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        CommandLineUsage usage = CommandLineUsage.builder()
+                .positionalArguments(List.of("scripts directory", "instance ID"))
+                .systemArguments(List.of("scripts directory"))
+                .options(List.of(CommandOption.longFlag("paused"), CommandOption.longOption("force-cdk-app")))
+                .helpSummary("" +
+                        "Redeploys an existing Sleeper instance. This can only be used with an instance that was deployed " +
+                        "with the standard scripts or CDK app from the main Sleeper GitHub.\n" +
+                        "\n" +
+                        "--paused\n" +
+                        "If set, the instance will be deployed paused. Periodic background processes will not run until " +
+                        "the instance is manually resumed.\n" +
+                        "\n" +
+                        "--force-cdk-app <app>\n" +
+                        "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
+                        "will be automatically detected. This should only be used if the detection fails, for example if " +
+                        "you are upgrading from a version that did not have this auto-detection. Do not use this if the " +
+                        "instance was deployed with a CDK app that is not listed.\n" +
+                        "Available apps from Sleeper GitHub: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
+                .build();
+        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+                Path.of(arguments.getString("scripts directory")),
+                arguments.getString("instance ID"),
+                arguments.isFlagSet("paused"),
+                arguments.getOptionalString("force-cdk-app")
+                        .flatMap(SleeperInternalCdkApp::readCdkAppDeployingSleeperInstance)
+                        .orElse(null)));
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
-            builder().clients(s3Client, ecrClient, stsClient)
-                    .regionProvider(DefaultAwsRegionProviderChain.builder().build())
-                    .scriptsDirectory(Path.of(args[0]))
-                    .instanceId(args[1])
-                    .deployPaused(deployPaused)
-                    .loadPropertiesFromS3(s3Client, dynamoClient)
+            String accountName = stsClient.getCallerIdentity().account();
+            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+            builder()
+                    .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, s3Client, ecrClient))
+                    .instanceId(args.instanceId())
+                    .deployPaused(args.deployPaused())
+                    .forceCdkApp(args.forceCdkApp())
+                    .loadPropertiesFromS3(accountName, s3Client, dynamoClient)
                     .build().update();
         }
     }
 
-    public void update() throws IOException, InterruptedException {
-        DeployInstance deployInstance = new DeployInstance(
-                SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
-                new UploadDockerImagesToEcr(
-                        UploadDockerImages.builder()
-                                .scriptsDirectory(scriptsDirectory)
-                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
-                                .commandRunner(runCommand)
-                                .createMultiplatformBuilder(createMultiPlatformBuilder)
-                                .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecr), sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
-                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
+    public record Arguments(Path scriptsDirectory, String instanceId, boolean deployPaused, SleeperInternalCdkApp forceCdkApp) {
+    }
 
+    public void update() throws IOException, InterruptedException {
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
-                .inferInstanceType()
+                .cdkApp(getCdkApp())
                 .build());
 
         LOGGER.info("Finished deployment of existing instance");
     }
 
+    private SleeperInternalCdkApp getCdkApp() {
+        if (forceCdkApp != null) {
+            return forceCdkApp;
+        }
+        return properties.getOptionalEnumValue(CDK_APP, SleeperInternalCdkApp.class)
+                .orElseThrow(() -> new IllegalArgumentException("" +
+                        "Cannot find the CDK app used to deploy this instance. " +
+                        "This script can only be used if you deployed with a CDK app that is included in the main Sleeper GitHub. " +
+                        "If you did, this failure may happen when upgrading from a version that did not have autodetection of the CDK app. " +
+                        "You can force which CDK app to use with the --force-cdk-app command line option. Use --help for more details."));
+    }
+
     public static final class Builder {
-        private Path scriptsDirectory;
+        private DeployInstance deployInstance;
         private String instanceId;
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
-        private S3Client s3;
-        private EcrClient ecr;
-        private StsClient sts;
-        private AwsRegionProvider regionProvider;
         private boolean deployPaused;
-        private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
-        private boolean createMultiPlatformBuilder = true;
+        private SleeperInternalCdkApp forceCdkApp;
 
         private Builder() {
         }
 
-        public Builder scriptsDirectory(Path scriptsDirectory) {
-            this.scriptsDirectory = scriptsDirectory;
+        public Builder deployInstance(DeployInstance deployInstance) {
+            this.deployInstance = deployInstance;
             return this;
         }
 
@@ -163,35 +168,18 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, EcrClient ecr, StsClient sts) {
-            this.s3 = s3;
-            this.ecr = ecr;
-            this.sts = sts;
-            return this;
-        }
-
-        public Builder regionProvider(AwsRegionProvider regionProvider) {
-            this.regionProvider = regionProvider;
-            return this;
-        }
-
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
             return this;
         }
 
-        public Builder runCommand(CommandPipelineRunner runCommand) {
-            this.runCommand = runCommand;
+        public Builder forceCdkApp(SleeperInternalCdkApp forceCdkApp) {
+            this.forceCdkApp = forceCdkApp;
             return this;
         }
 
-        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
-            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
-            return this;
-        }
-
-        public Builder loadPropertiesFromS3(S3Client s3Client, DynamoDbClient dynamoCient) {
-            properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        public Builder loadPropertiesFromS3(String accountName, S3Client s3Client, DynamoDbClient dynamoCient) {
+            properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             tablePropertiesList = S3TableProperties.createStore(properties, s3Client, dynamoCient)
                     .streamAllTables().collect(Collectors.toList());
             return this;

@@ -323,7 +323,7 @@ AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.*)
 
 - Apache License, Version 2.0
 
-CDK Lambda Layer KUBECTL V32 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v32:2.*)
+CDK Lambda Layer KUBECTL V32 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v35:2.*)
 
 - Apache License, Version 2.0
 
@@ -585,11 +585,7 @@ cxx (https://github.com/dtolnay/cxx)
 
 - Apache 2 License
 
-datasketches-cpp (https://github.com/apache/datasketches-cpp)
-
-- Apache 2 License
-
-git2 (https://github.com/rust-lang/git2-rs)
+This project vendors datasketches-cpp (https://github.com/apache/datasketches-cpp)
 
 - Apache 2 License
 

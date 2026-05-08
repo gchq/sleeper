@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,10 @@ import software.amazon.awscdk.services.stepfunctions.LogOptions;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -56,23 +54,6 @@ public class Utils {
 
     private Utils() {
         // Prevents instantiation
-    }
-
-    /**
-     * Returns a cleaned up version of the Sleeper instance ID for use in resource names. Note that the instance ID
-     * has a maximum length of 20 characters. See
-     * {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
-     *
-     * @param  properties the instance properties
-     * @return            the cleaned up instance ID
-     */
-    public static String cleanInstanceId(InstanceProperties properties) {
-        return cleanInstanceId(properties.get(ID));
-    }
-
-    public static String cleanInstanceId(String instanceId) {
-        return instanceId.toLowerCase(Locale.ROOT)
-                .replace(".", "-");
     }
 
     public static LogDriver createECSContainerLogDriver(ILogGroup logGroup) {

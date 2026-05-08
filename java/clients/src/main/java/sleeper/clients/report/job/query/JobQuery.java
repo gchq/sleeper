@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public interface JobQuery {
 
     /**
      * Creates a query for jobs based on parameters. To allow the PROMPT query type,
-     * use {@link #fromParametersOrPrompt()}.
+     * use {@link #fromParametersOrPrompt}.
      *
      * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run

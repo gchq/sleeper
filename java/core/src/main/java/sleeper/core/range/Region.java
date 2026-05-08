@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,6 @@ public class Region {
      * @param  schema                   the schema that dictates returned order
      * @return                          a List of Ranges in schema order.
      * @throws IllegalArgumentException if a row key in the given schema is not present in this region
-     * @see                             getPartialRangesOrdered
      */
     public List<Range> getRangesOrdered(Schema schema) {
         List<String> rowKeysOrdered = schema.getRowKeyFieldNames();

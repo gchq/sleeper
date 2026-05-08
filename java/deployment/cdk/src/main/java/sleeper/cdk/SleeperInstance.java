@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class SleeperInstance {
      * <p>
      * A Sleeper instance consists of a number of nested stacks, which will be nested under the stack you provide. These
      * nested stacks will always have the same CDK construct IDs. For multiple instances, each Sleeper instance should
-     * be its own nested stack. Also see {@link #createAsNestedStack()}.
+     * be its own nested stack. Also see {@link #createAsNestedStack}.
      *
      * @param  stack an empty stack to contain the instance resources, usually a Stack or NestedStack
      * @param  props configuration to deploy the instance

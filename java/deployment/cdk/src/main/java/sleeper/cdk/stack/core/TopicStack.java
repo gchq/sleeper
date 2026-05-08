@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class TopicStack extends NestedStack {
         this.topic = Topic.Builder
                 .create(this, "ErrorsTopic")
                 .topicName(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "ErrorsTopic"))
+                        instanceProperties.cleanInstanceId(), "ErrorsTopic"))
                 .build();
         String emailAddress = instanceProperties.get(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION);
         if (null != emailAddress && !emailAddress.isEmpty()) {

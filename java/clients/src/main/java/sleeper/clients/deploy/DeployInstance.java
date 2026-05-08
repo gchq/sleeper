@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -33,11 +36,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
 
 public class DeployInstance {
     public static final Logger LOGGER = LoggerFactory.getLogger(DeployInstance.class);
@@ -52,6 +55,16 @@ public class DeployInstance {
         this.dockerImageUploader = dockerImageUploader;
         this.writeLocalProperties = writeLocalProperties;
         this.invokeCdk = invokeCdk;
+    }
+
+    public static DeployInstance fromScriptsDirectory(Path scriptsDirectory, String account, String region, S3Client s3Client, EcrClient ecrClient) throws IOException {
+        return new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3Client, account, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
+                        account, region),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdk.fromScriptsDirectory(scriptsDirectory));
     }
 
     public void deploy(DeployInstanceRequest request) throws IOException, InterruptedException {
@@ -75,7 +88,7 @@ public class DeployInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand().withPropertiesFile(propertiesFile));
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(propertiesFile));
     }
 
     public interface WriteLocalProperties {

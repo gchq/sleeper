@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class TransactionLogTransactionStack extends NestedStack {
             SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters trackDeadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion");
         IFunction transactionDeletionTrigger = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_DELETION_TRIGGER, "TransactionLogTransactionDeletionTrigger", builder -> builder
@@ -142,7 +142,7 @@ public class TransactionLogTransactionStack extends NestedStack {
 
     private void createFunctionToFollowTransactionLog(
             InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
                 .functionName(functionName)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.util.S3BucketName;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -95,7 +96,7 @@ public class QueryStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String tableName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
+                instanceProperties.cleanInstanceId(), "query-tracking-table");
 
         Table queryTrackingTable = Table.Builder.create(this, "QueryTrackingTable")
                 .tableName(tableName)
@@ -122,7 +123,7 @@ public class QueryStack extends NestedStack {
     private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "query-executor");
+                instanceProperties.cleanInstanceId(), "query-executor");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries")
@@ -165,7 +166,7 @@ public class QueryStack extends NestedStack {
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
+                instanceProperties.cleanInstanceId(), "query-leaf-partition");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
                 .functionName(leafQueryFunctionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to execute the query")
@@ -213,7 +214,7 @@ public class QueryStack extends NestedStack {
     }
 
     private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String dlLeafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
         Queue leafPartitionQueryDlq = Queue.Builder
                 .create(this, "LeafPartitionQueryDeadLetterQueue")
@@ -264,7 +265,7 @@ public class QueryStack extends NestedStack {
      */
     private Queue setupResultsQueue(InstanceProperties instanceProperties) {
         String queueName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "QueryResultsQ");
+                instanceProperties.cleanInstanceId(), "QueryResultsQ");
         Queue resultsQueue = Queue.Builder
                 .create(this, "QueryResultsQueue")
                 .queueName(queueName)
@@ -290,8 +291,8 @@ public class QueryStack extends NestedStack {
 
     private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "query-results");
+        String bucketName = S3BucketName.create(instanceProperties, "query-results");
+
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
                 .bucketName(bucketName)

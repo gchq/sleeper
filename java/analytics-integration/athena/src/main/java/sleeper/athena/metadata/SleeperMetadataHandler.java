@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,14 +139,15 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * Used to get a paginated list of tables that this source contains. In Sleeper the Schema is coupled to the table
      * so we can just use the schema name in the request.
      *
-     * @param    blockAllocator    Tool for creating and managing Apache Arrow Blocks.
-     * @param    listTablesRequest Provides details on who made the request and which Athena catalog and database they
-     *                             are querying.
-     * @return                     A ListTablesResponse which primarily contains a List enumerating the TableNames in
-     *                             this catalog, database tuple. It also contains the catalog name corresponding the
-     *                             Athena catalog that was queried.
-     * @implNote                   A complete (un-paginated) list of tables should be returned if the request's pageSize
-     *                             is set to ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
+     * Note: A complete (un-paginated) list of tables should be returned if the request's pageSize is set to
+     * ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
+     *
+     * @param  blockAllocator    Tool for creating and managing Apache Arrow Blocks.
+     * @param  listTablesRequest Provides details on who made the request and which Athena catalog and database they
+     *                           are querying.
+     * @return                   A ListTablesResponse which primarily contains a List enumerating the TableNames in
+     *                           this catalog, database tuple. It also contains the catalog name corresponding the
+     *                           Athena catalog that was queried.
      */
     @Override
     public ListTablesResponse doListTables(BlockAllocator blockAllocator, ListTablesRequest listTablesRequest) {
@@ -245,20 +246,19 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * don't contain data that satisfy the key requirements. At the end of processing it returns the relevant partitions
      * for this query.
      *
+     * Note: Partitions are partially opaque to Amazon Athena in that it only understands your partition columns and
+     * how to filter out partitions that do not meet the query's constraints. Any additional columns you add to the
+     * partition data are ignored by Athena but passed on to calls on GetSplits. Also note that the BlockWriter handlers
+     * automatically constraining and filtering out values that don't satisfy the query's predicate. This is how we
+     * accomplish partition pruning. You can optionally retrieve a ConstraintEvaluator from BlockWriter if you have your
+     * own need to apply filtering in Lambda. Otherwise you can get the actual predicate from the request object for
+     * pushing down into the source you are querying.
+     *
      * @param blockWriter           Used to write rows (partitions) into the Apache Arrow response.
      * @param getTableLayoutRequest Provides details of the catalog, database, and table being queried as well as any
      *                              filter predicate.
      * @param queryStatusChecker    A QueryStatusChecker that you can use to stop doing work for a query that has
      *                              already terminated.
-     * @note                        Partitions are partially opaque to Amazon Athena in that it only understands your
-     *                              partition columns and how to filter out partitions that do not meet the query's
-     *                              constraints. Any additional columns you add to the partition data are ignored by
-     *                              Athena but passed on to calls on GetSplits. Also note that the BlockWriter handlers
-     *                              automatically constraining and filtering out values that don't satisfy the query's
-     *                              predicate. This is how we we accomplish partition pruning. You can optionally
-     *                              retrieve a ConstraintEvaluator from BlockWriter if you have your own need to apply
-     *                              filtering in Lambda. Otherwise you can get the actual predicate from the request
-     *                              object for pushing down into the source you are querying.
      */
     @Override
     public void getPartitions(BlockWriter blockWriter, GetTableLayoutRequest getTableLayoutRequest, QueryStatusChecker queryStatusChecker) throws Exception {

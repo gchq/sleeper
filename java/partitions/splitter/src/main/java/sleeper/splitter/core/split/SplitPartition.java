@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  * - If the partition consists of a single point (i.e. the minimum equals the maximum).
  * - If the median equals the minimum then the partition cannot be split.
  * This is because it would have to be split into [min, median) and [median, max), but if the min equals the median then
- * the left one can't have any data in it as a key x in it would have to have min <= x < median = min which is a
- * contradiction.
+ * the left one can't have any data in it as a key x in it would have to have min {@literal<}= x {@literal<} median =
+ * min which is a contradiction.
  */
 public class SplitPartition {
     public static final Logger LOGGER = LoggerFactory.getLogger(SplitPartition.class);

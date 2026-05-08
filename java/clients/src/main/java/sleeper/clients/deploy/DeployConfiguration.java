@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.DockerImageLocation;
+import sleeper.container.images.ContainerRegistryCredentials;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-public record DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix) {
+public record DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix, ContainerRegistryCredentials dockerCredentials) {
 
     public DeployConfiguration {
         Objects.requireNonNull(dockerImageLocation, "dockerImageLocation must not be null");
@@ -38,10 +39,14 @@ public record DeployConfiguration(DockerImageLocation dockerImageLocation, Strin
     }
 
     public static DeployConfiguration fromLocalBuild() {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null);
+        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null);
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix) {
-        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix);
+        return fromDockerRepository(prefix, null);
+    }
+
+    public static DeployConfiguration fromDockerRepository(String prefix, ContainerRegistryCredentials credentials) {
+        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix, credentials);
     }
 }

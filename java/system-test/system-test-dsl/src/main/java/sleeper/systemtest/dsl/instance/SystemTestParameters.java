@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,14 +122,6 @@ public class SystemTestParameters {
         return scriptsDirectory;
     }
 
-    public Path getJarsDirectory() {
-        return scriptsDirectory.resolve("jars");
-    }
-
-    public Path getDockerDirectory() {
-        return scriptsDirectory.resolve("docker");
-    }
-
     public Path getGeneratedDirectory() {
         return scriptsDirectory.resolve("generated");
     }
@@ -192,7 +184,7 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
         properties.set(SYSTEM_TEST_REGION, getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
-        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getArtefactsDeploymentId()));
+        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getAccount(), getArtefactsDeploymentId()));
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
     }

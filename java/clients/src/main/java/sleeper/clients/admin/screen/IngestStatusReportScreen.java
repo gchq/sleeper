@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
+import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -111,7 +112,8 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQuery.Type queryType, String queryParameters) {
-        new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, queryType, queryParameters,
+        JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), in);
+        new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), query,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);

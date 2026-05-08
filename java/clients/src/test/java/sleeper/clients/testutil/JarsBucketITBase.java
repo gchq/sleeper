@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package sleeper.clients.testutil;
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.clients.deploy.jar.JarsBucketCreator;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -31,8 +30,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.stream.Stream;
+import java.util.Set;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -48,26 +48,24 @@ public abstract class JarsBucketITBase extends LocalStackTestBase {
         new JarsBucketCreator(instanceProperties, s3Client).create();
     }
 
-    protected boolean uploadJarsToBucket(String bucketName) throws IOException {
-        return syncJarsToBucket(bucketName, false);
+    protected boolean uploadJarsToBucket() throws IOException {
+        return syncJarsToBucket(false);
     }
 
-    protected boolean uploadJarsToBucketDeletingOldJars(String bucketName) throws IOException {
-        return syncJarsToBucket(bucketName, true);
+    protected boolean uploadJarsToBucketDeletingOldJars() throws IOException {
+        return syncJarsToBucket(true);
     }
 
-    protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
-        return new SyncJars(s3Client, tempDir)
+    private boolean syncJarsToBucket(boolean deleteOldJars) throws IOException {
+        return new SyncJars(s3Client, instanceProperties.get(ACCOUNT), tempDir)
                 .sync(SyncJarsRequest.builder()
-                        .bucketName(bucketName)
-                        .deleteOldJars(deleteOld)
+                        .instanceProperties(instanceProperties)
+                        .deleteOldJars(deleteOldJars)
                         .build());
     }
 
-    protected Stream<String> listObjectKeys() {
-        return s3Client.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
-                .flatMap(response -> response.contents().stream())
-                .map(S3Object::key);
+    protected Set<String> listObjectKeys() {
+        return listObjectKeys(bucketName);
     }
 
     protected Instant getObjectLastModified(String key) {

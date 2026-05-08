@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -78,10 +79,13 @@ public class QueryResultsSQSQueuePoller {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
         InstanceProperties instanceProperties;
-        try (S3Client s3Client = S3Client.create()) {
-            instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+        try (S3Client s3Client = S3Client.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         }
 
         try (SqsClient sqsClient = SqsClient.create()) {

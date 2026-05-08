@@ -1,0 +1,72 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.foreign;
+
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class FFIRowKeyValueDataTest {
+    private jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
+
+    @Test
+    void shouldSetInt() {
+        // Given
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
+
+        // When
+        data.set(345678);
+
+        // Then
+        assertThat(data.getInt()).isEqualTo(345678);
+    }
+
+    @Test
+    void shouldSetLong() {
+        // Given
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
+
+        // When
+        data.set(987654L);
+
+        // Then
+        assertThat(data.getLong()).isEqualTo(987654L);
+    }
+
+    @Test
+    void shouldSetString() {
+        // Given
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
+
+        // When
+        data.set("hello test test\0test");
+
+        // Then
+        assertThat(data.getString()).isEqualTo("hello test test\0test");
+    }
+
+    @Test
+    void shouldSetBytes() {
+        // Given
+        FFIRowKeyValueData data = new FFIRowKeyValueData(runtime);
+
+        // When
+        data.set(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});
+
+        // Then
+        assertThat(data.getBytes()).isEqualTo(new byte[]{1, 2, 3, 4, 5, 0, 9, 8, 7, 6});
+    }
+}

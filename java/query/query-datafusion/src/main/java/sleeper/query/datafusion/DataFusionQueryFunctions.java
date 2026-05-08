@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * FFI method to call to foreign query code. This function returns the results of writing data to a file.
      *
      * Clients should generally call
-     * {@link DataFusionQueryFunctions#query_file(FFIContext, FFILeafPartitionQueryConfig, FFIQueryResults)}.
+     * {@link DataFusionQueryFunctions#query_file(FFIContext, FFILeafPartitionQueryConfig, FFIFileResult)}.
      *
      * The provided context object must be open.
      * The return code will be 0 if successful.

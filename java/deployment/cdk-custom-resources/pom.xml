@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2025 Crown Copyright
+  ~ Copyright 2022-2026 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>deployment</artifactId>
-        <version>0.35.2</version>
+        <version>0.35.3</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>container-images</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -85,10 +90,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ecr</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.cloud.tools</groupId>
-            <artifactId>jib-core</artifactId>
         </dependency>
         <!-- Test dependencies -->
         <dependency>

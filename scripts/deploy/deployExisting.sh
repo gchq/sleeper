@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,6 @@
 
 set -e
 unset CDPATH
-
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <instance-id> <optional-paused-true-or-false>"
-  exit 1
-fi
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")

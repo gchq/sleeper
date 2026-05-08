@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ public class EcsClusterTasksStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
+                instanceProperties.cleanInstanceId(), "auto-stop-ecs-cluster-tasks");
 
         lambda = lambdaCode.buildFunction(LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "Lambda", builder -> builder
                 .functionName(functionName)

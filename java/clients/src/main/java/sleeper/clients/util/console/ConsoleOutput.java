@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@ public class ConsoleOutput {
 
     public ConsoleOutput(PrintStream out) {
         this.out = out;
+    }
+
+    public static ConsoleOutput stdOut() {
+        return new ConsoleOutput(System.out);
     }
 
     /**

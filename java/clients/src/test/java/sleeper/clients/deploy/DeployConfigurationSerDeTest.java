@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.Test;
+
+import sleeper.container.images.ContainerRegistryCredentials;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,6 +56,28 @@ public class DeployConfigurationSerDeTest {
                 {
                   "dockerImageLocation": "repository",
                   "dockerRepositoryPrefix": "ghcr.io/gchq/"
+                }""");
+    }
+
+    @Test
+    void shouldSerDeDeployFromDockerRepositoryWithCredentials() {
+        // Given
+        DeployConfiguration configuration = DeployConfiguration.fromDockerRepository("ghcr.io/gchq/",
+                new ContainerRegistryCredentials("test-user", "test-password"));
+
+        // When
+        String json = serDe.toJson(configuration);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(configuration);
+        assertThat(json).isEqualTo("""
+                {
+                  "dockerImageLocation": "repository",
+                  "dockerRepositoryPrefix": "ghcr.io/gchq/",
+                  "dockerCredentials": {
+                    "username": "test-user",
+                    "password": "test-password"
+                  }
                 }""");
     }
 

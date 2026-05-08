@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,44 +18,34 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
-import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertyGroup;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.GROUP_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TEST_TABLE_REPORT_LIST;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instancePropertyGroupOption;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -63,116 +53,10 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_R
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
-class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
-
-    @DisplayName("Navigate from main screen and back")
-    @Nested
-    class NavigateFromMainScreen {
-
-        @Test
-        void shouldViewInstanceConfiguration() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-
-            // When
-            String output = viewInstanceConfiguration(properties).exitGetOutput();
-
-            // Then
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(properties);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldDiscardChangesToInstanceConfiguration() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = editInstanceConfiguration(before, after)
-                    .enterPrompt(SaveChangesScreen.DISCARD_CHANGES_OPTION)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @ParameterizedTest(name = "With return to editor option \"{0}\"")
-        @ValueSource(strings = {SaveChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
-        void shouldMakeChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = editInstanceConfiguration(before, after) // Apply changes
-                    .enterPrompt(returnToEditorOption)
-                    .editAgain(after, before) // Revert changes
-                    .exitGetOutput();
-
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @ParameterizedTest(name = "With return to editor option \"{0}\"")
-        @ValueSource(strings = {ValidateChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
-        void shouldMakeInvalidChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
-
-            // When
-            String output = editInstanceConfiguration(before, after) // Apply changes
-                    .enterPrompt(returnToEditorOption)
-                    .editAgain(after, before) // Revert changes
-                    .exitGetOutput();
-
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .doesNotContain(PROPERTY_SAVE_CHANGES_SCREEN)
-                    .containsOnlyOnce(PROPERTY_VALIDATION_SCREEN)
-                    .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-    }
+class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
 
     @DisplayName("Display changes to edited properties")
     @Nested
@@ -312,7 +196,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -321,13 +205,14 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "\n"));
         }
 
@@ -336,7 +221,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -351,7 +236,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
             after.set(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH, "def");
 
             // When
@@ -361,9 +246,10 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "sleeper.default.table.parquet.columnindex.truncate.length\n" +
@@ -374,7 +260,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "After (not valid, please change): def\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "sleeper.default.table.parquet.columnindex.truncate.length\n" +
                     "\n"));
         }
@@ -411,7 +297,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             before.set(VPC_ID, "before-vpc");
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(VPC_ID, "after-vpc");
-            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(FORCE_RELOAD_PROPERTIES, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -425,14 +311,15 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Before: before-vpc\n" +
                     "After (cannot be changed, please undo): after-vpc\n" +
                     "\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
-                    "Unset before, default value: 900\n" +
+                    "sleeper.properties.force.reload\n" +
+                    "If true, properties will be reloaded every time a long running job is started or a lambda is run.\n" +
+                    "This will mainly be used in test scenarios to ensure properties are up to date.\n" +
+                    "Unset before, default value: false\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.vpc\n" +
-                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.properties.force.reload\n" +
                     "\n"));
         }
 
@@ -452,7 +339,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "\n" +
                     "sleeper.config.bucket\n" +
                     "The S3 bucket name used to store configuration files.\n" +
-                    "Before: sleeper-" + instanceId + "-config\n" +
+                    "Before: sleeper-" + instanceId + "-config-test-account\n" +
                     "After (cannot be changed, please undo): changed-bucket\n" +
                     "\n" +
                     "Found invalid properties:\n" +
@@ -461,147 +348,9 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         }
     }
 
-    @DisplayName("Save changes")
-    @Nested
-    class SaveChanges {
-        @Test
-        void shouldSaveChangesWithStore() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = editInstanceConfiguration(before, after)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
-                            DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldReturnToSaveChangesScreenWhenSavingFails() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(before.get(ID),
-                    new RuntimeException("Something went wrong")))
-                    .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
-
-            // When
-            String output = editInstanceConfiguration(before, after)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                            "\n\n" +
-                            "----------------------------------\n" +
-                            "\n" +
-                            "Could not save properties for instance " + instanceId + "\n" +
-                            "Cause: Something went wrong\n" +
-                            "\n" +
-                            PROPERTY_SAVE_CHANGES_SCREEN +
-                            DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-    }
-
     @DisplayName("Configure table properties")
     @Nested
     class ConfigureTableProperties {
-        @Test
-        void shouldEditAProperty() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-            TableProperties before = createValidTableProperties(properties);
-            TableProperties after = TableProperties.copyOf(before);
-            after.set(ITERATOR_CONFIG, "TestIterator");
-
-            // When
-            String output = editTableConfiguration(properties, before, after)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
-                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldReturnToSaveChangesScreenWhenSavingFails() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-            TableProperties before = createValidTableProperties(properties);
-            TableProperties after = TableProperties.copyOf(before);
-            after.set(ROW_GROUP_SIZE, "123");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(properties.get(ID), TABLE_NAME_VALUE,
-                    new RuntimeException("Something went wrong")))
-                    .when(store).saveTableProperties(properties, after);
-
-            // When
-            String output = editTableConfiguration(properties, before, after)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                            "\n\n" +
-                            "----------------------------------\n" +
-                            "\n" +
-                            "Could not save properties for table test-table in instance " + instanceId + "\n" +
-                            "Cause: Something went wrong\n" +
-                            "\n" +
-                            PROPERTY_SAVE_CHANGES_SCREEN +
-                            DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after);
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
 
         @Test
         void shouldEditAPropertyThatWasPreviouslyUnsetButHadADefaultProperty() throws Exception {
@@ -629,125 +378,147 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
-    }
-
-    @DisplayName("Filter by group")
-    @Nested
-    class FilterByGroup {
-        @Test
-        void shouldViewPropertiesThatBelongToSpecificGroup() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-
-            // When
-            String output = runClient()
-                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
-                    .viewInEditorFromStore(properties, InstancePropertyGroup.COMMON)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
 
         @Test
-        void shouldEditPropertiesThatBelongToSpecificGroup() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = InstanceProperties.copyOf(before);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-
-            // When
-            String output = runClient()
-                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
-                    .editFromStore(before, after, InstancePropertyGroup.COMMON)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + GROUP_SELECT_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
-                            DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldEditTablePropertiesThatBelongToSpecificGroup() throws Exception {
+        void shouldFailToSetInvalidSchemaInEditor() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
-            before.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
             TableProperties after = TableProperties.copyOf(before);
-            after.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
+            after.set(SCHEMA, "{}");
 
             // When
-            String output = runClient()
-                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            tablePropertyGroupOption(TablePropertyGroup.METADATA),
-                            before.get(TABLE_NAME))
-                    .editFromStore(properties, before, after, TablePropertyGroup.METADATA)
+            String output = editTableConfiguration(properties, before, after)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.schema\n" +
+                            "The schema representing the structure of this table. This should be set in a separate schema.json\n" +
+                            "file, and cannot be edited once the table has been created.\n" +
+                            "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
+                            "further details.\n" +
+                            "Before: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n" +
+                            "After (cannot be changed, please undo): {}\n" +
+                            "\n" +
+                            "Found invalid properties:\n" +
+                            "sleeper.table.schema\n" +
+                            "\n");
+        }
+
+        @Test
+        void shouldRecoverFromInvalidSchema() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
+            before.set(SCHEMA, "{}");
+
+            // When
+            String output = editTableConfiguration(properties, before, after)
                     .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + "\n" +
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
                     TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
-                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
-                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
-                            DISPLAY_MAIN_SCREEN);
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.schema\n" +
+                            "The schema representing the structure of this table. This should be set in a separate schema.json\n" +
+                            "file, and cannot be edited once the table has been created.\n" +
+                            "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for\n" +
+                            "further details.\n" +
+                            "Before: {}\n" +
+                            "After: {\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}],\"sortKeyFields\":[],\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n" +
+                            "\n")
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+        }
+    }
 
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after);
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
+    @Nested
+    @DisplayName("Handle properties requiring CDK deployment")
+    class CdkDeployment {
+
+        @Test
+        void shouldRedeployStandardCdkAppWhenCdkDeployedPropertyIsUpdated() throws Exception {
+            // Given an instance that was deployed with the standard CDK app
+            InstanceProperties before = createValidInstanceProperties();
+            before.setEnum(CDK_APP, SleeperInternalCdkApp.STANDARD);
+            // And a property change to force a redeploy
+            InstanceProperties after = InstanceProperties.copyOf(before);
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "100");
+
+            // When we apply the change
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then the properties are not saved to the instance, as the CDK will apply the change
+            assertThat(clientProperties.loadInstancePropertiesNoValidation(after.get(ID)))
+                    .isEqualTo(before);
+            // And the properties are saved to the local directory, to be read by the CDK
+            assertThat(clientProperties.getLocalInstanceProperties()).isEqualTo(after);
+            // And the CDK is invoked
+            assertThat(cdkCommandsThatRan).containsExactly(pipeline(command(
+                    "cdk",
+                    "-a", "java -cp \"./test/jars/cdk-1.2.3.jar\" sleeper.cdk.SleeperCdkApp",
+                    "deploy",
+                    "--require-approval", "never",
+                    "-c", "propertiesfile=./test/generated/instance.properties",
+                    "*")));
+            // And this is displayed to the user
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
+                    "After: 100\n" +
+                    "Note that a change to this property requires redeployment of the instance.\n" +
+                    "\n" +
+                    PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN +
+                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                    DISPLAY_MAIN_SCREEN);
         }
 
         @Test
-        void shouldExitWhenOnGroupSelectScreen() throws Exception {
-            // Given
-            setInstanceProperties(createValidInstanceProperties());
+        void shouldNotifyWhenCdkRedeploymentIsRequiredWithCustomCdkApp() throws Exception {
+            // Given an instance that was deployed with a custom CDK app
+            InstanceProperties before = createValidInstanceProperties();
+            before.unset(CDK_APP);
+            // And a property change to force a redeploy
+            InstanceProperties after = InstanceProperties.copyOf(before);
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "100");
 
-            // When
-            String output = runClient()
-                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION, EXIT_OPTION)
+            // When we apply the change
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
-            // Then
+            // Then the properties are saved to the instance
+            assertThat(clientProperties.loadInstancePropertiesNoValidation(after.get(ID)))
+                    .isEqualTo(after);
+            // And the CDK is not invoked
+            assertThat(commandsThatRan).isEmpty();
+            // And the properties are saved to the local directory, to keep them up to date
+            assertThat(clientProperties.getLocalInstanceProperties()).isEqualTo(after);
+            // And this is displayed to the user
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN);
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
-            order.verifyNoMoreInteractions();
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
+                    "After: 100\n" +
+                    "Note that a change to this property requires redeployment of the instance.\n" +
+                    "\n" +
+                    PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN +
+                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                    DISPLAY_MAIN_SCREEN);
         }
     }
 

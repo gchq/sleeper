@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
@@ -59,8 +60,10 @@ public class PartitionsStatusReport {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            arguments.runReport(s3Client, dynamoClient, System.out);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            arguments.runReport(accountName, s3Client, dynamoClient, System.out);
         }
     }
 }

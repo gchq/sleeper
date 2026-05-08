@@ -1,4 +1,4 @@
-#  Copyright 2022-2025 Crown Copyright
+#  Copyright 2022-2026 Crown Copyright
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import pytest
 
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
-from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty, load_instance_properties_from_string
+from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty, clean_instance_id, load_instance_properties_from_string
 from sleeper.properties.user_defined_properties import CommonProperty
 from tests.sleeper.repository_path import get_repository_path
 
@@ -81,3 +81,19 @@ def should_read_full_example_properties():
 
     # Then
     assert properties.get(CommonProperty.ID) == "full-example"
+
+
+def should_clean_instance_id_with_upper_case():
+    # When
+    cleaned = clean_instance_id("AnInstanceId")
+
+    # Then
+    assert cleaned == "aninstanceid"
+
+
+def should_clean_instance_id_with_dots():
+    # When
+    cleaned = clean_instance_id("some.instance.id")
+
+    # Then
+    assert cleaned == "some-instance-id"

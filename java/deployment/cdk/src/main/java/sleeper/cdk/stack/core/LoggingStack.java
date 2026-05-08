@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class LoggingStack extends NestedStack {
      */
     public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, InstanceProperties instanceProperties) {
         return LogGroup.Builder.create(scope, ref.shortName)
-                .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
+                .logGroupName(ref.prefix + String.join("-", "sleeper", instanceProperties.cleanInstanceId(), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
                 .build();
@@ -121,7 +121,8 @@ public class LoggingStack extends NestedStack {
         QUERY_WEBSOCKET_HANDLER("query-websocket-handler"),
         QUERY_KEEP_WARM("query-keep-warm"),
         SIMPLE_ATHENA_HANDLER("Simple-athena-handler"),
-        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler");
+        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler"),
+        REST_API_HANDLER("rest-api-handler");
 
         private final String shortName;
         private final String prefix;

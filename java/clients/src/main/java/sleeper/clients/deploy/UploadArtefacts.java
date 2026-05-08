@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -34,6 +34,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -137,7 +138,7 @@ public class UploadArtefacts {
             images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
         } else {
             deploymentId = args.deploymentId();
-            jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId());
+            jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
             images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
         }
@@ -146,24 +147,26 @@ public class UploadArtefacts {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
-            String account = stsClient.getCallerIdentity().account();
+            String accountName = stsClient.getCallerIdentity().account();
             String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
-            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
+            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
+                            .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient), account, region);
+                    accountName, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
-                        .invoke(InvokeCdk.Type.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
             }
             if (args.toUpload().isUploadJars()) {
                 syncJars.sync(SyncJarsRequest.builder()
                         .bucketName(jarsBucket)
+                        .deploymentId(deploymentId)
                         .build());
             }
             if (args.toUpload().isUploadImages()) {

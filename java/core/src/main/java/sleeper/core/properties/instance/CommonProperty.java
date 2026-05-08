@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,9 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
-            .description("The S3 bucket containing the jar files of the Sleeper components. If unset, a default name " +
-                    "is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.")
-            .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
-            .validationPredicate(Objects::nonNull)
+            .description("The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set " +
+                    "by the CDK during deployment, based on `sleeper.artefacts.deployment` if it is set, or " +
+                    "`sleeper.id` if it is not.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
@@ -233,7 +232,8 @@ public interface CommonProperty {
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue(null)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
             .description("Default value for the maximum concurrency for each lambda in the Sleeper instance that " +
                     "scales according to the number of Sleeper tables.\n" +
@@ -245,7 +245,8 @@ public interface CommonProperty {
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue("10")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

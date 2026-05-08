@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,18 +52,16 @@ import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE
 public class DashboardStack extends NestedStack {
 
     private static final List<String> S3_REQUEST_METRIC_NAMES = List.of(
-        "AllRequests",
-        "HeadRequests",
-        "GetRequests",
-        "PutRequests",
-        "PostRequests",
-        "ListRequests",
-        "DeleteRequests"
-    );
+            "AllRequests",
+            "HeadRequests",
+            "GetRequests",
+            "PutRequests",
+            "PostRequests",
+            "ListRequests",
+            "DeleteRequests");
     private static final List<String> S3_ERROR_METRIC_NAMES = List.of(
-        "4xxErrors",
-        "5xxErrors"
-    );
+            "4xxErrors",
+            "5xxErrors");
 
     private final String instanceId;
     private final List<String> tableNames;
@@ -100,7 +98,7 @@ public class DashboardStack extends NestedStack {
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard")
-                .dashboardName(Utils.cleanInstanceId(instanceProperties))
+                .dashboardName(instanceProperties.cleanInstanceId())
                 .build();
 
         addErrorMetricsWidgets(errorMetrics);
@@ -219,8 +217,7 @@ public class DashboardStack extends NestedStack {
                         .metricName(metricName)
                         .dimensionsMap(Map.of(
                                 "BucketName", bucketName,
-                                "FilterId", "all"
-                        ))
+                                "FilterId", "all"))
                         .unit(Unit.COUNT)
                         .period(Duration.minutes(1))
                         .statistic("Sum")
@@ -233,8 +230,7 @@ public class DashboardStack extends NestedStack {
                         .metricName(metricName)
                         .dimensionsMap(Map.of(
                                 "BucketName", bucketName,
-                                "FilterId", "all"
-                        ))
+                                "FilterId", "all"))
                         .unit(Unit.COUNT)
                         .period(Duration.minutes(1))
                         .statistic("Sum")
@@ -260,8 +256,7 @@ public class DashboardStack extends NestedStack {
                         .left(errorMetrics)
                         .leftYAxis(YAxisProps.builder().min(0).build())
                         .width(12)
-                        .build()
-        );
+                        .build());
     }
 
     private void addTableWidgets() {

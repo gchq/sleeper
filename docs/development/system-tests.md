@@ -111,8 +111,8 @@ This command will build the system and run the default, quick system test suite:
 
 The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The quick test suite
 will run on one Sleeper instance, but other test suites will deploy more. A separate system test CDK stack will also
-be deployed with `SystemTestStandaloneApp`, for resources shared between tests. The system test stack will use the short
-ID as its stack name.
+be deployed with `SystemTestInfrastructureCdkApp`, for resources shared between tests. The system test stack will use
+the short ID as its stack name.
 
 You can avoid rebuilding the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`. This is useful if
 you've only changed test code and just want to re-run tests against the same instance.
@@ -168,8 +168,8 @@ an instance with the associated instance ID if one does not exist.
 ### Performance tests
 
 Performance tests use an ECS cluster to generate data, which we call the system test cluster. This is deployed in the
-system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
-non-performance tests, the system test stack is still deployed, but the system test cluster is not.
+system test CDK stack with `SystemTestInfrastructureCdkApp`. This is a CloudFormation stack with the short ID as its
+name. For non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
 When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
 additional costs, as data generation is done in AWS Fargate in tasks started for the specific test. You can also enable
@@ -221,6 +221,11 @@ otherwise not have been noticed.
 All figures are in rows per second, measured by start and finish time in a single process that either executes or
 directs the operation. For standard ingest and compaction this is an ECS task. For bulk import this is a Spark driver.
 
+These figures can be found by looking in the S3 bucket for the nightly dev tests. The summary.txt will tell you when the
+performance tests last ran. They are part of the expensive suites and run three times a week. To find which expensive
+suite to look into for the each test's results please check [system-test-suites](system-test-suites.md). The performance
+results for each test will be at {NIGHTLY_TEST_BUCKET}/{DATE_OF_TEST}/{SUITE_NAME}/{TEST_NAME}.log.
+
 | Version number | Test date  | Java compaction | DataFusion compaction | Standard ingest | EMR bulk import |
 |----------------|------------|-----------------|-----------------------|-----------------|-----------------|
 | 0.11.0         | 13/06/2022 | 366,000         |                       | 160,000         |                 |
@@ -253,3 +258,4 @@ directs the operation. For standard ingest and compaction this is an ECS task. F
 | 0.35.0         | 09/02/2026 | 250,432         | 4,187,338             | 194,904         | 3,449,223       |
 | 0.35.1         | 27/02/2026 | 261,300         | 3,733,464             | 178,526         | 3,538,171       |
 | 0.35.2         | 23/03/2026 | 238,817         | 3,751,770             | 184,576         | 3,567,103       |
+| 0.35.3         | 06/05/2026 | 224,064         | 3,874,728             | 186,955         | 3,500,007       |

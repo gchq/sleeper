@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ public class UpdatePropertiesRequestTestHelper {
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> noChanges(T properties) {
-        return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties);
+        return UpdatePropertiesRequest.fromBeforeAndAfter(properties, properties);
     }
 
     public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {
-        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
+        return UpdatePropertiesRequest.fromBeforeAndAfter(before, after);
     }
 }

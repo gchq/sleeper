@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
@@ -85,9 +86,14 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static DynamoDBTransactionLogStore forFiles(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             DynamoDbClient dynamoClient, S3Client s3Client) {
-        return new DynamoDBTransactionLogStore(
-                "file", instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
-                instanceProperties, tableProperties, dynamoClient, s3Client);
+        return builder()
+                .transactionDescription("file")
+                .logTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties)
+                .dynamoClient(dynamoClient)
+                .s3Client(s3Client)
+                .build();
     }
 
     /**
@@ -102,21 +108,31 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static DynamoDBTransactionLogStore forPartitions(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             DynamoDbClient dynamoClient, S3Client s3Client) {
-        return new DynamoDBTransactionLogStore(
-                "partition", instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
-                instanceProperties, tableProperties, dynamoClient, s3Client);
+        return builder()
+                .transactionDescription("partition")
+                .logTableName(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME))
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties)
+                .dynamoClient(dynamoClient)
+                .s3Client(s3Client)
+                .build();
     }
 
-    private DynamoDBTransactionLogStore(
-            String transactionDescription, String logTableName,
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            DynamoDbClient dynamoClient, S3Client s3Client) {
-        this.transactionDescription = transactionDescription;
-        this.logTableName = logTableName;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private DynamoDBTransactionLogStore(Builder builder) {
+        InstanceProperties instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        TableProperties tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
+        S3Client s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
+        this.transactionDescription = Objects.requireNonNull(builder.transactionDescription, "transactionDescription must not be null");
+        this.logTableName = Objects.requireNonNull(builder.logTableName, "logTableName must not be null");
         this.sleeperTable = tableProperties.getStatus();
-        this.dynamoClient = dynamoClient;
-        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
-        this.serDe = new TransactionSerDe(tableProperties.getSchema());
+        this.dynamoClient = Objects.requireNonNull(builder.dynamoClient, "dynamoClient must not be null");
+        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client,
+                builder.isForDeleteOnly ? null : TransactionSerDeProvider.forOneTable(tableProperties));
+        this.serDe = builder.isForDeleteOnly ? null : new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
@@ -225,5 +241,105 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
         return Map.of(TABLE_ID, item.get(TABLE_ID),
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
+    }
+
+    /**
+     * Builder for Dynamo DB transaction log store.
+     */
+    public static final class Builder {
+        String transactionDescription;
+        String logTableName;
+        InstanceProperties instanceProperties;
+        TableProperties tableProperties;
+        DynamoDbClient dynamoClient;
+        S3Client s3Client;
+        boolean isForDeleteOnly = false;
+
+        private Builder() {
+
+        }
+
+        /**
+         * Sets the transaction description.
+         *
+         * @param  transactionDescription the description of the transaction
+         * @return                        the builder
+         */
+        public Builder transactionDescription(String transactionDescription) {
+            this.transactionDescription = transactionDescription;
+            return this;
+        }
+
+        /**
+         * Sets the log table name.
+         *
+         * @param  logTableName the logTableName
+         * @return              the builder
+         */
+        public Builder logTableName(String logTableName) {
+            this.logTableName = logTableName;
+            return this;
+        }
+
+        /**
+         * Sets the instance properties.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    the builder
+         */
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        /**
+         * Sets the table properties.
+         *
+         * @param  tableProperties the table properties
+         * @return                 the builder
+         */
+        public Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
+        }
+
+        /**
+         * Sets the Dynamo DB client.
+         *
+         * @param  dynamoClient the Dynamo DB client
+         * @return              the builder
+         */
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
+            this.dynamoClient = dynamoClient;
+            return this;
+        }
+
+        /**
+         * Sets the S3 client.
+         *
+         * @param  s3Client the S3 client
+         * @return          the builder
+         */
+        public Builder s3Client(S3Client s3Client) {
+            this.s3Client = s3Client;
+            return this;
+        }
+
+        /**
+         * Sets if this log store is only going to be used for deletion.
+         * If it is only used for deletion the the SerDes don't need to be created.
+         * This allows us to delete tables even with invalid schema in S3.
+         *
+         * @param  isForDeleteOnly denotes is the log store will only be used for deletion
+         * @return                 the builder
+         */
+        public Builder isForDeleteOnly(boolean isForDeleteOnly) {
+            this.isForDeleteOnly = isForDeleteOnly;
+            return this;
+        }
+
+        public DynamoDBTransactionLogStore build() {
+            return new DynamoDBTransactionLogStore(this);
+        }
     }
 }

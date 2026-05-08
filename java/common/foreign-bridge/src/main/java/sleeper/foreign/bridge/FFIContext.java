@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ import java.util.Objects;
  * try-with-resources</a> construct:
  *
  * <pre>
- * Class<SomeFunctionClass> functions = ...;
- * try (FFIContext<SomeFunctionClass> context = getFFIContextSafely(functions)) {
+ * Class{@literal<SomeFunctionClass>} functions = ...;
+ * try (FFIContext{@literal<SomeFunctionClass>} context = getFFIContextSafely(functions)) {
  *   ...
  * }
  * </pre>
@@ -92,15 +92,14 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * This method is thread safe.
      *
-     * @param <T>           the interface type of the functions to be called in this
-     *                      context
-     * @param functionClass class type for the FFI interface
-     * @return a valid, open FFIContext for making FFI calls
+     * @param  <T>                  the interface type of the functions to be called in this
+     *                              context
+     * @param  functionClass        class type for the FFI interface
+     * @return                      a valid, open FFIContext for making FFI calls
      * @throws UncheckedIOException if the native library couldn't be loaded
-     * @see FFIContext#closeRootContext()
+     * @see                         FFIContext#closeRootContext()
      */
-    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass)
-            throws UncheckedIOException {
+    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws UncheckedIOException {
         synchronized (CONTEXT_LOCK) {
             try {
                 T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
@@ -123,10 +122,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * may be open and closed, but will throw {@link UnsupportedOperationException} if any foreign
      * functions are called on it.
      *
-     * @param <T>           the interface type of the functions to be called in this
-     *                      context
-     * @param functionClass class type for the FFI interface
-     * @return a valid, open FFIContext for making FFI calls OR a dummy context as a fallback
+     * @param  <T>           the interface type of the functions to be called in this
+     *                       context
+     * @param  functionClass class type for the FFI interface
+     * @return               a valid, open FFIContext for making FFI calls OR a dummy context as a fallback
      */
     public static <T extends ForeignFunctions> FFIContext<T> getFFIContextSafely(Class<T> functionClass) {
         try {
@@ -140,7 +139,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     static <T extends ForeignFunctions> FFIContext<T> createDummyContext(Class<T> functionClass, Exception e) {
         // create a dynamic proxy that implements T
         @SuppressWarnings("unchecked")
-        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[] {functionClass},
+        T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[]{functionClass},
                 (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "create_context":
@@ -219,7 +218,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Gets a pointer to the foreign context object.
      *
-     * @return foreign pointer
+     * @return                       foreign pointer
      * @throws IllegalStateException if this context has already been closed
      */
     public Pointer getForeignContext() {

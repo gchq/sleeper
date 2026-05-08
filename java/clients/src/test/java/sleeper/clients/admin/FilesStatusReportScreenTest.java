@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -52,16 +52,18 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
+class FilesStatusReportScreenTest extends AdminClientInMemoryTestBase {
     private final Schema schema = createSchemaWithKey("key", new StringType());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final String tableName = "test-table";
 
     @BeforeEach
     void setUp() {
+        tableProperties.set(TABLE_NAME, tableName);
         setInstanceProperties(instanceProperties, tableProperties);
+        setStateStoreForTable(tableName, stateStore);
         update(stateStore).initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
@@ -70,9 +72,6 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldRunFilesStatusReportWithDefaultArgs() throws Exception {
-        // Given
-        setStateStoreForTable("test-table", stateStore);
-
         // When
         String output = runClient()
                 .enterPrompts(FILES_STATUS_REPORT_OPTION,
@@ -93,9 +92,6 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldRunFilesStatusReportWithVerboseOption() throws Exception {
-        // Given
-        setStateStoreForTable("test-table", stateStore);
-
         // When
         String output = runClient()
                 .enterPrompts(FILES_STATUS_REPORT_OPTION,
@@ -120,9 +116,6 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldRunFilesStatusReportWithCustomMaxGC() throws Exception {
-        // Given
-        setStateStoreForTable("test-table", stateStore);
-
         // When
         String output = runClient()
                 .enterPrompts(FILES_STATUS_REPORT_OPTION,
@@ -148,7 +141,6 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
-        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
         // When

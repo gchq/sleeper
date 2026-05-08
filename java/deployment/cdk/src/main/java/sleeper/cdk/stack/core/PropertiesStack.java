@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class PropertiesStack extends NestedStack {
         SleeperLambdaCode lambdaCode = artefacts.lambdaCodeAtScope(this);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "properties-writer");
+                instanceProperties.cleanInstanceId(), "properties-writer");
 
         IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(LambdaHandler.INSTANCE_PROPERTIES_WRITER, "InstancePropertiesWriterLambda", builder -> builder
                 .functionName(functionName)

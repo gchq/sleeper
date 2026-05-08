@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,9 +177,20 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * @return           the value of the property
      */
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {
-        String value = get(property);
-        return Optional.ofNullable(value)
-                .map(mode -> EnumUtils.getEnumIgnoreCase(enumClass, mode))
-                .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + value));
+        return getOptionalEnumValue(property, enumClass)
+                .orElseThrow(() -> new IllegalArgumentException("Unrecognised value for " + property + ": " + get(property)));
+    }
+
+    /**
+     * Retrieves the value of a property of an enum type, if it was set.
+     *
+     * @param  <E>       the enum type representing valid values of the property
+     * @param  property  the property
+     * @param  enumClass the class of the enum representing valid values of the property
+     * @return           the value of the property, if it was set
+     */
+    default <E extends Enum<E>> Optional<E> getOptionalEnumValue(T property, Class<E> enumClass) {
+        return Optional.ofNullable(get(property))
+                .map(value -> EnumUtils.getEnumIgnoreCase(enumClass, value));
     }
 }

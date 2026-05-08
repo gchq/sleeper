@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 
 import java.util.List;
 import java.util.Map;
@@ -65,8 +66,9 @@ public class CopyJarProvider {
                 .logGroup(functionLogGroup)
                 .timeout(Duration.minutes(15)));
 
+        String wildcardJarsBucketName = SleeperArtefactsLocation.getDefaultJarsBucketName("*", "*");
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .resources(List.of("arn:aws:s3:::sleeper-*-jars", "arn:aws:s3:::sleeper-*-jars/*"))
+                .resources(List.of("arn:aws:s3:::" + wildcardJarsBucketName, "arn:aws:s3:::" + wildcardJarsBucketName + "/*"))
                 .actions(List.of(
                         "s3:PutObject",
                         "s3:ListMultipartUploadParts",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -45,13 +46,14 @@ public class ReinitialiseTableFromSplitPoints {
     private final String splitPointsFileLocation;
 
     public ReinitialiseTableFromSplitPoints(
+            String accountName,
             S3Client s3Client,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(accountName, s3Client, dynamoClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
@@ -90,9 +92,11 @@ public class ReinitialiseTableFromSplitPoints {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
             ReinitialiseTableFromSplitPoints reinitialiseTable = new ReinitialiseTableFromSplitPoints(
-                    s3Client, dynamoClient, instanceId, tableName,
+                    accountName, s3Client, dynamoClient, instanceId, tableName,
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");

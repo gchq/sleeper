@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public final class WebSocketQueryStack extends NestedStack {
     private void setupWebSocketApi(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
             SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
         IFunction webSocketApiHandler = lambdaCode.buildFunction(LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder
                 .functionName(functionName)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientTrackerFactory;
-import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
@@ -30,7 +29,6 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 
-import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
@@ -41,12 +39,12 @@ public class RunAdminClient {
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness harness;
     private final AdminClientProcessTrackerHolder trackers = new AdminClientProcessTrackerHolder();
-    private final UpdatePropertiesWithTextEditor editor;
+    private final PropertiesEditorTestHarness editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
-    RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
+    public RunAdminClient(ToStringConsoleOutput out, TestConsoleInput in,
             AdminConfigStoreTestHarness harness,
-            UpdatePropertiesWithTextEditor editor) {
+            PropertiesEditorTestHarness editor) {
         this.out = out;
         this.in = in;
         this.harness = harness;
@@ -65,68 +63,64 @@ public class RunAdminClient {
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after) throws Exception {
         harness.setInstanceProperties(before);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
+        editor.expectNextEdit(withChanges(before, after));
         return this;
     }
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
         harness.setInstanceProperties(before);
-        when(editor.openPropertiesFile(before, group))
-                .thenReturn(withChanges(before, after));
+        editor.expectNextEdit(withChanges(before, after), group);
         return this;
     }
 
     public RunAdminClient editAgain(InstanceProperties before, InstanceProperties after) throws Exception {
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
+        editor.expectNextEdit(withChanges(before, after));
         return this;
     }
 
     public RunAdminClient editFromStore(InstanceProperties properties,
             TableProperties before, TableProperties after) throws Exception {
         harness.setInstanceProperties(properties, before);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
+        editor.expectNextEdit(withChanges(before, after));
         return this;
     }
 
     public RunAdminClient editFromStore(InstanceProperties properties,
             TableProperties before, TableProperties after, PropertyGroup group) throws Exception {
         harness.setInstanceProperties(properties, before);
-        when(editor.openPropertiesFile(before, group))
-                .thenReturn(withChanges(before, after));
+        editor.expectNextEdit(withChanges(before, after), group);
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties) throws Exception {
         harness.setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties))
-                .thenReturn(noChanges(properties));
+        editor.expectNextEdit(noChanges(properties));
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, PropertyGroup propertyGroup) throws Exception {
         harness.setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties, propertyGroup))
-                .thenReturn(noChanges(properties));
+        editor.expectNextEdit(noChanges(properties), propertyGroup);
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, TableProperties tableProperties) throws Exception {
         harness.setInstanceProperties(properties, tableProperties);
-        when(editor.openPropertiesFile(tableProperties))
-                .thenReturn(noChanges(tableProperties));
+        editor.expectNextEdit(noChanges(tableProperties));
         return this;
     }
 
-    public String exitGetOutput() throws Exception {
+    public String exitGetOutput() {
         in.enterNextPrompt(EXIT_OPTION);
         return runGetOutput();
     }
 
-    public String runGetOutput() throws Exception {
-        harness.startClient(trackers, queueClient);
+    public String runGetOutput() {
+        try {
+            harness.startClient(trackers, queueClient);
+        } catch (Exception e) {
+            throw new AdminClientFailedException(out.toString(), e);
+        }
         return out.toString();
     }
 

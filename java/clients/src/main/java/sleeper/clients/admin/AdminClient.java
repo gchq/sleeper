@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.properties.CommandLinePropertiesEditor;
+import sleeper.clients.admin.properties.PropertiesEditor;
 import sleeper.clients.admin.screen.AdminMainScreen;
 import sleeper.clients.admin.screen.CompactionStatusReportScreen;
 import sleeper.clients.admin.screen.FilesStatusReportScreen;
@@ -33,7 +34,6 @@ import sleeper.clients.admin.screen.IngestBatcherReportScreen;
 import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -43,13 +43,11 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV2ClientHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
@@ -58,14 +56,14 @@ public class AdminClient {
     private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
     private final AdminClientTrackerFactory trackers;
-    private final UpdatePropertiesWithTextEditor editor;
+    private final PropertiesEditor editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers,
-            UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
+            PropertiesEditor editor, ConsoleOutput out, ConsoleInput in,
             QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.tableIndex = tableIndex;
         this.store = store;
@@ -85,13 +83,11 @@ public class AdminClient {
         Path scriptsDir = Path.of(args[0]);
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
-        Path jarsDir = scriptsDir.resolve("jars");
-        String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdk cdk = InvokeCdk.builder()
-                .jarsDirectory(jarsDir).version(version).build();
 
-        ConsoleOutput out = new ConsoleOutput(System.out);
-        ConsoleInput in = new ConsoleInput(System.console());
+        InvokeCdk cdk = InvokeCdk.fromScriptsDirectory(scriptsDir);
+
+        ConsoleOutput out = ConsoleOutput.stdOut();
+        ConsoleInput in = ConsoleInput.stdIn();
 
         int errorCode;
         try (S3Client s3Client = AwsV2ClientHelper.buildAwsV2Client(S3Client.builder());
@@ -100,14 +96,15 @@ public class AdminClient {
                 EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder());
                 StsClient stsClient = AwsV2ClientHelper.buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
             AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
-                    UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient),
-                    stsClient.getCallerIdentity().account(), regionProvider.getRegion().id());
-            errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir,
-                    uploadDockerImages, DockerImageConfiguration.getDefault(), out, in,
-                    new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
+                    UploadDockerImages.fromScriptsDirectory(scriptsDir, ecrClient),
+                    accountName, regionProvider.getRegion().id());
+            AdminClientPropertiesStore propertiesStore = new AdminClientPropertiesStore(
+                    accountName, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, DockerImageConfiguration.getDefault());
+            errorCode = start(instanceId, propertiesStore, AdminClientTrackerFactory.from(dynamoClient), out, in,
+                    new CommandLinePropertiesEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
                     properties -> PersistentEmrStepCount.byStatus(properties, emrClient));
         }
@@ -115,24 +112,21 @@ public class AdminClient {
     }
 
     public static int start(String instanceId,
-            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk, Path generatedDir,
-            UploadDockerImagesToEcr uploadDockerImages, DockerImageConfiguration dockerImageConfiguration,
-            ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
+            AdminClientPropertiesStore propertiesStore, AdminClientTrackerFactory trackerFactory,
+            ConsoleOutput out, ConsoleInput in, PropertiesEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
-        AdminClientPropertiesStore store = new AdminClientPropertiesStore(
-                s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, dockerImageConfiguration);
-        InstanceProperties instanceProperties;
+        TableIndex tableIndex;
         try {
-            instanceProperties = store.loadInstanceProperties(instanceId);
+            tableIndex = propertiesStore.loadTableIndex(instanceId);
         } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
             e.print(out);
             return 1;
         }
         new AdminClient(
-                new DynamoDBTableIndex(instanceProperties, dynamoClient),
-                store,
-                AdminClientTrackerFactory.from(dynamoClient),
+                tableIndex,
+                propertiesStore,
+                trackerFactory,
                 editor,
                 out, in,
                 queueClient, getStepCount)

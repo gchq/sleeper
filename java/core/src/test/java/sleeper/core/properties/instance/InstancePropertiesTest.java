@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package sleeper.core.properties.instance;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -277,7 +279,28 @@ class InstancePropertiesTest {
         // When /  Then
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
-                .hasMessage("Property sleeper.tags was invalid. It was \"" + tags + "\".");
+                .hasMessageContaining("Property sleeper.tags was invalid. It was \"" + tags + "\".");
+    }
+
+    @Nested
+    @DisplayName("Clean instance ID")
+    class CleanInstanceId {
+
+        InstanceProperties properties = createTestInstanceProperties();
+
+        @Test
+        void shouldConvertToLowerCase() {
+            properties.set(ID, "AnInstanceId");
+            assertThat(properties.cleanInstanceId())
+                    .isEqualTo("aninstanceid");
+        }
+
+        @Test
+        void shouldReplaceDotsWithDashes() {
+            properties.set(ID, "some.instance.id");
+            assertThat(properties.cleanInstanceId())
+                    .isEqualTo("some-instance-id");
+        }
     }
 
     private static InstanceProperties getSleeperProperties() {

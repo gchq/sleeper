@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,8 +88,12 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "buildx", "rm", "sleeper"));
     }
 
-    public static CommandPipeline createNewBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
+    public static CommandPipeline createBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper"));
+    }
+
+    public static CommandPipeline useBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "use", "sleeper"));
     }
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {

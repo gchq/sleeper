@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.cdk.lambdalayer.kubectl.v32.KubectlV32Layer;
+import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
@@ -90,11 +90,11 @@ public final class EksBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSDLQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSDLQ"))
                 .build();
 
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
@@ -108,7 +108,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .visibilityTimeout(Duration.minutes(3))
-                .queueName(String.join("sleeper", instanceId, "BulkImportEKSQ"))
+                .queueName(String.join("-", "sleeper", instanceId, "BulkImportEKSQ"))
                 .build();
 
         instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, bulkImportJobQueue.getQueueUrl());
@@ -138,8 +138,8 @@ public final class EksBulkImportStack extends NestedStack {
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
         Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
                 .clusterName(uniqueBulkImportId)
-                .version(KubernetesVersion.V1_32)
-                .kubectlLayer(new KubectlV32Layer(this, "KubectlLayer"))
+                .version(KubernetesVersion.V1_35)
+                .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"))
                 .vpc(coreStacks.getVpc())
                 .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
                 .build();
@@ -233,7 +233,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .definitionBody(DefinitionBody.fromChainable(
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
-                                        .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
+                                        .when(Condition.numberEquals("$.jobResult.succeeded", 1),
                                                 CustomState.Builder.create(this, "DeleteDriverPod")
                                                         .stateJson(deleteDriverPodState).build()
                                                         .next(CustomState.Builder.create(this, "DeleteJob")

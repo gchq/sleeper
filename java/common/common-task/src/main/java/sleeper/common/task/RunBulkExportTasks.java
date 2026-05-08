@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.common.task;
 
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,13 +33,15 @@ public class RunBulkExportTasks {
             System.out.println("Usage: <instance-id> <number-of-tasks>");
             return;
         }
+        String instanceId = args[0];
+        int numberOfTasks = Integer.parseInt(args[1]);
 
         try (S3Client s3Client = S3Client.create();
-                EcsClient ecsClient = EcsClient.create()) {
-            String instanceId = args[0];
-            int numberOfTasks = Integer.parseInt(args[1]);
+                EcsClient ecsClient = EcsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
 
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
             RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient)
                     .runToMeetTargetTasks(numberOfTasks);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.AdminClientInMemoryTestBase;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.core.table.TableStatus;
 
@@ -34,7 +34,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
-class TableNamesReportTest extends AdminClientMockStoreBase {
+class TableNamesReportTest extends AdminClientInMemoryTestBase {
 
     @Test
     void shouldPrintNoConfirm() throws Exception {
@@ -42,10 +42,9 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
         setInstanceTables(createValidInstanceProperties(),
                 onlineTable("test-table-1-id", "test-table-1"),
                 onlineTable("test-table-2-id", "test-table-2"));
-        TableNamesReport report = new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex);
 
         // When
-        report.print(false);
+        report().print(false);
         String output = out.toString();
 
         // Then
@@ -60,11 +59,10 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
         setInstanceTables(createValidInstanceProperties(),
                 onlineTable("test-table-1-id", "test-table-1"),
                 onlineTable("test-table-2-id", "test-table-2"));
-        TableNamesReport report = new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex);
 
         // When
         in.enterNextPrompt(CONFIRM_PROMPT);
-        report.print(true);
+        report().print(true);
 
         // Then
         String output = out.toString();
@@ -141,5 +139,9 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
 
     private static TableStatus offlineTable(String tableId, String tableName) {
         return uniqueIdAndName(tableId, tableName, false);
+    }
+
+    private TableNamesReport report() {
+        return new TableNamesReport(out.consoleOut(), in.consoleIn(), clientProperties.createTableIndex(instanceProperties));
     }
 }

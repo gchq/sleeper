@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package sleeper.cdk.artefacts;
 import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecr.TagStatus;
@@ -35,7 +37,10 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,23 +55,26 @@ public class SleeperArtefactRepositories {
     private final String deploymentId;
     private final List<String> extraEcrImages;
     private final ToDeploy deploy;
+    private final IBucket jarsBucket;
+    private final Map<LambdaJar, IRepository> jarToRepository = new HashMap<>();
+    private final Map<DockerDeployment, IRepository> deploymentToRepository = new HashMap<>();
+    private final List<IRepository> extraRepositories = new ArrayList<>();
 
     private SleeperArtefactRepositories(Builder builder) {
         scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
+        String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
-        if (deploy.isDeployJars()) {
-            createJarsBucket(scope, deploymentId);
-        }
+        jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
         if (deploy.isDeployImages()) {
             deployImages();
         }
     }
 
-    public static IBucket createJarsBucket(Construct scope, String deploymentId) {
+    public static IBucket createJarsBucket(Construct scope, String accountName, String deploymentId) {
         return Bucket.Builder.create(scope, "JarsBucket")
-                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
+                .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(accountName, deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -81,9 +89,25 @@ public class SleeperArtefactRepositories {
                 .build();
     }
 
+    public String getDeploymentId() {
+        return deploymentId;
+    }
+
+    public IBucket getJarsBucket() {
+        return Objects.requireNonNull(jarsBucket, "Jars bucket not deployed");
+    }
+
+    public IRepository getRepository(LambdaJar jar) {
+        return Objects.requireNonNull(jarToRepository.get(jar), "Repository not deployed for jar: " + jar);
+    }
+
+    public IRepository getRepository(DockerDeployment deployment) {
+        return Objects.requireNonNull(deploymentToRepository.get(deployment), "Repository not deployed for deployment: " + deployment);
+    }
+
     private void deployImages() {
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(jar.getImageName());
+            jarToRepository.put(jar, createRepository(jar.getImageName()));
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
@@ -96,9 +120,10 @@ public class SleeperArtefactRepositories {
                         .actions(List.of("ecr:BatchGetImage", "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer"))
                         .build());
             }
+            deploymentToRepository.put(deployment, repository);
         }
 
-        extraEcrImages.forEach(this::createRepository);
+        extraEcrImages.forEach(image -> extraRepositories.add(createRepository(image)));
     }
 
     private Repository createRepository(String imageName) {
@@ -126,16 +151,25 @@ public class SleeperArtefactRepositories {
     public static class Builder {
         private final Construct scope;
         private final String deploymentId;
+        private String accountName;
         private List<String> extraEcrImages;
         private ToDeploy deploy;
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
             this.deploymentId = deploymentId;
+            if (scope instanceof Stack stack) {
+                accountName = stack.getAccount();
+            }
         }
 
         public static Builder create(Construct scope, String deploymentId) {
             return new Builder(scope, deploymentId);
+        }
+
+        public Builder accountName(String accountName) {
+            this.accountName = accountName;
+            return this;
         }
 
         public Builder extraEcrImages(List<String> extraEcrImages) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,9 +147,11 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
+                        .accountName(instanceProperties.get(ACCOUNT))
                         .s3Client(s3Client)
                         .dynamoClient(dynamoClient)
                         .sqsClient(sqsClient)
+                        .stsClient(stsClient)
                         .awsCredentialsProvider(credentialsProvider))
                 .hadoopConf(hadoopConf)
                 .build();

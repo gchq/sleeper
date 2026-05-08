@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
@@ -61,22 +62,6 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
-            TableStatus table, JobQuery.Type queryType) {
-        this(compactionJobTracker, reporter, table, queryType, "");
-    }
-
-    public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobTracker,
-            CompactionJobStatusReporter reporter,
-            TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        this(compactionJobTracker, reporter,
-                JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                        Clock.systemUTC(), new ConsoleInput(System.console())));
-    }
-
-    public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobTracker,
-            CompactionJobStatusReporter reporter,
             JobQuery query) {
         this.compactionJobTracker = compactionJobTracker;
         this.compactionJobStatusReporter = reporter;
@@ -106,13 +91,16 @@ public class CompactionJobStatusReport {
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
             try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+                String accountName = stsClient.getCallerIdentity().account();
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                new CompactionJobStatusReport(tracker, reporter, table, queryType, queryParameters).run();
+                JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                new CompactionJobStatusReport(tracker, reporter, query).run();
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());

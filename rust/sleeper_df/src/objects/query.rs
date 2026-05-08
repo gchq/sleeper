@@ -1,6 +1,6 @@
 //! Query related FFI structs.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{
-    objects::{ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
-    unpack::unpack_string_array,
+use crate::objects::{
+    FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion,
 };
-use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::bail;
+use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
 use sleeper_core::LeafPartitionQueryConfig;
-use std::{ffi::c_char, slice};
+use std::slice;
 
 /// Contains all information needed for a Sleeper leaf partition query from a foreign function.
 ///
@@ -41,7 +40,7 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of requested value fields
     pub requested_value_fields_len: usize,
     /// Requested value fields.
-    pub requested_value_fields: *const *const c_char,
+    pub requested_value_fields: *const FFIBytes,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
@@ -62,7 +61,6 @@ impl FFILeafPartitionQueryConfig {
         };
         let common = ffi_common.to_common_config(file_output_enabled)?;
         let row_key_cols = ffi_common.row_key_cols()?;
-        let schema_types = ffi_common.schema_types()?;
 
         let Some(_) = (unsafe { self.query_regions.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig query_regions is NULL");
@@ -70,17 +68,20 @@ impl FFILeafPartitionQueryConfig {
 
         let ranges = unsafe { slice::from_raw_parts(self.query_regions, self.query_regions_len) }
             .iter()
-            .map(|ffi_reg| {
-                FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
-            })
+            .map(|ffi_reg| FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols))
             .collect::<Result<Vec<_>, _>>()?;
 
         let requested_value_columns = if self.requested_value_fields_set {
             Some(
-                unpack_string_array(self.requested_value_fields, self.requested_value_fields_len)?
-                    .into_iter()
-                    .map(String::from)
-                    .collect(),
+                unsafe {
+                    slice::from_raw_parts(
+                        self.requested_value_fields,
+                        self.requested_value_fields_len,
+                    )
+                }
+                .iter()
+                .map(|bytes| Ok(String::from(TryInto::<&str>::try_into(bytes)?)))
+                .collect::<Result<Vec<_>, color_eyre::Report>>()?,
             )
         } else {
             None

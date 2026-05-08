@@ -1,8 +1,6 @@
-//! This module contains a wrapper for an [`ObjectStore`] that adds logging functionality and customised multipart upload
-//! buffering size.
-//!
+//! This module contains a wrapper for an [`ObjectStore`] that adds logging functionality.
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +15,17 @@
  * limitations under the License.
  */
 use async_trait::async_trait;
-use futures::stream::BoxStream;
+use bytes::Bytes;
+use futures::{StreamExt, TryStreamExt, future::ready, stream::BoxStream};
 use log::{debug, info};
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
-    PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
+    CopyMode, CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
+    OBJECT_STORE_COALESCE_DEFAULT, ObjectMeta, ObjectStore, ObjectStoreExt, PutMultipartOptions,
+    PutOptions, PutPayload, PutResult, RenameOptions, RenameTargetMode, Result, UploadPart,
+    coalesce_ranges, path::Path,
 };
-use std::{pin::Pin, sync::Mutex};
+use std::{ops::Range, pin::Pin, sync::Mutex};
 
 /// Simple struct for storing various statistics about the operation of the store.
 #[derive(Debug, Default, Eq, PartialOrd, Ord, PartialEq, Clone)]
@@ -127,77 +128,74 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
 }
 
 #[async_trait]
+#[deny(clippy::missing_trait_methods)]
 impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
-        if !options.head {
+        {
             let stats = &mut *self
                 .internal
                 .lock()
                 .expect("LoggingObjectStore stats lock poisoned");
-            stats.get_count += 1;
-            match &options.range {
-                Some(GetRange::Bounded(get_range)) => {
-                    let len = get_range
-                        .end
-                        .checked_sub(get_range.start)
-                        .expect("Get range length is negative");
-                    stats.get_bytes_read += len;
-                    debug!(
-                        "{} GET request on {}/{} byte range {} to {} = {} bytes",
-                        self.prefix,
-                        self.path_prefix,
-                        location,
-                        get_range.start.to_formatted_string(&Locale::en),
-                        get_range.end.to_formatted_string(&Locale::en),
-                        len.to_formatted_string(&Locale::en),
-                    );
-                }
-                Some(GetRange::Offset(start_pos)) => {
-                    debug!(
-                        "{} GET request on {}/{} for byte {} to EOF",
-                        self.prefix,
-                        self.path_prefix,
-                        location,
-                        start_pos.to_formatted_string(&Locale::en)
-                    );
-                }
-                Some(GetRange::Suffix(pos)) => {
-                    debug!(
-                        "{} GET request on {}/{} for last {} bytes of object",
-                        self.prefix,
-                        self.path_prefix,
-                        location,
-                        pos.to_formatted_string(&Locale::en)
-                    );
-                }
-                None => {
-                    debug!(
-                        "{} GET request on {}/{} for complete file range",
-                        self.prefix, self.path_prefix, location
-                    );
+            if options.head {
+                stats.head_count += 1;
+                debug!(
+                    "{} HEAD request {}/{}",
+                    self.prefix, self.path_prefix, location
+                );
+            } else {
+                stats.get_count += 1;
+                match &options.range {
+                    Some(GetRange::Bounded(get_range)) => {
+                        let len = get_range
+                            .end
+                            .checked_sub(get_range.start)
+                            .expect("Get range length is negative");
+                        stats.get_bytes_read += len;
+                        debug!(
+                            "{} GET request on {}/{} byte range {} to {} = {} bytes",
+                            self.prefix,
+                            self.path_prefix,
+                            location,
+                            get_range.start.to_formatted_string(&Locale::en),
+                            get_range.end.to_formatted_string(&Locale::en),
+                            len.to_formatted_string(&Locale::en),
+                        );
+                    }
+                    Some(GetRange::Offset(start_pos)) => {
+                        debug!(
+                            "{} GET request on {}/{} for byte {} to EOF",
+                            self.prefix,
+                            self.path_prefix,
+                            location,
+                            start_pos.to_formatted_string(&Locale::en)
+                        );
+                    }
+                    Some(GetRange::Suffix(pos)) => {
+                        debug!(
+                            "{} GET request on {}/{} for last {} bytes of object",
+                            self.prefix,
+                            self.path_prefix,
+                            location,
+                            pos.to_formatted_string(&Locale::en)
+                        );
+                    }
+                    None => {
+                        debug!(
+                            "{} GET request on {}/{} for complete file range",
+                            self.prefix, self.path_prefix, location
+                        );
+                    }
                 }
             }
         }
         self.store.get_opts(location, options).await
     }
 
-    async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-        {
-            let stats = &mut *self
-                .internal
-                .lock()
-                .expect("LoggingObjectStore stats lock poisoned");
-            stats.head_count += 1;
-        }
-        debug!(
-            "{} HEAD request {}/{}",
-            self.prefix, self.path_prefix, location
-        );
-        self.store.head(location).await
-    }
-
-    async fn delete(&self, location: &Path) -> Result<()> {
-        self.store.delete(location).await
+    fn delete_stream(
+        &self,
+        locations: BoxStream<'static, Result<Path>>,
+    ) -> BoxStream<'static, Result<Path>> {
+        self.store.delete_stream(locations)
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
@@ -212,12 +210,8 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.list_with_delimiter(prefix).await
     }
 
-    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
-        self.store.copy(from, to).await
-    }
-
-    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
-        self.store.copy_if_not_exists(from, to).await
+    async fn copy_opts(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
+        self.store.copy_opts(from, to, options).await
     }
 
     async fn put_opts(
@@ -251,6 +245,44 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
             &self.prefix,
             format!("{}/{}", self.path_prefix, location),
         )) as Box<dyn MultipartUpload>)
+    }
+
+    async fn get_ranges(&self, location: &Path, ranges: &[Range<u64>]) -> Result<Vec<Bytes>> {
+        coalesce_ranges(
+            ranges,
+            |range| self.get_range(location, range),
+            OBJECT_STORE_COALESCE_DEFAULT,
+        )
+        .await
+    }
+
+    fn list_with_offset(
+        &self,
+        prefix: Option<&Path>,
+        offset: &Path,
+    ) -> BoxStream<'static, Result<ObjectMeta>> {
+        let offset = offset.clone();
+        self.list(prefix)
+            .try_filter(move |f| ready(f.location > offset))
+            .boxed()
+    }
+
+    async fn rename_opts(&self, from: &Path, to: &Path, options: RenameOptions) -> Result<()> {
+        let RenameOptions {
+            target_mode,
+            extensions,
+        } = options;
+        let copy_mode = match target_mode {
+            RenameTargetMode::Overwrite => CopyMode::Overwrite,
+            RenameTargetMode::Create => CopyMode::Create,
+        };
+        let copy_options = CopyOptions {
+            mode: copy_mode,
+            extensions,
+        };
+        self.copy_opts(from, to, copy_options).await?;
+        self.delete(from).await?;
+        Ok(())
     }
 }
 
@@ -312,7 +344,7 @@ impl MultipartUpload for LoggingMultipartUpload {
 mod tests {
     use super::*;
     use log::Level;
-    use object_store::{integration::*, memory::InMemory};
+    use object_store::{ObjectStoreExt, integration::*, memory::InMemory};
 
     #[tokio::test]
     async fn log_test() {

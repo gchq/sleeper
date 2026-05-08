@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -27,14 +28,17 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.statestore.StateStoreProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class DeleteTable {
@@ -44,18 +48,16 @@ public class DeleteTable {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final TablePropertiesStore tablePropertiesStore;
-    private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     public void delete(String tableName) {
-        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        TableProperties tableProperties = tablePropertiesStore.loadByNameNoValidation(tableName);
         /*
          * - First we clear the state store for the table. This needs to happen first so that if a transaction log
          * snapshot exists, it can be loaded when the transaction log state store updates.
@@ -64,11 +66,32 @@ public class DeleteTable {
          * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
          * table existed.
          */
-        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        buildTransactionLogStateStore(tableProperties).clearSleeperTable();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         snapshotMetadataStore(tableProperties).deleteAllSnapshots();
         tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
+    }
+
+    private TransactionLogStateStore buildTransactionLogStateStore(TableProperties tableProperties) {
+        DynamoDBTransactionLogStore.Builder builder = DynamoDBTransactionLogStore.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties)
+                .dynamoClient(dynamoClient)
+                .s3Client(s3Client)
+                .isForDeleteOnly(true);
+
+        return TransactionLogStateStore.builder().tableProperties(tableProperties)
+                .filesLogStore(builder
+                        .transactionDescription("file")
+                        .logTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                        .build())
+                .partitionsLogStore(builder
+                        .transactionDescription("partition")
+                        .logTableName(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME))
+                        .build())
+                .transactionBodyStore(new S3TransactionBodyStore(instanceProperties, s3Client, null))
+                .build();
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
@@ -79,18 +102,21 @@ public class DeleteTable {
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
         }
+        String instanceId = args[0];
         String tableName = args[1];
         boolean force = optionalArgument(args, 2).map("--force"::equals).orElse(false);
         if (!force) {
-            ConsoleInput input = new ConsoleInput(System.console());
+            ConsoleInput input = ConsoleInput.stdIn();
             String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
             if (!"y".equalsIgnoreCase(result)) {
                 return;
             }
         }
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             new DeleteTable(instanceProperties, s3Client, dynamoClient).delete(tableName);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -147,8 +148,10 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         Instant startTime = Instant.parse(args[2]);
         Dimensions dimensions;
         try (S3Client s3Client = S3Client.create();
-                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
             dimensions = new Dimensions(instanceProperties, tableProperties);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
     private static String buildFailureMessage(Map.Entry<SleeperProperty, String> failure) {
         SleeperProperty property = failure.getKey();
         String value = failure.getValue();
-        return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value) + ".";
+        return "Property " + property.getPropertyName() + " was invalid. It was " + quoteIfSet(value) + ". " +
+                "\nDescription:\n" + property.getDescription();
     }
 
     private static String quoteIfSet(String value) {

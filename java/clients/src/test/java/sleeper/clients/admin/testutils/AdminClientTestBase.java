@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,7 +27,6 @@ import sleeper.core.table.TableStatus;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.Mockito.mock;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
@@ -48,7 +46,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-    protected final UpdatePropertiesWithTextEditor editor = mock(UpdatePropertiesWithTextEditor.class);
+    protected final InMemoryPropertiesEditor editor = new InMemoryPropertiesEditor();
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

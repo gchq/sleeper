@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2025 Crown Copyright
+  ~ Copyright 2022-2026 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
     <parent>
         <artifactId>common</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.35.2</version>
+        <version>0.35.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -41,6 +41,10 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>autoscaling</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
-import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.DeployConfiguration;
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
-import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -46,9 +41,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
-import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.SYSTEM_TEST_INFRA;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
 
@@ -57,14 +52,18 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
 
     private final SystemTestParameters parameters;
     private final S3Client s3;
-    private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
+    private final SyncJars syncJars;
+    private final UploadDockerImagesToEcr dockerUploader;
+    private final InvokeCdk cdk;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
-        this.ecr = clients.getEcr();
         this.cloudFormation = clients.getCloudFormation();
+        this.syncJars = SystemTestDeploymentFactory.createSyncJars(parameters, clients);
+        this.dockerUploader = SystemTestDeploymentFactory.createDockerUploader(parameters, clients);
+        this.cdk = SystemTestDeploymentFactory.createInvokeCdk(parameters, clients);
     }
 
     @Override
@@ -97,11 +96,8 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
             Path propertiesFile = generatedDirectory.resolve("system-test.properties");
             deployProperties.save(propertiesFile);
-            InvokeCdk.builder()
-                    .jarsDirectory(parameters.getJarsDirectory())
-                    .runCommand(CommandUtils::runCommandLogOutput)
-                    .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone(propertiesFile));
+            cdk.invoke(SYSTEM_TEST_INFRA,
+                    CdkCommand.deploySystemTestStandalone(propertiesFile));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -111,26 +107,15 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        InvokeCdk.builder()
-                .jarsDirectory(parameters.getJarsDirectory())
-                .runCommand(CommandUtils::runCommandLogOutput)
-                .build().invoke(ARTEFACTS,
-                        CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId(), List.of(SYSTEM_TEST_IMAGE.getImageName())));
-        new SyncJars(s3, parameters.getJarsDirectory())
-                .sync(SyncJarsRequest.builder()
-                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
-                        .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
-                        .build());
+        cdk.invoke(ARTEFACTS,
+                CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId(), List.of(SYSTEM_TEST_IMAGE.getImageName())));
+        syncJars.sync(SyncJarsRequest.builder()
+                .deploymentId(parameters.getArtefactsDeploymentId())
+                .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
+                .build());
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
-        UploadDockerImagesToEcr dockerUploader = new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .scriptsDirectory(parameters.getScriptsDirectory())
-                        .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
-                        .commandRunner(CommandUtils::runCommandLogOutput)
-                        .build(),
-                CheckVersionExistsInEcr.withEcrClient(ecr), parameters.getAccount(), parameters.getRegion());
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
                 .images(List.of(SYSTEM_TEST_IMAGE))

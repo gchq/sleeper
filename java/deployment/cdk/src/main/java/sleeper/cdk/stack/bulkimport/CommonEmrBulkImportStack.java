@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -84,7 +83,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
         IRole role = new Role(scope, "Ec2Role", RoleProps.builder()
-                .roleName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-ec2"))
+                .roleName(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), "bulk-import-emr-ec2"))
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
@@ -133,7 +132,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
     }
 
     private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, IRole ec2Role, IKey ebsKey) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String instanceId = instanceProperties.cleanInstanceId();
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
@@ -212,7 +211,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .build();
         CfnSecurityConfiguration conf = CfnSecurityConfiguration.Builder.create(scope, "EMRSecurityConfiguration")
                 .name(String.join("-", "sleeper",
-                        Utils.cleanInstanceId(instanceProperties), "EMRSecurityConfigurationProps"))
+                        instanceProperties.cleanInstanceId(), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, conf.getName());

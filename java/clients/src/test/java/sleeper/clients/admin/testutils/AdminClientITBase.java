@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
-import sleeper.clients.deploy.container.InMemoryEcrRepositories;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -55,7 +54,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdk cdk = mock(InvokeCdk.class);
-    protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
@@ -66,7 +64,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Override
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
-        AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImagesToEcr(), dockerImageConfiguration,
+        AdminClient.start(instanceId, store(), AdminClientTrackerFactory.from(dynamoDB),
                 out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
     }
 
@@ -75,7 +73,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImagesToEcr(), dockerImageConfiguration);
+        return new AdminClientPropertiesStore(account, s3, dynamoDB, cdk, path, uploadDockerImagesToEcr(), dockerImageConfiguration);
     }
 
     private UploadDockerImagesToEcr uploadDockerImagesToEcr() {
@@ -88,7 +86,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version(version)
                         .build(),
-                ecrClient, account, region);
+                account, region);
     }
 
     @Override

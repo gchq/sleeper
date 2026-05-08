@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.util.List;
 
@@ -52,18 +53,8 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The version of Sleeper that is being used. This property is used to identify the correct " +
                     "jars in the S3 jars bucket and to select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
-    CdkDefinedInstanceProperty ADMIN_ROLE_ARN = Index.propertyBuilder("sleeper.admin.role.arn")
-            .description("The ARN of a role that has permissions to administer the instance.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
 
-    // Configuration
-    CdkDefinedInstanceProperty CONFIG_BUCKET = Index.propertyBuilder("sleeper.config.bucket")
-            .description("The S3 bucket name used to store configuration files.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-
-    //AWS Config
+    // CDK environment
     CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
@@ -72,10 +63,26 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty CDK_APP = Index.propertyBuilder("sleeper.cdk.app")
+            .description("Which CDK app was used to deploy the instance. If you use your own custom CDK " +
+                    "app, this should be left empty.\n" +
+                    "Possible values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
-    // Security Groups
+    // Security
+    CdkDefinedInstanceProperty ADMIN_ROLE_ARN = Index.propertyBuilder("sleeper.admin.role.arn")
+            .description("The ARN of a role that has permissions to administer the instance.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty ECS_SECURITY_GROUP = Index.propertyBuilder("sleeper.ecs.security.group.id")
             .description("The security group ID to be used for ECS tasks and services.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
+    // Configuration
+    CdkDefinedInstanceProperty CONFIG_BUCKET = Index.propertyBuilder("sleeper.config.bucket")
+            .description("The S3 bucket name used to store configuration files.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
@@ -779,6 +786,12 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
             .description("The endpoint of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+
+    // REST API
+    CdkDefinedInstanceProperty REST_API_URL = Index.propertyBuilder("sleeper.rest.api.url")
+            .description("The URL for the Sleeper REST API.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     @Override

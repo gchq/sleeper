@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package sleeper.clients.util.cdk;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.ClientJar;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,21 +32,6 @@ public class InvokeCdk {
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
-
-    public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
-        ARTEFACTS("sleeper.cdk.SleeperArtefactsCdkApp", InvokeCdk::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdk::systemTestJarFile),
-        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdk::systemTestJarFile);
-
-        private final String cdkAppClassName;
-        private final Function<InvokeCdk, Path> getCdkJarFile;
-
-        Type(String cdkAppClassName, Function<InvokeCdk, Path> getCdkJarFile) {
-            this.cdkAppClassName = cdkAppClassName;
-            this.getCdkJarFile = getCdkJarFile;
-        }
-    }
 
     private InvokeCdk(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
@@ -64,23 +47,13 @@ public class InvokeCdk {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), cdkCommand);
-    }
-
-    private static Type inferType(InstanceProperties instanceProperties) {
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return Type.SYSTEM_TEST;
-        } else {
-            return Type.STANDARD;
-        }
-    }
-
-    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
+    public void invoke(SleeperInternalCdkApp cdkApp, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        String appClassName = cdkApp.getCdkAppClassName();
+        Path jarFile = cdkApp.getCdkJarFile(jarsDirectory, version);
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
-                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
+                        jarFile, appClassName)));
         command.addAll(cdkCommand.command());
         command.addAll(cdkCommand.arguments());
         command.add("*");
@@ -90,14 +63,6 @@ public class InvokeCdk {
         if (exitCode != 0) {
             throw new CdkFailedException(exitCode);
         }
-    }
-
-    private Path cdkJarFile() {
-        return jarsDirectory.resolve(ClientJar.CDK.getFormattedFilename(version));
-    }
-
-    private Path systemTestJarFile() {
-        return jarsDirectory.resolve(String.format("system-test-cdk-%s.jar", version));
     }
 
     public static final class Builder {

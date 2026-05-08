@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,14 @@ public class NewInstanceValidator {
     }
 
     private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
-        String bucketName = String.join("-", "sleeper", instanceProperties.get(ID), "query", "results");
+        String bucketName = S3BucketName.create(instanceProperties, "query-results");
         if (doesBucketExist(bucketName)) {
             throw new IllegalArgumentException("Sleeper query results bucket exists: " + bucketName);
         }
     }
 
     private void checkDataBucketDoesNotExist(InstanceProperties instanceProperties) {
-        String bucketName = String.join("-", "sleeper", instanceProperties.get(ID), "table", "data");
+        String bucketName = S3BucketName.create(instanceProperties, "table-data");
         if (doesBucketExist(bucketName)) {
             throw new IllegalArgumentException("Sleeper data bucket exists: " + bucketName);
         }

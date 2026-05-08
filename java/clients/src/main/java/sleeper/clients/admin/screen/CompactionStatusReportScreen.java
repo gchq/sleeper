@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -101,8 +102,9 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
+        JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), in);
         new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
-                new StandardCompactionJobStatusReporter(out.printStream()), table, queryType, queryParameters).run();
+                new StandardCompactionJobStatusReporter(out.printStream()), query).run();
         confirmReturnToMainScreen(out, in);
     }
 
