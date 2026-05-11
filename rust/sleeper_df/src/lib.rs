@@ -28,10 +28,7 @@ use ::log::{error, warn};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{
-    CompletedOutput, run_compaction, run_query, simulate_compaction_row_reads,
-    stream_to_ffi_arrow_stream,
-};
+use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::{c_char, c_int};
 
 mod context;
