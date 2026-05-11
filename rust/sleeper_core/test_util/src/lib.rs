@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::dummy_exec::DummyExec;
 use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
@@ -33,18 +32,15 @@ use datafusion::{
         data_type::AsBytes,
         file::properties::WriterProperties,
     },
-    physical_plan::ExecutionPlan,
 };
 use futures::StreamExt;
 use object_store::ObjectStoreExt;
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
-use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, sleeper_context::SleeperContext};
-use std::{collections::HashMap, fs::File, sync::Arc, time::Duration};
+use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
+use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
-
-mod dummy_exec;
 
 #[macro_export]
 macro_rules! assert_error {
@@ -294,31 +290,4 @@ pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
         upper: PartitionBound::Int32(max),
         upper_inclusive: false,
     }
-}
-
-/// Simulates running compactions for metric reading purposes.
-///
-/// Creates two compactions called "compact_1" and "compact_2". Some row counts are updated after a few seconds delay.
-/// After 1 seconds both will report 10 rows read.
-/// After 2 seconds compact_1 will be dropped and compact_2 will report 20 rows read.
-/// After 3 seconds compact_2 will be dropped
-#[allow(clippy::doc_markdown)]
-pub async fn simulate_compaction_row_reads(sleeper_context: &SleeperContext) {
-    let compact_1 = Arc::new(DummyExec::default());
-    let compact_2 = Arc::new(DummyExec::default());
-
-    sleeper_context.set_filter_stage("compact_1", &(compact_1.clone() as Arc<dyn ExecutionPlan>));
-    sleeper_context.set_filter_stage("compact_2", &(compact_2.clone() as Arc<dyn ExecutionPlan>));
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
-    compact_1.add_output_rows(10);
-    compact_2.add_output_rows(10);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
-    drop(compact_1);
-    compact_2.add_output_rows(10);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
 }

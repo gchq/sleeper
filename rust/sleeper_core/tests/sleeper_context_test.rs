@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use sleeper_core::sleeper_context::SleeperContext;
+use sleeper_core::{simulate_compaction_row_reads, sleeper_context::SleeperContext};
 use std::{sync::Arc, time::Duration};
-use test_util::simulate_compaction_row_reads;
 
 #[tokio::test]
 async fn should_report_compaction_values_after_time() {

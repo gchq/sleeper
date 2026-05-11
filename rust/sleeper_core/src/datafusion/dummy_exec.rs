@@ -23,6 +23,8 @@ use datafusion::{
 };
 use std::{any::Any, sync::Arc};
 
+/// An implementation of an execution plan stage, purely for testing. Invoking most
+/// functions will cause a panic.
 #[derive(Debug)]
 pub struct DummyExec(ExecutionPlanMetricsSet, Count);
 

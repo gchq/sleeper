@@ -4419,7 +4419,6 @@ dependencies = [
  "rust_sketch",
  "sleeper_core",
  "tempfile",
- "tokio",
  "url",
 ]
 

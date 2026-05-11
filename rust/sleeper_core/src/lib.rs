@@ -35,7 +35,8 @@ pub use crate::datafusion::output::CompletedOutput;
 pub use common_config::{CommonConfig, CommonConfigBuilder};
 pub use datafusion::{
     ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperRegion, sketch::DataSketchVariant, stream_to_ffi_arrow_stream,
+    SleeperRegion, simulate_compaction_row_reads, sketch::DataSketchVariant,
+    stream_to_ffi_arrow_stream,
 };
 pub use objectstore_ext::s3::AwsConfig;
 
