@@ -40,10 +40,10 @@ import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
-import sleeper.systemtest.configuration.SystemTestDockerRepository;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -112,7 +112,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestTaskDefinitionFamily", taskDefinitionFamilyOutputProps);
 
-        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", SystemTestDockerRepository.getRepositoryName(instanceProperties));
+        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", DockerDeployment.SYSTEM_TEST.getEcrRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
