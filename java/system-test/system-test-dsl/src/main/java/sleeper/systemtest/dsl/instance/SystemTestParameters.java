@@ -321,7 +321,6 @@ public class SystemTestParameters {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                     .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
-                    .findDirectories()
                     .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
                             .map(Path::of)
                             .orElse(null))

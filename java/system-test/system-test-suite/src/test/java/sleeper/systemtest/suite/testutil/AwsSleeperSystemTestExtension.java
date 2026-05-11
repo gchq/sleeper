@@ -43,6 +43,7 @@ public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
                 .account(clients.getSts().getCallerIdentity().account())
                 .region(new DefaultAwsRegionProviderChain().getRegion().id())
                 .loadFromSystemProperties()
+                .findDirectories()
                 .build();
     }
 }
