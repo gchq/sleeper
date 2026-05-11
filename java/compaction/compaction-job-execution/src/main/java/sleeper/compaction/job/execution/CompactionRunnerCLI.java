@@ -116,7 +116,7 @@ public class CompactionRunnerCLI {
         Region region = regionSupplier.getPartitionRegion(tableProperties, job.getPartitionId());
         CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
         for (int i = 0; i < times; i++) {
-            runner.compact(job, tableProperties, region);
+            runner.compact(job, tableProperties, region, null);
         }
     }
 

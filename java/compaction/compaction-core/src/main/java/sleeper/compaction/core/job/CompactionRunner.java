@@ -21,7 +21,7 @@ import sleeper.core.range.Region;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
@@ -31,46 +31,51 @@ public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
      *
+     * An optional progress callback can be supplied which will receive notifications of compactions progress. The rate
+     * and regularity of progress updates is at the discretion of the implementation. Callbacks may receive the same row
+     * count multiple times. Implementations MUST call the callback function once the compaction has finished.
+     *
      * @param  job                       the job
      * @param  tableProperties           the configuration of the Sleeper table this takes place in
      * @param  region                    the region to be read for the compaction (usually the region of the partition
      *                                   it takes place in)
+     * @param  progressCallback          callback for compaction progress notifications
      * @return                           a report of the number of rows processed
      * @throws IOException               a failure reading or writing files
      * @throws IteratorCreationException a problem creating any configured iterators
      */
-    RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
+    RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region, Consumer<Long> progressCallback) throws IOException, IteratorCreationException;
 
-    /**
-     * Gets the number of input rows read by a compaction that is currently executing.
-     *
-     * The compactor should regularly update the count of the number of rows read during a compaction. By polling this
-     * method, it is possible to determine if a compaction is making progress. It is intended to use this to report
-     * on currently running compactions. Once a compaction is finished, it may not be possible to get a count. An empty
-     * optional is returned if no information is available for the given job.
-     *
-     * The default implementation simply returns an empty value.
-     *
-     * @implNote                      this method MUST be thread safe! It must be safe to call this method while
-     *                                another thread is executing
-     *                                {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
-     * @param    compactionJobId      id for compaction job to lookup
-     * @return                        the number of rows read by the requested compaction, if available
-     * @throws   NullPointerException if compactionJobId is null
-     * @throws   IOException          if trying to read the row count fails on IO
-     */
-    default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
-        return Optional.empty();
-    }
+    // /**
+    //  * Gets the number of input rows read by a compaction that is currently executing.
+    //  *
+    //  * The compactor should regularly update the count of the number of rows read during a compaction. By polling this
+    //  * method, it is possible to determine if a compaction is making progress. It is intended to use this to report
+    //  * on currently running compactions. Once a compaction is finished, it may not be possible to get a count. An empty
+    //  * optional is returned if no information is available for the given job.
+    //  *
+    //  * The default implementation simply returns an empty value.
+    //  *
+    //  * @implNote                      this method MUST be thread safe! It must be safe to call this method while
+    //  *                                another thread is executing
+    //  *                                {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
+    //  * @param    compactionJobId      id for compaction job to lookup
+    //  * @return                        the number of rows read by the requested compaction, if available
+    //  * @throws   NullPointerException if compactionJobId is null
+    //  * @throws   IOException          if trying to read the row count fails on IO
+    //  */
+    // default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
+    //     return Optional.empty();
+    // }
 
-    /**
-     * Convenience method for calling with a job object.
-     *
-     * @param  job         compaction job to look up
-     * @return             the number of rows read by the requested compaction, if available
-     * @throws IOException if trying to read the row count fails on IO
-     */
-    default Optional<Long> getCompactionRowsRead(CompactionJob job) throws IOException {
-        return getCompactionRowsRead(job.getId());
-    }
+    // /**
+    //  * Convenience method for calling with a job object.
+    //  *
+    //  * @param  job         compaction job to look up
+    //  * @return             the number of rows read by the requested compaction, if available
+    //  * @throws IOException if trying to read the row count fails on IO
+    //  */
+    // default Optional<Long> getCompactionRowsRead(CompactionJob job) throws IOException {
+    //     return getCompactionRowsRead(job.getId());
+    // }
 }

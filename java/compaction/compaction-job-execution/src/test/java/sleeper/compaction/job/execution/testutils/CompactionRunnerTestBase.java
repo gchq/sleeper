@@ -85,14 +85,18 @@ public class CompactionRunnerTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected void runTask(CompactionJob job) throws Exception {
-        runTask(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    protected Configuration hadoopConfigForECS() {
+        return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
-    protected void runTask(CompactionJob job, Configuration hadoopConf) throws Exception {
+    protected void runTask(CompactionJob job) throws Exception {
+        runTask(job, hadoopConfigForECS(), null);
+    }
+
+    protected void runTask(CompactionJob job, Configuration hadoopConf, Consumer<Long> progressCallback) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
-        compactionTaskTestHelper().runTask(runner, List.of(job));
+        compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
     }
 
     protected FileReference outputFileReference(CompactionJob job, long numberOfRows) {

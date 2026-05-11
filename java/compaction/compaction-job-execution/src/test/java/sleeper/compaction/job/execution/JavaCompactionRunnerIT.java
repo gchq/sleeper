@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -31,21 +30,12 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.core.util.ObjectFactory;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -157,31 +147,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
     class TrackProgress {
 
         @Test
-        void shouldReturnEmptyOptionalForUnknownJobIdBeforeAnyCompaction() {
-            // Given
-            JavaCompactionRunner runner = new JavaCompactionRunner(
-                    ObjectFactory.noUserJars(),
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
-                    createSketchesStore());
-
-            // When / Then
-            assertThat(runner.getCompactionRowsRead("not-a-job")).isEmpty();
-        }
-
-        @Test
-        void shouldThrowNullPointerExceptionWhenJobIdIsNull() {
-            // Given
-            JavaCompactionRunner runner = new JavaCompactionRunner(
-                    ObjectFactory.noUserJars(),
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
-                    createSketchesStore());
-
-            // When / Then
-            assertThatNullPointerException().isThrownBy(() -> runner.getCompactionRowsRead((String) null));
-        }
-
-        @Test
-        void shouldReportRowsReadFromAnotherThreadWhileCompactionIsRunning() throws Exception {
+        void shouldReportProgress() throws Exception {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
             tableProperties.setSchema(schema);
@@ -194,42 +160,18 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
             assignJobIdToInputFiles(stateStore, compactionJob);
-            Region region = stateStore.getPartition(compactionJob.getPartitionId()).getRegion();
 
-            // The compaction thread will arrive at the phaser inside the final updateRowCount call;
-            // the test thread arrives once it has observed the reported value, allowing both threads to advance.
-            Phaser phaser = new Phaser(2);
-            JavaCompactionRunner runner = new JavaCompactionRunner(
-                    ObjectFactory.noUserJars(),
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
-                    createSketchesStore()) {
-                @Override
-                protected void updateRowCount(AtomicLong counter, long newRowsRead) {
-                    super.updateRowCount(counter, newRowsRead);
-                    phaser.arriveAndAwaitAdvance();
-                }
-            };
+            AtomicLong progressCount = new AtomicLong(0);
 
             // When
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            try {
-                Future<RowsProcessed> compactionResult = executor.submit(
-                        () -> runner.compact(compactionJob, tableProperties, region));
+            runTask(compactionJob, hadoopConfigForECS(), l -> progressCount.set(l));
 
-                // Wait for the compaction thread to reach the final updateRowCount call,
-                // then read the reported value while it is paused there.
-                phaser.arriveAndAwaitAdvance();
-                Optional<Long> reportedRowsRead = runner.getCompactionRowsRead(compactionJob);
-
-                // Then the running compaction reports the rows it has read so far.
-                assertThat(reportedRowsRead).contains(200L);
-
-                // Let the compaction finish and verify it completed successfully.
-                RowsProcessed processed = compactionResult.get(30, TimeUnit.SECONDS);
-                assertThat(processed).isEqualTo(new RowsProcessed(200, 200));
-            } finally {
-                executor.shutdownNow();
-            }
+            // Then
+            //  - Read output file and check that it contains the right results
+            assertThat(progressCount.get()).isEqualTo(199);
+            assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 200));
+            assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
+                    .isEqualTo(CompactionRunnerTestData.combineSortedBySingleKey(data1, data2));
         }
     }
 

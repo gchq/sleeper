@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.google.common.cache.CacheBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
@@ -48,10 +47,7 @@ import sleeper.sketches.store.SketchesStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
@@ -60,12 +56,6 @@ public class JavaCompactionRunner implements CompactionRunner {
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
     private final SketchesStore sketchesStore;
-    /* Progress counts using weak values. Once the value is GC'd, the entry is removed from the map. */
-    private final ConcurrentMap<String, AtomicLong> progressCounts = CacheBuilder
-            .newBuilder()
-            .weakValues()
-            .<String, AtomicLong>build()
-            .asMap();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaCompactionRunner.class);
 
@@ -76,14 +66,7 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException {
-        /*
-         * Used as a convenient mutable wrapper. This reference will keep the mapping string -> count mapping alive in
-         * progress map while the compaction is executing. Once the compaction finishes and the strong reference to
-         * this variable goes out of scope, the mapping will become eligible for GC.
-         */
-        AtomicLong valueHolder = new AtomicLong(0L);
-        progressCounts.put(compactionJob.getId(), valueHolder);
+    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Region region, Consumer<Long> callback) throws IOException, IteratorCreationException {
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
@@ -109,8 +92,8 @@ public class JavaCompactionRunner implements CompactionRunner {
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
             rowsRead++;
-            if (0 == rowsRead % 50_000) {
-                updateRowCount(valueHolder, rowsRead);
+            if (0 == rowsRead % 50_000 && callback != null) {
+                callback.accept(rowsRead);
             }
             sketches.update(row);
             // Write out
@@ -120,7 +103,9 @@ public class JavaCompactionRunner implements CompactionRunner {
                 LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
-        updateRowCount(valueHolder, rowsRead);
+        if (callback != null) {
+            callback.accept(rowsRead);
+        }
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
@@ -174,25 +159,5 @@ public class JavaCompactionRunner implements CompactionRunner {
         return new IteratorFactory(objectFactory)
                 .getIterator(config, schema)
                 .applyTransform(mergingIterator);
-    }
-
-    /**
-     * Updates the progress counter for the currently executing compaction. Extracted so that tests can subclass and
-     * intercept progress updates (for example, to pause the compaction thread while another thread observes the
-     * reported value).
-     *
-     * @param counter     the per-job counter holding the current rows-read value
-     * @param newRowsRead the latest rows-read count to report
-     */
-    protected void updateRowCount(AtomicLong counter, long newRowsRead) {
-        counter.set(newRowsRead);
-    }
-
-    @Override
-    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException {
-        return Optional
-                .ofNullable(
-                        progressCounts.getOrDefault(Objects.requireNonNull(compactionJobId, "compactionJobId"), null))
-                .map(AtomicLong::get);
     }
 }
