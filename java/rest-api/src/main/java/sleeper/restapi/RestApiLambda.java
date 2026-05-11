@@ -113,7 +113,7 @@ public class RestApiLambda {
         try {
             tableProperties = request.toTableProperties(instanceProperties);
             splitPoints = request.toSplitPoints(tableProperties);
-        } catch (IllegalArgumentException | RuntimeException e) {
+        } catch (RuntimeException e) {
             // SchemaSerDe / split-point parsing surface invalid input as runtime exceptions.
             LOGGER.warn("Add table request was invalid", e);
             return errorResponse(400, "invalid_request", e.getMessage());

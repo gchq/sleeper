@@ -30,10 +30,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Decoded JSON body for {@code POST /sleeper/tables}. Contains the table properties as a key/value map, the schema as
- * a JSON object, and an optional list of split points as JSON values. Conversion to the typed
- * {@link TableProperties} and {@code List<Object>} expected by {@code SleeperClient.addTable} happens here so the
- * lambda handler stays thin.
+ * Class for the table request. TODO expand.
  */
 public class AddTableRequest {
 
@@ -54,7 +51,7 @@ public class AddTableRequest {
     }
 
     /**
-     * Builds the {@link TableProperties} described by this request, applying the schema.
+     * Converts to table properties. TODO Expand.
      *
      * @param  instanceProperties the instance the table will be added to
      * @return                    the table properties (not yet validated)
