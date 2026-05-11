@@ -68,6 +68,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -517,6 +520,61 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(expected);
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, expected));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle reading compaction progress")
+    class CompactionProgress {
+
+        @Test
+        void shouldReadCompactionProgress() throws Exception {
+            //Given
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+                /*
+                 * See rust/sleeper_core/src/datafusion.rs simulate_compaction_row_reads() function for timings and
+                 * expected results.
+                 */
+                CompactionRunner runner = new DataFusionCompactionRunner(
+                        DataFusionAwsConfig.overrideEndpoint("dummy"), new Configuration(), context);
+
+                // Then - should be no reports yet
+                assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
+                assertThat(runner.getCompactionRowsRead("compact_2")).isEmpty();
+
+                // When / Then - check reports from simulated compactions
+                Future<?> rowsRead = executorService.submit(() -> {
+                    Thread.sleep(500);
+
+                    // After 0.5 seconds, we should see zero progress
+                    assertThat(runner.getCompactionRowsRead("compact_1")).contains(0L);
+                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(0L);
+
+                    // After 1 second, should see progress
+                    Thread.sleep(1000);
+                    assertThat(runner.getCompactionRowsRead("compact_1")).contains(10L);
+                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(10L);
+
+                    // After 2 seconds, should see compact_1 done and compact_2 progress
+                    Thread.sleep(1000);
+                    assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
+                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(20L);
+                    return null;
+                });
+
+                // When - start a compaction
+                context.getFunctions().simulate_compaction(context);
+
+                // Then - test we can read progress
+                rowsRead.get();
+
+                // When compactions finish - should be no reports
+                assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
+                assertThat(runner.getCompactionRowsRead("compact_2")).isEmpty();
+            } finally {
+                executorService.shutdownNow();
+            }
         }
     }
 

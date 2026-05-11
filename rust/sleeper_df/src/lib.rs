@@ -28,7 +28,10 @@ use ::log::{error, warn};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
+use sleeper_core::{
+    CompletedOutput, run_compaction, run_query, simulate_compaction_row_reads,
+    stream_to_ffi_arrow_stream,
+};
 use std::ffi::{c_char, c_int};
 
 mod context;
@@ -365,7 +368,7 @@ pub extern "C" fn native_query_file(
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
-pub extern "C" fn get_compaction_rows_read(
+pub extern "C" fn native_get_compaction_rows_read(
     ctx_ptr: *const FFIContext,
     c_job_id: *const c_char,
     output_ptr: *mut FFIFileResult,
@@ -400,4 +403,23 @@ pub extern "C" fn get_compaction_rows_read(
     } else {
         -1
     }
+}
+
+/// Run a simulated compaction. This is for testing purposes only.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[unsafe(no_mangle)]
+pub extern "C" fn native_simulate_compaction(ctx_ptr: *const FFIContext) -> c_int {
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("NULL context pointer");
+        return EFAULT;
+    };
+
+    let sleeper_context = &context.sleeper_context;
+
+    context
+        .rt
+        .block_on(simulate_compaction_row_reads(sleeper_context));
+
+    0
 }
