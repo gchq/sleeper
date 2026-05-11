@@ -44,8 +44,11 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -138,9 +141,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             return t;
         });
 
-        ProgressPoller poller = new ProgressPoller(job.getId(), progressCallback);
+        Future<?> poller = CompletableFuture.completedFuture(null);
         if (progressCallback != null) {
-            executorService.submit(poller);
+            poller = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
         }
 
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
@@ -152,11 +155,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
         try {
             executorService.shutdownNow();
+            poller.get();
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                 LOGGER.warn("Compaction progress monitoring thread still running");
             }
         } catch (InterruptedException ignored) {
             // doesn't matter
+        } catch (ExecutionException e) {
+            throw new IOException(e);
         }
 
         if (result.getRowsWritten() < 1) {
