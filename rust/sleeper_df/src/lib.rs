@@ -404,22 +404,3 @@ pub extern "C" fn native_get_compaction_rows_read(
         -1
     }
 }
-
-/// Run a simulated compaction. This is for testing purposes only.
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-#[unsafe(no_mangle)]
-pub extern "C" fn native_simulate_compaction(ctx_ptr: *const FFIContext) -> c_int {
-    // Null check the context pointer
-    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
-        error!("NULL context pointer");
-        return EFAULT;
-    };
-
-    let sleeper_context = &context.sleeper_context;
-
-    context
-        .rt
-        .block_on(simulate_compaction_row_reads(sleeper_context));
-
-    0
-}

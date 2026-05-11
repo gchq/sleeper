@@ -66,20 +66,4 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
     @SuppressWarnings(value = "checkstyle:parametername")
     int native_get_compaction_rows_read(@In Pointer ctx_ptr, String job_id, @Out FFIFileResult output_ptr);
-
-    /**
-     * Runs a simulated compaction, purely for testing.
-     *
-     * This method is purely for testing the correct operation of
-     * {@link DataFusionCompactionFunctions#get_compaction_rows_read(FFIContext, String, FFIFileResult)}.
-     *
-     * @param  context Java context object
-     * @return         0 on success
-     */
-    default int simulate_compaction(FFIContext<DataFusionCompactionFunctions> context) {
-        return native_simulate_compaction(context.getForeignContext());
-    }
-
-    @SuppressWarnings(value = "checkstyle:parametername")
-    int native_simulate_compaction(@In Pointer ctx_ptr);
 }

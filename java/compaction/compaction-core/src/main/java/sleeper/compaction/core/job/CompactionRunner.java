@@ -35,11 +35,14 @@ public interface CompactionRunner {
      * and regularity of progress updates is at the discretion of the implementation. Callbacks may receive the same row
      * count multiple times. Implementations MUST call the callback function once the compaction has finished.
      *
+     * <strong>Note:</strong> Callback code must be thread safe as it not specified which thread will call it, i.e. it
+     * may not be the thread running the compaction that sends progress notifications.
+     *
      * @param  job                       the job
      * @param  tableProperties           the configuration of the Sleeper table this takes place in
      * @param  region                    the region to be read for the compaction (usually the region of the partition
      *                                   it takes place in)
-     * @param  progressCallback          callback for compaction progress notifications
+     * @param  progressCallback          callback for compaction progress notifications, may be null
      * @return                           a report of the number of rows processed
      * @throws IOException               a failure reading or writing files
      * @throws IteratorCreationException a problem creating any configured iterators

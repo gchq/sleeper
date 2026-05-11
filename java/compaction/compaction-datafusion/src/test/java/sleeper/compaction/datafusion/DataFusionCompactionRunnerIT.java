@@ -68,9 +68,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -529,62 +528,41 @@ public class DataFusionCompactionRunnerIT {
 
         @Test
         void shouldReadCompactionProgress() throws Exception {
-            //Given
-            ExecutorService executorService = Executors.newSingleThreadExecutor();
-            try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
-                /*
-                 * See rust/sleeper_core/src/datafusion.rs simulate_compaction_row_reads() function for timings and
-                 * expected results.
-                 */
-                CompactionRunner runner = new DataFusionCompactionRunner(
-                        DataFusionAwsConfig.overrideEndpoint("dummy"), new Configuration(), context);
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", 1));
+            Row row2 = new Row(Map.of("key", 2));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
-                // Then - should be no reports yet
-                assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
-                assertThat(runner.getCompactionRowsRead("compact_2")).isEmpty();
+            AtomicLong progressCount = new AtomicLong(0);
 
-                // When / Then - check reports from simulated compactions
-                Future<?> rowsRead = executorService.submit(() -> {
-                    Thread.sleep(500);
+            // When
+            runTask(job, l -> progressCount.set(l));
 
-                    // After 0.5 seconds, we should see zero progress
-                    assertThat(runner.getCompactionRowsRead("compact_1")).contains(0L);
-                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(0L);
-
-                    // After 1 second, should see progress
-                    Thread.sleep(1000);
-                    assertThat(runner.getCompactionRowsRead("compact_1")).contains(10L);
-                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(10L);
-
-                    // After 2 seconds, should see compact_1 done and compact_2 progress
-                    Thread.sleep(1000);
-                    assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
-                    assertThat(runner.getCompactionRowsRead("compact_2")).contains(20L);
-                    return null;
-                });
-
-                // When - start a compaction
-                context.getFunctions().simulate_compaction(context);
-
-                // Then - test we can read progress
-                rowsRead.get();
-
-                // When compactions finish - should be no reports
-                assertThat(runner.getCompactionRowsRead("compact_1")).isEmpty();
-                assertThat(runner.getCompactionRowsRead("compact_2")).isEmpty();
-            } finally {
-                executorService.shutdownNow();
-            }
+            // Then
+            assertThat(progressCount.get()).isEqualTo(2);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(row1, row2);
+            assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
         }
     }
 
     private void runTask(CompactionJob job) throws Exception {
+        runTask(job, null);
+    }
+
+    private void runTask(CompactionJob job, Consumer<Long> progressCallback) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(
                     // DataFusion spends time trying to auth with AWS unless you override it
                     DataFusionAwsConfig.overrideEndpoint("dummy"),
                     new Configuration(), context);
-            compactionTaskTestHelper().runTask(runner, List.of(job));
+            compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
         }
     }
 

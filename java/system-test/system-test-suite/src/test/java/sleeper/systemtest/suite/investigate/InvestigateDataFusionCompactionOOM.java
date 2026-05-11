@@ -83,7 +83,7 @@ public class InvestigateDataFusionCompactionOOM {
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration(), context);
-            runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
+            runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion(), null);
         }
     }
 

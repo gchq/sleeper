@@ -39,9 +39,15 @@ import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -69,11 +75,89 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         this.context = context;
     }
 
+    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
+        FFIFileResult rowData = new FFIFileResult(runtime);
+
+        int result = context.getFunctions().get_compaction_rows_read(context,
+                Objects.requireNonNull(compactionJobId, "compactionJobId"),
+                rowData);
+
+        if (result == 0) {
+            return Optional.of(rowData.rows_read.get());
+        } else if (result == -1) {
+            return Optional.empty();
+        } else {
+            LOGGER.error("Failed reading compaction row progress count, return code: {}", result);
+            throw new IOException("Failed reading compaction row progress count, return code " + result);
+        }
+    }
+
+    public class ProgressPoller implements Callable<Void> {
+        private final String jobID;
+        private final Consumer<Long> progressCallback;
+
+        private Optional<Long> lastResult = Optional.empty();
+
+        public ProgressPoller(String jobID, Consumer<Long> progressCallback) {
+            this.jobID = jobID;
+            this.progressCallback = progressCallback;
+        }
+
+        @Override
+        public Void call() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Thread.sleep(5000);
+
+                    Optional<Long> currentProgress = getCompactionRowsRead(jobID);
+                    if (!currentProgress.equals(lastResult)) {
+                        lastResult = currentProgress;
+                        currentProgress.ifPresent(progressCallback);
+                    }
+                }
+            } catch (InterruptedException e) {
+                // preserve status
+                Thread.currentThread().interrupt();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return null;
+        }
+    }
+
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
+    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region, Consumer<Long> progressCallback) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+
+        // make sure progress thread won't keep JVM alive
+        ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            return t;
+        });
+
+        ProgressPoller poller = new ProgressPoller(job.getId(), progressCallback);
+        if (progressCallback != null) {
+            executorService.submit(poller);
+        }
+
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
+
+        // Guarantee at least one update
+        if (progressCallback != null) {
+            progressCallback.accept(result.getRowsRead());
+        }
+
+        try {
+            executorService.shutdownNow();
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOGGER.warn("Compaction progress monitoring thread still running");
+            }
+        } catch (InterruptedException ignored) {
+            // doesn't matter
+        }
 
         if (result.getRowsWritten() < 1) {
             Path outputPath = new Path(job.getOutputFile());
@@ -172,24 +256,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    @Override
-    public Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
-        FFIFileResult rowData = new FFIFileResult(runtime);
-
-        int result = context.getFunctions().get_compaction_rows_read(context,
-                Objects.requireNonNull(compactionJobId, "compactionJobId"),
-                rowData);
-
-        if (result == 0) {
-            return Optional.of(rowData.rows_read.get());
-        } else if (result == -1) {
-            return Optional.empty();
-        } else {
-            LOGGER.error("Failed reading compaction row progress count, return code: {}", result);
-            throw new IOException("Failed reading compaction row progress count, return code " + result);
-        }
     }
 }
