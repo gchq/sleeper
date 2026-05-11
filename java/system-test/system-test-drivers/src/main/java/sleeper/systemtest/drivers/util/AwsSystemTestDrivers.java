@@ -92,11 +92,7 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
 
-    public AwsSystemTestDrivers() {
-        this(SystemTestClients.fromDefaults());
-    }
-
-    protected AwsSystemTestDrivers(SystemTestClients clients) {
+    public AwsSystemTestDrivers(SystemTestClients clients) {
         this.clients = clients;
     }
 
