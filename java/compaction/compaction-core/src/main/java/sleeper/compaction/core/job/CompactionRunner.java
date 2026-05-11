@@ -48,37 +48,4 @@ public interface CompactionRunner {
      * @throws IteratorCreationException a problem creating any configured iterators
      */
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region, Consumer<Long> progressCallback) throws IOException, IteratorCreationException;
-
-    // /**
-    //  * Gets the number of input rows read by a compaction that is currently executing.
-    //  *
-    //  * The compactor should regularly update the count of the number of rows read during a compaction. By polling this
-    //  * method, it is possible to determine if a compaction is making progress. It is intended to use this to report
-    //  * on currently running compactions. Once a compaction is finished, it may not be possible to get a count. An empty
-    //  * optional is returned if no information is available for the given job.
-    //  *
-    //  * The default implementation simply returns an empty value.
-    //  *
-    //  * @implNote                      this method MUST be thread safe! It must be safe to call this method while
-    //  *                                another thread is executing
-    //  *                                {@link CompactionRunner#compact(CompactionJob, TableProperties, Region)}.
-    //  * @param    compactionJobId      id for compaction job to lookup
-    //  * @return                        the number of rows read by the requested compaction, if available
-    //  * @throws   NullPointerException if compactionJobId is null
-    //  * @throws   IOException          if trying to read the row count fails on IO
-    //  */
-    // default Optional<Long> getCompactionRowsRead(String compactionJobId) throws NullPointerException, IOException {
-    //     return Optional.empty();
-    // }
-
-    // /**
-    //  * Convenience method for calling with a job object.
-    //  *
-    //  * @param  job         compaction job to look up
-    //  * @return             the number of rows read by the requested compaction, if available
-    //  * @throws IOException if trying to read the row count fails on IO
-    //  */
-    // default Optional<Long> getCompactionRowsRead(CompactionJob job) throws IOException {
-    //     return getCompactionRowsRead(job.getId());
-    // }
 }
