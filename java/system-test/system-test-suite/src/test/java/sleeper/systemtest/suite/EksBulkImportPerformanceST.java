@@ -65,7 +65,7 @@ public class EksBulkImportPerformanceST {
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5),
                         "jobs finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 10_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(5_000_000, 8_000_000),
                         "meets expected performance");
     }
 
