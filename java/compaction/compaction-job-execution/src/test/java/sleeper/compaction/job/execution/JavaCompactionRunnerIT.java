@@ -168,7 +168,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
-            assertThat(progressCount.get()).isEqualTo(199);
+            assertThat(progressCount.get()).isEqualTo(200);
             assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 200));
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
                     .isEqualTo(CompactionRunnerTestData.combineSortedBySingleKey(data1, data2));
