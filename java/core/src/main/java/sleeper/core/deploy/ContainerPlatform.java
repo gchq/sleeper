@@ -20,6 +20,9 @@ import java.util.Objects;
 /**
  * A platform that a container image is built for. Combines an operating system and an architecture, in the same form
  * used by Docker (e.g. {@code linux/amd64}).
+ *
+ * @param os           the operating system
+ * @param architecture the CPU architecture
  */
 public record ContainerPlatform(String os, String architecture) {
 
@@ -32,7 +35,7 @@ public record ContainerPlatform(String os, String architecture) {
     }
 
     /**
-     * Parses a platform from its {@code os/architecture} string form.
+     * Parses a platform from its "os/architecture" string form.
      *
      * @param  value the string form, e.g. {@code linux/amd64}
      * @return       the platform
