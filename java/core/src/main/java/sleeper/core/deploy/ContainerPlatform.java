@@ -15,7 +15,6 @@
  */
 package sleeper.core.deploy;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -26,11 +25,6 @@ public record ContainerPlatform(String os, String architecture) {
 
     public static final ContainerPlatform LINUX_AMD64 = new ContainerPlatform("linux", "amd64");
     public static final ContainerPlatform LINUX_ARM64 = new ContainerPlatform("linux", "arm64");
-
-    /**
-     * The set of platforms used for any image marked as multi-platform in this build.
-     */
-    public static final List<ContainerPlatform> MULTIPLATFORM_LINUX = List.of(LINUX_AMD64, LINUX_ARM64);
 
     public ContainerPlatform {
         Objects.requireNonNull(os, "os must not be null");

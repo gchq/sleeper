@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.core.deploy.ContainerPlatform.MULTIPLATFORM_LINUX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -77,7 +76,7 @@ public class DockerDeployment {
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
         cdkApps = builder.cdkApps;
-        platforms = builder.multiplatform ? MULTIPLATFORM_LINUX : List.of();
+        platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
