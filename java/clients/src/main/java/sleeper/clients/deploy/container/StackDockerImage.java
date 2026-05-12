@@ -37,7 +37,7 @@ public class StackDockerImage {
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
-        platforms = List.copyOf(builder.platforms);
+        platforms = builder.platforms;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         lambdaJar = builder.lambdaJar;
     }
