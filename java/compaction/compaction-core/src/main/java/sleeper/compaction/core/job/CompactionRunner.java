@@ -33,7 +33,9 @@ public interface CompactionRunner {
      *
      * An optional progress callback can be supplied which will receive notifications of compactions progress. The rate
      * and regularity of progress updates is at the discretion of the implementation. Callbacks may receive the same row
-     * count multiple times. Implementations MUST call the callback function once the compaction has finished.
+     * count multiple times. Implementations MUST call the callback function when the compaction has finished to
+     * guarantee
+     * at least one update.
      *
      * <strong>Note:</strong> Callback code must be thread safe as it not specified which thread will call it, i.e. it
      * may not be the thread running the compaction that sends progress notifications.
