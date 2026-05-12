@@ -22,13 +22,20 @@ import com.google.cloud.tools.jib.api.ImageReference;
 import com.google.cloud.tools.jib.api.InvalidImageReferenceException;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.JibContainer;
+import com.google.cloud.tools.jib.api.JibContainerBuilder;
 import com.google.cloud.tools.jib.api.RegistryException;
 import com.google.cloud.tools.jib.api.RegistryImage;
+import com.google.cloud.tools.jib.api.buildplan.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.deploy.ContainerPlatform;
+
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -60,7 +67,9 @@ public class ContainerImageTransferManager {
         try {
             ImageReference sourceRef = ImageReference.parse(request.getSourceImageReference());
             ImageReference targetRef = ImageReference.parse(request.getTargetImageReference());
-            JibContainer container = Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever()))
+            JibContainerBuilder containerBuilder = Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever()));
+            setPlatformsIfPresent(containerBuilder, request.getPlatforms());
+            JibContainer container = containerBuilder
                     .containerize(configure(Containerizer.to(registryImage(targetRef, request.getTargetCredentialsRetriever()))));
             return new ContainerImageTransferResult(
                     container.getTargetImage().toString(),
@@ -68,6 +77,17 @@ public class ContainerImageTransferManager {
         } catch (IOException | RegistryException | CacheDirectoryCreationException | ExecutionException | InvalidImageReferenceException e) {
             throw new ContainerImageTransferException(request, e);
         }
+    }
+
+    private static void setPlatformsIfPresent(JibContainerBuilder containerBuilder, List<ContainerPlatform> platforms) {
+        if (platforms.isEmpty()) {
+            return;
+        }
+        Set<Platform> jibPlatforms = new LinkedHashSet<>();
+        for (ContainerPlatform platform : platforms) {
+            jibPlatforms.add(new Platform(platform.architecture(), platform.os()));
+        }
+        containerBuilder.setPlatforms(jibPlatforms);
     }
 
     private static RegistryImage registryImage(ImageReference imageName, ContainerRegistryCredentials.Retriever credentialRetriever) throws InvalidImageReferenceException {

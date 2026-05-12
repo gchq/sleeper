@@ -18,9 +18,11 @@ package sleeper.container.images;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
+import com.google.cloud.tools.jib.api.buildplan.Platform;
 import com.google.cloud.tools.jib.event.EventHandlers;
 import com.google.cloud.tools.jib.http.FailoverHttpClient;
 import com.google.cloud.tools.jib.image.json.ManifestTemplate;
+import com.google.cloud.tools.jib.image.json.V22ManifestListTemplate;
 import com.google.cloud.tools.jib.image.json.V22ManifestTemplate;
 import com.google.cloud.tools.jib.registry.ManifestAndDigest;
 import com.google.cloud.tools.jib.registry.RegistryClient;
@@ -33,7 +35,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.core.deploy.ContainerPlatform;
+
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,6 +98,26 @@ public class ContainerImageTransferManagerIT {
     }
 
     @Test
+    void shouldCopyMultiplatformDockerImage() throws Exception {
+        // Given
+        copyMultiplatformImage("busybox", imageNameInRegistry(SOURCE));
+
+        // When
+        ContainerImageTransferResult result = transferManager().transfer(ContainerImageTransferRequest.builder()
+                .sourceImageReference(imageNameInRegistry(SOURCE))
+                .targetImageReference(imageNameInRegistry(DESTINATION))
+                .platforms(List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64))
+                .build());
+
+        // Then
+        ManifestAndDigest<ManifestTemplate> manifest = imageClientForRegistry(DESTINATION).pullManifest("latest");
+        assertThat(manifest.getManifest()).isInstanceOf(V22ManifestListTemplate.class);
+        assertThat(manifest.getDigest()).hasToString(result.imageDigest());
+        assertThat(result.imageReference()).isEqualTo(imageNameInRegistry(DESTINATION));
+        assertThat(result.imageDigest()).matches("sha256:[a-z0-9]+");
+    }
+
+    @Test
     void shouldFailWhenSourceTagDoesNotExist() throws Exception {
         // Given
         copyImage("scratch", imageNameInRegistry(SOURCE));
@@ -115,6 +141,15 @@ public class ContainerImageTransferManagerIT {
     private static void copyImage(String baseImage, String target) throws Exception {
         Jib.from(baseImage).containerize(JibEvents.logEvents(LOGGER, Containerizer.to(RegistryImage.named(target)))
                 .setAllowInsecureRegistries(true));
+    }
+
+    private static void copyMultiplatformImage(String baseImage, String target) throws Exception {
+        Jib.from(baseImage)
+                .setPlatforms(Set.of(
+                        new Platform("amd64", "linux"),
+                        new Platform("arm64", "linux")))
+                .containerize(JibEvents.logEvents(LOGGER, Containerizer.to(RegistryImage.named(target)))
+                        .setAllowInsecureRegistries(true));
     }
 
     private String imageNameInRegistry(GenericContainer<?> container) {

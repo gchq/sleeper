@@ -24,8 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
+import sleeper.core.deploy.ContainerPlatform;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -44,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CopyContainerImageLambdaIT {
 
     private final Map<String, String> imageReferenceToDigest = new HashMap<>();
+    private final Map<String, List<ContainerPlatform>> transferredPlatforms = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -100,6 +103,44 @@ public class CopyContainerImageLambdaIT {
     }
 
     @Test
+    void shouldForwardPlatformsToTransfer(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        imageReferenceToDigest.put("source-registry/multi-image", "multi-digest");
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", "source-registry/multi-image",
+                        "target", "target-registry/multi-image",
+                        "platforms", "linux/amd64,linux/arm64"))
+                .build());
+
+        // Then
+        assertThat(transferredPlatforms).isEqualTo(Map.of(
+                "target-registry/multi-image", List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64)));
+    }
+
+    @Test
+    void shouldTransferWithNoPlatformsWhenPropertyIsEmpty(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        imageReferenceToDigest.put("source-registry/test-image", "test-digest");
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", "source-registry/test-image",
+                        "target", "target-registry/test-image",
+                        "platforms", ""))
+                .build());
+
+        // Then
+        assertThat(transferredPlatforms).isEqualTo(Map.of(
+                "target-registry/test-image", List.of()));
+    }
+
+    @Test
     void shouldDoNothingOnDelete(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // When
         handleEvent(event(runtimeInfo)
@@ -125,7 +166,8 @@ public class CopyContainerImageLambdaIT {
     }
 
     private CopyContainerImageLambda lambda() {
-        return new CopyContainerImageLambda((source, target) -> {
+        return new CopyContainerImageLambda((source, target, platforms) -> {
+            transferredPlatforms.put(target, platforms);
             String digest = imageReferenceToDigest.get(source);
             imageReferenceToDigest.put(target, digest);
             return digest;

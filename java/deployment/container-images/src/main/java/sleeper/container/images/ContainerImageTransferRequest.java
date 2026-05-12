@@ -15,6 +15,9 @@
  */
 package sleeper.container.images;
 
+import sleeper.core.deploy.ContainerPlatform;
+
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -23,12 +26,14 @@ import java.util.Objects;
 public class ContainerImageTransferRequest {
     private final String sourceImageReference;
     private final String targetImageReference;
+    private final List<ContainerPlatform> platforms;
     private final ContainerRegistryCredentials.Retriever sourceCredentialsRetriever;
     private final ContainerRegistryCredentials.Retriever targetCredentialsRetriever;
 
     private ContainerImageTransferRequest(Builder builder) {
         sourceImageReference = Objects.requireNonNull(builder.sourceImageReference, "sourceImageReference must not be null");
         targetImageReference = Objects.requireNonNull(builder.targetImageReference, "targetImageReference must not be null");
+        platforms = List.copyOf(builder.platforms);
         sourceCredentialsRetriever = builder.sourceCredentialsRetriever;
         targetCredentialsRetriever = builder.targetCredentialsRetriever;
     }
@@ -45,6 +50,10 @@ public class ContainerImageTransferRequest {
         return targetImageReference;
     }
 
+    public List<ContainerPlatform> getPlatforms() {
+        return platforms;
+    }
+
     public ContainerRegistryCredentials.Retriever getSourceCredentialsRetriever() {
         return sourceCredentialsRetriever;
     }
@@ -55,13 +64,13 @@ public class ContainerImageTransferRequest {
 
     @Override
     public String toString() {
-        return "ContainerImageTransferRequest{sourceImageReference=" + sourceImageReference + ", targetImageReference=" + targetImageReference + ", sourceCredentialsRetriever="
-                + sourceCredentialsRetriever + ", targetCredentialsRetriever=" + targetCredentialsRetriever + "}";
+        return "ContainerImageTransferRequest{sourceImageReference=" + sourceImageReference + ", targetImageReference=" + targetImageReference
+                + ", platforms=" + platforms + ", sourceCredentialsRetriever=" + sourceCredentialsRetriever + ", targetCredentialsRetriever=" + targetCredentialsRetriever + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sourceImageReference, targetImageReference, sourceCredentialsRetriever, targetCredentialsRetriever);
+        return Objects.hash(sourceImageReference, targetImageReference, platforms, sourceCredentialsRetriever, targetCredentialsRetriever);
     }
 
     @Override
@@ -74,6 +83,7 @@ public class ContainerImageTransferRequest {
         }
         ContainerImageTransferRequest other = (ContainerImageTransferRequest) obj;
         return Objects.equals(sourceImageReference, other.sourceImageReference) && Objects.equals(targetImageReference, other.targetImageReference)
+                && Objects.equals(platforms, other.platforms)
                 && Objects.equals(sourceCredentialsRetriever, other.sourceCredentialsRetriever) && Objects.equals(targetCredentialsRetriever, other.targetCredentialsRetriever);
     }
 
@@ -83,6 +93,7 @@ public class ContainerImageTransferRequest {
     public static class Builder {
         private String sourceImageReference;
         private String targetImageReference;
+        private List<ContainerPlatform> platforms = List.of();
         private ContainerRegistryCredentials.Retriever sourceCredentialsRetriever;
         private ContainerRegistryCredentials.Retriever targetCredentialsRetriever;
 
@@ -105,6 +116,19 @@ public class ContainerImageTransferRequest {
          */
         public Builder targetImageReference(String targetImageReference) {
             this.targetImageReference = targetImageReference;
+            return this;
+        }
+
+        /**
+         * Sets the platforms to transfer from the source image. The source image must be a manifest list that includes
+         * each of these platforms. The target image will be a manifest list with the same platforms. If empty (the
+         * default), the source image is transferred as-is using the host's default platform.
+         *
+         * @param  platforms the platforms
+         * @return           this builder
+         */
+        public Builder platforms(List<ContainerPlatform> platforms) {
+            this.platforms = platforms;
             return this;
         }
 
