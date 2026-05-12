@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.core.deploy.ContainerPlatform;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
@@ -53,6 +54,7 @@ import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COM
 public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase {
 
     private final Map<String, String> imageReferenceToDigest = new HashMap<>();
+    private final Map<String, List<ContainerPlatform>> imageReferenceToCopiedPlatforms = new HashMap<>();
     private final Map<Path, String> files = new HashMap<>();
     DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
 
@@ -410,6 +412,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(imageReferenceToDigest).isEqualTo(Map.of(
                     "www.test-repo.com/prefix/ingest:1.0.0", "test-digest",
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0", "test-digest"));
+            assertThat(imageReferenceToCopiedPlatforms).isEqualTo(Map.of(
+                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0", List.of()));
             assertThat(commandsThatRan).isEmpty();
         }
 
@@ -426,6 +430,9 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(imageReferenceToDigest).isEqualTo(Map.of(
                     "www.test-repo.com/prefix/compaction:1.0.0", "test-digest",
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0", "test-digest"));
+            assertThat(imageReferenceToCopiedPlatforms).isEqualTo(Map.of(
+                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0",
+                    List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64)));
             assertThat(commandsThatRan).isEmpty();
         }
 
@@ -534,9 +541,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         .deployConfig(deployConfig)
                         .commandRunner(commandRunner)
                         .copyFile((source, target) -> files.put(target, files.get(source)))
-                        .copyImage((source, target, credentials) -> {
+                        .copyImage((source, target, platforms, credentials) -> {
                             String digest = imageReferenceToDigest.get(source);
                             imageReferenceToDigest.put(target, digest);
+                            imageReferenceToCopiedPlatforms.put(target, platforms);
                         })
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version("1.0.0")
