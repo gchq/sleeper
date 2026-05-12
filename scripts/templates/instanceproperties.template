@@ -676,59 +676,6 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.spark.speculation.quantile=0.75
 
-# JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
-
-# JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
-
-# The interval between heartbeats from executors to the driver. Used to set
-# spark.executor.heartbeatInterval.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.executor.heartbeat.interval=60s
-
-# The default timeout for network interactions in Spark. Used to set spark.network.timeout.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.network.timeout=800s
-
-# The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.memory.fraction=0.80
-
-# The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
-# execution and storage. Used to set spark.memory.storageFraction.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.memory.storage.fraction=0.30
-
-# The storage to use for temporary caching. Used to set spark.storage.level.
-# See
-# https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.storage.level=MEMORY_AND_DISK_SER
-
-# Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.rdd.compress=true
-
-# Whether to compress map output files. Used to set spark.shuffle.compress.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.shuffle.compress=true
-
-# Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.
-# See https://spark.apache.org/docs/latest/configuration.html.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.spark.shuffle.spill.compress=true
-
 # The amount of memory in MB for lambda functions that start bulk import jobs.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.starter.memory.mb=4096
@@ -792,11 +739,48 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.emr.spark.driver.cores=5
 
+# (Non-persistent or persistent EMR mode only) The default timeout for network interactions in Spark.
+# Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.network.timeout=800s
+
+# (Non-persistent or persistent EMR mode only) The interval between heartbeats from executors to the
+# driver. Used to set spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.executor.heartbeat.interval=60s
+
 # (Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale
 # resources up and down. Used to set spark.dynamicAllocation.enabled.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.emr.spark.dynamic.allocation.enabled=false
+
+# (Non-persistent or persistent EMR mode only) The fraction of heap space used for execution and
+# storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.memory.fraction=0.80
+
+# (Non-persistent or persistent EMR mode only) The amount of storage memory immune to eviction,
+# expressed as a fraction of the heap space used for execution and storage. Used to set
+# spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.memory.storage.fraction=0.30
+
+# (Non-persistent or persistent EMR mode only) JVM options passed to the executors. Used to set
+# spark.executor.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# (Non-persistent or persistent EMR mode only) JVM options passed to the driver. Used to set
+# spark.driver.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
 
 # (Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can
 # fail the application. Used to set spark.yarn.scheduler.reporterThread.maxFailures.
@@ -804,6 +788,31 @@ sleeper.subnets=set-automatically
 # https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures=5
+
+# (Non-persistent or persistent EMR mode only) The storage to use for temporary caching. Used to set
+# spark.storage.level.
+# See
+# https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.storage.level=MEMORY_AND_DISK_SER
+
+# (Non-persistent or persistent EMR mode only) Whether to compress serialized RDD partitions. Used to
+# set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.rdd.compress=true
+
+# (Non-persistent or persistent EMR mode only) Whether to compress map output files. Used to set
+# spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.shuffle.compress=true
+
+# (Non-persistent or persistent EMR mode only) Whether to compress data spilled during shuffles. Used
+# to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.emr.spark.shuffle.spill.compress=true
 
 # (Non-persistent or persistent EMR mode only) The size of the EBS volume in gibibytes (GiB).
 # This can be a number from 10 to 1024.
@@ -1223,6 +1232,58 @@ sleeper.subnets=set-automatically
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.spark.dynamic.allocation.enabled=false
+
+# JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# The interval between heartbeats from executors to the driver. Used to set
+# spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.heartbeat.interval=60s
+
+# The default timeout for network interactions in Spark. Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.network.timeout=800s
+
+# The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.memory.fraction=0.80
+
+# The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
+# execution and storage. Used to set spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.memory.storage.fraction=0.30
+
+# The storage to use for temporary caching. Used to set spark.storage.level.
+# See https://aws.amazon.com/blogs/containers/best-practices-for-running-spark-on-amazon-eks/
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.storage.level=MEMORY_AND_DISK_SER
+
+# Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.rdd.compress=true
+
+# Whether to compress map output files. Used to set spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.shuffle.compress=true
+
+# Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.shuffle.spill.compress=true
 
 
 ## The following instance properties relate to the splitting of partitions.
