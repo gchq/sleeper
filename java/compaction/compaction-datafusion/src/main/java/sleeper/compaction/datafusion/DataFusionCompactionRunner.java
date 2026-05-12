@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
@@ -125,7 +126,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region, Consumer<Long> progressCallback) throws IOException {
+    public RowsProcessed compact(CompactionRequest request) throws IOException {
+        CompactionJob job = request.getJob();
+        TableProperties tableProperties = request.getTableProperties();
+        Region region = request.getRegion();
+        Consumer<Long> progressCallback = request.getProgressCallback();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -136,17 +141,12 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             return t;
         });
 
-        Future<?> poller = CompletableFuture.completedFuture(null);
-        if (progressCallback != null) {
-            poller = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
-        }
+        Future<?> poller = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
 
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
         // Guarantee at least one update
-        if (progressCallback != null) {
-            progressCallback.accept(result.getRowsRead());
-        }
+        progressCallback.accept(result.getRowsRead());
 
         try {
             executorService.shutdownNow();

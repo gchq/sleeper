@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
@@ -66,7 +67,11 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Region region, Consumer<Long> callback) throws IOException, IteratorCreationException {
+    public RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException {
+        CompactionJob compactionJob = request.getJob();
+        TableProperties tableProperties = request.getTableProperties();
+        Region region = request.getRegion();
+        Consumer<Long> callback = request.getProgressCallback();
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
@@ -92,7 +97,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
             rowsRead++;
-            if (0 == rowsRead % 50_000 && callback != null) {
+            if (0 == rowsRead % 50_000) {
                 callback.accept(rowsRead);
             }
             sketches.update(row);
@@ -103,9 +108,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                 LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
-        if (callback != null) {
-            callback.accept(rowsRead);
-        }
+        callback.accept(rowsRead);
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 

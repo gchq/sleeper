@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.PropertiesReloader;
@@ -241,7 +242,12 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion(), progressTracker);
+        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+                .job(job)
+                .tableProperties(tableProperties)
+                .region(partition.getRegion())
+                .progressCallback(progressTracker)
+                .build());
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;

@@ -23,6 +23,7 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
@@ -115,8 +116,13 @@ public class CompactionRunnerCLI {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableId());
         Region region = regionSupplier.getPartitionRegion(tableProperties, job.getPartitionId());
         CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
+        CompactionRequest request = CompactionRequest.builder()
+                .job(job)
+                .tableProperties(tableProperties)
+                .region(region)
+                .build();
         for (int i = 0; i < times; i++) {
-            runner.compact(job, tableProperties, region, null);
+            runner.compact(request);
         }
     }
 

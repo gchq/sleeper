@@ -335,7 +335,8 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return (job, table, region, progressCallback) -> {
+        return request -> {
+            CompactionJob job = request.getJob();
             if (getAction.hasNext()) {
                 return getAction.next().run(job);
             } else {

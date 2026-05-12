@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.taskexecution.SqsBulkExportQueueHandler.SqsMessageHandle;
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
@@ -171,7 +172,11 @@ public class ECSBulkExportTaskRunner {
 
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, bulkExportLeafPartitionQuery.getPartitionRegion(), null);
+        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+                .job(job)
+                .tableProperties(tableProperties)
+                .region(bulkExportLeafPartitionQuery.getPartitionRegion())
+                .build());
         LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),
