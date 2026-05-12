@@ -18,6 +18,8 @@ vulnerabilities:
   - id: CVE-2026-39826
   - id: CVE-2026-39836
   - id: CVE-2026-42499
+  # github.com/in-toto/in-toto-golang
+  - id: GHSA-pmwq-pjrm-6p5r
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
