@@ -308,16 +308,16 @@ public class ConfigurationUtils {
 
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
         Map<String, String> sparkConf = new HashMap<>();
-        // The following value is not mentioned in the blog linked above, but setting this explicitly
+        // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
         sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
 
-        // spark.speculation properties (not referenced in the blog linked above)
+        // spark.speculation properties (not referenced in the blog linked at the top of this class)
         sparkConf.put("spark.speculation", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION));
         sparkConf.put("spark.speculation.quantile", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION_QUANTILE));
 
-        // spark.hadoop properties (not referenced in the blog linked above)
+        // spark.hadoop properties (not referenced in the blog linked at the top of this class)
         sparkConf.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
 
         // Disable file/directory existence probes on file creation
