@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -78,12 +79,11 @@ public class DeployInstance {
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
         if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
-            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID)));
         }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
-                        .withExtraImages(request.getExtraDockerImages()));
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
         Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
