@@ -100,8 +100,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         private final String jobID;
         private final Consumer<Long> progressCallback;
 
-        private Optional<Long> lastResult = Optional.empty();
-
         public ProgressPoller(String jobID, Consumer<Long> progressCallback) {
             this.jobID = jobID;
             this.progressCallback = progressCallback;
@@ -114,10 +112,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                     Thread.sleep(5000);
 
                     Optional<Long> currentProgress = getCompactionRowsRead(jobID);
-                    if (!currentProgress.equals(lastResult)) {
-                        lastResult = currentProgress;
-                        currentProgress.ifPresent(progressCallback);
-                    }
+                    currentProgress.ifPresent(progressCallback);
                 }
             } catch (InterruptedException e) {
                 // preserve status
