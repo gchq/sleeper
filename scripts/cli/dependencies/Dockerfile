@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg
-RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main"  \
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main"  \
     | tee /etc/apt/sources.list.d/nodesource.list > /dev/null
 RUN apt-get update && apt-get install -y \
     nodejs \
