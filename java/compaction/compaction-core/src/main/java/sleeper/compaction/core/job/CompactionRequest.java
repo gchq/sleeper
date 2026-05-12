@@ -22,8 +22,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * A bundle of the inputs required to execute a compaction via {@link CompactionRunner}. Contains the job, the
- * configuration of the Sleeper table the job runs in, the region to read, and a progress callback.
+ * A bundle of the inputs required to execute a compaction.
+ *
+ * Contains the job, the configuration of the Sleeper table the job runs in, the region to read, and a progress
+ * callback.
  *
  * <p>The progress callback is always non-null. If not supplied to the builder, a no-op consumer is used.
  */
