@@ -26,7 +26,7 @@ Give this new issue a name that describes the changes you will include in a pull
 
 You've done some work towards another issue but haven't finished it yet. You want to integrate your changes into the rest of the project with a pull request before you continue your work on the issue. This will mean other contributors can see your changes in their copy of the code, and can take your work into account in anything they're doing. This is great!
 
-Progress issues are intended to minimise the effort needed to raise a pull request when an issue is not fully resolved. They should usually be used if you've already made a change that partially addresses another issue.
+Progress issues are intended to minimise the effort needed to raise a pull request when an issue is not fully resolved. They should usually be used if you've already made a change that partially addresses another issue, rather than for future planning.
 
 #### Pull requests for unfinished changes
 
