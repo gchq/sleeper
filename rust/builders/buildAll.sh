@@ -17,15 +17,16 @@ set -ex
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
 
 pushd "$THIS_DIR"/base
 docker build -t sleeper-rust-builder-base:current .
 popd
 
 pushd "$THIS_DIR"/x86_64
-docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
 popd
 
 pushd "$THIS_DIR"/aarch64
-docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
 popd

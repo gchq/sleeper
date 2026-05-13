@@ -14,6 +14,8 @@
 
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
+ARG RUSTUP_DIST_SERVER
+ARG RUSTUP_UPDATE_ROOT
 
 RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
     g++-x86-64-linux-gnu \
