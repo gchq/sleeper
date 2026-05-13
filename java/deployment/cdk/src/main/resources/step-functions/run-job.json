@@ -18,6 +18,9 @@
         "template": {
           "spec": {
             "serviceAccountName": "spark-submit",
+            "nodeSelector": {
+              "kubernetes.io/arch": "arm64"
+            },
             "containers": [
               {
                 "image": "image-placeholder",

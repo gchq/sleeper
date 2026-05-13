@@ -62,6 +62,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         defaultConf.put("spark.driver.memoryOverhead", "1g");
         defaultConf.put("spark.executor.memoryOverhead", "1g");
         defaultConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
+        defaultConf.put("spark.kubernetes.node.selector.kubernetes.io/arch", "arm64");
         // Hadoop Configuration
         defaultConf.put("spark.hadoop.fs.s3a.aws.credentials.provider",
                 WebIdentityTokenFileCredentialsProvider.class.getName());
@@ -93,7 +94,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {
-        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, EmrInstanceArchitecture.X86_64));
+        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, EmrInstanceArchitecture.ARM64));
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
         defaultConfig.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
