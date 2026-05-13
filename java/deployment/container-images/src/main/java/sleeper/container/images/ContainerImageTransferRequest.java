@@ -33,7 +33,7 @@ public class ContainerImageTransferRequest {
     private ContainerImageTransferRequest(Builder builder) {
         sourceImageReference = Objects.requireNonNull(builder.sourceImageReference, "sourceImageReference must not be null");
         targetImageReference = Objects.requireNonNull(builder.targetImageReference, "targetImageReference must not be null");
-        platforms = List.copyOf(builder.platforms);
+        platforms = Objects.requireNonNull(builder.platforms, "platforms must not be null");
         sourceCredentialsRetriever = builder.sourceCredentialsRetriever;
         targetCredentialsRetriever = builder.targetCredentialsRetriever;
     }
