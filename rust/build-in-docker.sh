@@ -29,10 +29,14 @@ else
   exit 1
 fi
 
+# If the caller (Maven) passes a non-empty cargo command as a single argument,
+# tokenise it into the BUILD_COMMAND array. xargs honours shell-style quoting
+# so values like 'cargo build --config "foo = bar"' split correctly into 4
+# tokens. Falls back to the default release build when no override is given.
 if [[ -z $1 ]]; then
   BUILD_COMMAND=(cargo build --release --package sleeper_df)
 else
-  BUILD_COMMAND=("$@")
+  mapfile -t BUILD_COMMAND < <(xargs -n1 printf '%s\n' <<< "$1")
 fi
 
 if [ "$IN_CLI_CONTAINER" = "true" ]; then
