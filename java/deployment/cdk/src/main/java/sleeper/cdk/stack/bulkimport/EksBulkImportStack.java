@@ -85,18 +85,6 @@ import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROL
 public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
-    /*
-     * 12/05 Progress:
-     * So far I've found one mention to arn which is in run-jobs.json but I don't think thas related to he architecture
-     * for the job
-     * Need to understand the link between statemachine and jobs.
-     * Something suggested adding a manifest to the cluster to use arm?
-     * It isn't set on the fargate profile for sure
-     * NodeSelector has come up in some places
-     * https://aws.amazon.com/blogs/aws/announcing-aws-graviton2-support-for-aws-fargate-get-up-to-40-better-price-
-     * performance-for-your-serverless-containers/
-     */
-
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, SleeperInstanceArtefacts artefacts,
             BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks) {
