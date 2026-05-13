@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Class for the table request. TODO expand.
+ * Decoded JSON body for {@code POST /sleeper/tables}.
  */
 public class AddTableRequest {
 
@@ -51,7 +51,7 @@ public class AddTableRequest {
     }
 
     /**
-     * Converts to table properties. TODO Expand.
+     * Builds the {@link TableProperties} described by this request.
      *
      * @param  instanceProperties the instance the table will be added to
      * @return                    the table properties (not yet validated)
