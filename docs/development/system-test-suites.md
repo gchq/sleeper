@@ -17,3 +17,4 @@ it takes to complete the nightly system tests.
 | --------------------------------- | -------------------------- | --------------------- |
 | CompactionDataFusionPerformanceST | CompactionPerformanceST    | IngestPerformanceST   |
 | CompactionVeryLargeST             | EmrBulkImportPerformanceST | ParallelCompactionsST |
+|                                   | EksBulkImportPerformanceST |                       |
