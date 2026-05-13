@@ -26,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -141,7 +142,7 @@ class RestApiLambdaTest {
 
     @Test
     void shouldReturn400WhenSleeperClientRejectsProperties() {
-        Map<SleeperProperty, String> invalidValues = Map.of();
+        Map<SleeperProperty, String> invalidValues = Map.of(CdkDefinedInstanceProperty.ACCOUNT, "Failure");
         doThrow(new SleeperPropertiesInvalidException(invalidValues))
                 .when(sleeperClient).addTable(any(), any());
 
