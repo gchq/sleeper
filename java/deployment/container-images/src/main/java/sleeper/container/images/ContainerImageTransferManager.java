@@ -67,9 +67,7 @@ public class ContainerImageTransferManager {
         try {
             ImageReference sourceRef = ImageReference.parse(request.getSourceImageReference());
             ImageReference targetRef = ImageReference.parse(request.getTargetImageReference());
-            JibContainerBuilder containerBuilder = Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever()));
-            setPlatformsIfPresent(containerBuilder, request.getPlatforms());
-            JibContainer container = containerBuilder
+            JibContainer container = configure(Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever())), request)
                     .containerize(configure(Containerizer.to(registryImage(targetRef, request.getTargetCredentialsRetriever()))));
             return new ContainerImageTransferResult(
                     container.getTargetImage().toString(),
@@ -79,17 +77,6 @@ public class ContainerImageTransferManager {
         }
     }
 
-    private static void setPlatformsIfPresent(JibContainerBuilder containerBuilder, List<ContainerPlatform> platforms) {
-        if (platforms.isEmpty()) {
-            return;
-        }
-        Set<Platform> jibPlatforms = new LinkedHashSet<>();
-        for (ContainerPlatform platform : platforms) {
-            jibPlatforms.add(new Platform(platform.architecture(), platform.os()));
-        }
-        containerBuilder.setPlatforms(jibPlatforms);
-    }
-
     private static RegistryImage registryImage(ImageReference imageName, ContainerRegistryCredentials.Retriever credentialRetriever) throws InvalidImageReferenceException {
         RegistryImage image = RegistryImage.named(imageName);
         if (credentialRetriever != null) {
@@ -97,6 +84,18 @@ public class ContainerImageTransferManager {
                     .map(credentials -> Credential.from(credentials.username(), credentials.password())));
         }
         return image;
+    }
+
+    private static JibContainerBuilder configure(JibContainerBuilder builder, ContainerImageTransferRequest request) {
+        List<ContainerPlatform> platforms = request.getPlatforms();
+        if (platforms.isEmpty()) {
+            return builder;
+        }
+        Set<Platform> jibPlatforms = new LinkedHashSet<>();
+        for (ContainerPlatform platform : platforms) {
+            jibPlatforms.add(new Platform(platform.architecture(), platform.os()));
+        }
+        return builder.setPlatforms(jibPlatforms);
     }
 
     private Containerizer configure(Containerizer containerizer) {
