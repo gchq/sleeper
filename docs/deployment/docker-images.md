@@ -24,7 +24,7 @@ are listed here.
 | Deployment Name            | Optional Stack     | Multiplatform |
 |----------------------------|--------------------|---------------|
 | ingest                     | IngestStack        | false         |
-| bulk-import-runner         | EksBulkImportStack | false         |
+| bulk-import-runner         | EksBulkImportStack | true          |
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
 | statestore-committer       |                    | true          |
