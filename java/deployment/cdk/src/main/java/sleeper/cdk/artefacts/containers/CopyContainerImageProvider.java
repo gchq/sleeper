@@ -92,7 +92,8 @@ public class CopyContainerImageProvider {
      * @param  id        the CDK construct ID for the custom resource
      * @param  source    the source image name, including repository and path
      * @param  target    the target image name, including repository and path
-     * @param  platforms the platforms to transfer from a multi-platform source image, or empty to transfer as-is
+     * @param  platforms The platforms to transfer from a multi-platform source image. If this is empty, a single image
+     *                   will be transferred as is, but for a multi-platform image the behaviour is undefined.
      * @return           the custom resource
      */
     public CustomResource createCopyContainerImage(Construct scope, String id, String source, String target, List<ContainerPlatform> platforms) {
