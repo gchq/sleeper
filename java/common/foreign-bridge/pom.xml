@@ -97,7 +97,7 @@
     </build>
     <profiles>
         <!-- Activates when CARGO_COMMAND is set in the environment, allowing the
-             build to override the default cargo invocation (e.g. to add --config
+             build to override the default cargo invocation (e.g. to add config
              flags for mirrors). The value is forwarded to build-for-maven.sh as
              a single argument and tokenised there. -->
         <profile>
