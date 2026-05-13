@@ -79,19 +79,19 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         @Test
         void shouldPushImagesForTwoStacks() throws Exception {
             // Given
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EmrServerlessBulkImportStack));
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner-emr-serverless:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
-                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
+                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner-emr-serverless"),
                     pushImageCommand(expectedTag2));
         }
 
