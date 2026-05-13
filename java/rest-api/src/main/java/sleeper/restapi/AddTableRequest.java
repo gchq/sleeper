@@ -38,18 +38,6 @@ public class AddTableRequest {
     private JsonElement schema;
     private List<JsonElement> splitPoints;
 
-    public Map<String, String> getProperties() {
-        return properties;
-    }
-
-    public JsonElement getSchema() {
-        return schema;
-    }
-
-    public List<JsonElement> getSplitPoints() {
-        return splitPoints;
-    }
-
     /**
      * Builds the tableProperties described by this request.
      *
