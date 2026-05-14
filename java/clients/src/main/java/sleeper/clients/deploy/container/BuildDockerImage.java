@@ -74,8 +74,15 @@ public class BuildDockerImage {
             dockerfileDirectory = args.dockerDir().resolve(deployment.getDeploymentName());
         }
 
+        String baseImageName = "sleeper-java-base";
+
+        List<String> buildBaseImageCommand = new ArrayList<>();
+        buildBaseImageCommand.addAll(List.of("docker", "build", "-t", baseImageName));
+        buildBaseImageCommand.add(args.dockerDir().resolve(DockerDeployment.BASE.getDeploymentName()).toString());
+        commandRunner.runOrThrow(buildBaseImageCommand.toArray(String[]::new));
+
         List<String> dockerCommand = new ArrayList<>();
-        dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+        dockerCommand.addAll(List.of("docker", "build", "--build-arg", "BASE_IMAGE=" + baseImageName, "-t", args.tag()));
         dockerCommand.addAll(args.dockerOptions());
         dockerCommand.add(dockerfileDirectory.toString());
         commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
