@@ -18,27 +18,29 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class IngestByQueueDsl {
 
+    private final SentJobsContext sentJobs;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
     private final CdkDefinedInstanceProperty defaultQueueProperty;
     private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
-    private final List<String> sentJobIds = new ArrayList<>();
 
     public IngestByQueueDsl(
-            IngestSourceFilesContext sourceFiles, IngestByQueue ingest, CdkDefinedInstanceProperty defaultQueueProperty,
+            SentJobsContext sentJobs, IngestSourceFilesContext sourceFiles, IngestByQueue ingest,
+            CdkDefinedInstanceProperty defaultQueueProperty,
             IngestTasksDriver tasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
+        this.sentJobs = sentJobs;
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
         this.defaultQueueProperty = defaultQueueProperty;
@@ -52,26 +54,26 @@ public class IngestByQueueDsl {
     }
 
     public IngestByQueueDsl sendSourceFiles(CdkDefinedInstanceProperty queueProperty, String... files) {
-        sentJobIds.add(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
+        sentJobs.addJobId(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
         return this;
     }
 
     public IngestByQueueDsl sendSourceFilesToAllTables(String... files) {
-        sentJobIds.addAll(ingest.sendJobToAllTablesGetIds(defaultQueueProperty, sourceFiles(files)));
+        sentJobs.addAllJobIds(ingest.sendJobToAllTablesGetIds(defaultQueueProperty, sourceFiles(files)));
         return this;
     }
 
     public IngestByQueueDsl waitForTask() {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobs.getJobIds(), pollDriver);
         return this;
     }
 
     public void waitForJobs() {
-        waitForJobs.waitForJobs(sentJobIds);
+        waitForJobs.waitForJobs(sentJobs.getJobIds());
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) {
-        waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
+        waitForJobs.waitForJobs(sentJobs.getJobIds(), pollWithRetries);
     }
 
     private List<String> sourceFiles(String... files) {
