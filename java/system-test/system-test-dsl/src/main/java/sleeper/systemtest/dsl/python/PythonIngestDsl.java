@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
@@ -26,19 +27,18 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class PythonIngestDsl {
+    private final SentJobsContext sentJobs;
     private final IngestByAnyQueueDriver fromS3Driver;
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
-    private final List<String> sentJobIds = new ArrayList<>();
 
     public PythonIngestDsl(SystemTestContext context) {
+        sentJobs = context.sentJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         fromS3Driver = drivers.pythonIngest(context);
         localFileDriver = drivers.pythonIngestLocalFile(context);
@@ -50,24 +50,24 @@ public class PythonIngestDsl {
     public PythonIngestDsl uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
         localFileDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
-        sentJobIds.add(jobId);
+        sentJobs.addJobId(jobId);
         return this;
     }
 
     public PythonIngestDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         fromS3Driver.sendJobWithFiles(jobId, files);
-        sentJobIds.add(jobId);
+        sentJobs.addJobId(jobId);
         return this;
     }
 
     public PythonIngestDsl waitForTask() {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobs.getJobIds(), pollDriver);
         return this;
     }
 
     public void waitForJobs() {
-        waitForJobs.waitForJobs(sentJobIds,
+        waitForJobs.waitForJobs(sentJobs.getJobIds(),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }

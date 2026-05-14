@@ -145,7 +145,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 .build();
         configurations.add(yarnConfiguration);
 
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(
+        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationForEMRFromInstanceProperties(
                 instanceProperties, architecture);
         Configuration sparkDefaultsConfigurations = Configuration.builder()
                 .classification("spark-defaults")
