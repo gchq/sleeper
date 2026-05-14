@@ -131,6 +131,45 @@ public class SchemaSerDeTest {
     }
 
     @Test
+    void shouldDeserialiseFromJsonStringWithNullableValueField() {
+        // Given
+        String jsonSchema = "{\n" +
+                "  \"rowKeyFields\": [\n" +
+                "    {\n" +
+                "      \"name\": \"column1\",\n" +
+                "      \"type\": \"StringType\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"sortKeyFields\": [\n" +
+                "    {\n" +
+                "      \"name\": \"column2\",\n" +
+                "      \"type\": \"ByteArrayType\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"valueFields\": [\n" +
+                "    {\n" +
+                "      \"name\": \"column3\",\n" +
+                "      \"type\": \"StringType\",\n" +
+                "      \"nullable\": \"true\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n";
+        SchemaSerDe schemaSerDe = new SchemaSerDe();
+
+        // When
+        Schema deserialisedSchema = schemaSerDe.fromJson(jsonSchema);
+
+        // Then
+        Schema expectedSchema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .sortKeyFields(new Field("column2", new ByteArrayType()))
+                .valueFields(new Field("column3", new StringType(), true))
+                .build();
+        assertThat(deserialisedSchema).isEqualTo(expectedSchema);
+    }
+
+    @Test
     void shouldOmitNullablePropertyWhenFalse() {
         // Given
         Schema schema = Schema.builder()

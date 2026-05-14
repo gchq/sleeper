@@ -144,11 +144,51 @@ public class RowJsonSerDeTest {
     }
 
     @Test
+    public void shouldSerDeNullableByteArrayValueField() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new ByteArrayType(), true))
+                .build();
+        Row row = new Row();
+        row.put("key", 1);
+        row.put("value", null);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
+
+        // When
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
+
+        // Then
+        assertThat(deserialised).isEqualTo(row);
+        assertThat(deserialised.get("value")).isNull();
+    }
+
+    @Test
     public void shouldSerDeNullableIntValueField() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new IntType(), true))
+                .build();
+        Row row = new Row();
+        row.put("key", 1);
+        row.put("value", null);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
+
+        // When
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
+
+        // Then
+        assertThat(deserialised).isEqualTo(row);
+        assertThat(deserialised.get("value")).isNull();
+    }
+
+    @Test
+    public void shouldSerDeNullableLongValueField() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType(), true))
                 .build();
         Row row = new Row();
         row.put("key", 1);

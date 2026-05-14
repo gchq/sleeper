@@ -91,7 +91,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private StateStore stateStore;
 
-    private static Stream<Arguments> parameterObjsForTests() {
+    private static Stream<Arguments> getStreamOfTestIngestTypes() {
         return Stream.of(
                 Arguments.of(Named.of("Direct write, backed by Arrow, no S3",
                         TestIngestType.directWriteBackedByArrowWriteToLocalFile())),
@@ -118,7 +118,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRows(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -156,7 +156,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionIntKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -201,7 +201,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionLongKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -244,7 +244,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionStringKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
@@ -292,7 +292,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -340,7 +340,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
@@ -399,7 +399,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
@@ -453,7 +453,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
@@ -501,7 +501,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
@@ -555,7 +555,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsSplitByPartitionWhenThereIsOnlyDataInOnePartition(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -592,7 +592,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteDuplicateRows(
             TestIngestType ingestType) throws Exception {
         // Given
@@ -635,7 +635,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteNoRows(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -661,7 +661,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldApplyIterator(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.byteArrayRowKeyLongSortKey(
@@ -705,7 +705,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
+    @MethodSource("getStreamOfTestIngestTypes")
     public void shouldWriteRowsWithNullableValueField(TestIngestType ingestType) throws Exception {
         // Given
         Schema schema = Schema.builder()
