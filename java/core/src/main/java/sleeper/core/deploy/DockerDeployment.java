@@ -37,6 +37,10 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 public class DockerDeployment {
 
     private static final List<DockerDeployment> ALL = new ArrayList<>();
+    public static final DockerDeployment BASE = builder()
+            .deploymentName("base")
+            .multiplatform(true)
+            .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)

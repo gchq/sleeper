@@ -11,21 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:24.04
-
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Amazon Corretto JDK
-RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
-RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
-    | tee /etc/apt/sources.list.d/corretto.list > /dev/null
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    java-17-amazon-corretto-jdk \
-    && rm -rf /var/lib/apt/lists/*
+ARG BASE_IMAGE=ghcr.io/gchq/sleeper-java-base:0.35.4-SNAPSHOT
+FROM ${BASE_IMAGE}
 
 COPY ingest.jar /ingest.jar
 COPY run.sh /run.sh
