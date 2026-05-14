@@ -231,15 +231,6 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    // All the policies needed for addTable are already grouped together as part of the editTable policy, so reusing
-    // this method.
-    // Policies of relevance: config-bucket read/write, table-index read/write and state-store partition read/write.
-    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public void grantAddTable(@Nullable IRole nullableRole) {
-        IRole role = Objects.requireNonNull(nullableRole);
-        policiesStack.getEditTablesPolicyForGrants().attachToRole(role);
-    }
-
     public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
         autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }

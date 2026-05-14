@@ -77,8 +77,6 @@ public class RestApiStack extends NestedStack {
                 .methods(List.of(HttpMethod.POST))
                 .integration(integration).build());
 
-        coreStacks.grantAddTable(lambda.getRole());
-
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
                 .value(restHttpApi.getApiEndpoint())
                 .build());
