@@ -16,6 +16,8 @@
 package sleeper.restapi;
 
 import com.google.gson.Gson;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,102 +44,111 @@ class AddTableRequestTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Gson gson = new Gson();
 
-    @Test
-    void shouldBuildTablePropertiesAndApplySchema() {
-        AddTableRequest request = parse("""
-                {
-                  "properties": {"sleeper.table.name": "my-table"},
-                  "schema": %s
-                }
-                """.formatted(schemaJson(createSchemaWithKey("key", new StringType()))));
+    @Nested
+    @DisplayName("Valid add table requests")
+    class ValidAddTableRequestTests {
+        @Test
+        void shouldBuildTablePropertiesAndApplySchema() {
+            AddTableRequest request = parse("""
+                    {
+                      "properties": {"sleeper.table.name": "my-table"},
+                      "schema": %s
+                    }
+                    """.formatted(schemaJson(createSchemaWithKey("key", new StringType()))));
 
-        TableProperties tableProperties = request.toTableProperties(instanceProperties);
+            TableProperties tableProperties = request.toTableProperties(instanceProperties);
 
-        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("my-table");
-        assertThat(tableProperties.getSchema().getRowKeyFields()).hasSize(1);
-        assertThat(request.toSplitPoints(tableProperties)).isEmpty();
+            assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("my-table");
+            assertThat(tableProperties.getSchema().getRowKeyFields()).hasSize(1);
+            assertThat(request.toSplitPoints(tableProperties)).isEmpty();
+        }
+
+        @Test
+        void shouldConvertIntSplitPoints() {
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
+
+            AddTableRequest request = parse("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
+                    """);
+
+            assertThat(request.toSplitPoints(tableProperties)).containsExactly(1, 2, 3);
+        }
+
+        @Test
+        void shouldConvertLongSplitPoints() {
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new LongType()));
+
+            AddTableRequest request = parse("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["10", "20"]}
+                    """);
+
+            assertThat(request.toSplitPoints(tableProperties)).containsExactly(10L, 20L);
+        }
+
+        @Test
+        void shouldConvertStringSplitPoints() {
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
+
+            AddTableRequest request = parse("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["a", "m", "z"]}
+                    """);
+
+            assertThat(request.toSplitPoints(tableProperties)).containsExactly("a", "m", "z");
+        }
+
+        @Test
+        void shouldConvertBase64EncodedStringSplitPoints() {
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
+            tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
+            String encoded = Base64.getEncoder().encodeToString("middle".getBytes(StandardCharsets.UTF_8));
+
+            AddTableRequest request = parse("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
+                    """.formatted(encoded));
+
+            assertThat(request.toSplitPoints(tableProperties)).containsExactly("middle");
+        }
+
+        @Test
+        void shouldConvertByteArraySplitPoints() {
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new ByteArrayType()));
+            String encoded = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
+
+            AddTableRequest request = parse("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
+                    """.formatted(encoded));
+
+            assertThat(request.toSplitPoints(tableProperties))
+                    .singleElement()
+                    .isEqualTo(new byte[]{1, 2, 3});
+        }
     }
 
-    @Test
-    void shouldConvertIntSplitPoints() {
-        TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
+    @Nested
+    @DisplayName("Invalid add table request tests")
+    class InvalidAddTableRequests {
 
-        AddTableRequest request = parse("""
-                {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
-                """);
+        @Test
+        void shouldRejectMissingProperties() {
+            AddTableRequest request = parse("""
+                    {"schema": {}}
+                    """);
 
-        assertThat(request.toSplitPoints(tableProperties)).containsExactly(1, 2, 3);
-    }
+            assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("properties");
+        }
 
-    @Test
-    void shouldConvertLongSplitPoints() {
-        TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new LongType()));
+        @Test
+        void shouldRejectMissingSchema() {
+            AddTableRequest request = parse("""
+                    {"properties": {}}
+                    """);
 
-        AddTableRequest request = parse("""
-                {"properties": {}, "schema": {}, "splitPoints": ["10", "20"]}
-                """);
-
-        assertThat(request.toSplitPoints(tableProperties)).containsExactly(10L, 20L);
-    }
-
-    @Test
-    void shouldConvertStringSplitPoints() {
-        TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
-
-        AddTableRequest request = parse("""
-                {"properties": {}, "schema": {}, "splitPoints": ["a", "m", "z"]}
-                """);
-
-        assertThat(request.toSplitPoints(tableProperties)).containsExactly("a", "m", "z");
-    }
-
-    @Test
-    void shouldConvertBase64EncodedStringSplitPoints() {
-        TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
-        tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
-        String encoded = Base64.getEncoder().encodeToString("middle".getBytes(StandardCharsets.UTF_8));
-
-        AddTableRequest request = parse("""
-                {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
-                """.formatted(encoded));
-
-        assertThat(request.toSplitPoints(tableProperties)).containsExactly("middle");
-    }
-
-    @Test
-    void shouldConvertByteArraySplitPoints() {
-        TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new ByteArrayType()));
-        String encoded = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
-
-        AddTableRequest request = parse("""
-                {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
-                """.formatted(encoded));
-
-        assertThat(request.toSplitPoints(tableProperties))
-                .singleElement()
-                .isEqualTo(new byte[]{1, 2, 3});
-    }
-
-    @Test
-    void shouldRejectMissingProperties() {
-        AddTableRequest request = parse("""
-                {"schema": {}}
-                """);
-
-        assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("properties");
-    }
-
-    @Test
-    void shouldRejectMissingSchema() {
-        AddTableRequest request = parse("""
-                {"properties": {}}
-                """);
-
-        assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("schema");
+            assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("schema");
+        }
     }
 
     private AddTableRequest parse(String json) {
