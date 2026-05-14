@@ -1,5 +1,5 @@
 {
   "stateMachineArn": "state-machine-arn",
-  "name": "table-id-test-job",
+  "name": "test-table-test-job",
   "input": "some-json"
 }

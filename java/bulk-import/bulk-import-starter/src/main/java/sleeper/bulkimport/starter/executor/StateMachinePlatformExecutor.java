@@ -144,14 +144,14 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private static String jobExecutionName(BulkImportJob job) {
-        String tableId = job.getTableId();
+        String tableName = job.getTableName();
         String jobId = job.getId();
         // See maximum length restriction in AWS documentation:
         // https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html#API_StartExecution_RequestParameters
-        int spaceForTableId = 80 - jobId.length() - 1;
-        if (tableId.length() > spaceForTableId) {
-            tableId = tableId.substring(0, spaceForTableId);
+        int spaceForTableName = 80 - jobId.length() - 1;
+        if (tableName.length() > spaceForTableName) {
+            tableName = tableName.substring(0, spaceForTableName);
         }
-        return String.join("-", tableId, jobId);
+        return String.join("-", tableName, jobId);
     }
 }

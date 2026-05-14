@@ -147,9 +147,9 @@ class StateMachinePlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldTruncateTableIdInStateMachineExecutionName(WireMockRuntimeInfo runtimeInfo) {
+    void shouldTruncateTableNameInStateMachineExecutionName(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        tableProperties.set(TABLE_ID, "this-is-a-long-table-id-that-will-not-fit-in-an-execution-name-when-combined-with-the-job-id");
+        tableProperties.set(TABLE_NAME, "this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-combined-with-the-job-id");
         BulkImportJob myJob = jobForTable()
                 .id("my-job")
                 .files(List.of("file1.parquet"))
@@ -162,14 +162,14 @@ class StateMachinePlatformExecutorWiremockIT {
         // Then
         findRequestBody(body -> assertThatJson(body)
                 .inPath("$.name").asString()
-                .isEqualTo("this-is-a-long-table-id-that-will-not-fit-in-an-execution-name-when-combi-my-job")
+                .isEqualTo("this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-com-my-job")
                 .hasSize(80));
     }
 
     @Test
-    void shouldNotTruncateTableIdInStateMachineExecutionNameWhenItFits(WireMockRuntimeInfo runtimeInfo) {
+    void shouldNotTruncateTableNameInStateMachineExecutionNameWhenItFits(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        tableProperties.set(TABLE_ID, "short-table-id");
+        tableProperties.set(TABLE_NAME, "short-table-name");
         BulkImportJob myJob = jobForTable()
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
@@ -182,7 +182,7 @@ class StateMachinePlatformExecutorWiremockIT {
         // Then
         findRequestBody(body -> assertThatJson(body)
                 .inPath("$.name").asString()
-                .isEqualTo("short-table-id-my-job"));
+                .isEqualTo("short-table-name-my-job"));
     }
 
     private void stubStartExecutionIsSuccessful() {
