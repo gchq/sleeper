@@ -152,7 +152,7 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.22.0</commons-codec.version>
         <commons-io.version>2.22.0</commons-io.version>
-        <commons-configuration.version>2.14.0</commons-configuration.version>
+        <commons-configuration.version>2.15.0</commons-configuration.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-text.version>1.15.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
