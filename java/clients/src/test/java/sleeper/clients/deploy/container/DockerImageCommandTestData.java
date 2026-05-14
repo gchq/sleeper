@@ -45,11 +45,12 @@ public class DockerImageCommandTestData {
     }
 
     private static List<CommandPipeline> commandsToLoginDockerAndPushImages(String ecrHostname, String ecrPrefix, String version, String... images) {
+        String baseTag = ecrHostname + "/" + ecrPrefix + "/base:" + version;
         List<CommandPipeline> commands = new ArrayList<>();
         commands.add(dockerLoginToEcrCommand(ecrHostname));
         for (String image : images) {
             String tag = ecrHostname + "/" + ecrPrefix + "/" + image + ":" + version;
-            commands.add(buildImageCommand(tag, "./docker/" + image));
+            commands.add(buildImageCommand(tag, "./docker/" + image, baseTag));
             commands.add(pushImageCommand(tag));
         }
         return commands;
@@ -64,12 +65,12 @@ public class DockerImageCommandTestData {
                 command("docker", "login", "--username", "AWS", "--password-stdin", ecrHostname));
     }
 
-    public static CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+    public static CommandPipeline buildImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerDirectory));
     }
 
-    public static CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "--provenance=false", "-t", tag, dockerDirectory));
+    public static CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "build", "--provenance=false", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerDirectory));
     }
 
     public static CommandPipeline pullImageCommand(String tag) {
@@ -96,8 +97,8 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "buildx", "use", "sleeper"));
     }
 
-    public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+    public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
 
