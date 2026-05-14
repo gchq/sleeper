@@ -141,6 +141,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"))
                 .vpc(coreStacks.getVpc())
                 .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                .defaultCapacity(0)
                 .build();
 
         bulkImportCluster.addNodegroupCapacity("EksBulkImportNodeGroup", NodegroupOptions.builder()
