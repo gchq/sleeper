@@ -65,8 +65,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
-                pushImageCommand(expectedBulkImportTag),
+                buildAndPushMultiplatformImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
                 pushImageCommand(expectedEmrTag));
@@ -92,8 +91,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
-                pushImageCommand(expectedBulkImportTag),
+                buildAndPushMultiplatformImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
                 pushImageCommand(expectedEmrTag));

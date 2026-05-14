@@ -147,6 +147,24 @@ class StateMachinePlatformExecutorWiremockIT {
     }
 
     @Test
+    void shouldIncludeArm64NodeSelectorForSparkDriverAndExecutorPods(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-job-run");
+
+        // Then
+        findInputJson(input -> assertThatJson(input)
+                .inPath("$.args").isArray().extracting(Objects::toString)
+                .contains("spark.kubernetes.node.selector.kubernetes.io/arch=arm64"));
+    }
+
+    @Test
     void shouldTruncateTableNameInStateMachineExecutionName(WireMockRuntimeInfo runtimeInfo) {
         // Given
         tableProperties.set(TABLE_NAME, "this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-combined-with-the-job-id");

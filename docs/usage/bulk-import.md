@@ -38,8 +38,9 @@ There are several stacks that allow data to be imported using the bulk import pr
   no delay while a new cluster is created (this also means the cost of the servers during the cluster creation and
   bootstrapping process is amortised over multiple jobs). The downside is that if there are no jobs to perform then
   there is still a cost.
-- `EksBulkImportStack` - this uses Spark running on an EKS cluster to bulk import the data. Currently, the executors run
-  as Fargate tasks. Future work will allow them to run on EC2 instances. This stack is experimental.
+- `EksBulkImportStack` - this uses Spark running on an EKS cluster to bulk import the data. Executors run on a
+  Graviton (ARM64) EC2 managed node group. The instance type is configurable via `sleeper.bulk.import.eks.ec2.instance.type`
+  (default: `m6g.4xlarge`). This stack is experimental.
 
 These can all be deployed independently of each other. Each stack has its own queue from which it pulls jobs. The
 `sleeper.optional.stacks` instance property needs to include `EmrServerlessBulkImportStack`, `EmrBulkImportStack`,
@@ -503,7 +504,7 @@ You can submit a job in a similar way to the methods above, e.g.
 You can change the memory settings and number of executors. The settings shown are the default ones so will be
 included even if you don't ask for them. It's important that your driver and executor memory and CPU settings are
 compatible
-with [AWS Fargate's supported values](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+with the available memory on the EC2 instance type configured via `sleeper.bulk.import.eks.ec2.instance.type`
 otherwise the job will fail to start. The total memory for the spark driver or executor is calculated by adding
 the `spark.[driver/executor].memory` and `spark.[driver/executor].memoryOverhead` The memory overhead should be
 around 10% of the executor memory. Otherwise you start to run into memory issues on Kubernetes and your nodes

@@ -76,6 +76,8 @@
     "--conf",
     "spark.dynamicAllocation.enabled=false",
     "--conf",
+    "spark.kubernetes.node.selector.kubernetes.io/arch=arm64",
+    "--conf",
     "spark.driver.extraJavaOptions=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
     "local:///opt/spark/workdir/bulk-import-runner.jar",
     "config-bucket",
