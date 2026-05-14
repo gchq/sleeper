@@ -231,9 +231,9 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    // The EditTables managed policy already bundles config-bucket read/write, table-index read/write and
-    // state-store partition read/write - exactly the grants SleeperClient.addTable requires. The REST API lambda
-    // intentionally shares this policy with the human admin role.
+    // All the policies needed for addTable are already grouped together as part of the editTable policy, so reusing
+    // this method.
+    // Policies of relevance: config-bucket read/write, table-index read/write and state-store partition read/write.
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public void grantAddTable(@Nullable IRole nullableRole) {
         IRole role = Objects.requireNonNull(nullableRole);
