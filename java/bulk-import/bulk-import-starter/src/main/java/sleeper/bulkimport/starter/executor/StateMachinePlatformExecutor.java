@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
 
         stepFunctions.startExecution(request -> request
                 .stateMachineArn(stateMachineArn)
-                .name(jobExecutionName(bulkImportJob))
+                .name(DeriveJobExecutionName.jobExecutionName(bulkImportJob))
                 .input(inputJson));
     }
 
@@ -111,15 +112,4 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         }
     }
 
-    private static String jobExecutionName(BulkImportJob job) {
-        String tableId = job.getTableId();
-        String jobId = job.getId();
-        // See maximum length restriction in AWS documentation:
-        // https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html#API_StartExecution_RequestParameters
-        int spaceForTableId = 80 - jobId.length() - 1;
-        if (tableId.length() > spaceForTableId) {
-            tableId = tableId.substring(0, spaceForTableId);
-        }
-        return String.join("-", tableId, jobId);
-    }
 }
