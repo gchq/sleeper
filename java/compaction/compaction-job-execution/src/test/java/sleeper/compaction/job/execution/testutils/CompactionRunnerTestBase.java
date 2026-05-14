@@ -90,7 +90,11 @@ public class CompactionRunnerTestBase {
     }
 
     protected void runTask(CompactionJob job) throws Exception {
-        runTask(job, hadoopConfigForECS(), null);
+        runTask(job, hadoopConfigForECS());
+    }
+
+    protected void runTask(CompactionJob job, Configuration hadoopConf) throws Exception {
+        runTask(job, hadoopConf, null);
     }
 
     protected void runTask(CompactionJob job, Configuration hadoopConf, Consumer<Long> progressCallback) throws Exception {

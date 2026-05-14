@@ -93,7 +93,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        runTask(compactionJob, hadoopConf, null);
+        runTask(compactionJob, hadoopConf);
 
         // Then
         //  - Read output file and check that it contains the right results
