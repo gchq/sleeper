@@ -72,7 +72,7 @@ public class DockerDeployment {
     private final OptionalStack optionalStack;
     private final StateStoreCommitterPlatform committerPlatform;
     private final Collection<SleeperInternalCdkApp> cdkApps;
-    private final boolean multiplatform;
+    private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
 
     private DockerDeployment(Builder builder) {
@@ -80,7 +80,7 @@ public class DockerDeployment {
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
         cdkApps = builder.cdkApps;
-        multiplatform = builder.multiplatform;
+        platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
@@ -162,7 +162,17 @@ public class DockerDeployment {
      * @return true if the image is multiplatform
      */
     public boolean isMultiplatform() {
-        return multiplatform;
+        return platforms.size() > 1;
+    }
+
+    /**
+     * Retrieves the platforms this image should be built and transferred for. If empty, the default platform of the
+     * build/transfer tool is used.
+     *
+     * @return the platforms
+     */
+    public List<ContainerPlatform> getPlatforms() {
+        return platforms;
     }
 
     /**
@@ -201,7 +211,7 @@ public class DockerDeployment {
     @Override
     public String toString() {
         return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", cdkApps=" + cdkApps
-                + ", multiplatform=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
+                + ", platforms=" + platforms + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
     }
 
     /**

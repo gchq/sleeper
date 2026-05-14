@@ -29,6 +29,7 @@ import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.deploy.ContainerPlatform;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -117,7 +119,10 @@ public class UploadDockerImages {
         });
 
         if (image.isMultiplatform()) {
-            commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
+            String platformList = image.getPlatforms().stream()
+                    .map(ContainerPlatform::toString)
+                    .collect(Collectors.joining(","));
+            commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
         } else {
             if (image.getLambdaJar().isPresent()) {
                 // At time of writing AWS Lambda does not support images with provenance enabled.
@@ -132,7 +137,7 @@ public class UploadDockerImages {
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
         String sourceTag = buildTag(deployConfig.dockerRepositoryPrefix(), image);
-        copyImage.copy(sourceTag, tag, deployConfig.dockerCredentials());
+        copyImage.copy(sourceTag, tag, image.getPlatforms(), deployConfig.dockerCredentials());
     }
 
     private String buildTag(String repositoryPrefix, StackDockerImage image) {
@@ -225,10 +230,10 @@ public class UploadDockerImages {
 
     public interface CopyContainerImage {
 
-        void copy(String source, String target, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
+        void copy(String source, String target, List<ContainerPlatform> platforms, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
 
         static CopyContainerImage localBuildOnly() {
-            return (source, target, sourceCredentials) -> {
+            return (source, target, platforms, sourceCredentials) -> {
                 throw new UnsupportedOperationException(
                         "Copying container images is not configured correctly, expected to always build images locally.");
             };
@@ -243,10 +248,11 @@ public class UploadDockerImages {
 
         static CopyContainerImage withTransferManager(ContainerImageTransferManager transferManager, EcrClient ecrClient) {
             EcrCredentialRetriever ecrCredentialRetriever = new EcrCredentialRetriever(ecrClient);
-            return (source, target, sourceCredentials) -> {
+            return (source, target, platforms, sourceCredentials) -> {
                 transferManager.transfer(ContainerImageTransferRequest.builder()
                         .sourceImageReference(source)
                         .targetImageReference(target)
+                        .platforms(platforms)
                         .sourceCredentials(sourceCredentials)
                         .targetCredentialsRetriever(ecrCredentialRetriever)
                         .build());
