@@ -237,7 +237,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         configurations.add(yarnConfigurations);
 
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, architecture);
+        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationForEMRFromInstanceProperties(instanceProperties, architecture);
         CfnCluster.ConfigurationProperty sparkDefaultsConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark-defaults")
                 .configurationProperties(sparkConf)

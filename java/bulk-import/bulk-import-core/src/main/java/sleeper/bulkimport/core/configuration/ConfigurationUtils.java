@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.core.configuration;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 
@@ -24,7 +25,32 @@ import java.util.Map;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_NETWORK_TIMEOUT;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_RDD_COMPRESS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_SHUFFLE_COMPRESS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_SHUFFLE_SPILL_COMPRESS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
@@ -79,9 +105,9 @@ public class ConfigurationUtils {
     private ConfigurationUtils() {
     }
 
-    public static Map<String, String> getSparkConfigurationFromInstanceProperties(
+    public static Map<String, String> getSparkConfigurationForEMRFromInstanceProperties(
             InstanceProperties instanceProperties, EmrInstanceArchitecture arch) {
-        Map<String, String> sparkConf = new HashMap<>();
+        Map<String, String> sparkConf = getBaseSparkConfiguration(instanceProperties);
 
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_CORES));
@@ -122,27 +148,70 @@ public class ConfigurationUtils {
         // spark.shuffle properties
         sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS));
         sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS));
-        // The following value is not mentioned in the blog linked above, but setting this explicitly
-        // was found necessary to stop "Decompression error: Version not supported" errors -
-        // only a value of "lz4" has been tested.
-        sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
-
-        // spark.speculation properties (not referenced in the blog linked above)
-        sparkConf.put("spark.speculation", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION));
-        sparkConf.put("spark.speculation.quantile", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION_QUANTILE));
-
-        // spark.hadoop properties (not referenced in the blog linked above)
-        sparkConf.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
-
-        // Disable file/directory existence probes on file creation
-        // https://hadoop.apache.org/docs/r3.4.3/hadoop-aws/tools/hadoop-aws/performance.html#Create_Performance_fs.s3a.create.performance
-        sparkConf.put("spark.hadoop.fs.s3a.create.performance", "true");
 
         // spark.sql properties
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS));
 
         // Set JAVA_HOME explicitly
         sparkConf.put("spark.executorEnv.JAVA_HOME", getJavaHome(arch));
+
+        return sparkConf;
+    }
+
+    public static Map<String, String> getSparkConfigurationForEKSFromInstanceProperties(InstanceProperties instanceProperties) {
+        Map<String, String> sparkConf = getBaseSparkConfiguration(instanceProperties);
+
+        // spark.driver properties
+        sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_CORES));
+        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY));
+
+        // spark.executor properties
+        sparkConf.put("spark.executor.cores", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES));
+        sparkConf.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
+        sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
+        sparkConf.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES));
+        sparkConf.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY));
+
+        // memoryOverhead properties (Fargate provides extra memory so no need to include extra which also messes up the scheduler)
+        sparkConf.put("spark.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD));
+        sparkConf.put("spark.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD));
+
+        // spark.default properties
+        sparkConf.put("spark.default.parallelism", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM));
+
+        // spark.network properties
+        sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_EKS_SPARK_NETWORK_TIMEOUT));
+
+        // spark.dynamicAllocation properties
+        sparkConf.put("spark.dynamicAllocation.enabled", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED));
+
+        // spark.memory properties
+        sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION));
+        sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION));
+
+        // spark.storage properties
+        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_EKS_SPARK_STORAGE_LEVEL));
+
+        // spark.rdd properties
+        sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_EKS_SPARK_RDD_COMPRESS));
+
+        // spark.shuffle properties
+        sparkConf.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SHUFFLE_COMPRESS));
+        sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SHUFFLE_SPILL_COMPRESS));
+
+        // spark.hadoop properties
+        sparkConf.put("spark.hadoop.fs.s3a.aws.credentials.provider", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER));
+        sparkConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE));
+
+        // spark.sql properties
+        sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS));
+
+        // spark.kubernetes properties
+        sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
+        sparkConf.put("spark.kubernetes.container.image", DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
+        sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
+        sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME));
 
         return sparkConf;
     }
@@ -235,5 +304,26 @@ public class ConfigurationUtils {
         } else {
             throw new IllegalArgumentException("Unrecognised architecture: " + arch);
         }
+    }
+
+    private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
+        Map<String, String> sparkConf = new HashMap<>();
+        // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
+        // was found necessary to stop "Decompression error: Version not supported" errors -
+        // only a value of "lz4" has been tested.
+        sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
+
+        // spark.speculation properties (not referenced in the blog linked at the top of this class)
+        sparkConf.put("spark.speculation", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION));
+        sparkConf.put("spark.speculation.quantile", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION_QUANTILE));
+
+        // spark.hadoop properties (not referenced in the blog linked at the top of this class)
+        sparkConf.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
+
+        // Disable file/directory existence probes on file creation
+        // https://hadoop.apache.org/docs/r3.4.3/hadoop-aws/tools/hadoop-aws/performance.html#Create_Performance_fs.s3a.create.performance
+        sparkConf.put("spark.hadoop.fs.s3a.create.performance", "true");
+
+        return sparkConf;
     }
 }

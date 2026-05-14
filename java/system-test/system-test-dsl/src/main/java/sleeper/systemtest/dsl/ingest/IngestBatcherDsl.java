@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -26,7 +27,6 @@ import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class IngestBatcherDsl {
+    private final SentJobsContext sentJobs;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
@@ -43,9 +44,9 @@ public class IngestBatcherDsl {
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private final PollWithRetriesDriver pollDriver;
-    private List<String> createdJobIds = new ArrayList<>();
 
     public IngestBatcherDsl(SystemTestContext context, SystemTestDrivers drivers) {
+        sentJobs = context.sentJobs();
         instance = context.instance();
         sourceFiles = context.sourceFiles();
         driver = drivers.ingestBatcher(context);
@@ -66,7 +67,7 @@ public class IngestBatcherDsl {
             if (newJobIds.size() > expectedJobs) {
                 throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected " + expectedJobs);
             }
-            createdJobIds.addAll(newJobIds);
+            sentJobs.addAllJobIds(newJobIds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -75,17 +76,17 @@ public class IngestBatcherDsl {
     }
 
     public IngestBatcherDsl waitForStandardIngestTask() {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(createdJobIds, pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobs.getJobIds(), pollDriver);
         return this;
     }
 
     public IngestBatcherDsl waitForIngestJobs() {
-        waitForIngest.waitForJobs(createdJobIds);
+        waitForIngest.waitForJobs(sentJobs.getJobIds());
         return this;
     }
 
     public IngestBatcherDsl waitForBulkImportJobs(PollWithRetries pollWithRetries) {
-        waitForBulkImport.waitForJobs(createdJobIds, pollWithRetries);
+        waitForBulkImport.waitForJobs(sentJobs.getJobIds(), pollWithRetries);
         return this;
     }
 

@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
@@ -23,17 +24,16 @@ import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class PythonBulkImportDsl {
+    private final SentJobsContext sentJobs;
     private final IngestByAnyQueueDriver ingestDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
-    private final List<String> sentJobIds = new ArrayList<>();
 
     public PythonBulkImportDsl(SystemTestContext context) {
+        sentJobs = context.sentJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         ingestDriver = drivers.pythonBulkImport(context);
         waitForJobs = drivers.waitForBulkImport(context);
@@ -43,12 +43,12 @@ public class PythonBulkImportDsl {
     public PythonBulkImportDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         ingestDriver.sendJobWithFiles(jobId, files);
-        sentJobIds.add(jobId);
+        sentJobs.addJobId(jobId);
         return this;
     }
 
     public void waitForJobs() {
-        waitForJobs.waitForJobs(sentJobIds,
+        waitForJobs.waitForJobs(sentJobs.getJobIds(),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 }
