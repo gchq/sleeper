@@ -68,7 +68,7 @@ if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
   else
     : > "$ALT_CARGO_HOME/config.toml"
   fi
-  printf '\n%s\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
+  printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
   RUN_PARAMS+=(
     -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
     -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
