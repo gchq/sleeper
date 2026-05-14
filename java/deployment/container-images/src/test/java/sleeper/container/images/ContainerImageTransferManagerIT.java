@@ -111,6 +111,9 @@ public class ContainerImageTransferManagerIT {
 
         // Then
         ManifestAndDigest<ManifestTemplate> manifest = imageClientForRegistry(DESTINATION).pullManifest("latest");
+        // Note that V22ManifestListTemplate has the following media type: application/vnd.docker.distribution.manifest.list.v2+json
+        // This is a subset of the newer OCI type that's now produced by the Docker CLI.
+        // The difference should not have any effect for our purposes.
         assertThat(manifest.getManifest()).isInstanceOf(V22ManifestListTemplate.class);
         assertThat(manifest.getDigest()).hasToString(result.imageDigest());
         assertThat(result.imageReference()).isEqualTo(imageNameInRegistry(DESTINATION));
