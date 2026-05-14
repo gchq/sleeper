@@ -19,12 +19,11 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -33,17 +32,19 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DirectBulkImportDsl {
 
+    private final SentJobsContext sentJobs;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectBulkImportDriver driver;
     private final WaitForJobs waitForJobs;
-    private final List<String> sentJobIds = new ArrayList<>();
 
     public DirectBulkImportDsl(
+            SentJobsContext sentJobs,
             SystemTestInstanceContext instance,
             IngestSourceFilesContext sourceFiles,
             DirectBulkImportDriver driver,
             WaitForJobs waitForJobs) {
+        this.sentJobs = sentJobs;
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
@@ -52,7 +53,7 @@ public class DirectBulkImportDsl {
 
     public DirectBulkImportDsl sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
-        sentJobIds.add(jobId);
+        sentJobs.addJobId(jobId);
         TableProperties table = instance.getTableProperties();
         driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
@@ -64,6 +65,6 @@ public class DirectBulkImportDsl {
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) {
-        waitForJobs.waitForJobs(sentJobIds, pollWithRetries);
+        waitForJobs.waitForJobs(sentJobs.getJobIds(), pollWithRetries);
     }
 }
