@@ -145,7 +145,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         bulkImportCluster.addNodegroupCapacity("EksBulkImportNodeGroup", NodegroupOptions.builder()
                 .nodegroupName(uniqueBulkImportId)
-                .amiType(NodegroupAmiType.AL2_ARM_64)
+                .amiType(NodegroupAmiType.AL2023_ARM_64_STANDARD)
                 .instanceTypes(List.of(new InstanceType(instanceProperties.get(EKS_EC2_INSTANCE_TYPE))))
                 .minSize(0)
                 .maxSize(100)
