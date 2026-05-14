@@ -25,12 +25,6 @@
 
     <artifactId>foreign-bridge</artifactId>
 
-    <properties>
-        <!-- Optional override for the cargo invocation used by the rust build script.
-             Empty by default; populated from $CARGO_COMMAND via the profile below. -->
-        <cargo.command></cargo.command>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.github.spotbugs</groupId>
@@ -96,21 +90,6 @@
         </plugins>
     </build>
     <profiles>
-        <!-- Activates when CARGO_COMMAND is set in the environment, allowing the
-             build to override the default cargo invocation (e.g. to add config
-             flags for mirrors). The value is forwarded to build-for-maven.sh as
-             a single argument and tokenised there. -->
-        <profile>
-            <id>cargo-command-from-env</id>
-            <activation>
-                <property>
-                    <name>env.CARGO_COMMAND</name>
-                </property>
-            </activation>
-            <properties>
-                <cargo.command>${env.CARGO_COMMAND}</cargo.command>
-            </properties>
-        </profile>
         <profile>
             <activation>
                 <property>
@@ -142,7 +121,6 @@
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>x86_64</argument>
-                                        <argument>${cargo.command}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -159,7 +137,6 @@
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>aarch64</argument>
-                                        <argument>${cargo.command}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
