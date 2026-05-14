@@ -35,6 +35,11 @@ public interface EKSProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .defaultValue("false")
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EKS_EC2_INSTANCE_TYPE = Index.propertyBuilder("sleeper.bulk.import.eks.ec2.instance.type")
+            .description("(EKS mode only) The EC2 instance type for the EKS Graviton managed node group.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("m6g.4xlarge")
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

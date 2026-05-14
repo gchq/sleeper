@@ -1156,6 +1156,10 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.is.native.libs.image=false
 
+# (EKS mode only) The EC2 instance type for the EKS Graviton managed node group.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.ec2.instance.type=m6g.4xlarge
+
 
 ## The following instance properties relate to the splitting of partitions.
 

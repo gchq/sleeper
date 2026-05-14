@@ -21,15 +21,14 @@ import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
+import software.amazon.awscdk.services.ec2.InstanceType;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
-import software.amazon.awscdk.services.eks.FargateCluster;
-import software.amazon.awscdk.services.eks.FargateProfile;
-import software.amazon.awscdk.services.eks.FargateProfileOptions;
 import software.amazon.awscdk.services.eks.KubernetesManifest;
 import software.amazon.awscdk.services.eks.KubernetesVersion;
-import software.amazon.awscdk.services.eks.Selector;
+import software.amazon.awscdk.services.eks.NodegroupAmiType;
+import software.amazon.awscdk.services.eks.NodegroupOptions;
 import software.amazon.awscdk.services.eks.ServiceAccount;
 import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.Effect;
@@ -38,7 +37,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
@@ -77,6 +75,7 @@ import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_ST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
+import static sleeper.core.properties.instance.EKSProperty.EKS_EC2_INSTANCE_TYPE;
 
 /**
  * Deploys an EKS cluster and associated Kubernetes resources needed to run Spark on Kubernetes. In addition to this,
@@ -136,7 +135,7 @@ public final class EksBulkImportStack extends NestedStack {
         coreStacks.grantValidateBulkImport(bulkImportJobStarter.getRole());
 
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
-        Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
+        Cluster bulkImportCluster = Cluster.Builder.create(this, "EksBulkImportCluster")
                 .clusterName(uniqueBulkImportId)
                 .version(KubernetesVersion.V1_35)
                 .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"))
@@ -144,22 +143,32 @@ public final class EksBulkImportStack extends NestedStack {
                 .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
                 .build();
 
+        bulkImportCluster.addNodegroupCapacity("EksBulkImportNodeGroup", NodegroupOptions.builder()
+                .nodegroupName(uniqueBulkImportId)
+                .amiType(NodegroupAmiType.AL2_ARM_64)
+                .instanceTypes(List.of(new InstanceType(instanceProperties.get(EKS_EC2_INSTANCE_TYPE))))
+                .minSize(0)
+                .maxSize(100)
+                .subnets(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build())
+                .build());
+
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
-        FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
-                .fargateProfileName(uniqueBulkImportId)
-                .vpc(coreStacks.getVpc())
-                .subnetSelection(SubnetSelection.builder()
-                        .subnets(List.of(coreStacks.getSubnets().get(0)))
-                        .build())
-                .selectors(List.of(Selector.builder()
-                        .namespace(uniqueBulkImportId)
-                        .build()))
-                .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+        // Fargate profile and FluentBit logging removed - cluster now uses Graviton EC2 managed node group
+        // FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
+        //         .fargateProfileName(uniqueBulkImportId)
+        //         .vpc(coreStacks.getVpc())
+        //         .subnetSelection(SubnetSelection.builder()
+        //                 .subnets(List.of(coreStacks.getSubnets().get(0)))
+        //                 .build())
+        //         .selectors(List.of(Selector.builder()
+        //                 .namespace(uniqueBulkImportId)
+        //                 .build()))
+        //         .build());
+        // addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -210,8 +219,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         // Deleting the driver pod is necessary as a Spark job does not delete the pod afterwards:
         // https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html#how-it-works
-        // Although the Spark documentation says it doesn't use up resources in the completed state, it does when it's
-        // scheduled into AWS Fargate.
+        // Although the Spark documentation says it doesn't use up resources in the completed state, it does on EC2.
         Map<String, Object> deleteDriverPodState = parseEksStepDefinition(
                 "/step-functions/delete-driver-pod.json", instanceProperties, cluster);
 
@@ -244,43 +252,40 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
     }
 
-    @SuppressWarnings("unchecked")
-    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, ILogGroup logGroup) {
-        // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html
-
-        KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
-                "apiVersion", "v1",
-                "kind", "Namespace",
-                "metadata", Map.of(
-                        "name", "aws-observability",
-                        "labels", Map.of("aws-observability", "enabled"))));
-
-        // Fluent Bit configuration
-        // See https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch
-        Function<String, String> outputReplacements = replacements(Map.of(
-                "region-placeholder", cluster.getStack().getRegion(),
-                "log-group-placeholder", logGroup.getLogGroupName()));
-        withDependencyOn(namespace, cluster.addManifest("LoggingConfig", Map.of(
-                "apiVersion", "v1",
-                "kind", "ConfigMap",
-                "metadata", Map.of("name", "aws-logging", "namespace", "aws-observability"),
-                "data", Map.of(
-                        "flb_log_cw", "false",
-                        "filters.conf", loadResource("/fluentbit/filters.conf"),
-                        "output.conf", outputReplacements.apply(loadResource("/fluentbit/output.conf")),
-                        "parsers.conf", loadResource("/fluentbit/parsers.conf")))));
-
-        fargateProfile.getPodExecutionRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of(
-                        "logs:CreateLogStream",
-                        "logs:CreateLogGroup",
-                        "logs:DescribeLogStreams",
-                        "logs:PutLogEvents",
-                        "logs:PutRetentionPolicy"))
-                .resources(List.of("*"))
-                .build());
-    }
+    // Fargate-specific FluentBit logging removed - cluster now uses Graviton EC2 managed node group.
+    // Pod logs are accessible via kubectl; the state machine captures spark-submit logs via LogOptions.RetrieveLogs.
+    // @SuppressWarnings("unchecked")
+    // private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, ILogGroup logGroup) {
+    //     // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html
+    //     KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
+    //             "apiVersion", "v1",
+    //             "kind", "Namespace",
+    //             "metadata", Map.of(
+    //                     "name", "aws-observability",
+    //                     "labels", Map.of("aws-observability", "enabled"))));
+    //     Function<String, String> outputReplacements = replacements(Map.of(
+    //             "region-placeholder", cluster.getStack().getRegion(),
+    //             "log-group-placeholder", logGroup.getLogGroupName()));
+    //     withDependencyOn(namespace, cluster.addManifest("LoggingConfig", Map.of(
+    //             "apiVersion", "v1",
+    //             "kind", "ConfigMap",
+    //             "metadata", Map.of("name", "aws-logging", "namespace", "aws-observability"),
+    //             "data", Map.of(
+    //                     "flb_log_cw", "false",
+    //                     "filters.conf", loadResource("/fluentbit/filters.conf"),
+    //                     "output.conf", outputReplacements.apply(loadResource("/fluentbit/output.conf")),
+    //                     "parsers.conf", loadResource("/fluentbit/parsers.conf")))));
+    //     fargateProfile.getPodExecutionRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+    //             .effect(Effect.ALLOW)
+    //             .actions(List.of(
+    //                     "logs:CreateLogStream",
+    //                     "logs:CreateLogGroup",
+    //                     "logs:DescribeLogStreams",
+    //                     "logs:PutLogEvents",
+    //                     "logs:PutRetentionPolicy"))
+    //             .resources(List.of("*"))
+    //             .build());
+    // }
 
     @SuppressWarnings("unchecked")
     private KubernetesManifest createNamespace(Cluster cluster, String namespaceName) {
