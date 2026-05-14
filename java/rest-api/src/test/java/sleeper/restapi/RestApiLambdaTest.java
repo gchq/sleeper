@@ -20,6 +20,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.Reques
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext.Http;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -61,41 +63,45 @@ class RestApiLambdaTest {
         lambda = new RestApiLambda(instanceProperties, sleeperClient);
     }
 
-    @Test
-    void shouldAddTable() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {
-                  "properties": {"sleeper.table.name": "my-table"},
-                  "schema": %s
-                }
-                """.formatted(schemaJson(schema))));
+    @Nested
+    @DisplayName("Valid request tests")
+    class ValidRequests {
+        @Test
+        void shouldAddTable() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {
+                      "properties": {"sleeper.table.name": "my-table"},
+                      "schema": %s
+                    }
+                    """.formatted(schemaJson(schema))));
 
-        assertThat(response.getStatusCode()).isEqualTo(201);
-        assertThat(response.getBody()).contains("\"tableName\":\"my-table\"");
-        ArgumentCaptor<TableProperties> tableCaptor = ArgumentCaptor.forClass(TableProperties.class);
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(sleeperClient).addTable(tableCaptor.capture(), splitsCaptor.capture());
-        assertThat(tableCaptor.getValue().get(sleeper.core.properties.table.TableProperty.TABLE_NAME))
-                .isEqualTo("my-table");
-        assertThat(splitsCaptor.getValue()).isEmpty();
-    }
+            assertThat(response.getStatusCode()).isEqualTo(201);
+            assertThat(response.getBody()).contains("\"tableName\":\"my-table\"");
+            ArgumentCaptor<TableProperties> tableCaptor = ArgumentCaptor.forClass(TableProperties.class);
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
+            verify(sleeperClient).addTable(tableCaptor.capture(), splitsCaptor.capture());
+            assertThat(tableCaptor.getValue().get(sleeper.core.properties.table.TableProperty.TABLE_NAME))
+                    .isEqualTo("my-table");
+            assertThat(splitsCaptor.getValue()).isEmpty();
+        }
 
-    @Test
-    void shouldAddTableWithSplitPoints() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {
-                  "properties": {"sleeper.table.name": "my-table"},
-                  "schema": %s,
-                  "splitPoints": ["a", "m", "z"]
-                }
-                """.formatted(schemaJson(schema))));
+        @Test
+        void shouldAddTableWithSplitPoints() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {
+                      "properties": {"sleeper.table.name": "my-table"},
+                      "schema": %s,
+                      "splitPoints": ["a", "m", "z"]
+                    }
+                    """.formatted(schemaJson(schema))));
 
-        assertThat(response.getStatusCode()).isEqualTo(201);
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(sleeperClient).addTable(any(), splitsCaptor.capture());
-        assertThat(splitsCaptor.getValue()).containsExactly("a", "m", "z");
+            assertThat(response.getStatusCode()).isEqualTo(201);
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
+            verify(sleeperClient).addTable(any(), splitsCaptor.capture());
+            assertThat(splitsCaptor.getValue()).containsExactly("a", "m", "z");
+        }
     }
 
     @Test
@@ -112,87 +118,95 @@ class RestApiLambdaTest {
         assertThat(response.getStatusCode()).isEqualTo(201);
     }
 
-    @Test
-    void shouldReturn400ForMalformedJson() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("not-json"));
+    @Nested
+    @DisplayName("Request rejected tests")
+    class RejectedValidAddTableRequests {
+        @Test
+        void shouldReturnReponseOfInvalidForMalformedJson() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("not-json"));
 
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.getBody()).contains("invalid_request");
-        verify(sleeperClient, never()).addTable(any(), any());
+            assertThat(response.getStatusCode()).isEqualTo(400);
+            assertThat(response.getBody()).contains("invalid_request");
+            verify(sleeperClient, never()).addTable(any(), any());
+        }
+
+        @Test
+        void shouldReturnResponseForEmptyBody() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent(null));
+
+            assertThat(response.getStatusCode()).isEqualTo(400);
+            verify(sleeperClient, never()).addTable(any(), any());
+        }
+
+        @Test
+        void shouldReturnRepsonseForMissingProperties() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {"schema": %s}
+                    """.formatted(schemaJson(schema))));
+
+            assertThat(response.getStatusCode()).isEqualTo(400);
+            assertThat(response.getBody()).contains("properties");
+            verify(sleeperClient, never()).addTable(any(), any());
+        }
+
+        @Test
+        void shouldReturnResponseWhenSleeperClientRejectsProperties() {
+            Map<SleeperProperty, String> invalidValues = Map.of(CdkDefinedInstanceProperty.ACCOUNT, "Failure");
+            doThrow(new SleeperPropertiesInvalidException(invalidValues))
+                    .when(sleeperClient).addTable(any(), any());
+
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
+                    """.formatted(schemaJson(schema))));
+
+            assertThat(response.getStatusCode()).isEqualTo(400);
+        }
+
+        @Test
+        void shouldReturn409WhenTableAlreadyExists() {
+            TableStatus existing = TableStatus.uniqueIdAndName("table-id", "my-table", true);
+            doThrow(new TableAlreadyExistsException(existing))
+                    .when(sleeperClient).addTable(any(), any());
+
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
+                    """.formatted(schemaJson(schema))));
+
+            assertThat(response.getStatusCode()).isEqualTo(409);
+            assertThat(response.getBody()).contains("table_already_exists");
+        }
     }
 
-    @Test
-    void shouldReturn400ForEmptyBody() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent(null));
+    @Nested
+    @DisplayName("Failure response for REST API")
+    class FailureResponses {
+        @Test
+        void shouldReturn404ForUnknownRoute() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(event("GET", "/sleeper/unknown", null));
 
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        verify(sleeperClient, never()).addTable(any(), any());
-    }
+            assertThat(response.getStatusCode()).isEqualTo(404);
+        }
 
-    @Test
-    void shouldReturn400ForMissingProperties() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {"schema": %s}
-                """.formatted(schemaJson(schema))));
+        @Test
+        void shouldRespondToExistingPlaceholderRoute() {
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(event("GET", "/sleeper", null));
 
-        assertThat(response.getStatusCode()).isEqualTo(400);
-        assertThat(response.getBody()).contains("properties");
-        verify(sleeperClient, never()).addTable(any(), any());
-    }
+            assertThat(response.getStatusCode()).isEqualTo(200);
+        }
 
-    @Test
-    void shouldReturn400WhenSleeperClientRejectsProperties() {
-        Map<SleeperProperty, String> invalidValues = Map.of(CdkDefinedInstanceProperty.ACCOUNT, "Failure");
-        doThrow(new SleeperPropertiesInvalidException(invalidValues))
-                .when(sleeperClient).addTable(any(), any());
+        @Test
+        void shouldReturn500ForUnexpectedFailure() {
+            doThrow(new RuntimeException("kaboom"))
+                    .when(sleeperClient).addTable(any(), any());
 
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                """.formatted(schemaJson(schema))));
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+                    {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
+                    """.formatted(schemaJson(schema))));
 
-        assertThat(response.getStatusCode()).isEqualTo(400);
-    }
-
-    @Test
-    void shouldReturn409WhenTableAlreadyExists() {
-        TableStatus existing = TableStatus.uniqueIdAndName("table-id", "my-table", true);
-        doThrow(new TableAlreadyExistsException(existing))
-                .when(sleeperClient).addTable(any(), any());
-
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                """.formatted(schemaJson(schema))));
-
-        assertThat(response.getStatusCode()).isEqualTo(409);
-        assertThat(response.getBody()).contains("table_already_exists");
-    }
-
-    @Test
-    void shouldReturn500ForUnexpectedFailure() {
-        doThrow(new RuntimeException("kaboom"))
-                .when(sleeperClient).addTable(any(), any());
-
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                """.formatted(schemaJson(schema))));
-
-        assertThat(response.getStatusCode()).isEqualTo(500);
-        assertThat(response.getBody()).contains("internal_error");
-        assertThat(response.getBody()).doesNotContain("kaboom");
-    }
-
-    @Test
-    void shouldReturn404ForUnknownRoute() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(event("GET", "/sleeper/unknown", null));
-
-        assertThat(response.getStatusCode()).isEqualTo(404);
-    }
-
-    @Test
-    void shouldRespondToExistingPlaceholderRoute() {
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(event("GET", "/sleeper", null));
-
-        assertThat(response.getStatusCode()).isEqualTo(200);
+            assertThat(response.getStatusCode()).isEqualTo(500);
+            assertThat(response.getBody()).contains("internal_error");
+            assertThat(response.getBody()).doesNotContain("kaboom");
+        }
     }
 
     private APIGatewayV2HTTPEvent addTableEvent(String body) {

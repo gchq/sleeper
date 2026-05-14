@@ -46,7 +46,7 @@ class AddTableRequestTest {
 
     @Nested
     @DisplayName("Valid add table requests")
-    class ValidAddTableRequestTests {
+    class ValidAddTableRequest {
         @Test
         void shouldBuildTablePropertiesAndApplySchema() {
             AddTableRequest request = parse("""
