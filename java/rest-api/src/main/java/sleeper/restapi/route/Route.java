@@ -19,7 +19,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
 /**
- * Handles a single REST API route. Implementations are mapped against an HTTP method and path by
+ * Handles a single REST API route. Implementations are mapped against a HTTP method and path by
  * {@link sleeper.restapi.RestApiLambda}.
  */
 @FunctionalInterface
