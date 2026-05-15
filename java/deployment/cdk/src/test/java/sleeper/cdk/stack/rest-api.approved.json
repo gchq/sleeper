@@ -10,11 +10,6 @@
         }
       },
       "Outputs": {
-        "TestInstanceRestApiRestApiHandlerlambdaServiceRole1E0A5531Ref": {
-          "Value": {
-            "Ref": "RestApiHandlerlambdaServiceRoleEB7ED2C9"
-          }
-        },
         "RestApiUrl": {
           "Value": {
             "Fn::GetAtt": [
