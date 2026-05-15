@@ -420,7 +420,7 @@ class ArrowToRowConversionUtilsTest {
     @Test
     void shouldReturnNullForNullableLongField() {
         // Given
-        try (BigIntVector longVec = new BigIntVector("longField", allocator);) {
+        try (BigIntVector longVec = new BigIntVector("longField", allocator)) {
             longVec.allocateNew(1);
             longVec.setNull(0);
             longVec.setValueCount(1);
