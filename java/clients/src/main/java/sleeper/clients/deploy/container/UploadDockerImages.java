@@ -28,8 +28,8 @@ import sleeper.container.images.ContainerImageTransferRequest;
 import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.ContainerPlatform;
+import sleeper.core.deploy.DockerDeployment;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
