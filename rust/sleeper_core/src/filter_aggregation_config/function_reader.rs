@@ -225,15 +225,14 @@ impl<'h> FunctionReader<'h> {
 
 #[cfg(test)]
 mod tests {
-
     use super::super::{
         function_call::{FunctionCall, FunctionParameter},
         function_reader::FunctionReaderError,
     };
     use super::FunctionReader;
-    use crate::assert_error;
     use color_eyre::eyre::Result as EyreResult;
     use test_log::test;
+    use test_util::assert_error;
 
     #[test]
     fn should_read_function_call() -> EyreResult<()> {

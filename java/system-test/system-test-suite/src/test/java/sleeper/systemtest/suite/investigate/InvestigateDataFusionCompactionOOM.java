@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
@@ -83,7 +84,11 @@ public class InvestigateDataFusionCompactionOOM {
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration(), context);
-            runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
+            runner.compact(CompactionRequest.builder()
+                    .job(localJob)
+                    .tableProperties(logs.tableProperties())
+                    .region(partitionTree.getPartition(localJob.getPartitionId()).getRegion())
+                    .build());
         }
     }
 

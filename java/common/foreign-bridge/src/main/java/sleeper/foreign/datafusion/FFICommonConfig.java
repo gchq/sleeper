@@ -34,6 +34,8 @@ import java.util.Objects;
 @SuppressWarnings("checkstyle:membername")
 @SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFICommonConfig extends Struct {
+    /** Optional job ID. */
+    public final Struct.UTF8StringRef job_id = new Struct.UTF8StringRef();
     /** Optional AWS configuration. Set to NULL if not used. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Length of input files array. */

@@ -475,7 +475,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
-                jobRunIdSupplier, timeSupplier, noWaits(), noJitter());
+                jobRunIdSupplier, timeSupplier, noWaits(), noJitter(), null);
         return task;
     }
 

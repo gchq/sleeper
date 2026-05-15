@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -81,17 +82,17 @@ public class CompactionTaskTestHelper {
         };
     }
 
-    public void runTask(CompactionRunner compactionRunner, List<CompactionJob> jobs) throws IOException {
-        runTask(compactionRunner, receiveJobsFromQueue(new LinkedList<>(jobs)));
+    public void runTask(CompactionRunner compactionRunner, Consumer<Long> progressCallback, List<CompactionJob> jobs) throws IOException {
+        runTask(compactionRunner, progressCallback, receiveJobsFromQueue(new LinkedList<>(jobs)));
     }
 
-    public void runTask(CompactionRunner compactionRunner, MessageReceiver messageReceiver) throws IOException {
+    public void runTask(CompactionRunner compactionRunner, Consumer<Long> progressCallback, MessageReceiver messageReceiver) throws IOException {
         new CompactionTask(
                 instanceProperties, tablePropertiesProvider, PropertiesReloader.neverReload(),
                 stateStoreProvider, messageReceiver, stateStoreWaitForFiles(), jobCommitter(),
                 jobTracker, CompactionTaskTracker.NONE,
                 runnerFactory(compactionRunner), "test-task", supplyNumberedUuidsWithPrefix("testrun"),
-                timeSupplier, threadSleep, randomJitterFunction)
+                timeSupplier, threadSleep, randomJitterFunction, progressCallback)
                 .run();
     }
 

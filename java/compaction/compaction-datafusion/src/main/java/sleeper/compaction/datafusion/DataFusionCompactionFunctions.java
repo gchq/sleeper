@@ -46,5 +46,24 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_compact(@In Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
+    int native_compact(@In Pointer ctx_ptr, @In FFICommonConfig input_ptr, @Out FFIFileResult output_ptr);
+
+    /**
+     * Get number of rows read for a currently executing compaction.
+     *
+     * The number of rows read by the given job ID is returned in the result parameter. The number of rows written
+     * will be 0. If no data can be found for the job, then -1 is returned and the contents of the result object is
+     * unspecified.
+     *
+     * @param  context Java context objet
+     * @param  jobId   compaction job ID
+     * @param  result  object to populate
+     * @return         0 on success, -1 if no row count could be retrieved
+     */
+    default int get_compaction_rows_read(FFIContext<DataFusionCompactionFunctions> context, String jobId, FFIFileResult result) {
+        return native_get_compaction_rows_read(context.getForeignContext(), jobId, result);
+    }
+
+    @SuppressWarnings(value = "checkstyle:parametername")
+    int native_get_compaction_rows_read(@In Pointer ctx_ptr, String job_id, @Out FFIFileResult output_ptr);
 }

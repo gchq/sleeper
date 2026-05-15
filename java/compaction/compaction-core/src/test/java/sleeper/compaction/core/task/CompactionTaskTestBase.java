@@ -167,7 +167,7 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null)
                 .run();
     }
 
@@ -335,7 +335,8 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return (job, table, region) -> {
+        return request -> {
+            CompactionJob job = request.getJob();
             if (getAction.hasNext()) {
                 return getAction.next().run(job);
             } else {

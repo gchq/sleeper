@@ -33,6 +33,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
@@ -135,6 +136,39 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
+            assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 200));
+            assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
+                    .isEqualTo(CompactionRunnerTestData.combineSortedBySingleKey(data1, data2));
+        }
+    }
+
+    @Nested
+    @DisplayName("Track compaction progress")
+    class TrackProgress {
+
+        @Test
+        void shouldReportProgress() throws Exception {
+            // Given
+            Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+            List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+            List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+            FileReference file1 = ingestRowsGetFile(data1);
+            FileReference file2 = ingestRowsGetFile(data2);
+
+            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+            assignJobIdToInputFiles(stateStore, compactionJob);
+
+            AtomicLong progressCount = new AtomicLong(0);
+
+            // When
+            runTask(compactionJob, hadoopConfigForECS(), l -> progressCount.set(l));
+
+            // Then
+            //  - Read output file and check that it contains the right results
+            assertThat(progressCount.get()).isEqualTo(200);
             assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 200));
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
                     .isEqualTo(CompactionRunnerTestData.combineSortedBySingleKey(data1, data2));

@@ -16,8 +16,6 @@
 package sleeper.compaction.core.job;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Region;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.IOException;
@@ -30,13 +28,19 @@ public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
      *
-     * @param  job                       the job
-     * @param  tableProperties           the configuration of the Sleeper table this takes place in
-     * @param  region                    the region to be read for the compaction (usually the region of the partition
-     *                                   it takes place in)
+     * The supplied {@link CompactionRequest} carries the job, the table configuration, the region to read, and a
+     * progress callback. The progress callback is always non-null: if the caller does not specify one, the request will
+     * carry a no-op consumer. The rate and regularity of progress updates is at the discretion of the implementation.
+     * Callbacks may receive the same row count multiple times. Implementations MUST call the callback function when the
+     * compaction has finished to guarantee at least one update.
+     *
+     * <strong>Note:</strong> Callback code must be thread safe as it is not specified which thread will call it, i.e.
+     * it may not be the thread running the compaction that sends progress notifications.
+     *
+     * @param  request                   compaction request details
      * @return                           a report of the number of rows processed
      * @throws IOException               a failure reading or writing files
      * @throws IteratorCreationException a problem creating any configured iterators
      */
-    RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
+    RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException;
 }

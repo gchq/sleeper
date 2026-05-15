@@ -30,14 +30,13 @@ mod common_config;
 mod datafusion;
 pub mod filter_aggregation_config;
 pub mod sleeper_context;
-#[cfg(test)]
-mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use common_config::{CommonConfig, CommonConfigBuilder};
 pub use datafusion::{
     ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperRegion, sketch::DataSketchVariant, stream_to_ffi_arrow_stream,
+    SleeperRegion, simulate_compaction_row_reads, sketch::DataSketchVariant,
+    stream_to_ffi_arrow_stream,
 };
 pub use objectstore_ext::s3::AwsConfig;
 
@@ -84,8 +83,7 @@ pub async fn run_compaction(
     sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult> {
     let store_factory = config.create_object_store_factory();
-    let rt = sleeper_context.retrieve_runtime_env()?;
-    crate::datafusion::compact(&store_factory, config, rt)
+    crate::datafusion::compact(&store_factory, config, sleeper_context)
         .await
         .map_err(Into::into)
 }
