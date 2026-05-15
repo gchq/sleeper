@@ -45,6 +45,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy directIngestPolicy;
     private final ManagedPolicy ingestByQueuePolicy;
     private final ManagedPolicy queryPolicy;
+    private final ManagedPolicy addTablePolicy;
     private final ManagedPolicy editTablesPolicy;
     private final ManagedPolicy reportingPolicy;
     private final ManagedPolicy readIngestSourcesPolicy;
@@ -60,6 +61,7 @@ public class ManagedPoliciesStack extends NestedStack {
         ingestByQueuePolicy = createManagedPolicy("IngestByQueue");
 
         queryPolicy = createManagedPolicy("Query");
+        addTablePolicy = createManagedPolicy("addTables");
         editTablesPolicy = createManagedPolicy("EditTables");
         reportingPolicy = createManagedPolicy("Reporting");
         clearInstancePolicy = createManagedPolicy("ClearInstance");
@@ -93,6 +95,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
     public ManagedPolicy getQueryPolicyForGrants() {
         return queryPolicy;
+    }
+
+    public ManagedPolicy getAddTablesPolicyForGrants() {
+        return addTablePolicy;
     }
 
     public ManagedPolicy getEditTablesPolicyForGrants() {
@@ -167,7 +173,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private Stream<ManagedPolicy> instanceAdminPolicies() {
         return Stream.of(
-                directIngestPolicy, ingestByQueuePolicy, queryPolicy,
+                directIngestPolicy, ingestByQueuePolicy, queryPolicy, addTablePolicy,
                 editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
                 invokeCompactionPolicy)
                 .filter(policy -> policy != null);

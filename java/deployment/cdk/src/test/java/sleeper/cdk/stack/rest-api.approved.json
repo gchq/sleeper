@@ -93,6 +93,32 @@
             }
           }
         },
+        "RestApiPOSTsleepertablestestinstancePermissionF7387ED5": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
+            },
+            "Action": "lambda:InvokeFunction",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:test-region:test-account:",
+                  {
+                    "Ref": "RestApi0C43BF4B"
+                  },
+                  "/*/*/sleeper/tables"
+                ]
+              ]
+            },
+            "Principal": "apigateway.amazonaws.com"
+          }
+        },
         "RestApiGETsleepertestinstance7ACA8C30": {
           "Type": "AWS::ApiGatewayV2::Integration",
           "Properties": {
@@ -144,6 +170,27 @@
                   }
                 }
               ]
+            }
+          }
+        },
+        "RestApiPOSTsleepertables31F8B401": {
+          "Type": "AWS::ApiGatewayV2::Route",
+          "Properties": {
+            "Target": {
+              "Fn::Join": [
+                "",
+                [
+                  "integrations/",
+                  {
+                    "Ref": "RestApiGETsleepertestinstance7ACA8C30"
+                  }
+                ]
+              ]
+            },
+            "RouteKey": "POST /sleeper/tables",
+            "AuthorizationType": "AWS_IAM",
+            "ApiId": {
+              "Ref": "RestApi0C43BF4B"
             }
           }
         },
