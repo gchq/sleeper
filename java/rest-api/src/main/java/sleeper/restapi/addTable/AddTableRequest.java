@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Decoded JSON body for POST request to /sleeper/tables.
  */
@@ -36,6 +38,12 @@ public class AddTableRequest {
     private Map<String, String> properties;
     private JsonElement schema;
     private List<JsonElement> splitPoints;
+
+    private AddTableRequest(Builder builder) {
+        properties = requireNonNull(builder.properties);
+        schema = requireNonNull(builder.schema);
+        splitPoints = requireNonNull(builder.splitPoints);
+    }
 
     /**
      * Builds the tableProperties described by this request.
@@ -75,6 +83,74 @@ public class AddTableRequest {
         String joined = splitPoints.stream()
                 .map(JsonElement::getAsString)
                 .collect(Collectors.joining("\n"));
+
         return ReadSplitPoints.fromString(joined, schema, stringsBase64Encoded);
+    }
+
+    /**
+     * Checks that the object created is valid and has all of the required fields.
+     *
+     * @return the validated object
+     */
+    public AddTableRequest validate() {
+        return AddTableRequest.builder()
+                .properties(properties)
+                .schema(schema)
+                .splitPoints(splitPoints)
+                .build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder to create an AddTable request.
+     */
+    public static final class Builder {
+
+        private Map<String, String> properties;
+        private JsonElement schema;
+        private List<JsonElement> splitPoints;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the map of properties.
+         *
+         * @param  properties the map of properties
+         * @return            the builder for chaining
+         */
+        public Builder properties(Map<String, String> properties) {
+            this.properties = properties;
+            return this;
+        }
+
+        /**
+         * Sets the schema.
+         *
+         * @param  schema the schema
+         * @return        the builder for chaining
+         */
+        public Builder schema(JsonElement schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        /**
+         * Sets the split points.
+         *
+         * @param  splitPoints list of split points
+         * @return             the builder for chaining
+         */
+        public Builder splitPoints(List<JsonElement> splitPoints) {
+            this.splitPoints = splitPoints;
+            return this;
+        }
+
+        public AddTableRequest build() {
+            return new AddTableRequest(this);
+        }
     }
 }
