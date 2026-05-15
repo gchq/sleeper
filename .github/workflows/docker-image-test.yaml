@@ -69,9 +69,9 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build base image
-        run: ./scripts/dev/buildDockerImage.sh base base:test ${{ inputs.dockerOptions }} --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh base base:test ${{ inputs.dockerOptions }}
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --build-arg BASE_IMAGE=base:test --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --build-arg BASE_IMAGE=base:test
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker
