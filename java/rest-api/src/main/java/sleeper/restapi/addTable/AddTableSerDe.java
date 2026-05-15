@@ -19,41 +19,41 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises an AddTable rest request to and from JSON.
+ * Serialises an AddTable rest request or response to and from JSON.
  */
-public class AddTableRequestSerDe {
+public class AddTableSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public AddTableRequestSerDe() {
+    public AddTableSerDe() {
         GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
     /**
-     * Formats an AddTable request query as a JSON string.
+     * Formats an AddTable response as a JSON string.
      *
-     * @param  query the query
-     * @return       a JSON string representation of the query
+     * @param  response the response
+     * @return          a JSON string representation of the response
      */
-    public String toJson(AddTableRequest query) {
-        return gson.toJson(query);
+    public String toJson(AddTableResponse response) {
+        return gson.toJson(response);
     }
 
     /**
-     * Formats an AddTable request as a JSON string with the option to pretty print.
+     * Formats an AddTable response as a JSON string with the option to pretty print.
      *
-     * @param  query       to query
+     * @param  query       the response
      * @param  prettyPrint option to pretty print
-     * @return             a JSON string representation of the query
+     * @return             a JSON string representation of the response
      */
-    public String toJson(AddTableRequest query, boolean prettyPrint) {
+    public String toJson(AddTableResponse response, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrint.toJson(query);
+            return gsonPrettyPrint.toJson(response);
         }
-        return toJson(query);
+        return toJson(response);
     }
 
     /**

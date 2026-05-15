@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.restapi;
+package sleeper.restapi.addTable;
 
-import com.google.gson.Gson;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.restapi.addTable.AddTableRequest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -40,17 +38,17 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class AddTableRequestTest {
+class AddTableSerDeTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Gson gson = new Gson();
+    private final AddTableSerDe addTableSerDe = new AddTableSerDe();
 
     @Nested
     @DisplayName("Valid add table requests")
     class ValidAddTableRequest {
         @Test
         void shouldBuildTablePropertiesAndApplySchema() {
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {
                       "properties": {"sleeper.table.name": "my-table"},
                       "schema": %s
@@ -68,7 +66,7 @@ class AddTableRequestTest {
         void shouldConvertIntSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
 
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
                     """);
 
@@ -79,7 +77,7 @@ class AddTableRequestTest {
         void shouldConvertLongSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new LongType()));
 
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["10", "20"]}
                     """);
 
@@ -90,7 +88,7 @@ class AddTableRequestTest {
         void shouldConvertStringSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
 
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["a", "m", "z"]}
                     """);
 
@@ -103,7 +101,7 @@ class AddTableRequestTest {
             tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
             String encoded = Base64.getEncoder().encodeToString("middle".getBytes(StandardCharsets.UTF_8));
 
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
                     """.formatted(encoded));
 
@@ -115,7 +113,7 @@ class AddTableRequestTest {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new ByteArrayType()));
             String encoded = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
 
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
                     """.formatted(encoded));
 
@@ -131,7 +129,7 @@ class AddTableRequestTest {
 
         @Test
         void shouldRejectMissingProperties() {
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"schema": {}}
                     """);
 
@@ -142,7 +140,7 @@ class AddTableRequestTest {
 
         @Test
         void shouldRejectMissingSchema() {
-            AddTableRequest request = parse("""
+            AddTableRequest request = addTableSerDe.fromJson("""
                     {"properties": {}}
                     """);
 
@@ -152,8 +150,18 @@ class AddTableRequestTest {
         }
     }
 
-    private AddTableRequest parse(String json) {
-        return gson.fromJson(json, AddTableRequest.class);
+    @Nested
+    @DisplayName("Valid add table response")
+    class ValidAddTableResponse {
+        @Test
+        void shouldAddTableResponseCorrectlyConvertedtoJson() {
+            String responseJson = addTableSerDe.toJson(AddTableResponse.builder()
+                    .tableId("table-id")
+                    .tableName("table-name")
+                    .build());
+
+            assertThat(responseJson).isEqualTo("{\"tableId\":\"table-id\",\"tableName\":\"table-name\"}");
+        }
     }
 
     private TableProperties tablePropertiesWithSchema(Schema schema) {

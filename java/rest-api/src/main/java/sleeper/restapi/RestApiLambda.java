@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.restapi.addTable.AddTableRest;
+import sleeper.restapi.addTable.AddTableEndpoint;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +67,7 @@ public class RestApiLambda {
                 .withStatusCode(200)
                 .withBody("API successfully interacted with. Further expansion for functionality required.")
                 .build());
-        routes.put("POST /sleeper/tables", event -> AddTableRest.builder()
+        routes.put("POST /sleeper/tables", event -> AddTableEndpoint.builder()
                 .instanceProperties(instanceProperties)
                 .sleeperClient(sleeperClient)
                 .build().processRequest(event));
@@ -84,7 +84,7 @@ public class RestApiLambda {
         String routeKey = methodAndPath(event);
         Route route = routes.get(routeKey);
         if (route == null) {
-            return RestMethod.errorResponse(404, "not_found", "No route registered for " + routeKey);
+            return RestEndpoint.errorResponse(404, "not_found", "No route registered for " + routeKey);
         }
         return route.handle(event);
     }

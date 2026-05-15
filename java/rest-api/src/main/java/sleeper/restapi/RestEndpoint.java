@@ -27,8 +27,7 @@ import java.util.Map;
 /**
  * Class to provide basic decoding of messages for rest methods as well as handling error response.
  */
-public abstract class RestMethod {
-    public static final Gson GSON = new Gson();
+public abstract class RestEndpoint {
     public static final String CONTENT_TYPE_JSON = "application/json";
 
     /**
@@ -72,8 +71,8 @@ public abstract class RestMethod {
         }
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(status)
-                .withHeaders(Map.of("Content-Type", RestMethod.CONTENT_TYPE_JSON))
-                .withBody(GSON.toJson(body))
+                .withHeaders(Map.of("Content-Type", RestEndpoint.CONTENT_TYPE_JSON))
+                .withBody(new Gson().toJson(body))
                 .build();
     }
 }

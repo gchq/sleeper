@@ -17,6 +17,7 @@ package sleeper.restapi.addTable;
 
 import com.google.gson.JsonElement;
 
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
@@ -28,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Decoded JSON body for POST request to /sleeper/tables.
  */
@@ -40,9 +39,9 @@ public class AddTableRequest {
     private List<JsonElement> splitPoints;
 
     private AddTableRequest(Builder builder) {
-        properties = requireNonNull(builder.properties);
-        schema = requireNonNull(builder.schema);
-        splitPoints = requireNonNull(builder.splitPoints);
+        properties = builder.properties;
+        schema = builder.schema;
+        splitPoints = builder.splitPoints;
     }
 
     /**
@@ -58,9 +57,16 @@ public class AddTableRequest {
         if (schema == null) {
             throw new IllegalArgumentException("Request must include 'schema'");
         }
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = new TableProperties(instanceProperties,
+                PropertiesUtils.loadProperties(convertPropertiesJsonToProperties()));
         tableProperties.setSchema(new SchemaSerDe().fromJson(schema.toString()));
         return tableProperties;
+    }
+
+    private String convertPropertiesJsonToProperties() {
+        return properties.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("\n"));
     }
 
     /**

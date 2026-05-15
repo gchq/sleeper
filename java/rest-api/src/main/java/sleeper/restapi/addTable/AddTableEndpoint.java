@@ -25,9 +25,8 @@ import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.restapi.RestMethod;
+import sleeper.restapi.RestEndpoint;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,28 +37,30 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 /**
  * Rest method for adding table to sleeper instance, utilising same process as within the Sleeper Client.
  */
-public class AddTableRest extends RestMethod {
+public class AddTableEndpoint extends RestEndpoint {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AddTableRest.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(AddTableEndpoint.class);
     private InstanceProperties instanceProperties;
     private SleeperClient sleeperClient;
+    private AddTableSerDe addTableSerDe;
 
-    private AddTableRest(Builder builder) {
+    private AddTableEndpoint(Builder builder) {
         instanceProperties = requireNonNull(builder.instanceProperties);
         sleeperClient = requireNonNull(builder.sleeperClient);
+        addTableSerDe = new AddTableSerDe();
     }
 
     /**
-     * Define text here.
+     * Decodes details for the AddTableRequest and then actions them within the application
      *
-     * @param  event wasds
+     * @param  event APIGateway passing into this method from the determined rest api route
      * @return       An APIGateway response detailing whether the addTable action has suceeded or not
      */
     @Override
     public APIGatewayV2HTTPResponse processRequest(APIGatewayV2HTTPEvent event) {
         AddTableRequest request;
         try {
-            request = GSON.fromJson(decodeBody(event), AddTableRequest.class);
+            request = addTableSerDe.fromJson(decodeBody(event));
         } catch (JsonSyntaxException e) {
             LOGGER.warn("Add table request body was not valid JSON", e);
             return errorResponse(400, "invalid_request", "Request body is not valid JSON");
@@ -90,13 +91,14 @@ public class AddTableRest extends RestMethod {
             LOGGER.error("Add table request failed unexpectedly", e);
             return errorResponse(500, "internal_error", "Failed to add table");
         }
-        Map<String, String> body = new HashMap<>();
-        body.put("tableId", tableProperties.get(TABLE_ID));
-        body.put("tableName", tableProperties.get(TABLE_NAME));
+        AddTableResponse response = AddTableResponse.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .tableName(tableProperties.get(TABLE_NAME))
+                .build();
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(201)
                 .withHeaders(Map.of("Content-Type", CONTENT_TYPE_JSON))
-                .withBody(GSON.toJson(body))
+                .withBody(addTableSerDe.toJson(response))
                 .build();
     }
 
@@ -136,8 +138,8 @@ public class AddTableRest extends RestMethod {
             return this;
         }
 
-        public AddTableRest build() {
-            return new AddTableRest(this);
+        public AddTableEndpoint build() {
+            return new AddTableEndpoint(this);
         }
     }
 
