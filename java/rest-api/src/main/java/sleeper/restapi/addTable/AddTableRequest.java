@@ -17,7 +17,6 @@ package sleeper.restapi.addTable;
 
 import com.google.gson.JsonElement;
 
-import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
@@ -51,10 +50,7 @@ public class AddTableRequest {
         if (schema == null) {
             throw new IllegalArgumentException("Request must include 'schema'");
         }
-        String propertiesText = properties.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("\n"));
-        TableProperties tableProperties = new TableProperties(instanceProperties, PropertiesUtils.loadProperties(propertiesText));
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(new SchemaSerDe().fromJson(schema.toString()));
         return tableProperties;
     }
