@@ -52,6 +52,11 @@ public class AggregationFilteringIteratorTest {
                     .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("value", new LongType()))
                     .build());
+    TableProperties tablePropertiesNullableValueField = createTestTableProperties(instanceProperties,
+            Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType(), true))
+                    .build());
 
     @Nested
     @DisplayName("Apply filters")
@@ -68,7 +73,27 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "test2", "value", 9999999999999999L)));
 
             // When
-            List<Row> filtered = applyIterator(rows);
+            List<Row> filtered = applyIterator(rows, tableProperties);
+
+            // Then
+            assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"ageoff", "AGEOFF", "ageOff"})
+        public void shouldApplyAgeOffFilterFromPropertiesAndNullValuesShouldBeExcluded(String ageOff) throws Exception {
+            // Given
+            tablePropertiesNullableValueField.set(FILTERING_CONFIG, ageOff + "(value,1000)");
+
+            Row row1 = new Row(Map.of("key", "test", "value", 10L));
+            Row row2 = new Row(Map.of("key", "test2", "value", 9999999999999999L));
+            Row row3 = new Row();
+            row3.put("key", "test3");
+            row3.put("value", null);
+            List<Row> rows = List.of(row1, row2, row3);
+
+            // When
+            List<Row> filtered = applyIterator(rows, tablePropertiesNullableValueField);
 
             // Then
             assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
@@ -89,7 +114,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "test", "value", 2214L)),
                     new Row(Map.of("key", "test", "value", 87L)),
-                    new Row(Map.of("key", "test", "value", 7841L))));
+                    new Row(Map.of("key", "test", "value", 7841L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
@@ -105,7 +131,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "test", "value", 619L)),
                     new Row(Map.of("key", "test", "value", 321L)),
-                    new Row(Map.of("key", "test", "value", 97L))));
+                    new Row(Map.of("key", "test", "value", 97L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
@@ -121,7 +148,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "test", "value", 458498L)),
                     new Row(Map.of("key", "test", "value", 87L)),
-                    new Row(Map.of("key", "test", "value", 222474L))));
+                    new Row(Map.of("key", "test", "value", 222474L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
@@ -151,7 +179,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "a",
                             "map_value", Map.of("map_key1", 1L, "map_key2", 3L))),
                     new Row(Map.of("key", "a",
-                            "map_value", Map.of("map_key1", 3L, "map_key2", 4L)))));
+                            "map_value", Map.of("map_key1", 3L, "map_key2", 4L)))),
+                    tableProperties);
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a",
@@ -169,7 +198,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "a",
                             "map_value", Map.of("map_key1", 17L, "map_key2", 112L))),
                     new Row(Map.of("key", "a",
-                            "map_value", Map.of("map_key1", 9L, "map_key2", 2489L)))));
+                            "map_value", Map.of("map_key1", 9L, "map_key2", 2489L)))),
+                    tableProperties);
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a",
@@ -187,7 +217,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "a",
                             "map_value", Map.of("map_key1", 666L, "map_key2", 11L))),
                     new Row(Map.of("key", "a",
-                            "map_value", Map.of("map_key1", 245L, "map_key2", 2L)))));
+                            "map_value", Map.of("map_key1", 245L, "map_key2", 2L)))),
+                    tableProperties);
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a",
@@ -218,7 +249,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key1", "test", "value1", 4217L,
                             "key2", "test", "value2", 367L)),
                     new Row(Map.of("key1", "test", "value1", 214L,
-                            "key2", "test", "value2", 88818L))));
+                            "key2", "test", "value2", 88818L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactly(
@@ -246,7 +278,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "C", "timestamp", 100L, "count", 10L)), // Filtered out due to age
                     new Row(Map.of("key", "C", "timestamp", 100L, "count", 20L)), // Filtered out due to age
                     new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 10L)),
-                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 20L))));
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 20L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactly(
@@ -267,7 +300,7 @@ public class AggregationFilteringIteratorTest {
         @Test
         void shouldAggregateZeroRows() throws Exception {
             // When / Then
-            assertThat(applyIterator(List.of())).isEmpty();
+            assertThat(applyIterator(List.of(), tableProperties)).isEmpty();
         }
 
         @Test
@@ -276,7 +309,7 @@ public class AggregationFilteringIteratorTest {
             Row testRow = new Row(Map.of("key", "A", "value", 525L));
 
             // When
-            List<Row> resultList = applyIterator(List.of(testRow));
+            List<Row> resultList = applyIterator(List.of(testRow), tableProperties);
 
             // Then
             assertThat(resultList).containsExactly(testRow);
@@ -290,7 +323,7 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "B", "value", 1000L)));
 
             // When
-            List<Row> resultList = applyIterator(testRows);
+            List<Row> resultList = applyIterator(testRows, tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(testRows);
@@ -302,7 +335,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "value", 100L)),
                     new Row(Map.of("key", "A", "value", 1000L)),
-                    new Row(Map.of("key", "B", "value", 500L))));
+                    new Row(Map.of("key", "B", "value", 500L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
@@ -316,7 +350,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "value", 100L)),
                     new Row(Map.of("key", "B", "value", 1000L)),
-                    new Row(Map.of("key", "B", "value", 500L))));
+                    new Row(Map.of("key", "B", "value", 500L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
@@ -332,7 +367,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "A", "value", 1000L)),
                     new Row(Map.of("key", "B", "value", 500L)),
                     new Row(Map.of("key", "C", "value", 70L)),
-                    new Row(Map.of("key", "C", "value", 230L))));
+                    new Row(Map.of("key", "C", "value", 230L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
@@ -348,7 +384,8 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "A", "value", 100L)),
                     new Row(Map.of("key", "B", "value", 1000L)),
                     new Row(Map.of("key", "B", "value", 500L)),
-                    new Row(Map.of("key", "C", "value", 70L))));
+                    new Row(Map.of("key", "C", "value", 70L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
@@ -371,7 +408,8 @@ public class AggregationFilteringIteratorTest {
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "sortKey", 1, "value", 100L)),
                     new Row(Map.of("key", "A", "sortKey", 1, "value", 1000L)),
-                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L))));
+                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).containsExactly(
@@ -395,7 +433,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
 
             // When / Then
-            assertThat(createIterator().getRequiredValueFields()).containsExactly("value");
+            assertThat(createIterator(tableProperties).getRequiredValueFields()).containsExactly("value");
         }
 
         @Test
@@ -409,7 +447,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(sortKey, 1000)");
 
             // When / Then
-            assertThat(createIterator().getRequiredValueFields()).isEmpty();
+            assertThat(createIterator(tableProperties).getRequiredValueFields()).isEmpty();
         }
 
         @Test
@@ -426,7 +464,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "sum(value1), min(value2), max(value3)");
 
             // When / Then
-            assertThat(createIterator().getRequiredValueFields()).isEmpty();
+            assertThat(createIterator(tableProperties).getRequiredValueFields()).isEmpty();
         }
     }
 
@@ -443,7 +481,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "someother(value,1000)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
         }
@@ -458,7 +496,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value,oops)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(NumberFormatException.class);
         }
     }
@@ -473,7 +511,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "bop(VALUE)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Unable to parse operand. Operand: bop");
         }
@@ -488,7 +526,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "SUM(value),SUM(abc)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Not all aggregated fields are declared in the schema. Missing fields: abc");
         }
@@ -504,7 +542,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "MIN(failKey),MIN(sortKey),SUM(value)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
         }
@@ -519,7 +557,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "MIN(doubleValue),SUM(doubleValue)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(java.lang.IllegalArgumentException.class)
                     .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
         }
@@ -534,7 +572,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "MIN(existsValue)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(java.lang.IllegalArgumentException.class)
                     .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
         }
@@ -549,7 +587,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "SUM(value)");
 
             // When / Then
-            assertThatThrownBy(() -> createIterator())
+            assertThatThrownBy(() -> createIterator(tableProperties))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Aggregation is not supported for nullable value fields. Nullable fields: value");
         }
@@ -569,7 +607,7 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "test2", "value", 9999999999999999L)));
 
             // When
-            List<Row> filtered = applyIterator(rows);
+            List<Row> filtered = applyIterator(rows, tableProperties);
 
             // Then
             assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
@@ -587,7 +625,8 @@ public class AggregationFilteringIteratorTest {
             // When
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "value", 100L, "value2", 10L)),
-                    new Row(Map.of("key", "A", "value", 1000L, "value2", 20L))));
+                    new Row(Map.of("key", "A", "value", 1000L, "value2", 20L))),
+                    tableProperties);
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
@@ -595,11 +634,11 @@ public class AggregationFilteringIteratorTest {
         }
     }
 
-    private List<Row> applyIterator(List<Row> rows) throws Exception {
-        return SortedRowIteratorTestHelper.apply(createIterator(), rows);
+    private List<Row> applyIterator(List<Row> rows, TableProperties tableProperties) throws Exception {
+        return SortedRowIteratorTestHelper.apply(createIterator(tableProperties), rows);
     }
 
-    private SortedRowIterator createIterator() throws Exception {
+    private SortedRowIterator createIterator(TableProperties tableProperties) throws Exception {
         return IteratorFactoryTestHelper.createIterator(tableProperties);
     }
 }

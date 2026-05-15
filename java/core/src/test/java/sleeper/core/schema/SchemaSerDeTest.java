@@ -151,7 +151,6 @@ public class SchemaSerDeTest {
                 "      \"name\": \"column3\",\n" +
                 "      \"type\": \"StringType\",\n" +
                 "      \"nullable\": \"true\"\n" +
-                "      }\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}\n";

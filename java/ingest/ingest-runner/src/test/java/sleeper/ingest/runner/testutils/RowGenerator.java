@@ -28,6 +28,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -155,6 +156,21 @@ public class RowGenerator {
                                     .collect(Collectors.toMap(
                                             dummy -> valueRandom.nextLong(),
                                             dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
+                    row.put(sleeperSchema.getValueFieldNames().get(6), i % 2 == 0 ? null : randomStringGenerator.generate(valueRandom.nextInt(50)));
+                    row.put(sleeperSchema.getValueFieldNames().get(7), i % 3 == 0 ? null : randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(Charset.forName("UTF-8")));
+                    row.put(sleeperSchema.getValueFieldNames().get(8), i % 4 == 0 ? null : valueRandom.nextInt());
+                    row.put(sleeperSchema.getValueFieldNames().get(9), i % 5 == 0 ? null : valueRandom.nextLong());
+                    row.put(
+                            sleeperSchema.getValueFieldNames().get(10), i % 6 == 0 ? null
+                                    : IntStream.range(0, valueRandom.nextInt(10))
+                                            .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
+                                            .collect(Collectors.toList()));
+                    row.put(
+                            sleeperSchema.getValueFieldNames().get(11), i % 7 == 0 ? null
+                                    : IntStream.range(0, valueRandom.nextInt(10)).boxed()
+                                            .collect(Collectors.toMap(
+                                                    dummy -> valueRandom.nextLong(),
+                                                    dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
                     return row;
                 }).collect(Collectors.toList());
         Collections.shuffle(rowList, new Random(0));
@@ -201,6 +217,12 @@ public class RowGenerator {
                 new Field("stringValue", new StringType()),
                 new Field("byteArrayValue", new ByteArrayType()),
                 new Field("listOfStringsValue", new ListType(new StringType())),
-                new Field("mapFromLongToStringValue", new MapType(new LongType(), new StringType())));
+                new Field("mapFromLongToStringValue", new MapType(new LongType(), new StringType())),
+                new Field("nullableStringValue", new StringType(), true),
+                new Field("nullableByteArrayValue", new ByteArrayType(), true),
+                new Field("nullableIntValue", new IntType(), true),
+                new Field("nullableLongValue", new LongType(), true),
+                new Field("nullableListValue", new ListType(new IntType()), true),
+                new Field("nullableMapValue", new MapType(new LongType(), new StringType()), true));
     }
 }

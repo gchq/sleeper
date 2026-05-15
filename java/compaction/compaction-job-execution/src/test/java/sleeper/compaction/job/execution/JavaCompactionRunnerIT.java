@@ -27,6 +27,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -199,18 +200,35 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("value", new StringType(), true))
+                .valueFields(
+                        new Field("value1", new StringType(), true),
+                        new Field("value2", new ByteArrayType(), true),
+                        new Field("value3", new IntType(), true),
+                        new Field("value4", new LongType(), true))
                 .build();
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         Row rowWithValue = new Row();
         rowWithValue.put("key", "a");
-        rowWithValue.put("value", "hello");
-        Row rowWithNull = new Row();
-        rowWithNull.put("key", "b");
-        rowWithNull.put("value", null);
-        FileReference file1 = ingestRowsGetFile(List.of(rowWithValue));
-        FileReference file2 = ingestRowsGetFile(List.of(rowWithNull));
+        rowWithValue.put("value1", "hello");
+        rowWithValue.put("value2", new byte[]{1, 2, 3, 4});
+        rowWithValue.put("value3", 100);
+        rowWithValue.put("value4", 1000L);
+        Row rowWithNulls = new Row();
+        rowWithNulls.put("key", "b");
+        rowWithNulls.put("value1", null);
+        rowWithNulls.put("value2", null);
+        rowWithNulls.put("value3", null);
+        rowWithNulls.put("value4", null);
+        Row rowWithSomeNulls = new Row();
+        rowWithSomeNulls.put("key", "c");
+        rowWithSomeNulls.put("value1", null);
+        rowWithSomeNulls.put("value2", new byte[]{9, 8, 7, 6, 5});
+        rowWithSomeNulls.put("value3", null);
+        rowWithSomeNulls.put("value4", 1_000_000L);
+
+        FileReference file1 = ingestRowsGetFile(List.of(rowWithValue, rowWithSomeNulls));
+        FileReference file2 = ingestRowsGetFile(List.of(rowWithNulls));
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
 
@@ -218,8 +236,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         runTask(compactionJob);
 
         // Then
-        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(2, 2));
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(3, 3));
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
-                .containsExactly(rowWithValue, rowWithNull);
+                .containsExactly(rowWithValue, rowWithNulls, rowWithSomeNulls);
     }
 }

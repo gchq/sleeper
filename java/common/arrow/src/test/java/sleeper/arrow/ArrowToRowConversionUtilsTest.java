@@ -382,6 +382,24 @@ class ArrowToRowConversionUtilsTest {
     }
 
     @Test
+    void shouldReturnNullForNullableByteArrayField() {
+        // Given
+        try (VarBinaryVector byteVec = new VarBinaryVector("byteField", allocator)) {
+            byteVec.allocateNew(1);
+            byteVec.setNull(0);
+            byteVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(byteVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("byteField")).isNull();
+        }
+    }
+
+    @Test
     void shouldReturnNullForNullableIntField() {
         // Given
         try (IntVector intVec = new IntVector("intField", allocator)) {
@@ -396,6 +414,24 @@ class ArrowToRowConversionUtilsTest {
 
             // Then
             assertThat(row.get("intField")).isNull();
+        }
+    }
+
+    @Test
+    void shouldReturnNullForNullableLongField() {
+        // Given
+        try (BigIntVector longVec = new BigIntVector("longField", allocator);) {
+            longVec.allocateNew(1);
+            longVec.setNull(0);
+            longVec.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(longVec));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("longField")).isNull();
         }
     }
 

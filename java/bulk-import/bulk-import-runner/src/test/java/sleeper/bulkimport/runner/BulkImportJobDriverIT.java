@@ -390,11 +390,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         runJob(runner, job);
 
         // Then
-        List<Row> outputRows = stateStoreProvider.getStateStore(tableProperties)
-                .getFileReferences().stream()
-                .flatMap(file -> readRows(file).stream())
-                .collect(Collectors.toList());
-        assertThat(outputRows).containsExactlyInAnyOrder(rowWithValue, rowWithNull);
+        assertThat(readRowsInPartitionTreeOrder()).isEqualTo(sorted(rows));
     }
 
     @ParameterizedTest

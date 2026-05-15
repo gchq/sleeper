@@ -45,7 +45,7 @@ that process pre-applied.
 
 See the the [table properties documentation](properties/table/data_definition.md) for the supported aggregation
 operations. We also support this for value fields that contain nested map data. This can be applied with the Java or
-DataFusion data engine.
+DataFusion data engine. Note that aggregation can only be configured for non-nullable value fields.
 
 ### Filtering
 
