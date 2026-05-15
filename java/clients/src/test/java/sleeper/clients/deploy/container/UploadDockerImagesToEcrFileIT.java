@@ -67,13 +67,14 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         uploadForDeployment(lambdaImageConfig());
 
         // Then
+        String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
         String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 dockerLoginToEcrCommand(),
-                buildLambdaImageCommand(expectedTag1, lambdaImageDir.toString()),
+                buildLambdaImageCommand(expectedTag1, lambdaImageDir.toString(), expectedBaseTag),
                 pushImageCommand(expectedTag1),
-                buildLambdaImageCommand(expectedTag2, lambdaImageDir.toString()),
+                buildLambdaImageCommand(expectedTag2, lambdaImageDir.toString(), expectedBaseTag),
                 pushImageCommand(expectedTag2));
 
         assertThat(fileToContentUnder(dir)).isEqualTo(Map.of(

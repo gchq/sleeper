@@ -53,6 +53,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
+        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
@@ -61,14 +62,14 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
-                buildImageCommand(expectedIngestTag, "./docker/ingest"),
+                buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
+                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedBaseTag),
                 pushImageCommand(expectedBulkImportTag),
-                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
-                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
+                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
                 pushImageCommand(expectedEmrTag));
     }
 
@@ -82,20 +83,21 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
 
         // Then
+        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
-                buildImageCommand(expectedIngestTag, "./docker/ingest"),
+                buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
+                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedBaseTag),
                 pushImageCommand(expectedBulkImportTag),
-                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
-                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
+                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
                 pushImageCommand(expectedEmrTag));
     }
 
@@ -114,18 +116,19 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
+        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedStatestoreTag = "www.somedocker.com/prefix/statestore-lambda:1.0.0";
         String expectedIngestTaskTag = "www.somedocker.com/prefix/ingest-task-creator-lambda:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-starter-lambda:1.0.0";
         String expectedAthenaTag = "www.somedocker.com/prefix/athena-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildLambdaImageCommand(expectedStatestoreTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedStatestoreTag, "./docker/lambda", expectedBaseTag),
                 pushImageCommand(expectedStatestoreTag),
-                buildLambdaImageCommand(expectedIngestTaskTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedIngestTaskTag, "./docker/lambda", expectedBaseTag),
                 pushImageCommand(expectedIngestTaskTag),
-                buildLambdaImageCommand(expectedBulkImportTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedBulkImportTag, "./docker/lambda", expectedBaseTag),
                 pushImageCommand(expectedBulkImportTag),
-                buildLambdaImageCommand(expectedAthenaTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedAthenaTag, "./docker/lambda", expectedBaseTag),
                 pushImageCommand(expectedAthenaTag));
 
         assertThat(files).isEqualTo(Map.of(
@@ -150,9 +153,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(imageConfig);
 
         // Then
+        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedTag = "www.somedocker.com/prefix/data-generation:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildImageCommand(expectedTag, "./docker/data-generation"),
+                buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                 pushImageCommand(expectedTag));
     }
 
@@ -162,7 +166,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
         CommandPipeline buildImageCommand = buildImageCommand(
                 "www.somedocker.com/prefix/statestore-committer:1.0.0",
-                "./docker/statestore-committer");
+                "./docker/statestore-committer",
+                "www.somedocker.com/prefix/base:1.0.0");
         setReturnExitCodeForCommand(42, buildImageCommand);
 
         // When / Then
