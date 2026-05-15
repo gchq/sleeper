@@ -15,15 +15,13 @@
  */
 package sleeper.restapi.addTable;
 
-import static java.util.Objects.requireNonNull;
-
 public class AddTableResponse {
     private String tableId;
     private String tableName;
 
     private AddTableResponse(Builder builder) {
-        tableId = requireNonNull(builder.tableId);
-        tableName = requireNonNull(builder.tableName);
+        tableId = builder.tableId;
+        tableName = builder.tableName;
     }
 
     public static Builder builder() {

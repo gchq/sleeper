@@ -64,7 +64,11 @@ public class AddTableSerDe {
      */
     public AddTableRequest fromJson(String json) {
         AddTableRequest query = gson.fromJson(json, AddTableRequest.class);
-        return query.validate();
+        if (query != null) {
+            return query.validate();
+        } else {
+            return null;
+        }
     }
 
 }
