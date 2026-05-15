@@ -44,8 +44,8 @@ public class AddTableResponse {
         /**
          * Sets the table id.
          *
-         * @param  properties the table id
-         * @return            the builder for chaining
+         * @param  tableId the table id
+         * @return         the builder for chaining
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
@@ -55,8 +55,8 @@ public class AddTableResponse {
         /**
          * Sets the table name.
          *
-         * @param  properties the table name
-         * @return            the builder for chaining
+         * @param  tableName the table name
+         * @return           the builder for chaining
          */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
