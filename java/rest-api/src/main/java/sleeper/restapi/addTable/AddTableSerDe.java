@@ -45,7 +45,7 @@ public class AddTableSerDe {
     /**
      * Formats an AddTable response as a JSON string with the option to pretty print.
      *
-     * @param  query       the response
+     * @param  response    the response
      * @param  prettyPrint option to pretty print
      * @return             a JSON string representation of the response
      */
