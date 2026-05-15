@@ -26,7 +26,6 @@ import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.restapi.addTable.AddTableRest;
-import sleeper.restapi.route.Route;
 
 import java.util.HashMap;
 import java.util.Map;
