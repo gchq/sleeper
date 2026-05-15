@@ -135,7 +135,7 @@ class AddTableSerDeTest {
 
             assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("properties");
+                    .hasMessage("Request must include 'properties'");
         }
 
         @Test
@@ -146,7 +146,7 @@ class AddTableSerDeTest {
 
             assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("schema");
+                    .hasMessage("Request must include 'schema'");
         }
     }
 
