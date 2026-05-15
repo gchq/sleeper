@@ -309,23 +309,34 @@ class ParquetRowReaderIT {
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Row row1 = new Row(Map.of("column1", "A", "column2", "B"));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
+        Row row3 = new Row();
+        row3.put("column1", "D");
+        // Don't explicitly set column2 to null when writing
         writer.write(row1);
         writer.write(row2);
+        writer.write(row3);
         writer.close();
 
         // When
         ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).build();
         Row readRow1 = new Row(reader.read());
         Row readRow2 = new Row(reader.read());
-        Row readRow3 = reader.read();
+        Row readRow3 = new Row(reader.read());
+        Row readRow4 = reader.read();
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
+        // Explicitly set column2 to null now to allow check of equality
+        row3.put("column2", null);
+        assertThat(readRow3).isEqualTo(row3);
         assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2.getKeys()).hasSize(2);
-        assertThat(readRow3).isNull();
+        assertThat(readRow3.getKeys()).hasSize(2);
+        assertThat(readRow4).isNull();
     }
 
     @Test
@@ -339,7 +350,9 @@ class ParquetRowReaderIT {
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Row row1 = new Row(Map.of("column1", "A", "column2", new byte[]{1, 2}));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
         writer.write(row1);
         writer.write(row2);
         writer.close();
@@ -369,7 +382,9 @@ class ParquetRowReaderIT {
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Row row1 = new Row(Map.of("column1", "A", "column2", 5));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
         writer.write(row1);
         writer.write(row2);
         writer.close();
@@ -399,7 +414,9 @@ class ParquetRowReaderIT {
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Row row1 = new Row(Map.of("column1", "A", "column2", 5L));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
         writer.write(row1);
         writer.write(row2);
         writer.close();
@@ -431,7 +448,9 @@ class ParquetRowReaderIT {
         Map<String, Long> map = new HashMap<>();
         map.put("key1", 10L);
         Row row1 = new Row(Map.of("column1", "A", "column2", map));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
         writer.write(row1);
         writer.write(row2);
         writer.close();
@@ -462,7 +481,9 @@ class ParquetRowReaderIT {
 
         List<String> list = List.of("elem1", "elem2");
         Row row1 = new Row(Map.of("column1", "A", "column2", list));
-        Row row2 = new Row(Map.of("column1", "C"));
+        Row row2 = new Row();
+        row2.put("column1", "C");
+        row2.put("column2", null);
         writer.write(row1);
         writer.write(row2);
         writer.close();
