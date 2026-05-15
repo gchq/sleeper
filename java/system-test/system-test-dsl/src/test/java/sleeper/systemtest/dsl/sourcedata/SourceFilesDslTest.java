@@ -23,8 +23,6 @@ import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
@@ -34,10 +32,11 @@ public class SourceFilesDslTest {
     @Test
     void shouldGenerateFilenameForSourceFile(SleeperDsl sleeper, SystemTestContext context) {
         // Given
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        Row row = new Row();
+        row.put("key", "some-id");
+        row.put("timestamp", 1234L);
+        row.put("value", "Some value");
+        row.put("nullable_value", null);
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
 
         // When

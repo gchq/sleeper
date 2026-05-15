@@ -59,6 +59,12 @@ public class RowSerialiser {
         DataOutputStream dos = new DataOutputStream(baos);
         for (Field field : schema.getAllFields()) {
             Object value = row.get(field.getName());
+            if (field.isNullable()) {
+                dos.writeBoolean(value != null);
+                if (value == null) {
+                    continue;
+                }
+            }
             Type type = field.getType();
             if (type instanceof PrimitiveType) {
                 write(value, (PrimitiveType) type, dos);
@@ -100,6 +106,10 @@ public class RowSerialiser {
         DataInputStream dis = new DataInputStream(bais);
         Row row = new Row();
         for (Field field : schema.getAllFields()) {
+            if (field.isNullable() && !dis.readBoolean()) {
+                row.put(field.getName(), null);
+                continue;
+            }
             Type type = field.getType();
             if (type instanceof PrimitiveType) {
                 row.put(field.getName(), read((PrimitiveType) type, dis));

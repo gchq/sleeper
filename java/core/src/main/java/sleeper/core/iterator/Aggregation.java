@@ -58,6 +58,7 @@ public record Aggregation(String fieldName, AggregationOp op) {
         if (!aggregations.isEmpty()) {
             validateNoRowKeySortKeyAggregations(aggregations, schema);
             validateAggregatedColumnsMatchValueColumns(aggregations, schema);
+            validateNoNullableValueFields(schema);
         }
         return aggregations;
     }
@@ -101,6 +102,16 @@ public record Aggregation(String fieldName, AggregationOp op) {
                     .map(Aggregation::fieldName)
                     .collect(Collectors.joining(", "));
             throw new IllegalArgumentException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
+        }
+    }
+
+    private static void validateNoNullableValueFields(Schema schema) {
+        String nullableFieldNames = schema.getValueFields().stream()
+                .filter(Field::isNullable)
+                .map(Field::getName)
+                .collect(joining(", "));
+        if (!nullableFieldNames.isEmpty()) {
+            throw new IllegalArgumentException("Aggregation is not supported for nullable value fields. Nullable fields: " + nullableFieldNames);
         }
     }
 

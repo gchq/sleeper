@@ -27,6 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -682,6 +683,33 @@ class IngestRowsIT extends IngestRowsTestBase {
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
                                 .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
                         .build());
+    }
+
+    @Test
+    void shouldWriteRowsWithNullableValueField() throws Exception {
+        // Given
+        Schema nullableSchema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        setSchema(nullableSchema);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(nullableSchema).singlePartition("root").buildList());
+        Row rowWithValue = new Row();
+        rowWithValue.put("key", "a");
+        rowWithValue.put("value", "hello");
+        Row rowWithNull = new Row();
+        rowWithNull.put("key", "b");
+        rowWithNull.put("value", null);
+
+        // When
+        long numWritten = ingestRows(stateStore, List.of(rowWithValue, rowWithNull)).getRowsWritten();
+
+        // Then
+        assertThat(numWritten).isEqualTo(2L);
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        assertThat(fileReferences).hasSize(1);
+        assertThat(readRows(fileReferences.get(0), nullableSchema))
+                .containsExactly(rowWithValue, rowWithNull);
     }
 
     private StateStore initialiseStateStore(List<Partition> partitions) {

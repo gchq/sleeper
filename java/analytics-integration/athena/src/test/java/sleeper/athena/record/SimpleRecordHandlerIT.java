@@ -17,6 +17,7 @@ package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
+import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
 import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
@@ -27,8 +28,10 @@ import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
 import com.amazonaws.athena.connector.lambda.records.RecordResponse;
+import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.athena.AthenaClient;
@@ -38,9 +41,16 @@ import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +58,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.TestUtils.createConstraints;
@@ -332,10 +343,73 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         assertThat(records.getFieldVector("day")).isNull();
     }
 
+    @Test
+    public void shouldReturnNullForNullableStringValueField() throws Exception {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        InstanceProperties instanceProperties = getInstanceProperties();
+        TableProperties tableProperties = createEmptyTable(instanceProperties, schema);
+
+        Row rowWithValue = new Row();
+        rowWithValue.put("key", "present");
+        rowWithValue.put("value", "hello");
+        Row rowWithNull = new Row();
+        rowWithNull.put("key", "absent");
+        rowWithNull.put("value", null);
+        ingestRows(instanceProperties, tableProperties, List.of(rowWithValue, rowWithNull));
+
+        StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
+        String file = stateStore.getFileReferences().get(0).getFilename();
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new SchemaBuilder()
+                .addStringField("key")
+                .addStringField("value")
+                .build();
+
+        // When
+        RecordResponse response = handler(instanceProperties).doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
+                TestUtils.createIdentity(), "abc", UUID.randomUUID().toString(),
+                new TableName(tableProperties.get(TABLE_NAME), tableProperties.get(TABLE_NAME)),
+                arrowSchema,
+                Split.newBuilder(S3SpillLocation.newBuilder().withBucket(SPILL_BUCKET_NAME).build(), null)
+                        .add(RELEVANT_FILES_FIELD, file).build(),
+                createConstraints(new HashMap<>()),
+                1_000_000L, 1_000_000L));
+
+        // Then
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        Block records = ((ReadRecordsResponse) response).getRecords();
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(2);
+
+        FieldReader keyReader = records.getFieldReader("key");
+        FieldReader valueReader = records.getFieldReader("value");
+        keyReader.setPosition(0);
+        valueReader.setPosition(0);
+        assertThat(keyReader.readObject().toString()).isEqualTo("present");
+        assertThat(valueReader.readObject().toString()).isEqualTo("hello");
+        keyReader.setPosition(1);
+        valueReader.setPosition(1);
+        assertThat(keyReader.readObject().toString()).isEqualTo("absent");
+        assertThat(valueReader.readObject()).isNull();
+    }
+
     private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
         return new SimpleRecordHandler(
                 s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(SecretsManagerClient.class), mock(AthenaClient.class));
+    }
+
+    private void ingestRows(InstanceProperties instanceProperties, TableProperties tableProperties, List<Row> rows) throws Exception {
+        IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(createTempDirectory(tempDir, null).toString())
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                .hadoopConfiguration(new Configuration())
+                .instanceProperties(instanceProperties)
+                .build()
+                .ingestFromRowIterator(tableProperties, rows.iterator());
     }
 }

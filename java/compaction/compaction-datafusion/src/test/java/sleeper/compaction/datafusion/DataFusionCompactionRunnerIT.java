@@ -224,6 +224,49 @@ public class DataFusionCompactionRunnerIT {
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
         }
+
+        @Test
+        void shouldMergeFilesWithNullableValueFields() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(
+                            new Field("value1", new StringType(), true),
+                            new Field("value2", new ByteArrayType(), true),
+                            new Field("value3", new IntType(), true),
+                            new Field("value4", new LongType(), true))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row rowWithValue = new Row();
+            rowWithValue.put("key", "a");
+            rowWithValue.put("value1", "hello");
+            rowWithValue.put("value2", new byte[]{1, 2, 3, 4});
+            rowWithValue.put("value3", 100);
+            rowWithValue.put("value4", 1000L);
+            Row rowWithNulls = new Row();
+            rowWithNulls.put("key", "b");
+            rowWithNulls.put("value1", null);
+            rowWithNulls.put("value2", null);
+            rowWithNulls.put("value3", null);
+            rowWithNulls.put("value4", null);
+            Row rowWithSomeNulls = new Row();
+            rowWithSomeNulls.put("key", "c");
+            rowWithSomeNulls.put("value1", null);
+            rowWithSomeNulls.put("value2", new byte[]{9, 8, 7, 6, 5});
+            rowWithSomeNulls.put("value3", null);
+            rowWithSomeNulls.put("value4", 1_000_000L);
+            String file1 = writeFileForPartition("root", List.of(rowWithValue, rowWithSomeNulls));
+            String file2 = writeFileForPartition("root", List.of(rowWithNulls));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(3, 3));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(rowWithValue, rowWithNulls, rowWithSomeNulls);
+        }
     }
 
     @Nested

@@ -47,25 +47,24 @@ class SchemaConverter {
         for (Field field : types) {
             if (field.getType() instanceof sleeper.core.schema.type.PrimitiveType) {
                 primitiveTypes.add(getParquetPrimitiveTypeFromSleeperPrimitiveType(field.getName(),
-                        (sleeper.core.schema.type.PrimitiveType) field.getType()));
+                        (sleeper.core.schema.type.PrimitiveType) field.getType(), field.isNullable()));
             } else if (field.getType() instanceof MapType) {
                 MapType mapType = (MapType) field.getType();
                 sleeper.core.schema.type.PrimitiveType keyType = mapType.getKeyType();
-                PrimitiveType keyParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType("key", keyType);
+                PrimitiveType keyParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType("key", keyType, false);
                 sleeper.core.schema.type.PrimitiveType valueType = mapType.getValueType();
-                PrimitiveType valueParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType("value", valueType);
-                GroupType mapGroupType = Types.requiredMap()
-                        .key(keyParquetType)
-                        .value(valueParquetType)
-                        .named(field.getName());
+                PrimitiveType valueParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType("value", valueType, false);
+                GroupType mapGroupType = field.isNullable()
+                        ? Types.optionalMap().key(keyParquetType).value(valueParquetType).named(field.getName())
+                        : Types.requiredMap().key(keyParquetType).value(valueParquetType).named(field.getName());
                 primitiveTypes.add(mapGroupType);
             } else if (field.getType() instanceof ListType) {
                 ListType listType = (ListType) field.getType();
                 sleeper.core.schema.type.PrimitiveType elementType = listType.getElementType();
-                PrimitiveType elementParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType(field.getName(), elementType);
-                GroupType listGroupType = Types.requiredList()
-                        .element(elementParquetType)
-                        .named(field.getName());
+                PrimitiveType elementParquetType = getParquetPrimitiveTypeFromSleeperPrimitiveType(field.getName(), elementType, false);
+                GroupType listGroupType = field.isNullable()
+                        ? Types.optionalList().element(elementParquetType).named(field.getName())
+                        : Types.requiredList().element(elementParquetType).named(field.getName());
                 primitiveTypes.add(listGroupType);
             } else {
                 throw new IllegalArgumentException("Field with unknown type (" + field + ")");
@@ -74,22 +73,23 @@ class SchemaConverter {
         return new MessageType("record", primitiveTypes);
     }
 
-    private static PrimitiveType getParquetPrimitiveTypeFromSleeperPrimitiveType(String name, sleeper.core.schema.type.PrimitiveType primitiveType) {
+    private static PrimitiveType getParquetPrimitiveTypeFromSleeperPrimitiveType(
+            String name, sleeper.core.schema.type.PrimitiveType primitiveType, boolean nullable) {
         if (primitiveType instanceof IntType) {
-            return Types.required(PrimitiveType.PrimitiveTypeName.INT32)
+            return (nullable ? Types.optional(PrimitiveType.PrimitiveTypeName.INT32) : Types.required(PrimitiveType.PrimitiveTypeName.INT32))
                     .named(name);
         }
         if (primitiveType instanceof LongType) {
-            return Types.required(PrimitiveType.PrimitiveTypeName.INT64)
+            return (nullable ? Types.optional(PrimitiveType.PrimitiveTypeName.INT64) : Types.required(PrimitiveType.PrimitiveTypeName.INT64))
                     .named(name);
         }
         if (primitiveType instanceof StringType) {
-            return Types.required(PrimitiveType.PrimitiveTypeName.BINARY)
+            return (nullable ? Types.optional(PrimitiveType.PrimitiveTypeName.BINARY) : Types.required(PrimitiveType.PrimitiveTypeName.BINARY))
                     .as(LogicalTypeAnnotation.stringType())
                     .named(name);
         }
         if (primitiveType instanceof ByteArrayType) {
-            return Types.required(PrimitiveType.PrimitiveTypeName.BINARY)
+            return (nullable ? Types.optional(PrimitiveType.PrimitiveTypeName.BINARY) : Types.required(PrimitiveType.PrimitiveTypeName.BINARY))
                     .named(name);
         }
         throw new IllegalArgumentException("Unknown type " + primitiveType);

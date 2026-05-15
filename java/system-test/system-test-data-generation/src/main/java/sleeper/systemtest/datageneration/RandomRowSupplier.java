@@ -50,7 +50,12 @@ public class RandomRowSupplier implements Supplier<Row> {
         fieldNameToSupplier = new HashMap<>();
         RandomGenerator generator = new JDKRandomGenerator();
         for (Field field : schema.getAllFields()) {
-            fieldNameToSupplier.put(field.getName(), getSupplier(field.getType(), settings, generator));
+            Supplier<Object> supplier = getSupplier(field.getType(), settings, generator);
+            if (field.isNullable()) {
+                fieldNameToSupplier.put(field.getName(), () -> generator.nextDouble() < 0.2 ? null : supplier.get());
+            } else {
+                fieldNameToSupplier.put(field.getName(), supplier);
+            }
         }
     }
 
