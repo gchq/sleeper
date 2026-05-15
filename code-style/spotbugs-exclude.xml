@@ -24,7 +24,6 @@
             <Bug pattern="EI_EXPOSE_REP"/>
             <Bug pattern="EI_EXPOSE_REP2"/>
             <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-            <Bug pattern="UWF_UNWRITTEN_FIELD"/>
         </Or>
     </Match>
 </FindBugsFilter>
