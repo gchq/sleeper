@@ -125,18 +125,30 @@ public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
                     varBinaryVector.setSafe(insertAtRowNo, value);
                 }
             } else if (sleeperType instanceof ListType) {
-                writeList(
-                        ((ListType) sleeperType).getElementType(),
-                        (List<?>) row.get(fieldName),
-                        (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                        insertAtRowNo);
+                List<?> list = (List<?>) row.get(fieldName);
+                ListVector listVector = (ListVector) vectorSchemaRoot.getVector(fieldNo);
+                if (list == null) {
+                    listVector.setNull(insertAtRowNo);
+                } else {
+                    writeList(
+                            ((ListType) sleeperType).getElementType(),
+                            list,
+                            listVector,
+                            insertAtRowNo);
+                }
             } else if (sleeperType instanceof MapType) {
-                writeMap(
-                        ((MapType) sleeperType).getKeyType(),
-                        ((MapType) sleeperType).getValueType(),
-                        (Map<?, ?>) row.get(fieldName),
-                        (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                        insertAtRowNo);
+                Map<?, ?> map = (Map<?, ?>) row.get(fieldName);
+                ListVector listVector = (ListVector) vectorSchemaRoot.getVector(fieldNo);
+                if (map == null) {
+                    listVector.setNull(insertAtRowNo);
+                } else {
+                    writeMap(
+                            ((MapType) sleeperType).getKeyType(),
+                            ((MapType) sleeperType).getValueType(),
+                            map,
+                            listVector,
+                            insertAtRowNo);
+                }
             } else {
                 throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
             }
