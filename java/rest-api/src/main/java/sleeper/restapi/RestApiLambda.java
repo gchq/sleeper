@@ -17,7 +17,6 @@ package sleeper.restapi;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
-import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -42,7 +41,6 @@ public class RestApiLambda {
 
     private final SleeperClient sleeperClient;
     private final InstanceProperties instanceProperties;
-    private final Gson gson = new Gson();
     private final Map<String, Route> routes = new HashMap<>();
 
     public RestApiLambda() {
