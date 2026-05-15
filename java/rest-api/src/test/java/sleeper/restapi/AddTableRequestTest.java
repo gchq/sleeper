@@ -28,6 +28,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.restapi.addTable.AddTableRequest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
