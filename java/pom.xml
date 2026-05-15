@@ -223,7 +223,7 @@
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
-        <asm.version>9.9.1</asm.version>
+        <asm.version>9.10</asm.version>
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
