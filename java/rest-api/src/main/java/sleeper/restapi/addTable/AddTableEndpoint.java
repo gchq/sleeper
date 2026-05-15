@@ -51,7 +51,7 @@ public class AddTableEndpoint extends RestEndpoint {
     }
 
     /**
-     * Decodes details for the AddTableRequest and then actions them within the application
+     * Decodes details for the AddTableRequest and then actions them within the application.
      *
      * @param  event APIGateway passing into this method from the determined rest api route
      * @return       An APIGateway response detailing whether the addTable action has suceeded or not

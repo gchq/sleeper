@@ -15,6 +15,9 @@
  */
 package sleeper.restapi.addTable;
 
+/**
+ * Decoded JSON body for the response back out from /sleeper/tables.
+ */
 public class AddTableResponse {
     private String tableId;
     private String tableName;
@@ -28,6 +31,9 @@ public class AddTableResponse {
         return new Builder();
     }
 
+    /**
+     * Builder to create an AddTable response.
+     */
     public static final class Builder {
         private String tableId;
         private String tableName;
@@ -35,11 +41,23 @@ public class AddTableResponse {
         private Builder() {
         }
 
+        /**
+         * Sets the table id.
+         *
+         * @param  properties the table id
+         * @return            the builder for chaining
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the table name.
+         *
+         * @param  properties the table name
+         * @return            the builder for chaining
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
