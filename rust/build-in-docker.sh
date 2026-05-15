@@ -58,8 +58,24 @@ RUN_PARAMS+=(
   -e ACTIONS_RESULTS_URL
   -e ACTIONS_RUNTIME_TOKEN
   -e ACTIONS_CACHE_SERVICE_V2
-  "$BUILD_IMAGE"
 )
+
+if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
+  ALT_CARGO_HOME="$PROJECT_DIR/rust/.cargo-home-mirror"
+  mkdir -p "$ALT_CARGO_HOME"
+  if [ -f "$PROJECT_DIR/rust/.cargo/config.toml" ]; then
+    cp "$PROJECT_DIR/rust/.cargo/config.toml" "$ALT_CARGO_HOME/config.toml"
+  else
+    : > "$ALT_CARGO_HOME/config.toml"
+  fi
+  printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
+  RUN_PARAMS+=(
+    -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
+    -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
+  )
+fi
+
+RUN_PARAMS+=("$BUILD_IMAGE")
 
 docker pull "$BUILD_IMAGE"
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"

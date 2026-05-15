@@ -14,11 +14,16 @@
 
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
+ARG RUSTUP_DIST_SERVER
+ARG RUSTUP_UPDATE_ROOT
 
 RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
     g++-aarch64-linux-gnu \
     libc6-dev-arm64-cross \
     && rm -rf /var/lib/apt/lists/*
+
+ENV RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER}"
+ENV RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT}"
 
 RUN rustup target add aarch64-unknown-linux-gnu
 RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
