@@ -44,9 +44,13 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -90,8 +94,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             t.setDaemon(true);
             return t;
         });
+        Future<Void> pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
         try {
-            executorService.submit(new ProgressPoller(job.getId(), progressCallback));
 
             RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
@@ -115,18 +119,25 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                     LocalDateTime.now());
             return result;
         } finally {
-            shutdownPoller(executorService);
+            shutdownPoller(executorService, pollerFuture);
         }
     }
 
-    private static void shutdownPoller(ExecutorService executorService) {
+    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) {
         executorService.shutdownNow();
         try {
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                 LOGGER.warn("Compaction progress monitoring thread still running");
             }
+            pollerFuture.get(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (CancellationException e) {
+            // expected: shutdownNow interrupted the poller
+        } catch (ExecutionException e) {
+            LOGGER.warn("Compaction progress polling failed", e.getCause());
+        } catch (TimeoutException e) {
+            LOGGER.warn("Timed out waiting for progress poller to terminate");
         }
     }
 
