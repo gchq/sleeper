@@ -28,11 +28,14 @@ import sleeper.container.images.ContainerImageTransferManager;
 import sleeper.container.images.ContainerImageTransferRequest;
 import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
+import sleeper.core.deploy.ContainerPlatform;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
@@ -67,9 +70,10 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         Map<String, Object> properties = event.getResourceProperties();
         String source = (String) properties.get("source");
         String target = (String) properties.get("target");
+        List<ContainerPlatform> platforms = parsePlatforms((String) properties.get("platforms"));
 
         try {
-            String digest = client.transferGetDigest(source, target);
+            String digest = client.transferGetDigest(source, target, platforms);
             return Response.builder()
                     .status(Status.SUCCESS)
                     .physicalResourceId(target)
@@ -88,8 +92,17 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
         }
     }
 
+    private static List<ContainerPlatform> parsePlatforms(String value) {
+        if (value == null || value.isEmpty()) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(ContainerPlatform::parse)
+                .toList();
+    }
+
     public interface Client {
-        String transferGetDigest(String source, String target) throws InterruptedException;
+        String transferGetDigest(String source, String target, List<ContainerPlatform> platforms) throws InterruptedException;
 
         static Client transferManagerWithSourceCredentials(
                 ContainerRegistryCredentials.Retriever sourceCredentialRetriever) {
@@ -106,9 +119,10 @@ public class CopyContainerImageLambda extends AbstractCustomResourceHandler {
                 ContainerImageTransferManager transferManager,
                 ContainerRegistryCredentials.Retriever sourceCredentialRetriever,
                 ContainerRegistryCredentials.Retriever targetCredentialRetriever) {
-            return (source, target) -> transferManager.transfer(ContainerImageTransferRequest.builder()
+            return (source, target, platforms) -> transferManager.transfer(ContainerImageTransferRequest.builder()
                     .sourceImageReference(source)
                     .targetImageReference(target)
+                    .platforms(platforms)
                     .sourceCredentialsRetriever(sourceCredentialRetriever)
                     .targetCredentialsRetriever(targetCredentialRetriever)
                     .build()).imageDigest();
