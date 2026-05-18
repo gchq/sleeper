@@ -374,12 +374,12 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         rowWithValue.put("key", 1);
         rowWithValue.put("sort", 100L);
         rowWithValue.put("value", "hello");
-        rowWithValue.put("value2", "hello2");
+        rowWithValue.put("value2", "hello2".getBytes(StandardCharsets.UTF_8));
         Row rowWithNull = new Row();
         rowWithNull.put("key", 2);
         rowWithNull.put("sort", 0L);
         rowWithNull.put("value", null);
-        rowWithNull.put("value2", "not-null");
+        rowWithNull.put("value2", "not-null".getBytes(StandardCharsets.UTF_8));
         List<Row> rows = List.of(rowWithValue, rowWithNull);
         writeRowsToFile(rows, dataDir + "/import/nullable.parquet");
 
