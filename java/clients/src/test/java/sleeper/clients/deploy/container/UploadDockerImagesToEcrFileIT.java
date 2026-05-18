@@ -34,9 +34,12 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
@@ -72,6 +75,9 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 dockerLoginToEcrCommand(),
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base", expectedBaseTag),
                 buildLambdaImageCommand(expectedTag1, lambdaImageDir.toString(), expectedBaseTag),
                 pushImageCommand(expectedTag1),
                 buildLambdaImageCommand(expectedTag2, lambdaImageDir.toString(), expectedBaseTag),

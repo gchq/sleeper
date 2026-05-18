@@ -51,7 +51,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushBaseAndImages;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -357,7 +357,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstancePropertyViaCdk(instanceId, OPTIONAL_STACKS, "BulkExportStack");
 
             // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "bulk-export-task-execution"));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushBaseAndImages(instanceProperties, "bulk-export-task-execution"));
         }
 
         @Test
@@ -366,7 +366,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstancePropertyViaCdk(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
-            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushBaseAndImages(instanceProperties, "ingest"));
         }
     }
 
