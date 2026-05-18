@@ -24,8 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.cdk.custom.testutil.FakeLambdaContext;
+import sleeper.core.deploy.ContainerPlatform;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -43,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @WireMockTest
 public class CopyContainerImageLambdaIT {
 
-    private final Map<String, String> imageReferenceToDigest = new HashMap<>();
+    private final Map<String, FakeImage> imageReferenceToImage = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -53,7 +55,7 @@ public class CopyContainerImageLambdaIT {
     @Test
     void shouldCopyDockerImageOnCreate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        imageReferenceToDigest.put("source-registry/test-image", "test-digest");
+        imageReferenceToImage.put("source-registry/test-image", singleImageWithDigest("test-digest"));
 
         // When
         handleEvent(event(runtimeInfo)
@@ -64,9 +66,9 @@ public class CopyContainerImageLambdaIT {
                 .build());
 
         // Then
-        assertThat(imageReferenceToDigest).isEqualTo(Map.of(
-                "source-registry/test-image", "test-digest",
-                "target-registry/test-image", "test-digest"));
+        assertThat(imageReferenceToImage).isEqualTo(Map.of(
+                "source-registry/test-image", singleImageWithDigest("test-digest"),
+                "target-registry/test-image", singleImageWithDigest("test-digest")));
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", equalTo("test-digest"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
@@ -75,8 +77,8 @@ public class CopyContainerImageLambdaIT {
     @Test
     void shouldCopyNewDockerImageOnUpdate(WireMockRuntimeInfo runtimeInfo) throws Exception {
         // Given
-        imageReferenceToDigest.put("source-registry/test-image:1.1", "new-digest");
-        imageReferenceToDigest.put("target-registry/test-image:1.0", "old-digest");
+        imageReferenceToImage.put("source-registry/test-image:1.1", singleImageWithDigest("new-digest"));
+        imageReferenceToImage.put("target-registry/test-image:1.0", singleImageWithDigest("old-digest"));
 
         // When
         handleEvent(event(runtimeInfo)
@@ -90,10 +92,10 @@ public class CopyContainerImageLambdaIT {
                 .build());
 
         // Then
-        assertThat(imageReferenceToDigest).isEqualTo(Map.of(
-                "source-registry/test-image:1.1", "new-digest",
-                "target-registry/test-image:1.0", "old-digest",
-                "target-registry/test-image:1.1", "new-digest"));
+        assertThat(imageReferenceToImage).isEqualTo(Map.of(
+                "source-registry/test-image:1.1", singleImageWithDigest("new-digest"),
+                "target-registry/test-image:1.0", singleImageWithDigest("old-digest"),
+                "target-registry/test-image:1.1", singleImageWithDigest("new-digest")));
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(matchingJsonPath("$.Data.digest", equalTo("new-digest"))
                         .and(matchingJsonPath("$.Status", equalTo("SUCCESS")))));
@@ -112,7 +114,69 @@ public class CopyContainerImageLambdaIT {
         // Then
         verify(putRequestedFor(urlEqualTo("/report-response"))
                 .withRequestBody(equalToJson("{\"Status\":\"SUCCESS\",\"Data\":null}", true, true)));
-        assertThat(imageReferenceToDigest).isEmpty();
+        assertThat(imageReferenceToImage).isEmpty();
+    }
+
+    @Test
+    void shouldCopyMultiplatformImage(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        List<ContainerPlatform> platforms = List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64);
+        imageReferenceToImage.put("source-registry/multi-image", new FakeImage("test-digest", platforms));
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", "source-registry/multi-image",
+                        "target", "target-registry/multi-image",
+                        "platforms", "linux/amd64,linux/arm64"))
+                .build());
+
+        // Then
+        assertThat(imageReferenceToImage).isEqualTo(Map.of(
+                "source-registry/multi-image", new FakeImage("test-digest", platforms),
+                "target-registry/multi-image", new FakeImage("test-digest", platforms)));
+    }
+
+    @Test
+    void shouldCopySubsetOfMultiplatformImage(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        List<ContainerPlatform> platforms = List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64);
+        imageReferenceToImage.put("source-registry/multi-image", new FakeImage("test-digest", platforms));
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", "source-registry/multi-image",
+                        "target", "target-registry/multi-image",
+                        "platforms", "linux/amd64"))
+                .build());
+
+        // Then
+        assertThat(imageReferenceToImage).isEqualTo(Map.of(
+                "source-registry/multi-image", new FakeImage("test-digest", platforms),
+                "target-registry/multi-image", new FakeImage("test-digest", List.of(ContainerPlatform.LINUX_AMD64))));
+    }
+
+    @Test
+    void shouldCopySingleImageWhenPlatformsIsEmptyString(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        // Given
+        imageReferenceToImage.put("source-registry/test-image", singleImageWithDigest("test-digest"));
+
+        // When
+        handleEvent(event(runtimeInfo)
+                .withRequestType("Create")
+                .withResourceProperties(Map.of(
+                        "source", "source-registry/test-image",
+                        "target", "target-registry/test-image",
+                        "platforms", ""))
+                .build());
+
+        // Then
+        assertThat(imageReferenceToImage).isEqualTo(Map.of(
+                "source-registry/test-image", singleImageWithDigest("test-digest"),
+                "target-registry/test-image", singleImageWithDigest("test-digest")));
     }
 
     private void handleEvent(CloudFormationCustomResourceEvent event) throws Exception {
@@ -125,11 +189,18 @@ public class CopyContainerImageLambdaIT {
     }
 
     private CopyContainerImageLambda lambda() {
-        return new CopyContainerImageLambda((source, target) -> {
-            String digest = imageReferenceToDigest.get(source);
-            imageReferenceToDigest.put(target, digest);
-            return digest;
+        return new CopyContainerImageLambda((source, target, platforms) -> {
+            FakeImage image = imageReferenceToImage.get(source);
+            imageReferenceToImage.put(target, new FakeImage(image.digest(), platforms));
+            return image.digest();
         });
+    }
+
+    private FakeImage singleImageWithDigest(String digest) {
+        return new FakeImage(digest, List.of());
+    }
+
+    public record FakeImage(String digest, List<ContainerPlatform> platforms) {
     }
 
 }

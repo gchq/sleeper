@@ -57,16 +57,16 @@ public class IngestDsl {
     }
 
     public IngestByQueueDsl byQueue() {
-        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
+        return new IngestByQueueDsl(context.sentJobs(), sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
     }
 
     public IngestByQueueDsl bulkImportByQueue() {
-        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
+        return new IngestByQueueDsl(context.sentJobs(), sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
     }
 
     public DirectBulkImportDsl directEmrServerless() {
         return new DirectBulkImportDsl(
-                instance(), sourceFiles(), baseDrivers.directEmrServerless(context), waitForBulkImport());
+                context.sentJobs(), instance(), sourceFiles(), baseDrivers.directEmrServerless(context), waitForBulkImport());
     }
 
     private SystemTestInstanceContext instance() {

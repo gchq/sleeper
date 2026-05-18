@@ -489,13 +489,13 @@ You can submit a job in a similar way to the methods above, e.g.
     "my-import-bucket/files/my-other-files/"
   ],
   "sparkConf": {
-    "spark.executor.instances": "3",
-    "spark.driver.memory": "7g",
+    "spark.executor.instances": "29",
+    "spark.driver.memory": "12g",
     "spark.driver.memoryOverhead": "1g",
-    "spark.executor.memory": "7g",
+    "spark.executor.memory": "12g",
     "spark.executor.memoryOverhead": "1g",
-    "spark.driver.cores": "1",
-    "spark.executor.cores": "1"
+    "spark.driver.cores": "5",
+    "spark.executor.cores": "5"
   }
 }
 ```

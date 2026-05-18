@@ -30,11 +30,6 @@ LOGIN_HOME=/home/$LOGIN_USER
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update && sudo apt -y dist-upgrade
 
-# Install Nix
-if [ ! -d /nix ]; then
-  runuser --login "$LOGIN_USER" -c "curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes"
-fi
-
 # Install latest Docker
 if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
   sudo apt remove -y docker.io containerd runc

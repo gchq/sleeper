@@ -7,12 +7,26 @@ assignees: ''
 
 ---
 
-You've done some work towards another issue but haven't finished it yet. You want to integrate your changes into the rest of the project with a pull request before you continue your work on the issue. This will mean other contributors can see your changes in their copy of the code, and can take your work into account in anything they're doing. This is great!
+### Description / Background
 
-Please complete the link below to link this to the issue you're working on. Give this new issue a name that describes the changes you will include in a pull request.
+#### Original issue
+
+Please complete the link below to link this to the issue that this progresses.
 
 Split from:
 - https://github.com/gchq/sleeper/issues/XXX
+
+#### Progress
+
+Please fill in this section with some information about the changes that progress the original issue, and briefly explain how this relates to the issue.
+
+Give this new issue a name that describes the changes you will include in a pull request.
+
+### Using progress issues
+
+You've done some work towards another issue but haven't finished it yet. You want to integrate your changes into the rest of the project with a pull request before you continue your work on the issue. This will mean other contributors can see your changes in their copy of the code, and can take your work into account in anything they're doing. This is great!
+
+Progress issues are intended to minimise the effort needed to raise a pull request when an issue is not fully resolved. They should usually be used if you've already made a change that partially addresses another issue, rather than for future planning.
 
 #### Pull requests for unfinished changes
 
@@ -20,7 +34,7 @@ Any changes you make must still pass all tests and linting. Your code in progres
 
 If your changes affect the behaviour of the system in incomplete ways, or may cause confusion over an incomplete feature, we may still be able to accommodate this. You could avoid connecting your new code to the rest of the system temporarily, or include configuration such that the new behaviour is disabled by default.
 
-#### Explanation
+#### Why use a progress issue?
 
 For tracking reasons, we want each pull request to be linked to an issue that it resolves. For an issue that's still in progress, please don't link a pull request to the original because that would trigger GitHub to close the original issue when the pull request is merged. Instead, you can link your pull request to a new issue that's split from the original.
 
