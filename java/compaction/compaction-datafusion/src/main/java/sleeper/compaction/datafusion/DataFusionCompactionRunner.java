@@ -236,7 +236,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         private final String jobID;
         private final Consumer<Long> progressCallback;
 
-        public ProgressPoller(String jobID, Consumer<Long> progressCallback) {
+        ProgressPoller(String jobID, Consumer<Long> progressCallback) {
             this.jobID = jobID;
             this.progressCallback = progressCallback;
         }
