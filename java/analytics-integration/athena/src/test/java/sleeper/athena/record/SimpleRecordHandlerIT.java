@@ -387,12 +387,12 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         FieldReader valueReader = records.getFieldReader("value");
         keyReader.setPosition(0);
         valueReader.setPosition(0);
-        assertThat(keyReader.readObject().toString()).isEqualTo("present");
-        assertThat(valueReader.readObject().toString()).isEqualTo("hello");
-        keyReader.setPosition(1);
-        valueReader.setPosition(1);
         assertThat(keyReader.readObject().toString()).isEqualTo("absent");
         assertThat(valueReader.readObject()).isNull();
+        keyReader.setPosition(1);
+        valueReader.setPosition(1);
+        assertThat(keyReader.readObject().toString()).isEqualTo("present");
+        assertThat(valueReader.readObject().toString()).isEqualTo("hello");
     }
 
     private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
