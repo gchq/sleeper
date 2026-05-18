@@ -369,6 +369,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                 .build();
         tableProperties.setSchema(nullableSchema);
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
+        tablePropertiesStore(instanceProperties).save(tableProperties);
         update(stateStore()).initialise(tableProperties);
         Row rowWithValue = new Row();
         rowWithValue.put("key", 1);
