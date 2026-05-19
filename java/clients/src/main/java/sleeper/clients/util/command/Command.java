@@ -116,7 +116,7 @@ public class Command {
         return envVars.keySet().stream().sorted().map(name -> name + "=?").collect(joining(" "));
     }
 
-    private static Pattern NO_QUOTE_PATTERN = Pattern.compile("\s|\"");
+    private static final Pattern NO_QUOTE_PATTERN = Pattern.compile("\s|\"");
 
     private static String argToString(String arg) {
         if (NO_QUOTE_PATTERN.matcher(arg).find()) {
