@@ -24,7 +24,7 @@ import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.Command.envAndCommand;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
-public class CommandTest {
+public class CommandPipelineTest {
 
     @Test
     void shouldConvertCommandToString() {
