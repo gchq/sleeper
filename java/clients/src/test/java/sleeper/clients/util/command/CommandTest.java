@@ -32,7 +32,7 @@ public class CommandTest {
         CommandPipeline command = pipeline(command("cat", "abc.txt"));
 
         // When / Then
-        assertThat(command).hasToString("[cat, abc.txt]");
+        assertThat(command).hasToString("cat \"abc.txt\"");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class CommandTest {
                 command("grep", "ef"));
 
         // When / Then
-        assertThat(command).hasToString("CommandPipeline{commands=[[cat, abc.txt], [grep, ef]]}");
+        assertThat(command).hasToString("cat \"abc.txt\" | grep \"ef\"");
     }
 
     @Test
@@ -55,7 +55,7 @@ public class CommandTest {
                 "cat", "abc.txt"));
 
         // When / Then
-        assertThat(command).hasToString("[cat, abc.txt]envVars{VAR_A, OTHER_VAR}");
+        assertThat(command).hasToString("OTHER_VAR=? VAR_A=? cat \"abc.txt\"");
     }
 
     @Test
@@ -66,7 +66,7 @@ public class CommandTest {
                 envAndCommand(Map.of("OTHER_VAR", "other value"), "grep", "ef"));
 
         // When / Then
-        assertThat(command).hasToString("CommandPipeline{commands=[[cat, abc.txt]envVars{VAR_A}, [grep, ef]envVars{OTHER_VAR}]}");
+        assertThat(command).hasToString("VAR_A=? cat \"abc.txt\" | OTHER_VAR=? grep \"ef\"");
     }
 
 }

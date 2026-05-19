@@ -21,6 +21,7 @@ import com.pty4j.PtyProcessBuilder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
@@ -34,6 +35,9 @@ public class Command {
     private Command(Map<String, String> envVars, String[] command) {
         this.envVars = requireNonNull(envVars, "envVars must not be null");
         this.command = requireNonNull(command, "command must not be null");
+        if (command.length < 1) {
+            throw new IllegalArgumentException("command must not be empty");
+        }
     }
 
     public static Command envAndCommand(Map<String, String> envVars, String... command) {
@@ -68,10 +72,20 @@ public class Command {
     @Override
     public String toString() {
         if (envVars.isEmpty()) {
-            return Arrays.toString(command);
+            return commandToString();
         } else {
-            return Arrays.toString(command) + "envVars{" + envVars.keySet().stream().collect(joining(", ")) + "}";
+            return envVarsToString() + " " + commandToString();
         }
+    }
+
+    private String commandToString() {
+        return command[0] + " " + Stream.of(command).skip(1)
+                .map(command -> "\"" + command + "\"")
+                .collect(joining(" "));
+    }
+
+    private String envVarsToString() {
+        return envVars.keySet().stream().map(name -> name + "=?").collect(joining(" "));
     }
 
     public String[] toArray() {
