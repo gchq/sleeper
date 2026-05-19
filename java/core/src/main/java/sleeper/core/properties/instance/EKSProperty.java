@@ -167,6 +167,13 @@ public interface EKSProperty {
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.ephemeral.storage")
+            .description("(EKS mode only) The amount of ephemeral storage allocated to each Spark executor pod on Fargate. " +
+                    "Used to set spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit. " +
+                    "Fargate uses this to provision ephemeral storage for the pod beyond the default 20 GiB.\n" +
+                    "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
+            .defaultValue("40Gi")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

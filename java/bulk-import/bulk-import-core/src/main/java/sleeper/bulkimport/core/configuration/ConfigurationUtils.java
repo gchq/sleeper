@@ -36,6 +36,7 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
@@ -206,6 +207,11 @@ public class ConfigurationUtils {
 
         // spark.sql properties
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS));
+
+        // spark.kubernetes.executor.volumes properties
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.mount.path", "/var/spark/local");
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.mount.readOnly", "false");
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE));
 
         // spark.kubernetes properties
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
