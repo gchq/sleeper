@@ -107,13 +107,13 @@ public class Command {
     }
 
     private String commandToString() {
-        return command[0] + " " + Stream.of(command).skip(1)
+        return Stream.of(command)
                 .map(arg -> argToString(arg))
                 .collect(joining(" "));
     }
 
     private String envVarsToString() {
-        return envVars.keySet().stream().map(name -> name + "=?").collect(joining(" "));
+        return envVars.keySet().stream().sorted().map(name -> name + "=?").collect(joining(" "));
     }
 
     private static Pattern NO_QUOTE_PATTERN = Pattern.compile("\s|\"");

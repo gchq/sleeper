@@ -27,12 +27,21 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 public class CommandPipelineTest {
 
     @Test
-    void shouldConvertCommandToString() {
+    void shouldConvertCommandWithNoArgumentsToString() {
         // Given
-        CommandPipeline command = pipeline(command("cat", "abc.txt"));
+        CommandPipeline command = pipeline(command("ls"));
 
         // When / Then
-        assertThat(command).hasToString("cat abc.txt");
+        assertThat(command).hasToString("ls");
+    }
+
+    @Test
+    void shouldConvertCommandWithArgumentsToString() {
+        // Given
+        CommandPipeline command = pipeline(command("cat", "-A", "abc.txt"));
+
+        // When / Then
+        assertThat(command).hasToString("cat -A abc.txt");
     }
 
     @Test
