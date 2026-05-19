@@ -152,7 +152,7 @@ class SleeperPropertyValueUtilsTest {
         }
 
         @ParameterizedTest(name = "Should reject invalid size: {0}")
-        @ValueSource(strings = {"19Gi", "201Gi", "100G", "100", "", "largeGi"})
+        @ValueSource(strings = {"19Gi", "201Gi", "100Mi", "100G", "100", "", "largeGi"})
         void shouldRejectInvalidSize(String value) {
             assertThat(SleeperPropertyValueUtils.isValidEksEphemeralStorageSize(value)).isFalse();
         }
