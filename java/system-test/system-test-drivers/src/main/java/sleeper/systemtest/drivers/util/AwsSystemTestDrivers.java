@@ -48,6 +48,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
+import sleeper.systemtest.drivers.statemachine.AwsStateMachineDriver;
 import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
@@ -84,6 +85,7 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statemachine.StateMachineDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
@@ -159,6 +161,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public DirectBulkImportDriver directEmrServerless(SystemTestContext context) {
         return new DirectEmrServerlessDriver(context.instance(), clients);
+    }
+
+    @Override
+    public StateMachineDriver statemachine(SystemTestContext context) {
+        return new AwsStateMachineDriver(clients);
     }
 
     @Override

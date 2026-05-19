@@ -45,6 +45,7 @@ import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SourceFilesDsl;
+import sleeper.systemtest.dsl.statemachine.StateMachineDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreDSl;
 
 import java.nio.file.Path;
@@ -149,6 +150,10 @@ public class SleeperDsl {
 
     public ReportingDsl reporting() {
         return new ReportingDsl(context);
+    }
+
+    public StateMachineDsl statemachine() {
+        return new StateMachineDsl(context.instance(), context.instance().adminDrivers().statemachine(context));
     }
 
     public TableMetricsDsl tableMetrics() {
