@@ -24,6 +24,7 @@ import java.util.Objects;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public class Command {
 
@@ -69,7 +70,7 @@ public class Command {
         if (envVars.isEmpty()) {
             return Arrays.toString(command);
         } else {
-            return Arrays.toString(command) + envVars.toString();
+            return Arrays.toString(command) + "envVars{" + envVars.keySet().stream().collect(joining(", ")) + "}";
         }
     }
 
