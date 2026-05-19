@@ -32,7 +32,7 @@ public class CommandTest {
         CommandPipeline command = pipeline(command("cat", "abc.txt"));
 
         // When / Then
-        assertThat(command).hasToString("cat \"abc.txt\"");
+        assertThat(command).hasToString("cat abc.txt");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class CommandTest {
                 command("grep", "ef"));
 
         // When / Then
-        assertThat(command).hasToString("cat \"abc.txt\" | grep \"ef\"");
+        assertThat(command).hasToString("cat abc.txt | grep ef");
     }
 
     @Test
@@ -55,7 +55,7 @@ public class CommandTest {
                 "cat", "abc.txt"));
 
         // When / Then
-        assertThat(command).hasToString("OTHER_VAR=? VAR_A=? cat \"abc.txt\"");
+        assertThat(command).hasToString("OTHER_VAR=? VAR_A=? cat abc.txt");
     }
 
     @Test
@@ -66,7 +66,25 @@ public class CommandTest {
                 envAndCommand(Map.of("OTHER_VAR", "other value"), "grep", "ef"));
 
         // When / Then
-        assertThat(command).hasToString("VAR_A=? cat \"abc.txt\" | OTHER_VAR=? grep \"ef\"");
+        assertThat(command).hasToString("VAR_A=? cat abc.txt | OTHER_VAR=? grep ef");
+    }
+
+    @Test
+    void shouldConvertCommandArgumentWithQuotesToString() {
+        // Given
+        CommandPipeline command = pipeline(command("grep", "\"ready\"", "abc.txt"));
+
+        // When / Then
+        assertThat(command).hasToString("grep \"\\\"ready\\\"\" abc.txt");
+    }
+
+    @Test
+    void shouldConvertCommandArgumentWithSpaceToString() {
+        // Given
+        CommandPipeline command = pipeline(command("grep", " ", "abc.txt"));
+
+        // When / Then
+        assertThat(command).hasToString("grep \" \" abc.txt");
     }
 
 }

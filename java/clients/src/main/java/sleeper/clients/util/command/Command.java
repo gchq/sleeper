@@ -21,6 +21,7 @@ import com.pty4j.PtyProcessBuilder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
@@ -78,16 +79,6 @@ public class Command {
         }
     }
 
-    private String commandToString() {
-        return command[0] + " " + Stream.of(command).skip(1)
-                .map(command -> "\"" + command + "\"")
-                .collect(joining(" "));
-    }
-
-    private String envVarsToString() {
-        return envVars.keySet().stream().map(name -> name + "=?").collect(joining(" "));
-    }
-
     public String[] toArray() {
         return command;
     }
@@ -113,5 +104,25 @@ public class Command {
         PtyProcessBuilder builder = new PtyProcessBuilder(command);
         builder.setEnvironment(envVars);
         return builder;
+    }
+
+    private String commandToString() {
+        return command[0] + " " + Stream.of(command).skip(1)
+                .map(arg -> argToString(arg))
+                .collect(joining(" "));
+    }
+
+    private String envVarsToString() {
+        return envVars.keySet().stream().map(name -> name + "=?").collect(joining(" "));
+    }
+
+    private static Pattern NO_QUOTE_PATTERN = Pattern.compile("\s|\"");
+
+    private static String argToString(String arg) {
+        if (NO_QUOTE_PATTERN.matcher(arg).find()) {
+            return "\"" + arg.replace("\"", "\\\"") + "\"";
+        } else {
+            return arg;
+        }
     }
 }
