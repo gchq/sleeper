@@ -19,6 +19,8 @@ package sleeper.core.properties.model;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -137,6 +139,27 @@ class SleeperPropertyValueUtilsTest {
         @Test
         void shouldValidateStringWhenStringLengthMeetsMaxLength() {
             assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate EKS ephemeral storage size")
+    class ValidateEksEphemeralStorageSize {
+        @ParameterizedTest(name = "Should validate valid size: {0}")
+        @ValueSource(strings = {"20Gi", "100Gi", "200Gi"})
+        void shouldValidateValidSize(String value) {
+            assertThat(SleeperPropertyValueUtils.isValidEksEphemeralStorageSize(value)).isTrue();
+        }
+
+        @ParameterizedTest(name = "Should reject invalid size: {0}")
+        @ValueSource(strings = {"19Gi", "201Gi", "100G", "100", "", "largeGi"})
+        void shouldRejectInvalidSize(String value) {
+            assertThat(SleeperPropertyValueUtils.isValidEksEphemeralStorageSize(value)).isFalse();
+        }
+
+        @Test
+        void shouldRejectNull() {
+            assertThat(SleeperPropertyValueUtils.isValidEksEphemeralStorageSize(null)).isFalse();
         }
     }
 

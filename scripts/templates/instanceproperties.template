@@ -1288,9 +1288,11 @@ sleeper.subnets=set-automatically
 # (EKS mode only) The amount of ephemeral storage allocated to each Spark executor pod on Fargate.
 # Used to set spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit. Fargate
 # uses this to provision ephemeral storage for the pod beyond the default 20 GiB.
+# Fargate has a cap of 200Gi, if you begin setting close to this it would be worth increasing the
+# number of executors. This is set by 'sleeper.bulk.import.eks.spark.executor.instances'.
 # See https://spark.apache.org/docs/latest/running-on-kubernetes.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.ephemeral.storage=40Gi
+# sleeper.bulk.import.eks.spark.executor.ephemeral.storage=100Gi
 
 
 ## The following instance properties relate to the splitting of partitions.

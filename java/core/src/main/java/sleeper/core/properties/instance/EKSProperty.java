@@ -17,6 +17,7 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -171,8 +172,11 @@ public interface EKSProperty {
             .description("(EKS mode only) The amount of ephemeral storage allocated to each Spark executor pod on Fargate. " +
                     "Used to set spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit. " +
                     "Fargate uses this to provision ephemeral storage for the pod beyond the default 20 GiB.\n" +
+                    "Fargate has a cap of 200Gi, if you begin setting close to this it would be worth increasing the number " +
+                    "of executors. This is set by 'sleeper.bulk.import.eks.spark.executor.instances'.\n" +
                     "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
-            .defaultValue("40Gi")
+            .defaultValue("100Gi")
+            .validationPredicate(SleeperPropertyValueUtils::isValidEksEphemeralStorageSize)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

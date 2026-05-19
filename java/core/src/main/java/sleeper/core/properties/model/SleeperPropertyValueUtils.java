@@ -293,6 +293,20 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is a valid ephemeral storage size for a Fargate pod on EKS.
+     * Must be in gibibytes (e.g. "20Gi"), between 20 GiB and 200 GiB (the Fargate limits).
+     *
+     * @param  value the value
+     * @return       true if the value meets the requirement
+     */
+    public static boolean isValidEksEphemeralStorageSize(String value) {
+        if (!isNonNullNonEmptyString(value) || !value.endsWith("Gi")) {
+            return false;
+        }
+        return parseAndCheckInteger(value.substring(0, value.length() - 2), num -> num >= 20 && num <= 200);
+    }
+
+    /**
      * Checks if a property value is a valid size for an AWS EBS volume for AWS EMR.
      *
      * @param  ebsSizeInGb the value
