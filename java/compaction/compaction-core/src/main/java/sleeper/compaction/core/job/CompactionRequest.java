@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 /**
  * A bundle of the inputs required to execute a compaction.
- *
+ * <p>
  * Contains the job, the configuration of the Sleeper table the job runs in, the region to read, and a progress
  * callback. The progress callback receives updates on the number of rows read by a compaction.
  *
@@ -91,8 +91,12 @@ public class CompactionRequest {
         }
 
         /**
-         * Sets the progress callback to receive notifications of compaction progress. If not set or set to null, the
-         * built request will use a no-op consumer.
+         * Sets the progress callback to receive notifications of compaction progress.
+         *
+         * The consumer will receive progress notifications of the number of rows read (not necessarily written)
+         * by the compaction. The written row count may be different due to filtering or aggregation.
+         *
+         * If not set or set to null, the built request will use a no-op consumer.
          *
          * @param  progressCallback the callback, or null to use a no-op
          * @return                  this builder

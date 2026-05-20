@@ -94,10 +94,12 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             t.setDaemon(true);
             return t;
         });
+
+        Throwable compactionException = null;
+        RowsProcessed result = null;
         Future<Void> pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
         try {
-
-            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
+            result = invokeDataFusion(job, params, runtime, context);
 
             // Guarantee at least one update
             progressCallback.accept(result.getRowsRead());
@@ -117,27 +119,43 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
             LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                     LocalDateTime.now());
-            return result;
+        } catch (IOException e) {
+            compactionException = e;
         } finally {
-            shutdownPoller(executorService, pollerFuture);
+            try {
+                shutdownPoller(executorService, pollerFuture);
+            } catch (Throwable t) {
+                if (compactionException != null) {
+                    compactionException.addSuppressed(t);
+                } else {
+                    compactionException = t;
+                }
+            }
         }
+
+        if (compactionException != null) {
+            throw new IOException(compactionException);
+        }
+        return result;
     }
 
-    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) {
+    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) throws Throwable {
         executorService.shutdownNow();
         try {
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                 LOGGER.warn("Compaction progress monitoring thread still running");
             }
-            pollerFuture.get(1, TimeUnit.SECONDS);
+            if (pollerFuture != null) {
+                pollerFuture.get(1, TimeUnit.SECONDS);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (CancellationException e) {
             // expected: shutdownNow interrupted the poller
         } catch (ExecutionException e) {
-            LOGGER.warn("Compaction progress polling failed", e.getCause());
+            throw e.getCause();
         } catch (TimeoutException e) {
-            LOGGER.warn("Timed out waiting for progress poller to terminate");
+            throw e;
         }
     }
 
@@ -238,7 +256,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else if (result == -1) {
             return Optional.empty();
         } else {
-            LOGGER.error("Failed reading compaction row progress count, return code: {}", result);
             throw new IOException("Failed reading compaction row progress count, return code " + result);
         }
     }
