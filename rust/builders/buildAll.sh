@@ -23,6 +23,10 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
 
 pushd "$THIS_DIR"/base
+# If repo root contains a certs directory, copy it into the build.
+rm -rf certs
+mkdir -p certs
+cp -r "../../../certs/." "certs/" 2>/dev/null || true
 docker build -t sleeper-rust-builder-base:current .
 popd
 

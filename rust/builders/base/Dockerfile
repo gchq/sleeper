@@ -14,6 +14,11 @@
 
 FROM rust:1.93-bookworm
 
+COPY certs/ /usr/local/share/ca-certificates/
+# Only update CA certificates and switch to HTTPS sources if certs are present in ca-certificates dir
+RUN [ -z "$(ls -A /usr/local/share/ca-certificates 2>/dev/null)" ] || \
+    { update-ca-certificates && sed -i 's|http|https|g' /etc/apt/sources.list.d/debian.sources; }
+
 RUN apt-get update && apt-get install -y \
     clang \
     && rm -rf /var/lib/apt/lists/*
