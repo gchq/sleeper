@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public class CommandPipeline {
 
@@ -82,12 +83,8 @@ public class CommandPipeline {
 
     @Override
     public String toString() {
-        if (commands.size() == 1) {
-            return commands.get(0).toString();
-        } else {
-            return "CommandPipeline{" +
-                    "commands=" + commands +
-                    '}';
-        }
+        return commands.stream()
+                .map(Command::toString)
+                .collect(joining(" | "));
     }
 }
