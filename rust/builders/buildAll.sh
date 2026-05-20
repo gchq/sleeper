@@ -25,10 +25,9 @@ VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version -f "$R
 BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
 
 pushd "$THIS_DIR"/base
-# If repo root contains a certs directory, copy it into the build.
 rm -rf certs
-mkdir -p certs
-cp -r "../../../certs/." "certs/" 2>/dev/null || true
+# Copy custom CA certs into build context if present at repo root
+[ -z "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ] || cp -r "$REPO_ROOT/certs" "certs"
 docker build -t sleeper-rust-builder-base:current .
 popd
 
