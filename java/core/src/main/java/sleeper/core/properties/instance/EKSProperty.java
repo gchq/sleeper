@@ -140,7 +140,7 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION = Index.propertyBuilder("sleeper.bulk.import.eks.spark.memory.fraction")
             .description("The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("0.80")
+            .defaultValue("0.75")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION = Index.propertyBuilder("sleeper.bulk.import.eks.spark.memory.storage.fraction")
             .description("The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for execution and storage. " +
@@ -175,7 +175,7 @@ public interface EKSProperty {
                     "Fargate has a cap of 200Gi, if you begin setting close to this it would be worth increasing the " +
                     "number of executors. This is set by 'sleeper.bulk.import.eks.spark.executor.instances'.\n" +
                     "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
-            .defaultValue("100Gi")
+            .defaultValue("85Gi")
             .validationPredicate(SleeperPropertyValueUtils::isValidEksEphemeralStorageSize)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 

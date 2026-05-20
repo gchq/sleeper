@@ -1257,7 +1257,7 @@ sleeper.subnets=set-automatically
 # The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.memory.fraction=0.80
+# sleeper.bulk.import.eks.spark.memory.fraction=0.75
 
 # The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
 # execution and storage. Used to set spark.memory.storageFraction.
@@ -1292,7 +1292,7 @@ sleeper.subnets=set-automatically
 # number of executors. This is set by 'sleeper.bulk.import.eks.spark.executor.instances'.
 # See https://spark.apache.org/docs/latest/running-on-kubernetes.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.ephemeral.storage=100Gi
+# sleeper.bulk.import.eks.spark.executor.ephemeral.storage=85Gi
 
 
 ## The following instance properties relate to the splitting of partitions.
