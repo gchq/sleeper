@@ -141,18 +141,18 @@ public class SystemTestClusterStack extends NestedStack {
 
         List<String> roleArns = new ArrayList<>();
         if (null != ingestByQueueRoleArn && !ingestByQueueRoleArn.isEmpty()) {
-                roleArns.add(ingestByQueueRoleArn);
+            roleArns.add(ingestByQueueRoleArn);
         }
         if (null != ingestDirectRoleArn && !ingestDirectRoleArn.isEmpty()) {
-                roleArns.add(ingestDirectRoleArn);
+            roleArns.add(ingestDirectRoleArn);
         }
 
         if (!roleArns.isEmpty()) {
-                taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
-                        .effect(Effect.ALLOW)
-                        .actions(List.of("sts:AssumeRole"))
-                        .resources(roleArns)
-                        .build());
+            taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
+                    .effect(Effect.ALLOW)
+                    .actions(List.of("sts:AssumeRole"))
+                    .resources(roleArns)
+                    .build());
         }
     }
 }
