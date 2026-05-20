@@ -41,6 +41,7 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -64,15 +65,14 @@ public class EmrStudioStack extends NestedStack {
     }
 
     public void createEmrStudio(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
-        String instanceId = instanceProperties.get(ID);
 
         CfnStudioProps props = CfnStudioProps.builder()
-                .name(String.join("-", "sleeper", instanceId, "emr", "studio"))
+                .name(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), "emr", "studio"))
                 .description("EMR Studio to be used to access EMR Serverless").authMode("IAM")
                 .vpcId(coreStacks.networking().vpcId())
                 .subnetIds(coreStacks.networking().subnetIds())
                 .engineSecurityGroupId(defaultEngineSecurityGroup.getSecurityGroupId())
-                .serviceRole(createEmrStudioServiceRole(instanceId))
+                .serviceRole(createEmrStudioServiceRole(instanceProperties))
                 .workspaceSecurityGroupId(workspaceSecurityGroup.getSecurityGroupId())
                 .defaultS3Location(bucket.s3UrlForObject())
                 .build();
@@ -81,7 +81,8 @@ public class EmrStudioStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL, studio.getAttrUrl());
     }
 
-    private String createEmrStudioServiceRole(String instanceId) {
+    private String createEmrStudioServiceRole(InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.cleanInstanceId();
         IRole studioRole = Role.Builder.create(this, "EmrServerlessStudioServiceRole")
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Studio-Role"))
                 .description("The role assumed by the Bulk import EMR Serverless Application")
@@ -103,7 +104,7 @@ public class EmrStudioStack extends NestedStack {
                                                 .build()))
                                         .build())
                                 .build()))
-                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
+                .assumedBy(new ServicePrincipal("elasticmapreduce." + instanceProperties.get(DNS_SUFFIX)))
                 .build();
 
         return studioRole.getRoleArn();

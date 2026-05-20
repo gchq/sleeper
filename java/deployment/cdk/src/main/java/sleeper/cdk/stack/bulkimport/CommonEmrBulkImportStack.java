@@ -52,6 +52,7 @@ import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
@@ -85,7 +86,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         IRole role = new Role(scope, "Ec2Role", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceProperties.cleanInstanceId(), "bulk-import-emr-ec2"))
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
-                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
+                .assumedBy(new ServicePrincipal("ec2." + instanceProperties.get(DNS_SUFFIX)))
                 .build());
         coreStacks.grantIngest(role);
         coreStacks.grantReadWritePartitions(role); // The partition tree can be extended if there aren't enough partitions to do a bulk import
@@ -165,7 +166,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                 .effect(Effect.ALLOW)
                                 .actions(List.of("iam:PassRole"))
                                 .resources(List.of(ec2Role.getRoleArn()))
-                                .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
+                                .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2." + instanceProperties.get(DNS_SUFFIX) + "*")))
                                 .build())))
                         .build())
                 .build();
@@ -180,7 +181,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
                 .description("The role assumed by the Bulk import clusters")
                 .managedPolicies(List.of(emrManagedPolicy, customEmrManagedPolicy))
-                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
+                .assumedBy(new ServicePrincipal("elasticmapreduce." + instanceProperties.get(DNS_SUFFIX)))
                 .build());
         ebsKey.grant(role, KMS_GRANTS);
 
