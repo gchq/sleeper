@@ -36,10 +36,6 @@ public class UploadDockerImagesToEcr {
     private final String region;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, String account, String region) {
-        this(uploader, account, region, "amazonaws.com");
-    }
-
     public UploadDockerImagesToEcr(UploadDockerImages uploader, String account, Region region, PartitionMetadata partitionMetadata) {
         this(uploader, account, region.id(), partitionMetadata.dnsSuffix());
     }
