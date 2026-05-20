@@ -26200,7 +26200,7 @@
                   {
                     "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Ref"
                   },
-                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
+                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.dns.suffix\u003damazonaws.com\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
                   },
