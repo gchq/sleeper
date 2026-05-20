@@ -31,6 +31,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.constructs.Construct;
 
 import sleeper.core.deploy.DockerDeployment;
@@ -52,6 +54,7 @@ public class SleeperArtefactRepositories {
 
     private final Construct scope;
     private final String deploymentId;
+    private final String dnsSuffix;
     private final ToDeploy deploy;
     private final IBucket jarsBucket;
     private final Map<LambdaJar, IRepository> jarToRepository = new HashMap<>();
@@ -60,6 +63,7 @@ public class SleeperArtefactRepositories {
     private SleeperArtefactRepositories(Builder builder) {
         scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
+        dnsSuffix = Objects.requireNonNull(builder.dnsSuffix, "dnsSuffix must not be null");
         String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
         jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
@@ -112,7 +116,7 @@ public class SleeperArtefactRepositories {
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
                         .effect(Effect.ALLOW)
-                        .principals(List.of(new ServicePrincipal("emr-serverless.amazonaws.com")))
+                        .principals(List.of(new ServicePrincipal("emr-serverless." + dnsSuffix)))
                         .actions(List.of("ecr:BatchGetImage", "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer"))
                         .build());
             }
@@ -146,6 +150,7 @@ public class SleeperArtefactRepositories {
         private final Construct scope;
         private final String deploymentId;
         private String accountName;
+        private String dnsSuffix;
         private ToDeploy deploy;
 
         private Builder(Construct scope, String deploymentId) {
@@ -153,6 +158,9 @@ public class SleeperArtefactRepositories {
             this.deploymentId = deploymentId;
             if (scope instanceof Stack stack) {
                 accountName = stack.getAccount();
+                Region region = Region.of(stack.getRegion());
+                PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+                dnsSuffix = partitionMetadata.dnsSuffix();
             }
         }
 
@@ -162,6 +170,11 @@ public class SleeperArtefactRepositories {
 
         public Builder accountName(String accountName) {
             this.accountName = accountName;
+            return this;
+        }
+
+        public Builder dnsSuffix(String dnsSuffix) {
+            this.dnsSuffix = dnsSuffix;
             return this;
         }
 
