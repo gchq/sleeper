@@ -49,6 +49,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -95,11 +96,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             return t;
         });
 
-        Throwable compactionException = null;
-        RowsProcessed result = null;
-        Future<Void> pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
+        Future<Void> pollerFuture = null;
+        IOException compactionException = null;
         try {
-            result = invokeDataFusion(job, params, runtime, context);
+            pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
             // Guarantee at least one update
             progressCallback.accept(result.getRowsRead());
@@ -119,27 +120,26 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
             LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                     LocalDateTime.now());
+            return result;
+        } catch (RejectedExecutionException e) {
+            compactionException = new IOException(e);
         } catch (IOException e) {
             compactionException = e;
         } finally {
             try {
                 shutdownPoller(executorService, pollerFuture);
-            } catch (Throwable t) {
+            } catch (IOException e) {
                 if (compactionException != null) {
-                    compactionException.addSuppressed(t);
+                    compactionException.addSuppressed(e);
                 } else {
-                    compactionException = t;
+                    compactionException = e;
                 }
             }
         }
-
-        if (compactionException != null) {
-            throw new IOException(compactionException);
-        }
-        return result;
+        throw compactionException;
     }
 
-    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) throws Throwable {
+    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) throws IOException {
         executorService.shutdownNow();
         try {
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -153,9 +153,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } catch (CancellationException e) {
             // expected: shutdownNow interrupted the poller
         } catch (ExecutionException e) {
-            throw e.getCause();
+            throw new IOException(e.getCause());
         } catch (TimeoutException e) {
-            throw e;
+            throw new IOException(e);
         }
     }
 
