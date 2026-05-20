@@ -22,11 +22,11 @@ RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
     libc6-dev-arm64-cross \
     && rm -rf /var/lib/apt/lists/*
 
-ENV RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER}"
-ENV RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT}"
-
-RUN rustup target add aarch64-unknown-linux-gnu
-RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
+SHELL ["/bin/bash", "-c"]
+RUN [ -z "${RUSTUP_DIST_SERVER}" ] || export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER}"; \
+    [ -z "${RUSTUP_UPDATE_ROOT}" ] || export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT}"; \
+    rustup target add aarch64-unknown-linux-gnu \
+    && rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
 
 ENV RUSTFLAGS="-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1 -Clinker=aarch64-linux-gnu-gcc"
 ENV CARGO_BUILD_TARGET="aarch64-unknown-linux-gnu"
