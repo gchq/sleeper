@@ -361,6 +361,10 @@ public class SleeperCoreStacks {
         return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 
+    public IGrantable getReadStateMachinePolicyForGrants() {
+        return policiesStack.getReadStateMachinePolicyForGrants();
+    }
+
     public void createRoles() {
         roles = policiesStack.createRoles();
     }

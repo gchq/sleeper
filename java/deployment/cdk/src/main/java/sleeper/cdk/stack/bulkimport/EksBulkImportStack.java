@@ -188,6 +188,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
+        stateMachine.grant(coreStacks.getReadStateMachinePolicyForGrants(), "states:DescribeExecution");
 
         Utils.addTags(this, instanceProperties);
     }

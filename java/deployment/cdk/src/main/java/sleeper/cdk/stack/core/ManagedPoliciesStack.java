@@ -51,6 +51,7 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy clearInstancePolicy;
     private final ManagedPolicy adminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
+    private ManagedPolicy readStateMachinePolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -123,6 +124,13 @@ public class ManagedPoliciesStack extends NestedStack {
         return invokeCompactionPolicy;
     }
 
+    public ManagedPolicy getReadStateMachinePolicyForGrants() {
+        if (readStateMachinePolicy == null) {
+            readStateMachinePolicy = createManagedPolicy("ReadStateMachine");
+        }
+        return readStateMachinePolicy;
+    }
+
     public void grantInvokeScheduled(IFunction function) {
         Utils.grantInvokeOnPolicy(function, adminPolicy);
     }
@@ -169,7 +177,7 @@ public class ManagedPoliciesStack extends NestedStack {
         return Stream.of(
                 directIngestPolicy, ingestByQueuePolicy, queryPolicy,
                 editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
-                invokeCompactionPolicy)
+                invokeCompactionPolicy, readStateMachinePolicy)
                 .filter(policy -> policy != null);
     }
 
