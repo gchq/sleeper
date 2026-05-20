@@ -68,7 +68,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
     public WebSocketQueryProcessorLambda(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         this.serde = new QuerySerDe(tablePropertiesProvider);
     }
