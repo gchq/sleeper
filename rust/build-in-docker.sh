@@ -17,13 +17,14 @@ set -ex
 unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version -f "$PROJECT_DIR/java/pom.xml")
 
 PLATFORM=$1
 shift
 if [ "$PLATFORM" = "x86_64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:latest"}
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:${VERSION}"}
 elif [ "$PLATFORM" = "aarch64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:latest"}
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:${VERSION}"}
 else
   echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
   exit 1

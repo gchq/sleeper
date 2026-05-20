@@ -17,6 +17,8 @@ set -ex
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_ROOT="$(git -C "$THIS_DIR" rev-parse --show-toplevel)"
+VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version -f "$REPO_ROOT/java/pom.xml")
 # If environment variables RUSTUP_DIST_SERVER or RUSTUP_UPDATE_ROOT are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If both are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
@@ -31,9 +33,15 @@ docker build -t sleeper-rust-builder-sccache:current .
 popd
 
 pushd "$THIS_DIR"/x86_64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+docker build ${BUILD_ARGS} \
+  -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:${VERSION} \
+  -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest \
+  --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
 
 pushd "$THIS_DIR"/aarch64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+docker build ${BUILD_ARGS} \
+  -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:${VERSION} \
+  -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest \
+  --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
