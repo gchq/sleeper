@@ -49,8 +49,11 @@ import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
@@ -132,10 +135,24 @@ public class SystemTestClusterStack extends NestedStack {
 
         Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET)).grantRead(taskRole);
         bucketStack.getBucket().grantReadWrite(taskRole);
-        taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
-                .build());
+
+        String ingestByQueueRoleArn = instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN);
+        String ingestDirectRoleArn = instanceProperties.get(INGEST_DIRECT_ROLE_ARN);
+
+        List<String> roleArns = new ArrayList<>();
+        if (null != ingestByQueueRoleArn && !ingestByQueueRoleArn.isEmpty()) {
+                roleArns.add(ingestByQueueRoleArn);
+        }
+        if (null != ingestDirectRoleArn && !ingestDirectRoleArn.isEmpty()) {
+                roleArns.add(ingestDirectRoleArn);
+        }
+
+        if (!roleArns.isEmpty()) {
+                taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
+                        .effect(Effect.ALLOW)
+                        .actions(List.of("sts:AssumeRole"))
+                        .resources(roleArns)
+                        .build());
+        }
     }
 }
