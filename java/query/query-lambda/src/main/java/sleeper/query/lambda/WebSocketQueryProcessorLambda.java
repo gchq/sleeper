@@ -47,13 +47,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+
 @SuppressWarnings("unused")
 public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV2WebSocketEvent, APIGatewayV2WebSocketResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryProcessorLambda.class);
 
     private final QuerySerDe serde;
     private final SqsClient sqsClient;
-    private final String queryQueueUrl;
+    private final InstanceProperties instanceProperties;
 
     public WebSocketQueryProcessorLambda() {
         this(
@@ -65,32 +68,16 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
     public WebSocketQueryProcessorLambda(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.queryQueueUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         this.serde = new QuerySerDe(tablePropertiesProvider);
-    }
-
-    private void sendErrorToClient(String endpoint, String region, String connectionId, String errorMessage) {
-
-        ApiGatewayManagementApiClient client = ApiGatewayManagementApiClient.builder()
-                .endpointOverride(URI.create(endpoint))
-                .region(Region.of(region))
-                .build();
-
-        String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
-        PostToConnectionRequest request = PostToConnectionRequest.builder()
-                .connectionId(connectionId)
-                .data(SdkBytes.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)))).build();
-
-        client.postToConnection(request);
     }
 
     public void submitQueryForProcessing(Query query) {
         String message = serde.toJson(query);
 
         sqsClient.sendMessage(SendMessageRequest.builder()
-                .queueUrl(queryQueueUrl)
+                .queueUrl(instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL))
                 .messageBody(message)
                 .build());
     }
@@ -100,11 +87,9 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         LOGGER.info("Received WebSocket event: {}", event);
 
         if (event.getRequestContext().getEventType().equals("MESSAGE")) {
-            String region = System.getenv("AWS_REGION");
-            if (region == null) {
-                throw new RuntimeException("Unable to detect current region!");
-            }
-            String endpoint = "https://" + event.getRequestContext().getApiId() + ".execute-api." + region + ".amazonaws.com/" + event.getRequestContext().getStage();
+            String endpoint = "https://" + event.getRequestContext().getApiId() + ".execute-api."
+                    + instanceProperties.get(REGION) + "." + instanceProperties.get(DNS_SUFFIX) + "/"
+                    + event.getRequestContext().getStage();
 
             Query query = null;
             try {
@@ -112,7 +97,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 LOGGER.info("Deserialised message to query: {}", query);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed to deserialise query", e);
-                this.sendErrorToClient(endpoint, region, event.getRequestContext().getConnectionId(), "Received malformed query JSON request");
+                sendErrorToClient(endpoint, event.getRequestContext().getConnectionId(), "Received malformed query JSON request");
             }
 
             if (query != null) {
@@ -138,5 +123,20 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         APIGatewayV2WebSocketResponse response = new APIGatewayV2WebSocketResponse();
         response.setStatusCode(200);
         return response;
+    }
+
+    private void sendErrorToClient(String endpoint, String connectionId, String errorMessage) {
+
+        ApiGatewayManagementApiClient client = ApiGatewayManagementApiClient.builder()
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.of(instanceProperties.get(REGION)))
+                .build();
+
+        String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
+        PostToConnectionRequest request = PostToConnectionRequest.builder()
+                .connectionId(connectionId)
+                .data(SdkBytes.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)))).build();
+
+        client.postToConnection(request);
     }
 }
