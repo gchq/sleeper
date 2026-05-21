@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
@@ -39,7 +40,19 @@ import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -68,27 +81,82 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
+    public RowsProcessed compact(CompactionRequest request) throws IOException {
+        CompactionJob job = request.getJob();
+        TableProperties tableProperties = request.getTableProperties();
+        Region region = request.getRegion();
+        Consumer<Long> progressCallback = request.getProgressCallback();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
-        RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-        if (result.getRowsWritten() < 1) {
-            Path outputPath = new Path(job.getOutputFile());
-            FileSystem fs = outputPath.getFileSystem(hadoopConf);
-            if (!fs.exists(outputPath)) {
-                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                        outputPath, tableProperties, hadoopConf)) {
-                    // Write an empty file. This should be temporary, as we expect DataFusion to add
-                    // support for this.
-                    // See the test should_merge_empty_files in compaction_test.rs
+        // Daemon thread so progress polling can't keep the JVM alive
+        ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "compaction-progress-" + job.getId());
+            t.setDaemon(true);
+            return t;
+        });
+
+        Future<Void> pollerFuture = null;
+        IOException compactionException = null;
+        try {
+            pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
+
+            // Guarantee at least one update
+            progressCallback.accept(result.getRowsRead());
+
+            if (result.getRowsWritten() < 1) {
+                Path outputPath = new Path(job.getOutputFile());
+                FileSystem fs = outputPath.getFileSystem(hadoopConf);
+                if (!fs.exists(outputPath)) {
+                    try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                            outputPath, tableProperties, hadoopConf)) {
+                        // Write an empty file. This should be temporary, as we expect DataFusion to add
+                        // support for this.
+                        // See the test should_merge_empty_files in compaction_test.rs
+                    }
+                }
+            }
+
+            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                    LocalDateTime.now());
+            return result;
+        } catch (RejectedExecutionException e) {
+            compactionException = new IOException(e);
+        } catch (IOException e) {
+            compactionException = e;
+        } finally {
+            try {
+                shutdownPoller(executorService, pollerFuture);
+            } catch (IOException e) {
+                if (compactionException != null) {
+                    compactionException.addSuppressed(e);
+                } else {
+                    compactionException = e;
                 }
             }
         }
+        throw compactionException;
+    }
 
-        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                LocalDateTime.now());
-        return result;
+    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) throws IOException {
+        executorService.shutdownNow();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOGGER.warn("Compaction progress monitoring thread still running");
+            }
+            if (pollerFuture != null) {
+                pollerFuture.get(1, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (CancellationException e) {
+            // expected: shutdownNow interrupted the poller
+        } catch (ExecutionException e) {
+            throw new IOException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new IOException(e);
+        }
     }
 
     /**
@@ -121,6 +189,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
 
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
+        params.job_id.set(job.getId());
         params.parquet_options.set(parquetOptions);
         params.setInputFiles(job.getInputFiles().toArray(String[]::new));
         // Files are always sorted for compactions
@@ -169,5 +238,53 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+    }
+
+    private Optional<Long> getCompactionRowsRead(String compactionJobId) throws IOException {
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
+        FFIFileResult rowData = new FFIFileResult(runtime);
+
+        int result = context.getFunctions().get_compaction_rows_read(context, compactionJobId, rowData);
+
+        /*
+         * The native function returns 0 on successful read of a row count, -1 if no data was available for the given
+         * job ID. This is indicated in Java with an empty return value.
+         * All other values are error codes.
+         */
+        if (result == 0) {
+            return Optional.of(rowData.rows_read.get());
+        } else if (result == -1) {
+            return Optional.empty();
+        } else {
+            throw new IOException("Failed reading compaction row progress count, return code " + result);
+        }
+    }
+
+    private class ProgressPoller implements Callable<Void> {
+        private final String jobID;
+        private final Consumer<Long> progressCallback;
+
+        ProgressPoller(String jobID, Consumer<Long> progressCallback) {
+            this.jobID = jobID;
+            this.progressCallback = progressCallback;
+        }
+
+        @Override
+        public Void call() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Thread.sleep(5000);
+
+                    Optional<Long> currentProgress = getCompactionRowsRead(jobID);
+                    currentProgress.ifPresent(progressCallback);
+                }
+            } catch (InterruptedException e) {
+                // preserve status
+                Thread.currentThread().interrupt();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return null;
+        }
     }
 }
