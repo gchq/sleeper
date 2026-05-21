@@ -26068,7 +26068,7 @@
                   {
                     "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Arn"
                   },
-                  "\nsleeper.compaction.commit.dlq.arn\u003d",
+                  "\nsleeper.partition\u003daws\nsleeper.compaction.commit.dlq.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn"
                   },
