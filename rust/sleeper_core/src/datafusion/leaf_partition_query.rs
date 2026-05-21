@@ -29,9 +29,7 @@ use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{
-        TaskContext, config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv,
-    },
+    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     logical_expr::{Expr, ident},
     physical_plan::displayable,
     prelude::SQLOptions,
@@ -106,7 +104,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let ops = SleeperOperations::new(&self.config.common);
         info!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
-        let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
+        let (sketcher, frame, ctx) = self.build_query_dataframe(&ops).await?;
 
         // Ensure sort ordering is created before adding more stages to plan, as completer might add stages
         // to plan which change schema, e.g. adding a data sink stage
@@ -114,14 +112,13 @@ impl<'a> LeafPartitionQuery<'a> {
         let completer = ops.create_output_completer();
 
         let mut frame = completer.complete_frame(frame)?;
-        let task_ctx = Arc::new(frame.task_ctx());
 
-        frame = add_sql_stage(self.config.sql_query.as_deref(), &ops, frame, &task_ctx).await?;
+        frame = add_sql_stage(self.config.sql_query.as_deref(), &ops, frame, &ctx).await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
         }
-
+        let task_ctx = Arc::new(frame.task_ctx());
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         // Check physical plan is free of `SortExec` stages.
@@ -140,9 +137,7 @@ impl<'a> LeafPartitionQuery<'a> {
         }
 
         // Run query
-        let result = completer
-            .execute_frame(physical_plan, task_ctx.clone())
-            .await?;
+        let result = completer.execute_frame(physical_plan, task_ctx).await?;
 
         // Do we have some sketch output to write?
         if let Some(sketch_func) = sketcher
@@ -213,7 +208,7 @@ impl<'a> LeafPartitionQuery<'a> {
     async fn build_query_dataframe(
         &self,
         ops: &'a SleeperOperations<'a>,
-    ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
+    ) -> Result<(Option<Sketcher<'a>>, DataFrame, SessionContext), DataFusionError> {
         let object_metas =
             retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
         let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
@@ -231,7 +226,8 @@ impl<'a> LeafPartitionQuery<'a> {
         frame = ops.apply_general_sort(frame)?;
         frame = ops.apply_aggregations(frame)?;
         frame = self.maybe_project_columns(frame)?;
-        self.maybe_add_sketch_output(ops, frame)
+        let (sketcher, frame) = self.maybe_add_sketch_output(ops, frame)?;
+        Ok((sketcher, frame, ctx))
     }
 }
 
@@ -246,29 +242,21 @@ async fn add_sql_stage(
     sql: Option<&str>,
     ops: &SleeperOperations<'_>,
     frame: DataFrame,
-    task_ctx: &Arc<TaskContext>,
+    ctx: &SessionContext,
 ) -> Result<DataFrame, DataFusionError> {
-    Ok(if let Some(sql) = sql {
-        let runtime = task_ctx.runtime_env();
-        let config = task_ctx.session_config();
-        let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
-
-        let table = frame.into_view();
-        ctx.register_table("my_table", table)?;
-        let frame = ctx
-            .sql_with_options(
-                sql,
-                SQLOptions::new()
-                    .with_allow_ddl(false)
-                    .with_allow_dml(false)
-                    .with_allow_statements(false),
-            )
-            .await?;
-
-        inject_sort_stage(frame, ops.create_sort_order())?
-    } else {
-        frame
-    })
+    let Some(sql) = sql else { return Ok(frame) };
+    ctx.register_table("my_table", frame.into_view())?;
+    let frame = ctx
+        .sql_with_options(
+            sql,
+            SQLOptions::new()
+                .with_allow_ddl(false)
+                .with_allow_dml(false)
+                .with_allow_statements(false),
+        )
+        .await
+        .map_err(|e| DataFusionError::Plan(format!("User SQL query failed: {e}")))?;
+    inject_sort_stage(frame, ops.create_sort_order())
 }
 
 impl LeafPartitionQuery<'_> {
