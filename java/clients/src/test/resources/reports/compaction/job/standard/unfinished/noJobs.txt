@@ -8,8 +8,6 @@ Jobs in an unfinished run after a failed run: 0
 Failed jobs (may be retried): 0
 Runs in progress: 0
 Runs awaiting commit: 0
-------------------------------------------------------------------------------------------------------
-| STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FAILURE REASONS |
-------------------------------------------------------------------------------------------------------
-
-For more information concerning the failure reasons, please consult the more detailed report.
+--------------------------------------------------------------------------------------------------------------------
+| STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TASK_ID | START_TIME | FINISH_TIME | FAILURE_REASONS |
+--------------------------------------------------------------------------------------------------------------------

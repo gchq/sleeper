@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class CompactionRunnerTestBase {
     private CompactionTaskTestHelper compactionTaskTestHelper() {
         return new CompactionTaskTestHelper(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), jobTracker);
     }
 
     protected RowsProcessed getRowsProcessed(CompactionJob job) {
@@ -123,7 +123,7 @@ public class CompactionRunnerTestBase {
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(localDir)
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .stateStoreProvider(FixedStateStoreProvider.singleTable(tableProperties, stateStore))
                 .instanceProperties(instanceProperties);
         config.accept(builder);
         IngestResult result = builder.build().ingestFromRowIterator(tableProperties, rows.iterator());

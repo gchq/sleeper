@@ -1,7 +1,7 @@
 //! This code presents a minimal working example to demonstrate the bug detailed
 //! here [ListingTable and FileScanConfig assume all files accessible via single ObjectStore instance](https://github.com/apache/datafusion/issues/15964)
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::{
-    array::{ArrayRef, Int32Array, RecordBatch},
-    datatypes::{DataType, Field, Schema},
-};
 use color_eyre::eyre::Result;
 use datafusion::{
+    arrow::{
+        array::{ArrayRef, Int32Array, RecordBatch},
+        datatypes::{DataType, Field, Schema},
+    },
     assert_batches_eq,
     parquet::arrow::{AsyncArrowWriter, async_writer::ParquetObjectWriter},
     prelude::{ParquetReadOptions, SessionContext},

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
 
+/**
+ * A query to generate a report on all jobs held in a job tracker.
+ */
 public class AllJobsQuery implements JobQuery {
     private final String tableId;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,24 @@ public class ExpectedAdminConsoleValues {
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +
             "[1] Save changes\n" +
+            "[2] Return to editor\n" +
+            "[3] Discard changes and return to main menu\n" +
+            "\n" +
+            "Input: \n";
+    public static final String PROPERTY_SAVE_CHANGES_AUTO_CDK_SCREEN = "" +
+            "This change will be applied as a CDK deployment of the instance.\n" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Save changes via CDK deployment\n" +
+            "[2] Return to editor\n" +
+            "[3] Discard changes and return to main menu\n" +
+            "\n" +
+            "Input: \n";
+    public static final String PROPERTY_SAVE_CHANGES_SEPARATE_CDK_SCREEN = "" +
+            "Your changes require a CDK deployment to apply. This must be done separately outside this tool.\n" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Save changes (changes requiring a CDK deployment will be saved but not applied)\n" +
             "[2] Return to editor\n" +
             "[3] Discard changes and return to main menu\n" +
             "\n" +

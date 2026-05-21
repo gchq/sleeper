@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.PrintStream;
 import java.util.function.Function;
 
+/**
+ * Command line arguments to create a report on the status of partitions in a Sleeper table.
+ */
 public class PartitionsStatusReportArguments {
     private final String instanceId;
     private final String tableName;
@@ -43,10 +46,22 @@ public class PartitionsStatusReportArguments {
         this.reporter = reporter;
     }
 
+    /**
+     * Prints the usage message to explain what arguments can be given.
+     *
+     * @param out the output to write to
+     */
     public static void printUsage(PrintStream out) {
         out.println("Usage: <instance-id> <table-name>");
     }
 
+    /**
+     * Reads command line arguments to create a report on the status of partitions in a Sleeper table.
+     *
+     * @param  args                     the arguments
+     * @return                          the parsed arguments
+     * @throws IllegalArgumentException if the arguments could not be read
+     */
     public static PartitionsStatusReportArguments fromArgs(String... args) {
         if (args.length != 2) {
             throw new IllegalArgumentException("Wrong number of arguments");
@@ -54,8 +69,16 @@ public class PartitionsStatusReportArguments {
         return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public void runReport(S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+    /**
+     * Retrieves the state of the Sleeper table and writes the report.
+     *
+     * @param accountName  the AWS account name
+     * @param s3Client     an S3 AWS SDK client
+     * @param dynamoClient a DynamoDB AWS SDK client
+     * @param out          the output to write to
+     */
+    public void runReport(String accountName, S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -45,6 +46,10 @@ public class AllReferencesToAllFiles {
 
     public Collection<AllReferencesToAFile> getFiles() {
         return filesByFilename.values();
+    }
+
+    public Set<String> getFilenames() {
+        return filesByFilename.keySet();
     }
 
     public Collection<AllReferencesToAFile> getFilesWithReferences() {

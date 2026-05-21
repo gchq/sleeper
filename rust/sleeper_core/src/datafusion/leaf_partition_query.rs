@@ -1,7 +1,7 @@
 //! Contains the implementation for performing Sleeper leaf queries
 //! using Apache `DataFusion`.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -23,10 +23,9 @@ use crate::{
         sketch::{Sketcher, output_sketch},
         sql_sort_fix::inject_sort_stage,
         util::{check_for_sort_exec, explain_plan},
+        util::{explain_plan, retrieve_object_metas},
     },
 };
-#[cfg(doc)]
-use arrow::record_batch::RecordBatch;
 use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
@@ -36,7 +35,7 @@ use datafusion::{
     physical_plan::displayable,
     prelude::SQLOptions,
 };
-use log::info;
+use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{
     fmt::{Display, Formatter},
@@ -152,7 +151,7 @@ impl<'a> LeafPartitionQuery<'a> {
         }
 
         if self.config.explain_plans {
-            info!(
+            debug!(
                 "Physical plan\n{}",
                 displayable(&*physical_plan).indent(true)
             );
@@ -233,14 +232,18 @@ impl<'a> LeafPartitionQuery<'a> {
         &self,
         ops: &'a SleeperOperations<'a>,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        let sf = ops
-            .apply_config(SessionConfig::new(), self.store_factory)
+        let object_metas =
+            retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
+        let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
+        let ctx = ops
+            .configure_context(
+                SessionContext::new_with_config_rt(sf, self.runtime.clone()),
+                self.store_factory,
+            )
             .await?;
-        let ctx = ops.configure_context(
-            SessionContext::new_with_config_rt(sf, self.runtime.clone()),
-            self.store_factory,
-        )?;
-        let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
+        let mut frame = ops
+            .create_initial_partitioned_read(&ctx, &object_metas)
+            .await?;
         frame = self.apply_query_regions(frame)?;
         frame = ops.apply_user_filters(frame)?;
         frame = ops.apply_general_sort(frame)?;

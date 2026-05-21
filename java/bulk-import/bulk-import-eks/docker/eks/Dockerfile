@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ FROM apache/spark:3.5.5-scala2.12-java17-ubuntu
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 RUN rm /opt/spark/jars/*
 RUN mkdir /opt/spark/workdir
 USER spark

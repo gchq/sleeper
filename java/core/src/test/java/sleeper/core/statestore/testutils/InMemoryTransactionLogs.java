@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
 
 /**
  * Gathers state for a state store backed by in-memory transaction logs. Helps with independent management of the

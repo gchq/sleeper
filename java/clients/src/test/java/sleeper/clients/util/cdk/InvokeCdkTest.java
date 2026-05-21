@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandRunner;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -33,11 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
-import static sleeper.clients.testutil.RunCommandTestHelper.singleCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 class InvokeCdkTest {
 
@@ -60,9 +57,9 @@ class InvokeCdkTest {
     class RunDeploy {
 
         @Test
-        void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDeployStandardCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.STANDARD, CdkCommand.deployPropertiesChange(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployPropertiesChange(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command(
@@ -75,13 +72,13 @@ class InvokeCdkTest {
         }
 
         @Test
-        void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDeployDemonstrationCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.deployPropertiesChange(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
                     "-c", "propertiesfile=instance.properties",
@@ -91,7 +88,7 @@ class InvokeCdkTest {
         @Test
         void shouldSetEnsureNewInstanceFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.STANDARD, CdkCommand.deployNew().withPropertiesFile(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployNew().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -106,7 +103,7 @@ class InvokeCdkTest {
         @Test
         void shouldSetSkipVersionCheckFlagWhenDeployingExistingInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.STANDARD, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -121,11 +118,11 @@ class InvokeCdkTest {
         @Test
         void shouldSetDeployPausedFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.deployNewPaused().withPropertiesFile(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.deployNewPaused().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
                     "-c", "propertiesfile=instance.properties",
@@ -141,7 +138,7 @@ class InvokeCdkTest {
             CdkCommand cdkCommand = CdkCommand.deployExisting().withPropertiesFile(propertiesFile);
 
             // When / Then
-            assertThatThrownBy(() -> cdk.invoke(InvokeCdk.Type.STANDARD, cdkCommand))
+            assertThatThrownBy(() -> cdk.invoke(SleeperInternalCdkApp.STANDARD, cdkCommand))
                     .isInstanceOf(IOException.class);
         }
     }
@@ -151,9 +148,9 @@ class InvokeCdkTest {
     class RunDestroy {
 
         @Test
-        void shouldRunStandardCdkDestroySuccessfully() throws IOException, InterruptedException {
+        void shouldDestroyStandardCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.STANDARD, CdkCommand.destroy().withPropertiesFile(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.destroy().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -165,13 +162,13 @@ class InvokeCdkTest {
         }
 
         @Test
-        void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+        void shouldDestroyDemonstrationCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdk.Type.SYSTEM_TEST, CdkCommand.destroy().withPropertiesFile(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.destroy().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
-                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                    "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "destroy", "--force",
                     "-c", "propertiesfile=instance.properties",
                     "-c", "validate=false",
@@ -185,43 +182,8 @@ class InvokeCdkTest {
             CdkCommand cdkCommand = CdkCommand.destroy().withPropertiesFile(propertiesFile);
 
             // When / Then
-            assertThatThrownBy(() -> cdk.invoke(InvokeCdk.Type.STANDARD, cdkCommand))
+            assertThatThrownBy(() -> cdk.invoke(SleeperInternalCdkApp.STANDARD, cdkCommand))
                     .isInstanceOf(IOException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Infer whether to invoke as a standard or system test instance")
-    class InferStandardOrSystemTest {
-
-        @Test
-        void shouldInferStandardDeploymentWhenNoSystemTestPropertiesAreSet() throws IOException, InterruptedException {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-
-            // When
-            cdk().invokeInferringType(instanceProperties, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
-
-            // Then
-            assertThat(singleCommand(commandsThatRan))
-                    .startsWith("cdk",
-                            "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
-        }
-
-        @Test
-        void shouldInferSystemTestDeploymentWhenSystemTestPropertyIsSet() throws IOException, InterruptedException {
-            // Given
-            InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(
-                    createTestInstanceProperties().saveAsString() + "\n" +
-                            "sleeper.systemtest.writers=123"));
-
-            // When
-            cdk().invokeInferringType(instanceProperties, CdkCommand.deployExisting().withPropertiesFile(propertiesFile));
-
-            // Then
-            assertThat(singleCommand(commandsThatRan))
-                    .startsWith("cdk",
-                            "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SystemTestApp");
         }
     }
 }

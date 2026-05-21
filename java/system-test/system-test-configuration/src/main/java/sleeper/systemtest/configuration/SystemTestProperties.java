@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,8 @@ public class SystemTestProperties extends InstanceProperties {
         return properties;
     }
 
-    public static SystemTestProperties loadFromS3GivenInstanceId(S3Client s3Client, String instanceId) {
-        return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+    public static SystemTestProperties loadFromS3GivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
+        return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
     }
 
     private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {

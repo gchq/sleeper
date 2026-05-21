@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,19 +34,16 @@ import java.util.UUID;
 
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
-import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestParameters {
@@ -125,14 +122,6 @@ public class SystemTestParameters {
         return scriptsDirectory;
     }
 
-    public Path getJarsDirectory() {
-        return scriptsDirectory.resolve("jars");
-    }
-
-    public Path getDockerDirectory() {
-        return scriptsDirectory.resolve("docker");
-    }
-
     public Path getGeneratedDirectory() {
         return scriptsDirectory.resolve("generated");
     }
@@ -172,9 +161,6 @@ public class SystemTestParameters {
     public void setRequiredProperties(SleeperInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
         properties.set(ARTEFACTS_DEPLOYMENT_ID, getArtefactsDeploymentId());
-        if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_ECS_SECURITY_GROUPS)) {
-            properties.set(ECS_SECURITY_GROUPS, standalonePropertiesTemplate.get(SYSTEM_TEST_ECS_SECURITY_GROUPS));
-        }
         if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_LOG_RETENTION_DAYS)) {
             properties.set(LOG_RETENTION_IN_DAYS, standalonePropertiesTemplate.get(SYSTEM_TEST_LOG_RETENTION_DAYS));
         }
@@ -198,8 +184,7 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
         properties.set(SYSTEM_TEST_REGION, getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
-        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getArtefactsDeploymentId()));
-        properties.set(SYSTEM_TEST_REPO, SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(getArtefactsDeploymentId()) + "/system-test");
+        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getAccount(), getArtefactsDeploymentId()));
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
     }
@@ -208,8 +193,8 @@ public class SystemTestParameters {
         return instancePropertiesOverrides.isSet(property);
     }
 
-    private static Path findScriptsDir() {
-        return getParentOrFail(findJavaDir()).resolve("scripts");
+    public static Path findProjectRootDirectory() {
+        return getParentOrFail(findJavaDir());
     }
 
     private static Path findJavaDir() {
@@ -224,11 +209,7 @@ public class SystemTestParameters {
         }
     }
 
-    private static Path findPythonDir() {
-        return getParentOrFail(findJavaDir()).resolve("python");
-    }
-
-    private static Path getParentOrFail(Path path) {
+    public static Path getParentOrFail(Path path) {
         Path parent = path.getParent();
         if (parent == null) {
             throw new IllegalArgumentException("No parent of path " + path);
@@ -336,7 +317,6 @@ public class SystemTestParameters {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                     .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
-                    .findDirectories()
                     .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
                             .map(Path::of)
                             .orElse(null))
@@ -356,8 +336,12 @@ public class SystemTestParameters {
         }
 
         public Builder findDirectories() {
-            return scriptsDirectory(findScriptsDir())
-                    .pythonDirectory(findPythonDir());
+            return sleeperRootDirectory(findProjectRootDirectory());
+        }
+
+        public Builder sleeperRootDirectory(Path sleeperRootDirectory) {
+            return scriptsDirectory(sleeperRootDirectory.resolve("scripts"))
+                    .pythonDirectory(sleeperRootDirectory.resolve("python"));
         }
 
         public SystemTestParameters build() {

@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
         with:
-         toolchain: 1.88
+         toolchain: 1.93
       - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Rust tests
         run: cargo test

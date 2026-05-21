@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,60 +16,32 @@
 
 package sleeper.clients.deploy.container;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
     private final List<StackDockerImage> images;
+    private final boolean overwriteExistingTag;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         images = requireNonNull(builder.images, "images must not be null");
+        overwriteExistingTag = builder.overwriteExistingTag;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
-        return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
-    }
-
-    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties) {
-        return forDeployment(properties, DockerImageConfiguration.getDefault());
-    }
-
-    public static Optional<UploadDockerImagesToEcrRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
-        List<StackDockerImage> images = configuration.getImagesToUploadOnUpdate(properties, diff);
-        if (images.isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(builder().properties(properties).images(images).build());
-        }
-    }
-
-    public Builder toBuilder() {
-        return builder().ecrPrefix(ecrPrefix).images(images);
-    }
-
-    public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
-        if (extraImages.isEmpty()) {
-            return this;
-        }
-        List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
-        newImages.addAll(images);
-        newImages.addAll(extraImages);
-        return toBuilder().images(newImages).build();
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, SleeperInternalCdkApp cdkApp, DockerImageConfiguration configuration) {
+        return builder().properties(properties).images(configuration.getImagesToUpload(properties, cdkApp)).build();
     }
 
     public String getEcrPrefix() {
@@ -78,6 +50,10 @@ public class UploadDockerImagesToEcrRequest {
 
     public List<StackDockerImage> getImages() {
         return images;
+    }
+
+    public boolean isOverwriteExistingTag() {
+        return overwriteExistingTag;
     }
 
     @Override
@@ -105,13 +81,13 @@ public class UploadDockerImagesToEcrRequest {
     public static final class Builder {
         private String ecrPrefix;
         private List<StackDockerImage> images;
+        private boolean overwriteExistingTag;
 
         private Builder() {
         }
 
         public Builder properties(InstanceProperties properties) {
-            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX))
-                    .version(properties.get(VERSION));
+            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX));
         }
 
         public Builder ecrPrefix(String ecrPrefix) {
@@ -119,12 +95,13 @@ public class UploadDockerImagesToEcrRequest {
             return this;
         }
 
-        public Builder version(String version) {
+        public Builder images(List<StackDockerImage> images) {
+            this.images = images;
             return this;
         }
 
-        public Builder images(List<StackDockerImage> images) {
-            this.images = images;
+        public Builder overwriteExistingTag(boolean overwriteExistingTag) {
+            this.overwriteExistingTag = overwriteExistingTag;
             return this;
         }
 

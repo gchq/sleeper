@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ public class StateStoreCommitterRunsByTableTest {
     private StateStoreCommitterRun finishedRunWithCommitsInTables(String... commitTableIds) {
         return add(StateStoreCommitterRun.builder()
                 .logStream(DEFAULT_LOG_STREAM)
-                .start(new StateStoreCommitterRunStarted(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
-                .finish(new StateStoreCommitterRunFinished(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
+                .start(new StateStoreCommitterLambdaRunStarted(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
+                .finish(new StateStoreCommitterLambdaRunFinished(DEFAULT_LOG_STREAM, Instant.now(), Instant.now()))
                 .commits(commitsWithTableIds(commitTableIds))
                 .build());
     }

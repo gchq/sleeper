@@ -9,4 +9,4 @@ jobs:
   check:
     uses: ./.github/workflows/dependency-check.yaml
     with:
-      failOnCacheMiss: false
+      failOnCacheMiss: true

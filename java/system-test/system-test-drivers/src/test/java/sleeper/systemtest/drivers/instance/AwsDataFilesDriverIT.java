@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,8 @@ public class AwsDataFilesDriverIT {
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
                     try (CloseableIterator<Row> iterator = sleeper.getRows(file)) {
-                        assertThat(iterator)
-                                .toIterable()
-                                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 3, 2)));
+                        assertThat(iterator).toIterable().containsExactlyElementsOf(
+                                sleeper.generateNumberedRows().iterableOver(1, 3, 2));
                     }
                 });
     }

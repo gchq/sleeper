@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.core.job.CompactionJobSerDe;
@@ -39,8 +40,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 
 /**
- * A utility class to report information about messages on the various dead-letter
- * queues and to print out the messages in a human-readable form.
+ * Reports information about messages on various dead-letter queues. Prints out the messages in a human-readable form.
  */
 public class DeadLettersStatusReport {
     private final InstanceProperties instanceProperties;
@@ -58,6 +58,9 @@ public class DeadLettersStatusReport {
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
+    /**
+     * Writes a report of messages on the dead letter queues.
+     */
     public void run() {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
@@ -94,11 +97,14 @@ public class DeadLettersStatusReport {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             DeadLettersStatusReport statusReport = new DeadLettersStatusReport(
                     sqsClient, QueueMessageCount.withSqsClient(sqsClient), instanceProperties, tablePropertiesProvider);

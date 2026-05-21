@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 class SystemTestPropertiesTest {
 
@@ -42,17 +41,6 @@ class SystemTestPropertiesTest {
         // When / Then
         assertThatCode(properties::validate)
                 .doesNotThrowAnyException();
-    }
-
-    @Test
-    void shouldFailValidationWhenMandatorySystemTestPropertyNotSet() {
-        // Given
-        SystemTestProperties properties = validProperties();
-        properties.unset(SYSTEM_TEST_REPO);
-
-        // When / Then
-        assertThatThrownBy(properties::validate)
-                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     @Test
@@ -122,7 +110,6 @@ class SystemTestPropertiesTest {
         properties.setNumber(NUMBER_OF_WRITERS, 1);
         properties.setNumber(NUMBER_OF_ROWS_PER_INGEST, 1);
         properties.setEnum(INGEST_MODE, DIRECT);
-        properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;
     }
 }

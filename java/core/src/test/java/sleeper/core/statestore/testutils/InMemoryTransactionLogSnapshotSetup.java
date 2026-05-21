@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 package sleeper.core.statestore.testutils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
@@ -34,6 +37,7 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
  * A test helper to setup in-memory snapshots derived from a transaction log.
  */
 public class InMemoryTransactionLogSnapshotSetup {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryTransactionLogSnapshotSetup.class);
 
     private final TableProperties tableProperties;
     private final TransactionLogStore filesLog;
@@ -62,6 +66,7 @@ public class InMemoryTransactionLogSnapshotSetup {
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
+        LOGGER.info("Setting up snapshot state");
         setupState.run(stateStore);
         return new InMemoryTransactionLogSnapshotSetup(tableProperties, fileTransactions, partitionTransactions, transactionBodyStore);
     }
@@ -103,6 +108,7 @@ public class InMemoryTransactionLogSnapshotSetup {
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                 snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, tableProperties)
                 .orElse(snapshot);
+        LOGGER.info("Created files snapshot: {}", snapshot);
         return new TransactionLogSnapshot((StateStoreFiles) snapshot.getState(), transactionNumber);
     }
 
@@ -119,6 +125,7 @@ public class InMemoryTransactionLogSnapshotSetup {
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                 snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, tableProperties)
                 .orElse(snapshot);
+        LOGGER.info("Created partitions snapshot: {}", snapshot);
         return new TransactionLogSnapshot((StateStorePartitions) snapshot.getState(), transactionNumber);
     }
 

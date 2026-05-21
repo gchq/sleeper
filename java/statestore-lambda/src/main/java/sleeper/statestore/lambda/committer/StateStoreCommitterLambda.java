@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,13 +96,13 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
-        LOGGER.info("Lambda started at {}", startTime);
+        LOGGER.info("State store committer process started at {}", startTime);
         List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         List<RequestHandle> requests = getRequestHandlesWithFailureTracking(event,
                 failed -> batchItemFailures.add(new BatchItemFailure(failed.getMessageId())));
         committer.applyBatch(retryForBatch(), requests);
         Instant finishTime = Instant.now();
-        LOGGER.info("Lambda finished at {} (ran for {})",
+        LOGGER.info("State store committer process finished at {} (ran for {})",
                 finishTime, LoggedDuration.withFullOutput(startTime, finishTime));
         return new SQSBatchResponse(batchItemFailures);
     }

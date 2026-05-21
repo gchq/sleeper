@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,22 @@ import java.io.PrintStream;
 
 import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
+/**
+ * Includes an average rate that rows were read and written in a report.
+ */
 public class AverageRowRateReport {
 
     private AverageRowRateReport() {
     }
 
+    /**
+     * Outputs the average rate that rows were read and written. Takes a format string as used in
+     * {@link PrintStream#printf}.
+     *
+     * @param format  the format string, including the row rate string with %s
+     * @param average the average row rate
+     * @param out     the output to write to
+     */
     public static void printf(String format, AverageRowRate average, PrintStream out) {
         if (average.getRunCount() < 1) {
             return;

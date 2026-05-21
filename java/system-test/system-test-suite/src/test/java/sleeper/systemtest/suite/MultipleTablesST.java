@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class MultipleTablesST {
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
-                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
+                        sleeper.generateNumberedRows(schema).iterableOverRange(0, 100)));
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1));
@@ -104,14 +104,15 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.compaction().putCurrentTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES)
+                .waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one file reference with the expected rows, and none ready for GC
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
-                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
+                        sleeper.generateNumberedRows(schema).iterableOverRange(0, 100)));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
@@ -144,7 +145,7 @@ public class MultipleTablesST {
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, rows) -> assertThat(rows)
                         .containsExactlyInAnyOrderElementsOf(
-                                sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
+                                sleeper.generateNumberedRows(schema).iterableOverRange(0, 100)));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTablePartitionsExpectingIdentical(schema, partitionsByTable) + "\n" +

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,10 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -34,21 +31,17 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
 
 public class DeployInstance {
     public static final Logger LOGGER = LoggerFactory.getLogger(DeployInstance.class);
@@ -65,48 +58,14 @@ public class DeployInstance {
         this.invokeCdk = invokeCdk;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file>[ options]");
-        }
-
-        Path scriptsDirectory = Path.of(args[0]);
-        String instanceId = args[1];
-        String vpcId = args[2];
-        String subnetIds = args[3];
-        Path propertiesFile = Path.of(args[4]);
-        Set<String> options = Stream.of(args).skip(5).map(String::toLowerCase).collect(toUnmodifiableSet());
-        boolean deployPaused = options.contains("--deploy-paused");
-
-        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
-        try (S3Client s3Client = S3Client.create();
-                EcrClient ecrClient = EcrClient.create();
-                StsClient stsClient = StsClient.create()) {
-
-            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
-            instanceConfiguration.getInstanceProperties().set(ID, instanceId);
-            instanceConfiguration.getInstanceProperties().set(VPC_ID, vpcId);
-            instanceConfiguration.getInstanceProperties().set(SUBNETS, subnetIds);
-            setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
-            instanceConfiguration.validate();
-
-            DeployInstance deployInstance = new DeployInstance(
-                    SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
-                    new UploadDockerImagesToEcr(
-                            UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()),
-                    WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                    InvokeCdk.fromScriptsDirectory(scriptsDirectory));
-
-            deployInstance.deploy(DeployInstanceRequest.builder()
-                    .instanceConfig(instanceConfiguration)
-                    .cdkCommand(CdkCommand.builder().deploy()
-                            .ensureNewInstance(false)
-                            .skipVersionCheck(true)
-                            .deployPaused(deployPaused)
-                            .build())
-                    .build());
-        }
+    public static DeployInstance fromScriptsDirectory(Path scriptsDirectory, String account, String region, S3Client s3Client, EcrClient ecrClient) throws IOException {
+        return new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3Client, account, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
+                        account, region),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdk.fromScriptsDirectory(scriptsDirectory));
     }
 
     public void deploy(DeployInstanceRequest request) throws IOException, InterruptedException {
@@ -120,17 +79,16 @@ public class DeployInstance {
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
         if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
-            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID)));
         }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
-                        .withExtraImages(request.getExtraDockerImages()));
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
         Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand().withPropertiesFile(propertiesFile));
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(propertiesFile));
     }
 
     public interface WriteLocalProperties {
@@ -150,15 +108,6 @@ public class DeployInstance {
                         instanceConfig.getTableProperties().stream());
                 return directory.resolve("instance.properties");
             };
-        }
-    }
-
-    private static void setFromEnvironmentVariables(InstanceProperties instanceProperties) {
-        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
-            String value = System.getenv(property.toEnvironmentVariable());
-            if (value != null) {
-                instanceProperties.set(property, value);
-            }
         }
     }
 }

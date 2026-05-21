@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Retrieves estimates of the number of messages on an SQS queue. Note that these are updated slowly and asynchronously.
+ * They should be considered a rough snapshot of the state several minutes ago.
+ */
 public class QueueMessageCount {
     private final int approximateNumberOfMessages;
     private final int approximateNumberOfMessagesNotVisible;

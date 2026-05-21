@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 BASE_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 MAVEN_DIR="$BASE_DIR/java"
-ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/cdk-environment"
-BUILD_UPTIME_MAVEN_DIR="$MAVEN_DIR/build-uptime-lambda"
+ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/deployment/cdk-environment"
+BUILD_UPTIME_MAVEN_DIR="$MAVEN_DIR/deployment/build-uptime-lambda"
 SCRIPTS_DIR="$BASE_DIR/scripts"
 VERSION_FILE="$THIS_DIR/version.txt"
-JARS_DIR="$THIS_DIR/jars"
+JARS_DIR="$THIS_DIR/app/jars"
 
 if [ "$#" -lt 1 ]; then
   MAVEN_PARAMS=(clean install -q -Pquick)
@@ -42,7 +42,7 @@ echo "Started at $(recorded_time_str "$START_TIME")"
 
 pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn -pl build-uptime-lambda,cdk-environment -am "${MAVEN_PARAMS[@]}"
+mvn -pl deployment/build-uptime-lambda,deployment/cdk-environment -am "${MAVEN_PARAMS[@]}"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"

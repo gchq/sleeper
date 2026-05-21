@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package sleeper.systemtest.drivers.testutil;
-
-import software.amazon.awssdk.regions.Region;
 
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.SleeperLocalStackClients;
@@ -48,7 +46,6 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
-                .regionProvider(() -> Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
                 .s3(SleeperLocalStackClients.S3_CLIENT)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)
@@ -65,7 +62,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        return new LocalStackSleeperInstanceDriver(clients);
+        return new LocalStackSleeperInstanceDriver(parameters, clients);
     }
 
     @Override

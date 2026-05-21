@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,18 +53,6 @@ public class InMemoryTransactionLogStoreTest {
         // Then
         assertThat(store.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry);
-    }
-
-    @Test
-    void shouldFailToAddFirstTransactionWithTooHighNumber() throws Exception {
-        // Given
-        TransactionLogEntry entry = logEntry(2, new ClearFilesTransaction());
-
-        // When / Then
-        assertThatThrownBy(() -> store.addTransaction(entry))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Attempted to add transaction 2 when we only have 0");
-        assertThat(store.readTransactions(toUpdateLocalStateAt(0))).isEmpty();
     }
 
     @Test

@@ -1,6 +1,6 @@
 //! Implementation of [`ScalarUDFImpl`] for age off filtering.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::{
-    array::{AsArray, BooleanBuilder},
-    datatypes::{DataType, Int64Type},
-};
 use datafusion::{
+    arrow::{
+        array::{AsArray, BooleanBuilder},
+        datatypes::{DataType, Int64Type},
+    },
     common::{exec_err, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
     logical_expr::{
@@ -184,11 +184,11 @@ impl ScalarUDFImpl for AgeOff {
 mod tests {
     use super::AgeOff;
     use crate::assert_error;
-    use arrow::{
-        array::{AsArray, Int64Builder},
-        datatypes::{DataType, Field},
-    };
     use datafusion::{
+        arrow::{
+            array::{AsArray, Int64Builder},
+            datatypes::{DataType, Field},
+        },
         common::exec_err,
         config::ConfigOptions,
         error::DataFusionError,
@@ -246,7 +246,7 @@ mod tests {
     fn try_from_should_create_from_filter_positive_time() -> Result<(), DataFusionError> {
         // Given
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_secs(2)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(1000, origin_time)?;
@@ -260,7 +260,7 @@ mod tests {
     fn try_from_should_create_from_filter_negative_time() -> Result<(), DataFusionError> {
         // Given
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_secs(2)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(-1000, origin_time)?;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,22 @@ public class ClientJar {
     public static final ClientJar CLIENTS_UTILITY = builder()
             .filenameFormat("clients-%s-utility.jar")
             .artifactId("clients")
+            .add();
+    public static final ClientJar EXAMPLE_ITERATORS = builder()
+            .filenameFormat("example-iterators-%s.jar")
+            .artifactId("example-iterators")
+            .add();
+    public static final ClientJar SYSTEM_TEST_CDK = builder()
+            .filenameFormat("system-test-cdk-%s.jar")
+            .artifactId("system-test-cdk")
+            .add();
+    public static final ClientJar SYSTEM_TEST_DATA_GENERATION = builder()
+            .filenameFormat("system-test-data-generation-%s.jar")
+            .artifactId("system-test-data-generation")
+            .add();
+    public static final ClientJar SYSTEM_TEST_DRIVERS = builder()
+            .filenameFormat("system-test-%s-utility.jar")
+            .artifactId("system-test-drivers")
             .add();
 
     private final String filenameFormat;

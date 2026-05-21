@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,9 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         return new Builder();
     }
 
-    public static CdkCommand deployArtefacts(String deploymentId, List<String> extraEcrImages) {
+    public static CdkCommand deployArtefacts(String deploymentId) {
         return builder().deploy()
                 .context("id", deploymentId)
-                .context("extraEcrImages", String.join(",", extraEcrImages))
                 .build();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,32 @@ import java.util.Set;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Finds separate runs of the state store committer based on log entries.
+ */
 public class StateStoreCommitterRuns {
 
     private StateStoreCommitterRuns() {
     }
 
+    /**
+     * Organises a list of log entries into separate runs of the state store committer.
+     *
+     * @param  logs the log entries
+     * @return      the state store committer runs
+     */
     public static List<StateStoreCommitterRun> findRunsByLogStream(List<StateStoreCommitterLogEntry> logs) {
         BuilderByLogStream builder = new BuilderByLogStream();
         logs.forEach(builder::add);
         return builder.buildRuns();
     }
 
+    /**
+     * Indexes runs of the state store committer according to which Sleeper tables were included in that run.
+     *
+     * @param  runs the state store committer runs
+     * @return      a map from Sleeper table ID to runs that committed to that table
+     */
     public static Map<String, List<StateStoreCommitterRun>> indexRunsByTableId(List<StateStoreCommitterRun> runs) {
         Map<String, List<StateStoreCommitterRun>> runsByTableId = new HashMap<>();
         for (StateStoreCommitterRun run : runs) {
@@ -50,6 +65,10 @@ public class StateStoreCommitterRuns {
         return runsByTableId;
     }
 
+    /**
+     * Detects which state store committer log entries were in the same run of the committer. Assumes a one to one
+     * correspondence between a CloudWatch log stream and a run of the committter.
+     */
     private static class BuilderByLogStream {
         private final Map<String, List<StateStoreCommitterLogEntry>> entriesByLogStream = new LinkedHashMap<>();
 
@@ -69,21 +88,31 @@ public class StateStoreCommitterRuns {
         List<StateStoreCommitterRun> runs = new ArrayList<>();
         StateStoreCommitterRun.Builder builder = null;
         for (StateStoreCommitterLogEntry entry : logs) {
-            if (entry instanceof StateStoreCommitterRunStarted) {
+            if (entry instanceof StateStoreCommitterThreadRunStarted) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                builder.batchStart((StateStoreCommitterThreadRunStarted) entry);
+            } else if (entry instanceof StateStoreCommitterLambdaRunStarted) {
                 if (builder != null) {
                     runs.add(builder.build());
                 }
-                builder = newRun(entry).start((StateStoreCommitterRunStarted) entry);
+                builder = newRun(entry).start((StateStoreCommitterLambdaRunStarted) entry);
             } else if (entry instanceof StateStoreCommitSummary) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
                 builder.commit((StateStoreCommitSummary) entry);
-            } else if (entry instanceof StateStoreCommitterRunFinished) {
+            } else if (entry instanceof StateStoreCommitterThreadRunFinished) {
                 if (builder == null) {
                     builder = newRun(entry);
                 }
-                runs.add(builder.finish((StateStoreCommitterRunFinished) entry).build());
+                builder.batchFinished((StateStoreCommitterThreadRunFinished) entry);
+            } else if (entry instanceof StateStoreCommitterLambdaRunFinished) {
+                if (builder == null) {
+                    builder = newRun(entry);
+                }
+                runs.add(builder.finish((StateStoreCommitterLambdaRunFinished) entry).build());
                 builder = null;
             }
         }

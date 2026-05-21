@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package sleeper.bulkimport.runner;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 /**
  * A runner to split Sleeper rows across partitions and write the data to files. This takes in a {@link Dataset} of
@@ -32,5 +34,12 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileReferences(BulkImportJobInput input) throws IOException;
+    Dataset<Row> createFileReferences(BulkImportSparkContext input) throws IOException;
+
+    default BulkImportJobDriver.BulkImporter<BulkImportSparkContext> asImporter() {
+        return context -> createFileReferences(context)
+                .collectAsList().stream()
+                .map(SparkFileReferenceRow::createFileReference)
+                .collect(Collectors.toList());
+    }
 }

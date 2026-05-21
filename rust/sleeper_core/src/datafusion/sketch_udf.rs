@@ -5,7 +5,7 @@
 //! row key field. The return value is just the first column, untransformed. The sketches
 //! are produced as a side effect.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@
 * limitations under the License.
 */
 use super::sketch::{DataSketchVariant, K, update_sketch};
-use arrow::{
-    array::AsArray,
-    datatypes::{
-        BinaryType, DataType, Field, FieldRef, Int32Type, Int64Type, LargeBinaryType,
-        LargeUtf8Type, Utf8Type,
-    },
-};
 use datafusion::{
+    arrow::{
+        array::AsArray,
+        datatypes::{
+            BinaryType, DataType, Field, FieldRef, Int32Type, Int64Type, LargeBinaryType,
+            LargeUtf8Type, Utf8Type,
+        },
+    },
     common::{DFSchema, Result, exec_err, internal_err},
     logical_expr::{
         ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
@@ -174,11 +174,11 @@ impl ScalarUDFImpl for SketchUDF {
                         DataType::Int64 => update_sketch(sketch, &array.as_primitive::<Int64Type>()),
                         DataType::Utf8 => update_sketch(
                             sketch,
-                            &array.as_string::<<Utf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
+                            &array.as_string::<<Utf8Type as datafusion::arrow::datatypes::ByteArrayType>::Offset>(),
                         ),
                         DataType::LargeUtf8 => update_sketch(
                             sketch,
-                            &array.as_string::<<LargeUtf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
+                            &array.as_string::<<LargeUtf8Type as datafusion::arrow::datatypes::ByteArrayType>::Offset>(),
                         ),
                         DataType::Utf8View => update_sketch(
                             sketch,
@@ -186,11 +186,11 @@ impl ScalarUDFImpl for SketchUDF {
                         ),
                         DataType::Binary => update_sketch(
                             sketch,
-                            &array.as_binary::<<BinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
+                            &array.as_binary::<<BinaryType as datafusion::arrow::datatypes::ByteArrayType>::Offset>(),
                         ),
                         DataType::LargeBinary => update_sketch(
                             sketch,
-                            &array.as_binary::<<LargeBinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
+                            &array.as_binary::<<LargeBinaryType as datafusion::arrow::datatypes::ByteArrayType>::Offset>(),
                         ),
                         DataType::BinaryView => update_sketch(
                             sketch,

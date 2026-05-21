@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,26 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 
+/**
+ * Submits files to the ingest batcher in a Sleeper instance.
+ */
 @FunctionalInterface
 public interface IngestBatcherSender {
 
+    /**
+     * Submits files to the ingest batcher.
+     *
+     * @param request the request to add files to a Sleeper table
+     */
     void submit(IngestBatcherSubmitRequest request);
 
+    /**
+     * Creates an object to send requests to an Amazon SQS queue.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  sqsClient          the SQS client
+     * @return                    the sender
+     */
     static IngestBatcherSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
         return request -> sqsClient.sendMessage(send -> send

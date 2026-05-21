@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -39,6 +40,9 @@ import java.util.Set;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 
+/**
+ * Scans and parses the state store committer logs. Used to create statistics on the rate of transactions committed.
+ */
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
 
@@ -50,6 +54,16 @@ public class QueryStateStoreCommitterLogs {
         this.cloudWatch = cloudWatch;
     }
 
+    /**
+     * Retrieves all logs in a given time period. Pages through results from CloudWatch if necessary. If this is a
+     * recent period, this may involve waiting for the logs to settle until they are reliably available for query in
+     * CloudWatch.
+     *
+     * @param  startTime            the start time
+     * @param  endTime              the end time
+     * @return                      the log entries in the period
+     * @throws InterruptedException if the thread is interrupted while waiting for the logs to settle
+     */
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) throws InterruptedException {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
@@ -65,7 +79,9 @@ public class QueryStateStoreCommitterLogs {
                 .endTime(endTime.getEpochSecond())
                 .limit(limit)
                 .queryString("fields @timestamp, @message, @logStream " +
-                        "| filter @message like /Lambda (started|finished) at|Applied request to table/ " +
+                        "| filter @message like /State store committer process (started|finished) at|" +
+                        "Started state store commits batch at .* having received [1-9].* messages|" +
+                        "Finished state store commits batch at|Applied request to table/ " +
                         "| sort @timestamp asc"))
                 .queryId();
         return waitForQuery(queryId)
@@ -106,10 +122,12 @@ public class QueryStateStoreCommitterLogs {
         Input input = gson.fromJson(Files.readString(inputFile), Input.class);
         LOGGER.info("{}", input);
 
-        try (S3Client s3 = S3Client.create();
-                CloudWatchLogsClient cw = CloudWatchLogsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, input.instanceId);
-            QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cw);
+        try (S3Client s3Client = S3Client.create();
+                CloudWatchLogsClient cwClient = CloudWatchLogsClient.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, input.instanceId);
+            QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cwClient);
             List<StateStoreCommitterLogEntry> entries = queryLogs.getLogsInPeriod(input.startTime, input.endTime);
             LOGGER.info("Found {} entries", entries.size());
             List<StateStoreCommitterRun> runs = StateStoreCommitterRuns.findRunsByLogStream(entries);
@@ -119,6 +137,13 @@ public class QueryStateStoreCommitterLogs {
         }
     }
 
+    /**
+     * The format for an input file passed on the command line, to specify the period to query in the logs.
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param startTime  the start of the period to query
+     * @param endTime    the end of the period to query
+     */
     public record Input(String instanceId, Instant startTime, Instant endTime) {
     }
 }

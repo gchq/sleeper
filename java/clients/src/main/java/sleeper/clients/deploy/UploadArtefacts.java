@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  */
 package sleeper.clients.deploy;
 
+import org.apache.commons.lang3.EnumUtils;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -33,6 +34,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -62,20 +64,23 @@ public class UploadArtefacts {
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
                         CommandOption.longFlag("create-builder"),
-                        CommandOption.longFlag("create-deployment")))
+                        CommandOption.longFlag("create-deployment"),
+                        CommandOption.longFlag("overwrite-existing"),
+                        CommandOption.shortOption('u', "upload"),
+                        CommandOption.longOption("cdk-app")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
                         "This works against an artefacts CDK deployment that must already exist in the same AWS " +
                         "account that you want to deploy Sleeper to. If you use the scripts for deployment you will " +
-                        "not need this, as this is done as part of \"deploy.sh\". If you prefer to use the artefacts " +
+                        "not need this, as this is done as part of \"deployNew.sh\" or \"deployExisting.sh\". If you prefer to use the artefacts " +
                         "CDK app directly, you can then use this tool to upload the needed artefacts to that " +
                         "deployment.\n" +
                         "\n" +
                         "--properties, -p\n" +
-                        "An instance properties file to read configuration from. The artefacts deployment ID will be " +
-                        "read from this file, defaulting to the instance ID. Docker images that are not required to " +
-                        "deploy this instance will not be uploaded.\n" +
+                        "An instance properties file to read configuration from. If you do not also set the " +
+                        "artefacts deployment ID, it will be read from this file, defaulting to the instance ID. " +
+                        "Docker images that are not required to deploy this instance will not be uploaded.\n" +
                         "\n" +
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
@@ -87,31 +92,56 @@ public class UploadArtefacts {
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
-                        "flag, this tool will deploy a new artefacts CDK deployment for you.")
+                        "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
+                        "\n" +
+                        "--overwrite-existing\n" +
+                        "By default, images are only uploaded if they do not already exist for this version of " +
+                        "Sleeper. This flag disables that check.\n" +
+                        "\n" +
+                        "--upload, -u\n" +
+                        "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
+                        "jars, or \"--upload images\" to only upload the container images.\n" +
+                        "\n" +
+                        "--cdk-app\n" +
+                        "By default we include images required for a normal Sleeper instance deployment. Other " +
+                        "deployment types may need different Docker images, in which case you can set this to a CDK " +
+                        "app that requires extra images.\n" +
+                        "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getOptionalString("properties")
                         .map(Path::of)
-                        .map(LoadLocalProperties::loadInstanceProperties)
+                        .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
+                arguments.getOptionalString("cdk-app")
+                        .map(string -> SleeperInternalCdkApp.readCdkAppDeployingSleeperInstance(string)
+                                .orElseThrow(() -> new CommandArgumentsException(
+                                        "Unknown CDK app: " + string + ". Valid values: " +
+                                                SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())))
+                        .orElse(SleeperInternalCdkApp.STANDARD),
                 arguments.isFlagSetWithDefault("create-builder", true),
-                arguments.isFlagSetWithDefault("create-deployment", false)));
+                arguments.isFlagSetWithDefault("create-deployment", false),
+                arguments.isFlagSetWithDefault("overwrite-existing", false),
+                arguments.getOptionalString("upload").map(ToUpload::fromString).orElse(ToUpload.ALL)));
 
         String deploymentId;
         String jarsBucket;
         String ecrPrefix;
         List<StackDockerImage> images;
         if (args.instanceProperties() != null) {
+            if (args.deploymentId() != null) {
+                args.instanceProperties().set(ARTEFACTS_DEPLOYMENT_ID, args.deploymentId());
+            }
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
+            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
-            jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId());
+            jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
             images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
         }
@@ -120,39 +150,72 @@ public class UploadArtefacts {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
-            String account = stsClient.getCallerIdentity().account();
+            String accountName = stsClient.getCallerIdentity().account();
             String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
-            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
+            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
                             .scriptsDirectory(args.scriptsDir())
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
+                            .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient), account, region);
+                    accountName, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
-                        .invoke(InvokeCdk.Type.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+                        .invoke(SleeperInternalCdkApp.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId));
             }
-            syncJars.sync(SyncJarsRequest.builder()
-                    .bucketName(jarsBucket)
-                    .build());
-            uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
-                    .ecrPrefix(ecrPrefix)
-                    .images(images)
-                    .build());
+            if (args.toUpload().isUploadJars()) {
+                syncJars.sync(SyncJarsRequest.builder()
+                        .bucketName(jarsBucket)
+                        .deploymentId(deploymentId)
+                        .build());
+            }
+            if (args.toUpload().isUploadImages()) {
+                uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
+                        .ecrPrefix(ecrPrefix)
+                        .images(images)
+                        .overwriteExistingTag(args.overwriteExisting())
+                        .build());
+            }
         }
     }
 
     public record Arguments(
-            Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
-            boolean createMultiplatformBuilder, boolean createDeployment) {
+            Path scriptsDir,
+            InstanceProperties instanceProperties,
+            String deploymentId,
+            SleeperInternalCdkApp cdkApp,
+            boolean createMultiplatformBuilder,
+            boolean createDeployment,
+            boolean overwriteExisting,
+            ToUpload toUpload) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
                 throw new CommandArgumentsException("Expected instance properties or artefacts deployment ID");
             }
+        }
+    }
+
+    public enum ToUpload {
+        ALL, JARS, IMAGES;
+
+        public static ToUpload fromString(String string) {
+            ToUpload upload = EnumUtils.getEnumIgnoreCase(ToUpload.class, string);
+            if (upload == null) {
+                throw new IllegalArgumentException("Unknown identifier for artefacts to upload: " + string);
+            }
+            return upload;
+        }
+
+        public boolean isUploadJars() {
+            return this == ALL || this == JARS;
+        }
+
+        public boolean isUploadImages() {
+            return this == ALL || this == IMAGES;
         }
     }
 

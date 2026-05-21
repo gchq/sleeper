@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,17 +34,6 @@ public class StaticRateLimit<T> {
     private StaticRateLimit(Duration waitBetweenRequests, Supplier<Instant> timeSupplier) {
         this.waitBetweenRequests = waitBetweenRequests;
         this.timeSupplier = timeSupplier;
-    }
-
-    /**
-     * Creates an instance of this class to operate at the given maximum rate per second.
-     *
-     * @param  <T>           the request result type
-     * @param  ratePerSecond the number of requests per second to stay below
-     * @return               the new instance
-     */
-    public static <T> StaticRateLimit<T> forMaximumRatePerSecond(double ratePerSecond) {
-        return withWaitBetweenRequests(RateLimitUtils.calculateSleepForSustainedRatePerSecond(ratePerSecond), Instant::now);
     }
 
     /**

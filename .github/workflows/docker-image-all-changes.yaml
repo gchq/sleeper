@@ -1,0 +1,12 @@
+name: Docker Image Tests All
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/docker-image-all.yaml'
+      - '.github/workflows/docker-image-test.yaml'
+      - 'code-style/.trivyignore.yaml'
+      - 'code-style/.trivyignore.eks.yaml'
+
+jobs:
+  build:
+    uses: ./.github/workflows/docker-image-all.yaml

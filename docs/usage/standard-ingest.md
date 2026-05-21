@@ -63,8 +63,7 @@ to the files you wish to ingest. This ARN is exported as a named export from Clo
 `<sleeper-id>-IngestContainerRoleARN` to help stacks that depend on Sleeper automatically grant read access to their
 data to Sleeper's ingest role. A simple way to do this is to use the `sleeper.ingest.source.bucket` instance property to
 set the name of the bucket that the files are in. If this property is populated when the Sleeper instance is deployed
-then the ingest roles will be granted read access to it. (The bulk import methods described below will also be granted
-read access to it.)
+then the ingest roles will be granted read access to it. Bulk import systems will also be granted read access to it.
 
 Once the message has been sent to the SQS, a lambda will notice that there are messages on the queue and then start
 a task on the ingest ECS cluster (this cluster is called `sleeper-<instance-id>-ingest-cluster`). This task will

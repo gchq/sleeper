@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,23 +73,6 @@ public class CompactionJobRun implements JobRunReport {
         return endedStatus != null;
     }
 
-    /**
-     * Generates a string list detailing all the reasons provided why the job run failed. Has a forced length defined
-     * in the interface so as not to greatly impact the size of the table created.
-     *
-     * @return combined list of reasons for failure
-     */
-    public String getFailureReasons() {
-        StringBuffer outStr = new StringBuffer();
-        endedStatus.getFailureReasons()
-                .forEach(str -> outStr.append(str).append(". "));
-        if (outStr.length() >= FAILURE_REASONS_MAX_LENGTH) {
-            return outStr.substring(0, FAILURE_REASONS_MAX_LENGTH) + "...";
-        } else {
-            return outStr.toString();
-        }
-    }
-
     @Override
     public boolean isFinishedSuccessfully() {
         return finishedStatus != null;
@@ -123,6 +106,11 @@ public class CompactionJobRun implements JobRunReport {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public List<String> getFailureReasons() {
+        return Optional.ofNullable(endedStatus).map(JobRunEndUpdate::getFailureReasons).orElseGet(List::of);
     }
 
     @Override

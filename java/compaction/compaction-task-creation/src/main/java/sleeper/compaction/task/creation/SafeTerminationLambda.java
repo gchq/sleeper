@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * @param  context                  AWS Lambda context
      * @return                          set of empty instances
      * @throws NullPointerException     for clusterDetails
-     * @throws IllegalArgumentException if suggestedSize < 0
+     * @throws IllegalArgumentException if suggestedSize {@literal<} 0
      */
     public static Set<String> findEmptyInstances(Iterable<EC2InstanceDetails> detailsIt, int suggestedSize,
             Context context) {

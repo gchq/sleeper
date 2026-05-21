@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ public class ParallelCompactionsTest {
                 .hasSize(NUMBER_OF_COMPACTIONS);
         // And we have the same rows afterwards
         assertThat(inAnyOrder(sleeper.directQuery().allRowsInTable()))
-                .isEqualTo(inAnyOrder(sleeper.generateNumberedRows(
-                        LongStream.range(0, 10000))));
+                .isEqualTo(inAnyOrder(sleeper.generateNumberedRows()
+                        .iterableOverRange(0, 10000)));
     }
 
     private static Map<Row, Integer> inAnyOrder(Iterable<Row> rows) {

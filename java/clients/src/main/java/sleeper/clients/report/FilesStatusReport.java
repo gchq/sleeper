@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.filestatus.CVSFileStatusReporter;
 import sleeper.clients.report.filestatus.FileStatusCollector;
@@ -38,8 +39,7 @@ import java.util.Map;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * A utility class to report information about the files in the system and their
- * status.
+ * Creates reports on the files in a Sleeper table.
  */
 public class FilesStatusReport {
     private final int maxNumberOfFilesWithNoReferencesToCount;
@@ -81,8 +81,11 @@ public class FilesStatusReport {
         return FILE_STATUS_REPORTERS.get(outputType);
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
-        TableFilesStatus tableStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
+        TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(tableStatus, verbose);
     }
 
@@ -112,8 +115,10 @@ public class FilesStatusReport {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(tableName));

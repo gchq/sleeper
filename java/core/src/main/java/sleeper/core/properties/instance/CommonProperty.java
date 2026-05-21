@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,9 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
-            .description("The S3 bucket containing the jar files of the Sleeper components. If unset, a default name " +
-                    "is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.")
-            .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
-            .validationPredicate(Objects::nonNull)
+            .description("The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set " +
+                    "by the CDK during deployment, based on `sleeper.artefacts.deployment` if it is set, or " +
+                    "`sleeper.id` if it is not.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
@@ -71,8 +70,11 @@ public interface CommonProperty {
             .description("A list of tags that will automatically be applied to all the resources in this deployment " +
                     "of Sleeper. The list should be in the form \"key1,value1,key2,value2,key3,value3,...\".\n" +
                     "For example if you want to add tags of \"user=some-user\" and \"project-name=sleeper-test\", " +
-                    "then the list should be \"user,some-user,project-name,sleeper-test\".")
+                    "then the list should be \"user,some-user,project-name,sleeper-test\".\n" +
+                    "Preferably, tags should be specified in a separate file called tags.properties.\n" +
+                    "See https://github.com/gchq/sleeper/blob/develop/docs/deployment/instance-configuration.md for further details.")
             .propertyGroup(InstancePropertyGroup.COMMON)
+            .validationPredicate(SleeperPropertyValueUtils::isListInKeyValueFormat)
             .runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
@@ -96,7 +98,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
-    UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.table.removal")
+    UserDefinedInstanceProperty DEFAULT_RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.default.table.retain.after.removal")
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
                     "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
                     "If this is false, it will delete all data associated with the table when the table is removed.\n" +
@@ -104,6 +106,16 @@ public interface CommonProperty {
                     "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .includedInBasicTemplate(true).build();
+    UserDefinedInstanceProperty DEFAULT_TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.default.table.reuse.existing")
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
+            .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .includedInBasicTemplate(true).build();
@@ -208,11 +220,6 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
-            .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
-            .validationPredicate(value -> SleeperPropertyValueUtils.isListWithMaxSize(value, 5))
-            .runCdkDeployWhenChanged(true)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
             .description("Default value for the reserved concurrency for each lambda in the Sleeper instance " +
                     "that scales according to the number of Sleeper tables.\n" +
@@ -225,7 +232,8 @@ public interface CommonProperty {
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue(null)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
             .description("Default value for the maximum concurrency for each lambda in the Sleeper instance that " +
                     "scales according to the number of Sleeper tables.\n" +
@@ -237,7 +245,8 @@ public interface CommonProperty {
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue("10")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

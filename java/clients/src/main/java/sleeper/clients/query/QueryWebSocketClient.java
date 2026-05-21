@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,18 +53,19 @@ public class QueryWebSocketClient {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.adapter = adapter;
         this.timeoutMs = timeoutMs;
-        if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
-            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
-        }
     }
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
+        if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
+            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
+        }
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query);
+        QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
+        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
             Instant startTime = Instant.now();
-            return listener.getQueryFuture()
+            return future
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());

@@ -2,7 +2,7 @@
 //! convert an asynchronous [`Stream`] into a synchronous iterator
 //! that can then be served across an FFI boundary.
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
  * limitations under the License.
  */
 #[allow(unused)]
-use arrow::{
-    array::RecordBatchIterator, error::ArrowError, ffi_stream::FFI_ArrowArrayStream,
-    record_batch::RecordBatch,
+use datafusion::{
+    arrow::{
+        array::RecordBatchIterator, error::ArrowError, ffi_stream::FFI_ArrowArrayStream,
+        record_batch::RecordBatch,
+    },
+    execution::SendableRecordBatchStream,
 };
-use datafusion::execution::SendableRecordBatchStream;
 use futures::{Stream, StreamExt};
 use std::{pin::Pin, sync::Arc};
 use tokio::runtime::Runtime;

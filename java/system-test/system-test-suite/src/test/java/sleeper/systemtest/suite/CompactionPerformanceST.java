@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class CompactionPerformanceST {
                 .waitForTotalFileReferences(110);
 
         // When
-        sleeper.compaction().putTableOnlineUntilJobsAreCreated(10).waitForTasks(10)
+        sleeper.compaction().putCurrentTablesOnlineUntilJobsAreCreated(10).waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
         // Then

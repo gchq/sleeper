@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import sleeper.core.statestore.FileReference;
 
 import java.util.Collection;
 
+/**
+ * Statistics on the number of rows in a set of file references.
+ */
 public class FileRowsStats {
 
     private final long totalRows;
@@ -32,6 +35,12 @@ public class FileRowsStats {
         this.totalRowsKnown = totalRowsKnown;
     }
 
+    /**
+     * Computes statistics on the number of rows.
+     *
+     * @param  references the file references
+     * @return            the statistics
+     */
     public static FileRowsStats from(Collection<FileReference> references) {
         long totalRowsApprox = 0;
         long totalRowsExact = 0;

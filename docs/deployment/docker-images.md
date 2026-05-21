@@ -5,8 +5,8 @@ A deployment of Sleeper includes components that run in Docker containers. This 
 are used in Sleeper, how to build them, and how to make them available for deployment.
 
 The easiest way to build and deploy these images is with our automated scripts. See
-the [deployment guide](../deployment-guide.md) and [deployment with the CDK](./deploy-with-cdk.md) for more information.
-The information below may be useful if you prefer to replicate this yourself.
+the [deployment guide](../deployment-guide.md) for more information. The information below may be useful if you prefer
+to replicate this yourself.
 
 ## Docker deployment images
 
@@ -27,6 +27,8 @@ are listed here.
 | bulk-import-runner         | EksBulkImportStack | false         |
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
+| statestore-committer       |                    | true          |
+| system-test                |                    | false         |
 
 
 ## Lambda images
@@ -63,6 +65,7 @@ Docker image for each lambda jar.
 | cdk-custom-resources-`<version-number>`.jar         | custom-resources-lambda           | false                |
 | metrics-`<version-number>`.jar                      | metrics-lambda                    | false                |
 | statestore-lambda-`<version-number>`.jar            | statestore-lambda                 | false                |
+| rest-api-`<version-number>`.jar                     | rest-api-lambda                   | false                |
 
 
 ## Building and pushing

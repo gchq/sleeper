@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -52,11 +53,12 @@ public class CompactionDsl {
     private final PollWithRetriesDriver pollDriver;
     private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
-    private List<String> lastJobIds;
+    private final SentJobsContext sentJobs;
     private List<String> lastBatchKeys;
 
     public CompactionDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
+        this.sentJobs = context.sentJobs();
         this.sourceFiles = context.sourceFiles();
         SystemTestDrivers drivers = instance.adminDrivers();
         driver = drivers.compaction(context);
@@ -73,39 +75,37 @@ public class CompactionDsl {
     }
 
     public CompactionDsl createJobs(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
+        sentJobs.setJobIds(waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs));
         return this;
     }
 
-    public CompactionDsl putTableOnlineUntilJobsAreCreated(int expectedJobs) {
-        putTablesOnlineWaitForJobCreation(expectedJobs);
+    public CompactionDsl putCurrentTablesOnlineUntilJobsAreCreated(int expectedJobs) {
+        putCurrentTablesOnlineWaitForJobCreation(expectedJobs);
         instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
         return this;
     }
 
-    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs);
-    }
-
-    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs,
+    public CompactionDsl putCurrentTablesOnlineWaitForJobCreation(int expectedJobs) {
+        return putCurrentTablesOnlineWaitForJobCreation(expectedJobs,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(15), Duration.ofMinutes(2)));
     }
 
-    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
-        return putTablesOnlineWaitForJobCreation(expectedJobs, poll);
+    public CompactionDsl putCurrentTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+        sentJobs.setJobIds(waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true"))));
+        return this;
     }
 
-    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
-                () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
+    public CompactionDsl putCurrentTablesOnlineWaitForMinJobCreation(int expectedJobs, PollWithRetries poll) {
+        sentJobs.setJobIds(waitForJobCreation.createMinJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true"))));
         return this;
     }
 
     public CompactionDsl forceCreateJobs(int expectedJobs) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
+        sentJobs.setJobIds(waitForJobCreation.createJobsGetIds(expectedJobs,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                driver::forceCreateJobs);
+                driver::forceCreateJobs));
         return this;
     }
 
@@ -119,9 +119,9 @@ public class CompactionDsl {
     public CompactionDsl createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
         CompactionJobFactory factory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
         List<CompactionJob> jobs = duplications.createSeparateCompactionsForOriginalAndDuplicates(factory);
-        lastJobIds = waitForJobCreation.createJobsGetIds(jobs.size(),
+        sentJobs.setJobIds(waitForJobCreation.createJobsGetIds(jobs.size(),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                () -> driver.createJobBatches(jobs));
+                () -> driver.createJobBatches(jobs)));
         return this;
     }
 
@@ -131,28 +131,28 @@ public class CompactionDsl {
 
     public CompactionDsl waitForTasks(int expectedTasks, PollWithRetries poll) {
         new WaitForTasks(driver.getJobTracker())
-                .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds, pollDriver.poll(poll));
+                .waitUntilNumTasksStartedAJob(expectedTasks, sentJobs.getJobIds(), pollDriver.poll(poll));
         return this;
     }
 
     public CompactionDsl waitForJobs() {
-        waitForJobs.waitForJobs(lastJobIds);
+        waitForJobs.waitForJobs(sentJobs.getJobIds());
         return this;
     }
 
     public CompactionDsl waitForJobs(PollWithRetries poll) {
-        waitForJobs.waitForJobs(lastJobIds, poll);
+        waitForJobs.waitForJobs(sentJobs.getJobIds(), poll);
         return this;
     }
 
     public CompactionDsl waitForJobsToFinishThenCommit(
             PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
-        waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
+        waitForJobs.waitForJobs(sentJobs.getJobIds(), pollUntilFinished, pollUntilCommitted);
         return this;
     }
 
     public CompactionDsl waitForJobsToCommit(PollWithRetries poll) {
-        waitForJobs.waitForJobsToCommit(lastJobIds, poll);
+        waitForJobs.waitForJobsToCommit(sentJobs.getJobIds(), poll);
         return this;
     }
 
@@ -171,7 +171,7 @@ public class CompactionDsl {
 
     public CompactionDsl sendFakeCommits(StreamFakeCompactions compactions) {
         baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
-        lastJobIds = compactions.listJobIds();
+        sentJobs.setJobIds(compactions.listJobIds());
         return this;
     }
 

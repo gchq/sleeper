@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,5 +165,12 @@ class TablePropertiesTest {
         // When / Then
         assertThat(tableProperties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
+    }
+
+    @Test
+    void shouldNameTablePropertiesConsistently() {
+        assertThat(TableProperty.getAll())
+                .extracting(TableProperty::getPropertyName)
+                .allSatisfy(name -> assertThat(name).startsWith("sleeper.table."));
     }
 }

@@ -33,7 +33,7 @@
     "Logger": {
         "prefix": "logger",
         "body": [
-            "public static final Logger LOGGER = LoggerFactory.getLogger($TM_FILENAME_BASE.class);"
+            "private static final Logger LOGGER = LoggerFactory.getLogger($TM_FILENAME_BASE.class);"
         ]
     }
 }

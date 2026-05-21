@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.testutils.TestInstantSupplier;
 import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 
 public class CompactionTaskTest extends CompactionTaskTestBase {
@@ -90,13 +90,17 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
         Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
         Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-        Queue<Instant> times = new LinkedList<>(List.of(
-                Instant.parse("2024-02-22T13:50:00Z"),   // Task start
-                startTime1, finishTime1, startTime2, finishTime2,
-                Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
+        TestInstantSupplier supplier = supplyTimes(
+                Instant.parse("2024-02-22T13:50:00Z"), // Task start
+                Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                startTime1, finishTime1,
+                Instant.parse("2024-02-22T13:50:03Z"), // Max alive time check
+                startTime2, finishTime2,
+                Instant.parse("2024-02-22T13:50:07Z"), // Max alive time check
+                Instant.parse("2024-02-22T13:50:07Z")); // Task finish
 
         // When
-        runTask(processNoJobs(), times::poll);
+        runTask(processNoJobs(), supplier);
 
         // Then
         assertThat(consumedJobs).containsExactly(job1, job2);

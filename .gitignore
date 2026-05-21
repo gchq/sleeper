@@ -32,3 +32,4 @@ scripts/test/maven/system-test-instance.properties
 input.json
 .approval_tests_temp/
 *.env
+rust/sleeper_df/include/sleeper_df.h

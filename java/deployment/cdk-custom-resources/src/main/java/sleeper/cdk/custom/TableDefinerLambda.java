@@ -1,0 +1,149 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.cdk.custom;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.lambda.powertools.cloudformation.AbstractCustomResourceHandler;
+import software.amazon.lambda.powertools.cloudformation.Response;
+
+import sleeper.core.properties.local.ReadSplitPoints;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
+import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.RETAIN_TABLE_AFTER_REMOVAL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+
+/**
+ * Lambda Function which defines Sleeper tables.
+ */
+public class TableDefinerLambda extends AbstractCustomResourceHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
+    private final String bucketName;
+
+    public TableDefinerLambda() {
+        this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+    }
+
+    public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient, String bucketName) {
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.bucketName = bucketName;
+    }
+
+    @Override
+    protected Response create(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
+
+        LOGGER.info("Validating table properties for table {}", tableName);
+        properties.getTableProperties().validate();
+
+        //Table may just be offline from a previous delete call
+        if (properties.getTableProperties().getBoolean(TableProperty.TABLE_REUSE_EXISTING)) {
+            reuseExistingTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties());
+        } else {
+            createNewTable(tableName, properties.getTablePropertiesStore(), properties.getTableProperties(), properties.getResourceProperties());
+        }
+
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
+
+    }
+
+    @Override
+    protected Response update(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+
+        LOGGER.info("Updating table properties for table {}", properties.getTableProperties().get(TABLE_NAME));
+        properties.getTableProperties().set(TABLE_ID, event.getPhysicalResourceId());
+        properties.getTableProperties().validate();
+
+        properties.getTablePropertiesStore().update(properties.getTableProperties());
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
+    }
+
+    @Override
+    protected Response delete(CloudFormationCustomResourceEvent event, Context context) {
+        TableDefinerLambdaProperties properties = new TableDefinerLambdaProperties(event, s3Client, dynamoClient, bucketName);
+        String tableName = properties.getTableProperties().get(TABLE_NAME);
+        String tableId = event.getPhysicalResourceId();
+        properties.getTableProperties().set(TABLE_ID, tableId);
+        if (properties.getTableProperties().getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
+            LOGGER.info("Taking table {} offline.", tableName);
+            properties.getTableProperties().set(TABLE_ONLINE, "false");
+            properties.getTablePropertiesStore().save(properties.getTableProperties());
+        } else {
+            LOGGER.info("Deleting table {} and associated data.", tableName);
+            StateStoreFactory.createProvider(properties.getInstanceProperties(), s3Client, dynamoClient)
+                    .getStateStore(properties.getTableProperties()).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, properties.getInstanceProperties().get(DATA_BUCKET), tableId);
+            new DynamoDBTransactionLogSnapshotMetadataStore(properties.getInstanceProperties(), properties.getTableProperties(), dynamoClient).deleteAllSnapshots();
+            properties.getTablePropertiesStore().delete(TableStatus.uniqueIdAndName(tableId, tableName, properties.getTableProperties().getBoolean(TABLE_ONLINE)));
+        }
+        return Response.success(properties.getTableProperties().get(TABLE_ID));
+    }
+
+    private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
+        LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
+        try {
+            tablePropertiesStore.update(tableProperties);
+        } catch (TableNotFoundException e) {
+            throw new NoTableToReuseException(tableName, e);
+        }
+    }
+
+    private void createNewTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties,
+            Map<String, Object> resourceProperties) {
+        LOGGER.info("Creating new table {}", tableName);
+        try {
+            tablePropertiesStore.createTable(tableProperties);
+        } catch (TableAlreadyExistsException e) {
+            throw new TableAlreadyExistsException(e.getMessage() + ". If attempting to reuse an existing table " +
+                    "ensure the sleeper.table.reuse.existing property is set to true.", e);
+        }
+
+        List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
+                tableProperties.getSchema(),
+                tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
+        LOGGER.info("Initalising state store from split points for table {}", tableName);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(
+                tableProperties.getInstanceProperties(), s3Client, dynamoClient);
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
+    }
+
+}

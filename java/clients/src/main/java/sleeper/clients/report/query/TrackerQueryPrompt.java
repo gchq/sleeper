@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,19 @@ package sleeper.clients.report.query;
 
 import sleeper.clients.util.console.ConsoleInput;
 
+/**
+ * Prompts the user on the command line to create a query to generate a report from a query tracker.
+ */
 public class TrackerQueryPrompt {
     private TrackerQueryPrompt() {
     }
 
+    /**
+     * Creates a tracker query by prompting the user. This can be used to generate a report from a query tracker.
+     *
+     * @param  in the console to prompt the user
+     * @return    the query
+     */
     public static TrackerQuery from(ConsoleInput in) {
         String type = in.promptLine("Query types are:\n" +
                 "a (All queries)\n" +

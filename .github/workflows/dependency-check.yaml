@@ -5,47 +5,52 @@ on:
       failOnCacheMiss:
         required: true
         type: boolean
+      writeCache:
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   maven:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'corretto'
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-      - name: Restore cache of Maven dependencies & CVEs database
-        uses: actions/cache/restore@v3
-        id: restore-cache
-        with:
-          path: ${{ runner.temp }}/.m2/repository
-          key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
-          fail-on-cache-miss: ${{ inputs.failOnCacheMiss }}
-          restore-keys: |
-            ${{ runner.os }}-dependency-check-
-      - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
-        working-directory: ./java
-      - name: Update CVEs database
-        run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
-        working-directory: ./java
-      - name: Build with Maven
-        run: mvn --batch-mode verify dependency-check:aggregate -Pquick,skipShade -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
-        working-directory: ./java
-      - name: Cache Maven dependencies & CVEs database
-        uses: actions/cache/save@v3
-        if: ${{ always() }}
-        with:
-          path: ${{ runner.temp }}/.m2/repository
-          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-      - name: Upload dependency check report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Dependency check report
-          path: java/target/dependency-check-report.html
+      - run: echo "Disabled dependency checks temporarily, see https://github.com/gchq/sleeper/issues/6481"
+      # - uses: actions/checkout@v3
+      # - uses: actions/setup-java@v3
+      #   with:
+      #     java-version: '17'
+      #     distribution: 'corretto'
+      # - name: Get current date
+      #   id: date
+      #   run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      # - name: Restore cache of Maven dependencies & CVEs database
+      #   uses: actions/cache/restore@v5
+      #   id: restore-cache
+      #   with:
+      #     path: ${{ runner.temp }}/.m2/repository
+      #     key: ${{ runner.os }}-dependency-check-${{ steps.date.outputs.date }}
+      #     fail-on-cache-miss: ${{ inputs.failOnCacheMiss }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-dependency-check-
+      # - name: Resolve dependencies
+      #   run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+      #   working-directory: ./java
+      # - name: Update CVEs database
+      #   run: mvn --batch-mode dependency-check:update-only -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+      #   working-directory: ./java
+      # - name: Build with Maven
+      #   run: mvn --batch-mode verify dependency-check:aggregate -Pquick,skipShade -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+      #   working-directory: ./java
+      # - name: Cache Maven dependencies & CVEs database
+      #   uses: actions/cache/save@v5
+      #   if: ${{ always() && inputs.writeCache }}
+      #   with:
+      #     path: ${{ runner.temp }}/.m2/repository
+      #     key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+      # - name: Upload dependency check report
+      #   if: ${{ always() }}
+      #   uses: actions/upload-artifact@v5
+      #   with:
+      #     name: Dependency check report
+      #     path: java/target/dependency-check-report.html

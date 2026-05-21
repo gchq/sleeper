@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.testutils.TestInstantSupplier;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -35,7 +36,6 @@ import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -49,6 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
@@ -74,15 +75,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             setAsyncCommitNoBatching(tableProperties);
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
-            Iterator<Instant> times = List.of(
-                    Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+            TestInstantSupplier supplier = supplyTimes(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Task start
+                    Instant.parse("2024-02-22T13:50:01Z"), // Max alive time check
                     startTime, finishTime,
-                    Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
+                    Instant.parse("2024-02-22T13:50:05Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:05Z")); // Task finished
             CompactionJob job1 = createJobOnQueue("job1");
             RowsProcessed job1Summary = new RowsProcessed(10L, 5L);
 
             // When
-            runTask(processJobs(jobSucceeds(job1Summary)), times::next);
+            runTask(processJobs(jobSucceeds(job1Summary)), supplier);
 
             // Then
             assertThat(consumedJobs).containsExactly(job1);
@@ -108,10 +111,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
-                    startTime1, finishTime1, startTime2, finishTime2,
-                    Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                    startTime1, finishTime1,
+                    Instant.parse("2024-02-22T13:50:03Z"), // Max alive time check
+                    startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:07Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:07Z")); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
             RowsProcessed job1Rows = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
@@ -121,7 +128,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Rows),
                     jobSucceeds(job2Rows)),
-                    times::poll);
+                    supplier);
 
             // Then
             assertThat(consumedJobs).containsExactly(job1, job2);
@@ -154,10 +161,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant commitTime2 = Instant.parse("2024-02-22T13:50:05Z");
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
-                    startTime1, finishTime1, startTime2, finishTime2, commitTime2,
-                    Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                    startTime1, finishTime1,
+                    Instant.parse("2024-02-22T13:50:03Z"), // Max alive time check
+                    startTime2, finishTime2, commitTime2,
+                    Instant.parse("2024-02-22T13:50:07Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:07Z")); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
             RowsProcessed job1Rows = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
@@ -167,7 +178,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask(processJobs(
                     jobSucceeds(job1Rows),
                     jobSucceeds(job2Rows)),
-                    times::poll);
+                    supplier);
 
             // Then
             assertThat(consumedJobs).containsExactly(job1, job2);
@@ -198,10 +209,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant commitTime = Instant.parse("2024-02-22T13:50:10Z");
             Instant commitFailTime = Instant.parse("2024-02-22T13:50:10Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    startTime1, finishTime1, startTime2, finishTime2,
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                    startTime1, finishTime1,
+                    Instant.parse("2024-02-22T13:50:03Z"), // Max alive time check
+                    startTime2, finishTime2,
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:07Z")); // Finish
             Queue<String> jobRunIds = new LinkedList<>(List.of(
                     "test-job-run-1", "test-job-run-2"));
             CompactionJob job = createJob("test-job");
@@ -213,7 +228,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask("test-task", processJobs(
                     jobSucceeds(rowsProcessed),
                     jobSucceeds(rowsProcessed)),
-                    jobRunIds::poll, timesInTask::poll);
+                    jobRunIds::poll, supplier);
             // And the commits are saved to the job tracker
             jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
@@ -246,15 +261,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
-            Iterator<Instant> times = List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     startTime, finishTime,
-                    Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
+                    Instant.parse("2024-02-22T13:50:05Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:05Z")); // Task finish
             CompactionJob job1 = createJobOnQueue("job1");
             RowsProcessed job1Summary = new RowsProcessed(10L, 5L);
 
             // When
-            runTask(processJobs(jobSucceeds(job1Summary)), times::next);
+            runTask(processJobs(jobSucceeds(job1Summary)), supplier);
 
             // Then
             assertThat(consumedJobs).containsExactly(job1);
@@ -299,11 +316,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime2 = Instant.parse("2024-02-22T13:50:04Z");
             Instant finishTime2 = Instant.parse("2024-02-22T13:50:05Z");
             Instant commitTime2 = Instant.parse("2024-02-22T13:50:06Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     startTime1, finishTime1, commitTime1,
+                    Instant.parse("2024-02-22T13:50:04Z"), // Max alive time check
                     startTime2, finishTime2, commitTime2,
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:07Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:07Z")); // Finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
             store1.fixFileUpdateTime(finishTime1);
@@ -314,7 +334,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask("test-task", processJobs(
                     jobSucceeds(rowsProcessed),
                     jobSucceeds(rowsProcessed)),
-                    timesInTask::poll);
+                    supplier);
 
             // Then
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
@@ -343,17 +363,19 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     startTime, finishTime, failTime,
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:04Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:04Z")); // Finish
             CompactionJob job = createJob("test-job");
             send(job);
 
             // When
             runTask("test-task", processJobs(jobSucceeds().withAction(() -> {
                 update(stateStore).clearFileData();
-            })), timesInTask::poll);
+            })), supplier);
 
             // Then
             assertThat(stateStore.getFileReferences()).isEmpty();
@@ -373,15 +395,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     startTime, finishTime, failTime,
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:04Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:04Z")); // Finish
             CompactionJob job = createJobOnQueueNotAssignedToFiles("test-job");
             update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
 
             // When
-            runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);
+            runTask("test-task", processJobs(jobSucceeds()), supplier);
 
             // Then
             assertThat(consumedJobs).containsExactly(job);
@@ -399,10 +423,12 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
-            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     startTime, finishTime, failTime,
-                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:04Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:04Z")); // Finish
             CompactionJob job = createJob("test-job");
             send(job);
 
@@ -410,7 +436,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
                     jobSucceeds(rowsProcessed)),
-                    timesInTask::poll);
+                    supplier);
 
             // Then
             assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
@@ -435,17 +461,19 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant jobFinishTime = Instant.parse("2024-02-22T13:50:02Z");
             Instant jobCommitTime = Instant.parse("2024-02-22T13:50:03Z");
             Instant taskFinishTime = Instant.parse("2024-02-22T13:50:05Z");
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     taskStartTime,
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     jobStartTime, jobFinishTime, jobCommitTime,
-                    taskFinishTime));
+                    Instant.parse("2024-02-22T13:50:05Z"), // Max alive time check
+                    taskFinishTime);
             CompactionJob job = createJobOnQueue("job1");
 
             // When
             RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(rowsProcessed)),
-                    times::poll);
+                    supplier);
 
             // Then
             JobRunSummary jobSummary = new JobRunSummary(rowsProcessed,
@@ -468,11 +496,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             Instant job2FinishTime = Instant.parse("2024-02-22T13:50:05Z");
             Instant job2CommitTime = Instant.parse("2024-02-22T13:50:06Z");
             Instant taskFinishTime = Instant.parse("2024-02-22T13:50:07Z");
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     taskStartTime,
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     job1StartTime, job1FinishTime, job1CommitTime,
+                    Instant.parse("2024-02-22T13:50:04Z"), // Max alive time check
                     job2StartTime, job2FinishTime, job2CommitTime,
-                    taskFinishTime));
+                    Instant.parse("2024-02-22T13:50:07Z"), // Max alive time check
+                    taskFinishTime);
             CompactionJob job1 = createJobOnQueue("job1");
             CompactionJob job2 = createJobOnQueue("job2");
 
@@ -482,7 +513,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1RowsProcessed),
                     jobSucceeds(job2RowsProcessed)),
-                    times::poll);
+                    supplier);
 
             // Then
             JobRunSummary job1Summary = new JobRunSummary(job1RowsProcessed,
@@ -501,18 +532,20 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSaveTaskAndJobWhenOneJobFails() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
                     Instant.parse("2024-02-22T13:50:01Z"), // Job start
                     Instant.parse("2024-02-22T13:50:05Z"), // Job failed
-                    Instant.parse("2024-02-22T13:50:06Z"))); // Task finish
+                    Instant.parse("2024-02-22T13:50:06Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:06Z")); // Task finish
             CompactionJob job = createJobOnQueue("job1");
             RuntimeException root = new RuntimeException("Root failure");
             RuntimeException cause = new RuntimeException("Details of cause", root);
             RuntimeException failure = new RuntimeException("Something went wrong", cause);
 
             // When
-            runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
+            runTask("test-task-1", processJobs(jobFails(failure)), supplier);
 
             // Then
             assertThat(taskTracker.getAllTasks()).containsExactly(
@@ -531,12 +564,13 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSaveTaskWhenNoJobsFound() throws Exception {
             // Given
-            Queue<Instant> times = new LinkedList<>(List.of(
+            TestInstantSupplier supplier = supplyTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
-                    Instant.parse("2024-02-22T13:50:05Z"))); // Finish
+                    Instant.parse("2024-02-22T13:50:00Z"), // Max alive time check
+                    Instant.parse("2024-02-22T13:50:05Z")); // Finish
 
             // When
-            runTask("test-task-1", processNoJobs(), times::poll);
+            runTask("test-task-1", processNoJobs(), supplier);
 
             // Then
             assertThat(taskTracker.getAllTasks()).containsExactly(

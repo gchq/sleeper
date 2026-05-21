@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,34 +19,22 @@ use serde_json::Value;
 fn main() {
     println!("cargo:rerun-if-changed=src/include");
     println!("cargo:rerun-if-changed=src/quantiles.rs");
-    println!("cargo:rerun-if-env-changed=RUST_SKETCH_DATASKETCH_URL");
-    println!("cargo:rerun-if-env-changed=RUST_SKETCH_DATASKETCH_TAG");
 
-    let out_dir = std::env::var_os("OUT_DIR").expect("OUT_DIR environment variable not set!");
-    let path = std::path::Path::new(&out_dir);
+    let datasketches_version = get_datasketch_version();
+    let out_dir = std::env::var_os("CARGO_MANIFEST_DIR")
+        .expect("CARGO_MANIFEST_DIR environment variable not set!");
+    let path = std::path::Path::new(&out_dir)
+        .join("../../vendored/datasketches-cpp")
+        .join(datasketches_version);
 
-    // look to see if the datasketches library repo has been overridden
-    let url = std::env::var("RUST_SKETCH_DATASKETCH_URL")
-        .unwrap_or(String::from("https://github.com/apache/datasketches-cpp"));
-
-    // look up tag to use
-    let tag = get_repo_tag();
-
-    // try to open repository in case it already exists
-    if git2::Repository::open(path.join("datasketches-cpp")).is_err() {
-        // otherwise clone its repository
-        println!("cargo:warning=Git cloned datasketches-cpp from {url} tag {tag}");
-        let repo = match git2::Repository::clone(&url, path.join("datasketches-cpp")) {
-            Ok(repo) => repo,
-            Err(e) => panic!("failed to clone from {url} tag {tag}: {e}"),
-        };
-        {
-            let reference = repo.find_reference(&format!("refs/tags/{tag}")).unwrap();
-            let ob = reference.peel_to_tag().unwrap().into_object();
-            repo.checkout_tree(&ob, None).unwrap();
-            repo.set_head_detached(ob.id()).unwrap();
-        }
-    }
+    let version_marker_file = path.join("version.cfg.in");
+    println!(
+        "cargo:rerun-if-changed={}",
+        version_marker_file
+            .into_os_string()
+            .into_string()
+            .expect("Invalid UTF-8 string")
+    );
 
     cxx_build::bridges(vec!["src/quantiles.rs"])
         .warnings_into_errors(true)
@@ -54,31 +42,20 @@ fn main() {
         .flag_if_supported("-std=c++17")
         .flag_if_supported("-Wno-maybe-uninitialized")
         .includes(vec![
-            path.join("datasketches-cpp/common/include"),
-            path.join("datasketches-cpp/quantiles/include"),
+            path.join("common/include"),
+            path.join("quantiles/include"),
         ])
         .compile("rust_sketch");
 }
 
-/// Retrieve git repository tag for Apache `DataSketches` library to retrieve.
+/// Retrieve version for Apache `DataSketches` library.
 ///
-/// Attempt to determine the git repository tag to retrieve for the Apache `DataSketches`
-/// library. Checks in order:
-/// 1. `RUST_SKETCH_DATASKETCH_TAG` environment variable.
-/// 2. Cargo workspace metadata `workspace.metadata.dataketches` for a `git_repository_tag` key.
+/// Attempt to determine the version for the Apache `DataSketches` library. This is read from Cargo workspace metadata
+/// `workspace.metadata.dataketches` for a `datasketches_cpp_version` key.
 ///
 /// # Panics
-/// If a repository tag cannot be found in either place.
-fn get_repo_tag() -> String {
-    // 1. Check environment variable
-    if let Ok(env_tag) = std::env::var("RUST_SKETCH_DATASKETCH_TAG") {
-        println!(
-            "cargo:warning=DataSketches repository tag taken from environment variable {env_tag}"
-        );
-        return env_tag;
-    }
-
-    // 2. Check cargo metadata
+/// If a version cannot be found.
+fn get_datasketch_version() -> String {
     let mut command = MetadataCommand::new();
     let Ok(metadata) = command.no_deps().exec() else {
         panic!("Couldn't execute cargo metadata command.");
@@ -92,12 +69,10 @@ fn get_repo_tag() -> String {
         panic!("Couldn't find \"datasketches\" metadata section.");
     };
 
-    if let Some(Value::String(repo_tag)) = sketch_data.get("git_repository_tag") {
-        println!(
-            "cargo:warning=DataSketches repository tag taken from cargo metadata variable {repo_tag}"
-        );
-        repo_tag.clone()
+    if let Some(Value::String(version)) = sketch_data.get("datasketches_cpp_version") {
+        println!("cargo:warning=DataSketches version taken from cargo metadata: {version}");
+        version.clone()
     } else {
-        panic!("Couldn't find \"git_repository_tag\" metadata key.");
+        panic!("Couldn't find \"datasketches_cpp_version\" metadata key.");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 package sleeper.clients.report.filestatus;
 
 /**
- * An interface the represents a method of presenting the status of files in
- * Sleeper to a user.
+ * A reporter to present the status of files in a Sleeper table to a user.
  */
 public interface FileStatusReporter {
 
+    /**
+     * Writes a report on the status of files.
+     *
+     * @param status  the status of files in the Sleeper table
+     * @param verbose true if the report should be verbose
+     */
     void report(TableFilesStatus status, boolean verbose);
 }

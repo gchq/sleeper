@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,20 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
 
+/**
+ * A GSON plugin to write JSON for reports, on summaries of runs of jobs held in a job tracker. This must be used in
+ * combination with other GSON plugins for the specific type of jobs being processed.
+ */
 public class JsonJobRunSummary {
 
     private JsonJobRunSummary() {
     }
 
+    /**
+     * Creates a GSON serialiser for job run summaries. Handles {@link JobRunSummary} objects.
+     *
+     * @return the GSON serialiser
+     */
     public static JsonSerializer<JobRunSummary> serializer() {
         return (summary, type, context) -> createSummaryJson(summary, context);
     }

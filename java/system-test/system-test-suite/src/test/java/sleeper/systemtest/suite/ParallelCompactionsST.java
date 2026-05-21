@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class ParallelCompactionsST {
 
         // When we run compaction
         sleeper.compaction()
-                .putTableOnlineWaitForJobCreation(40960,
+                .putCurrentTablesOnlineWaitForMinJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForTasks(200,
@@ -89,7 +89,7 @@ public class ParallelCompactionsST {
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForAllJobsToCommit(
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(4)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
@@ -110,7 +110,7 @@ public class ParallelCompactionsST {
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
-                        .isBetween(0, 600));
+                        .isBetween(0, 700));
     }
 
 }

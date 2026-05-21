@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class S3ExpandDirectories {
     private List<S3FileDetails> listFiles(S3Path path) {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(path.bucket())
-                .prefix(path.prefix())
+                .prefix(path.pathInBucket())
                 .build());
         return response.contents().stream()
                 .filter(s3Object -> checkIsParquetFile(s3Object.key()))

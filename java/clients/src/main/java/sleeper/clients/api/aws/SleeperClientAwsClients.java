@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
@@ -27,23 +28,29 @@ import sleeper.clients.util.UncheckedAutoCloseables;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * AWS clients to instantiate a Sleeper client.
+ * AWS clients to instantiate a Sleeper client. This is used by {@link AwsSleeperClientBuilder}, in
+ * {@link AwsSleeperClientBuilder#awsClients} or {@link AwsSleeperClientBuilder#awsProvider}.
  */
 public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
+    private final String accountName;
     private final ShutdownWrapper<S3Client> s3ClientWrapper;
     private final ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
     private final ShutdownWrapper<SqsClient> sqsClientWrapper;
+    private final ShutdownWrapper<StsClient> stsClientWrapper;
     private final AwsCredentialsProvider awsCredentialsProvider;
 
     private SleeperClientAwsClients(Builder builder) {
+        accountName = builder.accountName;
         s3ClientWrapper = Objects.requireNonNull(builder.s3ClientWrapper, "s3Client must not be null");
         dynamoClientWrapper = Objects.requireNonNull(builder.dynamoClientWrapper, "dynamoClient must not be null");
         sqsClientWrapper = Objects.requireNonNull(builder.sqsClientWrapper, "sqsClient must not be null");
+        stsClientWrapper = Objects.requireNonNull(builder.stsClientWrapper, "stsClient must not be null");
         awsCredentialsProvider = Objects.requireNonNull(builder.awsCredentialsProvider, "awsCredentialsProvider must not be null");
     }
 
@@ -51,18 +58,56 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         return new Builder();
     }
 
+    /**
+     * Retrieves the AWS account name if it is known. If not, you can retrieve it with the STS client.
+     *
+     * @return the account name, if known
+     */
+    public Optional<String> accountName() {
+        return Optional.ofNullable(accountName);
+    }
+
+    /**
+     * Retrieves the AWS client to interact with S3.
+     *
+     * @return the client
+     */
     public S3Client s3() {
         return s3ClientWrapper.get();
     }
 
+    /**
+     * Retrieves the AWS client to interact with DynamoDB.
+     *
+     * @return the client
+     */
     public DynamoDbClient dynamo() {
         return dynamoClientWrapper.get();
     }
 
+    /**
+     * Retrieves the AWS client to interact with SQS.
+     *
+     * @return the client
+     */
     public SqsClient sqs() {
         return sqsClientWrapper.get();
     }
 
+    /**
+     * Retrieves the AWS client to interact with STS.
+     *
+     * @return the client
+     */
+    public StsClient sts() {
+        return stsClientWrapper.get();
+    }
+
+    /**
+     * Retrieves the provider for credentials for the AWS SDK.
+     *
+     * @return the client
+     */
     public AwsCredentialsProvider awsCredentialsProvider() {
         return awsCredentialsProvider;
     }
@@ -72,10 +117,15 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
+    /**
+     * Creates AWS clients to instantiate a Sleeper client.
+     */
     public static class Builder {
+        private String accountName;
         private ShutdownWrapper<S3Client> s3ClientWrapper;
         private ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
         private ShutdownWrapper<SqsClient> sqsClientWrapper;
+        private ShutdownWrapper<StsClient> stsClientWrapper;
         private AwsCredentialsProvider awsCredentialsProvider;
 
         /**
@@ -88,7 +138,19 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
             s3ClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(S3Client.builder()), S3Client::close);
             dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(DynamoDbClient.builder()), DynamoDbClient::close);
             sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(SqsClient.builder()), SqsClient::close);
+            stsClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(StsClient.builder()), StsClient::close);
             awsCredentialsProvider = DefaultCredentialsProvider.builder().build();
+            return this;
+        }
+
+        /**
+         * Sets the AWS account name.
+         *
+         * @param  accountName the account name
+         * @return             this builder
+         */
+        public Builder accountName(String accountName) {
+            this.accountName = accountName;
             return this;
         }
 
@@ -122,6 +184,17 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          */
         public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClientWrapper = ShutdownWrapper.noShutdown(sqsClient);
+            return this;
+        }
+
+        /**
+         * Sets the AWS client to interact with STS.
+         *
+         * @param  stsClient the client
+         * @return           this builder
+         */
+        public Builder stsClient(StsClient stsClient) {
+            this.stsClientWrapper = ShutdownWrapper.noShutdown(stsClient);
             return this;
         }
 

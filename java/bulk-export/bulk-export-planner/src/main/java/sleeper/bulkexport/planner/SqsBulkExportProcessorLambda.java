@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,20 +69,7 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
             throws ObjectFactoryException {
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.bulkExportQuerySerDe = new BulkExportQuerySerDe();
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(
-                S3InstanceProperties.loadFromBucket(s3Client, configBucket), s3Client, dynamoClient);
-        processor = SqsBulkExportProcessor.builder()
-                .sqsClient(sqsClient)
-                .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
-                .build();
-    }
-
-    public SqsBulkExportProcessorLambda(SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoClient, String configBucket, TablePropertiesProvider tablePropertiesProvider)
-            throws ObjectFactoryException {
-        bulkExportQuerySerDe = new BulkExportQuerySerDe();
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
                 .instanceProperties(instanceProperties)

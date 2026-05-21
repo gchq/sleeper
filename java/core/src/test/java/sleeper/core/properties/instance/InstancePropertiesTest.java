@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,12 @@
  */
 package sleeper.core.properties.instance;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 
@@ -58,6 +62,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -89,6 +94,8 @@ import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_P
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
@@ -250,6 +257,52 @@ class InstancePropertiesTest {
                 .hasMessageContaining("-62");
     }
 
+    @ParameterizedTest(name = "Create with invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldCreateInstancePropertiesFineWithInvalidTags(String tags) {
+        // Given / When
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
+                loadProperties("sleeper.tags=" + tags));
+
+        // Then
+        assertThat(instanceProperties.get(TAGS)).isEqualTo(tags);
+        assertThat(instanceProperties.getTags()).isEqualTo(Map.of());
+    }
+
+    @ParameterizedTest(name = "Fail validation with invalid Tags: {0}")
+    @ValueSource(strings = {"key1=value1", "key1,value1,key2=value2"})
+    void shouldFailValidationForInstancePropertiesWithInvalidTags(String tags) {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(TAGS, tags);
+
+        // When /  Then
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(SleeperPropertiesInvalidException.class)
+                .hasMessageContaining("Property sleeper.tags was invalid. It was \"" + tags + "\".");
+    }
+
+    @Nested
+    @DisplayName("Clean instance ID")
+    class CleanInstanceId {
+
+        InstanceProperties properties = createTestInstanceProperties();
+
+        @Test
+        void shouldConvertToLowerCase() {
+            properties.set(ID, "AnInstanceId");
+            assertThat(properties.cleanInstanceId())
+                    .isEqualTo("aninstanceid");
+        }
+
+        @Test
+        void shouldReplaceDotsWithDashes() {
+            properties.set(ID, "some.instance.id");
+            assertThat(properties.cleanInstanceId())
+                    .isEqualTo("some-instance-id");
+        }
+    }
+
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");
@@ -318,6 +371,8 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 100_000_000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, 10);
+        instanceProperties.setNumber(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, 20);
 
         return instanceProperties;
     }

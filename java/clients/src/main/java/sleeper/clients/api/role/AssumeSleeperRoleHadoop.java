@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package sleeper.clients.api.role;
 
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * Sets Hadoop configuration to assume a role in AWS. Created with {@link AssumeSleeperRole}.
+ */
 public class AssumeSleeperRoleHadoop {
     private final String roleArn;
     private final String roleSessionName;
@@ -26,6 +29,13 @@ public class AssumeSleeperRoleHadoop {
         this.roleSessionName = roleSessionName;
     }
 
+    /**
+     * Sets credentials to assume a role when using the S3A file system. This will cover interactions with all files
+     * Sleeper holds in S3.
+     *
+     * @param  configuration the Hadoop configuration
+     * @return               the edited Hadoop configuration
+     */
     public Configuration setS3ACredentials(Configuration configuration) {
         String originalCredentialsProvider = configuration.get("fs.s3a.aws.credentials.provider");
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider");

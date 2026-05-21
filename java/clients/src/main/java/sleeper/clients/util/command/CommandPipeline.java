@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public class CommandPipeline {
 
@@ -82,12 +83,8 @@ public class CommandPipeline {
 
     @Override
     public String toString() {
-        if (commands.size() == 1) {
-            return commands.get(0).toString();
-        } else {
-            return "CommandPipeline{" +
-                    "commands=" + commands +
-                    '}';
-        }
+        return commands.stream()
+                .map(Command::toString)
+                .collect(joining(" | "));
     }
 }

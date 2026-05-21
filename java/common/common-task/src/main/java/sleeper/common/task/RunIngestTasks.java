@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ECS_SECURITY_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
@@ -103,7 +103,7 @@ public class RunIngestTasks {
                 .networkConfiguration(networkConfiguration -> networkConfiguration
                         .awsvpcConfiguration(vpcConfiguration -> vpcConfiguration
                                 .subnets(properties.getList(SUBNETS))
-                                .securityGroups(properties.getList(ECS_SECURITY_GROUPS))))
+                                .securityGroups(properties.get(ECS_SECURITY_GROUP))))
                 .overrides(overrides -> overrides
                         .containerOverrides(ContainerOverride.builder()
                                 .name(containerName)

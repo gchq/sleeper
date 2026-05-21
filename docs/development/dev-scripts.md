@@ -52,6 +52,10 @@ deployed by the CDK or CloudFormation, with the stack name in the log group name
 Note that this will not delete log groups for recently deleted instances of Sleeper, so you will still need a different
 instance ID when deploying a new instance to avoid naming collisions with existing log groups.
 
+#### `compileModule.sh`
+
+Recompiles a Maven module and its internal dependencies.
+
 #### `copyRustToJava.sh`
 
 This builds the Rust code and copies the binaries into the Maven project, so that the Rust code should be available
@@ -71,6 +75,10 @@ Publishes Docker images to a remote repository, see [publishing artefacts](publi
 #### `publishMaven.sh`
 
 Publishes Maven artifacts to a remote repository, see [publishing artefacts](publishing.md).
+
+#### `runTest.sh`
+
+Runs a single integration or unit test. Cannot be used with system tests.
 
 #### `showInternalDependencies.sh`
 

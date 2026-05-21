@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ public class ShowPageIndexesIT {
 
     private String runShowPageIndexes(Path file) throws Exception {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
-        new ShowPageIndexes(output.getPrintStream()).run(file.toString());
+        new ShowPageIndexes(output.consoleOut()).run(file.toString());
         return output.toString();
     }
 }

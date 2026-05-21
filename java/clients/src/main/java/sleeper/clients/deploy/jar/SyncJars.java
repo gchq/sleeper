@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,30 +19,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
     private final S3Client s3;
+    private final String accountName;
     private final Path jarsDirectory;
 
-    public SyncJars(S3Client s3, Path jarsDirectory) {
-        this.s3 = requireNonNull(s3, "s3 must not be null");
-        this.jarsDirectory = requireNonNull(jarsDirectory, "jarsDirectory must not be null");
+    public SyncJars(S3Client s3, String accountName, Path jarsDirectory) {
+        this.s3 = Objects.requireNonNull(s3, "s3 must not be null");
+        this.accountName = Objects.requireNonNull(accountName, "accountName must not be null");
+        this.jarsDirectory = Objects.requireNonNull(jarsDirectory, "jarsDirectory must not be null");
     }
 
-    public static SyncJars fromScriptsDirectory(S3Client s3, Path scriptsDirectory) {
-        return new SyncJars(s3, scriptsDirectory.resolve("jars"));
+    public static SyncJars fromScriptsDirectory(S3Client s3, String accountName, Path scriptsDirectory) {
+        return new SyncJars(s3, accountName, scriptsDirectory.resolve("jars"));
     }
 
     public static void main(String[] args) throws IOException {
@@ -54,8 +57,10 @@ public class SyncJars {
         boolean deleteOldJars = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
-        try (S3Client s3 = S3Client.create()) {
-            new SyncJars(s3, jarsDirectory)
+        try (S3Client s3Client = S3Client.create();
+                StsClient stsClient = StsClient.create()) {
+            String accountName = stsClient.getCallerIdentity().account();
+            new SyncJars(s3Client, accountName, jarsDirectory)
                     .sync(SyncJarsRequest.builder()
                             .bucketName(bucketName)
                             .deleteOldJars(deleteOldJars)
@@ -64,7 +69,7 @@ public class SyncJars {
     }
 
     public boolean sync(SyncJarsRequest request) throws IOException {
-        String bucketName = request.getBucketName();
+        String bucketName = request.getBucketNameForAccount(accountName);
         boolean changed = false;
 
         List<Path> jars = listJarsInDirectory(jarsDirectory);

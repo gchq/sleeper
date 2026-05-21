@@ -1,0 +1,56 @@
+{
+  "Type": "Task",
+  "Resource": "arn:aws:states:::eks:runJob.sync",
+  "Parameters": {
+    "ClusterName": "cluster-placeholder",
+    "CertificateAuthority": "ca-placeholder",
+    "Endpoint": "endpoint-placeholder",
+    "Namespace": "namespace-placeholder",
+    "Job": {
+      "apiVersion": "batch/v1",
+      "kind": "Job",
+      "metadata": {
+        "name.$": "$.job.id"
+      },
+      "spec": {
+        "ttlSecondsAfterFinished": 600,
+        "backoffLimit": 0,
+        "template": {
+          "spec": {
+            "serviceAccountName": "spark-submit",
+            "containers": [
+              {
+                "image": "image-placeholder",
+                "name": "spark-submit",
+                "args.$": "$.args"
+              }
+            ],
+            "restartPolicy": "Never"
+          }
+        }
+      }
+    },
+    "LogOptions": {
+      "RetrieveLogs": true,
+      "LogParameters": {
+        "tailLines": [
+          "10"
+        ]
+      }
+    }
+  },
+  "ResultSelector": {
+    "succeeded.$": "$.status.succeeded",
+    "logs.$": "$.logs..spark-submit.log"
+  },
+  "ResultPath": "$.jobResult",
+  "Catch": [
+    {
+      "ErrorEquals": [
+        "States.ALL"
+      ],
+      "ResultPath": "$.error",
+      "Next": "CreateErrorMessage"
+    }
+  ]
+}

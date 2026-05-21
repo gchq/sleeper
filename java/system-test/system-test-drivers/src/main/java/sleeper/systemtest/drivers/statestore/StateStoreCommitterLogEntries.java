@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ public class StateStoreCommitterLogEntries implements StateStoreCommitterLogs {
         Map<String, List<StateStoreCommitterRun>> runsByTableId = StateStoreCommitterRuns.indexRunsByTableId(runs);
         return tableIds.stream()
                 .collect(toMap(id -> id, tableId -> {
-                    List<StateStoreCommitterRun> tableRuns = runsByTableId.getOrDefault(tableId, List.of());
-                    return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondInRuns(tableRuns);
+                    return StateStoreCommitterRequestsPerSecond.computeAverageRequestsPerSecondInRuns(
+                            runsByTableId.getOrDefault(tableId, List.of()));
                 }));
     }
 

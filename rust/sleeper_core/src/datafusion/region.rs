@@ -1,6 +1,6 @@
 //! Functions for handling file regions. That is a range of key values, e.g. from 'b' - 'h'.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 /// Represents a Sleeper partition region.
 ///
-/// A [`SleeperPartitionRegion`] is multi-dimension key range over row-key fields in Sleeper.
+/// A multi-dimension key range over row-key fields in Sleeper.
 /// If a table has only on row-key field then a region is a single row range. A region in a
 /// table with two row-key fields would be a rectangle, etc.
 #[derive(Debug, Default)]

@@ -1,4 +1,4 @@
-#  Copyright 2022-2025 Crown Copyright
+#  Copyright 2022-2026 Crown Copyright
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ def should_save_load_instance_properties():
     save_instance_properties(LocalStack.s3_resource(), properties)
 
     # When
-    loaded = load_instance_properties(LocalStack.s3_resource(), properties.get(CommonProperty.ID))
+    loaded = load_instance_properties(LocalStack.s3_resource(), properties.get(CommonCdkProperty.ACCOUNT), properties.get(CommonProperty.ID))
 
     # Then
     assert properties.as_dict() == loaded.as_dict()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,16 +82,17 @@ public class InstancePropertiesTestHelper {
      * @return    the instance properties
      */
     public static InstanceProperties createTestInstancePropertiesWithId(String id) {
+        String accountName = "test-account";
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
-        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(ACCOUNT, accountName);
         instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
-        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
-        instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
-        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
+        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, id));
+        instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data-" + accountName);
+        instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars-" + accountName);
+        instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results-" + accountName);
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");

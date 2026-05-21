@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -53,8 +54,10 @@ public class SendFilesToIngest {
                 .filter(Files::isRegularFile)
                 .collect(Collectors.toList());
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
-            InstanceProperties properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties properties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
         }
     }

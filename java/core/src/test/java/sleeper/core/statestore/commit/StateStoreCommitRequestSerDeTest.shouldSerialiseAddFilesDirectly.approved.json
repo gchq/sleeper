@@ -4,7 +4,7 @@
   "transaction": {
     "files": [
       {
-        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
+        "filename": "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_root/file1.parquet",
         "references": [
           {
             "partitionId": "root",
@@ -15,7 +15,7 @@
         ]
       },
       {
-        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file2.parquet",
+        "filename": "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_root/file2.parquet",
         "references": [
           {
             "partitionId": "root",

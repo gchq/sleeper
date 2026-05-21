@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,22 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
@@ -44,13 +53,16 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
+        String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                removeOldBuildxBuilderInstanceCommand(),
-                createNewBuildxBuilderInstanceCommand(),
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -70,11 +82,14 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
 
         // Then
+        String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer"),
+                pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -119,7 +134,26 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
                 Path.of("./jars/athena.jar"), "athena-jar-content",
                 Path.of("./docker/lambda/lambda.jar"), "athena-jar-content"));
+    }
 
+    @Test
+    void shouldBuildAndPushImageForDemonstrationCdkApp() throws Exception {
+        // Given
+        DockerImageConfiguration imageConfig = new DockerImageConfiguration(
+                List.of(DockerDeployment.builder()
+                        .deploymentName("data-generation")
+                        .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+                        .build()),
+                List.of());
+
+        // When
+        uploadAllImages(imageConfig);
+
+        // Then
+        String expectedTag = "www.somedocker.com/prefix/data-generation:1.0.0";
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand(expectedTag, "./docker/data-generation"),
+                pushImageCommand(expectedTag));
     }
 
     @Test
@@ -127,8 +161,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
         CommandPipeline buildImageCommand = buildImageCommand(
-                "www.somedocker.com/prefix/ingest:1.0.0",
-                "./docker/ingest");
+                "www.somedocker.com/prefix/statestore-committer:1.0.0",
+                "./docker/statestore-committer");
         setReturnExitCodeForCommand(42, buildImageCommand);
 
         // When / Then
@@ -138,8 +172,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                     assertThat(e.getExitCode()).isEqualTo(42);
                 });
         assertThat(commandsThatRan).containsExactly(
-                removeOldBuildxBuilderInstanceCommand(),
-                createNewBuildxBuilderInstanceCommand(),
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
                 buildImageCommand);
     }
 

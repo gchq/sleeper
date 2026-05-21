@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,14 @@ RUN apt-get update && apt-get install -y \
     build-essential pkg-config libssl-dev \
     # Clang installation dependencies
     lsb-release wget software-properties-common gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Trivy for vulnerability scanning
+RUN curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor --yes -o /etc/apt/keyrings/trivy.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"  \
+    | tee /etc/apt/sources.list.d/trivy.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    trivy \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang 20

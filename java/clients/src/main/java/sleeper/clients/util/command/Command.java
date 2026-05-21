@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import com.pty4j.PtyProcessBuilder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public class Command {
 
@@ -33,6 +36,9 @@ public class Command {
     private Command(Map<String, String> envVars, String[] command) {
         this.envVars = requireNonNull(envVars, "envVars must not be null");
         this.command = requireNonNull(command, "command must not be null");
+        if (command.length < 1) {
+            throw new IllegalArgumentException("command must not be empty");
+        }
     }
 
     public static Command envAndCommand(Map<String, String> envVars, String... command) {
@@ -67,9 +73,9 @@ public class Command {
     @Override
     public String toString() {
         if (envVars.isEmpty()) {
-            return Arrays.toString(command);
+            return commandToString();
         } else {
-            return Arrays.toString(command) + envVars.toString();
+            return envVarsToString() + " " + commandToString();
         }
     }
 
@@ -98,5 +104,25 @@ public class Command {
         PtyProcessBuilder builder = new PtyProcessBuilder(command);
         builder.setEnvironment(envVars);
         return builder;
+    }
+
+    private String commandToString() {
+        return Stream.of(command)
+                .map(arg -> argToString(arg))
+                .collect(joining(" "));
+    }
+
+    private String envVarsToString() {
+        return envVars.keySet().stream().sorted().map(name -> name + "=?").collect(joining(" "));
+    }
+
+    private static final Pattern NO_QUOTE_PATTERN = Pattern.compile("\s|\"");
+
+    private static String argToString(String arg) {
+        if (NO_QUOTE_PATTERN.matcher(arg).find()) {
+            return "\"" + arg.replace("\"", "\\\"") + "\"";
+        } else {
+            return arg;
+        }
     }
 }

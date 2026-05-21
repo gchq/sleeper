@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -513,7 +513,7 @@ public class CreateCompactionJobsTest {
     private CreateCompactionJobs jobCreator(
             GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
-                instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, FixedStateStoreProvider.singleTable(tableProperties, stateStore),
                 new CreateCompactionJobBatches(instanceProperties, createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add, generateBatchId, timeSupplier),
                 ObjectFactory.noUserJars(), generateJobId, random);
     }

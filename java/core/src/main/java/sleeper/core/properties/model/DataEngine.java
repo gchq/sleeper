@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import org.apache.commons.lang3.EnumUtils;
 public enum DataEngine {
     /** Pure Java implementations. */
     JAVA,
-    /** Uses a native library written in Rust to perform compactions with Apache DataFusion. */
+    /** Uses a native library written in Rust to perform data operations with Apache DataFusion. */
     DATAFUSION,
     /**
      * Uses a native library written in Rust to perform data operations with Apache DataFusion.
-     * Performing queries with DataFusion is experimental.
+     * Currently this has the same behaviour as {@link #DATAFUSION}.
      */
     DATAFUSION_EXPERIMENTAL;
 

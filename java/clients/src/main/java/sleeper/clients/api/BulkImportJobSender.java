@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,27 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
+/**
+ * Sends a bulk import job to a Sleeper instance.
+ */
 @FunctionalInterface
 public interface BulkImportJobSender {
 
+    /**
+     * Sends a bulk import job to add data to a Sleeper table.
+     *
+     * @param platform the platform to run the job on
+     * @param job      the job
+     */
     void sendFilesToBulkImport(BulkImportPlatform platform, BulkImportJob job);
 
+    /**
+     * Creates an object to send bulk import jobs to an Amazon SQS queue for the given platform.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  sqsClient          the SQS client
+     * @return                    the sender
+     */
     static BulkImportJobSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         BulkImportJobSerDe serDe = new BulkImportJobSerDe();
         return (platform, job) -> sqsClient.sendMessage(send -> send

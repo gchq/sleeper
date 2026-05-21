@@ -1,21 +1,21 @@
-name: Docker Image Tests
 on:
-  pull_request:
-    paths:
-      - 'java/**/Dockerfile'
-      - 'rust/**' # We've seen Rust failures because of code built against a different glibc version than is present in the image
-      - '.github/workflows/docker-image-tests.yaml'
-      - '.github/workflows/docker-image-test.yaml'
+  workflow_call:
+    inputs:
+      dockerOptions:
+        required: false
+        type: string
 
 jobs:
-  compaction:
+  compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
-  query:
+      dockerOptions: ${{ inputs.dockerOptions }}
+  query-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: query-lambda
       isLambda: true
       testClassNames: QueryLambdaDockerImageST
+      dockerOptions: ${{ inputs.dockerOptions }}

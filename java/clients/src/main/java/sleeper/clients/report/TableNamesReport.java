@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
+/**
+ * Reports which tables are in an instance of Sleeper.
+ */
 public class TableNamesReport {
 
     private final ConsoleOutput out;
@@ -38,10 +41,19 @@ public class TableNamesReport {
         this.tableIndex = tableIndex;
     }
 
+    /**
+     * Prints the report.
+     */
     public void print() {
         print(tableIndex.streamAllTables().collect(Collectors.toList()), true);
     }
 
+    /**
+     * Prints the report.
+     *
+     * @param confirmReturn true if this is occurring in the admin client, and we want to wait for the user to confirm
+     *                      before returning to the main screen
+     */
     public void print(boolean confirmReturn) {
         print(tableIndex.streamAllTables().collect(Collectors.toList()), confirmReturn);
     }

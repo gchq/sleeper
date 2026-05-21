@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,22 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
 
 /**
@@ -68,6 +72,11 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.resetAndValidate(properties);
         return instanceProperties;
+    }
+
+    @Override
+    protected List<SleeperPropertiesValidationCriteria<InstanceProperty>> getValidationCriteria() {
+        return List.of(PersistentEMRManagedScalingBounds.validationCriteria());
     }
 
     /**
@@ -157,11 +166,35 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     /**
      * Infers the name of the config bucket for a given Sleeper instance.
      *
-     * @param  instanceId the Sleeper instance ID
-     * @return            the config bucket name
+     * @param  accountName the AWS account name
+     * @param  instanceId  the Sleeper instance ID
+     * @return             the config bucket name
      */
-    public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
+    public static String getConfigBucketFromAccountAndInstanceId(String accountName, String instanceId) {
+        return String.join("-", "sleeper", cleanInstanceId(instanceId), "config", accountName).toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Returns a version of the Sleeper instance ID for use in resource names. Will convert to lower case and replace
+     * dots with dashes.
+     *
+     * @return the cleaned up instance ID
+     */
+    public String cleanInstanceId() {
+        return cleanInstanceId(get(ID));
+    }
+
+    /**
+     * Returns a version of the Sleeper instance ID for use in resource names. Will convert to lower case and replace
+     * dots with dashes. Note that the instance ID has a maximum length of 20 characters.
+     * See {@link sleeper.core.properties.instance.CommonProperty#ID_MAX_LENGTH}.
+     *
+     * @param  instanceId the instance ID
+     * @return            the cleaned up instance ID
+     */
+    public static String cleanInstanceId(String instanceId) {
+        return instanceId.toLowerCase(Locale.ROOT)
+                .replace(".", "-");
     }
 
     /**
@@ -203,8 +236,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
-            for (int i = 0; i < split.length; i += 2) {
-                tags.put(split[i], split[i + 1]);
+            if (split.length % 2 == 0) { //Ensure matching number of keys and values
+                for (int i = 0; i < split.length; i += 2) {
+                    tags.put(split[i], split[i + 1]);
+                }
             }
         }
         return tags;

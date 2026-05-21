@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.report.IngestTaskStatusReport;
-import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
@@ -69,7 +69,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
         return (out, startTime) -> new IngestJobStatusReport(jobTracker(),
                 new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
                 new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
-                PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
+                PersistentEmrStepCount.byStatus(instance.getInstanceProperties(), emr))
                 .run();
     }
 

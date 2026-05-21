@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ public class DirectQueryDriverIT {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
         // When / Then
-        assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 2, 3)));
+        assertThat(sleeper.directQuery().allRowsInTable()).containsExactlyElementsOf(
+                sleeper.generateNumberedRows().iterableOver(1, 2, 3));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.SleeperTableInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -176,7 +177,7 @@ class LoadLocalPropertiesTablesIT {
                 .forEach(table -> {
                     // Consume the stream to trigger reading the properties file
                 }))
-                .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
+                .isInstanceOf(SleeperTableInvalidException.class);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ class SleeperPropertyValueUtilsTest {
             assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull("-7"))
                     .isFalse();
         }
+
     }
 
     @Nested
@@ -165,6 +166,21 @@ class SleeperPropertyValueUtilsTest {
         @Test
         void shouldFailToValidateStringWhenListSizeExceedsMaxSize() {
             assertThat(SleeperPropertyValueUtils.isListWithMaxSize("a,b,c,d,e", 4)).isFalse();
+        }
+
+        @Test
+        void shouldValidateEmptyListToBeInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("")).isTrue();
+        }
+
+        @Test
+        void shouldValidateListInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("key,value,key,value")).isTrue();
+        }
+
+        @Test
+        void shouldFailToValidateListNotInKeyValueFormat() {
+            assertThat(SleeperPropertyValueUtils.isListInKeyValueFormat("key=value")).isFalse();
         }
     }
 

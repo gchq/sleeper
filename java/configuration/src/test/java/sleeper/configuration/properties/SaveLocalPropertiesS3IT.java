@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -29,80 +30,75 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class SaveLocalPropertiesS3IT extends LocalStackTestBase {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
     private Path tempDir;
 
-    private InstanceProperties saveFromS3(String instanceId) throws IOException {
-        return S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, tempDir);
+    @BeforeEach
+    void setUp() {
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+    }
+
+    private InstanceProperties savePropertiesToTempDirFromS3() throws IOException {
+        return S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient,
+                instanceProperties.get(ACCOUNT), instanceProperties.get(ID), tempDir);
     }
 
     @Test
-    void shouldLoadInstancePropertiesFromS3() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstance();
-
+    void shouldSaveInstancePropertiesToLocalFile() throws IOException {
         // When
-        saveFromS3(properties.get(ID));
+        savePropertiesToTempDirFromS3();
 
         // Then
         assertThat(loadInstanceProperties(tempDir.resolve("instance.properties")))
-                .isEqualTo(properties);
+                .isEqualTo(instanceProperties);
     }
 
     @Test
-    void shouldLoadTablePropertiesFromS3() throws IOException {
+    void shouldSaveTablePropertiesToLocalFiles() throws IOException {
         // Given
-        InstanceProperties properties = createTestInstance();
-        TableProperties table1 = createTestTable(properties, createSchemaWithKey("key1"));
-        TableProperties table2 = createTestTable(properties, createSchemaWithKey("key2"));
+        TableProperties table1 = createTestTable(createSchemaWithKey("key1"));
+        TableProperties table2 = createTestTable(createSchemaWithKey("key2"));
 
         // When
-        saveFromS3(properties.get(ID));
+        savePropertiesToTempDirFromS3();
 
         // Then
-        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
+        assertThat(loadTablesFromInstancePropertiesFile(instanceProperties, tempDir.resolve("instance.properties")))
                 .containsExactlyInAnyOrder(table1, table2);
     }
 
     @Test
     void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstance();
-
         // When
-        saveFromS3(properties.get(ID));
+        savePropertiesToTempDirFromS3();
 
         // Then
-        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties"))).isEmpty();
+        assertThat(loadTablesFromInstancePropertiesFile(instanceProperties, tempDir.resolve("instance.properties"))).isEmpty();
     }
 
     @Test
-    void shouldLoadAndReturnInstancePropertiesFromS3() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstance();
-
+    void shouldReturnInstancePropertiesFromS3() throws IOException {
         // When
-        InstanceProperties saved = saveFromS3(properties.get(ID));
+        InstanceProperties saved = savePropertiesToTempDirFromS3();
 
         // Then
-        assertThat(saved).isEqualTo(properties);
+        assertThat(saved).isEqualTo(instanceProperties);
     }
 
-    private InstanceProperties createTestInstance() {
-        InstanceProperties instanceProperties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        return instanceProperties;
-    }
-
-    private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
+    private TableProperties createTestTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         return tableProperties;

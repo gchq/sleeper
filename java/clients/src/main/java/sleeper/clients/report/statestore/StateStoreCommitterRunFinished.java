@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package sleeper.clients.report.statestore;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A log entry recording that a state store committer invocation terminated.
+ */
 public class StateStoreCommitterRunFinished implements StateStoreCommitterLogEntry {
     private final String logStream;
     private final Instant timestamp;

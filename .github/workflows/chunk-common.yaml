@@ -12,8 +12,8 @@ on:
       - 'java/core/**'
       - 'java/example-iterators/**'
       - 'java/configuration/**'
-      - 'java/sketches/**'
-      - 'java/parquet/**'
+      - 'java/common/sketches/**'
+      - 'java/common/parquet/**'
       - 'java/common/common-job/**'
       - 'java/common/common-task/**'
       - 'java/common/common-invoke-tables/**'
@@ -22,6 +22,7 @@ on:
       - 'java/common/localstack-test/**'
       - 'java/statestore/**'
       - 'java/statestore-committer-core/**'
+      - 'java/statestore-committer/**'
       - 'java/statestore-lambda/**'
       - 'java/statestore/**'
       - 'java/metrics/**'
@@ -29,7 +30,7 @@ on:
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/ingest/ingest-core/**'
-      - 'java/arrow/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:

@@ -1,6 +1,6 @@
 //! [`GroupsAccumulator`] implementations for byte group map aggregation.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
 * limitations under the License.
 */
 use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
-use arrow::{
-    array::{
-        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,
-        MapBuilder, MapFieldNames, StructArray,
-    },
-    datatypes::{DataType, Field},
-};
 use datafusion::{
+    arrow::{
+        array::{
+            ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,
+            MapBuilder, MapFieldNames, StructArray,
+        },
+        datatypes::{DataType, Field},
+    },
     common::{HashMap, exec_err, plan_err},
     error::Result,
     logical_expr::{EmitTo, GroupsAccumulator},
@@ -301,14 +301,14 @@ mod tests {
             state::MapNullState,
         },
     };
-    use arrow::{
-        array::{
-            AsArray, BinaryArray, BinaryBuilder, Int64Array, Int64Builder, StructBuilder,
-            UInt16Builder,
-        },
-        datatypes::{DataType, Field, Fields, Int64Type},
-    };
     use datafusion::{
+        arrow::{
+            array::{
+                AsArray, BinaryArray, BinaryBuilder, Int64Array, Int64Builder, StructBuilder,
+                UInt16Builder,
+            },
+            datatypes::{DataType, Field, Fields, Int64Type},
+        },
         common::HashMap,
         error::DataFusionError,
         logical_expr::{EmitTo, GroupsAccumulator},

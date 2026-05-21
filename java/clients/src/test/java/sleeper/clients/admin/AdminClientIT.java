@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
@@ -52,7 +51,7 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + DISPLAY_MAIN_SCREEN);
-        verify(editor).openPropertiesFile(instanceProperties);
+        assertThat(editor.getRemainingExpectedEdits()).isEmpty();
     }
 
     @Test
@@ -93,7 +92,7 @@ class AdminClientIT extends AdminClientITBase {
                 "----------------------------------\n" +
                 "test-table\n" + TABLE_SELECT_SCREEN +
                 CLEAR_CONSOLE + MAIN_SCREEN);
-        verify(editor).openPropertiesFile(tableProperties);
+        assertThat(editor.getRemainingExpectedEdits()).isEmpty();
     }
 
     @Test

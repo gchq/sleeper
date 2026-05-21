@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+CDK_DIR=$(cd "$THIS_DIR" && cd ../../app && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 

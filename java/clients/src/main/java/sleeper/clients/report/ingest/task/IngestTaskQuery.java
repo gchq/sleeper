@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,28 @@ import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * A query to retreive details of ingest tasks held in the task tracker, to generate a report.
+ */
 @FunctionalInterface
 public interface IngestTaskQuery {
     IngestTaskQuery ALL = IngestTaskTracker::getAllTasks;
     IngestTaskQuery UNFINISHED = IngestTaskTracker::getTasksInProgress;
 
+    /**
+     * Retrieves the data for the report.
+     *
+     * @param  tracker the task tracker
+     * @return         the status of tasks covered by the query
+     */
     List<IngestTaskStatus> run(IngestTaskTracker tracker);
 
+    /**
+     * Creates a query based on a type argument passed on the command line.
+     *
+     * @param  type the type string
+     * @return      the query
+     */
     static IngestTaskQuery from(String type) {
         switch (type) {
             case "-a":
@@ -39,6 +54,13 @@ public interface IngestTaskQuery {
         }
     }
 
+    /**
+     * Creates a query for a given time period.
+     *
+     * @param  startTime the start of the time period
+     * @param  endTime   the end of the time period
+     * @return           the query
+     */
     static IngestTaskQuery forPeriod(Instant startTime, Instant endTime) {
         return store -> store.getTasksInTimePeriod(startTime, endTime);
     }

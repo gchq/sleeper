@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public class IngestRowsTestBase {
 
     private IngestFactory createIngestFactory(StateStore stateStore) {
         return IngestRowsTestDataHelper.createIngestFactory(inputFolderName,
-                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), instanceProperties);
     }
 
     protected static List<Row> readRows(FileReference fileReference, Schema schema) throws Exception {

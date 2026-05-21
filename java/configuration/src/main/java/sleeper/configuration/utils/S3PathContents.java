@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public record S3PathContents(S3Path location, List<S3FileDetails> files) {
      */
     public void throwIfEmpty() throws S3FileNotFoundException {
         if (files.isEmpty()) {
-            throw new S3FileNotFoundException(location.bucket(), location.prefix());
+            throw new S3FileNotFoundException(location.bucket(), location.pathInBucket());
         }
     }
 

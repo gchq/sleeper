@@ -3,11 +3,10 @@ Developer Guide
 
 This is a brief guide to developing Sleeper.
 
-## Get your environment setup
+## Deployment environment setup
 
-Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
-copy that you built yourself.
+Before you do any dev work on Sleeper it is worth reading the [deployment environment setup](deployment/environment-setup.md)
+document. Once you've built the system, exactly the same will apply with a copy that you built yourself.
 
 ### Install prerequisite software
 
@@ -17,8 +16,8 @@ these available.
 #### Dev container
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
-the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
-image based on this configuration.
+the [Sleeper Docker tools](deployment/docker-tools.md). This includes all the same dependencies. If your IDE supports
+Dev Containers, it can work against this Docker image based on this configuration.
 
 The dev container configuration will mount any AWS CLI, Maven and SSH configuration from your host machine into the
 container.
@@ -36,40 +35,15 @@ Here are some example steps to set this up in Windows:
 6. Click the prompt to open the dev container, or use ctrl+shift+P, Dev Containers: Reopen in Container
 7. The dev container will build, open, and install VS Code extensions
 
-#### Nix shell
+#### Sleeper builder image
 
-You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all the
-dependencies except Docker and Bash. When you have Nix installed, an easy way to get a development environment is to run
-`nix-shell` at the root of the Sleeper Git repository. This will start a shell with all the Sleeper dependencies
-installed, without installing them in your system. If you run your IDE from that shell, the dependencies will be
-available in your IDE. You can run `nix-shell` again whenever you want to work with Sleeper.
+If you've installed the [Sleeper Docker tools](deployment/docker-tools.md), you can use `sleeper builder` to get a
+command line inside a Docker container with the dependencies pre-installed. This is the same container image that's used
+for the Dev Containers setup above. It may be useful if you want to work inside Docker without using Dev Containers.
 
-**This has problems working with Python code.** The Nix package for the AWS CLI adds a number of libraries to the
-system Python, and pins them to specific versions. It's not possible to override this in a virtual environment, so it's
-likely there will be conflicts with the AWS library used in the Python code for Sleeper. This may prevent execution of
-the Sleeper Python code. If you change the Python dependencies in the Nix shell, this may break the AWS CLI.
-
-You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
-the repository from the Nix shell. Here's an example to get the latest release:
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
-nix-shell ./shell.nix
-git clone https://github.com/gchq/sleeper.git
-cd sleeper
-git checkout --track origin/main
-```
-
-#### Sleeper CLI builder image
-
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](getting-started.md), you can
-use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
-container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
-without using Dev Containers.
-
-If you're in an EC2 deployed with `sleeper environment`, the Sleeper CLI was pre-installed and the repository was
-already checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can
-use the commands below to do this:
+If you're in an EC2 deployed with `sleeper environment`, this is pre-installed and the repository has already been
+checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can use the
+commands below to do this:
 
 ```bash
 sleeper builder
@@ -102,7 +76,7 @@ You will need the following software:
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-* [Java](https://openjdk.java.net/install/): Requires version 17, to match the version used by AWS EMR
+* Java: Requires version 21, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
 * [Maven](https://maven.apache.org/)
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [Rust](https://rustup.rs/)
@@ -113,7 +87,7 @@ Provided script (recommended) - this builds the code and copies the jars into th
 work. Starting from the root of the Git repository:
 
 ```bash
-./scripts/build/buildForTest.sh
+./scripts/build/build.sh
 ```
 
 You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
@@ -122,9 +96,9 @@ previous build that included Rust, skipping Rust will reuse the same binaries.
 
 When running Maven directly, you can pass `-Pquick` to skip tests and linting.
 
-### Sleeper CLI
+### Sleeper Docker tools
 
-To build the Sleeper CLI, you can run this script:
+To build the Sleeper Docker tools, you can run this script:
 
 ```bash
 ./scripts/cli/buildAll.sh
@@ -155,6 +129,16 @@ There's also a document with information on past and
 current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
+
+### Coding conventions
+
+See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
+Sleeper.
+
+### Testing
+
+See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
+testing tools used in the project.
 
 ### IDE setup
 
@@ -217,20 +201,15 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
-### Testing
-
-See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
-testing tools used in the project.
-
-### Coding conventions
-
-See the [coding conventions document](development/conventions.md) for practices we try to adhere to when working on
-Sleeper.
-
 ## Standalone deployment
 
 See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
 the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
+
+## Upgrade support
+
+See [support for in-place upgrade](development/upgrade-support.md) for details of how to maintain support for in-place
+upgrade.
 
 ## Release process
 

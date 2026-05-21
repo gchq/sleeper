@@ -26,19 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build base Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/base
           tags: ${{ env.BASE_IMAGE }}
@@ -52,7 +52,7 @@ jobs:
       - name: Pull base image
         run: docker pull ${{ env.BASE_IMAGE }}
       - name: Build base sccache Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/base-sccache
           tags: ${{ env.SCCACHE_IMAGE }}
@@ -67,7 +67,7 @@ jobs:
       - name: Pull base sccache image
         run: docker pull ${{ env.SCCACHE_IMAGE }}
       - name: Build x86_64 Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/x86_64
           tags: ghcr.io/gchq/sleeper-rust-builder-x86_64:latest
@@ -80,7 +80,7 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
       - name: Build aarch64 Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/aarch64
           tags: ghcr.io/gchq/sleeper-rust-builder-aarch64:latest
@@ -93,7 +93,7 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
       - name: Build x86_64 sccache Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/x86_64
           tags: ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest
@@ -106,7 +106,7 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
       - name: Build aarch64 sccache Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./rust/builders/aarch64
           tags: ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest

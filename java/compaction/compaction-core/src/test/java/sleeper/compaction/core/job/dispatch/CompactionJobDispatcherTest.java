@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -328,7 +328,7 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), tracker,
+                FixedStateStoreProvider.singleTable(tableProperties, stateStore), tracker,
                 readBatch(), sendJobs(), 1, deleteBatch,
                 returnRequest(), pendingDeadLetterQueue::add, times.iterator()::next);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.query.datafusion;
 import jnr.ffi.Runtime;
 import org.junit.jupiter.api.Test;
 
+import sleeper.foreign.FFIBytes;
 import sleeper.foreign.FFISleeperRegion;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,9 @@ class FFILeafPartitionQueryConfigTest {
         // Then
         assertThat(config.common).isNotNull();
         assertThat(config.query_region_len.get()).isEqualTo(0);
+        assertThat(config.query_regions).isNotNull();
+        assertThat(config.requested_value_fields_set.get()).isFalse();
+        assertThat(config.requested_value_fields_len.get()).isEqualTo(0);
         assertThat(config.requested_value_fields).isNotNull();
         assertThat(config.explain_plans.get()).isFalse();
     }
@@ -55,12 +59,18 @@ class FFILeafPartitionQueryConfigTest {
     }
 
     @Test
-    void shouldValidateRequestedValueFieldsWithoutException() {
+    void shouldSetRequestedValueFieldsWhenValidFieldsGiven() {
         // Given
         Runtime runtime = Runtime.getSystemRuntime();
         FFILeafPartitionQueryConfig config = new FFILeafPartitionQueryConfig(runtime);
+        FFIBytes field1 = new FFIBytes(runtime, new byte[]{65, 66, 67});
+        FFIBytes field2 = new FFIBytes(runtime, new byte[]{68, 69, 70});
 
-        // When // Then
-        config.validate();
+        // When
+        config.setRequestedValueFields(new FFIBytes[]{field1, field2});
+
+        // Then
+        assertThat(config.requested_value_fields_len.get()).isEqualTo(2);
     }
+
 }

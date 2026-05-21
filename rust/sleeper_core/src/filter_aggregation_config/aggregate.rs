@@ -1,5 +1,5 @@
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ use super::{
 use thiserror::Error;
 
 /// Aggregation support. Consists of a column name and operation.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Aggregate {
     pub column: String,
     pub operation: AggOp,
@@ -68,7 +68,7 @@ fn column(call: &FunctionCall) -> Result<String, FunctionCallError> {
 }
 
 /// Supported aggregating operations.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AggOp {
     Sum,
     Min,

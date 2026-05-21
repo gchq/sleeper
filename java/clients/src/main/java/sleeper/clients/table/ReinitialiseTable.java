@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.utils.S3Path;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -31,13 +33,14 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTr
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketWithPrefix;
+import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketFromListOfKeys;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -46,6 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  */
 public class ReinitialiseTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class);
+    private final String accountName;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final boolean deletePartitions;
@@ -53,11 +57,13 @@ public class ReinitialiseTable {
     private final String tableName;
 
     public ReinitialiseTable(
+            String accountName,
             S3Client s3Client,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             boolean deletePartitions) {
+        this.accountName = accountName;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.deletePartitions = deletePartitions;
@@ -74,21 +80,21 @@ public class ReinitialiseTable {
     }
 
     public void run(Function<TableProperties, InitialisePartitionsTransaction> buildPartitions) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
-
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
+        List<String> filesToDelete = getFilesToDelete(stateStore);
 
         new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
             ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
-        deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
-                key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
+
+        deleteObjectsInBucketFromListOfKeys(s3Client, instanceProperties.get(DATA_BUCKET), filesToDelete);
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
@@ -117,8 +123,10 @@ public class ReinitialiseTable {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, deletePartitions);
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(accountName, s3Client, dynamoClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException e) {
@@ -126,5 +134,15 @@ public class ReinitialiseTable {
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
+    }
+
+    private List<String> getFilesToDelete(StateStore stateStore) {
+        return stateStore.getAllFilesWithMaxUnreferenced(Integer.MAX_VALUE).getFilenames()
+                .stream()
+                .map(S3Path::parse)
+                .flatMap(path -> Stream.of(
+                        path.pathInBucket(),
+                        path.pathInBucket().replace(".parquet", ".sketches")))
+                .toList();
     }
 }

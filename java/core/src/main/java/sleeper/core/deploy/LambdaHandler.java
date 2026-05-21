@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package sleeper.core.deploy;
 
+import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
@@ -134,9 +135,9 @@ public class LambdaHandler {
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.AutoStopEmrServerlessApplicationLambda::handleEvent")
             .core().add();
-    public static final LambdaHandler PROPERTIES_WRITER = builder()
+    public static final LambdaHandler INSTANCE_PROPERTIES_WRITER = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
-            .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
+            .handler("sleeper.cdk.custom.InstancePropertiesWriterLambda::handleEvent")
             .core().add();
     public static final LambdaHandler TABLE_DEFINER = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
@@ -145,6 +146,14 @@ public class LambdaHandler {
     public static final LambdaHandler VPC_CHECK = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
+            .core().add();
+    public static final LambdaHandler COPY_CONTAINER = builder()
+            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .handler("sleeper.cdk.custom.CopyContainerImageLambda::handleRequest")
+            .core().add();
+    public static final LambdaHandler COPY_JAR = builder()
+            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .handler("sleeper.cdk.custom.CopyJarLambda::handleRequest")
             .core().add();
     public static final LambdaHandler METRICS_TRIGGER = builder()
             .jar(LambdaJar.METRICS)
@@ -190,6 +199,10 @@ public class LambdaHandler {
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
             .core().add();
+    public static final LambdaHandler REST_API_HANDLER = builder()
+            .jar(LambdaJar.REST_API)
+            .handler("sleeper.restapi.RestApiLambda::handleEvent")
+            .core().add();
 
     private final LambdaJar jar;
     private final String handler;
@@ -231,23 +244,17 @@ public class LambdaHandler {
     }
 
     /**
-     * Checks if this lambda is deployed given the enabled optional stacks.
+     * Checks if this lambda is deployed given some configuration.
      *
-     * @param  stacks the enabled optional stacks
-     * @return        true if this lambda will be deployed
+     * @param  deployType the configuration for how lambdas are deployed
+     * @param  stacks     the enabled optional stacks
+     * @return            true if this lambda will be deployed
      */
-    public boolean isDeployed(Collection<OptionalStack> stacks) {
-        return optionalStacks.isEmpty() || isDeployedOptional(stacks);
-    }
-
-    /**
-     * Checks if this lambda is deployed in an optional stack, given the enabled optional stacks.
-     *
-     * @param  stacks the enabled optional stacks
-     * @return        true if this lambda will be deployed in an optional stack
-     */
-    public boolean isDeployedOptional(Collection<OptionalStack> stacks) {
-        return optionalStacks.stream().anyMatch(stacks::contains);
+    public boolean isDeployed(LambdaDeployType deployType, Collection<OptionalStack> stacks) {
+        if (deployType == LambdaDeployType.JAR && !isAlwaysDockerDeploy()) {
+            return false;
+        }
+        return optionalStacks.isEmpty() || optionalStacks.stream().anyMatch(stacks::contains);
     }
 
     @Override

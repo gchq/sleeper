@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unminimize \
     && yes | unminimize \
     && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /etc/ssl/private/ssl-cert-snakeoil.key \
     && userdel -r ubuntu \
     && groupdel systemd-journal
 # The deleted user and group are added either by one of the above packages, or by unminimize. They are deleted to avoid
@@ -48,11 +49,14 @@ RUN apt-get update && apt-get install -y \
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor --yes -o /etc/apt/keyrings/nodesource.gpg
-RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main"  \
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_24.x nodistro main"  \
     | tee /etc/apt/sources.list.d/nodesource.list > /dev/null
 RUN apt-get update && apt-get install -y \
     nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g npm \
+    && npm update -g \
+    && npm cache clean --force
 
 # Install AWS CDK CLI
 RUN npm install -g aws-cdk

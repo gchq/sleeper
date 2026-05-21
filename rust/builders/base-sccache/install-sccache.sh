@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2025 Crown Copyright
+# Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,21 @@
 set -ex
 
 SCCACHE_REPO="https://github.com/mozilla/sccache"
-ARCH_TRIPLE="x86_64-unknown-linux-musl"
+
+case "$(uname -m)" in
+  x86_64|amd64)
+    ARCH="x86_64"
+    ;;
+  aarch64|arm64)
+    ARCH="aarch64"
+    ;;
+  *)
+    echo "Unsupported architecture: $(uname -m)" >&2
+    exit 1
+    ;;
+esac
+
+ARCH_TRIPLE="${ARCH}-unknown-linux-musl"
 
 TEMP_DIR="$(mktemp -d)"
 pushd "$TEMP_DIR"

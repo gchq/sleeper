@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,27 @@
 
 package sleeper.clients.deploy.container;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperPropertyValues;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 
 /**
  * Models which Docker images need to be built and uploaded to be able to deploy the system. This includes components
@@ -61,43 +61,17 @@ public class DockerImageConfiguration {
     }
 
     /**
-     * Finds which images need to be uploaded when redeploying due to a change to an instance property. This is computed
-     * based on which optional stacks have been added to the instance. This is needed in a context where Docker images
-     * are only uploaded to AWS when we deploy the stack associated with it.
-     *
-     * @param  properties the instance properties
-     * @param  diff       the diff describing the change that caused the redeploy
-     * @return            the list of Docker images that need to be uploaded
-     */
-    public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
-        Set<OptionalStack> stacksBefore = diff.getValuesBefore(properties)
-                .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
-                .collect(toUnmodifiableSet());
-        Set<OptionalStack> stacksAdded = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
-                .filter(not(stacksBefore::contains))
-                .collect(toUnmodifiableSet());
-        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        return getImagesToUpload(stacksAdded, lambdaDeployType, lambda -> lambda.isDeployedOptional(stacksAdded));
-    }
-
-    /**
      * Finds which images need to be uploaded when deploying an instance of Sleeper. This is computed based on which
      * optional stacks will be deployed for the instance.
      *
      * @param  properties the instance properties
+     * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getImagesToUpload(InstanceProperties properties) {
-        Set<OptionalStack> optionalStacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
-        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        return getImagesToUpload(optionalStacks, lambdaDeployType, lambda -> lambda.isDeployed(optionalStacks));
-    }
-
-    private List<StackDockerImage> getImagesToUpload(
-            Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
+    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
-                dockerDeploymentImages(stacks),
-                lambdaImages(lambdaDeployType, checkUploadLambda))
+                dockerDeploymentImages(properties, cdkApp),
+                lambdaImages(properties))
                 .collect(toUnmodifiableList());
     }
 
@@ -111,40 +85,21 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    private Stream<StackDockerImage> dockerDeploymentImages(Collection<OptionalStack> stacks) {
+    private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+        StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(deployment -> stacks.contains(deployment.getOptionalStack()))
+                .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
 
-    private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
-        return dockerLambdaHandlers(lambdaDeployType)
-                .filter(checkUploadLambda)
+    private Stream<StackDockerImage> lambdaImages(SleeperPropertyValues<InstanceProperty> properties) {
+        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
+        return lambdaHandlers.stream()
+                .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
                 .map(LambdaHandler::getJar).distinct()
                 .map(StackDockerImage::lambdaImage);
-    }
-
-    private Stream<LambdaHandler> dockerLambdaHandlers(LambdaDeployType lambdaDeployType) {
-        if (lambdaDeployType == LambdaDeployType.CONTAINER) {
-            return lambdaHandlers.stream();
-        } else {
-            return lambdaHandlers.stream()
-                    .filter(LambdaHandler::isAlwaysDockerDeploy);
-        }
-    }
-
-    /**
-     * Finds the prefix of an ECR repository that may be a Sleeper instance ID. This assumes that the repository was
-     * created during the deployment of a Sleeper instance with no ECR repository prefix set.
-     *
-     * @param  repositoryName the ECR repository name
-     * @return                the detected Sleeper instance ID, if one was found
-     */
-    public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
-        return dockerDeployments.stream()
-                .filter(image -> repositoryName.endsWith("/" + image.getDeploymentName()))
-                .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
-                .findFirst();
     }
 
     public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public abstract class QueryCommandLineClient {
     protected ConsoleOutput out;
 
     protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties) {
-        this(s3Client, dynamoClient, instanceProperties, new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+        this(s3Client, dynamoClient, instanceProperties, ConsoleInput.stdIn(), ConsoleOutput.stdOut());
     }
 
     protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,19 @@ package sleeper.clients.report.ingest.batcher.query;
 import sleeper.clients.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.util.console.ConsoleInput;
 
+/**
+ * Prompts the user to create a query to generate a report on files tracked in the ingest batcher store.
+ */
 public class BatcherQueryPrompt {
     private BatcherQueryPrompt() {
     }
 
+    /**
+     * Prompts the user to create a query to generate a report on files tracked in the ingest batcher store.
+     *
+     * @param  in the console input
+     * @return    the query
+     */
     public static BatcherQuery from(ConsoleInput in) {
         String type = in.promptLine("All (a) or Pending (p) query? ");
         if ("a".equalsIgnoreCase(type)) {

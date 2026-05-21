@@ -12,6 +12,7 @@ on:
       - '.github/workflows/docker-cli-image.yaml'
       - '.github/scripts/planCliBuild.sh'
       - 'scripts/cli/**'
+      - 'code-style/.trivyignore.cli.yaml'
 
 jobs:
   build-cli:

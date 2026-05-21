@@ -4,7 +4,9 @@ Ingest Job Status Report
 Jobs waiting in ingest queue (excluded from report): 0
 Total jobs waiting across all queues: 0
 Total jobs rejected: 1
---------------------------------------------------------------------------------------------------
-| STATE    | JOB_ID                               | INPUT_FILES | TASK_ID | START_TIME           |
-| REJECTED | job11111-1111-1111-1111-111111111111 |           2 |         | 2023-06-05T17:20:00Z |
---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE    | JOB_ID                               | INPUT_FILES | TASK_ID | START_TIME           | FINISH_TIME          | FAILURE_REASONS         |
+| REJECTED | job11111-1111-1111-1111-111111111111 |           2 |         | 2023-06-05T17:20:00Z | 2023-06-05T17:20:00Z | Test validation reason. |
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+For more information concerning any failure reasons, please consult the more detailed report.

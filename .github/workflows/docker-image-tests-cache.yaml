@@ -1,0 +1,11 @@
+name: Docker Image Cache
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    uses: ./.github/workflows/docker-image-tests.yaml
+    with:
+      dockerOptions: --cache-to type=gha,mode=max --cache-from type=gha

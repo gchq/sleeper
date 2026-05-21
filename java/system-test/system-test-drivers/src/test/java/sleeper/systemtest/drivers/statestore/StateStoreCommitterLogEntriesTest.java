@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.statestore;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.statestore.StateStoreCommitSummary;
-import sleeper.clients.report.statestore.StateStoreCommitterRunStarted;
+import sleeper.clients.report.statestore.StateStoreCommitterLambdaRunStarted;
 
 import java.time.Instant;
 import java.util.List;
@@ -83,7 +83,7 @@ public class StateStoreCommitterLogEntriesTest {
         return new StateStoreCommitSummary("test-stream", Instant.MIN, tableId, "test-commit", time);
     }
 
-    StateStoreCommitterRunStarted runStartedAtTime(Instant time) {
-        return new StateStoreCommitterRunStarted("test-stream", Instant.MIN, time);
+    StateStoreCommitterLambdaRunStarted runStartedAtTime(Instant time) {
+        return new StateStoreCommitterLambdaRunStarted("test-stream", Instant.MIN, time);
     }
 }

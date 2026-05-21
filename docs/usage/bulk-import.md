@@ -12,10 +12,13 @@ then there will be 100,000 writes to S3 (in fact, there might be more if the fil
 of `sleeper.ingest.max.local.rows`). Using the bulk import method, there will only be 100 writes to S3 (assuming that
 the 1000 files are all imported in the same bulk import job).
 
-Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../usage/tables.md#pre-split-partitions)). Bulk import jobs will be refused unless there are a
-minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
-documented [here](properties/table/bulk_import.md).
+Note that bulk import requires a minimum number of partitions, and by default a table starts with just one. The minimum
+is set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
+documented [here](properties/table/bulk_import.md). If too few partitions are present, then when a bulk import job is
+submitted the partitions will be split automatically, based on the data in the bulk import job. This will assume that
+the job's data is a representative sample for the table. If multiple bulk import jobs are submitted simultaneously, they
+will attempt to pre-split separately, which can waste compute resources. You can take control over this by pre-splitting
+the table as described [here](../usage/tables.md#pre-split-partitions).
 
 Files to be ingested must be accessible to the EMR cluster, and to the lambda that receives the job to submit to the
 cluster. See the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
@@ -465,10 +468,7 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 
 #### Bulk import on EKS
 
-The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
-[deployment guide](../deployment-guide.md).
-
-It's also important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
+It's important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
 with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned
 to your user, or users with administrator access. This may be in the form AWSReservedSSO_AdministratorAccess_abc123 if
 you log in with SSO, or OrganizationAccountAccessRole if you log in with an AWS Organisation.
@@ -489,13 +489,13 @@ You can submit a job in a similar way to the methods above, e.g.
     "my-import-bucket/files/my-other-files/"
   ],
   "sparkConf": {
-    "spark.executor.instances": "3",
-    "spark.driver.memory": "7g",
+    "spark.executor.instances": "29",
+    "spark.driver.memory": "12g",
     "spark.driver.memoryOverhead": "1g",
-    "spark.executor.memory": "7g",
+    "spark.executor.memory": "12g",
     "spark.executor.memoryOverhead": "1g",
-    "spark.driver.cores": "1",
-    "spark.executor.cores": "1"
+    "spark.driver.cores": "5",
+    "spark.executor.cores": "5"
   }
 }
 ```

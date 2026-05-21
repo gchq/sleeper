@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,12 @@ public class SleeperArtefactsLocation {
     /**
      * Computes the default jars bucket name. See the instance property `sleeper.jars.bucket`.
      *
+     * @param  accountName           the AWS account name
      * @param  artefactsDeploymentId the deployment ID
      * @return                       the bucket name
      */
-    public static String getDefaultJarsBucketName(String artefactsDeploymentId) {
-        return "sleeper-" + artefactsDeploymentId + "-jars";
+    public static String getDefaultJarsBucketName(String accountName, String artefactsDeploymentId) {
+        return "sleeper-" + artefactsDeploymentId + "-jars-" + accountName;
     }
 
     /**

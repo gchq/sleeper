@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IngestToStateStoreDsl {
 
@@ -58,7 +57,7 @@ public class IngestToStateStoreDsl {
 
     public IngestToStateStoreDsl addFileOnPartition(
             String name, String partitionId, Row... rows) {
-        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, Stream.of(rows));
+        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, List.of(rows).iterator());
         addFiles(List.of(FileReference.builder()
                 .filename(ingestSource.getFilePath(name))
                 .partitionId(partitionId)

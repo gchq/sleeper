@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Properties;
@@ -27,7 +28,9 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class TablePropertiesSchemaTest {
 
@@ -39,11 +42,11 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
-                .hasMessage("Property sleeper.table.schema was invalid. It was unset.");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was unset.");
     }
 
     @Test
-    void shouldFailToLoadFromStringIfTableSchemaIsInvalid() {
+    void shouldFailToResetAndValidateIfTableSchemaIsInvalid() {
         // Given
         Properties input = loadProperties("" +
                 "sleeper.table.name=myTable\n" +
@@ -51,7 +54,23 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.resetAndValidate(input))
-                .hasMessage("Must have at least one row key field");
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
+    }
+
+    @Test
+    void shouldReadPropertiesWithInvalidSchema() {
+        // Given
+        Properties properties = loadProperties("" +
+                "sleeper.table.name=myTable\n" +
+                "sleeper.table.schema={}\n");
+
+        // When
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(), properties);
+
+        // Then
+        assertThat(tableProperties.getSchema()).isNull();
+        assertThatThrownBy(tableProperties::validate)
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
     }
 
     @Test
@@ -72,13 +91,12 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldLoadAndValidateSuccessfullyIfTableSchemaIsInPropertyInConstructor() {
+    void shouldLoadAndValidateSuccessfullyIfTableSchemaIsInProperty() {
         // Given
-        String input = "" +
+        Properties properties = loadProperties("" +
                 "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}";
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}");
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        Properties properties = loadProperties(input);
 
         // When
         TableProperties tableProperties = TableProperties.createAndValidate(new InstanceProperties(), properties);
@@ -107,15 +125,42 @@ class TablePropertiesSchemaTest {
     @Test
     void shouldFailToLoadAndValidateIfMandatoryPropertyIsMissing() {
         // Given
-        String input = "" +
-                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
+        InstanceProperties instanceProperties = new InstanceProperties();
+        Properties properties = loadProperties("" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n");
+
+        // When / Then
+        assertThatThrownBy(() -> TableProperties.createAndValidate(instanceProperties, properties))
+                .hasMessageContaining("Property sleeper.table.name was invalid. It was unset.");
+    }
+
+    @Test
+    void shouldSetSchemaByPropertyConstant() {
+        // Given
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
         // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        Properties properties = loadProperties(input);
+        tableProperties.set(SCHEMA, new SchemaSerDe().toJson(schema));
 
         // Then
-        assertThatThrownBy(() -> TableProperties.createAndValidate(instanceProperties, properties))
-                .hasMessage("Property sleeper.table.name was invalid. It was unset.");
+        assertThat(tableProperties.getSchema()).isEqualTo(schema);
+    }
+
+    @Test
+    void shouldSetInvalidSchemaByPropertyConstant() {
+        // Given
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(createSchemaWithKey("key"));
+
+        // When
+        tableProperties.set(SCHEMA, "{}");
+
+        // Then
+        assertThat(tableProperties.getSchema()).isNull();
+        assertThatThrownBy(tableProperties::validate)
+                .hasMessageContaining("Property sleeper.table.schema was invalid. It was \"{}\".");
+        assertThat(tableProperties.isValid()).isFalse();
     }
 }

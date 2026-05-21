@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
@@ -58,7 +58,7 @@ public class PropertiesDiffTest {
             InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
-            assertThat(getChanges(before, after)).isEmpty();
+            assertThat(streamChanges(before, after)).isEmpty();
         }
 
         @Test
@@ -70,7 +70,7 @@ public class PropertiesDiffTest {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "30", "50"));
         }
 
@@ -82,7 +82,7 @@ public class PropertiesDiffTest {
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(newValue(INGEST_SOURCE_BUCKET, "some-bucket"));
         }
 
@@ -94,7 +94,7 @@ public class PropertiesDiffTest {
             InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueDeleted(INGEST_SOURCE_BUCKET, "some-bucket"));
         }
 
@@ -106,7 +106,7 @@ public class PropertiesDiffTest {
             after.set(S3_UPLOAD_BLOCK_SIZE, "64M");
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(newValue(S3_UPLOAD_BLOCK_SIZE, "64M"));
         }
 
@@ -118,7 +118,7 @@ public class PropertiesDiffTest {
             InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueDeleted(S3_UPLOAD_BLOCK_SIZE, "64M"));
         }
     }
@@ -135,7 +135,7 @@ public class PropertiesDiffTest {
                     loadProperties("unknown.property=1"));
 
             // When / Then
-            assertThat(getChanges(before, after)).isEmpty();
+            assertThat(streamChanges(before, after)).isEmpty();
         }
 
         @Test
@@ -147,7 +147,7 @@ public class PropertiesDiffTest {
                     loadProperties("unknown.property=2"));
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueChanged("unknown.property", "1", "2"));
         }
 
@@ -159,7 +159,7 @@ public class PropertiesDiffTest {
                     loadProperties("unknown.property=12"));
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(newValue("unknown.property", "12"));
         }
 
@@ -171,7 +171,7 @@ public class PropertiesDiffTest {
             InstanceProperties after = new InstanceProperties();
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueDeleted("unknown.property", "12"));
         }
     }
@@ -189,7 +189,7 @@ public class PropertiesDiffTest {
             after.set(ITERATOR_CONFIG, "config-after");
 
             // When / Then
-            assertThat(getChanges(before, after))
+            assertThat(streamChanges(before, after))
                     .containsExactly(valueChanged(ITERATOR_CONFIG, "config-before", "config-after"));
         }
 
@@ -210,7 +210,7 @@ public class PropertiesDiffTest {
             PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
             PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
 
-            assertThat(diff1.andThen(diff2).getChanges())
+            assertThat(diff1.andThen(diff2).streamChanges())
                     .containsExactly(valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "789"));
         }
 
@@ -220,7 +220,7 @@ public class PropertiesDiffTest {
             PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
             PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "123");
 
-            assertThat(diff1.andThen(diff2).getChanges())
+            assertThat(diff1.andThen(diff2).streamChanges())
                     .isEmpty();
         }
 
@@ -231,7 +231,7 @@ public class PropertiesDiffTest {
             PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
             PropertiesDiff diff3 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "789", "123");
 
-            assertThat(diff1.andThen(diff2).andThen(diff3).getChanges())
+            assertThat(diff1.andThen(diff2).andThen(diff3).streamChanges())
                     .isEmpty();
         }
 
@@ -241,7 +241,7 @@ public class PropertiesDiffTest {
             PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
             PropertiesDiff diff2 = generateSingleDiff(LOG_RETENTION_IN_DAYS, "456", "123");
 
-            assertThat(diff1.andThen(diff2).getChanges())
+            assertThat(diff1.andThen(diff2).streamChanges())
                     .containsExactly(
                             valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "456"),
                             valueChanged(LOG_RETENTION_IN_DAYS, "456", "123"));
@@ -257,7 +257,7 @@ public class PropertiesDiffTest {
 
     }
 
-    private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
-        return new PropertiesDiff(before, after).getChanges();
+    private <T extends SleeperProperty> Stream<PropertyDiff> streamChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
+        return new PropertiesDiff(before, after).streamChanges();
     }
 }

@@ -4,16 +4,16 @@
       "jobId": "job1",
       "partitionId": "root",
       "filenames": [
-        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
-        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file2.parquet"
+        "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_root/file1.parquet",
+        "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_root/file2.parquet"
       ]
     },
     {
       "jobId": "job2",
       "partitionId": "L",
       "filenames": [
-        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_L/file3.parquet",
-        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_L/file4.parquet"
+        "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_L/file3.parquet",
+        "s3a://sleeper-instanceid-table-data-test-account/933cd595/data/partition_L/file4.parquet"
       ]
     }
   ]

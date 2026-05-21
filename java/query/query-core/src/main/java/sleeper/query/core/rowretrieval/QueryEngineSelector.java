@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,8 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION_EXPERIMENTAL:
-                return dataFusionProvider.getRowRetriever(tableProperties);
             case DATAFUSION:
+                return dataFusionProvider.getRowRetriever(tableProperties);
             case JAVA:
             default:
                 return javaProvider.getRowRetriever(tableProperties);

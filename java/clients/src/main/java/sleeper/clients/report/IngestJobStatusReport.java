@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
-import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
@@ -46,6 +47,10 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of ingest and bulk import jobs. Takes a {@link JobQuery} and outputs information about
+ * the jobs matching that query.
+ */
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
     private static final Map<String, IngestJobStatusReporter> REPORTERS = new HashMap<>();
@@ -64,16 +69,6 @@ public class IngestJobStatusReport {
     private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
-            IngestJobTracker tracker,
-            TableStatus table, JobQuery.Type queryType, String queryParameters,
-            IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
-            Map<String, Integer> persistentEmrStepCount) {
-        this(tracker, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
-                reporter, queueClient, properties, persistentEmrStepCount);
-    }
-
-    public IngestJobStatusReport(
             IngestJobTracker tracker, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
@@ -86,6 +81,25 @@ public class IngestJobStatusReport {
         this.persistentEmrStepCount = persistentEmrStepCount;
     }
 
+    /**
+     * Creates a query for ingest and bulk import jobs to include in a report.
+     *
+     * @param  table           the Sleeper table to include jobs for
+     * @param  queryType       the type of query
+     * @param  queryParameters parameters for the query, as specified on the command line
+     * @param  clock           a clock to get the current time, to read relative time ranges
+     * @param  input           the console input, to prompt for further parameters
+     * @return                 the query
+     */
+    public static JobQuery queryfromParametersOrPrompt(
+            TableStatus table, JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, clock, input,
+                Map.of("n", new RejectedJobsQuery()));
+    }
+
+    /**
+     * Creates a report.
+     */
     public void run() {
         if (query == null) {
             return;
@@ -110,15 +124,18 @@ public class IngestJobStatusReport {
             try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                     DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                     SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder());
+                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+                String accountName = stsClient.getCallerIdentity().account();
+                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                new IngestJobStatusReport(tracker, table, queryType, queryParameters,
-                        reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                        PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
+                JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                new IngestJobStatusReport(tracker, query, reporter,
+                        QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                        PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
             }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());

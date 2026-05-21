@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
@@ -29,7 +28,6 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -55,7 +53,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;
-        schema = loadSchema(properties);
+        setSchema(properties.getProperty(SCHEMA.getPropertyName()));
     }
 
     /**
@@ -94,24 +92,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return new TableProperties(tableProperties.instanceProperties, newProperties);
     }
 
-    private static Schema loadSchema(Properties properties) {
-        return Optional.ofNullable(properties.getProperty(SCHEMA.getPropertyName()))
-                .map(Schema::loadFromString)
-                .orElse(null);
-    }
-
     @Override
     protected void init() {
-        String schemaProperty = get(TableProperty.SCHEMA);
-        if (schemaProperty != null) {
-            schema = Schema.loadFromString(schemaProperty);
-        }
+        setSchema(get(SCHEMA));
         super.init();
-    }
-
-    @Override
-    public void validate(SleeperPropertiesValidationReporter reporter) {
-        super.validate(reporter);
     }
 
     @Override
@@ -130,11 +114,27 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public void setSchema(Schema schema) {
         this.schema = schema;
-        set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
+        super.set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
+    }
+
+    private void setSchema(String string) {
+        try {
+            schema = Schema.loadFromString(string);
+        } catch (RuntimeException e) {
+            schema = null;
+        }
     }
 
     public InstanceProperties getInstanceProperties() {
         return instanceProperties;
+    }
+
+    @Override
+    public void set(TableProperty property, String value) {
+        super.set(property, value);
+        if (property == SCHEMA) {
+            setSchema(value);
+        }
     }
 
     @Override

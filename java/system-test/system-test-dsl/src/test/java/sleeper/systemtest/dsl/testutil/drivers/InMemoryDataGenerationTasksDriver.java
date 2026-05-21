@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,8 +78,8 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
         Collections.shuffle(rowNumbers, random);
-        GenerateNumberedRows generator = instance.numberedRows(tableProperties.getSchema());
-        return () -> rowNumbers.stream().map(generator::generateRow).iterator();
+        return instance.numberedRows(tableProperties.getSchema())
+                .iterableOver(rowNumbers);
     }
 
 }

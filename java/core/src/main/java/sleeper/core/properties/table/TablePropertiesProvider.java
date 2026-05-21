@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public class TablePropertiesProvider {
             cache(properties, currentTime);
         } else {
             properties = currentEntry.getTableProperties();
-            LOGGER.debug("Cache hit for table {}", properties.getStatus());
+            LOGGER.trace("Cache hit for table {}", properties.getStatus());
         }
         return properties;
     }

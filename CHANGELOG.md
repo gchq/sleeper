@@ -5,6 +5,172 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.35.3
+
+### 8th May, 2025
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.35.3*
+
+This release includes improvements to the deployment process, an initial REST API shell, graceful upgrade process for
+compaction tasks as well as some bugfixes and documentation improvements.
+
+Deployment:
+- This is a breaking change: S3 bucket names are now created with the AWS account number appended to them.
+- Support for combining the two CDK apps together in an external repository has been provided. You can now retrieve
+  references to the artefact repositories after defining them in your own CDK app.
+- Docker images are now deployed by their digest instead of tag.
+- Docker images of the same Sleeper version will now be republished to ECR when the digest has changed.
+- The script `scripts/deploy/setDeployFromRemoteDocker.sh` has been replaced with `scripts/deploy/setDeployConfig.sh`.
+- Improved the error message when loading invalid configuration properties from the local file system.
+
+REST API:
+- An initial REST API shell has been created that will be built upon further in future releases for interacting
+  with Sleeper instances.
+
+Compactions:
+- Compaction tasks will now stop gracefully after they reach a max alive time minus some jitter. This is so that
+  upgraded code can be picked up for future tasks.
+
+Bulk Import:
+- Upgraded Kubernetes version to V1_35 as V1_32 has reached end of life.
+- Python API now defaults to EMRServerless for bulk import.
+
+DataFusion:
+- S3 readahead has been re-enabled with the property. This is a change to the default value of
+  `sleeper.default.table.datafusion.s3.readahead.enabled`.
+- Version upgraded to 53.0.0.
+
+Documentation:
+- Details of failure modes during an instance upgrade have been documented.
+
+Bugfixes:
+- Instance properties can be validated even if certain EMR managed scaling properties are unreadable.
+- Tables can now be deleted/taken offline even if they have invalid configuration.
+- DataFusion compactions no longer hang and will complete as successful or failed. Timeouts on AWS clients writing
+  files to S3 were re-enabled to fix this.
+- DataFusion compactions no longer fail if all rows are filtered out.
+- If you deploy with your own custom CDK app, this will no longer be overwritten by the admin client or deploy existing
+  instance script.
+- When deploying a pre-published version of Sleeper, multiplatform container images are now correctly retrieved and
+  pushed to ECR. Previously this was done with `docker push` which does not support multiplatform images. This affects
+  any deployment of the compaction stack.
+
+## Version 0.35.2
+
+### 24th March, 2026
+
+This includes minor improvements, bugfixes and security upgrades to dependencies.
+
+Compaction:
+- Increased block size of S3 PUTs in DataFusion compactions
+- Improvements to readahead behaviour with `sleeper.table.datafusion.s3.readahead.enabled`, caching for S3 HEAD requests
+
+Bulk import:
+- Disabled checks for whether output files already exist during bulk import, vastly reducing requests to S3
+
+Reports:
+- Added static rate limiting for all requests to the EMR API in reports, including in the admin client and system tests
+
+Scripts:
+- Renamed the Docker-based CLI to the Sleeper Docker tools
+- Added help text to the Sleeper Docker tools CLI
+- Removed `scripts/deploy/deploy.sh` in favour of deploy new/existing
+
+Deployment:
+- Enabled S3 request metrics on the table data bucket
+- Container images are now referenced by image digest instead of tag
+
+Documentation:
+- Reworked getting started documentation and guides, clarified use of Sleeper Docker tools
+- Improved documentation of deployment scripts
+- Improved Javadoc for `SleeperClient` and related classes
+- Out of date documentation of Python client has been removed
+
+Build:
+- Maven artifact publishing now attaches source code
+
+System tests:
+- Added system test automation for the EC2 state store committer platform
+
+Bugfixes:
+- `SleeperClient` can now be created for an instance without WebSocketQueryStack
+- If one table has invalid properties, state store snapshot creation did not run for other tables after loading the
+  invalid table
+- If you use the EC2-based state store committer, or set `sleeper.table.statestore.committer.update.every.batch` to
+  false, the table state was corrupted when a new committer first committed to an old table with a pre-existing snapshot
+- When managed scaling is disabled for persistent EMR bulk import, the cluster capacity was incorrectly validated
+  against the maximum capacity for managed scaling
+- The Sleeper Docker tools `sleeper cdk bootstrap` command was including a `cdk.json` file resulting in confusing
+  failures, it will now behave the same as running `cdk bootstrap` without any context
+
+
+## Version 0.35.1
+
+### 2nd March, 2026
+
+This includes minor improvements, as well as bugfixes and security upgrades to dependencies.
+
+Query:
+- Queries now run on DataFusion by default
+
+Scripts:
+- Added a script to list tables in an instance
+- Added median and percentiles to file status report
+
+Configuration:
+- Some table properties have been renamed to include "parquet" more consistently ([see issue](https://github.com/gchq/sleeper/issues/6545))
+
+Build:
+- Builders for Rust code now work on ARM64 architecture
+
+Bugfixes:
+- Allowed maximum capacity lower than 3 for a persistent EMR cluster with managed scaling, improved validation of managed scaling configuration
+- When more bulk import jobs are submitted to a persistent EMR cluster than can fit as pending steps, the job no longer fails and is re-queued on the bulk import queue
+- Setting the schema property directly on a TableProperties object no longer results in a null schema
+
+
+## Version 0.35.0
+
+### 9th February, 2026
+
+This includes automation of pre-splitting table partitions in bulk import, and a high throughput committer for the state
+store.
+
+Bulk import:
+- When a bulk import job is submitted to a Sleeper table with too few partitions, they are pre-split automatically.
+  - This assumes the data in the bulk import job is representative of the table as a whole.
+  - Increased the default value of [`sleeper.default.table.bulk.import.min.leaf.partitions`](docs/usage/properties/instance/user/table_property_defaults.md) to 256.
+
+State store:
+- An experimental high throughput version of the state store committer is now available.
+  - This is a single persistent EC2 instance that listens for all messages from the commit queue.
+  - Can handle many Sleeper tables at much higher throughput than the default lambda version.
+  - Can be chosen with the instance property [`sleeper.statestore.committer.platform`](docs/usage/properties/instance/user/table_state.md).
+
+Spark:
+- Initial version of using Spark to query a Sleeper table
+
+Configuration:
+- Instance properties that are default values for table properties were renamed to start with `sleeper.default.table`.
+- Added [`sleeper.table.parquet.rowgroup.rows.max`](docs/usage/properties/table/data_storage.md) to set the maximum Parquet row group size for the DataFusion data engine.
+
+Deployment:
+- ECS tasks and services now use their own security group, rather than the default security group for the VPC.
+- Restricted permissions on default security group in environment deployed by Sleeper CLI.
+- Added lifecycle rules to ECR repositories so that Docker images older than a year are deleted.
+- Improvements to workflow deploying an instance directly with the CDK CLI (see [documentation](docs/deployment/deploy-with-cdk.md#using-the-cdk-cli)).
+
+Bugfixes:
+- DataFusion data engine failed when aggregations were specified that did not match the order of the table schema.
+- Tags configured for an instance are now correctly added to the instance by the CDK.
+- Removed confusing logs about constructing a partition tree when reading table configuration, e.g. when the CDK starts.
+- A bug in the CDK meant changing the minimum capacity of a bulk import persistent EMR cluster caused deployment to fail.
+- When reinitialising a table that contained data, the underlying data files were not deleted.
+- Reasons that an ingest or compaction job failed were not always shown in reports.
+- EMR Serverless is now shown in counts of jobs on queues in ingest job reports.
+- The admin client crashed when invalid tags were configured for the Sleeper instance.
+
 
 ## Version 0.34.1
 

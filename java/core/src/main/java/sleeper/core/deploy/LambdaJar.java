@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 /**
@@ -96,6 +99,9 @@ public class LambdaJar {
     public static final LambdaJar STATESTORE = builder().filenameFormat("statestore-lambda-%s.jar")
             .imageName("statestore-lambda")
             .artifactId("statestore-lambda").add();
+    public static final LambdaJar REST_API = builder().filenameFormat("rest-api-%s.jar")
+            .imageName("rest-api-lambda")
+            .artifactId("rest-api").add();
 
     private final String filenameFormat;
     private final String imageName;
@@ -147,6 +153,20 @@ public class LambdaJar {
      */
     public String getFormattedFilename(String version) {
         return String.format(filenameFormat, version);
+    }
+
+    /**
+     * Retrieves the Docker image name for deploying this jar as a Docker container. Includes the repository URL and the
+     * tag. This method requires that CDK defined properties are set due to requiring account and region.
+     *
+     * @param  properties the instance properties
+     * @return            the Docker image name
+     */
+    public String getDockerImageName(InstanceProperties properties) {
+        return properties.get(ACCOUNT) + ".dkr.ecr." +
+                properties.get(REGION) + ".amazonaws.com/" +
+                getEcrRepositoryName(properties) +
+                ":" + properties.get(VERSION);
     }
 
     /**

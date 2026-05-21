@@ -1,6 +1,6 @@
 //! Details for AWS access.
 /*
-* Copyright 2022-2025 Crown Copyright
+* Copyright 2022-2026 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,23 +19,18 @@ use color_eyre::eyre::bail;
 use sleeper_core::AwsConfig;
 use std::ffi::c_char;
 
-pub fn unpack_aws_config(
-    params: &FFICommonConfig,
-) -> Result<Option<AwsConfig>, color_eyre::Report> {
-    Ok(if params.override_aws_config {
-        let Some(ffi_aws) = (unsafe { params.aws_config.as_ref() }) else {
-            bail!("override_aws_config is true, but aws_config pointer is NULL");
-        };
+pub fn unpack_aws_config(params: &FFICommonConfig) -> Option<AwsConfig> {
+    if let Some(ffi_aws) = unsafe { params.aws_config.as_ref() } {
         AwsConfig::try_from(ffi_aws).ok()
     } else {
         None
-    })
+    }
 }
 
 /// Contains the FFI compatible configuration data for AWS.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIAwsConfig {
@@ -43,6 +38,7 @@ pub struct FFIAwsConfig {
     pub endpoint: *const c_char,
     pub access_key: *const c_char,
     pub secret_key: *const c_char,
+    pub session_token: *const c_char,
     pub allow_http: bool,
 }
 
@@ -67,6 +63,7 @@ impl TryFrom<&FFIAwsConfig> for AwsConfig {
             endpoint: unpack_string(value.endpoint)?,
             access_key: unpack_string(value.access_key)?,
             secret_key: unpack_string(value.secret_key)?,
+            session_token: Some(unpack_string(value.session_token)?).filter(|s| !s.is_empty()),
             allow_http: value.allow_http,
         })
     }

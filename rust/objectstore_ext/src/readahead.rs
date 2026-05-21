@@ -2,6 +2,8 @@
 //! but delegates to a custom GET implementation. This allows it to implement a readahead mechanism
 //! to reduce the number of GET calls.
 //!
+//! It also caches [`ObjectMeta`]s retrieved from GET/HEAD requests and returns them on future HEAD requests.
+//!
 //! When a ranged get request is made, [`ReadaheadStore`] will convert the [`GetRange::Bounded`] range to a
 //! [`GetRange::Offset`] range when the request is made to the underlying store so that we can read beyond the
 //! original range requested. A [`PositionedStream`] is returned which honours the original bounded range. The returned
@@ -42,7 +44,7 @@
 //!        through to the underlying store.
 //!
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,19 +62,28 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::stream::{BoxStream, empty};
+use futures::{
+    StreamExt, TryStreamExt,
+    future::ready,
+    stream::{BoxStream, empty},
+};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult, MultipartUpload,
-    ObjectMeta, ObjectStore, PutMultipartOptions, PutOptions, PutPayload, PutResult, Result,
-    path::Path,
+    Attributes, CopyMode, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload,
+    ListResult, MultipartUpload, OBJECT_STORE_COALESCE_DEFAULT, ObjectMeta, ObjectStore,
+    ObjectStoreExt, PutMultipartOptions, PutOptions, PutPayload, PutResult, RenameOptions,
+    RenameTargetMode, Result, coalesce_ranges, path::Path,
 };
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{Debug, Display},
-    sync::{Arc, Mutex, Weak},
+    ops::Range,
+    sync::{
+        Arc, Mutex, Weak,
+        atomic::{AtomicUsize, Ordering},
+    },
     time::{Duration, Instant},
 };
 use stream::PositionedStream;
@@ -90,11 +101,11 @@ pub enum ReadaheadError {
 
 /// Default amount in bytes to allow a stream to be readahead before the
 /// stream will be closed and re-opened.
-pub const DEFAULT_READAHEAD: u64 = 2u64.pow(16);
+pub const DEFAULT_READAHEAD: u64 = 1024 * 1024;
 /// Maximum number of cached streams per location before being purged.
 pub const DEFAULT_MAX_STREAM_PER_LOCATION: usize = 2;
 /// Maximum age of a stream before being purged.
-pub const DEFAULT_MAX_STREAM_AGE: Duration = Duration::from_secs(10);
+pub const DEFAULT_MAX_STREAM_AGE: Duration = Duration::from_secs(20);
 
 /// Simple container for storing a byte stream and its location.
 struct Container {
@@ -168,7 +179,7 @@ impl CacheInserter {
 #[allow(clippy::module_name_repetitions)]
 pub struct ReadaheadStore<T: ObjectStore> {
     /// Underlying `object_store` implementation.
-    inner: T,
+    inner: Arc<T>,
     /// Path prefix for logging purposes
     path_prefix: String,
     /// Cache for object meta-data and streams.
@@ -179,8 +190,10 @@ pub struct ReadaheadStore<T: ObjectStore> {
     max_age: Duration,
     /// Maximum number of live streams per object.
     max_live_streams: usize,
-    /// Number of underlying GET requests
-    underlying_gets: Arc<Mutex<usize>>,
+    /// Number of underlying GET requests. This is only for logging purposes.
+    underlying_gets: AtomicUsize,
+    /// Number of underlying HEAD requests
+    underlying_heads: AtomicUsize,
 }
 
 impl<T: ObjectStore> ReadaheadStore<T> {
@@ -188,13 +201,14 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     #[must_use]
     pub fn new(inner: T, path_prefix: impl Into<String>) -> Self {
         Self {
-            inner,
+            inner: Arc::new(inner),
             path_prefix: path_prefix.into(),
             cache: Arc::new(Mutex::new(HashMap::new())),
             max_readahead: DEFAULT_READAHEAD,
             max_age: DEFAULT_MAX_STREAM_AGE,
             max_live_streams: DEFAULT_MAX_STREAM_PER_LOCATION,
-            underlying_gets: Arc::new(Mutex::new(0)),
+            underlying_gets: AtomicUsize::new(0),
+            underlying_heads: AtomicUsize::new(0),
         }
     }
 
@@ -339,12 +353,12 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             attributes,
         } = response;
 
-        *self
-            .underlying_gets
-            .lock()
-            .expect("ReadaheadStore lock poisoned") += 1;
-        info!(
-            "ReadaheadStore GET request to {}/{location}",
+        // Update counter with relaxed ordering, guarantees atomicity, but we don't
+        // care about memory ordering between threads
+        self.underlying_gets.fetch_add(1, Ordering::Relaxed);
+
+        debug!(
+            "ReadaheadStore cacheable GET request to {}/{location}",
             self.path_prefix
         );
 
@@ -352,14 +366,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
         let payload = match payload {
             GetResultPayload::Stream(stream) => {
                 // Retrieve data from cache or insert it if needed
-                let mut cache = self.cache.lock().unwrap();
-                cache
-                    .entry(location.to_owned())
-                    .or_insert_with(|| CacheObject {
-                        meta: meta.clone(),
-                        attrs: attributes.clone(),
-                        streams: BTreeMap::new(),
-                    });
+                self.create_cache_location(location, meta.clone(), attributes.clone());
 
                 let inserter = CacheInserter {
                     cache_ptr: Arc::downgrade(&self.cache),
@@ -386,6 +393,21 @@ impl<T: ObjectStore> ReadaheadStore<T> {
         })
     }
 
+    /// Creates an empty cache object for the given location.
+    fn create_cache_location(&self, location: &Path, meta: ObjectMeta, attributes: Attributes) {
+        let mut cache = self
+            .cache
+            .lock()
+            .expect("ReadaheadStore cache lock poisoned");
+        cache
+            .entry(location.to_owned())
+            .or_insert_with(|| CacheObject {
+                meta,
+                attrs: attributes,
+                streams: BTreeMap::new(),
+            });
+    }
+
     /// Purge all cache entries that are too old or too numerous across all files.
     /// A lock will be obtained for the cache object and all streams that are too old
     /// will be purged as well as the lowest position streams if there are too many.
@@ -395,6 +417,22 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     /// # Panics
     /// If the mutex lock that guards the cache has become poisoned.
     pub fn clean_cache(&self) -> usize {
+        self.clean_cache_with_remove(None)
+    }
+
+    /// Purge all cache entries that are too old or too numerous across all files.
+    /// A lock will be obtained for the cache object and all streams that are too old
+    /// will be purged as well as the lowest position streams if there are too many.
+    ///
+    /// If a `retrieved_location` is provided, then this indicates a cached stream was
+    /// just removed for that location, therefore we account for that stream when computing
+    /// the maximum number of cached streams at that location.
+    ///
+    /// Returns the total number of live streams still in the cache.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    fn clean_cache_with_remove(&self, retrieved_location: Option<&Path>) -> usize {
         let now = Instant::now();
         debug!(
             "Purging cache of streams older than {}s or when more than {} streams per location",
@@ -406,19 +444,40 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .lock()
             .expect("ReadaheadStore cache lock poisoned");
         let mut total_live_streams = 0;
-        for (_, cache_ob) in cache.iter_mut() {
+        for (path, cache_ob) in cache.iter_mut() {
             // Evict all which are too old
             cache_ob
                 .streams
                 .retain(|_, c| now.duration_since(c.last_use) < self.max_age);
-            // Max size evictions. Evict "earliest" in file first
-            while cache_ob.streams.len() > self.max_live_streams {
-                cache_ob.streams.pop_first();
+            // Max streams for this location depends on if a stream has just been removed for it
+            let max_streams_for_location = if let Some(retrieved) = retrieved_location
+                && retrieved == path
+            {
+                self.max_live_streams.saturating_sub(1)
+            } else {
+                self.max_live_streams
+            };
+            if cache_ob.streams.len() > max_streams_for_location {
+                let streams_to_evict = cache_ob.streams.len() - max_streams_for_location;
+                debug!(
+                    "Need to evict {streams_to_evict} for {path} max for location {max_streams_for_location}"
+                );
+                // Get stream of entries ordered by oldest first (LRU)
+                let mut removal_queue = cache_ob
+                    .streams
+                    .iter()
+                    .map(|(p, c)| (*p, c.last_use))
+                    .collect::<Vec<_>>();
+                removal_queue.sort_unstable_by_key(|(_, d)| *d);
+                // Take necessary number and evict
+                for (k, _) in removal_queue.into_iter().take(streams_to_evict) {
+                    cache_ob.streams.remove(&k);
+                }
             }
             total_live_streams += cache_ob.streams.len();
         }
         debug!(
-            "Cache contains live streams {} across {} files",
+            "After purge, cache contains live streams {} across {} files",
             total_live_streams.to_formatted_string(&Locale::en),
             cache.len().to_formatted_string(&Locale::en),
         );
@@ -436,15 +495,53 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .expect("ReadaheadStore cache lock poisoned")
             .clear();
     }
+
+    /// Remove all cache entries for given location.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    pub fn remove_cache_for(&self, location: &Path) {
+        Self::remove_cache_for_impl(&self.cache, location);
+    }
+
+    /// Helper function for cache removal. Has no "self" receiver.
+    fn remove_cache_for_impl(cache: &Arc<Mutex<HashMap<Path, CacheObject>>>, location: &Path) {
+        let mut cache = cache.lock().expect("ReadaheadStore cache lock poisoned");
+        cache.remove(location);
+    }
+
+    /// Attempts to retrieve object metadata from internal cache.
+    ///
+    /// # Panics
+    /// If the mutex lock that guards the cache has become poisoned.
+    fn head_impl(&self, location: &Path) -> Option<GetResult> {
+        let cached_meta = self
+            .cache
+            .lock()
+            .expect("ReadaheadStore cache lock poisoned");
+        let cache_ob = cached_meta.get(location);
+
+        // If we retrieved something from the cache, return it
+        // otherwise re-direct to GET which will call inner get_opts
+        // and cache result
+        cache_ob.map(|cache_ob| GetResult {
+            payload: GetResultPayload::Stream(Box::pin(empty())),
+            attributes: cache_ob.attrs.clone(),
+            meta: cache_ob.meta.clone(),
+            range: 0..cache_ob.meta.size,
+        })
+    }
 }
 
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
     fn drop(&mut self) {
         info!(
-            "ReadaheadStore made {} GET requests to underlying location {}",
+            "ReadaheadStore made {} GET and {} HEAD requests to underlying location {}",
             self.underlying_gets
-                .lock()
-                .expect("ReadaheadStore lock poisoned")
+                .load(Ordering::Relaxed)
+                .to_formatted_string(&Locale::en),
+            self.underlying_heads
+                .load(Ordering::Relaxed)
                 .to_formatted_string(&Locale::en),
             self.path_prefix,
         );
@@ -511,6 +608,7 @@ impl<T: ObjectStore> Display for ReadaheadStore<T> {
 }
 
 #[async_trait]
+#[deny(clippy::missing_trait_methods)]
 impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
     async fn put_opts(
         &self,
@@ -518,6 +616,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         payload: PutPayload,
         opts: PutOptions,
     ) -> Result<PutResult> {
+        self.remove_cache_for(location);
         self.inner.put_opts(location, payload, opts).await
     }
 
@@ -526,14 +625,32 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         location: &Path,
         opts: PutMultipartOptions,
     ) -> Result<Box<dyn MultipartUpload>> {
+        self.remove_cache_for(location);
         self.inner.put_multipart_opts(location, opts).await
     }
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
+        // If this is a HEAD request and we have the cached data available then use it
+        if options.head {
+            if let Some(result) = self.head_impl(location) {
+                return Ok(result);
+            }
+            // increment specific HEAD request count when not cached
+            self.underlying_heads
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+
         // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
         // to do anything with it
         if should_skip_readahead(&options) {
-            return self.inner.get_opts(location, options).await;
+            debug!(
+                "ReadaheadStore ObjectMeta-only-cache GET request to {}/{location}",
+                self.path_prefix
+            );
+            let result = self.inner.get_opts(location, options).await?;
+            // Create an empty cache entry for the ObjectMeta, in case it's wanted for future HEAD requests
+            self.create_cache_location(location, result.meta.clone(), result.attributes.clone());
+            return Ok(result);
         }
 
         let start_pos = get_start_pos(options.range.as_ref());
@@ -541,8 +658,8 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             .get_cached_stream(location, options.range.as_ref())
             .await?;
 
-        // Clean cache here so that we don't expire something we're just about to use, even if it is about to expire
-        self.clean_cache();
+        // Clean cache, but record that one cacheable stream has just been removed
+        self.clean_cache_with_remove(Some(location));
 
         // If cache hit
         match cached {
@@ -562,8 +679,25 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         }
     }
 
-    async fn delete(&self, location: &Path) -> Result<()> {
-        self.inner.delete(location).await
+    fn delete_stream(
+        &self,
+        locations: BoxStream<'static, Result<Path>>,
+    ) -> BoxStream<'static, Result<Path>> {
+        let inner = self.inner.clone();
+        let cache = self.cache.clone();
+        locations
+            .map(move |location| {
+                let inner = inner.clone();
+                let cache = cache.clone();
+                async move {
+                    let p = location?;
+                    Self::remove_cache_for_impl(&cache, &p);
+                    inner.delete(&p).await?;
+                    Ok(p)
+                }
+            })
+            .buffered(10)
+            .boxed()
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
@@ -574,20 +708,53 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         self.inner.list_with_delimiter(prefix).await
     }
 
-    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
-        self.inner.copy(from, to).await
+    async fn copy_opts(&self, from: &Path, to: &Path, options: CopyOptions) -> Result<()> {
+        self.inner.copy_opts(from, to, options).await
     }
 
-    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
-        self.inner.copy_if_not_exists(from, to).await
+    async fn get_ranges(&self, location: &Path, ranges: &[Range<u64>]) -> Result<Vec<Bytes>> {
+        coalesce_ranges(
+            ranges,
+            |range| self.get_range(location, range),
+            OBJECT_STORE_COALESCE_DEFAULT,
+        )
+        .await
+    }
+
+    fn list_with_offset(
+        &self,
+        prefix: Option<&Path>,
+        offset: &Path,
+    ) -> BoxStream<'static, Result<ObjectMeta>> {
+        let offset = offset.clone();
+        self.list(prefix)
+            .try_filter(move |f| ready(f.location > offset))
+            .boxed()
+    }
+
+    async fn rename_opts(&self, from: &Path, to: &Path, options: RenameOptions) -> Result<()> {
+        let RenameOptions {
+            target_mode,
+            extensions,
+        } = options;
+        let copy_mode = match target_mode {
+            RenameTargetMode::Overwrite => CopyMode::Overwrite,
+            RenameTargetMode::Create => CopyMode::Create,
+        };
+        let copy_options = CopyOptions {
+            mode: copy_mode,
+            extensions,
+        };
+        self.copy_opts(from, to, copy_options).await?;
+        self.delete(from).await?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::store::LoggingObjectStore;
-
     use super::*;
+    use crate::store::LoggingObjectStore;
     use futures::{StreamExt, stream};
     use object_store::{integration::*, local::LocalFileSystem, memory::InMemory};
     use tempfile::TempDir;
@@ -1163,7 +1330,178 @@ mod tests {
         // When - no op
 
         // Then
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn head_count_is_zero() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When - no op
+
+        // Then
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_return_cached_head_objectmeta() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        let meta = ps.head(&"test_file".into()).await?;
+
+        // Then
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
+
+        // When 2 - request data again
+        let meta2 = ps.head(&"test_file".into()).await?;
+
+        // Then 2
+        assert_eq!(meta, meta2);
+        // No extra HEAD request should have occurred
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_cache_objectmeta_on_get() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+        let _ = ps.get(&"test_file".into()).await?;
+
+        // When
+        let _ = ps.head(&"test_file".into()).await?;
+
+        // Then - no HEAD request should have occurred
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_remove_cache_on_delete() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        let _ = ps
+            .make_get_request(
+                &"test_file".into(),
+                GetOptions {
+                    range: Some(GetRange::Bounded(4..7)),
+                    ..GetOptions::default()
+                },
+            )
+            .await?;
+
+        // Then
+        // check file in cache
+        assert_eq!(
+            ps.cache
+                .lock()
+                .unwrap()
+                .get(&"test_file".into())
+                .unwrap()
+                .streams
+                .len(),
+            1
+        );
+
+        // When 2 - delete file
+        ps.delete(&"test_file".into()).await?;
+
+        // Then 2 - cache should be empty
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_remove_cache_on_put() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        let _ = ps
+            .make_get_request(
+                &"test_file".into(),
+                GetOptions {
+                    range: Some(GetRange::Bounded(4..7)),
+                    ..GetOptions::default()
+                },
+            )
+            .await?;
+
+        // Then
+        // check file in cache
+        assert_eq!(
+            ps.cache
+                .lock()
+                .unwrap()
+                .get(&"test_file".into())
+                .unwrap()
+                .streams
+                .len(),
+            1
+        );
+
+        // When 2 - PUT file
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // Then 2 - cache should be empty
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_remove_cache_on_put_multipart() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        let _ = ps
+            .make_get_request(
+                &"test_file".into(),
+                GetOptions {
+                    range: Some(GetRange::Bounded(4..7)),
+                    ..GetOptions::default()
+                },
+            )
+            .await?;
+
+        // Then
+        // check file in cache
+        assert_eq!(
+            ps.cache
+                .lock()
+                .unwrap()
+                .get(&"test_file".into())
+                .unwrap()
+                .streams
+                .len(),
+            1
+        );
+
+        // When 2 - PUT multipart on file
+        let mut p = ps.put_multipart(&"test_file".into()).await?;
+        p.complete().await?;
+
+        // Then 2 - cache should be empty
+        assert!(ps.cache.lock().unwrap().get(&"test_file".into()).is_none());
 
         Ok(())
     }
@@ -1175,13 +1513,31 @@ mod tests {
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
         let _ = ps
             .make_get_request(&"test_file".into(), GetOptions::default())
             .await?;
 
         // Then
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn make_head_requests_increments_get_count() -> Result<()> {
+        // Given
+        let ps = make_store();
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 0);
+        let _ = ps.head(&"test_file".into()).await?;
+
+        // Then
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
+        assert_eq!(ps.underlying_heads.load(Ordering::Relaxed), 1);
 
         Ok(())
     }
@@ -1353,10 +1709,59 @@ mod tests {
             );
         }
         drop(cache);
+
         // When
         let size = ps.clean_cache();
+
         // Then
         assert_eq!(size, expected, "Incorrect number of items left in cache");
+    }
+
+    fn test_cache_purge_and_validate<T: Into<Path>, I: IntoIterator<Item = (T, u64, Instant)>>(
+        live_streams: usize,
+        max_age: Duration,
+        expected: usize,
+        items: I,
+        expected_remaining: I,
+    ) {
+        // Given
+        let ps = make_store()
+            .with_max_live_streams(live_streams)
+            .with_max_stream_age(max_age);
+        let mut cache = ps.cache.lock().unwrap();
+        for (path, pos, time) in items {
+            let k = cache.entry(path.into()).or_insert_with(|| CacheObject {
+                meta: test_meta(),
+                attrs: test_attributes(),
+                streams: BTreeMap::new(),
+            });
+            k.streams.insert(
+                pos,
+                Container {
+                    inner: Box::pin(stream::empty()),
+                    pos,
+                    last_use: time,
+                },
+            );
+        }
+        drop(cache);
+
+        // When
+        let size = ps.clean_cache();
+
+        // Then
+        assert_eq!(size, expected, "Incorrect number of items left in cache");
+
+        // Validate correct items left in cache
+        let cache = ps.cache.lock().unwrap();
+        for (path, pos, time) in expected_remaining {
+            let cache_ob = cache.get(&path.into()).expect("No entry for {path}");
+            let item = cache_ob
+                .streams
+                .get(&pos)
+                .expect("No cache entry in {path} for {pos}");
+            assert_eq!(time, item.last_use);
+        }
     }
 
     #[tokio::test]
@@ -1430,7 +1835,7 @@ mod tests {
     async fn purge_some_when_short_duration() {
         test_cache_purge(
             99999,
-            Duration::from_secs(60),
+            Duration::from_mins(1),
             3,
             vec![
                 (
@@ -1446,9 +1851,7 @@ mod tests {
                 (
                     "test_file",
                     34,
-                    Instant::now()
-                        .checked_sub(Duration::from_secs(120))
-                        .unwrap(),
+                    Instant::now().checked_sub(Duration::from_mins(2)).unwrap(),
                 ),
                 (
                     "test_file2",
@@ -1475,7 +1878,7 @@ mod tests {
     async fn purge_some_when_short_duration_and_two_live() {
         test_cache_purge(
             2,
-            Duration::from_secs(60),
+            Duration::from_mins(1),
             2,
             vec![
                 (
@@ -1496,9 +1899,7 @@ mod tests {
                 (
                     "test_file",
                     34,
-                    Instant::now()
-                        .checked_sub(Duration::from_secs(120))
-                        .unwrap(),
+                    Instant::now().checked_sub(Duration::from_mins(2)).unwrap(),
                 ),
                 (
                     "test_file",
@@ -1513,6 +1914,31 @@ mod tests {
                         .unwrap(),
                 ),
             ],
+        );
+    }
+
+    #[tokio::test]
+    async fn purge_oldest_two_lru() {
+        // Test that of 3 streams, the 2 oldest get purged, leaving the most recent
+        let instant_to_keep = Instant::now().checked_sub(Duration::from_secs(10)).unwrap();
+        test_cache_purge_and_validate(
+            1,
+            Duration::from_mins(1),
+            1,
+            vec![
+                (
+                    "test_file",
+                    12,
+                    Instant::now().checked_sub(Duration::from_secs(30)).unwrap(),
+                ),
+                ("test_file", 56, instant_to_keep),
+                (
+                    "test_file",
+                    45,
+                    Instant::now().checked_sub(Duration::from_secs(20)).unwrap(),
+                ),
+            ],
+            vec![("test_file", 56, instant_to_keep)],
         );
     }
 
@@ -1562,7 +1988,7 @@ mod tests {
         let ps = make_store();
         ps.put(&"test_file".into(), "some data".into()).await?;
 
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 0);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 0);
 
         // When
         {
@@ -1578,7 +2004,7 @@ mod tests {
         }
 
         // Then - should have incremented underlying GET count
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
 
         // When - make cached request
         {
@@ -1593,7 +2019,7 @@ mod tests {
                 .await?;
         }
         // Then - cached request should NOT have incremented GET count
-        assert_eq!(*ps.underlying_gets.lock().unwrap(), 1);
+        assert_eq!(ps.underlying_gets.load(Ordering::Relaxed), 1);
 
         Ok(())
     }
@@ -1638,7 +2064,7 @@ mod tests {
                 Container {
                     inner: Box::pin(stream::empty()),
                     pos: 1,
-                    last_use: Instant::now().checked_sub(Duration::from_secs(60)).unwrap(),
+                    last_use: Instant::now().checked_sub(Duration::from_mins(1)).unwrap(),
                 },
             );
         }
@@ -1646,6 +2072,7 @@ mod tests {
         ps.put(&"test_file2".into(), "some data".into()).await?;
 
         // When
+        // Get a cached stream and drop it, causing it to insert into cache
         ps.get_range(&"test_file2".into(), 1..2).await?;
 
         // Then
@@ -1664,6 +2091,30 @@ mod tests {
                 .0,
             1
         );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_opts_should_purge_location_when_stream_retrieved() -> Result<()> {
+        // Given
+        let ps = make_store()
+            .with_max_live_streams(1)
+            .with_max_stream_age(Duration::from_secs(10));
+
+        ps.put(&"test_file".into(), "some data".into()).await?;
+
+        // When
+        // Get a cached stream and drop it, causing it to insert into cache
+        ps.get_range(&"test_file".into(), 4..5).await?;
+        // Get a second cached stream and drop it, this should cause above stream to be evicted.
+        ps.get_range(&"test_file".into(), 2..4).await?;
+
+        // Then
+        // test_file cache should have 1 entry
+        let cache = ps.cache.lock().unwrap();
+        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.get(&"test_file".into()).unwrap().streams.len(), 1);
 
         Ok(())
     }

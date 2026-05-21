@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -44,6 +42,8 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
+import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
@@ -58,7 +58,6 @@ import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
     private final AwsCredentialsProvider credentialsProvider;
-    private final AwsRegionProvider regionProvider;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
@@ -76,13 +75,13 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
+    private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
 
     private SystemTestClients(Builder builder) {
         credentialsProvider = builder.credentialsProvider;
-        regionProvider = builder.regionProvider;
         s3 = builder.s3;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
@@ -112,7 +111,6 @@ public class SystemTestClients {
     public static SystemTestClients fromDefaults() {
         return builder()
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
-                .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
                 .dynamo(DynamoDbClient.create())
@@ -138,7 +136,6 @@ public class SystemTestClients {
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
                 .credentialsProvider(aws.credentialsProvider())
-                .regionProvider(regionProvider)
                 .s3(aws.buildClient(S3Client.builder()))
                 .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
                 .dynamo(aws.buildClient(DynamoDbClient.builder()))
@@ -163,10 +160,6 @@ public class SystemTestClients {
 
     public AwsCredentialsProvider getCredentialsProvider() {
         return credentialsProvider;
-    }
-
-    public AwsRegionProvider getRegionProvider() {
-        return regionProvider;
     }
 
     public S3Client getS3() {
@@ -237,6 +230,10 @@ public class SystemTestClients {
         return cloudWatchEvents;
     }
 
+    public CommandPipelineRunner getCommandRunner() {
+        return commandRunner;
+    }
+
     public DataFusionAwsConfig createDataFusionAwsConfig() {
         return dataFusionAwsConfig.get();
     }
@@ -268,7 +265,6 @@ public class SystemTestClients {
 
     public static class Builder {
         private AwsCredentialsProvider credentialsProvider;
-        private AwsRegionProvider regionProvider;
         private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
@@ -295,11 +291,6 @@ public class SystemTestClients {
 
         public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
             this.credentialsProvider = credentialsProvider;
-            return this;
-        }
-
-        public Builder regionProvider(AwsRegionProvider regionProvider) {
-            this.regionProvider = regionProvider;
             return this;
         }
 
