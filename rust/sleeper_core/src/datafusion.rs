@@ -27,7 +27,7 @@ use crate::{
         unalias::unalias_view_projection_columns,
         util::{
             add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
+            calculate_upload_size, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },

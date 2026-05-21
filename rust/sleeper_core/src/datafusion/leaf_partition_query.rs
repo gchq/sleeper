@@ -22,8 +22,7 @@ use crate::{
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
         sql_sort_fix::inject_sort_stage,
-        util::{check_for_sort_exec, explain_plan},
-        util::{explain_plan, retrieve_object_metas},
+        util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
 };
 use datafusion::{
