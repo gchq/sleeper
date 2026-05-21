@@ -21,7 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        sql_sort_fix::inject_sort_stage,
+        sql_sort_fix::{inject_sort_stage},
         util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
 };
@@ -132,6 +132,7 @@ impl<'a> LeafPartitionQuery<'a> {
                 .await?;
 
             // SQL on a frame incorrectly removes the sort stage, so manually inject it
+            // frame = inject_sort_stage(frame, ops.create_sort_order())?;
             frame = inject_sort_stage(frame, ops.create_sort_order())?;
         }
 

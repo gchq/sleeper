@@ -24,11 +24,11 @@ use datafusion::{
     prelude::DataFrame,
 };
 
-/// Insert sort stage back into logical plan for a query (v2).
+/// Insert sort stage back into logical plan for a query.
 ///
 /// Searches bottom-up for the first non-Filter node that has a Filter child,
 /// then inserts a Sort stage between them in a single pass.
-pub fn inject_sort_stage_v2(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFrame> {
+pub fn inject_sort_stage(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFrame> {
     use std::cell::RefCell;
 
     let (state, plan) = frame.into_parts();
@@ -57,53 +57,371 @@ pub fn inject_sort_stage_v2(frame: DataFrame, expr: Vec<SortExpr>) -> Result<Dat
     Ok(DataFrame::new(state, new_plan))
 }
 
-/// Insert sort stage back into logical plan for a query.
-///
-/// We search the query plan bottom up, looking for the first non-Filter stage (1) that has a Filter stage (2)
-/// as input (i.e. direct child). On the second pass, we insert a Sort stage betweem (1) and (2).
-pub fn inject_sort_stage(frame: DataFrame, mut sorting_exprs: Vec<SortExpr>) -> Result<DataFrame> {
-    let (state, plan) = frame.into_parts();
-    // Look for last "Filter" stage working up from bottom of plan.
-    // Since we can't find out who the "parent" plan stage is in advance and it
-    // seems we can't easily duplicate the stage under examination, we scan upwards
-    // and count stages
-    let mut stage_found = false;
-    let mut stage_no = 0usize;
-    let mut new_plan = plan
-        .transform_up(|node| {
-            Ok(
-                // if we are a non filter node with a filter node child, then stop
-                if !matches!(node, LogicalPlan::Filter(_))
-                    && node.inputs().len() == 1
-                    && matches!(node.inputs()[0], LogicalPlan::Filter(_))
-                {
-                    stage_found = true;
-                    stage_no -= 1;
-                    Transformed::new(node, false, TreeNodeRecursion::Stop)
-                } else {
-                    stage_no += 1;
-                    Transformed::no(node)
-                },
-            )
-        })?
-        .data;
-    if stage_found {
-        // Now we can scan again, stop in the right plan stage and inject the new sort stage
-        new_plan = new_plan
-            .transform_up(|node| {
-                Ok(if stage_no == 0 {
-                    let new_node = LogicalPlan::Sort(Sort {
-                        expr: std::mem::take(&mut sorting_exprs),
-                        input: Arc::new(node),
-                        fetch: None,
-                    });
-                    Transformed::complete(new_node)
-                } else {
-                    stage_no -= 1;
-                    Transformed::no(node)
-                })
-            })?
-            .data;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use datafusion::{
+        arrow::datatypes::{DataType, Field, Schema},
+        execution::context::SessionContext,
+        logical_expr::{col, lit},
+    };
+
+    fn create_test_context() -> SessionContext {
+        SessionContext::new()
     }
-    Ok(DataFrame::new(state, new_plan))
+
+    fn create_sort_exprs() -> Vec<SortExpr> {
+        vec![col("a").sort(true, true)]
+    }
+
+    async fn create_simple_dataframe(ctx: &SessionContext) -> DataFrame {
+        ctx.read_empty().unwrap()
+    }
+
+    async fn create_dataframe_with_filter(ctx: &SessionContext) -> DataFrame {
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]);
+        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
+            schema,
+        )))
+        .unwrap()
+        .filter(col("a").gt(lit(0)))
+        .unwrap()
+    }
+
+    async fn create_dataframe_with_filter_and_projection(ctx: &SessionContext) -> DataFrame {
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]);
+        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
+            schema,
+        )))
+        .unwrap()
+        .filter(col("a").gt(lit(0)))
+        .unwrap()
+        .select(vec![col("a")])
+        .unwrap()
+    }
+
+    async fn create_dataframe_with_nested_filters(ctx: &SessionContext) -> DataFrame {
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]);
+        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
+            schema,
+        )))
+        .unwrap()
+        .filter(col("a").gt(lit(0)))
+        .unwrap()
+        .filter(col("a").lt(lit(100)))
+        .unwrap()
+    }
+
+    fn count_sort_nodes(plan: &LogicalPlan) -> usize {
+        let self_count = if matches!(plan, LogicalPlan::Sort(_)) {
+            1
+        } else {
+            0
+        };
+        self_count
+            + plan
+                .inputs()
+                .iter()
+                .map(|p| count_sort_nodes(p))
+                .sum::<usize>()
+    }
+
+    fn find_sort(plan: &LogicalPlan) -> Option<&Sort> {
+        if let LogicalPlan::Sort(sort) = plan {
+            return Some(sort);
+        }
+        plan.inputs().iter().find_map(|p| find_sort(p))
+    }
+
+    #[tokio::test]
+    async fn should_inject_sort_between_projection_and_filter() {
+        // Given
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let sort_exprs = create_sort_exprs();
+
+        // Verify no Sort node exists before injection
+        let (_, plan_before) = frame.clone().into_parts();
+        assert_eq!(count_sort_nodes(&plan_before), 0);
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then
+        let (_, plan_after) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan_after), 1);
+
+        // Verify sort is in correct place: Projection -> Sort -> Filter
+        assert!(
+            matches!(plan_after, LogicalPlan::Projection(_)),
+            "Root should be Projection"
+        );
+        let projection_input = &plan_after.inputs()[0];
+        assert!(
+            matches!(projection_input, LogicalPlan::Sort(_)),
+            "Projection child should be Sort"
+        );
+        let sort_input = &projection_input.inputs()[0];
+        assert!(
+            matches!(sort_input, LogicalPlan::Filter(_)),
+            "Sort child should be Filter"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_place_sort_above_filter() {
+        // Given
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then
+        let (_, plan) = result.into_parts();
+        let sort = find_sort(&plan).expect("Sort node should exist");
+        assert!(
+            matches!(sort.input.as_ref(), LogicalPlan::Filter(_)),
+            "Sort child should be Filter"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_not_inject_sort_when_only_nested_filters() {
+        // Given - nested filters with no non-Filter node above them
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_nested_filters(&ctx).await;
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then - no sort should be added since root is a Filter
+        let (_, plan) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan), 0);
+    }
+
+    #[tokio::test]
+    async fn should_not_modify_plan_without_filter() {
+        // Given
+        let ctx = create_test_context();
+        let frame = create_simple_dataframe(&ctx).await;
+        let sort_exprs = create_sort_exprs();
+
+        // Verify no Sort node exists before
+        let (_, plan_before) = frame.clone().into_parts();
+        assert_eq!(count_sort_nodes(&plan_before), 0);
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then - no sort should be added since there's no filter
+        let (_, plan_after) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan_after), 0);
+    }
+
+    #[tokio::test]
+    async fn should_handle_empty_sort_expressions() {
+        // Given
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let sort_exprs: Vec<SortExpr> = vec![];
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then - sort node should still be injected, just with empty expressions
+        let (_, plan) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan), 1);
+
+        // Verify the sort node has empty expressions
+        let sort = find_sort(&plan).expect("Sort node should exist");
+        assert!(sort.expr.is_empty());
+    }
+
+    #[tokio::test]
+    async fn should_handle_multiple_sort_expressions() {
+        // Given
+        let ctx = create_test_context();
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int32, false),
+            Field::new("c", DataType::Utf8, false),
+        ]);
+        let frame = ctx
+            .read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
+                schema,
+            )))
+            .unwrap()
+            .filter(col("a").gt(lit(0)))
+            .unwrap()
+            .select(vec![col("a"), col("b")])
+            .unwrap();
+
+        let sort_exprs = vec![col("a").sort(true, true), col("b").sort(false, false)];
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then
+        let (_, plan) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan), 1);
+
+        // Find the sort node and verify it has 2 expressions
+        let sort = find_sort(&plan).expect("Sort node should exist");
+        let sort_exprs = &sort.expr;
+        assert_eq!(sort_exprs.len(), 2);
+
+        // Verify first sort expr: col("a") ASC NULLS FIRST
+        assert_eq!(sort_exprs[0].expr.schema_name().to_string(), "a");
+        assert!(sort_exprs[0].asc);
+        assert!(sort_exprs[0].nulls_first);
+
+        // Verify second sort expr: col("b") DESC NULLS LAST
+        assert_eq!(sort_exprs[1].expr.schema_name().to_string(), "b");
+        assert!(!sort_exprs[1].asc);
+        assert!(!sort_exprs[1].nulls_first);
+    }
+
+    #[tokio::test]
+    async fn should_only_inject_one_sort_even_with_multiple_filter_boundaries() {
+        // Given - a plan with projection -> filter -> filter -> table scan
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_nested_filters(&ctx)
+            .await
+            .select(vec![col("a")])
+            .unwrap();
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then - only one sort should be injected (at the topmost filter boundary)
+        let (_, plan) = result.into_parts();
+        assert_eq!(
+            count_sort_nodes(&plan),
+            1,
+            "Should inject exactly one Sort node"
+        );
+
+        // Verify sort is between projection and first filter
+        // Plan should be: Projection -> Sort -> Filter -> Filter -> TableScan
+        assert!(
+            matches!(plan, LogicalPlan::Projection(_)),
+            "Root should be Projection"
+        );
+        let projection_input = &plan.inputs()[0];
+        assert!(
+            matches!(projection_input, LogicalPlan::Sort(_)),
+            "Projection child should be Sort"
+        );
+        let sort_input = &projection_input.inputs()[0];
+        assert!(
+            matches!(sort_input, LogicalPlan::Filter(_)),
+            "Sort child should be Filter"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_preserve_dataframe_state() {
+        // Given
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let schema_before = frame.schema().clone();
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then
+        let schema_after = result.schema().clone();
+        assert_eq!(schema_before, schema_after);
+    }
+
+    #[tokio::test]
+    async fn should_handle_filter_as_root_node() {
+        // Given - filter is the root node (no projection on top)
+        let ctx = create_test_context();
+        let frame = create_dataframe_with_filter(&ctx).await;
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then - no sort should be added since filter is root
+        // (there's no non-Filter node with Filter child)
+        let (_, plan) = result.into_parts();
+        // Filter as root means there's no parent to insert between
+        assert_eq!(count_sort_nodes(&plan), 0);
+    }
+
+    #[tokio::test]
+    async fn should_inject_sort_at_deepest_non_filter_to_filter_boundary() {
+        // Given - plan: Projection -> Filter -> Limit -> Filter -> Filter -> TableScan
+        let ctx = create_test_context();
+        let schema = Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]);
+        let frame = ctx
+            .read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
+                schema,
+            )))
+            .unwrap()
+            .filter(col("a").gt(lit(0))) // Filter3 (deepest)
+            .unwrap()
+            .filter(col("a").lt(lit(100))) // Filter2
+            .unwrap()
+            .limit(0, Some(10)) // Limit
+            .unwrap()
+            .filter(col("a").gt(lit(5))) // Filter
+            .unwrap()
+            .select(vec![col("a")]) // Projection
+            .unwrap();
+        let sort_exprs = create_sort_exprs();
+
+        // When
+        let result = inject_sort_stage(frame, sort_exprs).unwrap();
+
+        // Then
+        let (_, plan) = result.into_parts();
+        assert_eq!(count_sort_nodes(&plan), 1);
+
+        // Verify structure: Projection -> Filter -> Limit -> Sort -> Filter -> Filter -> TableScan
+        // Sort should be inserted between Limit (NonFilter2) and Filter2
+        assert!(
+            matches!(plan, LogicalPlan::Projection(_)),
+            "Root should be Projection"
+        );
+        let proj_input = &plan.inputs()[0];
+        assert!(
+            matches!(proj_input, LogicalPlan::Filter(_)),
+            "Projection child should be Filter"
+        );
+        let filter_input = &proj_input.inputs()[0];
+        assert!(
+            matches!(filter_input, LogicalPlan::Limit(_)),
+            "Filter child should be Limit"
+        );
+        let limit_input = &filter_input.inputs()[0];
+        assert!(
+            matches!(limit_input, LogicalPlan::Sort(_)),
+            "Limit child should be Sort"
+        );
+        let sort_input = &limit_input.inputs()[0];
+        assert!(
+            matches!(sort_input, LogicalPlan::Filter(_)),
+            "Sort child should be Filter"
+        );
+    }
 }
