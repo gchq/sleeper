@@ -35,7 +35,6 @@ import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 
 /**
  * Deploys resources to perform bulk import jobs on EMR, with a cluster created per job. A message arriving on a queue
@@ -86,10 +85,9 @@ public class EmrBulkImportStack extends NestedStack {
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("CreateCleanupRole")
                 .actions(List.of("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(List.of("arn:aws:iam::*:role/aws-service-role/elasticmapreduce." + instanceProperties.get(DNS_SUFFIX) + "*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        List.of("elasticmapreduce." + instanceProperties.get(DNS_SUFFIX),
-                                "elasticmapreduce." + instanceProperties.get(DNS_SUFFIX) + ".cn"))))
+                // TODO check service linked role ARN format in another partition
+                .resources(List.of("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com/AWSServiceRoleForEMRCleanup*"))
+                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName", "elasticmapreduce.amazonaws.com")))
                 .build());
     }
 
