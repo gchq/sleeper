@@ -16,8 +16,8 @@
 
 package sleeper.cdk.stack.bulkimport;
 
+import com.google.common.io.Resources;
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -45,13 +45,16 @@ import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
@@ -135,9 +138,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
         String instanceId = instanceProperties.cleanInstanceId();
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
-        PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
-                new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
-                Map.class));
+        String policyJson = loadResourceAsString("/iam/SleeperEMRPolicy.json")
+                .replace("${partition}", instanceProperties.get(PARTITION));
+        PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(policyJson, Map.class));
 
         ManagedPolicy customEmrManagedPolicy = ManagedPolicy.Builder.create(scope, "CustomEMRManagedPolicy")
                 .description("Custom policy for EMR bulk import to operate in VPC")
@@ -242,5 +245,14 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     public CfnSecurityConfiguration getSecurityConfiguration() {
         return securityConfiguration;
+    }
+
+    private static String loadResourceAsString(String resource) {
+        URL url = Resources.getResource(CommonEmrBulkImportStack.class, resource);
+        try {
+            return Resources.toString(url, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
