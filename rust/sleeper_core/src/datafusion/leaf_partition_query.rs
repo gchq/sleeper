@@ -116,7 +116,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let mut frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
 
-        frame = add_sql_stages(self.config.sql_query.as_ref(), &ops, frame, &task_ctx).await?;
+        frame = add_sql_stage(self.config.sql_query.as_deref(), &ops, frame, &task_ctx).await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
@@ -242,14 +242,13 @@ impl<'a> LeafPartitionQuery<'a> {
 ///
 /// # Errors
 /// Returns an error if the SQL query is invalid or uses disallowed statements.
-async fn add_sql_stages<S: AsRef<str>>(
-    sql: Option<S>,
+async fn add_sql_stage(
+    sql: Option<&str>,
     ops: &SleeperOperations<'_>,
     frame: DataFrame,
     task_ctx: &Arc<TaskContext>,
 ) -> Result<DataFrame, DataFusionError> {
     Ok(if let Some(sql) = sql {
-        let sql = sql.as_ref();
         let runtime = task_ctx.runtime_env();
         let config = task_ctx.session_config();
         let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
