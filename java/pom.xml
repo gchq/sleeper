@@ -97,6 +97,9 @@
         <protobuf.version>4.35.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
+        <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
+        <org.lz4.version>1.8.1</org.lz4.version>
+        <yawk.lz4.version>1.11.0</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -985,6 +988,16 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${org.lz4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>at.yawk.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${yawk.lz4.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
