@@ -1,4 +1,4 @@
-//! Contains code to replace the sort stage that [`DataFrame`] as SQL table functionality drops.
+//! Contains code to replace the sort stage that [`DataFrame`] as SQL table functionality incorrectly drops it.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -23,6 +23,39 @@ use datafusion::{
     logical_expr::{LogicalPlan, Sort, SortExpr},
     prelude::DataFrame,
 };
+
+/// Insert sort stage back into logical plan for a query (v2).
+///
+/// Searches bottom-up for the first non-Filter node that has a Filter child,
+/// then inserts a Sort stage between them in a single pass.
+pub fn inject_sort_stage_v2(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFrame> {
+    use std::cell::RefCell;
+
+    let (state, plan) = frame.into_parts();
+    // RefCell allows moving `expr` out of the FnMut closure. We stop traversal after
+    // the first match so the closure only fires once, but rustc can't prove that.
+    let expr = RefCell::new(expr);
+
+    let new_plan = plan
+        .transform_up(|node| {
+            if matches!(node, LogicalPlan::Filter(_)) {
+                return Ok(Transformed::no(node));
+            }
+            if node.inputs().len() != 1 || !matches!(node.inputs()[0], LogicalPlan::Filter(_)) {
+                return Ok(Transformed::no(node));
+            }
+            let sort_node = LogicalPlan::Sort(Sort {
+                expr: expr.take(),
+                input: Arc::new(node.inputs()[0].clone()),
+                fetch: None,
+            });
+            let new_node = node.with_new_exprs(node.expressions(), vec![sort_node])?;
+            Ok(Transformed::new(new_node, true, TreeNodeRecursion::Stop))
+        })?
+        .data;
+
+    Ok(DataFrame::new(state, new_plan))
+}
 
 /// Insert sort stage back into logical plan for a query.
 ///
