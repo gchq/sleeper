@@ -17,6 +17,8 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -58,12 +60,13 @@ public class DeployInstance {
         this.invokeCdk = invokeCdk;
     }
 
-    public static DeployInstance fromScriptsDirectory(Path scriptsDirectory, String account, String region, S3Client s3Client, EcrClient ecrClient) throws IOException {
+    public static DeployInstance fromScriptsDirectory(
+            Path scriptsDirectory, String account, Region region, PartitionMetadata partitionMetadata, S3Client s3Client, EcrClient ecrClient) throws IOException {
         return new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, account, scriptsDirectory),
                 new UploadDockerImagesToEcr(
                         UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
-                        account, region),
+                        account, region, partitionMetadata),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.fromScriptsDirectory(scriptsDirectory));
     }

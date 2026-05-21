@@ -91,7 +91,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                         .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                         .version("1.0.0")
                         .build(),
-                "123", "test-region");
+                "123", "test-region", "amazonaws.com");
     }
 
     private static Map<Path, String> fileToContentUnder(Path directory) throws Exception {
