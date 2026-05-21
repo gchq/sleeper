@@ -18,14 +18,10 @@ package sleeper.clients.deploy.container;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 public class DockerImageCommandTestData {
@@ -35,59 +31,16 @@ public class DockerImageCommandTestData {
 
     private static final String DEFAULT_ECR_HOSTNAME = "123.dkr.ecr.test-region.amazonaws.com";
 
-    public static List<CommandPipeline> commandsToLoginDockerAndPushBaseAndImages(String... images) {
-        return commandsToLoginDockerAndPushBaseAndImages(DEFAULT_ECR_HOSTNAME, "test-instance", "1.0.0", false, images);
-    }
-
-    public static List<CommandPipeline> commandsToLoginDockerAndPushBaseAndMultiplatformImages(String... images) {
-        return commandsToLoginDockerAndPushBaseAndImages(DEFAULT_ECR_HOSTNAME, "test-instance", "1.0.0", true, images);
-    }
-
-    public static List<CommandPipeline> commandsToLoginDockerAndPushBaseAndImages(InstanceProperties instanceProperties, String... images) {
-        String ecrHostname = instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + ".amazonaws.com";
-        return commandsToLoginDockerAndPushBaseAndImages(ecrHostname, instanceProperties.get(ECR_REPOSITORY_PREFIX), instanceProperties.get(VERSION), false, images);
-    }
-
-    private static List<CommandPipeline> commandsToLoginDockerAndPushBaseAndImages(String ecrHostname, String ecrPrefix, String version, boolean multiplatform, String... images) {
-        String baseTag = ecrHostname + "/" + ecrPrefix + "/base:" + version;
-        List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(dockerLoginToEcrCommand(ecrHostname));
-        commands.add(createBuildxBuilderInstanceCommand());
-        commands.add(useBuildxBuilderInstanceCommand());
-        commands.add(buildAndPushMultiplatformImageCommand(baseTag, "./docker/base", baseTag));
-        for (String image : images) {
-            String tag = ecrHostname + "/" + ecrPrefix + "/" + image + ":" + version;
-            if (multiplatform) {
-                commands.add(buildAndPushMultiplatformImageCommand(tag, "./docker/" + image, baseTag));
-            } else {
-                commands.add(buildImageCommand(tag, "./docker/" + image, baseTag));
-                commands.add(pushImageCommand(tag));
-            }
-        }
-        return commands;
-    }
-
-    public static List<CommandPipeline> commandsToLoginDockerAndPushLambdaBaseAndImages(String... images) {
-        return commandsToLoginDockerAndPushLambdaBaseAndImages(DEFAULT_ECR_HOSTNAME, "test-instance", "1.0.0", images);
-    }
-
-    private static List<CommandPipeline> commandsToLoginDockerAndPushLambdaBaseAndImages(String ecrHostname, String ecrPrefix, String version, String... images) {
-        String baseTag = ecrHostname + "/" + ecrPrefix + "/base:" + version;
-        List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(dockerLoginToEcrCommand(ecrHostname));
-        commands.add(createBuildxBuilderInstanceCommand());
-        commands.add(useBuildxBuilderInstanceCommand());
-        commands.add(buildAndPushMultiplatformImageCommand(baseTag, "./docker/base", baseTag));
-        for (String image : images) {
-            String tag = ecrHostname + "/" + ecrPrefix + "/" + image + ":" + version;
-            commands.add(buildLambdaImageCommand(tag, "./docker/lambda", baseTag));
-            commands.add(pushImageCommand(tag));
-        }
-        return commands;
+    public static String ecrPrefix(InstanceProperties instanceProperties) {
+        return instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + ".amazonaws.com/" + instanceProperties.get(ECR_REPOSITORY_PREFIX);
     }
 
     public static CommandPipeline dockerLoginToEcrCommand() {
         return dockerLoginToEcrCommand(DEFAULT_ECR_HOSTNAME);
+    }
+
+    public static CommandPipeline dockerLoginToEcrCommand(InstanceProperties instanceProperties) {
+        return dockerLoginToEcrCommand(instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + ".amazonaws.com");
     }
 
     private static CommandPipeline dockerLoginToEcrCommand(String ecrHostname) {
