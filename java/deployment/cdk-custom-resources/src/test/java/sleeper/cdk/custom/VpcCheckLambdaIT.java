@@ -61,6 +61,26 @@ class VpcCheckLambdaIT {
     }
 
     @Test
+    void shouldFindVpcEndpointInNonStandardAWSPartition(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(describeVpcEndpoints().willReturn(singleVpcEndpointResponse()));
+
+        Map<String, Object> properties = Map.of(
+                "vpcId", "myVpc",
+                "region", "eusc-de-east-1");
+
+        // When
+        lambda(runtimeInfo).handleEvent(CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(properties).build(), null);
+
+        // Then
+        verify(1, postRequestedFor(urlEqualTo("/"))
+                .withRequestBody(containing("Filter.2.Name=service-name")
+                        .and(containing("Filter.2.Value.1=eu.amazonaws.eusc-de-east-1.s3"))));
+    }
+
+    @Test
     void shouldFailWhenVpcEndpointIsNotPresent(WireMockRuntimeInfo runtimeInfo) {
         // Given
         stubFor(describeVpcEndpoints().willReturn(noVpcEndpointsResponse()));
