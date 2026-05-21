@@ -361,7 +361,7 @@ public class SleeperCoreStacks {
         return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 
-    public IGrantable getReadStateMachinePolicyForGrants() {
+    public ManagedPolicy getReadStateMachinePolicyForGrants() {
         return policiesStack.getReadStateMachinePolicyForGrants();
     }
 

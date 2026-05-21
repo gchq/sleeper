@@ -18,8 +18,11 @@ package sleeper.cdk.stack.bulkimport;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import software.amazon.awscdk.ArnComponents;
+import software.amazon.awscdk.ArnFormat;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
@@ -188,7 +191,16 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
-        stateMachine.grantExecution(coreStacks.getReadStateMachinePolicyForGrants(), "states:DescribeExecution");
+        String executionArn = Stack.of(this).formatArn(ArnComponents.builder()
+                .service("states")
+                .resource("execution")
+                .resourceName(stateMachine.getStateMachineName() + ":*")
+                .arnFormat(ArnFormat.COLON_RESOURCE_NAME)
+                .build());
+        coreStacks.getReadStateMachinePolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .actions(List.of("states:DescribeExecution"))
+                .resources(List.of(executionArn))
+                .build());
 
         Utils.addTags(this, instanceProperties);
     }
