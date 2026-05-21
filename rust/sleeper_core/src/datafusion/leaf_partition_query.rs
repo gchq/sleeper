@@ -116,7 +116,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let mut frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
 
-        frame = self.add_sql_stages(&ops, frame, &task_ctx).await?;
+        frame = add_sql_stages(self.config.sql_query.as_ref(), &ops, frame, &task_ctx).await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
@@ -156,37 +156,6 @@ impl<'a> LeafPartitionQuery<'a> {
             output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
         Ok(result)
-    }
-
-    async fn add_sql_stages(
-        &self,
-        ops: &SleeperOperations<'_>,
-        frame: DataFrame,
-        task_ctx: &Arc<TaskContext>,
-    ) -> Result<DataFrame, DataFusionError> {
-        Ok(if let Some(sql) = &self.config.sql_query {
-            let runtime = task_ctx.runtime_env();
-            let config = task_ctx.session_config();
-            let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
-
-            let table = frame.into_view();
-            ctx.register_table("my_table", table)?;
-            let frame = ctx
-                .sql_with_options(
-                    sql,
-                    SQLOptions::new()
-                        .with_allow_ddl(false)
-                        .with_allow_dml(false)
-                        .with_allow_statements(false),
-                )
-                .await?;
-
-            // SQL on a frame incorrectly removes the sort stage, so manually inject it
-            // frame = inject_sort_stage(frame, ops.create_sort_order())?;
-            inject_sort_stage(frame, ops.create_sort_order())?
-        } else {
-            frame
-        })
     }
 
     /// Adds a quantile sketch to a query plan if sketch generation is enabled.
@@ -264,6 +233,43 @@ impl<'a> LeafPartitionQuery<'a> {
         frame = self.maybe_project_columns(frame)?;
         self.maybe_add_sketch_output(ops, frame)
     }
+}
+
+/// Applies an optional user-provided SQL query to the `DataFrame`.
+///
+/// The `DataFrame` is exposed as `my_table` for the SQL to reference.
+/// Only SELECT queries are permitted.
+///
+/// # Errors
+/// Returns an error if the SQL query is invalid or uses disallowed statements.
+async fn add_sql_stages<S: AsRef<str>>(
+    sql: Option<S>,
+    ops: &SleeperOperations<'_>,
+    frame: DataFrame,
+    task_ctx: &Arc<TaskContext>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(if let Some(sql) = sql {
+        let sql = sql.as_ref();
+        let runtime = task_ctx.runtime_env();
+        let config = task_ctx.session_config();
+        let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
+
+        let table = frame.into_view();
+        ctx.register_table("my_table", table)?;
+        let frame = ctx
+            .sql_with_options(
+                sql,
+                SQLOptions::new()
+                    .with_allow_ddl(false)
+                    .with_allow_dml(false)
+                    .with_allow_statements(false),
+            )
+            .await?;
+
+        inject_sort_stage(frame, ops.create_sort_order())?
+    } else {
+        frame
+    })
 }
 
 impl LeafPartitionQuery<'_> {
