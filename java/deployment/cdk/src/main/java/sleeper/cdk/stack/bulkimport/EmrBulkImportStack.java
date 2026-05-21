@@ -85,7 +85,6 @@ public class EmrBulkImportStack extends NestedStack {
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("CreateCleanupRole")
                 .actions(List.of("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                // TODO check service linked role ARN format in another partition
                 .resources(List.of("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com/AWSServiceRoleForEMRCleanup*"))
                 .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName", "elasticmapreduce.amazonaws.com")))
                 .build());

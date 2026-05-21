@@ -131,7 +131,6 @@ public class CompactionOnEc2Resources {
 
         IDependable autoScalingPermission = CfnPermission.Builder.create(stack, "AutoscalingCall")
                 .action("lambda:InvokeFunction")
-                // TODO check service linked role ARN format in another partition
                 .principal("arn:aws:iam::" + instanceProperties.get(ACCOUNT)
                         + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling")
                 .functionName(customTermination.getFunctionArn())
