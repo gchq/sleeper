@@ -49,8 +49,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
-
 public final class WebSocketQueryStack extends NestedStack {
 
     private CfnApi webSocketApi;
@@ -120,7 +118,7 @@ public final class WebSocketQueryStack extends NestedStack {
                 .build();
 
         webSocketApiHandler.addPermission("apigateway-access-to-lambda", Permission.builder()
-                .principal(new ServicePrincipal("apigateway." + instanceProperties.get(DNS_SUFFIX)))
+                .principal(new ServicePrincipal("apigateway.amazonaws.com"))
                 .sourceArn(Stack.of(this).formatArn(ArnComponents.builder()
                         .service("execute-api")
                         .resource(api.getRef())
