@@ -41,7 +41,6 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -104,7 +103,7 @@ public class EmrStudioStack extends NestedStack {
                                                 .build()))
                                         .build())
                                 .build()))
-                .assumedBy(new ServicePrincipal("elasticmapreduce." + instanceProperties.get(DNS_SUFFIX)))
+                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build();
 
         return studioRole.getRoleArn();
