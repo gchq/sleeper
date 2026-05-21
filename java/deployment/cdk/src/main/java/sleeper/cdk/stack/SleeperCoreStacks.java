@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -361,8 +362,8 @@ public class SleeperCoreStacks {
         return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 
-    public ManagedPolicy getReadStateMachinePolicyForGrants() {
-        return policiesStack.getReadStateMachinePolicyForGrants();
+    public void grantReadStateMachine(PolicyStatement statement) {
+        policiesStack.grantReadStateMachine(statement);
     }
 
     public void createRoles() {

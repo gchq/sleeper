@@ -19,6 +19,7 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -51,7 +52,6 @@ public class ManagedPoliciesStack extends NestedStack {
     private final ManagedPolicy clearInstancePolicy;
     private final ManagedPolicy adminPolicy;
     private ManagedPolicy invokeCompactionPolicy;
-    private ManagedPolicy readStateMachinePolicy;
 
     public ManagedPoliciesStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
@@ -124,11 +124,8 @@ public class ManagedPoliciesStack extends NestedStack {
         return invokeCompactionPolicy;
     }
 
-    public ManagedPolicy getReadStateMachinePolicyForGrants() {
-        if (readStateMachinePolicy == null) {
-            readStateMachinePolicy = createManagedPolicy("ReadStateMachine");
-        }
-        return readStateMachinePolicy;
+    public void grantReadStateMachine(PolicyStatement statement) {
+        adminPolicy.addStatements(statement);
     }
 
     public void grantInvokeScheduled(IFunction function) {
@@ -177,7 +174,7 @@ public class ManagedPoliciesStack extends NestedStack {
         return Stream.of(
                 directIngestPolicy, ingestByQueuePolicy, queryPolicy,
                 editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
-                invokeCompactionPolicy, readStateMachinePolicy)
+                invokeCompactionPolicy)
                 .filter(policy -> policy != null);
     }
 
