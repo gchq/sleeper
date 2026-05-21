@@ -72,7 +72,6 @@ import java.util.Objects;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -132,8 +131,9 @@ public class CompactionOnEc2Resources {
 
         IDependable autoScalingPermission = CfnPermission.Builder.create(stack, "AutoscalingCall")
                 .action("lambda:InvokeFunction")
+                // TODO check service linked role ARN format in another partition
                 .principal("arn:aws:iam::" + instanceProperties.get(ACCOUNT)
-                        + ":role/aws-service-role/autoscaling." + instanceProperties.get(DNS_SUFFIX) + "/AWSServiceRoleForAutoScaling")
+                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling")
                 .functionName(customTermination.getFunctionArn())
                 .build();
 
