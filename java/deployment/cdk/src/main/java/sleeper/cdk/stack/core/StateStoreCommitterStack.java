@@ -67,7 +67,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
@@ -179,7 +178,7 @@ public class StateStoreCommitterStack extends NestedStack {
                                 .userData(UserData.forLinux())
                                 .securityGroup(ecsSecurityGroup)
                                 .role(Role.Builder.create(this, "role")
-                                        .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2." + instanceProperties.get(DNS_SUFFIX)))
+                                        .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                                         .build())
                                 .build())
                         .vpc(vpc)
