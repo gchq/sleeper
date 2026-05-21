@@ -61,6 +61,17 @@ RUN_PARAMS+=(
   -e ACTIONS_CACHE_SERVICE_V2
 )
 
+
+# If the caller set EXTRA_CARGO_CONFIG (e.g. to point cargo at an internal crates.io
+# mirror), build a throwaway CARGO_HOME containing the project's existing
+# .cargo/config.toml plus the extra snippet appended. We do this in a separate
+# directory rather than editing the checked-in config so the working tree stays
+# clean and the mirror settings don't leak into other builds.
+#
+# Assumes EXTRA_CARGO_CONFIG holds valid TOML, possibly with \n escapes — printf %b
+# interprets them so callers can pass multi-line config as a single env var.
+# The ${VAR:-} form lets `set -u` callers run without tripping on an unset var,
+# and `: > file` truncates/creates the file when no base config exists to copy.
 if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
   ALT_CARGO_HOME="$PROJECT_DIR/rust/.cargo-home-mirror"
   mkdir -p "$ALT_CARGO_HOME"
