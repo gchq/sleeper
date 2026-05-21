@@ -59,7 +59,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
@@ -210,7 +209,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .description("The role assumed by the Bulk import EMR Serverless Application")
                 .managedPolicies(
                         List.of(createEmrServerlessManagedPolicy(instanceProperties)))
-                .assumedBy(new ServicePrincipal("emr-serverless." + instanceProperties.get(DNS_SUFFIX))).build());
+                .assumedBy(new ServicePrincipal("emr-serverless.amazonaws.com")).build());
 
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
 
