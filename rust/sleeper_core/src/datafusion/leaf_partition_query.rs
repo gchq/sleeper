@@ -21,7 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        sql_sort_fix::{inject_sort_stage},
+        sql_sort_fix::inject_sort_stage,
         util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
 };
@@ -29,7 +29,9 @@ use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
+    execution::{
+        TaskContext, config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv,
+    },
     logical_expr::{Expr, ident},
     physical_plan::displayable,
     prelude::SQLOptions,
@@ -114,27 +116,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let mut frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
 
-        if let Some(sql) = &self.config.sql_query {
-            let runtime = task_ctx.runtime_env();
-            let config = task_ctx.session_config();
-            let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
-
-            let table = frame.into_view();
-            ctx.register_table("my_table", table)?;
-            frame = ctx
-                .sql_with_options(
-                    sql,
-                    SQLOptions::new()
-                        .with_allow_ddl(false)
-                        .with_allow_dml(false)
-                        .with_allow_statements(false),
-                )
-                .await?;
-
-            // SQL on a frame incorrectly removes the sort stage, so manually inject it
-            // frame = inject_sort_stage(frame, ops.create_sort_order())?;
-            frame = inject_sort_stage(frame, ops.create_sort_order())?;
-        }
+        frame = self.add_sql_stages(&ops, frame, &task_ctx).await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
@@ -174,6 +156,37 @@ impl<'a> LeafPartitionQuery<'a> {
             output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
         Ok(result)
+    }
+
+    async fn add_sql_stages(
+        &self,
+        ops: &SleeperOperations<'_>,
+        frame: DataFrame,
+        task_ctx: &Arc<TaskContext>,
+    ) -> Result<DataFrame, DataFusionError> {
+        Ok(if let Some(sql) = &self.config.sql_query {
+            let runtime = task_ctx.runtime_env();
+            let config = task_ctx.session_config();
+            let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
+
+            let table = frame.into_view();
+            ctx.register_table("my_table", table)?;
+            let frame = ctx
+                .sql_with_options(
+                    sql,
+                    SQLOptions::new()
+                        .with_allow_ddl(false)
+                        .with_allow_dml(false)
+                        .with_allow_statements(false),
+                )
+                .await?;
+
+            // SQL on a frame incorrectly removes the sort stage, so manually inject it
+            // frame = inject_sort_stage(frame, ops.create_sort_order())?;
+            inject_sort_stage(frame, ops.create_sort_order())?
+        } else {
+            frame
+        })
     }
 
     /// Adds a quantile sketch to a query plan if sketch generation is enabled.

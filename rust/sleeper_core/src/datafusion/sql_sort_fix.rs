@@ -14,23 +14,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-use std::sync::Arc;
-
 use datafusion::{
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::Result,
     logical_expr::{LogicalPlan, Sort, SortExpr},
     prelude::DataFrame,
 };
+use std::{cell::RefCell, sync::Arc};
 
 /// Insert sort stage back into logical plan for a query.
 ///
 /// Searches bottom-up for the first non-Filter node that has a Filter child,
 /// then inserts a Sort stage between them in a single pass.
 pub fn inject_sort_stage(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFrame> {
-    use std::cell::RefCell;
-
     let (state, plan) = frame.into_parts();
     // RefCell allows moving `expr` out of the FnMut closure. We stop traversal after
     // the first match so the closure only fires once, but rustc can't prove that.
@@ -60,6 +56,7 @@ pub fn inject_sort_stage(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow::array::RecordBatch;
     use datafusion::{
         arrow::datatypes::{DataType, Field, Schema},
         execution::context::SessionContext,
@@ -74,59 +71,49 @@ mod tests {
         vec![col("a").sort(true, true)]
     }
 
-    async fn create_simple_dataframe(ctx: &SessionContext) -> DataFrame {
+    fn create_simple_dataframe(ctx: &SessionContext) -> DataFrame {
         ctx.read_empty().unwrap()
     }
 
-    async fn create_dataframe_with_filter(ctx: &SessionContext) -> DataFrame {
+    fn create_dataframe_with_filter(ctx: &SessionContext) -> DataFrame {
         let schema = Schema::new(vec![
             Field::new("a", DataType::Int32, false),
             Field::new("b", DataType::Utf8, false),
         ]);
-        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
-            schema,
-        )))
-        .unwrap()
-        .filter(col("a").gt(lit(0)))
-        .unwrap()
+        ctx.read_batch(RecordBatch::new_empty(Arc::new(schema)))
+            .unwrap()
+            .filter(col("a").gt(lit(0)))
+            .unwrap()
     }
 
-    async fn create_dataframe_with_filter_and_projection(ctx: &SessionContext) -> DataFrame {
+    fn create_dataframe_with_filter_and_projection(ctx: &SessionContext) -> DataFrame {
         let schema = Schema::new(vec![
             Field::new("a", DataType::Int32, false),
             Field::new("b", DataType::Utf8, false),
         ]);
-        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
-            schema,
-        )))
-        .unwrap()
-        .filter(col("a").gt(lit(0)))
-        .unwrap()
-        .select(vec![col("a")])
-        .unwrap()
+        ctx.read_batch(RecordBatch::new_empty(Arc::new(schema)))
+            .unwrap()
+            .filter(col("a").gt(lit(0)))
+            .unwrap()
+            .select(vec![col("a")])
+            .unwrap()
     }
 
-    async fn create_dataframe_with_nested_filters(ctx: &SessionContext) -> DataFrame {
+    fn create_dataframe_with_nested_filters(ctx: &SessionContext) -> DataFrame {
         let schema = Schema::new(vec![
             Field::new("a", DataType::Int32, false),
             Field::new("b", DataType::Utf8, false),
         ]);
-        ctx.read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
-            schema,
-        )))
-        .unwrap()
-        .filter(col("a").gt(lit(0)))
-        .unwrap()
-        .filter(col("a").lt(lit(100)))
-        .unwrap()
+        ctx.read_batch(RecordBatch::new_empty(Arc::new(schema)))
+            .unwrap()
+            .filter(col("a").gt(lit(0)))
+            .unwrap()
+            .filter(col("a").lt(lit(100)))
+            .unwrap()
     }
 
     fn count_sort_nodes(plan: &LogicalPlan) -> usize {
-        let self_count = if matches!(plan, LogicalPlan::Sort(_)) {
-            1
-        } else {
-            0
-        };
+        let self_count = usize::from(matches!(plan, LogicalPlan::Sort(_)));
         self_count
             + plan
                 .inputs()
@@ -142,11 +129,11 @@ mod tests {
         plan.inputs().iter().find_map(|p| find_sort(p))
     }
 
-    #[tokio::test]
-    async fn should_inject_sort_between_projection_and_filter() {
+    #[test]
+    fn should_inject_sort_between_projection_and_filter() {
         // Given
         let ctx = create_test_context();
-        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let frame = create_dataframe_with_filter_and_projection(&ctx);
         let sort_exprs = create_sort_exprs();
 
         // Verify no Sort node exists before injection
@@ -177,11 +164,11 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn should_place_sort_above_filter() {
+    #[test]
+    fn should_place_sort_above_filter() {
         // Given
         let ctx = create_test_context();
-        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let frame = create_dataframe_with_filter_and_projection(&ctx);
         let sort_exprs = create_sort_exprs();
 
         // When
@@ -196,11 +183,11 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn should_not_inject_sort_when_only_nested_filters() {
+    #[test]
+    fn should_not_inject_sort_when_only_nested_filters() {
         // Given - nested filters with no non-Filter node above them
         let ctx = create_test_context();
-        let frame = create_dataframe_with_nested_filters(&ctx).await;
+        let frame = create_dataframe_with_nested_filters(&ctx);
         let sort_exprs = create_sort_exprs();
 
         // When
@@ -211,11 +198,11 @@ mod tests {
         assert_eq!(count_sort_nodes(&plan), 0);
     }
 
-    #[tokio::test]
-    async fn should_not_modify_plan_without_filter() {
+    #[test]
+    fn should_not_modify_plan_without_filter() {
         // Given
         let ctx = create_test_context();
-        let frame = create_simple_dataframe(&ctx).await;
+        let frame = create_simple_dataframe(&ctx);
         let sort_exprs = create_sort_exprs();
 
         // Verify no Sort node exists before
@@ -230,11 +217,11 @@ mod tests {
         assert_eq!(count_sort_nodes(&plan_after), 0);
     }
 
-    #[tokio::test]
-    async fn should_handle_empty_sort_expressions() {
+    #[test]
+    fn should_handle_empty_sort_expressions() {
         // Given
         let ctx = create_test_context();
-        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let frame = create_dataframe_with_filter_and_projection(&ctx);
         let sort_exprs: Vec<SortExpr> = vec![];
 
         // When
@@ -249,8 +236,8 @@ mod tests {
         assert!(sort.expr.is_empty());
     }
 
-    #[tokio::test]
-    async fn should_handle_multiple_sort_expressions() {
+    #[test]
+    fn should_handle_multiple_sort_expressions() {
         // Given
         let ctx = create_test_context();
         let schema = Schema::new(vec![
@@ -259,9 +246,7 @@ mod tests {
             Field::new("c", DataType::Utf8, false),
         ]);
         let frame = ctx
-            .read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
-                schema,
-            )))
+            .read_batch(RecordBatch::new_empty(Arc::new(schema)))
             .unwrap()
             .filter(col("a").gt(lit(0)))
             .unwrap()
@@ -293,12 +278,11 @@ mod tests {
         assert!(!sort_exprs[1].nulls_first);
     }
 
-    #[tokio::test]
-    async fn should_only_inject_one_sort_even_with_multiple_filter_boundaries() {
+    #[test]
+    fn should_only_inject_one_sort_even_with_multiple_filter_boundaries() {
         // Given - a plan with projection -> filter -> filter -> table scan
         let ctx = create_test_context();
         let frame = create_dataframe_with_nested_filters(&ctx)
-            .await
             .select(vec![col("a")])
             .unwrap();
         let sort_exprs = create_sort_exprs();
@@ -332,11 +316,11 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn should_preserve_dataframe_state() {
+    #[test]
+    fn should_preserve_dataframe_state() {
         // Given
         let ctx = create_test_context();
-        let frame = create_dataframe_with_filter_and_projection(&ctx).await;
+        let frame = create_dataframe_with_filter_and_projection(&ctx);
         let schema_before = frame.schema().clone();
         let sort_exprs = create_sort_exprs();
 
@@ -348,11 +332,11 @@ mod tests {
         assert_eq!(schema_before, schema_after);
     }
 
-    #[tokio::test]
-    async fn should_handle_filter_as_root_node() {
+    #[test]
+    fn should_handle_filter_as_root_node() {
         // Given - filter is the root node (no projection on top)
         let ctx = create_test_context();
-        let frame = create_dataframe_with_filter(&ctx).await;
+        let frame = create_dataframe_with_filter(&ctx);
         let sort_exprs = create_sort_exprs();
 
         // When
@@ -365,8 +349,8 @@ mod tests {
         assert_eq!(count_sort_nodes(&plan), 0);
     }
 
-    #[tokio::test]
-    async fn should_inject_sort_at_deepest_non_filter_to_filter_boundary() {
+    #[test]
+    fn should_inject_sort_at_deepest_non_filter_to_filter_boundary() {
         // Given - plan: Projection -> Filter -> Limit -> Filter -> Filter -> TableScan
         let ctx = create_test_context();
         let schema = Schema::new(vec![
@@ -374,9 +358,7 @@ mod tests {
             Field::new("b", DataType::Utf8, false),
         ]);
         let frame = ctx
-            .read_batch(datafusion::arrow::array::RecordBatch::new_empty(Arc::new(
-                schema,
-            )))
+            .read_batch(RecordBatch::new_empty(Arc::new(schema)))
             .unwrap()
             .filter(col("a").gt(lit(0))) // Filter3 (deepest)
             .unwrap()
