@@ -32,6 +32,7 @@ public class SystemTestParametersTestHelper {
                 .shortTestId("test-id")
                 .account("test-account")
                 .region("test-region")
+                .dnsSuffix("amazonaws.com")
                 .vpcId("test-vpc")
                 .subnetIds("test-subnet")
                 .systemTestStandalonePropertiesTemplate(new SystemTestStandaloneProperties())

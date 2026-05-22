@@ -354,6 +354,18 @@
           "UpdateReplacePolicy": "Delete",
           "DeletionPolicy": "Delete"
         },
+        "Repositorybase41FBA974": {
+          "Type": "AWS::ECR::Repository",
+          "Properties": {
+            "EmptyOnDelete": true,
+            "LifecyclePolicy": {
+              "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"Delete untagged images\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countNumber\":1,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"Keep images for 365 days\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countNumber\":365,\"countUnit\":\"days\"},\"action\":{\"type\":\"expire\"}}]}"
+            },
+            "RepositoryName": "test-deployment/base"
+          },
+          "UpdateReplacePolicy": "Delete",
+          "DeletionPolicy": "Delete"
+        },
         "Repositoryingest2C547FF9": {
           "Type": "AWS::ECR::Repository",
           "Properties": {
