@@ -77,7 +77,7 @@ impl TryFrom<&FFIAwsConfig> for AwsConfig {
         };
 
         let region = to_option(value.region).map(unpack_string).transpose()?;
-        let endpoint = to_option(value.region).map(unpack_string).transpose()?;
+        let endpoint = to_option(value.endpoint).map(unpack_string).transpose()?;
 
         Ok(AwsConfig {
             secrets,
