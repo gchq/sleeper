@@ -31,6 +31,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
@@ -62,7 +63,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * A command line tool to run a compaction job locally. Can be useful for debugging.
  */
 public class CompactionRunnerCLI {
-
     private final TablePropertiesProvider tablePropertiesProvider;
     private final CompactionRunnerFactory runnerFactory;
     private final RegionSupplier regionSupplier;
@@ -78,7 +78,7 @@ public class CompactionRunnerCLI {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         return new CompactionRunnerCLI(
                 S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
-                new DefaultCompactionRunnerFactory(
+                new DefaultCompactionRunnerFactory(instanceProperties,
                         new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                         TableHadoopConfigurationProvider.forClient(instanceProperties),
                         new S3SketchesStore(s3Client, s3TransferManager)),
@@ -98,6 +98,8 @@ public class CompactionRunnerCLI {
     }
 
     public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client, S3TransferManager s3TransferManager) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(CdkDefinedInstanceProperty.DNS_SUFFIX, null);
         return new CompactionRunnerCLI(
                 tableId -> {
                     TableProperties properties = TableProperties.copyOf(baseTableProperties);
@@ -105,7 +107,7 @@ public class CompactionRunnerCLI {
                     properties.set(TABLE_NAME, "unknown");
                     return properties;
                 },
-                new DefaultCompactionRunnerFactory(
+                new DefaultCompactionRunnerFactory(instanceProperties,
                         ObjectFactory.noUserJars(),
                         HadoopConfigurationProvider.getConfigurationForClient(),
                         new S3SketchesStore(s3Client, s3TransferManager)),

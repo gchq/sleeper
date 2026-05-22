@@ -66,7 +66,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
                 buildAwsV2Client(SqsClient.builder()),
                 buildAwsV2Client(DynamoDbClient.builder()),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
-                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), new RootAllocator(), FFIContext.getFFIContext(DataFusionQueryFunctions.class)));
+                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.builder().build(), new RootAllocator(), FFIContext.getFFIContext(DataFusionQueryFunctions.class)));
     }
 
     public SqsLeafPartitionQueryLambda(

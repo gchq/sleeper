@@ -120,7 +120,15 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // Given
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
+                DataFusionAwsConfig
+                        .builder()
+                        .region("us-east-1")
+                        .accessKeyId("test-access-key-id")
+                        .secretAccessKey("test-secret-access-key")
+                        .allowHttp(true)
+                        .endpoint("dummy")
+                        .build(),
+                ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         // When
         boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
@@ -164,7 +172,15 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                         FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
                     LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                             // DataFusion spends time trying to auth with AWS unless you override it
-                            DataFusionAwsConfig.overrideEndpoint("dummy"), allocator, context);
+                            DataFusionAwsConfig
+                                    .builder()
+                                    .region("us-east-1")
+                                    .accessKeyId("test-access-key-id")
+                                    .secretAccessKey("test-secret-access-key")
+                                    .allowHttp(true)
+                                    .endpoint("dummy")
+                                    .build(),
+                            allocator, context);
 
                     Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
                             "key", 1L, true, 10L, true)),
@@ -1304,7 +1320,15 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     private QueryExecutor initQueryExecutor() {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
+                DataFusionAwsConfig
+                        .builder()
+                        .region("us-east-1")
+                        .accessKeyId("test-access-key-id")
+                        .secretAccessKey("test-secret-access-key")
+                        .allowHttp(true)
+                        .endpoint("dummy")
+                        .build(),
+                ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         return new QueryExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),

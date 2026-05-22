@@ -52,36 +52,36 @@ public class DataFusionAwsConfig {
         return new Builder();
     }
 
-    /**
-     * Creates the default AWS configuration. Usually this will be null. Applies configuration from environment
-     * variables if set.
-     *
-     * @return the configuration, if set
-     */
-    public static DataFusionAwsConfig getDefault() {
-        String endpoint = System.getenv("AWS_ENDPOINT_URL");
-        if (endpoint != null) {
-            return overrideEndpoint(endpoint);
-        } else {
-            return null;
-        }
-    }
+    // /**
+    //  * Creates the default AWS configuration. Usually this will be null. Applies configuration from environment
+    //  * variables if set.
+    //  *
+    //  * @return the configuration, if set
+    //  */
+    // public static DataFusionAwsConfig getDefault() {
+    //     String endpoint = System.getenv("AWS_ENDPOINT_URL");
+    //     if (endpoint != null) {
+    //         return overrideEndpoint(endpoint);
+    //     } else {
+    //         return null;
+    //     }
+    // }
 
-    /**
-     * Creates a configuration to run against a LocalStack endpoint.
-     *
-     * @param  endpoint the endpoint
-     * @return          the configuration
-     */
-    public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
-        return builder()
-                .endpoint(endpoint)
-                .region("us-east-1")
-                .accessKeyId("test-access-key-id")
-                .secretAccessKey("test-secret-access-key")
-                .allowHttp(true)
-                .build();
-    }
+    // /**
+    //  * Creates a configuration to run against a LocalStack endpoint.
+    //  *
+    //  * @param  endpoint the endpoint
+    //  * @return          the configuration
+    //  */
+    // public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
+    //     return builder()
+    //             .endpoint(endpoint)
+    //             .region("us-east-1")
+    //             .accessKeyId("test-access-key-id")
+    //             .secretAccessKey("test-secret-access-key")
+    //             .allowHttp(true)
+    //             .build();
+    // }
 
     /**
      * Converts this configuration to an FFI struct to be passed to DataFusion.
