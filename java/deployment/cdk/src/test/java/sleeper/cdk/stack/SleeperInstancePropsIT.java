@@ -53,7 +53,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
-class SleeperInstanceStacksPropsIT {
+class SleeperInstancePropsIT {
 
     private final String account = "test-account";
     private final String region = "test-region";
