@@ -33,7 +33,6 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
@@ -42,7 +41,6 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION;
@@ -202,7 +200,7 @@ public class ConfigurationUtils {
         sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SHUFFLE_SPILL_COMPRESS));
 
         // spark.hadoop properties
-        sparkConf.put("spark.hadoop.fs.s3a.aws.credentials.provider", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER));
+        sparkConf.put("spark.hadoop.fs.s3a.aws.credentials.provider", "software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider");
         sparkConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE));
 
         // spark.sql properties
@@ -217,7 +215,7 @@ public class ConfigurationUtils {
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         sparkConf.put("spark.kubernetes.container.image", DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
         sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME));
+        sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
 
         return sparkConf;
     }

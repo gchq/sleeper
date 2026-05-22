@@ -69,17 +69,6 @@ public interface EKSProperty {
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME = Index.propertyBuilder("sleeper.bulk.import.eks.spark.kubernetes.driver.service.account.name")
-            .description("(EKS mode only) The Kubernetes service account used by the Spark driver pod. Used to set " +
-                    "spark.kubernetes.authenticate.driver.serviceAccountName.\n" +
-                    "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
-            .defaultValue("spark")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER = Index.propertyBuilder("sleeper.bulk.import.eks.spark.hadoop.fs.s3a.aws.credentials.provider")
-            .description("(EKS mode only) The AWS credentials provider class used by the S3A Hadoop filesystem. " +
-                    "Used to set spark.hadoop.fs.s3a.aws.credentials.provider.")
-            .defaultValue("software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.bulk.import.eks.spark.hadoop.fs.s3a.experimental.input.fadvise")
             .description("(EKS mode only) The S3A input read policy. Used to set " +
                     "spark.hadoop.fs.s3a.experimental.input.fadvise.")
