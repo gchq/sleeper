@@ -520,8 +520,8 @@ When the job makes it to the State Machine, it will run the job synchronously an
 successful, the job will be torn down automatically. If unsuccessful or the job doesn't submit, a notification will be
 sent to the errors email.
 
-When running a very large bulk import job e.g. 10 billion rows, it is reccomended to increase the following instance
-properties to prevent memory issues:
+When running a very large bulk import job e.g. 10 billion rows, it is recommended to increase the following instance
+properties:
 sleeper.bulk.import.eks.spark.executor.instances - 150
 sleeper.bulk.import.eks.spark.executor.memory.overhead - 2g
 sleeper.bulk.import.eks.spark.sql.shuffle.partitions - 600
