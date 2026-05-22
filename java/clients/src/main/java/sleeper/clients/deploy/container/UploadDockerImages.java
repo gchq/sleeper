@@ -29,6 +29,7 @@ import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.ContainerPlatform;
+import sleeper.core.deploy.DockerDeployment;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -95,10 +96,12 @@ public class UploadDockerImages {
             commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
         }
 
+        String baseTag = buildTag(repositoryPrefix, StackDockerImage.fromDockerDeployment(DockerDeployment.BASE));
+
         for (StackDockerImage image : imagesToUpload) {
             String tag = buildTag(repositoryPrefix, image);
             if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-                buildAndPushImage(tag, image);
+                buildAndPushImage(tag, image, baseTag);
             } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
                 pullAndPushImage(tag, image);
             } else {
@@ -107,7 +110,7 @@ public class UploadDockerImages {
         }
     }
 
-    private void buildAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
+    private void buildAndPushImage(String tag, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
         Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
@@ -119,14 +122,14 @@ public class UploadDockerImages {
             String platformList = image.getPlatforms().stream()
                     .map(ContainerPlatform::toString)
                     .collect(Collectors.joining(","));
-            commandRunner.runOrThrow("docker", "buildx", "build", "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
+            commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
         } else {
             if (image.getLambdaJar().isPresent()) {
                 // At time of writing AWS Lambda does not support images with provenance enabled.
                 // See https://docs.aws.amazon.com/lambda/latest/dg/java-image.html
-                commandRunner.runOrThrow("docker", "build", "--provenance=false", "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow("docker", "build", "--provenance=false", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
             } else {
-                commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
             }
             commandRunner.runOrThrow("docker", "push", tag);
         }
