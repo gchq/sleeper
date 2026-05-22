@@ -47,6 +47,7 @@ import java.util.Properties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
@@ -194,6 +195,7 @@ public class SleeperInstanceProps {
         Region region = Region.of(stack.getRegion());
         PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
         instanceProperties.set(REGION, region.id());
+        instanceProperties.set(PARTITION, partitionMetadata.id());
         instanceProperties.set(DNS_SUFFIX, partitionMetadata.dnsSuffix());
         instanceProperties.setEnum(CDK_APP, sleeperCdkApp);
         instanceProperties.set(VPC_ID, networking.vpcId());

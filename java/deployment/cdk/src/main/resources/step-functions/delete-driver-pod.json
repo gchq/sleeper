@@ -1,6 +1,6 @@
 {
   "Type": "Task",
-  "Resource": "arn:aws:states:::eks:call",
+  "Resource": "arn:partition-placeholder:states:::eks:call",
   "Parameters": {
     "ClusterName": "cluster-placeholder",
     "CertificateAuthority": "ca-placeholder",

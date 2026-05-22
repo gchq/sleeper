@@ -118,6 +118,8 @@ public class DashboardStack extends NestedStack {
     }
 
     private static String constructUrl(InstanceProperties instanceProperties) {
+        // Console hostname is hardcoded for the standard aws partition. In other partitions this link will not resolve
+        // and the user will need to navigate to the CloudWatch dashboard manually.
         return "https://" + instanceProperties.get(REGION) + ".console.aws.amazon.com/cloudwatch/home" +
                 "#dashboards:name=" + instanceProperties.get(ID) + ";expand=true";
     }
