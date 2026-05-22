@@ -16,30 +16,32 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <instance-id> <table-name>"
   exit 1
 fi
 
 INSTANCE_ID=$1
+TABLE_NAME=$2
 
-TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+SYSTEM_TEST_JAR="${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar"
+WRITE_DATA_OUTPUT_FILE="${SCRIPTS_DIR}/generated/writeDataOutput.json"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/deploy.sh" "$@"
-END_DEPLOY_TIME=$(record_time)
-
-"$THIS_DIR/writeRandomData.sh" "$INSTANCE_ID" "$TABLE_NAME"
+echo "-------------------------------------------------------------------------------"
+echo "Starting tasks to write random data"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+ sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished deploying test"
+echo "Started write random data tasks"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
-echo "Starting of tasks to write random data finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
-echo "Overall, deploying test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Starting tasks finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

@@ -16,30 +16,29 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
+if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
   echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
   exit 1
 fi
 
-INSTANCE_ID=$1
-
-TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+SYSTEM_TEST_JAR="${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/deploy.sh" "$@"
-END_DEPLOY_TIME=$(record_time)
+PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
+if [ ! -f "$PROPERTIES_FILE" ]; then
+   cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
+fi
 
-"$THIS_DIR/writeRandomData.sh" "$INSTANCE_ID" "$TABLE_NAME"
+java -cp "${SYSTEM_TEST_JAR}" sleeper.systemtest.drivers.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "${PROPERTIES_FILE}" "$@"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished deploying test"
+echo "Finished deployment"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
-echo "Starting of tasks to write random data finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
-echo "Overall, deploying test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Deploy finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
