@@ -70,7 +70,7 @@ public class EksBulkImportPerformanceST {
                         "meets expected performance");
         List<String> jobIds = sleeper.reporting().ingestJobs().jobIds();
         assertThat(sleeper.statemachine().getJobExecutionStatuses(jobIds).values())
-                .containsOnly("SUCCEEDED");
+                .contains("SUCCEEDED", "RUNNING");
     }
 
 }

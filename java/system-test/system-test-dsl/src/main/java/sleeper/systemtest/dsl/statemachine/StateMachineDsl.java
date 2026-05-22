@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.statemachine;
 
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
@@ -33,16 +35,16 @@ public class StateMachineDsl {
     private final SystemTestInstanceContext instance;
     private final StateMachineDriver driver;
 
-    public StateMachineDsl(SystemTestInstanceContext instance, StateMachineDriver driver) {
-        this.instance = instance;
-        this.driver = driver;
+    public StateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.instance = context.instance();
+        this.driver = baseDrivers.statemachine(context);
     }
 
     /**
      * Retrieves the execution status of each bulk import job in the EKS state machine.
      *
      * @param  jobIds the bulk import job IDs to query
-     * @return a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
+     * @return        a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
      */
     public Map<String, String> getJobExecutionStatuses(List<String> jobIds) {
         String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);

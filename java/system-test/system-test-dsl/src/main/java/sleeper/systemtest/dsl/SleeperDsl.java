@@ -153,7 +153,8 @@ public class SleeperDsl {
     }
 
     public StateMachineDsl statemachine() {
-        return new StateMachineDsl(context.instance(), context.instance().adminDrivers().statemachine(context));
+        //return new StateMachineDsl(context.instance(), context.instance().adminDrivers().statemachine(context));
+        return new StateMachineDsl(context, baseDrivers);
     }
 
     public TableMetricsDsl tableMetrics() {
