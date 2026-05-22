@@ -717,7 +717,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                         new Field("value3", new IntType(), true),
                         new Field("value4", new LongType(), true),
                         new Field("value5", new ListType(new StringType()), true),
-                        new Field("value6", new MapType(new StringType(), new LongType())))
+                        new Field("value6", new MapType(new StringType(), new LongType()), true))
                 .build();
         Row rowWithValue = new Row();
         rowWithValue.put("key", "a");
