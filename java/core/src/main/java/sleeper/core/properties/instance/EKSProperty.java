@@ -174,7 +174,7 @@ public interface EKSProperty {
                     "Fargate uses this to provision ephemeral storage for the pod beyond the default 20 GiB.\n" +
                     "Accepted values 20Gi - 200Gi.\n" +
                     "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
-            .defaultValue("85Gi")
+            .defaultValue("200Gi")
             .validationPredicate(SleeperPropertyValueUtils::isValidEksEphemeralStorageSize)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
