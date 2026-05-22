@@ -560,13 +560,7 @@ public class DataFusionCompactionRunnerIT {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(
                     // DataFusion spends time trying to auth with AWS unless you override it
-                    DataFusionAwsConfig.builder()
-                            .region("us-east-1")
-                            .accessKeyId("test-access-key-id")
-                            .secretAccessKey("test-secret-access-key")
-                            .allowHttp(true)
-                            .endpoint("dummy")
-                            .build(),
+                    DataFusionAwsConfig.overrideEndpointFromEnv("dummy"),
                     new Configuration(), context);
             compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
         }
