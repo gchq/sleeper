@@ -27,7 +27,19 @@ public class DataFusionAwsConfig {
     private final String sessionToken;
     private final boolean allowHttp;
 
+    /**
+     * Creates a DataFusionAwsConfig.
+     *
+     * All fields be null, however secretAccessKey and accessKeyId must either both be null or non-null.
+     *
+     * @param  builder
+     * @throws IllegalArgumentException if only one of secretAccessKey and accessKeyId are null
+     */
     private DataFusionAwsConfig(Builder builder) {
+        if ((builder.secretAccessKey == null && builder.accessKeyId != null) ||
+                (builder.secretAccessKey != null && builder.accessKeyId == null)) {
+            throw new IllegalArgumentException("secretAccessKey and accessKeyId must either both be null or non-null");
+        }
         region = builder.region;
         endpoint = builder.endpoint;
         accessKeyId = builder.accessKeyId;
@@ -80,10 +92,10 @@ public class DataFusionAwsConfig {
     public FFIAwsConfig toFfi(jnr.ffi.Runtime runtime) {
         FFIAwsConfig config = new FFIAwsConfig(runtime);
         config.region.set(region);
-        config.endpoint.set(endpoint == null ? "" : endpoint);
+        config.endpoint.set(endpoint);
         config.access_key_id.set(accessKeyId);
         config.secret_access_key.set(secretAccessKey);
-        config.session_token.set(sessionToken == null ? "" : sessionToken);
+        config.session_token.set(sessionToken);
         config.allow_http.set(allowHttp);
         return config;
     }

@@ -36,10 +36,11 @@ public class FFIAwsConfig extends Struct {
 
     public FFIAwsConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
-        region.set("");
-        endpoint.set("");
-        access_key_id.set("");
-        secret_access_key.set("");
-        session_token.set("");
+        region.set(null);
+        endpoint.set(null);
+        access_key_id.set(null);
+        secret_access_key.set(null);
+        session_token.set(null);
+        allow_http.set(false);
     }
 }
