@@ -22,16 +22,16 @@ public class DataFusionAwsConfig {
 
     private final String region;
     private final String endpoint;
-    private final String accessKey;
-    private final String secretKey;
+    private final String accessKeyId;
+    private final String secretAccessKey;
     private final String sessionToken;
     private final boolean allowHttp;
 
     private DataFusionAwsConfig(Builder builder) {
         region = builder.region;
         endpoint = builder.endpoint;
-        accessKey = builder.accessKey;
-        secretKey = builder.secretKey;
+        accessKeyId = builder.accessKeyId;
+        secretAccessKey = builder.secretAccessKey;
         sessionToken = builder.sessionToken;
         allowHttp = builder.allowHttp;
     }
@@ -65,8 +65,8 @@ public class DataFusionAwsConfig {
         return builder()
                 .endpoint(endpoint)
                 .region("us-east-1")
-                .accessKey("test-access-key")
-                .secretKey("test-secret-key")
+                .accessKeyId("test-access-key-id")
+                .secretAccessKey("test-secret-access-key")
                 .allowHttp(true)
                 .build();
     }
@@ -81,8 +81,8 @@ public class DataFusionAwsConfig {
         FFIAwsConfig config = new FFIAwsConfig(runtime);
         config.region.set(region);
         config.endpoint.set(endpoint == null ? "" : endpoint);
-        config.access_key.set(accessKey);
-        config.secret_key.set(secretKey);
+        config.access_key_id.set(accessKeyId);
+        config.secret_access_key.set(secretAccessKey);
         config.session_token.set(sessionToken == null ? "" : sessionToken);
         config.allow_http.set(allowHttp);
         return config;
@@ -94,8 +94,8 @@ public class DataFusionAwsConfig {
     public static class Builder {
         private String region;
         private String endpoint;
-        private String accessKey;
-        private String secretKey;
+        private String accessKeyId;
+        private String secretAccessKey;
         private String sessionToken;
         private boolean allowHttp;
 
@@ -125,24 +125,24 @@ public class DataFusionAwsConfig {
         }
 
         /**
-         * Sets the access key.
+         * Sets the access key ID.
          *
-         * @param  accessKey the access key
-         * @return           the builder for chaining
+         * @param  accessKeyId the access key ID
+         * @return             the builder for chaining
          */
-        public Builder accessKey(String accessKey) {
-            this.accessKey = accessKey;
+        public Builder accessKeyId(String accessKeyId) {
+            this.accessKeyId = accessKeyId;
             return this;
         }
 
         /**
-         * Sets the secret key.
+         * Sets the secret access key.
          *
-         * @param  secretKey the secret key
-         * @return           the builder for chaining
+         * @param  secretAccessKey the secret key
+         * @return                 the builder for chaining
          */
-        public Builder secretKey(String secretKey) {
-            this.secretKey = secretKey;
+        public Builder secretAccessKey(String secretAccessKey) {
+            this.secretAccessKey = secretAccessKey;
             return this;
         }
 
