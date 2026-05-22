@@ -539,7 +539,7 @@ Alternativley you could submit the job with overrides e.g.
     "spark.executor.instances": "150",
     "spark.executor.memoryOverhead": "2g",
     "spark.sql.shuffle.partitions": 600,
-    "spark.kubernetes.executor.volumes.emptyDir.spark-local-dir.options.sizeLimit": "200Gi"
+    "spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit": "200Gi"
   }
 }
 ```

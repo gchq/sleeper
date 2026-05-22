@@ -208,9 +208,11 @@ public class ConfigurationUtils {
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SQL_SHUFFLE_PARTITIONS));
 
         // spark.kubernetes.executor.volumes properties
-        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir.mount.path", "/var/spark/local");
-        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir.mount.readOnly", "false");
-        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir.options.sizeLimit", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE));
+        // IMPORTANT: Note that the volume name "spark-local-dir-1" refers to a pre-defined volume for local storage.
+        // See https://spark.apache.org/docs/3.5.6/running-on-kubernetes.html#local-storage
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.mount.path", "/var/spark/local");
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.mount.readOnly", "false");
+        sparkConf.put("spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit", instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE));
 
         // spark.kubernetes properties
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
