@@ -98,8 +98,8 @@ public class BuildEC2Deployment {
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of(
-                        "arn:" + Aws.PARTITION + ":iam::*:role/cdk-*",
-                        "arn:" + Aws.PARTITION + ":iam::*:role/sleeper-admin-*"))
+                        "arn:" + Aws.PARTITION + ":iam::" + Aws.ACCOUNT_ID + ":role/cdk-*",
+                        "arn:" + Aws.PARTITION + ":iam::" + Aws.ACCOUNT_ID + ":role/sleeper-admin-*"))
                 .build());
 
         // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks
