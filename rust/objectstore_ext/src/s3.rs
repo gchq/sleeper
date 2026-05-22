@@ -17,6 +17,7 @@
 use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 use aws_config::{BehaviorVersion, Region, SdkConfig};
 use aws_credential_types::{Credentials, provider::ProvideCredentials};
+use aws_sdk_s3::config::endpoint::{DefaultResolver, Params, ResolveEndpoint};
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
@@ -99,11 +100,12 @@ impl AwsConfig {
             None => create_region_from_config(&config)?,
         };
 
-        let mut builder = builder_from_creds(&creds, &region);
-        if let Some(endpoint) = &self.endpoint {
-            builder = builder.with_endpoint(endpoint);
-        }
-        Ok(builder)
+        let endpoint = match &self.endpoint {
+            Some(endpoint) => endpoint,
+            None => &find_endpoint(&region).await?,
+        };
+
+        Ok(builder_from_creds(&creds, &region, &endpoint))
     }
 
     #[must_use]
@@ -117,10 +119,12 @@ impl AwsConfig {
 fn builder_from_creds(
     creds: &aws_credential_types::Credentials,
     region: &Region,
+    endpoint: &str,
 ) -> AmazonS3Builder {
     AmazonS3Builder::from_env()
         .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
         .with_region(region.as_ref())
+        .with_endpoint(endpoint)
 }
 
 /// Load AWS configuration from the default providers.
@@ -150,6 +154,19 @@ fn create_region_from_config(config: &SdkConfig) -> color_eyre::Result<Region> {
         .region()
         .ok_or(eyre!("Couldn't retrieve AWS region"))?
         .clone())
+}
+
+/// Extract AWS S3 endpoint URL from an SDK configuration.
+///
+/// # Errors
+/// Function will fail if provided configuration doesn't supply an endpoint URL.
+async fn find_endpoint(region: &Region) -> color_eyre::Result<String> {
+    let params = Params::builder().region(region.to_string()).build()?;
+    let endpoint = DefaultResolver::new()
+        .resolve_endpoint(&params)
+        .await
+        .map_err(|e| eyre!("Couldn't retrieve AWS endpoint URL {e}"))?;
+    Ok(endpoint.url().to_owned())
 }
 
 /// Extract the S3 bucket name from a URL.

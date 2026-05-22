@@ -15,6 +15,8 @@
  */
 package sleeper.foreign.datafusion;
 
+import java.util.function.Function;
+
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
  */
@@ -52,36 +54,68 @@ public class DataFusionAwsConfig {
         return new Builder();
     }
 
-    // /**
-    //  * Creates the default AWS configuration. Usually this will be null. Applies configuration from environment
-    //  * variables if set.
-    //  *
-    //  * @return the configuration, if set
-    //  */
-    // public static DataFusionAwsConfig getDefault() {
-    //     String endpoint = System.getenv("AWS_ENDPOINT_URL");
-    //     if (endpoint != null) {
-    //         return overrideEndpoint(endpoint);
-    //     } else {
-    //         return null;
-    //     }
-    // }
+    /**
+     * Creates a configuration to run against a LocalStack endpoint.
+     *
+     * Reads an endpoint URL from the environment if "AWS_ENDPOINT_URL" if endpoint argument
+     * is null. If both are null, this method returns null.
+     *
+     * @param  endpoint the endpoint to use
+     * @return          the configuration
+     */
+    public static DataFusionAwsConfig overrideEndpointFromEnv(String endpoint) {
+        return overrideEndpointFromEnv(endpoint, System::getenv);
+    }
 
-    // /**
-    //  * Creates a configuration to run against a LocalStack endpoint.
-    //  *
-    //  * @param  endpoint the endpoint
-    //  * @return          the configuration
-    //  */
-    // public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
-    //     return builder()
-    //             .endpoint(endpoint)
-    //             .region("us-east-1")
-    //             .accessKeyId("test-access-key-id")
-    //             .secretAccessKey("test-secret-access-key")
-    //             .allowHttp(true)
-    //             .build();
-    // }
+    /**
+     * Creates a configuration to run against a LocalStack endpoint.
+     *
+     * Reads an endpoint URL from the environment if "AWS_ENDPOINT_URL" if endpoint argument
+     * is null. If both are null, this method returns null.
+     *
+     * @param  endpoint  the endpoint to use
+     * @param  envLookup function to look up environment variables
+     * @return           the configuration
+     */
+    static DataFusionAwsConfig overrideEndpointFromEnv(String endpoint, Function<String, String> envLookup) {
+        String environmentEndpoint = envLookup.apply("AWS_ENDPOINT_URL");
+        String finalEndpoint = (endpoint != null) ? endpoint : environmentEndpoint;
+        if (finalEndpoint != null) {
+            return builder()
+                    .endpoint(finalEndpoint)
+                    .region("us-east-1")
+                    .accessKeyId("test-access-key-id")
+                    .secretAccessKey("test-secret-access-key")
+                    .allowHttp(true)
+                    .build();
+        } else {
+            return null;
+        }
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public String getAccessKeyId() {
+        return accessKeyId;
+    }
+
+    public String getSecretAccessKey() {
+        return secretAccessKey;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public boolean isAllowHttp() {
+        return allowHttp;
+    }
 
     /**
      * Converts this configuration to an FFI struct to be passed to DataFusion.

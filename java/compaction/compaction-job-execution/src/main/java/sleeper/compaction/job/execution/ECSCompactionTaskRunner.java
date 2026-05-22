@@ -106,7 +106,6 @@ public class ECSCompactionTaskRunner {
             ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
 
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
-                    instanceProperties,
                     objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                     new S3SketchesStore(s3Client, s3TransferManager));

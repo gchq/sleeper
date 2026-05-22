@@ -25,8 +25,11 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
+aws-sdk-s3 = { workspace = true }
 aws-config = { workspace = true }
-aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+aws-credential-types = { workspace = true, features = [
+    "hardcoded-credentials",
+] }
 async-trait = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
@@ -34,7 +37,7 @@ color-eyre = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
 num-format = { workspace = true }
-object_store = { workspace = true, features = [ "aws" ] }
+object_store = { workspace = true, features = ["aws"] }
 thiserror = { workspace = true }
 url = { workspace = true }
 

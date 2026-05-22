@@ -77,7 +77,7 @@ public class DefaultCompactionRunnerFactoryTest {
     }
 
     private CompactionRunner createRunner() {
-        return new DefaultCompactionRunnerFactory(instanceProperties, ObjectFactory.noUserJars(), new Configuration(), new NoSketchesStore())
+        return new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), new Configuration(), new NoSketchesStore())
                 .createCompactor(exampleCompactionJob(), tableProperties);
     }
 

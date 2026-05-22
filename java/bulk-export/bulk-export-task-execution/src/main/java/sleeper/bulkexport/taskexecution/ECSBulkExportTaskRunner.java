@@ -158,7 +158,7 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Output file path: {}", outputFile);
 
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
-        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(instanceProperties,
+        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
                 objectFactory, hadoopConf, new NoSketchesStore());
 
         CompactionJob job = CompactionJob.builder()
