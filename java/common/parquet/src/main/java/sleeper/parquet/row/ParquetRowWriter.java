@@ -51,6 +51,10 @@ class ParquetRowWriter {
         for (Field entry : schema.getAllFields()) {
             String name = entry.getName();
             Type type = entry.getType();
+            if (entry.isNullable() && row.get(name) == null) {
+                count++;
+                continue;
+            }
             recordConsumer.startField(name, count);
             if (type instanceof IntType) {
                 recordConsumer.addInteger((int) row.get(name));
