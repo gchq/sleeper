@@ -45,6 +45,7 @@ import static sleeper.core.SleeperVersion.getVersion;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -56,6 +57,7 @@ class SleeperInstanceStacksPropsIT {
 
     private final String account = "test-account";
     private final String region = "test-region";
+    private final String partition = "aws";
     private final String dnsSuffix = "amazonaws.com";
     private final String vpcId = "vpc-12345";
     private final List<String> subnetIds = List.of("subnet-12345");
@@ -89,6 +91,7 @@ class SleeperInstanceStacksPropsIT {
             properties.set(VERSION, getVersion());
             properties.set(ACCOUNT, account);
             properties.set(REGION, region);
+            properties.set(PARTITION, partition);
             properties.set(DNS_SUFFIX, dnsSuffix);
             properties.set(VPC_ID, vpcId);
             properties.setList(SUBNETS, subnetIds);
