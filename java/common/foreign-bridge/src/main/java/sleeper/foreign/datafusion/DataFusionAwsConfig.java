@@ -34,12 +34,12 @@ public class DataFusionAwsConfig {
      *
      * All fields be null, however secretAccessKey and accessKeyId must either both be null or non-null.
      *
-     * @param  builder
+     * @param  builder                  builder object
      * @throws IllegalArgumentException if only one of secretAccessKey and accessKeyId are null
      */
     private DataFusionAwsConfig(Builder builder) {
-        if ((builder.secretAccessKey == null && builder.accessKeyId != null) ||
-                (builder.secretAccessKey != null && builder.accessKeyId == null)) {
+        if (builder.secretAccessKey == null && builder.accessKeyId != null ||
+                builder.secretAccessKey != null && builder.accessKeyId == null) {
             throw new IllegalArgumentException("secretAccessKey and accessKeyId must either both be null or non-null");
         }
         region = builder.region;

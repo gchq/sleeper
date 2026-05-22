@@ -105,7 +105,7 @@ impl AwsConfig {
             None => &find_endpoint(&region).await?,
         };
 
-        Ok(builder_from_creds(&creds, &region, &endpoint))
+        Ok(builder_from_creds(&creds, &region, endpoint))
     }
 
     #[must_use]
