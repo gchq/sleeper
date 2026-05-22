@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.statemachine;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -50,5 +51,23 @@ public class StateMachineDsl {
         String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         String tableId = instance.getTableProperties().get(TABLE_ID);
         return driver.getJobExecutionStatuses(stateMachineArn, tableId, jobIds);
+    }
+
+    /**
+     * Polls until all state machine executions have finished, then returns the final statuses.
+     *
+     * @param  jobIds the bulk import job IDs to query
+     * @param  poll   the polling configuration
+     * @return        a map of job ID to final execution status
+     */
+    public Map<String, String> waitForJobsFinished(List<String> jobIds, PollWithRetries poll) {
+        try {
+            return poll.queryUntil("state machine executions finished",
+                    () -> getJobExecutionStatuses(jobIds),
+                    statuses -> statuses.values().stream().noneMatch("RUNNING"::equals));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }
