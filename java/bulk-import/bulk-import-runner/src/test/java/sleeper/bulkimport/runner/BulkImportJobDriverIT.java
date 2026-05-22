@@ -161,7 +161,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
-        tablePropertiesStore(instanceProperties).save(tableProperties);
+        tablePropertiesStore().save(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(tableProperties);
     }
 
@@ -362,14 +362,13 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldImportDataWithNullableValueField(BulkImportJobRunner runner) throws IOException {
         // Given
-        Schema nullableSchema = Schema.builder()
+        tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new StringType(), true), new Field("value2", new ByteArrayType(), false))
-                .build();
-        tableProperties.setSchema(nullableSchema);
+                .build());
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
-        tablePropertiesStore(instanceProperties).save(tableProperties);
+        tablePropertiesStore().save(tableProperties);
         update(stateStore()).initialise(tableProperties);
         Row rowWithValue = new Row();
         rowWithValue.put("key", 1);
@@ -400,7 +399,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        tablePropertiesStore(instanceProperties).save(tableProperties);
+        tablePropertiesStore().save(tableProperties);
         List<Row> rows = getRows();
         writeRowsToFile(rows, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
@@ -457,7 +456,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return sorted;
     }
 
-    private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
+    private TablePropertiesStore tablePropertiesStore() {
         return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     }
 
