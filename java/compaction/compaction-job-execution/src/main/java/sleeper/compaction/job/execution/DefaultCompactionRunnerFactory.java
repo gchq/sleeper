@@ -79,8 +79,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(DataFusionAwsConfig.builder()
-                        .build(), hadoopConf, ContextHolder.INSTANCE);
+                return new DataFusionCompactionRunner(DataFusionAwsConfig.builder().build(), hadoopConf, ContextHolder.INSTANCE);
             case JAVA:
             default:
                 return createJavaRunner(hadoopConf);

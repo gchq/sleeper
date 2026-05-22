@@ -120,8 +120,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // Given
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpointFromEnv("dummy"),
-                ALLOCATOR, CONTEXT);
+                DataFusionAwsConfig.overrideEndpointFromEnv("dummy"), ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         // When
         boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
@@ -165,8 +164,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                         FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
                     LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                             // DataFusion spends time trying to auth with AWS unless you override it
-                            DataFusionAwsConfig.overrideEndpointFromEnv("dummy"),
-                            allocator, context);
+                            DataFusionAwsConfig.overrideEndpointFromEnv("dummy"), allocator, context);
 
                     Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
                             "key", 1L, true, 10L, true)),
@@ -1306,8 +1304,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     private QueryExecutor initQueryExecutor() {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpointFromEnv("dummy"),
-                ALLOCATOR, CONTEXT);
+                DataFusionAwsConfig.overrideEndpointFromEnv("dummy"), ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         return new QueryExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
