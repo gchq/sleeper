@@ -53,6 +53,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -76,6 +82,12 @@ class StateMachinePlatformExecutorWiremockIT {
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "state-machine-arn");
         instanceProperties.set(BULK_IMPORT_EKS_NAMESPACE, "eks-namespace");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "85Gi");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "12g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD, "1g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "12g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD, "1g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION, "0.75");
         tableProperties.set(TABLE_ID, "table-id");
         tableProperties.set(TABLE_NAME, "test-table");
         transactionLogs.initialiseTable(tableProperties);

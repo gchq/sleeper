@@ -21,6 +21,7 @@ import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
@@ -311,7 +312,7 @@ public class ConfigurationUtils {
     }
 
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
-        Map<String, String> sparkConf = new HashMap<>();
+        Map<String, String> sparkConf = new TreeMap<>();
         // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
