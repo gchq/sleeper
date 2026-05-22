@@ -140,7 +140,7 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION = Index.propertyBuilder("sleeper.bulk.import.eks.spark.memory.fraction")
             .description("The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("0.75")
+            .defaultValue("0.80")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION = Index.propertyBuilder("sleeper.bulk.import.eks.spark.memory.storage.fraction")
             .description("The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for execution and storage. " +
