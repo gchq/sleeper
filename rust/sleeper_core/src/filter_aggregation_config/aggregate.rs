@@ -106,9 +106,9 @@ impl TryFrom<&str> for AggOp {
 #[cfg(test)]
 mod tests {
     use super::{AggOp, Aggregate, MapAggregateOp};
-    use crate::assert_error;
     use color_eyre::eyre::Result;
     use test_log::test;
+    use test_util::assert_error;
 
     #[test]
     fn should_parse_sum() -> Result<()> {

@@ -34,6 +34,7 @@ import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
@@ -87,6 +88,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(ID, id);
         instanceProperties.set(ACCOUNT, accountName);
         instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(DNS_SUFFIX, "amazonaws.com");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, id));

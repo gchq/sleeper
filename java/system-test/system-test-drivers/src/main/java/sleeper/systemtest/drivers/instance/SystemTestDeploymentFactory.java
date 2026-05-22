@@ -54,7 +54,7 @@ public class SystemTestDeploymentFactory {
                             .commandRunner(clients.getCommandRunner())
                             .copyImage(CopyContainerImage.withTransferManager(clients.getEcr()))
                             .build(),
-                    parameters.getAccount(), parameters.getRegion());
+                    parameters.getAccount(), parameters.getRegion(), parameters.getDnsSuffix());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
