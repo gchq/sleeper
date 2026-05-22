@@ -46,28 +46,28 @@ public interface EKSProperty {
                     "spark.driver.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("12g")
+            .defaultValue("16g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.memory")
             .description("(EKS mode only) The amount of memory allocated to a Spark executor. Used to set " +
                     "spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("12g")
+            .defaultValue("16g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.memory.overhead")
             .description("(EKS mode only) The memory overhead for the Spark driver. Used to set " +
                     "spark.driver.memoryOverhead. Fargate provides extra memory so no need to include extra which " +
                     "also messes up the scheduler.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("1g")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.memory.overhead")
             .description("(EKS mode only) The memory overhead for a Spark executor. Used to set " +
                     "spark.executor.memoryOverhead. Fargate provides extra memory so no need to include extra which " +
                     "also messes up the scheduler.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("1g")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME = Index.propertyBuilder("sleeper.bulk.import.eks.spark.kubernetes.driver.service.account.name")
             .description("(EKS mode only) The Kubernetes service account used by the Spark driver pod. Used to set " +
