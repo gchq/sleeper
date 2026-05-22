@@ -25294,7 +25294,17 @@
                   "\",{\"label\":\"Partition Splits\",\"stat\":\"Maximum\"}]],\"yAxis\":{}}}]}"
                 ]
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Dashboard"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         }
       }
