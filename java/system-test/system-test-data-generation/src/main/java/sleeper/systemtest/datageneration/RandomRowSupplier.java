@@ -46,9 +46,8 @@ import java.util.function.Supplier;
 public class RandomRowSupplier implements Supplier<Row> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;
 
-    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings) {
+    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings, RandomGenerator randomGenerator) {
         fieldNameToSupplier = new HashMap<>();
-        RandomGenerator generator = new JDKRandomGenerator();
         for (Field field : schema.getAllFields()) {
             Supplier<Object> supplier = getSupplier(field.getType(), settings, generator);
             if (field.isNullable()) {
@@ -57,6 +56,10 @@ public class RandomRowSupplier implements Supplier<Row> {
                 fieldNameToSupplier.put(field.getName(), supplier);
             }
         }
+    }
+
+    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings) {
+        this(schema, settings, new JDKRandomGenerator());
     }
 
     @Override

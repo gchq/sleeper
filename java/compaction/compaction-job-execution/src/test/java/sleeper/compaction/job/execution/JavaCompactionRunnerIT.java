@@ -35,6 +35,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -248,19 +249,24 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         rowWithValue.put("value2", new byte[]{1, 2, 3, 4});
         rowWithValue.put("value3", 100);
         rowWithValue.put("value4", 1000L);
+        rowWithValue.put("value5", List.of("a", "b", "c"));
+        rowWithValue.put("value6", Map.of("x", 1L));
         Row rowWithNulls = new Row();
         rowWithNulls.put("key", "b");
         rowWithNulls.put("value1", null);
         rowWithNulls.put("value2", null);
         rowWithNulls.put("value3", null);
         rowWithNulls.put("value4", null);
+        rowWithNulls.put("value5", null);
+        rowWithNulls.put("value6", null);
         Row rowWithSomeNulls = new Row();
         rowWithSomeNulls.put("key", "c");
         rowWithSomeNulls.put("value1", null);
         rowWithSomeNulls.put("value2", new byte[]{9, 8, 7, 6, 5});
         rowWithSomeNulls.put("value3", null);
         rowWithSomeNulls.put("value4", 1_000_000L);
-
+        rowWithSomeNulls.put("value5", null);
+        rowWithSomeNulls.put("value6", Map.of("y", 100L));
         FileReference file1 = ingestRowsGetFile(List.of(rowWithValue, rowWithSomeNulls));
         FileReference file2 = ingestRowsGetFile(List.of(rowWithNulls));
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");

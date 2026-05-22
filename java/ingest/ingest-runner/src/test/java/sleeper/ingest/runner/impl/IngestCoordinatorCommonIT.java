@@ -34,7 +34,9 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -710,14 +712,29 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("value", new StringType(), true))
+                .valueFields(new Field("value1", new StringType(), true),
+                        new Field("value2", new ByteArrayType(), true),
+                        new Field("value3", new IntType(), true),
+                        new Field("value4", new LongType(), true),
+                        new Field("value5", new ListType(new StringType()), true),
+                        new Field("value6", new MapType(new StringType(), new LongType())))
                 .build();
         Row rowWithValue = new Row();
         rowWithValue.put("key", "a");
-        rowWithValue.put("value", "hello");
+        rowWithValue.put("value1", "hello");
+        rowWithValue.put("value2", new byte[]{1, 2, 3});
+        rowWithValue.put("value3", 50);
+        rowWithValue.put("value4", 100L);
+        rowWithValue.put("value5", List.of("x", "y", "z"));
+        rowWithValue.put("value6", Map.of("a", 1L, "b", 2L));
         Row rowWithNull = new Row();
         rowWithNull.put("key", "b");
-        rowWithNull.put("value", null);
+        rowWithNull.put("value1", null);
+        rowWithNull.put("value2", null);
+        rowWithNull.put("value3", null);
+        rowWithNull.put("value4", null);
+        rowWithNull.put("value5", null);
+        rowWithNull.put("value6", null);
         RowGenerator.RowListAndSchema rowListAndSchema = new RowGenerator.RowListAndSchema(
                 List.of(rowWithValue, rowWithNull), schema);
         setSchema(schema);

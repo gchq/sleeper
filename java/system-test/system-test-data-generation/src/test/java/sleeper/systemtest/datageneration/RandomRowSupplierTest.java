@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.datageneration;
 
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
@@ -29,7 +31,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RandomRowSupplierTest {
-
+    private static final RandomGenerator RANDOM_GENERATOR = new JDKRandomGenerator(10);
     private static final int SAMPLE_SIZE = 1000;
 
     @Test
@@ -39,7 +41,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults());
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
 
         // When
         List<Row> rows = generateRows(supplier);
@@ -55,7 +57,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType(), true))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults());
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
 
         // When
         List<Row> rows = generateRows(supplier);
@@ -73,7 +75,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType(), true))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults());
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
 
         // When
         List<Row> rows = generateRows(supplier);
