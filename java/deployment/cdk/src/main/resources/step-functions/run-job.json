@@ -1,6 +1,6 @@
 {
   "Type": "Task",
-  "Resource": "arn:aws:states:::eks:runJob.sync",
+  "Resource": "arn:partition-placeholder:states:::eks:runJob.sync",
   "Parameters": {
     "ClusterName": "cluster-placeholder",
     "CertificateAuthority": "ca-placeholder",

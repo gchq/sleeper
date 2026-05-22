@@ -63,6 +63,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty PARTITION = Index.propertyBuilder("sleeper.partition")
+            .description("The ID of the AWS partition the instance is deployed in, e.g. aws.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty DNS_SUFFIX = Index.propertyBuilder("sleeper.dns.suffix")
             .description("The DNS suffix for the AWS partition the instance is deployed in, e.g. amazonaws.com.")
             .propertyGroup(InstancePropertyGroup.COMMON)

@@ -41,6 +41,7 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -98,8 +99,8 @@ public class EmrStudioStack extends NestedStack {
                                                         "elasticmapreduce:ListInstances",
                                                         "elasticmapreduce:DescribeCluster",
                                                         "elasticmapreduce:ListSteps"))
-                                                .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
-                                                        "arn:aws:s3:::*.elasticmapreduce/*"))
+                                                .resources(List.of("arn:" + instanceProperties.get(PARTITION) + ":s3:::*.elasticmapreduce",
+                                                        "arn:" + instanceProperties.get(PARTITION) + ":s3:::*.elasticmapreduce/*"))
                                                 .build()))
                                         .build())
                                 .build()))
