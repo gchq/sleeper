@@ -46,12 +46,12 @@ import java.util.function.Supplier;
 public class RandomRowSupplier implements Supplier<Row> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;
 
-    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings, RandomGenerator randomGenerator) {
+    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings, RandomGenerator random) {
         fieldNameToSupplier = new HashMap<>();
         for (Field field : schema.getAllFields()) {
-            Supplier<Object> supplier = getSupplier(field.getType(), settings, generator);
+            Supplier<Object> supplier = getSupplier(field.getType(), settings, random);
             if (field.isNullable()) {
-                fieldNameToSupplier.put(field.getName(), () -> generator.nextDouble() < 0.2 ? null : supplier.get());
+                fieldNameToSupplier.put(field.getName(), () -> random.nextDouble() < 0.2 ? null : supplier.get());
             } else {
                 fieldNameToSupplier.put(field.getName(), supplier);
             }
@@ -71,15 +71,15 @@ public class RandomRowSupplier implements Supplier<Row> {
         return row;
     }
 
-    private static Supplier<Object> getSupplier(Type type, SystemTestRandomDataSettings settings, RandomGenerator generator) {
+    private static Supplier<Object> getSupplier(Type type, SystemTestRandomDataSettings settings, RandomGenerator random) {
         if (type instanceof PrimitiveType) {
-            return getSupplier((PrimitiveType) type, settings, generator);
+            return getSupplier((PrimitiveType) type, settings, random);
         }
         if (type instanceof MapType) {
-            return getSupplierForMapType((MapType) type, settings, generator);
+            return getSupplierForMapType((MapType) type, settings, random);
         }
         if (type instanceof ListType) {
-            return getSupplierForListType((ListType) type, settings, generator);
+            return getSupplierForListType((ListType) type, settings, random);
         }
         throw new IllegalArgumentException("Unknown type " + type);
     }
