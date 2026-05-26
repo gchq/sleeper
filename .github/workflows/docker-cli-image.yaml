@@ -55,7 +55,7 @@ jobs:
           rm -rf "/usr/local/share/boost"
           rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/checkout@v6
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'corretto'
