@@ -75,7 +75,7 @@ public class BuildDockerImage {
         }
 
         List<String> dockerCommand = new ArrayList<>();
-        dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+        dockerCommand.addAll(List.of("docker", "buildx", "-t", args.tag()));
         dockerCommand.addAll(args.dockerOptions());
         dockerCommand.add(dockerfileDirectory.toString());
         commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
