@@ -15,7 +15,7 @@
 
 # This script deploys a demonstration instance.
 # If you want the system to be built first, use buildDeploy.sh.
-# If you want test data to be added automatically, use deployTest.sh.
+# If you want test data to be added automatically, use deployTest.sh or buildDeployTest.sh.
 # You can also use writeRandomData.sh to add test data after the fact.
 
 set -e
