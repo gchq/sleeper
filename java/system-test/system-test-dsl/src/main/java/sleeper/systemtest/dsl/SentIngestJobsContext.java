@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Tracks the ingest and bulk import jobs that have been sent in the current system test.
  */
-public class SentJobsContext {
+public class SentIngestJobsContext {
     private final List<String> jobIds = new ArrayList<>();
 
     /**

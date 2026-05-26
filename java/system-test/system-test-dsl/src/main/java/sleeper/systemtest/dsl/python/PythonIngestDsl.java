@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.systemtest.dsl.SentJobsContext;
+import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
@@ -30,7 +30,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 public class PythonIngestDsl {
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final IngestByAnyQueueDriver fromS3Driver;
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final IngestTasksDriver tasksDriver;

@@ -23,7 +23,7 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.dsl.SentJobsContext;
+import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -51,7 +51,7 @@ public class DataGenerationClusterDsl {
     private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final PollWithRetriesDriver pollDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
 

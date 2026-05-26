@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SentJobsContext;
+import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public class IngestByQueueDsl {
 
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
     private final CdkDefinedInstanceProperty defaultQueueProperty;
@@ -37,7 +37,7 @@ public class IngestByQueueDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public IngestByQueueDsl(
-            SentJobsContext sentJobs, IngestSourceFilesContext sourceFiles, IngestByQueue ingest,
+            SentIngestJobsContext sentJobs, IngestSourceFilesContext sourceFiles, IngestByQueue ingest,
             CdkDefinedInstanceProperty defaultQueueProperty,
             IngestTasksDriver tasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
         this.sentJobs = sentJobs;

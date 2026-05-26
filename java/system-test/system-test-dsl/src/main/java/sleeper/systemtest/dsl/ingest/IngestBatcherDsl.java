@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.systemtest.dsl.SentJobsContext;
+import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -36,7 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class IngestBatcherDsl {
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;

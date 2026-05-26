@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SentJobsContext;
+import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -32,14 +32,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DirectBulkImportDsl {
 
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectBulkImportDriver driver;
     private final WaitForJobs waitForJobs;
 
     public DirectBulkImportDsl(
-            SentJobsContext sentJobs,
+            SentIngestJobsContext sentJobs,
             SystemTestInstanceContext instance,
             IngestSourceFilesContext sourceFiles,
             DirectBulkImportDriver driver,
