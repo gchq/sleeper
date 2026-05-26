@@ -40,7 +40,6 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
-    private static final String EXECUTOR_POD_TEMPLATE_PATH = "/tmp/executor-template.yaml";
 
     private final SfnClient stepFunctions;
     private final InstanceProperties instanceProperties;
@@ -76,7 +75,6 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         String jobPodPrefix = jobPodPrefix(bulkImportJob);
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);
         defaultConfig.put("spark.kubernetes.executor.podNamePrefix", jobPodPrefix);
-        defaultConfig.put("spark.kubernetes.executor.podTemplateFile", EXECUTOR_POD_TEMPLATE_PATH);
 
         return defaultConfig;
     }
