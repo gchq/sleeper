@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: spark-kubernetes-executor
+      resources:
+        requests:
+          ephemeral-storage: "ephemeral-storage-request-placeholder"
+        limits:
+          ephemeral-storage: "ephemeral-storage-limit-placeholder"

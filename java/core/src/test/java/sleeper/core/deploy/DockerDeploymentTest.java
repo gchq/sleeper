@@ -21,6 +21,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -73,6 +74,7 @@ public class DockerDeploymentTest {
         InstanceProperties properties = new InstanceProperties();
         properties.set(ACCOUNT, "1234");
         properties.set(REGION, "global");
+        properties.set(DNS_SUFFIX, "amazonaws.com");
         properties.set(VERSION, "1.2.3");
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 

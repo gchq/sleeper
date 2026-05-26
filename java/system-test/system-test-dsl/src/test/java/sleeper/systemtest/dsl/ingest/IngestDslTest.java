@@ -25,7 +25,6 @@ import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
@@ -46,10 +45,11 @@ public class IngestDslTest {
     @Test
     void shouldIngestByQueue(SleeperDsl sleeper) {
         // Given
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        Row row = new Row();
+        row.put("key", "some-id");
+        row.put("timestamp", 1234L);
+        row.put("value", "Some value");
+        row.put("nullable_value", null);
         sleeper.sourceFiles().create("test.parquet", row);
 
         // When
@@ -67,10 +67,11 @@ public class IngestDslTest {
     @Test
     void shouldBulkImportByQueue(SleeperDsl sleeper) {
         // Given
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        Row row = new Row();
+        row.put("key", "some-id");
+        row.put("timestamp", 1234L);
+        row.put("value", "Some value");
+        row.put("nullable_value", null);
         sleeper.sourceFiles().create("test.parquet", row);
 
         // When

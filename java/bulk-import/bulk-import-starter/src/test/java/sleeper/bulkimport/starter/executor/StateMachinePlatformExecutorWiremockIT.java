@@ -15,6 +15,9 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
@@ -34,6 +37,8 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +58,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -76,6 +87,12 @@ class StateMachinePlatformExecutorWiremockIT {
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "state-machine-arn");
         instanceProperties.set(BULK_IMPORT_EKS_NAMESPACE, "eks-namespace");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "85Gi");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "12g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD, "1g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "12g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD, "1g");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION, "0.75");
         tableProperties.set(TABLE_ID, "table-id");
         tableProperties.set(TABLE_NAME, "test-table");
         transactionLogs.initialiseTable(tableProperties);
@@ -102,8 +119,35 @@ class StateMachinePlatformExecutorWiremockIT {
                             .isEqualTo(exampleString("example/step-functions/startexecution-request.json"));
                     assertThatJson(body).inPath("$.input").asString()
                             .satisfies(input -> assertThatJson(input)
+                                    .whenIgnoringPaths("executorPodTemplate")
                                     .isEqualTo(exampleString("example/step-functions/startexecution-input.json")));
                 });
+    }
+
+    @Test
+    void shouldSetEphemeralStorageOnExecutorPodTemplate(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-job-run");
+
+        // Then
+        findInputJson(input -> assertThatJson(input)
+                .inPath("$.executorPodTemplate").asString().satisfies(template -> {
+                    assertThat(template).doesNotContain("placeholder");
+                    JsonNode parsed = parseYaml(template);
+                    assertThatJson(parsed)
+                            .inPath("$.spec.containers[0].resources.requests['ephemeral-storage']")
+                            .isEqualTo("85Gi");
+                    assertThatJson(parsed)
+                            .inPath("$.spec.containers[0].resources.limits['ephemeral-storage']")
+                            .isEqualTo("85Gi");
+                }));
     }
 
     @Test
@@ -194,6 +238,14 @@ class StateMachinePlatformExecutorWiremockIT {
     private void findInputJson(Consumer<String> assertion) {
         findRequestBody(body -> assertThatJson(body)
                 .inPath("$.input").asString().satisfies(assertion));
+    }
+
+    private static JsonNode parseYaml(String yaml) {
+        try {
+            return new ObjectMapper(new YAMLFactory()).readTree(yaml);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void findRequestBody(Consumer<String> assertion) {

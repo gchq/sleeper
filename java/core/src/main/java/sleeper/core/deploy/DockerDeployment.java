@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -37,6 +38,10 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 public class DockerDeployment {
 
     private static final List<DockerDeployment> ALL = new ArrayList<>();
+    public static final DockerDeployment BASE = builder()
+            .deploymentName("base")
+            .multiplatform(true)
+            .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)
@@ -189,7 +194,8 @@ public class DockerDeployment {
      */
     public String getDockerImageName(InstanceProperties properties) {
         return properties.get(ACCOUNT) + ".dkr.ecr." +
-                properties.get(REGION) + ".amazonaws.com/" +
+                properties.get(REGION) + "." +
+                properties.get(DNS_SUFFIX) + "/" +
                 getEcrRepositoryName(properties) +
                 ":" + properties.get(VERSION);
     }

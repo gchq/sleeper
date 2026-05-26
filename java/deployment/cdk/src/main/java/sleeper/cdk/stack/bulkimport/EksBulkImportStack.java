@@ -76,6 +76,7 @@ import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -329,6 +330,7 @@ public final class EksBulkImportStack extends NestedStack {
         return parseJson(resource,
                 namespaceReplacement(instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE))
                         .andThen(replacements(Map.of(
+                                "partition-placeholder", instanceProperties.get(PARTITION),
                                 "endpoint-placeholder", instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT),
                                 "cluster-placeholder", cluster.getClusterName(),
                                 "ca-placeholder", cluster.getClusterCertificateAuthorityData())))

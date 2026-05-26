@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/spark:3.5.5-scala2.12-java17-ubuntu
+FROM apache/spark:3.5.6-scala2.12-java17-ubuntu
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root
@@ -24,3 +24,10 @@ USER spark
 # Replace Spark jars with versions managed by Sleeper (the version of Spark must match)
 COPY ./spark/* /opt/spark/jars
 COPY ./bulk-import-runner.jar /opt/spark/workdir
+
+USER root
+COPY ./sleeper-entrypoint.sh /opt/sleeper-entrypoint.sh
+RUN chmod +x /opt/sleeper-entrypoint.sh
+USER spark
+
+ENTRYPOINT ["/opt/sleeper-entrypoint.sh"]

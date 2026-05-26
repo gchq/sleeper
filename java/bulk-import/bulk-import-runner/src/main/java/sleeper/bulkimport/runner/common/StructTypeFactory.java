@@ -48,7 +48,7 @@ public class StructTypeFactory {
     }
 
     private StructField getStructField(Field field) {
-        return StructField.apply(field.getName(), getDataType(field.getType()), false, Metadata.empty());
+        return StructField.apply(field.getName(), getDataType(field.getType()), field.isNullable(), Metadata.empty());
     }
 
     private DataType getDataType(Type type) {

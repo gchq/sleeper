@@ -18,7 +18,7 @@ package sleeper.bulkimport.starter.executor;
 import com.google.gson.Gson;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
@@ -56,9 +57,11 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
         List<String> args = constructArgs(arguments, stateMachineArn);
+        String ephemeralStorage = instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE);
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
+        input.put("executorPodTemplate", ExecutorPodTemplate.forEphemeralStorageRequestAndLimit(ephemeralStorage, ephemeralStorage));
         String inputJson = new Gson().toJson(input);
 
         stepFunctions.startExecution(request -> request
@@ -68,7 +71,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {
-        Map<String, String> defaultConfig = ConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
+        Map<String, String> defaultConfig = SparkConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         String jobPodPrefix = jobPodPrefix(bulkImportJob);
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);

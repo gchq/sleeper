@@ -24,7 +24,6 @@ import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.nio.file.Path;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
@@ -52,10 +51,11 @@ public class SetupInstanceLocalIT {
     @Test
     void shouldIngestOneRow(SleeperDsl sleeper) {
         // Given
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        Row row = new Row();
+        row.put("key", "some-id");
+        row.put("timestamp", 1234L);
+        row.put("value", "Some value");
+        row.put("nullable_value", null);
 
         // When
         sleeper.ingest().direct(tempDir).rows(row);
