@@ -235,7 +235,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createBulkImportOnEksPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
-        properties.setEnum(OPTIONAL_STACKS, OptionalStack.EksBulkImportStack);
+        properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
     }

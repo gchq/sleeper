@@ -15,12 +15,15 @@
  */
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Expensive2;
@@ -41,7 +44,13 @@ public class EksBulkImportPerformanceST {
     @BeforeEach
     void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_PERFORMANCE_EKS);
+        sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
+    }
+
+    @AfterEach
+    void tearDown(SleeperDsl sleeper, SystemTestParameters parameters) {
+        sleeper.disableOptionalStack(OptionalStack.EksBulkImportStack);
     }
 
     @Test
