@@ -38,7 +38,7 @@ public class PythonIngestDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public PythonIngestDsl(SystemTestContext context) {
-        sentJobs = context.sentJobs();
+        sentJobs = context.sentIngestJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         fromS3Driver = drivers.pythonIngest(context);
         localFileDriver = drivers.pythonIngestLocalFile(context);

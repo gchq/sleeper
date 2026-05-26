@@ -39,7 +39,7 @@ public class SystemTestContext {
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reporting;
-    private final SentIngestJobsContext sentJobs = new SentIngestJobsContext();
+    private final SentIngestJobsContext sentIngestJobs = new SentIngestJobsContext();
 
     public SystemTestContext(
             SystemTestParameters parameters, SystemTestDrivers drivers,
@@ -72,7 +72,7 @@ public class SystemTestContext {
         return reporting;
     }
 
-    public SentIngestJobsContext sentJobs() {
-        return sentJobs;
+    public SentIngestJobsContext sentIngestJobs() {
+        return sentIngestJobs;
     }
 }

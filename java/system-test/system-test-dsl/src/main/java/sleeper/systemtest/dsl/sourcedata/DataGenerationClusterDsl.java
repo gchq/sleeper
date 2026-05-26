@@ -58,7 +58,7 @@ public class DataGenerationClusterDsl {
     public DataGenerationClusterDsl(
             SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context.systemTest();
-        this.sentJobs = context.sentJobs();
+        this.sentJobs = context.sentIngestJobs();
         instance = context.instance();
         SystemTestDrivers instanceAdminDrivers = instance.adminDrivers();
         driver = baseDrivers.dataGenerationTasks(context);

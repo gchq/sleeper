@@ -33,7 +33,7 @@ public class PythonBulkImportDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public PythonBulkImportDsl(SystemTestContext context) {
-        sentJobs = context.sentJobs();
+        sentJobs = context.sentIngestJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         ingestDriver = drivers.pythonBulkImport(context);
         waitForJobs = drivers.waitForBulkImport(context);

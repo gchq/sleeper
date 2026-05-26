@@ -45,7 +45,7 @@ public class IngestBatcherDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public IngestBatcherDsl(SystemTestContext context, SystemTestDrivers drivers) {
-        sentJobs = context.sentJobs();
+        sentJobs = context.sentIngestJobs();
         instance = context.instance();
         sourceFiles = context.sourceFiles();
         driver = drivers.ingestBatcher(context);
