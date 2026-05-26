@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

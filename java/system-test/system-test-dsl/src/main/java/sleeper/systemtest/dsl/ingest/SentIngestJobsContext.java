@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl;
+package sleeper.systemtest.dsl.ingest;
 
 import java.util.ArrayList;
 import java.util.Collections;

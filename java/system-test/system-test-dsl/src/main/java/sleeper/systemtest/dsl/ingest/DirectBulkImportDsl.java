@@ -19,7 +19,6 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;

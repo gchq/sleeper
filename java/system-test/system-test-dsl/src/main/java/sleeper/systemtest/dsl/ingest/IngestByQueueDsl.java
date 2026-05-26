@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SentIngestJobsContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
