@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
@@ -39,6 +40,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String NATIVE_IMAGE_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String NATIVE_IMAGE_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
+    private static final String EXECUTOR_POD_TEMPLATE_PATH = "/tmp/executor-template.yaml";
 
     private final SfnClient stepFunctions;
     private final InstanceProperties instanceProperties;
@@ -55,9 +57,11 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
         List<String> args = constructArgs(arguments, stateMachineArn);
+        String ephemeralStorage = instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE);
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
+        input.put("executorPodTemplate", ExecutorPodTemplate.forEphemeralStorageRequestAndLimit(ephemeralStorage, ephemeralStorage));
         String inputJson = new Gson().toJson(input);
 
         stepFunctions.startExecution(request -> request
@@ -72,6 +76,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         String jobPodPrefix = jobPodPrefix(bulkImportJob);
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);
         defaultConfig.put("spark.kubernetes.executor.podNamePrefix", jobPodPrefix);
+        defaultConfig.put("spark.kubernetes.executor.podTemplateFile", EXECUTOR_POD_TEMPLATE_PATH);
 
         return defaultConfig;
     }
