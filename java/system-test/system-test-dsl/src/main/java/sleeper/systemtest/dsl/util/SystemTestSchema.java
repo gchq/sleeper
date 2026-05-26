@@ -33,10 +33,13 @@ public class SystemTestSchema {
     public static final String ROW_KEY_FIELD_NAME = "key";
     public static final String SORT_KEY_FIELD_NAME = "timestamp";
     public static final String VALUE_FIELD_NAME = "value";
+    public static final String NULLABLE_VALUE_FIELD_NAME = "nullable_value";
     public static final Schema DEFAULT_SCHEMA = Schema.builder()
             .rowKeyFields(new Field(ROW_KEY_FIELD_NAME, new StringType()))
             .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
-            .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
+            .valueFields(
+                    new Field(VALUE_FIELD_NAME, new StringType()),
+                    new Field(NULLABLE_VALUE_FIELD_NAME, new StringType(), true))
             .build();
 
     public static List<Row> sorted(List<Row> rows) {

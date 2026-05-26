@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 use color_eyre::eyre::{Error, bail};
 use sleeper_core::{
     CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,

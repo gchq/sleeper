@@ -59,6 +59,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
@@ -232,8 +233,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("PolicyStatementProps").effect(Effect.ALLOW)
                                 .actions(List.of("s3:GetObject", "s3:ListBucket"))
-                                .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
-                                        "arn:aws:s3:::*.elasticmapreduce/*"))
+                                .resources(List.of("arn:" + instanceProperties.get(PARTITION) + ":s3:::*.elasticmapreduce",
+                                        "arn:" + instanceProperties.get(PARTITION) + ":s3:::*.elasticmapreduce/*"))
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)

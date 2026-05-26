@@ -20,6 +20,7 @@
 use crate::{
     CommonConfig,
     datafusion::{
+        dummy_exec::DummyExec,
         filter_aggregation_config::validate_aggregations,
         metadata_cache::prepopulate_metadata_cache,
         output::Completer,
@@ -32,6 +33,7 @@ use crate::{
         },
     },
     filter_aggregation_config::aggregate::Aggregate,
+    sleeper_context::SleeperContext,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use datafusion::{
@@ -51,12 +53,13 @@ use log::{debug, info, warn};
 use num_format::{Locale, ToFormattedString};
 use object_store::ObjectMeta;
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 mod arrow_stream;
 mod cast_udf;
 mod compact;
 mod config;
+mod dummy_exec;
 mod filter_aggregation_config;
 mod leaf_partition_query;
 mod metadata_cache;
@@ -445,6 +448,33 @@ fn sort_aggregates_by_schema(aggregates: &[Aggregate], schema: &DFSchema) -> Vec
     let mut sorted_aggregates = aggregates.to_vec();
     sorted_aggregates.sort_by_key(|e| schema.index_of_column_by_name(None, &e.column));
     sorted_aggregates
+}
+
+/// Simulates running compactions for metric reading purposes.
+///
+/// Creates two compactions called "compact_1" and "compact_2". Some row counts are updated after a few seconds delay.
+/// After 1 seconds both will report 10 rows read.
+/// After 2 seconds compact_1 will be dropped and compact_2 will report 20 rows read.
+/// After 3 seconds compact_2 will be dropped
+#[allow(clippy::doc_markdown)]
+pub async fn simulate_compaction_row_reads(sleeper_context: &SleeperContext) {
+    let compact_1 = Arc::new(DummyExec::default());
+    let compact_2 = Arc::new(DummyExec::default());
+
+    sleeper_context.set_filter_stage("compact_1", &(compact_1.clone() as Arc<dyn ExecutionPlan>));
+    sleeper_context.set_filter_stage("compact_2", &(compact_2.clone() as Arc<dyn ExecutionPlan>));
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    compact_1.add_output_rows(10);
+    compact_2.add_output_rows(10);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    drop(compact_1);
+    compact_2.add_output_rows(10);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[cfg(test)]

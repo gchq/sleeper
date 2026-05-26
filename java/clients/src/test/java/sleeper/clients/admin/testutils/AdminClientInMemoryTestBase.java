@@ -130,6 +130,6 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
                         .scriptsDirectory(scriptsDirectory)
                         .version(version)
                         .build(),
-                account, region);
+                account, region, dnsSuffix);
     }
 }

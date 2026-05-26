@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
@@ -47,6 +48,7 @@ import sleeper.sketches.store.SketchesStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
@@ -65,7 +67,11 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException {
+    public RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException {
+        CompactionJob compactionJob = request.getJob();
+        TableProperties tableProperties = request.getTableProperties();
+        Region region = request.getRegion();
+        Consumer<Long> callback = request.getProgressCallback();
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
@@ -87,8 +93,13 @@ public class JavaCompactionRunner implements CompactionRunner {
         Sketches sketches = Sketches.from(schema);
 
         long rowsWritten = 0L;
+        long rowsRead = 0L;
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
+            rowsRead++;
+            if (0 == rowsRead % 50_000) {
+                callback.accept(rowsRead);
+            }
             sketches.update(row);
             // Write out
             writer.write(row);
@@ -97,6 +108,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                 LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
+        callback.accept(rowsRead);
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 

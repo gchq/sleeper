@@ -26,7 +26,8 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * A filter to exclude records older than a given age.
+ * A filter to exclude records older than a given age. A row with a null value in the timestamp field is treated
+ * as having no timestamp, and is excluded from the results.
  */
 public class AgeOffFilter implements Predicate<Row> {
     private final String fieldName;

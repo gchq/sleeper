@@ -58,6 +58,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected String version = "1.2.3";
     protected String account = "test-account";
     protected String region = "test-region";
+    protected String dnsSuffix = "amazonaws.com";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
     @Override

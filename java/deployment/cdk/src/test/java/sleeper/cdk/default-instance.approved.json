@@ -25530,7 +25530,17 @@
                   "\",{\"label\":\"Partition Splits\",\"stat\":\"Maximum\"}]],\"yAxis\":{}}}]}"
                 ]
               ]
-            }
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Dashboard"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         }
       }
@@ -26304,7 +26314,7 @@
                   {
                     "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Arn"
                   },
-                  "\nsleeper.compaction.commit.dlq.arn\u003d",
+                  "\nsleeper.partition\u003daws\nsleeper.compaction.commit.dlq.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn"
                   },
@@ -26436,7 +26446,7 @@
                   {
                     "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Ref"
                   },
-                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
+                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.dns.suffix\u003damazonaws.com\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
                   },
