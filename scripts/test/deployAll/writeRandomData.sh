@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script triggers automatic data generation in a demonstration instance. This will run data generation based on
+# the instance properties stored in the instance. If you want to apply a change to the data generation configuration
+# first, you can use the admin client.
+
 set -e
 unset CDPATH
 

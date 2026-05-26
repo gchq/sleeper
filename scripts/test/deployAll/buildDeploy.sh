@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script calls build.sh and then deploy.sh.
+# Use when you want to build the system and deploy a demonstration instance, but not immediately run any data
+# generation.
+# If you've already built the system you can run deploy.sh directly.
+# If you want test data to be added automatically, use buildDeployTest.sh or deployTest.sh.
+# You can also use writeRandomData.sh to add test data after the fact.
+
 set -e
 unset CDPATH
 

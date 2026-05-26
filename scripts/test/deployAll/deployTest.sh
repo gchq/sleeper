@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script deploys a demonstration instance and adds some test data automatically.
+# If you want the system to be built first, use buildDeployTest.sh.
+# If you don't want test data to be added automatically, use deploy.sh or buildDeploy.sh.
+
 set -e
 unset CDPATH
 
