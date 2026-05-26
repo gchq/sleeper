@@ -77,6 +77,10 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isListInKeyValueFormat)
             .runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
+    UserDefinedInstanceProperty EXCLUDED_RESOURCES_FROM_TAGS = Index.propertyBuilder("sleeper.tags.excluded.resources")
+            .description("A common sepearted list of resource to exclude from tagging.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")

@@ -17,6 +17,7 @@ package sleeper.cdk.util;
 
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.TagProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
@@ -31,11 +32,14 @@ import software.amazon.awscdk.services.stepfunctions.LogOptions;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static sleeper.core.properties.instance.CommonProperty.EXCLUDED_RESOURCES_FROM_TAGS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -110,15 +114,26 @@ public class Utils {
             case 3653:
                 return RetentionDays.TEN_YEARS;
             default:
-                throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
+                throw new IllegalArgumentException(
+                        "Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
     }
 
     public static void addTags(Stack stack, InstanceProperties properties) {
+        String excludedResourcesString = properties.get(EXCLUDED_RESOURCES_FROM_TAGS);
+        List<String> excludedResources = new ArrayList<>();
+        if (excludedResourcesString != null) {
+            excludedResources.addAll(Arrays.stream(excludedResourcesString.split(","))
+                    .map(String::trim)
+                    .toList());
+        }
+        TagProps excludeResourceTypes = TagProps.builder()
+                .excludeResourceTypes(excludedResources)
+                .build();
         Tags tags = Tags.of(stack);
-        properties.getTags().forEach(tags::add);
+        properties.getTags().forEach((key, value) -> tags.add(key, value, excludeResourceTypes));
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
-                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId()));
+                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId(), excludeResourceTypes));
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
@@ -138,8 +153,10 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
+     * Normalises EC2 instance size strings to match enum identifiers. They can then
+     * be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java
+     * identifiers can't start with a number, so
      * "2xlarge" becomes "xlarge2".
      *
      * @param  size the human readable size

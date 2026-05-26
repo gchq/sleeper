@@ -19,6 +19,7 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.TagProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -27,6 +28,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static sleeper.core.properties.instance.CommonProperty.EXCLUDED_RESOURCES_FROM_TAGS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -61,9 +67,19 @@ public class SleeperCdkApp {
                             .env(environment)
                             .build(),
                     props);
-            instanceProperties.getTags()
-                    .forEach((key, value) -> Tags.of(app).add(key, value));
 
+            String excludedResourcesString = instanceProperties.get(EXCLUDED_RESOURCES_FROM_TAGS);
+            List<String> excludedResources = new ArrayList<>();
+            if (excludedResourcesString != null) {
+                excludedResources.addAll(Arrays.stream(excludedResourcesString.split(","))
+                        .map(String::trim)
+                        .toList());
+            }
+            TagProps excludeResourceTypes = TagProps.builder()
+                    .excludeResourceTypes(excludedResources)
+                    .build();
+            instanceProperties.getTags()
+                    .forEach((key, value) -> Tags.of(app).add(key, value, excludeResourceTypes));
             app.synth();
         }
     }
