@@ -27,6 +27,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
+import sleeper.systemtest.dsl.ingest.EksBulkImportStateMachineDsl;
 import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -45,7 +46,6 @@ import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SourceFilesDsl;
-import sleeper.systemtest.dsl.statemachine.StateMachineDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreDSl;
 
 import java.nio.file.Path;
@@ -152,8 +152,8 @@ public class SleeperDsl {
         return new ReportingDsl(context);
     }
 
-    public StateMachineDsl stateMachine() {
-        return new StateMachineDsl(context, baseDrivers);
+    public EksBulkImportStateMachineDsl stateMachine() {
+        return new EksBulkImportStateMachineDsl(context, baseDrivers);
     }
 
     public TableMetricsDsl tableMetrics() {

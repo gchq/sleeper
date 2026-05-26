@@ -22,6 +22,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -38,7 +39,6 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
-import sleeper.systemtest.dsl.statemachine.StateMachineDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 public abstract class SystemTestDriversBase implements SystemTestDrivers {
@@ -79,7 +79,7 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
     }
 
     @Override
-    public StateMachineDriver stateMachine(SystemTestContext context) {
+    public EksBulkImportDriver stateMachine(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

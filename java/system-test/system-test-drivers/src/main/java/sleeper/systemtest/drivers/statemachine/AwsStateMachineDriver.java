@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sfn.SfnClient;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.statemachine.StateMachineDriver;
+import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.Map;
  * Queries AWS Step Functions for the execution status of bulk import jobs. Derives execution names from job IDs and
  * table IDs using DeriveJobExecutionName, then calls the Step Functions API to retrieve each execution's status.
  */
-public class AwsStateMachineDriver implements StateMachineDriver {
+public class AwsStateMachineDriver implements EksBulkImportDriver {
     private final SfnClient sfnClient;
 
     public AwsStateMachineDriver(SystemTestClients clients) {

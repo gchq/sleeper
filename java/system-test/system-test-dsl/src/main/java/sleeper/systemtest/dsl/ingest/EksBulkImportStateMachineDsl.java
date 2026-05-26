@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.statemachine;
+package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -28,15 +28,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
- * DSL entry point for querying the status of bulk import jobs in an AWS Step Functions state machine. Resolves the
- * state machine ARN and table ID from the current instance context so that tests only need to provide job IDs.
+ * DSL entry point for querying the status of bulk import jobs in an AWS Step Functions state machine.
  */
-public class StateMachineDsl {
+public class EksBulkImportStateMachineDsl {
 
     private final SystemTestInstanceContext instance;
-    private final StateMachineDriver driver;
+    private final EksBulkImportDriver driver;
 
-    public StateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
         this.driver = baseDrivers.stateMachine(context);
     }
