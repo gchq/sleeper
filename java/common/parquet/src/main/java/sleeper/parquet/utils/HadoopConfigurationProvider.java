@@ -23,6 +23,8 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
 import static sleeper.core.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
@@ -45,6 +47,7 @@ public class HadoopConfigurationProvider {
 
     public static Configuration getConfigurationForClient(InstanceProperties instanceProperties) {
         Configuration conf = getConfigurationForClient();
+        conf.set("fs.s3a.endpoint", evaluateEndpoint(instanceProperties));
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         return conf;
     }
@@ -57,7 +60,7 @@ public class HadoopConfigurationProvider {
 
     public static Configuration getConfigurationForLambdas(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
-        conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
+        conf.set("fs.s3a.endpoint", evaluateEndpoint(instanceProperties));
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         return conf;
     }
@@ -69,6 +72,7 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
+            conf.set("fs.s3a.endpoint", evaluateEndpoint(instanceProperties));
             conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }
         return conf;
@@ -93,6 +97,7 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
+            conf.set("fs.s3a.endpoint", evaluateEndpoint(instanceProperties));
             conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getName());
         }
         // See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise
@@ -108,5 +113,9 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.aws.credentials.provider", SimpleAWSCredentialsProvider.class.getName());
         conf.set("fs.s3a.access.key", "test-access-key");
         conf.set("fs.s3a.secret.key", "test-secret-key");
+    }
+
+    private static String evaluateEndpoint(InstanceProperties instanceProperties) {
+        return instanceProperties.get(REGION) + "." + instanceProperties.get(DNS_SUFFIX);
     }
 }
