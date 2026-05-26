@@ -16,8 +16,8 @@ jobs:
 
     steps:
       - run: echo "Disabled dependency checks temporarily, see https://github.com/gchq/sleeper/issues/6481"
-      # - uses: actions/checkout@v3
-      # - uses: actions/setup-java@v3
+      # - uses: actions/checkout@v6
+      # - uses: actions/setup-java@v5
       #   with:
       #     java-version: '17'
       #     distribution: 'corretto'
@@ -50,7 +50,7 @@ jobs:
       #     key: ${{ steps.restore-cache.outputs.cache-primary-key }}
       # - name: Upload dependency check report
       #   if: ${{ always() }}
-      #   uses: actions/upload-artifact@v5
+      #   uses: actions/upload-artifact@v7
       #   with:
       #     name: Dependency check report
       #     path: java/target/dependency-check-report.html
