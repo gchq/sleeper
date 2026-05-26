@@ -37,6 +37,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
@@ -225,6 +226,57 @@ public class DataFusionCompactionRunnerIT {
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
+        }
+
+        @Test
+        void shouldMergeFilesWithNullableValueFields() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(
+                            new Field("value1", new StringType(), true),
+                            new Field("value2", new ByteArrayType(), true),
+                            new Field("value3", new IntType(), true),
+                            new Field("value4", new LongType(), true),
+                            new Field("value5", new ListType(new StringType()), true),
+                            new Field("value6", new MapType(new StringType(), new LongType()), true))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row rowWithValue = new Row();
+            rowWithValue.put("key", "a");
+            rowWithValue.put("value1", "hello");
+            rowWithValue.put("value2", new byte[]{1, 2, 3, 4});
+            rowWithValue.put("value3", 100);
+            rowWithValue.put("value4", 1000L);
+            rowWithValue.put("value5", List.of("a", "b", "c"));
+            rowWithValue.put("value6", Map.of("x", 1L));
+            Row rowWithNulls = new Row();
+            rowWithNulls.put("key", "b");
+            rowWithNulls.put("value1", null);
+            rowWithNulls.put("value2", null);
+            rowWithNulls.put("value3", null);
+            rowWithNulls.put("value4", null);
+            rowWithNulls.put("value5", null);
+            rowWithNulls.put("value6", null);
+            Row rowWithSomeNulls = new Row();
+            rowWithSomeNulls.put("key", "c");
+            rowWithSomeNulls.put("value1", null);
+            rowWithSomeNulls.put("value2", new byte[]{9, 8, 7, 6, 5});
+            rowWithSomeNulls.put("value3", null);
+            rowWithSomeNulls.put("value4", 1_000_000L);
+            rowWithSomeNulls.put("value5", null);
+            rowWithSomeNulls.put("value6", Map.of("y", 100L));
+            String file1 = writeFileForPartition("root", List.of(rowWithValue, rowWithSomeNulls));
+            String file2 = writeFileForPartition("root", List.of(rowWithNulls));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(3, 3));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(rowWithValue, rowWithNulls, rowWithSomeNulls);
         }
     }
 

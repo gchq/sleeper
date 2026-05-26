@@ -70,7 +70,7 @@ public class IteratorFactory {
      * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @param  applyFiltersAggregations  if filtering iterators and aggregating should be added
      * @return                           an initialised iterator
-     * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
+     * @throws IteratorCreationException if an iterator can't be created, for example its class definition can't be
      *                                   found
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema, boolean applyFiltersAggregations) throws IteratorCreationException {

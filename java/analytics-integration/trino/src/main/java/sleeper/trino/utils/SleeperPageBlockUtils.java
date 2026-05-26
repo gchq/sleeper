@@ -58,6 +58,9 @@ public class SleeperPageBlockUtils {
             int positionNo) {
         Type trinoType = sleeperColumnHandlesInChannelOrder.get(channelNo).getColumnTrinoType();
         Block block = page.getBlock(channelNo);
+        if (block.isNull(positionNo)) {
+            return null;
+        }
         if (trinoType.equals(IntegerType.INTEGER)) {
             return block.getInt(positionNo, 0);
         }

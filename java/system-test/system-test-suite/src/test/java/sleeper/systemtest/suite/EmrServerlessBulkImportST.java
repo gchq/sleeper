@@ -68,10 +68,11 @@ public class EmrServerlessBulkImportST {
     void shouldBulkImportOneRowWithEmrServerlessDirectly(SleeperDsl sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        Row row = new Row(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
+        Row row = new Row();
+        row.put("key", "some-id");
+        row.put("timestamp", 1234L);
+        row.put("value", "Some value");
+        row.put("nullable_value", null);
 
         // When
         sleeper.sourceFiles().create("file.parquet", row);
