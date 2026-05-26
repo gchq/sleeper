@@ -37,7 +37,7 @@ public class EksBulkImportStateMachineDsl {
 
     public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
-        this.driver = baseDrivers.stateMachine(context);
+        this.driver = baseDrivers.eksBulkImport(context);
     }
 
     /**

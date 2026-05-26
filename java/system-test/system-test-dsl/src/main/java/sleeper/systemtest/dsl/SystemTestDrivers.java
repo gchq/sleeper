@@ -87,7 +87,7 @@ public interface SystemTestDrivers {
 
     DirectBulkImportDriver directEmrServerless(SystemTestContext context);
 
-    EksBulkImportDriver stateMachine(SystemTestContext context);
+    EksBulkImportDriver eksBulkImport(SystemTestContext context);
 
     IngestBatcherDriver ingestBatcher(SystemTestContext context);
 

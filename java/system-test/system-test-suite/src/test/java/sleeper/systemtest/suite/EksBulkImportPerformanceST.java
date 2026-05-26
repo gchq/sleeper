@@ -69,7 +69,7 @@ public class EksBulkImportPerformanceST {
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(5_000_000, 8_000_000),
                         "meets expected performance");
         List<String> jobIds = sleeper.reporting().ingestJobs().jobIds();
-        assertThat(sleeper.stateMachine().waitForJobsFinished(jobIds,
+        assertThat(sleeper.eksBulkImportStateMachine().waitForJobsFinished(jobIds,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .values())
                 .containsOnly("SUCCEEDED");

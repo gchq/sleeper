@@ -164,7 +164,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public EksBulkImportDriver stateMachine(SystemTestContext context) {
+    public EksBulkImportDriver eksBulkImport(SystemTestContext context) {
         return new AwsStateMachineDriver(clients);
     }
 

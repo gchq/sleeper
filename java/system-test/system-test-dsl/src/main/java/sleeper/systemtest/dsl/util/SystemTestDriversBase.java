@@ -79,7 +79,7 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
     }
 
     @Override
-    public EksBulkImportDriver stateMachine(SystemTestContext context) {
+    public EksBulkImportDriver eksBulkImport(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

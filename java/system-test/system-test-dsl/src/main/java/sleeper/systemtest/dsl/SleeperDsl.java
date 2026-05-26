@@ -152,7 +152,7 @@ public class SleeperDsl {
         return new ReportingDsl(context);
     }
 
-    public EksBulkImportStateMachineDsl stateMachine() {
+    public EksBulkImportStateMachineDsl eksBulkImportStateMachine() {
         return new EksBulkImportStateMachineDsl(context, baseDrivers);
     }
 
