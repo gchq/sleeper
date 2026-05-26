@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/spark:3.5.6-scala2.12-java17-ubuntu
+set -euo pipefail
 
-ENV PATH="$PATH:/opt/spark/bin"
-USER root
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
-RUN rm /opt/spark/jars/*
-RUN mkdir /opt/spark/workdir
-USER spark
+if [ -n "${EXECUTOR_POD_TEMPLATE:-}" ]; then
+    printf '%s' "$EXECUTOR_POD_TEMPLATE" > /tmp/executor-template.yaml
+fi
 
-# Replace Spark jars with versions managed by Sleeper (the version of Spark must match)
-COPY ./spark/* /opt/spark/jars
-COPY ./bulk-import-runner.jar /opt/spark/workdir
-
-USER root
-COPY ./sleeper-entrypoint.sh /opt/sleeper-entrypoint.sh
-RUN chmod +x /opt/sleeper-entrypoint.sh
-USER spark
-
-ENTRYPOINT ["/opt/sleeper-entrypoint.sh"]
+exec /opt/entrypoint.sh "$@"
