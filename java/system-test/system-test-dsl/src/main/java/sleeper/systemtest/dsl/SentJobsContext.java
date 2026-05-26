@@ -23,37 +23,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Store the ingest job Id's.
+ * Tracks the ingest and bulk import jobs that have been sent in the current system test.
  */
 public class SentJobsContext {
     private final List<String> jobIds = new ArrayList<>();
     private GeneratedIngestSourceFiles lastGeneratedFiles;
 
     /**
-     * Add a new job Id.
+     * Track that an ingest or bulk import job has been sent.
      *
-     * @param jobId the job Id to add
+     * @param jobId the ID of the job that was sent
      */
-    public void addJobId(String jobId) {
+    public void addSentJob(String jobId) {
         jobIds.add(jobId);
     }
 
     /**
-     * Add new job Id's.
+     * Track that a batch of ingest or bulk import jobs has been sent.
      *
-     * @param ids the job Id's to add
+     * @param ids the IDs of the jobs that were sent
      */
-    public void addAllJobIds(List<String> ids) {
-        jobIds.addAll(ids);
-    }
-
-    /**
-     * Clear all stored job Id's and add new ones.
-     *
-     * @param ids the job Id's to store in the context
-     */
-    public void setJobIds(List<String> ids) {
-        jobIds.clear();
+    public void addSentJobs(List<String> ids) {
         jobIds.addAll(ids);
     }
 
@@ -62,9 +52,9 @@ public class SentJobsContext {
     }
 
     /**
-     * Get the job Id's stored in the context.
+     * Gets the IDs of all ingest and bulk import jobs that have been sent in the current system test.
      *
-     * @return the job Id's
+     * @return the job IDs
      */
     public List<String> getJobIds() {
         if (jobIds.isEmpty() && lastGeneratedFiles != null) {

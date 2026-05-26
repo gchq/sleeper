@@ -43,7 +43,7 @@ public class PythonBulkImportDsl {
     public PythonBulkImportDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         ingestDriver.sendJobWithFiles(jobId, files);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 

@@ -67,7 +67,7 @@ public class IngestBatcherDsl {
             if (newJobIds.size() > expectedJobs) {
                 throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected " + expectedJobs);
             }
-            sentJobs.addAllJobIds(newJobIds);
+            sentJobs.addSentJobs(newJobIds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

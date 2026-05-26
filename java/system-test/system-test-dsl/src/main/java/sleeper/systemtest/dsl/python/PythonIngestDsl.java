@@ -50,14 +50,14 @@ public class PythonIngestDsl {
     public PythonIngestDsl uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
         localFileDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 
     public PythonIngestDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         fromS3Driver.sendJobWithFiles(jobId, files);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 

@@ -53,7 +53,6 @@ public class DirectBulkImportDsl {
 
     public DirectBulkImportDsl sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
-        sentJobs.addJobId(jobId);
         TableProperties table = instance.getTableProperties();
         driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
@@ -61,6 +60,7 @@ public class DirectBulkImportDsl {
                 .tableName(table.get(TABLE_NAME))
                 .files(sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
+        sentJobs.addSentJob(jobId);
         return this;
     }
 

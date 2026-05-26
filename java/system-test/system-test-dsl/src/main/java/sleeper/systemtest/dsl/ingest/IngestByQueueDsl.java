@@ -54,12 +54,12 @@ public class IngestByQueueDsl {
     }
 
     public IngestByQueueDsl sendSourceFiles(CdkDefinedInstanceProperty queueProperty, String... files) {
-        sentJobs.addJobId(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
+        sentJobs.addSentJob(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
         return this;
     }
 
     public IngestByQueueDsl sendSourceFilesToAllTables(String... files) {
-        sentJobs.addAllJobIds(ingest.sendJobToAllTablesGetIds(defaultQueueProperty, sourceFiles(files)));
+        sentJobs.addSentJobs(ingest.sendJobToAllTablesGetIds(defaultQueueProperty, sourceFiles(files)));
         return this;
     }
 
