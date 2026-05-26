@@ -21,6 +21,7 @@ import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
@@ -33,7 +34,6 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DYNAMIC_ALLOCATION_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
@@ -41,7 +41,6 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_MEMORY_STORAGE_FRACTION;
@@ -98,11 +97,11 @@ import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
  * Properties in this class are based on AWS recommended values. See this blog for details:
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
-public class ConfigurationUtils {
+public class SparkConfigurationUtils {
 
     private static final String JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.%s";
 
-    private ConfigurationUtils() {
+    private SparkConfigurationUtils() {
     }
 
     public static Map<String, String> getSparkConfigurationForEMRFromInstanceProperties(
@@ -201,7 +200,7 @@ public class ConfigurationUtils {
         sparkConf.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_EKS_SPARK_SHUFFLE_SPILL_COMPRESS));
 
         // spark.hadoop properties
-        sparkConf.put("spark.hadoop.fs.s3a.aws.credentials.provider", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER));
+        sparkConf.put("spark.hadoop.fs.s3a.aws.credentials.provider", "software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider");
         sparkConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", instanceProperties.get(BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE));
 
         // spark.sql properties
@@ -211,7 +210,8 @@ public class ConfigurationUtils {
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         sparkConf.put("spark.kubernetes.container.image", DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
         sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", instanceProperties.get(BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME));
+        sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
+        sparkConf.put("spark.kubernetes.executor.podTemplateFile", "/tmp/executor-template.yaml");
 
         return sparkConf;
     }
@@ -307,7 +307,7 @@ public class ConfigurationUtils {
     }
 
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
-        Map<String, String> sparkConf = new HashMap<>();
+        Map<String, String> sparkConf = new TreeMap<>();
         // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.

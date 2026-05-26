@@ -24,3 +24,10 @@ USER spark
 # Replace Spark jars with versions managed by Sleeper (the version of Spark must match)
 COPY ./spark/* /opt/spark/jars
 COPY ./bulk-import-runner.jar /opt/spark/workdir
+
+USER root
+COPY ./sleeper-entrypoint.sh /opt/sleeper-entrypoint.sh
+RUN chmod +x /opt/sleeper-entrypoint.sh
+USER spark
+
+ENTRYPOINT ["/opt/sleeper-entrypoint.sh"]
