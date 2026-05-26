@@ -17,6 +17,7 @@
 package sleeper.systemtest.drivers.statemachine;
 
 import software.amazon.awssdk.services.sfn.SfnClient;
+import software.amazon.awssdk.services.sfn.model.DescribeExecutionResponse;
 
 import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -24,8 +25,7 @@ import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -46,16 +46,15 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     }
 
     @Override
-    public Map<String, String> getExecutionStatuses() {
-        Map<String, String> statuses = new LinkedHashMap<>();
+    public List<String> getExecutionStatuses() {
         String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         String tableId = instance.getTableProperties().get(TABLE_ID);
-        for (String jobId : sentJobs.getJobIds()) {
-            String executionName = DeriveJobExecutionName.jobExecutionName(tableId, jobId);
-            String executionArn = stateMachineArn.replace(":stateMachine:", ":execution:") + ":" + executionName;
-            String status = sfnClient.describeExecution(req -> req.executionArn(executionArn)).statusAsString();
-            statuses.put(jobId, status);
-        }
-        return statuses;
+        return sentJobs.getJobIds().stream()
+                .map(jobId -> {
+                    String executionName = DeriveJobExecutionName.jobExecutionName(tableId, jobId);
+                    String executionArn = stateMachineArn.replace(":stateMachine:", ":execution:") + ":" + executionName;
+                    DescribeExecutionResponse response = sfnClient.describeExecution(req -> req.executionArn(executionArn));
+                    return response.statusAsString();
+                }).toList();
     }
 }

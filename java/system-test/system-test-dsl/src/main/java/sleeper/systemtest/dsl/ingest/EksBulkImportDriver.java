@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Runs checks on bulk import jobs that are specific to running in EKS.
@@ -24,9 +24,9 @@ import java.util.Map;
 public interface EksBulkImportDriver {
 
     /**
-     * Retrieves the execution status of each bulk import job in the state machine.
+     * Retrieves the execution status of each bulk import job submitted in this system test.
      *
-     * @return a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
+     * @return a list of execution statuses (e.g. "SUCCEEDED", "FAILED", "RUNNING")
      */
-    Map<String, String> getExecutionStatuses();
+    List<String> getExecutionStatuses();
 }

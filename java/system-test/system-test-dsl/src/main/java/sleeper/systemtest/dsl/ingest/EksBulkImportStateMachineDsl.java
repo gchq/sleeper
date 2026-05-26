@@ -46,7 +46,7 @@ public class EksBulkImportStateMachineDsl {
         try {
             return pollDriver.poll(poll)
                     .queryUntil("state machine executions finished",
-                            () -> driver.getExecutionStatuses().values(),
+                            () -> driver.getExecutionStatuses(),
                             statuses -> statuses.stream().noneMatch("RUNNING"::equals));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
