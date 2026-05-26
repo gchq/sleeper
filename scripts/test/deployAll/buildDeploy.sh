@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script calls build.sh and then deployTest.sh.
-# Use when you want to build the system and deploy a demonstration instance, and you want some test data to be added
-# automatically.
-# If you've already built the system you can run deployTest.sh directly.
-# If you don't want test data to be added automatically, use buildDeploy.sh or deploy.sh.
+# This script calls build.sh and then deploy.sh.
+# Use when you want to build the system and deploy a demonstration instance, but not immediately run any data
+# generation.
+# If you've already built the system you can run deploy.sh directly.
+# If you want test data to be added automatically, use buildDeployTest.sh or deployTest.sh.
+# You can also use writeRandomData.sh to add test data after the fact.
 
 set -e
 unset CDPATH
@@ -36,7 +37,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/build.sh"
 END_BUILD_TIME=$(record_time)
 
-"$THIS_DIR/deployTest.sh" "$@"
+"$THIS_DIR/deploy.sh" "$@"
 FINISH_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
@@ -44,5 +45,5 @@ echo "Finished"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Build finished at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_BUILD_TIME")"
-echo "Deploying test finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$FINISH_TIME")"
+echo "Deploying finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$FINISH_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
