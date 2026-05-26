@@ -48,7 +48,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.statemachine.AwsStateMachineDriver;
+import sleeper.systemtest.drivers.statemachine.AwsEksBulkImportDriver;
 import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
@@ -165,7 +165,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public EksBulkImportDriver eksBulkImport(SystemTestContext context) {
-        return new AwsStateMachineDriver(clients);
+        return new AwsEksBulkImportDriver(context.instance(), context.sentIngestJobs(), clients);
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,10 +26,7 @@ public interface EksBulkImportDriver {
     /**
      * Retrieves the execution status of each bulk import job in the state machine.
      *
-     * @param  stateMachineArn the ARN of the Step Functions state machine
-     * @param  tableId         the table ID used to derive execution names
-     * @param  jobIds          the bulk import job IDs to query
-     * @return                 a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
+     * @return a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
      */
-    Map<String, String> getJobExecutionStatuses(String stateMachineArn, String tableId, List<String> jobIds);
+    Map<String, String> getExecutionStatuses();
 }

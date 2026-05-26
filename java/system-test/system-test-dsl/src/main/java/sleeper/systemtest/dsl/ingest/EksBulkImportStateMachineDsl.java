@@ -19,27 +19,19 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.util.Collection;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * DSL entry point for querying the status of bulk import jobs in an AWS Step Functions state machine.
  */
 public class EksBulkImportStateMachineDsl {
 
-    private final SystemTestInstanceContext instance;
-    private final SentIngestJobsContext sentJobs;
     private final EksBulkImportDriver driver;
     private final PollWithRetriesDriver pollDriver;
 
     public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
-        this.instance = context.instance();
-        this.sentJobs = context.sentIngestJobs();
         this.driver = baseDrivers.eksBulkImport(context);
         this.pollDriver = baseDrivers.pollWithRetries();
     }
@@ -54,17 +46,11 @@ public class EksBulkImportStateMachineDsl {
         try {
             return pollDriver.poll(poll)
                     .queryUntil("state machine executions finished",
-                            () -> getJobExecutionStatuses(),
+                            () -> driver.getExecutionStatuses().values(),
                             statuses -> statuses.stream().noneMatch("RUNNING"::equals));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
-    }
-
-    private Collection<String> getJobExecutionStatuses() {
-        String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
-        String tableId = instance.getTableProperties().get(TABLE_ID);
-        return driver.getJobExecutionStatuses(stateMachineArn, tableId, sentJobs.getJobIds()).values();
     }
 }

@@ -23,8 +23,10 @@ public class DeriveJobExecutionName {
     }
 
     public static String jobExecutionName(BulkImportJob job) {
-        String tableId = job.getTableId();
-        String jobId = job.getId();
+        return jobExecutionName(job.getTableId(), job.getId());
+    }
+
+    public static String jobExecutionName(String tableId, String jobId) {
         // See maximum length restriction in AWS documentation:
         // https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html#API_StartExecution_RequestParameters
         int spaceForTableId = 80 - jobId.length() - 1;
