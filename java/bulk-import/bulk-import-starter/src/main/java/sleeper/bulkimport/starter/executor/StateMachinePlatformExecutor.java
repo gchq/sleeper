@@ -18,7 +18,7 @@ package sleeper.bulkimport.starter.executor;
 import com.google.gson.Gson;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -70,7 +70,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {
-        Map<String, String> defaultConfig = ConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
+        Map<String, String> defaultConfig = SparkConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         String jobPodPrefix = jobPodPrefix(bulkImportJob);
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);

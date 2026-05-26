@@ -97,11 +97,11 @@ import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
  * Properties in this class are based on AWS recommended values. See this blog for details:
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
-public class ConfigurationUtils {
+public class SparkConfigurationUtils {
 
     private static final String JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.%s";
 
-    private ConfigurationUtils() {
+    private SparkConfigurationUtils() {
     }
 
     public static Map<String, String> getSparkConfigurationForEMRFromInstanceProperties(
