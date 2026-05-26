@@ -20,9 +20,9 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -33,40 +33,38 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class EksBulkImportStateMachineDsl {
 
     private final SystemTestInstanceContext instance;
+    private final SentIngestJobsContext sentJobs;
     private final EksBulkImportDriver driver;
+    private final PollWithRetriesDriver pollDriver;
 
     public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
+        this.sentJobs = context.sentIngestJobs();
         this.driver = baseDrivers.eksBulkImport(context);
-    }
-
-    /**
-     * Retrieves the execution status of each bulk import job in the EKS state machine.
-     *
-     * @param  jobIds the bulk import job IDs to query
-     * @return        a map of job ID to execution status (e.g. "SUCCEEDED", "FAILED", "RUNNING")
-     */
-    public Map<String, String> getJobExecutionStatuses(List<String> jobIds) {
-        String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
-        String tableId = instance.getTableProperties().get(TABLE_ID);
-        return driver.getJobExecutionStatuses(stateMachineArn, tableId, jobIds);
+        this.pollDriver = baseDrivers.pollWithRetries();
     }
 
     /**
      * Polls until all state machine executions have finished, then returns the final statuses.
      *
-     * @param  jobIds the bulk import job IDs to query
-     * @param  poll   the polling configuration
-     * @return        a map of job ID to final execution status
+     * @param  poll the polling configuration
+     * @return      a map of job ID to final execution status
      */
-    public Map<String, String> waitForJobsFinished(List<String> jobIds, PollWithRetries poll) {
+    public Collection<String> waitUntilExecutionsFinishedGetStatuses(PollWithRetries poll) {
         try {
-            return poll.queryUntil("state machine executions finished",
-                    () -> getJobExecutionStatuses(jobIds),
-                    statuses -> statuses.values().stream().noneMatch("RUNNING"::equals));
+            return pollDriver.poll(poll)
+                    .queryUntil("state machine executions finished",
+                            () -> getJobExecutionStatuses(),
+                            statuses -> statuses.stream().noneMatch("RUNNING"::equals));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    private Collection<String> getJobExecutionStatuses() {
+        String stateMachineArn = instance.getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
+        String tableId = instance.getTableProperties().get(TABLE_ID);
+        return driver.getJobExecutionStatuses(stateMachineArn, tableId, sentJobs.getJobIds()).values();
     }
 }

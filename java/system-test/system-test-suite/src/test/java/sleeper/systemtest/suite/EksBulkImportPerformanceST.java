@@ -26,7 +26,6 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
 import java.time.Duration;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -68,10 +67,8 @@ public class EksBulkImportPerformanceST {
                         "jobs finished with one run each")
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(5_000_000, 8_000_000),
                         "meets expected performance");
-        List<String> jobIds = sleeper.reporting().ingestJobs().jobIds();
-        assertThat(sleeper.eksBulkImportStateMachine().waitForJobsFinished(jobIds,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
-                .values())
+        assertThat(sleeper.eksBulkImportStateMachine().waitUntilExecutionsFinishedGetStatuses(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10))))
                 .containsOnly("SUCCEEDED");
     }
 
