@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Copyright 2022-2026 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This script triggers automatic data generation in a demonstration instance. This will run data generation based on
+# the instance properties stored in the instance. If you want to apply a change to the data generation configuration
+# first, you can use the admin client.
+
+set -e
+unset CDPATH
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <instance-id> <table-name>"
+  exit 1
+fi
+
+INSTANCE_ID=$1
+TABLE_NAME=$2
+
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+SYSTEM_TEST_JAR="${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar"
+WRITE_DATA_OUTPUT_FILE="${SCRIPTS_DIR}/generated/writeDataOutput.json"
+
+source "$SCRIPTS_DIR/functions/timeUtils.sh"
+START_TIME=$(record_time)
+
+echo "-------------------------------------------------------------------------------"
+echo "Starting tasks to write random data"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+ sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
+
+FINISH_TIME=$(record_time)
+echo "-------------------------------------------------------------------------------"
+echo "Started write random data tasks"
+echo "-------------------------------------------------------------------------------"
+echo "Started at $(recorded_time_str "$START_TIME")"
+echo "Starting tasks finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
