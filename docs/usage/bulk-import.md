@@ -520,30 +520,6 @@ When the job makes it to the State Machine, it will run the job synchronously an
 successful, the job will be torn down automatically. If unsuccessful or the job doesn't submit, a notification will be
 sent to the errors email.
 
-When running a very large bulk import job e.g. 10 billion rows, it is recommended to increase the following instance
-properties:
-sleeper.bulk.import.eks.spark.executor.instances - 150
-sleeper.bulk.import.eks.spark.executor.memory.overhead - 2g
-sleeper.bulk.import.eks.spark.sql.shuffle.partitions - 600
-sleeper.bulk.import.eks.spark.executor.ephemeral.storage - 200Gi
-
-Alternativley you could submit the job with overrides e.g.
-```JSON
-{
-  "tableName": "myTable",
-  "files": [
-    "my-import-bucket/files/example.parquet",
-    "my-import-bucket/files/my-other-files/"
-  ],
-  "sparkConf": {
-    "spark.executor.instances": "150",
-    "spark.executor.memoryOverhead": "2g",
-    "spark.sql.shuffle.partitions": 600,
-    "spark.kubernetes.executor.volumes.emptyDir.spark-local-dir-1.options.sizeLimit": "200Gi"
-  }
-}
-```
-
 ##### Debugging and UI access
 
 While a Spark job is running you'll be able to monitor it with the Spark UI. You can also monitor jobs in the AWS
