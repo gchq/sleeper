@@ -51,7 +51,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Cache dependencies
         uses: actions/cache/restore@v5
         with:

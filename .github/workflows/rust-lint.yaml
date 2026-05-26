@@ -20,7 +20,7 @@ jobs:
         with:
           components: clippy,rustfmt
           toolchain: 1.93
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Check formatting
         working-directory: ./rust
         run: cargo fmt --all -- --check
