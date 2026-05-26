@@ -86,7 +86,6 @@ public class HadoopConfigurationProvider {
 
     public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
-        conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         conf.set("fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
         conf.set("fs.s3a.bucket.probe", "0");
