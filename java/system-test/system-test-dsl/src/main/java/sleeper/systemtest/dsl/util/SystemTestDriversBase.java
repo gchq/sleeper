@@ -79,7 +79,7 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
     }
 
     @Override
-    public StateMachineDriver statemachine(SystemTestContext context) {
+    public StateMachineDriver stateMachine(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

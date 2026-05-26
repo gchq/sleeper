@@ -38,7 +38,7 @@ public class StateMachineDsl {
 
     public StateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
-        this.driver = baseDrivers.statemachine(context);
+        this.driver = baseDrivers.stateMachine(context);
     }
 
     /**

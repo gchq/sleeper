@@ -164,7 +164,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public StateMachineDriver statemachine(SystemTestContext context) {
+    public StateMachineDriver stateMachine(SystemTestContext context) {
         return new AwsStateMachineDriver(clients);
     }
 
