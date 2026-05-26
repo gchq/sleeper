@@ -20,6 +20,7 @@ on:
         type: string
 
 env:
+  BASE_IMAGE: localhost:5000/base:test
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"
   RUST_BUILD_IMAGE_AARCH64: "ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
@@ -29,6 +30,12 @@ jobs:
   build:
     name: Test Docker image ${{ inputs.imageName }}
     runs-on: ubuntu-latest
+
+    services:
+      registry:
+        image: registry:3
+        ports:
+          - 5000:5000
 
     steps:
       - name: Delete huge unnecessary tools folder
@@ -68,9 +75,9 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build base image
-        run: ./scripts/dev/buildDockerImage.sh base base:test ${{ inputs.dockerOptions }} --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh base ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --push
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load --build-arg BASE_IMAGE=base:test
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }}
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker
