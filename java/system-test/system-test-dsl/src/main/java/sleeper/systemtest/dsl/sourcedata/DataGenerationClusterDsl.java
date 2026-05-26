@@ -85,7 +85,6 @@ public class DataGenerationClusterDsl {
 
         driver.runDataGenerationJobs(numberOfJobs, jobSpec, poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
-        sentJobs.setLastGeneratedFiles(lastGeneratedFiles);
         return this;
     }
 
@@ -95,25 +94,32 @@ public class DataGenerationClusterDsl {
     }
 
     public DataGenerationClusterDsl waitForStandardIngestTask() {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobs.getJobIds(), pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(jobIds(), pollDriver);
         return this;
     }
 
     public DataGenerationClusterDsl waitForStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilNumTasksStartedAJob(expectedTasks, sentJobs.getJobIds(), poll);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
         return this;
     }
 
     public void waitForIngestJobs() {
-        waitForIngestJobs.waitForJobs(sentJobs.getJobIds());
+        waitForIngestJobs.waitForJobs(jobIds());
     }
 
     public void waitForIngestJobs(PollWithRetries poll) {
-        waitForIngestJobs.waitForJobs(sentJobs.getJobIds(), poll);
+        waitForIngestJobs.waitForJobs(jobIds(), poll);
     }
 
     public void waitForBulkImportJobs(PollWithRetries poll) {
-        waitForBulkImportJobs.waitForJobs(sentJobs.getJobIds(), poll);
+        waitForBulkImportJobs.waitForJobs(jobIds(), poll);
+    }
+
+    private List<String> jobIds() {
+        if (sentJobs.getJobIds().isEmpty()) {
+            sentJobs.addSentJobs(lastGeneratedFiles.getJobIdsFromIndividualFiles());
+        }
+        return sentJobs.getJobIds();
     }
 
     public void waitForTotalFileReferences(int expectedFileReferences) {

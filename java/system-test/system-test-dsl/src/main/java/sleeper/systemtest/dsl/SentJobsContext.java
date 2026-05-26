@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.dsl;
 
-import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +25,6 @@ import java.util.List;
  */
 public class SentJobsContext {
     private final List<String> jobIds = new ArrayList<>();
-    private GeneratedIngestSourceFiles lastGeneratedFiles;
 
     /**
      * Track that an ingest or bulk import job has been sent.
@@ -47,19 +44,12 @@ public class SentJobsContext {
         jobIds.addAll(ids);
     }
 
-    public void setLastGeneratedFiles(GeneratedIngestSourceFiles files) {
-        this.lastGeneratedFiles = files;
-    }
-
     /**
      * Gets the IDs of all ingest and bulk import jobs that have been sent in the current system test.
      *
      * @return the job IDs
      */
     public List<String> getJobIds() {
-        if (jobIds.isEmpty() && lastGeneratedFiles != null) {
-            jobIds.addAll(lastGeneratedFiles.getJobIdsFromIndividualFiles());
-        }
         return Collections.unmodifiableList(jobIds);
     }
 }
