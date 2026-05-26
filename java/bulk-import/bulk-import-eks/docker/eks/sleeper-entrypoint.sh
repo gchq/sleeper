@@ -13,15 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-unset CDPATH
+set -euo pipefail
 
-if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
-  echo "Usage: $0 <properties-template> <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
-  exit 1
+if [ -n "${EXECUTOR_POD_TEMPLATE:-}" ]; then
+    printf '%s' "$EXECUTOR_POD_TEMPLATE" > /tmp/executor-template.yaml
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
-
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.drivers.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "$@"
+exec /opt/entrypoint.sh "$@"
