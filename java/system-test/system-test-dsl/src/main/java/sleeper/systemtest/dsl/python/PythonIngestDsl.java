@@ -16,12 +16,12 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -30,7 +30,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 public class PythonIngestDsl {
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final IngestByAnyQueueDriver fromS3Driver;
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final IngestTasksDriver tasksDriver;
@@ -38,7 +38,7 @@ public class PythonIngestDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public PythonIngestDsl(SystemTestContext context) {
-        sentJobs = context.sentJobs();
+        sentJobs = context.sentIngestJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         fromS3Driver = drivers.pythonIngest(context);
         localFileDriver = drivers.pythonIngestLocalFile(context);
@@ -50,14 +50,14 @@ public class PythonIngestDsl {
     public PythonIngestDsl uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
         localFileDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 
     public PythonIngestDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         fromS3Driver.sendJobWithFiles(jobId, files);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 

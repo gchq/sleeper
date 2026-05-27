@@ -51,6 +51,7 @@ public class UploadDockerImages {
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final CopyContainerImage copyImage;
+    private final StackDockerImage baseImage;
     private final String version;
     private final boolean createMultiplatformBuilder;
 
@@ -61,6 +62,7 @@ public class UploadDockerImages {
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.localBuildOnly());
+        baseImage = requireNonNull(builder.baseImage, "baseImage must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -90,22 +92,20 @@ public class UploadDockerImages {
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder
-                && imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
+                && createMultiplatformBuilder) {
             commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
             commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
         }
 
-        String baseTag = buildTag(repositoryPrefix, StackDockerImage.fromDockerDeployment(DockerDeployment.BASE));
-
-        for (StackDockerImage image : imagesToUpload) {
-            String tag = buildTag(repositoryPrefix, image);
-            if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-                buildAndPushImage(tag, image, baseTag);
-            } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
-                pullAndPushImage(tag, image);
-            } else {
-                throw new IllegalArgumentException("Unrecognised Docker image location: " + deployConfig.dockerImageLocation());
+        if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
+            String baseTag = buildTag(repositoryPrefix, baseImage);
+            buildAndPushImage(baseTag, baseImage, baseTag);
+            for (StackDockerImage image : imagesToUpload) {
+                buildAndPushImage(buildTag(repositoryPrefix, image), image, baseTag);
+            }
+        } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
+            for (StackDockerImage image : imagesToUpload) {
+                pullAndPushImage(buildTag(repositoryPrefix, image), image);
             }
         }
     }
@@ -159,6 +159,7 @@ public class UploadDockerImages {
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private CopyContainerImage copyImage;
+        private StackDockerImage baseImage = StackDockerImage.fromDockerDeployment(DockerDeployment.BASE);
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
 
@@ -197,6 +198,11 @@ public class UploadDockerImages {
 
         public Builder copyImage(CopyContainerImage copyImage) {
             this.copyImage = copyImage;
+            return this;
+        }
+
+        public Builder baseImage(StackDockerImage baseImage) {
+            this.baseImage = baseImage;
             return this;
         }
 

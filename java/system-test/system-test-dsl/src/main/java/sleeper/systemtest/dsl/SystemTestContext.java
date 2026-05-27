@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -38,7 +39,7 @@ public class SystemTestContext {
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final ReportingContext reporting;
-    private final SentJobsContext sentJobs = new SentJobsContext();
+    private final SentIngestJobsContext sentIngestJobs = new SentIngestJobsContext();
 
     public SystemTestContext(
             SystemTestParameters parameters, SystemTestDrivers drivers,
@@ -71,7 +72,7 @@ public class SystemTestContext {
         return reporting;
     }
 
-    public SentJobsContext sentJobs() {
-        return sentJobs;
+    public SentIngestJobsContext sentIngestJobs() {
+        return sentIngestJobs;
     }
 }
