@@ -15,23 +15,45 @@
  */
 package sleeper.foreign.datafusion;
 
+import org.junit.jupiter.api.Test;
+
+import sleeper.core.properties.instance.InstanceProperties;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+
 public class DataFusionAwsConfigTest {
 
-    // @Test
-    // void shouldReturnConfigWhenEndpointArgumentProvided() {
-    //     // Given
-    //     String endpoint = "http://localhost:4566";
+    @Test
+    void shouldReturnConfigWithInstanceConfiguredEndpoint() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(REGION, "test-region");
+        properties.set(DNS_SUFFIX, "test.domain.com");
 
-    //     // When
-    //     DataFusionAwsConfig config = DataFusionAwsConfig.overrideEndpointFromEnv(endpoint, name -> null);
+        // When
+        DataFusionAwsConfig config = DataFusionAwsConfig.getDefault(properties);
 
-    //     // Then
-    //     assertThat(config).isNotNull();
-    //     assertThat(config.getEndpoint()).isEqualTo("http://localhost:4566");
-    //     assertThat(config.getRegion()).isEqualTo("us-east-1");
-    //     assertThat(config.getAccessKeyId()).isEqualTo("test-access-key-id");
-    //     assertThat(config.getSecretAccessKey()).isEqualTo("test-secret-access-key");
-    //     assertThat(config.isAllowHttp()).isTrue();
-    // }
+        // Then
+        assertThat(config).isNotNull();
+        assertThat(config.getEndpoint()).isEqualTo("https://s3.test-region.test.domain.com");
+    }
 
+    @Test
+    void shouldReturnConfigWithEndpointProvided() {
+        // Given
+        String endpoint = "http://localhost:4566";
+
+        // When
+        DataFusionAwsConfig config = DataFusionAwsConfig.overrideEndpoint(endpoint);
+
+        // Then
+        assertThat(config).isNotNull();
+        assertThat(config.getEndpoint()).isEqualTo("http://localhost:4566");
+        assertThat(config.getRegion()).isEqualTo("us-east-1");
+        assertThat(config.getAccessKeyId()).isEqualTo("test-access-key-id");
+        assertThat(config.getSecretAccessKey()).isEqualTo("test-secret-access-key");
+        assertThat(config.isAllowHttp()).isTrue();
+    }
 }
