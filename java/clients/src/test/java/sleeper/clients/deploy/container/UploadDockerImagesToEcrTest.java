@@ -17,7 +17,6 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -221,12 +220,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             uploadForDeployment(lambdaImageConfig());
 
             // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
-                    useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag));
+            assertThat(commandsThatRan).isEmpty();
         }
 
         @Test
@@ -267,12 +261,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
-                    useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag));
+            assertThat(commandsThatRan).isEmpty();
         }
 
         @Test
@@ -475,10 +464,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(imageReferenceToDigest).isEqualTo(Map.of(
                     "www.test-repo.com/prefix/base:1.0.0", "test-digest",
                     "www.test-repo.com/prefix/ingest:1.0.0", "test-digest",
-                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0", "test-digest",
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0", "test-digest"));
             assertThat(imageReferenceToCopiedPlatforms).isEqualTo(Map.of(
-                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0", List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64),
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0", List.of()));
             assertThat(commandsThatRan).isEmpty();
         }
@@ -497,11 +484,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(imageReferenceToDigest).isEqualTo(Map.of(
                     "www.test-repo.com/prefix/base:1.0.0", "test-digest",
                     "www.test-repo.com/prefix/compaction:1.0.0", "test-digest",
-                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0", "test-digest",
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0", "test-digest"));
             assertThat(imageReferenceToCopiedPlatforms).isEqualTo(Map.of(
-                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0",
-                    List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64),
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0",
                     List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64)));
             assertThat(commandsThatRan).isEmpty();
@@ -523,7 +507,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(imageReferenceToDigest).isEqualTo(Map.of(
                     "www.test-repo.com/prefix/base:1.0.0", "test-digest",
                     "www.test-repo.com/prefix/statestore-lambda:1.0.0", "test-digest",
-                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0", "test-digest",
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0", "test-digest"));
             assertThat(commandsThatRan).isEmpty();
             assertThat(files).isEqualTo(Map.of(
@@ -569,12 +552,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
-                    useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag));
+            assertThat(commandsThatRan).isEmpty();
         }
     }
 
@@ -604,6 +582,9 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/data-generation:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
                     buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -623,7 +604,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     class SpecificImage {
 
         @Test
-        @Disabled("TODO")
         void shouldUploadOneImageWithBase() throws Exception {
             // When
             uploader().upload(UploadDockerImagesToEcrRequest.builder()
