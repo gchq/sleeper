@@ -145,7 +145,7 @@ public class UploadArtefacts {
             deploymentId = args.deploymentId();
             jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
-            images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
+            images = DockerImageConfiguration.getDefault().getAllNonBaseImagesToUpload();
         }
 
         try (S3Client s3Client = S3Client.create();

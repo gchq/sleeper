@@ -76,7 +76,7 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
-    public List<StackDockerImage> getAllImagesToUpload() {
+    public List<StackDockerImage> getAllNonBaseImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
                         .filter(not(DockerDeployment::isBaseImage))
