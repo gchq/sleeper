@@ -23,11 +23,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
@@ -68,11 +70,15 @@ public class DirectQueryDriver implements QueryDriver {
 
     public DirectQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        DataFusionAwsConfig awsConfig = clients.createDataFusionAwsConfig();
+        if (awsConfig == null) {
+            awsConfig = DataFusionAwsConfig.getDefault(instanceProperties);
+        }
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
                 new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE,
-                        clients.tableHadoopProvider(instance.getInstanceProperties())),
-                new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR,
-                        CONTEXT));
+                        clients.tableHadoopProvider(instanceProperties)),
+                new DataFusionLeafPartitionRowRetriever.Provider(awsConfig, ALLOCATOR, CONTEXT));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

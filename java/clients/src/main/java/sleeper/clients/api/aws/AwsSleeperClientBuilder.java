@@ -49,7 +49,7 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientQueryProvider queryProvider = SleeperClientQueryProvider.createDefaultForEachClient();
+    private SleeperClientQueryProvider queryProvider;
 
     /**
      * Creates a Sleeper client.
@@ -60,6 +60,7 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
+        queryProvider = SleeperClientQueryProvider.createDefaultForEachClient(instanceProperties);
         ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
@@ -118,11 +119,12 @@ public class AwsSleeperClientBuilder {
     /**
      * Sets the number of threads in the thread pool used to read data files in parallel during queries.
      *
+     * @param  instanceProperties  Sleeper instance properties
      * @param  queryThreadPoolSize the number of threads
      * @return                     this builder
      */
-    public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+    public AwsSleeperClientBuilder queryThreadPoolSize(InstanceProperties instanceProperties, int queryThreadPoolSize) {
+        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(instanceProperties, queryThreadPoolSize));
     }
 
     /**

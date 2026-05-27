@@ -28,8 +28,10 @@ import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 
@@ -66,12 +68,13 @@ public class InvestigateDataFusionCompactionOOM {
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             CheckTransactionLogs check = CheckTransactionLogs.load(accountName, instanceId, tableId, cacheTransactions, s3Client, dynamoClient);
-            examine(check, s3Client, dynamoClient);
+            examine(instanceProperties, check, s3Client, dynamoClient);
         }
     }
 
-    private static void examine(CheckTransactionLogs logs, S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, IteratorCreationException {
+    private static void examine(InstanceProperties instanceProperties, CheckTransactionLogs logs, S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, IteratorCreationException {
         // Find a compaction that was created
         PartitionTree partitionTree = logs.partitionTree();
         CompactionJob inferredJob = logs.inferLastCompactionJobFromAssignJobIdsTransaction();
@@ -83,7 +86,7 @@ public class InvestigateDataFusionCompactionOOM {
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
-            CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration(), context);
+            CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(instanceProperties), new Configuration(), context);
             runner.compact(CompactionRequest.builder()
                     .job(localJob)
                     .tableProperties(logs.tableProperties())

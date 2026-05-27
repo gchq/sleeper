@@ -24,6 +24,7 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
@@ -60,7 +61,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     @Override
-    public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
+    public CompactionRunner createCompactor(InstanceProperties instanceProperties, CompactionJob job, TableProperties tableProperties) {
         Configuration hadoopConf = hadoopProvider.getConfiguration(tableProperties);
         if (job.getIteratorClassName() != null) {
             CompactionRunner runner = createJavaRunner(hadoopConf);
@@ -69,17 +70,17 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
             return runner;
         }
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
-        CompactionRunner runner = createRunnerForEngine(engine, hadoopConf);
+        CompactionRunner runner = createRunnerForEngine(instanceProperties, engine, hadoopConf);
         LOGGER.info("Selecting {} for job ID {}, table {}",
                 runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
         return runner;
     }
 
-    private CompactionRunner createRunnerForEngine(DataEngine engine, Configuration hadoopConf) {
+    private CompactionRunner createRunnerForEngine(InstanceProperties instanceProperties, DataEngine engine, Configuration hadoopConf) {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), hadoopConf, ContextHolder.INSTANCE);
+                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(instanceProperties), hadoopConf, ContextHolder.INSTANCE);
             case JAVA:
             default:
                 return createJavaRunner(hadoopConf);

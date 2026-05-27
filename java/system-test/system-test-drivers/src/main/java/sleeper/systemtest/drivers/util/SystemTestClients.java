@@ -127,7 +127,7 @@ public class SystemTestClients {
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
-                .dataFusionAwsConfig(DataFusionAwsConfig::getDefault)
+                .dataFusionAwsConfig(() -> null)
                 .build();
     }
 
