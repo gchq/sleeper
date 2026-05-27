@@ -636,6 +636,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                             imageReferenceToDigest.put(target, digest);
                             imageReferenceToCopiedPlatforms.put(target, platforms);
                         })
+                        .baseImage(baseImage())
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version("1.0.0")
                         .build(),

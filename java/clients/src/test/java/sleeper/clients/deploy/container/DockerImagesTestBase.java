@@ -109,6 +109,10 @@ public class DockerImagesTestBase {
         return new DockerImageConfiguration(List.of(BASE), LAMBDA_HANDLERS);
     }
 
+    protected StackDockerImage baseImage() {
+        return StackDockerImage.fromDockerDeployment(BASE);
+    }
+
     protected DockerImageConfiguration optionalLambdasImageConfig() {
         return new DockerImageConfiguration(List.of(BASE),
                 LAMBDA_HANDLERS.stream().filter(lambda -> !lambda.getOptionalStacks().isEmpty()).toList());

@@ -210,6 +210,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 .deployConfig(DeployConfiguration.fromLocalBuild())
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                .baseImage(baseImage())
                 .version("1.0.0");
     }
 }
