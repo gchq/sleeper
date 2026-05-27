@@ -98,7 +98,6 @@ public class CompactionRunnerCLI {
     }
 
     public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client, S3TransferManager s3TransferManager) {
-
         return new CompactionRunnerCLI(
                 tableId -> {
                     TableProperties properties = TableProperties.copyOf(baseTableProperties);
