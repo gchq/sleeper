@@ -15,6 +15,8 @@
  */
 package sleeper.foreign.datafusion;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
  */
@@ -56,14 +58,17 @@ public class DataFusionAwsConfig {
      * Creates the default AWS configuration. Applies configuration from environment
      * variables if set.
      *
-     * @return AWS config for DataFusion
+     * @param  instanceProperties Sleeper instance properties
+     * @return                    AWS config for DataFusion
      */
-    public static DataFusionAwsConfig getDefault() {
+    public static DataFusionAwsConfig getDefault(InstanceProperties instanceProperties) {
         String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
             return overrideEndpoint(endpoint);
         } else {
-            return null;
+            return builder()
+                    .endpoint(instanceProperties.evaluateAWSEndpoint("s3"))
+                    .build();
         }
     }
 
