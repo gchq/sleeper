@@ -15,6 +15,8 @@
  */
 package sleeper.cdk.testutil;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import software.amazon.awscdk.Stack;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,11 +59,42 @@ public class SleeperInstancePrinter {
             return Map.entry(entry.getKey(), Map.of("Fn::Join", sanitisePropertiesJoin(list)));
         }
 
+        if (Objects.equals("Manifest", entry.getKey())
+                && entry.getValue() instanceof Map map
+                && map.containsKey("Fn::Join")) {
+            return Map.entry(entry.getKey(), "manifest-with-refs-scrubbed-for-test");
+        }
+
+        if (Objects.equals("Manifest", entry.getKey()) && entry.getValue() instanceof String s) {
+            return Map.entry(entry.getKey(), sortJsonString(s));
+        }
+
         if (entry.getValue() instanceof Map map) {
             return Map.entry(entry.getKey(), sanitiseTemplate(map));
         }
 
         return entry;
+    }
+
+    private static String sortJsonString(String s) {
+        try {
+            Object parsed = new Gson().fromJson(s, Object.class);
+            return new Gson().toJson(sortMapsRecursively(parsed));
+        } catch (JsonSyntaxException e) {
+            return s;
+        }
+    }
+
+    private static Object sortMapsRecursively(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> sorted = new TreeMap<>();
+            map.forEach((k, v) -> sorted.put(k.toString(), sortMapsRecursively(v)));
+            return sorted;
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(SleeperInstancePrinter::sortMapsRecursively).toList();
+        }
+        return value;
     }
 
     private List<Object> sanitisePropertiesJoin(List<Object> list) {

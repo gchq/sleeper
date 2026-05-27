@@ -47,6 +47,7 @@ import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
@@ -111,7 +112,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.validatedIn
 
 class BulkImportJobDriverIT extends LocalStackTestBase {
 
-    private static Stream<Arguments> getParameters() {
+    private static Stream<Arguments> getStreamOfBulkImportJobRunners() {
         return Stream.of(
                 Arguments.of(Named.of("BulkImportJobDataframeDriver",
                         (BulkImportJobRunner) BulkImportJobDataframeDriver::createFileReferences)),
@@ -160,12 +161,12 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
-        tablePropertiesStore(instanceProperties).save(tableProperties);
+        tablePropertiesStore().save(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(tableProperties);
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
@@ -200,7 +201,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
@@ -224,7 +225,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
@@ -261,7 +262,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
@@ -328,7 +329,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
@@ -358,12 +359,47 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     @ParameterizedTest
-    @MethodSource("getParameters")
+    @MethodSource("getStreamOfBulkImportJobRunners")
+    void shouldImportDataWithNullableValueField(BulkImportJobRunner runner) throws IOException {
+        // Given
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new StringType(), true), new Field("value2", new ByteArrayType(), false))
+                .build());
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
+        tablePropertiesStore().save(tableProperties);
+        update(stateStore()).initialise(tableProperties);
+        Row rowWithValue = new Row();
+        rowWithValue.put("key", 1);
+        rowWithValue.put("sort", 100L);
+        rowWithValue.put("value", "hello");
+        rowWithValue.put("value2", "hello2".getBytes(StandardCharsets.UTF_8));
+        Row rowWithNull = new Row();
+        rowWithNull.put("key", 2);
+        rowWithNull.put("sort", 0L);
+        rowWithNull.put("value", null);
+        rowWithNull.put("value2", "not-null".getBytes(StandardCharsets.UTF_8));
+        List<Row> rows = List.of(rowWithValue, rowWithNull);
+        writeRowsToFile(rows, dataDir + "/import/nullable.parquet");
+
+        // When
+        BulkImportJob job = jobForTable().id("nullable-test-job")
+                .files(List.of(dataDir + "/import/nullable.parquet"))
+                .build();
+        runJob(runner, job);
+
+        // Then
+        assertThat(readRowsInPartitionTreeOrder()).isEqualTo(sorted(rows));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getStreamOfBulkImportJobRunners")
     void shouldPreSplitPartitionsBeforeBulkImport(BulkImportJobRunner runner) throws Exception {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        tablePropertiesStore(instanceProperties).save(tableProperties);
+        tablePropertiesStore().save(tableProperties);
         List<Row> rows = getRows();
         writeRowsToFile(rows, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
@@ -420,7 +456,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return sorted;
     }
 
-    private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
+    private TablePropertiesStore tablePropertiesStore() {
         return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     }
 
@@ -504,8 +540,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return splitPoints;
     }
 
-    private static void writeRowsToFile(List<Row> rows, String file) throws IllegalArgumentException, IOException {
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(file), getSchema());
+    private void writeRowsToFile(List<Row> rows, String file) throws IllegalArgumentException, IOException {
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(file), tableProperties.getSchema());
         for (Row row : rows) {
             writer.write(row);
         }

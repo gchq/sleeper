@@ -275,6 +275,9 @@ public class Schema {
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Row key fields must have a primitive type");
         }
+        if (fields.stream().anyMatch(Field::isNullable)) {
+            throw new IllegalArgumentException("Row key fields cannot be nullable");
+        }
         return makeImmutable(fields);
     }
 
@@ -284,6 +287,9 @@ public class Schema {
         }
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Sort key fields must have a primitive type");
+        }
+        if (fields.stream().anyMatch(Field::isNullable)) {
+            throw new IllegalArgumentException("Sort key fields cannot be nullable");
         }
         return makeImmutable(fields);
     }

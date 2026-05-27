@@ -191,4 +191,50 @@ public class SchemaTest {
                         .valueFields(Collections.emptyList())
                         .build());
     }
+
+    @Test
+    public void shouldAllowNullableValueField() {
+        // Given / When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build()
+                .getValueFields().get(0).isNullable())
+                .isTrue();
+    }
+
+    @Test
+    public void shouldNotAllowNullableRowKeyField() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType(), true));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Row key");
+    }
+
+    @Test
+    public void shouldNotAllowNullableSortKeyField() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new IntType(), true));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Sort key");
+    }
+
+    @Test
+    public void nullableAndNonNullableValueFieldsShouldNotBeEqual() {
+        // Given
+        Field nonNullable = new Field("value", new StringType());
+        Field nullable = new Field("value", new StringType(), true);
+
+        // When / Then
+        assertThat(nonNullable).isNotEqualTo(nullable);
+    }
 }

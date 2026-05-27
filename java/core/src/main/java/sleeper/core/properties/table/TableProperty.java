@@ -179,7 +179,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "data is read, e.g. during compactions or queries. Defaults to retaining all rows.\n" +
                     "Currently this can only be `ageOff(field,age)`, to age off old data. The first parameter is the " +
                     "name of the timestamp field to check against, which must be of type long, in milliseconds since " +
-                    "the epoch. The second parameter is the maximum age in milliseconds, e.g. 1209600000 for 2 weeks.")
+                    "the epoch. The second parameter is the maximum age in milliseconds, e.g. 1209600000 for 2 weeks." +
+                    " A row with a null value for the timestamp is treated as having no timestamp and is excluded " +
+                    "from the results.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty AGGREGATION_CONFIG = Index.propertyBuilder("sleeper.table.aggregations")
@@ -188,7 +190,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "them as separate rows.\n" +
                     "This must be in the format `op(field),op(field)`. This must define an operation for every value " +
                     "field, passing the field name as the parameter. All value fields must be of a numeric or map " +
-                    "type. The available operations are as follows:\n" +
+                    "type, and must not be nullable. The available operations are as follows:\n" +
                     "sum: adds the values together for equal rows\n" +
                     "max: takes the maximum value out of all equal rows\n" +
                     "min: takes the minimum value out of all equal rows\n" +

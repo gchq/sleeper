@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Converts rows of Parquet data into Sleeper rows.
@@ -42,11 +43,16 @@ import java.util.Map;
 class RowConverter extends GroupConverter {
     private final Row currentRow;
     private final Converter[] converters;
+    private final List<String> nullableFieldNames;
 
     RowConverter(Schema schema) {
         currentRow = new Row();
         List<Field> fields = schema.getAllFields();
         this.converters = new Converter[fields.size()];
+        this.nullableFieldNames = fields.stream()
+                .filter(Field::isNullable)
+                .map(Field::getName)
+                .collect(Collectors.toList());
         int count = 0;
         for (Field field : fields) {
             if (field.getType() instanceof IntType) {
@@ -80,6 +86,7 @@ class RowConverter extends GroupConverter {
 
     @Override
     public void start() {
+        nullableFieldNames.forEach(name -> currentRow.put(name, null));
     }
 
     @Override
