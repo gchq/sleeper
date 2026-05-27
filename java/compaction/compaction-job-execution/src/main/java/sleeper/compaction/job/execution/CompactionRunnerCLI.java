@@ -62,6 +62,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * A command line tool to run a compaction job locally. Can be useful for debugging.
  */
 public class CompactionRunnerCLI {
+
     private final TablePropertiesProvider tablePropertiesProvider;
     private final CompactionRunnerFactory runnerFactory;
     private final RegionSupplier regionSupplier;
@@ -97,7 +98,6 @@ public class CompactionRunnerCLI {
     }
 
     public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client, S3TransferManager s3TransferManager) {
-
         return new CompactionRunnerCLI(
                 tableId -> {
                     TableProperties properties = TableProperties.copyOf(baseTableProperties);
