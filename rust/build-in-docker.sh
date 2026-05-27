@@ -88,10 +88,10 @@ fi
 RUN_PARAMS+=("$BUILD_IMAGE")
 
 # Skip pulling image if environment variable is set and non-empty
-if [ -z "${SKIP_DOCKER_PULL:-}" ]; then
-  docker pull "${BUILD_IMAGE}"
+if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
+  echo "Skipping Docker image pull"
 else
-  echo "Skipping pulling of Docker image"
+  docker pull "${BUILD_IMAGE}"
 fi
 
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"

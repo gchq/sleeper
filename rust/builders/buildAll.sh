@@ -26,16 +26,16 @@ BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_S
 pushd "$THIS_DIR"/base
 rm -rf certs
 # Copy custom CA certs into build context if present at repo root
-[ -z "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ] || cp -r "$REPO_ROOT/certs" "certs"
+if [ -n "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ]; then
+  cp -r "$REPO_ROOT/certs" certs
+fi
 docker build -t sleeper-rust-builder-base:current .
 popd
 
 pushd "$THIS_DIR"/x86_64
-docker build ${BUILD_ARGS} \
-  -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
 popd
 
 pushd "$THIS_DIR"/aarch64
-docker build ${BUILD_ARGS} \
-  -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
 popd

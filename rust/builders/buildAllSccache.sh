@@ -17,27 +17,34 @@ set -ex
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_ROOT="$(git -C "$THIS_DIR" rev-parse --show-toplevel)"
 # If environment variables RUSTUP_DIST_SERVER or RUSTUP_UPDATE_ROOT are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If both are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
 BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
 
 pushd "$THIS_DIR"/base
+rm -rf certs
+# Copy custom CA certs into build context if present at repo root
+if [ -n "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ]; then
+  cp -r "$REPO_ROOT/certs" certs
+fi
 docker build -t sleeper-rust-builder-base:current .
 popd
 
 pushd "$THIS_DIR"/base-sccache
+rm -rf certs
+# Copy custom CA certs into build context if present at repo root
+if [ -n "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ]; then
+  cp -r "$REPO_ROOT/certs" certs
+fi
 docker build -t sleeper-rust-builder-sccache:current .
 popd
 
 pushd "$THIS_DIR"/x86_64
-docker build ${BUILD_ARGS} \
-  -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest \
-  --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
 
 pushd "$THIS_DIR"/aarch64
-docker build ${BUILD_ARGS} \
-  -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest \
-  --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
