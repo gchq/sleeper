@@ -17,7 +17,8 @@ set -ex
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-REPO_ROOT="$(git -C "$THIS_DIR" rev-parse --show-toplevel)"
+BASE_DIR=$(cd "$THIS_DIR" && cd "../../" && pwd)
+
 # If environment variables RUSTUP_DIST_SERVER or RUSTUP_UPDATE_ROOT are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If both are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
@@ -26,8 +27,8 @@ BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_S
 pushd "$THIS_DIR"/base
 rm -rf certs
 # Copy custom CA certs into build context if present at repo root
-if [ -n "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ]; then
-  cp -r "$REPO_ROOT/certs" certs
+if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null)" ]; then
+  cp -r "$BASE_DIR/certs" certs
 fi
 docker build -t sleeper-rust-builder-base:current .
 popd
@@ -35,8 +36,8 @@ popd
 pushd "$THIS_DIR"/base-sccache
 rm -rf certs
 # Copy custom CA certs into build context if present at repo root
-if [ -n "$(ls -A "$REPO_ROOT/certs" 2>/dev/null)" ]; then
-  cp -r "$REPO_ROOT/certs" certs
+if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null)" ]; then
+  cp -r "$BASE_DIR/certs" certs
 fi
 docker build -t sleeper-rust-builder-sccache:current .
 popd
