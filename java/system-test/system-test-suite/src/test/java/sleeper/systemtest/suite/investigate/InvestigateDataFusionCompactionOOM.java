@@ -83,7 +83,7 @@ public class InvestigateDataFusionCompactionOOM {
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
-            CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.builder().build(), new Configuration(), context);
+            CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration(), context);
             runner.compact(CompactionRequest.builder()
                     .job(localJob)
                     .tableProperties(logs.tableProperties())

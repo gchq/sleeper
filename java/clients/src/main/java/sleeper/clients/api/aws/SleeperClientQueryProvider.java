@@ -72,7 +72,7 @@ public interface SleeperClientQueryProvider {
             FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
 
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.builder().build(), allocator, context);
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context);
             return ShutdownWrapper.shutdown(
                     QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
                     new UncheckedAutoCloseables(List.of(
@@ -107,7 +107,7 @@ public interface SleeperClientQueryProvider {
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.builder().build(), allocator, context);
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context);
             return ShutdownWrapper.noShutdown(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider));
         }
 

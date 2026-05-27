@@ -50,7 +50,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)
                 .sqs(SleeperLocalStackClients.SQS_CLIENT)
-                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpointFromEnv(SleeperLocalStackContainer.INSTANCE.getEndpoint().toString()))
+                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalStackContainer.INSTANCE.getEndpoint().toString()))
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
                 .build());
     }

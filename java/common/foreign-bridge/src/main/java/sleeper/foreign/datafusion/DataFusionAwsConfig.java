@@ -15,8 +15,6 @@
  */
 package sleeper.foreign.datafusion;
 
-import java.util.function.Function;
-
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
  */
@@ -55,16 +53,18 @@ public class DataFusionAwsConfig {
     }
 
     /**
-     * Creates a configuration to run against a LocalStack endpoint.
+     * Creates the default AWS configuration. Applies configuration from environment
+     * variables if set.
      *
-     * Reads an endpoint URL from the environment if "AWS_ENDPOINT_URL" if endpoint argument
-     * is null. If both are null, this method returns null.
-     *
-     * @param  endpoint the endpoint to use
-     * @return          the configuration
+     * @return AWS config for DataFusion
      */
-    public static DataFusionAwsConfig overrideEndpointFromEnv(String endpoint) {
-        return overrideEndpointFromEnv(endpoint, System::getenv);
+    public static DataFusionAwsConfig getDefault() {
+        String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        if (endpoint != null) {
+            return overrideEndpoint(endpoint);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -73,24 +73,17 @@ public class DataFusionAwsConfig {
      * Reads an endpoint URL from the environment if "AWS_ENDPOINT_URL" if endpoint argument
      * is null. If both are null, this method returns null.
      *
-     * @param  endpoint  the endpoint to use
-     * @param  envLookup function to look up environment variables
-     * @return           the configuration
+     * @param  endpoint the endpoint to use
+     * @return          the configuration
      */
-    static DataFusionAwsConfig overrideEndpointFromEnv(String endpoint, Function<String, String> envLookup) {
-        String environmentEndpoint = envLookup.apply("AWS_ENDPOINT_URL");
-        String finalEndpoint = (endpoint != null) ? endpoint : environmentEndpoint;
-        if (finalEndpoint != null) {
-            return builder()
-                    .endpoint(finalEndpoint)
-                    .region("us-east-1")
-                    .accessKeyId("test-access-key-id")
-                    .secretAccessKey("test-secret-access-key")
-                    .allowHttp(true)
-                    .build();
-        } else {
-            return null;
-        }
+    public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
+        return builder()
+                .endpoint(endpoint)
+                .region("us-east-1")
+                .accessKeyId("test-access-key-id")
+                .secretAccessKey("test-secret-access-key")
+                .allowHttp(true)
+                .build();
     }
 
     public String getRegion() {

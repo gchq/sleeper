@@ -147,7 +147,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
 
     private static DataFusionAwsConfig createAwsConfig() {
         LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
-        return DataFusionAwsConfig.overrideEndpointFromEnv(container.getEndpoint().toString());
+        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
