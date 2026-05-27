@@ -133,7 +133,7 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.26.0</log4j.version>
-        <aws-java-sdk-v2.version>2.44.12</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.44.13</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -147,7 +147,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.46.0</aws-crt.version>
+        <aws-crt.version>0.46.1</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -155,7 +155,7 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.22.0</commons-codec.version>
         <commons-io.version>2.22.0</commons-io.version>
-        <commons-configuration.version>2.15.0</commons-configuration.version>
+        <commons-configuration.version>2.15.1</commons-configuration.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-text.version>1.15.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
