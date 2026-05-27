@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.PropertiesReloader;
@@ -48,6 +49,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -80,6 +82,7 @@ public class CompactionTask {
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
     private final Duration maxAliveTimeDuration;
+    private final Consumer<Long> progressTracker;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -89,7 +92,7 @@ public class CompactionTask {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskTracker, selector, taskId,
-                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, Math::random);
+                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, Math::random, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
@@ -102,7 +105,7 @@ public class CompactionTask {
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep,
-            DoubleSupplier randomJitterFunction) {
+            DoubleSupplier randomJitterFunction, Consumer<Long> progressTracker) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
@@ -117,6 +120,7 @@ public class CompactionTask {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
+        this.progressTracker = progressTracker;
         maxAliveTimeDuration = generateMaxAliveTimeWithJitter(randomJitterFunction);
     }
 
@@ -238,7 +242,12 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
+        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+                .job(job)
+                .tableProperties(tableProperties)
+                .region(partition.getRegion())
+                .progressCallback(progressTracker)
+                .build());
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;

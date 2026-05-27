@@ -13,6 +13,10 @@ vulnerabilities:
   - id: CVE-2025-40780
   - id: CVE-2025-8677
   - id: CVE-2026-1519
+  - id: CVE-2026-3039
+  - id: CVE-2026-3592
+  - id: CVE-2026-5946
+  - id: CVE-2026-5950
 
   # Java dependencies in Spark
 
@@ -50,6 +54,6 @@ vulnerabilities:
   # org.eclipse.jetty:jetty-server
   # (spark-core_2.12-3.5.6.jar)
   - id: CVE-2024-13009
-  # org.lz4:lz4-java
-  # (lz4-java-1.8.0.jar)
-  - id: CVE-2025-12183
+  # org.apache.commons:commons-configuration2
+  # (hadoop-client-runtime-3.4.1.jar)
+  - id: CVE-2026-45205

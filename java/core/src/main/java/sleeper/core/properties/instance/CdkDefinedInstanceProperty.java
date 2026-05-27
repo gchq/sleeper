@@ -63,6 +63,14 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty PARTITION = Index.propertyBuilder("sleeper.partition")
+            .description("The ID of the AWS partition the instance is deployed in, e.g. aws.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty DNS_SUFFIX = Index.propertyBuilder("sleeper.dns.suffix")
+            .description("The DNS suffix for the AWS partition the instance is deployed in, e.g. amazonaws.com.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty CDK_APP = Index.propertyBuilder("sleeper.cdk.app")
             .description("Which CDK app was used to deploy the instance. If you use your own custom CDK " +
                     "app, this should be left empty.\n" +

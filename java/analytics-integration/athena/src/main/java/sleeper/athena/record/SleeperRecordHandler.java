@@ -180,8 +180,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private void addByteArrayExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarBinaryExtractor) (context, dst) -> {
             Row row = (Row) context;
-            dst.isSet = 1;
-            dst.value = (byte[]) row.get(name);
+            byte[] value = (byte[]) row.get(name);
+            dst.isSet = value != null ? 1 : 0;
+            dst.value = value;
         });
     }
 
@@ -212,8 +213,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private void addStringExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarCharExtractor) (context, dst) -> {
             Row row = (Row) context;
-            dst.isSet = 1;
-            dst.value = (String) row.get(name);
+            String value = (String) row.get(name);
+            dst.isSet = value != null ? 1 : 0;
+            dst.value = value;
         });
     }
 
@@ -226,8 +228,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private void addLongExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (BigIntExtractor) (context, dst) -> {
             Row row = (Row) context;
-            dst.isSet = 1;
-            dst.value = (Long) row.get(name);
+            Long value = (Long) row.get(name);
+            dst.isSet = value != null ? 1 : 0;
+            dst.value = value != null ? value : 0L;
         });
     }
 
@@ -240,8 +243,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private void addIntExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (IntExtractor) (context, dst) -> {
             Row row = (Row) context;
-            dst.isSet = 1;
-            dst.value = (Integer) row.get(name);
+            Integer value = (Integer) row.get(name);
+            dst.isSet = value != null ? 1 : 0;
+            dst.value = value != null ? value : 0;
         });
     }
 

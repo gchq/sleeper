@@ -62,6 +62,57 @@ public class SleeperInstancePrinterTest {
     }
 
     @Test
+    void shouldSortJsonStringKeysInManifestField() {
+        // Given
+        String templateSnippet = """
+                {
+                  "Manifest": "[{\\"kind\\":\\"Namespace\\",\\"apiVersion\\":\\"v1\\",\\"metadata\\":{\\"name\\":\\"ns\\",\\"labels\\":{\\"b\\":\\"\\",\\"a\\":\\"\\"}}}]"
+                }""";
+        Map<String, Object> map = gson.fromJson(templateSnippet, Map.class);
+
+        // When
+        Map<String, Object> sanitised = printer.sanitiseTemplate(map);
+        String printed = gson.toJson(sanitised);
+
+        // Then
+        assertThat(printed).isEqualTo("""
+                {
+                  "Manifest": "[{\\"apiVersion\\":\\"v1\\",\\"kind\\":\\"Namespace\\",\\"metadata\\":{\\"labels\\":{\\"a\\":\\"\\",\\"b\\":\\"\\"},\\"name\\":\\"ns\\"}}]"
+                }""");
+    }
+
+    @Test
+    void shouldScrubManifestFnJoinWithEmbeddedJson() {
+        // Given
+        String templateSnippet = """
+                {
+                  "Manifest": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "[{\\"kind\\":\\"ConfigMap\\",\\"data\\":{\\"key\\":\\"prefix-",
+                        {
+                          "Ref": "SomeRef"
+                        },
+                        "-suffix\\"}}]"
+                      ]
+                    ]
+                  }
+                }""";
+        Map<String, Object> map = gson.fromJson(templateSnippet, Map.class);
+
+        // When
+        Map<String, Object> sanitised = printer.sanitiseTemplate(map);
+        String printed = gson.toJson(sanitised);
+
+        // Then
+        assertThat(printed).isEqualTo("""
+                {
+                  "Manifest": "manifest-with-refs-scrubbed-for-test"
+                }""");
+    }
+
+    @Test
     void shouldRemoveDateFromPropertiesJoin() {
         // Given
         String templateSnippet = """

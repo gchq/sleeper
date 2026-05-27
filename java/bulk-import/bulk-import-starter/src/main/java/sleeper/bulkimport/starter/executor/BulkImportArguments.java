@@ -16,7 +16,7 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
@@ -73,7 +73,7 @@ public class BulkImportArguments {
 
     public String sparkSubmitParametersForServerless() {
         return sparkSubmitParameters(
-                ConfigurationUtils.getSparkServerlessConfigurationFromInstanceProperties(
+                SparkConfigurationUtils.getSparkServerlessConfigurationFromInstanceProperties(
                         instanceProperties, EmrInstanceArchitecture.X86_64))
                 .collect(Collectors.joining(" "));
     }

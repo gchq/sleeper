@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.cdk;
 
+import software.amazon.awscdk.Aws;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
@@ -135,7 +136,7 @@ public class SystemTestClusterStack extends NestedStack {
         taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
+                .resources(List.of("arn:" + Aws.PARTITION + ":iam::*:role/sleeper-ingest-*"))
                 .build());
     }
 }

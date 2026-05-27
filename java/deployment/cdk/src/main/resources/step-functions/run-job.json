@@ -1,6 +1,6 @@
 {
   "Type": "Task",
-  "Resource": "arn:aws:states:::eks:runJob.sync",
+  "Resource": "arn:partition-placeholder:states:::eks:runJob.sync",
   "Parameters": {
     "ClusterName": "cluster-placeholder",
     "CertificateAuthority": "ca-placeholder",
@@ -22,7 +22,13 @@
               {
                 "image": "image-placeholder",
                 "name": "spark-submit",
-                "args.$": "$.args"
+                "args.$": "$.args",
+                "env": [
+                  {
+                    "name": "EXECUTOR_POD_TEMPLATE",
+                    "value.$": "$.executorPodTemplate"
+                  }
+                ]
               }
             ],
             "restartPolicy": "Never"

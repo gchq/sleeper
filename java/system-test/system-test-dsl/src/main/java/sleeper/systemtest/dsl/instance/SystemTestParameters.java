@@ -51,6 +51,7 @@ public class SystemTestParameters {
     private final String shortTestId;
     private final String account;
     private final String region;
+    private final String dnsSuffix;
     private final String vpcId;
     private final String subnetIds;
     private final Path scriptsDirectory;
@@ -68,6 +69,7 @@ public class SystemTestParameters {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
         account = Objects.requireNonNull(builder.account, "account must not be null");
         region = Objects.requireNonNull(builder.region, "region must not be null");
+        dnsSuffix = Objects.requireNonNull(builder.dnsSuffix, "dnsSuffix must not be null");
         vpcId = Objects.requireNonNull(builder.vpcId, "vpcId must not be null");
         subnetIds = Objects.requireNonNull(builder.subnetIds, "subnetIds must not be null");
         scriptsDirectory = Objects.requireNonNull(builder.scriptsDirectory, "scriptsDirectory must not be null");
@@ -108,6 +110,10 @@ public class SystemTestParameters {
 
     public String getRegion() {
         return region;
+    }
+
+    public String getDnsSuffix() {
+        return dnsSuffix;
     }
 
     public String getVpcId() {
@@ -222,6 +228,7 @@ public class SystemTestParameters {
         private String shortTestId;
         private String account;
         private String region;
+        private String dnsSuffix;
         private String vpcId;
         private String subnetIds;
         private Path scriptsDirectory;
@@ -250,6 +257,11 @@ public class SystemTestParameters {
 
         public Builder region(String region) {
             this.region = region;
+            return this;
+        }
+
+        public Builder dnsSuffix(String dnsSuffix) {
+            this.dnsSuffix = dnsSuffix;
             return this;
         }
 

@@ -52,6 +52,7 @@ import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_H
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_SPILL_MASTER_KEY_ARN;
 import static sleeper.core.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -151,7 +152,8 @@ public class AthenaStack extends NestedStack {
                 // and region
                 Policy.Builder.create(scope, "GetAthenaQueryStatusPolicy")
                         .statements(List.of(PolicyStatement.Builder.create()
-                                .resources(List.of("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
+                                .resources(List.of("arn:" + instanceProperties.get(PARTITION) + ":athena:"
+                                        + instanceProperties.get(REGION) + ":"
                                         + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
                                 .actions(List.of("athena:getQueryExecution"))
                                 .build()))
