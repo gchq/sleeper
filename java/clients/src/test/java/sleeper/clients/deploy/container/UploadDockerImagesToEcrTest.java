@@ -17,6 +17,7 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -614,6 +615,32 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
             // Then
             assertThat(commandsThatRan).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Upload a specific image")
+    class SpecificImage {
+
+        @Test
+        @Disabled("TODO")
+        void shouldUploadOneImageWithBase() throws Exception {
+            // When
+            uploader().upload(UploadDockerImagesToEcrRequest.builder()
+                    .properties(properties)
+                    .images(List.of(StackDockerImage.fromDockerDeployment(DockerDeployment.SYSTEM_TEST)))
+                    .build());
+
+            // Then
+            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            String expectedSystemTestTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/system-test:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                    buildImageCommand(expectedSystemTestTag, "./docker/system-test", expectedBaseTag),
+                    pushImageCommand(expectedSystemTestTag));
         }
     }
 
