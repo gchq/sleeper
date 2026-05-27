@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -68,16 +69,17 @@ public class DockerImageConfiguration {
      * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+    public List<StackDockerImage> getNonBaseImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
                 dockerDeploymentImages(properties, cdkApp),
                 lambdaImages(properties))
                 .collect(toUnmodifiableList());
     }
 
-    public List<StackDockerImage> getAllImagesToUpload() {
+    public List<StackDockerImage> getAllNonBaseImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
+                        .filter(not(DockerDeployment::isBaseImage))
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()
@@ -89,6 +91,7 @@ public class DockerImageConfiguration {
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
         Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
+                .filter(not(DockerDeployment::isBaseImage))
                 .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
