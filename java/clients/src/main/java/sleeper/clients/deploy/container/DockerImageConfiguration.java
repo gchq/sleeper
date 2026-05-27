@@ -79,6 +79,7 @@ public class DockerImageConfiguration {
     public List<StackDockerImage> getAllImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
+                        .filter(not(DockerDeployment::isBaseImage))
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()

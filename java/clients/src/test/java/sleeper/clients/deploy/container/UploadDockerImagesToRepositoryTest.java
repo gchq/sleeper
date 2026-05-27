@@ -161,6 +161,9 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedTag = "www.somedocker.com/prefix/data-generation:1.0.0";
         assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
                 buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                 pushImageCommand(expectedTag));
     }
