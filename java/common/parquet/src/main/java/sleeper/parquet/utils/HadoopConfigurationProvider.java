@@ -113,10 +113,4 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.access.key", "test-access-key");
         conf.set("fs.s3a.secret.key", "test-secret-key");
     }
-
-    /*
-     * private static String evaluateEndpoint(InstanceProperties instanceProperties) {
-     * return instanceProperties.get(REGION) + "." + instanceProperties.get(DNS_SUFFIX);
-     * }
-     */
 }
