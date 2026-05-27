@@ -17,7 +17,6 @@
 use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 use aws_config::{BehaviorVersion, Region, SdkConfig};
 use aws_credential_types::{Credentials, provider::ProvideCredentials};
-use aws_sdk_s3::config::endpoint::{DefaultResolver, Params, ResolveEndpoint};
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
@@ -154,19 +153,6 @@ fn create_region_from_config(config: &SdkConfig) -> color_eyre::Result<Region> {
         .region()
         .ok_or(eyre!("Couldn't retrieve AWS region"))?
         .clone())
-}
-
-/// Extract AWS S3 endpoint URL from an SDK configuration.
-///
-/// # Errors
-/// Function will fail if provided configuration doesn't supply an endpoint URL.
-async fn find_endpoint(region: &Region) -> color_eyre::Result<String> {
-    let params = Params::builder().region(region.to_string()).build()?;
-    let endpoint = DefaultResolver::new()
-        .resolve_endpoint(&params)
-        .await
-        .map_err(|e| eyre!("Couldn't retrieve AWS endpoint URL {e}"))?;
-    Ok(endpoint.url().to_owned())
 }
 
 /// Extract the S3 bucket name from a URL.
