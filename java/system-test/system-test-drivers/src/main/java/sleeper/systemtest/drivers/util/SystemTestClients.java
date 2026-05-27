@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
@@ -75,6 +76,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
+    private final SfnClient sfn;
     private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
@@ -99,6 +101,7 @@ public class SystemTestClients {
         cloudWatch = builder.cloudWatch;
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
+        sfn = builder.sfn;
         dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
@@ -128,6 +131,7 @@ public class SystemTestClients {
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
                 .dataFusionAwsConfig(() -> null)
+                .sfn(SfnClient.create())
                 .build();
     }
 
@@ -152,6 +156,7 @@ public class SystemTestClients {
                 .cloudWatch(aws.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
+                .sfn(aws.buildClient(SfnClient.builder()))
                 .dataFusionAwsConfig(aws::dataFusionAwsConfig)
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
@@ -230,6 +235,10 @@ public class SystemTestClients {
         return cloudWatchEvents;
     }
 
+    public SfnClient getSfn() {
+        return sfn;
+    }
+
     public CommandPipelineRunner getCommandRunner() {
         return commandRunner;
     }
@@ -282,6 +291,7 @@ public class SystemTestClients {
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
+        private SfnClient sfn;
         private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
@@ -372,6 +382,11 @@ public class SystemTestClients {
 
         public Builder cloudWatchEvents(CloudWatchEventsClient cloudWatchEvents) {
             this.cloudWatchEvents = cloudWatchEvents;
+            return this;
+        }
+
+        public Builder sfn(SfnClient sfn) {
+            this.sfn = sfn;
             return this;
         }
 

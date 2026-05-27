@@ -16,10 +16,10 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
+import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -27,13 +27,13 @@ import java.time.Duration;
 import java.util.UUID;
 
 public class PythonBulkImportDsl {
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final IngestByAnyQueueDriver ingestDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
 
     public PythonBulkImportDsl(SystemTestContext context) {
-        sentJobs = context.sentJobs();
+        sentJobs = context.sentIngestJobs();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         ingestDriver = drivers.pythonBulkImport(context);
         waitForJobs = drivers.waitForBulkImport(context);
@@ -43,7 +43,7 @@ public class PythonBulkImportDsl {
     public PythonBulkImportDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         ingestDriver.sendJobWithFiles(jobId, files);
-        sentJobs.addJobId(jobId);
+        sentJobs.addSentJob(jobId);
         return this;
     }
 
