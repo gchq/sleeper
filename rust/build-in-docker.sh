@@ -17,14 +17,13 @@ set -ex
 unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version -f "$PROJECT_DIR/java/pom.xml")
 
 PLATFORM=$1
 shift
 if [ "$PLATFORM" = "x86_64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:${VERSION}"}
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:latest"}
 elif [ "$PLATFORM" = "aarch64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:${VERSION}"}
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:latest"}
 else
   echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
   exit 1
@@ -61,7 +60,6 @@ RUN_PARAMS+=(
   -e ACTIONS_CACHE_SERVICE_V2
 )
 
-
 # If the caller set EXTRA_CARGO_CONFIG (e.g. to point cargo at an internal crates.io
 # mirror), build a throwaway CARGO_HOME containing the project's existing
 # .cargo/config.toml plus the extra snippet appended. We do this in a separate
@@ -88,5 +86,12 @@ if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
 fi
 
 RUN_PARAMS+=("$BUILD_IMAGE")
+
+# Skip pulling image if environment variable is set and non-empty
+if [ -z "${SKIP_DOCKER_PULL:-}" ]; then
+  docker pull "${BUILD_IMAGE}"
+else
+  echo "Skipping pulling of Docker image"
+fi
 
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"
