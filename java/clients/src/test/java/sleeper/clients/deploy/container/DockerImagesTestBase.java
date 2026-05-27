@@ -34,6 +34,7 @@ public class DockerImagesTestBase {
     private static final DockerDeployment BASE = DockerDeployment.builder()
             .deploymentName("base")
             .multiplatform(true)
+            .baseImage(true)
             .build();
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             BASE,

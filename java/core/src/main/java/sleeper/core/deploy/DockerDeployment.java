@@ -41,6 +41,7 @@ public class DockerDeployment {
     public static final DockerDeployment BASE = builder()
             .deploymentName("base")
             .multiplatform(true)
+            .baseImage(true)
             .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
@@ -75,6 +76,7 @@ public class DockerDeployment {
     private final Collection<SleeperInternalCdkApp> cdkApps;
     private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
+    private final boolean baseImage;
 
     private DockerDeployment(Builder builder) {
         deploymentName = builder.deploymentName;
@@ -83,6 +85,7 @@ public class DockerDeployment {
         cdkApps = builder.cdkApps;
         platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        baseImage = builder.baseImage;
     }
 
     public static Builder builder() {
@@ -134,6 +137,10 @@ public class DockerDeployment {
      */
     public Collection<SleeperInternalCdkApp> getCdkApps() {
         return cdkApps;
+    }
+
+    public boolean isBaseImage() {
+        return baseImage;
     }
 
     /**
@@ -226,6 +233,7 @@ public class DockerDeployment {
         private Collection<SleeperInternalCdkApp> cdkApps;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
+        private boolean baseImage;
 
         /**
          * Sets the name of this deployment. Used as part of Docker image names and ECR repository names.
@@ -292,6 +300,17 @@ public class DockerDeployment {
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        /**
+         * Sets whether this is the base image, and required to build all others.
+         *
+         * @param  baseImage true if this is the base image
+         * @return           this builder
+         */
+        public Builder baseImage(boolean baseImage) {
+            this.baseImage = baseImage;
             return this;
         }
 
