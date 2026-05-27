@@ -19,7 +19,6 @@ package sleeper.systemtest.dsl.ingest;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SentJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -32,14 +31,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DirectBulkImportDsl {
 
-    private final SentJobsContext sentJobs;
+    private final SentIngestJobsContext sentJobs;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final DirectBulkImportDriver driver;
     private final WaitForJobs waitForJobs;
 
     public DirectBulkImportDsl(
-            SentJobsContext sentJobs,
+            SentIngestJobsContext sentJobs,
             SystemTestInstanceContext instance,
             IngestSourceFilesContext sourceFiles,
             DirectBulkImportDriver driver,
@@ -53,7 +52,6 @@ public class DirectBulkImportDsl {
 
     public DirectBulkImportDsl sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
-        sentJobs.addJobId(jobId);
         TableProperties table = instance.getTableProperties();
         driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
@@ -61,6 +59,7 @@ public class DirectBulkImportDsl {
                 .tableName(table.get(TABLE_NAME))
                 .files(sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
+        sentJobs.addSentJob(jobId);
         return this;
     }
 
