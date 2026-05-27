@@ -34,6 +34,7 @@ public class DockerImagesTestBase {
     private static final DockerDeployment BASE = DockerDeployment.builder()
             .deploymentName("base")
             .multiplatform(true)
+            .baseImage(true)
             .build();
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             BASE,
@@ -106,6 +107,10 @@ public class DockerImagesTestBase {
 
     protected DockerImageConfiguration lambdaImageConfig() {
         return new DockerImageConfiguration(List.of(BASE), LAMBDA_HANDLERS);
+    }
+
+    protected StackDockerImage baseImage() {
+        return StackDockerImage.fromDockerDeployment(BASE);
     }
 
     protected DockerImageConfiguration optionalLambdasImageConfig() {

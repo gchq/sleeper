@@ -58,8 +58,40 @@ RUN_PARAMS+=(
   -e ACTIONS_RESULTS_URL
   -e ACTIONS_RUNTIME_TOKEN
   -e ACTIONS_CACHE_SERVICE_V2
-  "$BUILD_IMAGE"
 )
 
-docker pull "$BUILD_IMAGE"
+# If the caller set EXTRA_CARGO_CONFIG (e.g. to point cargo at an internal crates.io
+# mirror), build a throwaway CARGO_HOME containing the project's existing
+# .cargo/config.toml plus the extra snippet appended. We do this in a separate
+# directory rather than editing the checked-in config so the working tree stays
+# clean and the mirror settings don't leak into other builds.
+#
+# Assumes EXTRA_CARGO_CONFIG holds valid TOML, possibly with \n escapes — printf %b
+# interprets them so callers can pass multi-line config as a single env var.
+# The ${VAR:-} form lets `set -u` callers run without tripping on an unset var,
+# and `: > file` truncates/creates the file when no base config exists to copy.
+if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
+  ALT_CARGO_HOME="$PROJECT_DIR/rust/.cargo-home-mirror"
+  mkdir -p "$ALT_CARGO_HOME"
+  if [ -f "$PROJECT_DIR/rust/.cargo/config.toml" ]; then
+    cp "$PROJECT_DIR/rust/.cargo/config.toml" "$ALT_CARGO_HOME/config.toml"
+  else
+    : > "$ALT_CARGO_HOME/config.toml"
+  fi
+  printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
+  RUN_PARAMS+=(
+    -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
+    -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
+  )
+fi
+
+RUN_PARAMS+=("$BUILD_IMAGE")
+
+# Skip pulling image if environment variable is set and non-empty
+if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
+  echo "Skipping Docker image pull"
+else
+  docker pull "${BUILD_IMAGE}"
+fi
+
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"

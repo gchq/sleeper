@@ -140,12 +140,12 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), args.cdkApp());
+            images = DockerImageConfiguration.getDefault().getNonBaseImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
-            images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
+            images = DockerImageConfiguration.getDefault().getAllNonBaseImagesToUpload();
         }
 
         try (S3Client s3Client = S3Client.create();
