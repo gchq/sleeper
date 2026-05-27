@@ -69,7 +69,7 @@ public class DockerImageConfiguration {
      * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+    public List<StackDockerImage> getNonBaseImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
                 dockerDeploymentImages(properties, cdkApp),
                 lambdaImages(properties))
