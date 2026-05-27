@@ -99,12 +99,7 @@ impl AwsConfig {
             None => create_region_from_config(&config)?,
         };
 
-        let endpoint = match &self.endpoint {
-            Some(endpoint) => endpoint,
-            None => &find_endpoint(&region).await?,
-        };
-
-        Ok(builder_from_creds(&creds, &region, endpoint))
+        Ok(builder_from_creds(&creds, &region, self.endpoint.as_ref()))
     }
 
     #[must_use]
@@ -118,12 +113,16 @@ impl AwsConfig {
 fn builder_from_creds(
     creds: &aws_credential_types::Credentials,
     region: &Region,
-    endpoint: &str,
+    endpoint: Option<&String>,
 ) -> AmazonS3Builder {
-    AmazonS3Builder::from_env()
+    let builder = AmazonS3Builder::from_env()
         .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
-        .with_region(region.as_ref())
-        .with_endpoint(endpoint)
+        .with_region(region.as_ref());
+    if let Some(endpoint) = endpoint {
+        builder.with_endpoint(endpoint)
+    } else {
+        builder
+    }
 }
 
 /// Load AWS configuration from the default providers.
