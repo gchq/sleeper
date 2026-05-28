@@ -26,12 +26,12 @@ import java.util.Collection;
 /**
  * DSL entry point for querying the status of bulk import jobs in an AWS Step Functions state machine.
  */
-public class EksBulkImportStateMachineDsl {
+public class EksBulkImportCheckDsl {
 
     private final EksBulkImportDriver driver;
     private final PollWithRetriesDriver pollDriver;
 
-    public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public EksBulkImportCheckDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.driver = baseDrivers.eksBulkImport(context);
         this.pollDriver = baseDrivers.pollWithRetries();
     }
