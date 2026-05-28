@@ -31,9 +31,16 @@ public interface EksBulkImportDriver {
     List<String> getExecutionStatuses();
 
     /**
-     * Retrieves a list of running Kubernetes pods in the Spark namespace.
+     * Retrieves a list of Kubernetes pods in the Spark namespace.
      *
-     * @return a list of descriptions of running pods
+     * @return a list of descriptions of pods
      */
-    List<String> getRunningPods();
+    List<String> getPods();
+
+    /**
+     * Retrieves a list of Kubernetes jobs in the Spark namespace.
+     *
+     * @return a list of descriptions of jobs
+     */
+    List<String> getJobs();
 }

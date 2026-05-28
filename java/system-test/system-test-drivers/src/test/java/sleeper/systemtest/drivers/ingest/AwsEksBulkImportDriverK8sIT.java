@@ -16,6 +16,7 @@
 package sleeper.systemtest.drivers.ingest;
 
 import io.fabric8.kubernetes.api.model.PodListBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.JobListBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
@@ -48,7 +49,7 @@ public class AwsEksBulkImportDriverK8sIT {
     }
 
     @Test
-    void shouldGetNoRunningPodsInSparkNamespace() {
+    void shouldGetNoPodsInNamespace() {
         // Given
         server.expect().get()
                 .withPath("/api/v1/namespaces/test-namespace/pods")
@@ -56,11 +57,11 @@ public class AwsEksBulkImportDriverK8sIT {
                 .always();
 
         // When / Then
-        assertThat(driver().getRunningPods()).isEmpty();
+        assertThat(driver().getPods()).isEmpty();
     }
 
     @Test
-    void shouldGetOneRunningPodInSparkNamespace() {
+    void shouldGetOnePodInNamespace() {
         // Given
         server.expect().get()
                 .withPath("/api/v1/namespaces/test-namespace/pods")
@@ -70,7 +71,33 @@ public class AwsEksBulkImportDriverK8sIT {
                 .always();
 
         // When / Then
-        assertThat(driver().getRunningPods()).hasSize(1);
+        assertThat(driver().getPods()).hasSize(1);
+    }
+
+    @Test
+    void shouldGetNoJobsInNamespace() {
+        // Given
+        server.expect().get()
+                .withPath("/apis/batch/v1/namespaces/test-namespace/jobs")
+                .andReturn(200, new JobListBuilder().build())
+                .always();
+
+        // When / Then
+        assertThat(driver().getJobs()).isEmpty();
+    }
+
+    @Test
+    void shouldGetOneJobInNamespace() {
+        // Given
+        server.expect().get()
+                .withPath("/apis/batch/v1/namespaces/test-namespace/jobs")
+                .andReturn(200, new JobListBuilder()
+                        .addNewItem()
+                        .and().build())
+                .always();
+
+        // When / Then
+        assertThat(driver().getJobs()).hasSize(1);
     }
 
     private AwsEksBulkImportDriver driver() {

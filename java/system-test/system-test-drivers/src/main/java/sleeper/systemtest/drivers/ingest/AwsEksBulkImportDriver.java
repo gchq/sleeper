@@ -16,7 +16,10 @@
 
 package sleeper.systemtest.drivers.ingest;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.model.DescribeExecutionResponse;
@@ -69,12 +72,21 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     }
 
     @Override
-    public List<String> getRunningPods() {
+    public List<String> getPods() {
         InstanceProperties properties = instance.getInstanceProperties();
         PodList list = k8sProvider.getClient(properties).pods()
                 .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
                 .list();
-        return list.getItems().stream().map(pod -> pod.toString()).toList();
+        return list.getItems().stream().map(Pod::toString).toList();
+    }
+
+    @Override
+    public List<String> getJobs() {
+        InstanceProperties properties = instance.getInstanceProperties();
+        JobList list = k8sProvider.getClient(properties).batch().v1().jobs()
+                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                .list();
+        return list.getItems().stream().map(Job::toString).toList();
     }
 
     public interface KubernetesClientProvider {
