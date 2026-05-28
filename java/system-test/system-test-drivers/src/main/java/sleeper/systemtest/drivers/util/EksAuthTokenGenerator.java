@@ -22,6 +22,7 @@ import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
 import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
+import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
 
 import java.net.URI;
@@ -40,9 +41,10 @@ public class EksAuthTokenGenerator {
     }
 
     public static String generateToken(String clusterName, Region region, AwsCredentialsProvider credentialsProvider) {
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
         SdkHttpRequest request = SdkHttpRequest.builder()
                 .method(SdkHttpMethod.GET)
-                .uri(URI.create("https://sts." + region.id() + ".amazonaws.com/"))
+                .uri(URI.create("https://sts." + region.id() + "." + partitionMetadata.dnsSuffix() + "/"))
                 .appendRawQueryParameter("Action", "GetCallerIdentity")
                 .appendRawQueryParameter("Version", "2011-06-15")
                 .putHeader("x-k8s-aws-id", clusterName)
