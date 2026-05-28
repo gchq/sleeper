@@ -50,6 +50,7 @@ public class AwsSleeperClientBuilder {
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
     private SleeperClientQueryProvider queryProvider;
+    private Integer queryThreadPoolSize;
 
     /**
      * Creates a Sleeper client.
@@ -60,7 +61,7 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
-        SleeperClientQueryProvider provider = (queryProvider != null) ? queryProvider : SleeperClientQueryProvider.createDefaultForEachClient(instanceProperties);
+        SleeperClientQueryProvider provider = getProvider(instanceProperties);
         ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = provider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
@@ -81,6 +82,16 @@ public class AwsSleeperClientBuilder {
                         awsClients.awsCredentialsProvider()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
+    }
+
+    private SleeperClientQueryProvider getProvider(InstanceProperties instanceProperties) {
+        if (queryProvider != null) {
+            return queryProvider;
+        } else if (queryThreadPoolSize != null) {
+            return SleeperClientQueryProvider.withThreadPoolForEachClient(instanceProperties, queryThreadPoolSize);
+        } else {
+            return SleeperClientQueryProvider.createDefaultForEachClient(instanceProperties);
+        }
     }
 
     private InstanceProperties loadInstanceProperties(SleeperClientAwsClients awsClients) {
@@ -119,12 +130,12 @@ public class AwsSleeperClientBuilder {
     /**
      * Sets the number of threads in the thread pool used to read data files in parallel during queries.
      *
-     * @param  instanceProperties  Sleeper instance properties
      * @param  queryThreadPoolSize the number of threads
      * @return                     this builder
      */
-    public AwsSleeperClientBuilder queryThreadPoolSize(InstanceProperties instanceProperties, int queryThreadPoolSize) {
-        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(instanceProperties, queryThreadPoolSize));
+    public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
+        this.queryThreadPoolSize = queryThreadPoolSize;
+        return this;
     }
 
     /**
