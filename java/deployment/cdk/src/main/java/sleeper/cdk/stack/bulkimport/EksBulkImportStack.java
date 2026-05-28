@@ -56,6 +56,7 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -289,6 +290,9 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+
+        cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessForInstanceAdmin", ManagedPoliciesStack.getAdminRoleName(properties)));
+
         List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
         if (roles == null) {
             return;
