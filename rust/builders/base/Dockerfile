@@ -14,6 +14,14 @@
 
 FROM rust:1.93-bookworm
 
+# Copy certs/ if it exists, skip silently if not. The glob pattern cert[s]/ matches "certs/" when
+# present but matches nothing (instead of failing) when absent — Docker's COPY fails on missing
+# sources unless a glob is used.
+COPY cert[s]/ /usr/local/share/ca-certificates/
+# Only update CA certificates and switch to HTTPS sources if certs are present in ca-certificates dir
+RUN [ -z "$(ls -A /usr/local/share/ca-certificates 2>/dev/null)" ] || \
+    { update-ca-certificates && sed -i 's|http|https|g' /etc/apt/sources.list.d/debian.sources; }
+
 RUN apt-get update && apt-get install -y \
     clang \
     && rm -rf /var/lib/apt/lists/*
