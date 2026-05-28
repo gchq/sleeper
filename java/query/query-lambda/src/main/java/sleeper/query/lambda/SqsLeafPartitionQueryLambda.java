@@ -42,6 +42,7 @@ import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -65,27 +66,31 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         this(buildAwsV2Client(S3Client.builder()),
                 buildAwsV2Client(SqsClient.builder()),
                 buildAwsV2Client(DynamoDbClient.builder()),
-                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()), null);
+                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
+                SqsLeafPartitionQueryLambda::createDataFusionProvider);
     }
 
     public SqsLeafPartitionQueryLambda(
-            S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient, String configBucket, LeafPartitionRowRetrieverProvider dataFusionProvider) throws ObjectFactoryException {
+            S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient, String configBucket,
+            Function<InstanceProperties, LeafPartitionRowRetrieverProvider> dataFusionProviderFactory) throws ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableHadoopConfigurationProvider hadoopProvider = TableHadoopConfigurationProvider.withCache(
                 TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties));
         LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(
                 Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider);
-        if (dataFusionProvider == null) {
-            dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), new RootAllocator(),
-                    FFIContext.getFFIContext(DataFusionQueryFunctions.class));
-        }
+        LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider).hadoopProvider(hadoopProvider)
                 .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
                 .build();
+    }
+
+    private static LeafPartitionRowRetrieverProvider createDataFusionProvider(InstanceProperties instanceProperties) {
+        return new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), new RootAllocator(),
+                FFIContext.getFFIContext(DataFusionQueryFunctions.class));
     }
 
     @Override
