@@ -28,10 +28,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static sleeper.core.properties.instance.CommonProperty.EXCLUDED_RESOURCES_FROM_TAGS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
@@ -68,18 +64,11 @@ public class SleeperCdkApp {
                             .build(),
                     props);
 
-            String excludedResourcesString = instanceProperties.get(EXCLUDED_RESOURCES_FROM_TAGS);
-            List<String> excludedResources = new ArrayList<>();
-            if (excludedResourcesString != null) {
-                excludedResources.addAll(Arrays.stream(excludedResourcesString.split(","))
-                        .map(String::trim)
-                        .toList());
-            }
-            TagProps excludeResourceTypes = TagProps.builder()
-                    .excludeResourceTypes(excludedResources)
+            Tags tags = Tags.of(app);
+            TagProps tagProps = TagProps.builder()
+                    .excludeResourceTypes(instanceProperties.getList(EXCLUDED_RESOURCES_FROM_TAGS))
                     .build();
-            instanceProperties.getTags()
-                    .forEach((key, value) -> Tags.of(app).add(key, value, excludeResourceTypes));
+            instanceProperties.getTags().forEach((key, value) -> tags.add(key, value, tagProps));
             app.synth();
         }
     }

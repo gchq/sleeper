@@ -32,8 +32,6 @@ import software.amazon.awscdk.services.stepfunctions.LogOptions;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -120,20 +118,13 @@ public class Utils {
     }
 
     public static void addTags(Stack stack, InstanceProperties properties) {
-        String excludedResourcesString = properties.get(EXCLUDED_RESOURCES_FROM_TAGS);
-        List<String> excludedResources = new ArrayList<>();
-        if (excludedResourcesString != null) {
-            excludedResources.addAll(Arrays.stream(excludedResourcesString.split(","))
-                    .map(String::trim)
-                    .toList());
-        }
-        TagProps excludeResourceTypes = TagProps.builder()
-                .excludeResourceTypes(excludedResources)
-                .build();
         Tags tags = Tags.of(stack);
-        properties.getTags().forEach((key, value) -> tags.add(key, value, excludeResourceTypes));
+        TagProps tagProps = TagProps.builder()
+                .excludeResourceTypes(properties.getList(EXCLUDED_RESOURCES_FROM_TAGS))
+                .build();
+        properties.getTags().forEach((key, value) -> tags.add(key, value, tagProps));
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
-                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId(), excludeResourceTypes));
+                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId(), tagProps));
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
@@ -153,10 +144,8 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings to match enum identifiers. They can then
-     * be looked up in the
-     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java
-     * identifiers can't start with a number, so
+     * Normalises EC2 instance size strings to match enum identifiers. They can then be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum. Java identifiers can't start with a number, so
      * "2xlarge" becomes "xlarge2".
      *
      * @param  size the human readable size
