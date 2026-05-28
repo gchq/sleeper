@@ -44,6 +44,17 @@ public class EksAuthTokenGeneratorTest {
         assertThat(rawQuery).containsPattern("X-Amz-SignedHeaders=[^&]*x-k8s-aws-id");
     }
 
+    @Test
+    void shouldTargetStsInTheGivenRegion() {
+        // When
+        String token = EksAuthTokenGenerator.generateToken("my-cluster", Region.EU_WEST_2, CREDENTIALS);
+
+        // Then
+        URI url = decodePresignedUrl(token);
+        assertThat(url.getScheme()).isEqualTo("https");
+        assertThat(url.getHost()).isEqualTo("sts.eu-west-2.amazonaws.com");
+    }
+
     private static URI decodePresignedUrl(String token) {
         byte[] decoded = Base64.getUrlDecoder().decode(token.substring("k8s-aws-v1.".length()));
         return URI.create(new String(decoded, StandardCharsets.UTF_8));
