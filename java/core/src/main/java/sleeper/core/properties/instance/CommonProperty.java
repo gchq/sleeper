@@ -78,7 +78,8 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
     UserDefinedInstanceProperty EXCLUDED_RESOURCES_FROM_TAGS = Index.propertyBuilder("sleeper.tags.excluded.resources")
-            .description("A common sepearted list of resource to exclude from tagging.")
+            .description("A comma separated list of resources to exclude from tagging. These should be CDK resource " +
+                    "types to be set in TagProps.Builder.excludeResourceTypes.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")

@@ -57,7 +57,8 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.userjars=
 
-# A common sepearted list of resource to exclude from tagging.
+# A comma separated list of resources to exclude from tagging. These should be CDK resource types to
+# be set in TagProps.Builder.excludeResourceTypes.
 # (uncomment to set a value)
 # sleeper.tags.excluded.resources=
 
