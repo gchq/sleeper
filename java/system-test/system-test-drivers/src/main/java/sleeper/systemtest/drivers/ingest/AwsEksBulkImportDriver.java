@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.statemachine;
+package sleeper.systemtest.drivers.ingest;
 
+import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.model.DescribeExecutionResponse;
 
 import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
@@ -27,6 +30,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -38,11 +42,17 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     private final SystemTestInstanceContext instance;
     private final SentIngestJobsContext sentJobs;
     private final SfnClient sfnClient;
+    private final KubernetesClientProvider k8sProvider;
 
     public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SystemTestClients clients) {
+        this(instance, sentJobs, clients.getSfn(), clients::createKubernetesClient);
+    }
+
+    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, KubernetesClientProvider k8sProvider) {
         this.instance = instance;
         this.sentJobs = sentJobs;
-        this.sfnClient = clients.getSfn();
+        this.sfnClient = sfnClient;
+        this.k8sProvider = k8sProvider;
     }
 
     @Override
@@ -56,5 +66,18 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
                     DescribeExecutionResponse response = sfnClient.describeExecution(req -> req.executionArn(executionArn));
                     return response.statusAsString();
                 }).toList();
+    }
+
+    @Override
+    public List<String> getRunningPods() {
+        InstanceProperties properties = instance.getInstanceProperties();
+        PodList list = k8sProvider.getClient(properties).pods()
+                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                .list();
+        return list.getItems().stream().map(pod -> pod.toString()).toList();
+    }
+
+    public interface KubernetesClientProvider {
+        KubernetesClient getClient(InstanceProperties instanceProperties);
     }
 }

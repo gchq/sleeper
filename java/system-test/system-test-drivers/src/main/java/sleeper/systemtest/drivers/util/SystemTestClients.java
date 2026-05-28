@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.util;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -253,6 +254,11 @@ public class SystemTestClients {
 
     public Configuration createHadoopConf() {
         return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
+    }
+
+    public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
+        // TODO
+        return null;
     }
 
     public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
