@@ -790,6 +790,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ID of the Kubernetes namespace where Spark jobs will run for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_NAME = Index
+            .propertyBuilder("sleeper.bulk.import.eks.k8s.cluster.name")
+            .description("The name of the EKS cluster for bulk import.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = Index
             .propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
             .description("The endpoint of the EKS cluster for bulk import.")
