@@ -143,7 +143,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(
                 s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
-                new LeafPartitionRowRetrieverProvider() {
+                (instanceProperties) -> new LeafPartitionRowRetrieverProvider() {
                     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
                         throw new UnsupportedOperationException("DataFusion provider not usable here");
                     }

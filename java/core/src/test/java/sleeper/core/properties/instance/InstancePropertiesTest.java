@@ -276,14 +276,13 @@ class InstancePropertiesTest {
     @Test
     void shouldCreateEndpointFromServiceAndProtocol() {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(DNS_SUFFIX, "test.domain.com");
-        properties.set(REGION, "test-region");
         String protocol = "test_protocol";
         String service = "s3";
+        String regionId = "test-region";
+        String dnsSuffix = "test.domain.com";
 
         // When
-        String endpoint = properties.evaluateAWSEndpoint(protocol, service);
+        String endpoint = InstanceProperties.evaluateAWSEndpoint(protocol, service, regionId, dnsSuffix);
 
         // Then
         assertThat(endpoint).isEqualTo("test_protocol://s3.test-region.test.domain.com");
