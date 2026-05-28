@@ -69,11 +69,8 @@ public class DataFusionAwsConfig {
         if (endpoint != null) {
             return overrideEndpoint(endpoint);
         } else {
-            DataFusionAwsConfig.Builder builder = builder();
-            if (instanceProperties != null) {
-                builder = builder.endpoint(instanceProperties.evaluateAWSEndpoint("s3"));
-            }
-            return builder.build();
+            return builder().endpoint(instanceProperties.evaluateAWSEndpoint("s3"))
+                    .build();
         }
     }
 
