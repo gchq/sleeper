@@ -58,7 +58,6 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAM
 public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryLambda.class);
 
-    private final InstanceProperties instanceProperties;
     private final SqsLeafPartitionQueryProcessor processor;
     private final QueryMessageHandler messageHandler;
 
@@ -71,7 +70,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
 
     public SqsLeafPartitionQueryLambda(
             S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient, String configBucket, LeafPartitionRowRetrieverProvider dataFusionProvider) throws ObjectFactoryException {
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableHadoopConfigurationProvider hadoopProvider = TableHadoopConfigurationProvider.withCache(
                 TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties));
