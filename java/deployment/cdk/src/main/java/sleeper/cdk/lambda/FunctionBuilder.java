@@ -16,6 +16,7 @@
 package sleeper.cdk.lambda;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Size;
 import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
@@ -73,6 +74,12 @@ public class FunctionBuilder implements LambdaBuilder {
     @Override
     public LambdaBuilder events(List<IEventSource> events) {
         builder.events(events);
+        return this;
+    }
+
+    @Override
+    public LambdaBuilder ephemeralStorageSize(Size ephemeralStorageSize) {
+        builder.ephemeralStorageSize(ephemeralStorageSize);
         return this;
     }
 
