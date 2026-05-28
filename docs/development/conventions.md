@@ -57,6 +57,19 @@ public Partition(Builder builder) {
 }
 ```
 
+## Null handling
+
+Whenever it's necessary to have an empty value, we prefer a non-null value, e.g. a no-op instead of a null for a
+Supplier object.
+
+We avoid any need for null checks, except in data classes. In a data class, a field can be null if it's optional by
+necessity. We prefer to use an Optional to expose the value outside the class. Wherever possible, we avoid using
+null values in a class responsible for logic, wiring or high level policy.
+
+We avoid ever using null as an uninitialised value. We avoid leaving fields uninitialised, except in a builder, where
+fields will be set before the object is built. Wherever possible we ensure an object is fully initialised
+after it's constructed. We avoid passing null as a parameter to a function.
+
 ## Ordering within a Java class
 
 We try to keep to this ordering of elements in a class declaration:
