@@ -227,7 +227,8 @@
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
         <asm.version>9.10.1</asm.version>
-        <fabric8.version>7.7.0</fabric8.version>
+        <!-- We match the version of Fabric8 used by Spark -->
+        <fabric8.version>6.7.2</fabric8.version>
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
