@@ -379,6 +379,19 @@ class SleeperPropertiesTest {
             // Then
             assertThat(list).isEmpty();
         }
+
+        @Test
+        void shouldAllowSpacesBetweenListItems() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(USER_JARS, "a, b, c");
+
+            // When
+            List<String> list = testSleeperProperties.getList(USER_JARS);
+
+            // Then
+            assertThat(list).containsExactly("a", "b", "c");
+        }
     }
 
     @Nested
