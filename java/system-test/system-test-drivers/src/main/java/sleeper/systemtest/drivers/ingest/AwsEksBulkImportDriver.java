@@ -72,8 +72,10 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
                     String executionArn = stateMachineArn.replace(":stateMachine:", ":execution:") + ":" + executionName;
                     DescribeExecutionResponse response = sfnClient.describeExecution(req -> req.executionArn(executionArn));
                     LOGGER.info("Found execution for job {}: {}", jobId, response);
-                    LOGGER.info("Error: {}", response.error());
-                    LOGGER.info("Cause: {}", response.cause());
+                    if (response.error() != null) {
+                        LOGGER.info("Error: {}", response.error());
+                        LOGGER.info("Cause: {}", response.cause());
+                    }
                     return response.statusAsString();
                 }).toList();
     }
