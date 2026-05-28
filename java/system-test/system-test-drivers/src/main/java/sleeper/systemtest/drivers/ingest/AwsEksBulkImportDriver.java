@@ -84,6 +84,7 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
         PodList list = k8sProvider.getClient(properties).pods()
                 .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
                 .list();
+        LOGGER.info("Found pods in Spark namespace: {}", list);
         return list.getItems().stream().map(Pod::toString).toList();
     }
 
@@ -93,6 +94,7 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
         JobList list = k8sProvider.getClient(properties).batch().v1().jobs()
                 .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
                 .list();
+        LOGGER.info("Found jobs in Spark namespace: {}", list);
         return list.getItems().stream().map(Job::toString).toList();
     }
 
