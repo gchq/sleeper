@@ -77,9 +77,6 @@ public class DataFusionAwsConfig {
     /**
      * Creates a configuration to run against a LocalStack endpoint.
      *
-     * Reads an endpoint URL from the environment if "AWS_ENDPOINT_URL" if endpoint argument
-     * is null. If both are null, this method returns null.
-     *
      * @param  endpoint the endpoint to use
      * @return          the configuration
      */
