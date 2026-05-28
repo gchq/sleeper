@@ -15,6 +15,9 @@
  */
 package sleeper.foreign.datafusion;
 
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
+
 import sleeper.core.properties.instance.InstanceProperties;
 
 /**
@@ -72,6 +75,20 @@ public class DataFusionAwsConfig {
             }
             return builder.build();
         }
+    }
+
+    /**
+     * Creates the default AWS configuration from given region and partition.
+     *
+     * @param  region   AWS region
+     * @param  metadata AWS partition metadata
+     * @return          AWs config for DataFusion
+     */
+    public static DataFusionAwsConfig getDefault(Region region, PartitionMetadata metadata) {
+        return DataFusionAwsConfig.builder()
+                .endpoint(
+                        InstanceProperties.evaluateAWSEndpoint("https", "s3", region.id(), metadata.dnsSuffix()))
+                .build();
     }
 
     /**

@@ -72,9 +72,6 @@ public class DirectQueryDriver implements QueryDriver {
         this.instance = instance;
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         DataFusionAwsConfig awsConfig = clients.createDataFusionAwsConfig();
-        if (awsConfig == null) {
-            awsConfig = DataFusionAwsConfig.getDefault(instanceProperties);
-        }
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
                 new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE,
                         clients.tableHadoopProvider(instanceProperties)),

@@ -164,18 +164,20 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @return         endpoint URL
      */
     public String evaluateAWSEndpoint(String service) {
-        return evaluateAWSEndpoint("https", service);
+        return evaluateAWSEndpoint("https", service, get(REGION), get(DNS_SUFFIX));
     }
 
     /**
-     * Create the AWS endpoint URL for a protocol and service.
+     * Creates the AWS endpoint URL for the given parameters.
      *
-     * @param  protocol URL protocol to use
-     * @param  service  AWS service to create endpoint for
-     * @return          endpoint URL
+     * @param  protocol  URL protocol
+     * @param  service   AWS service code
+     * @param  region    AWS region ID
+     * @param  dnsSuffix endpoint DNS suffix URL
+     * @return           endpoint URL
      */
-    public String evaluateAWSEndpoint(String protocol, String service) {
-        return String.format("%s://%s.%s.%s", protocol, service, get(REGION), get(DNS_SUFFIX));
+    public static String evaluateAWSEndpoint(String protocol, String service, String region, String dnsSuffix) {
+        return String.format("%s://%s.%s.%s", protocol, service, region, dnsSuffix);
     }
 
     @Override
