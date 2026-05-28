@@ -274,12 +274,11 @@ public class SystemTestClients {
     }
 
     public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
-        String token = EksAuthTokenGenerator.generateToken(
-                instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider);
         Config config = new ConfigBuilder()
                 .withMasterUrl(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
                 .withCaCertData(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_CA_DATA))
-                .withOauthToken(token)
+                .withOauthTokenProvider(() -> EksAuthTokenGenerator.generateToken(
+                        instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider))
                 .build();
         return new KubernetesClientBuilder().withConfig(config).build();
     }
