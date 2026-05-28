@@ -28,7 +28,6 @@ import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -68,9 +67,8 @@ public class InvestigateDataFusionCompactionOOM {
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             CheckTransactionLogs check = CheckTransactionLogs.load(accountName, instanceId, tableId, cacheTransactions, s3Client, dynamoClient);
-            examine(instanceProperties, check, s3Client, dynamoClient);
+            examine(check.instanceProperties(), check, s3Client, dynamoClient);
         }
     }
 
