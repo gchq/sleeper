@@ -41,7 +41,7 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, SleeperInternalCdkApp cdkApp, DockerImageConfiguration configuration) {
-        return builder().properties(properties).images(configuration.getImagesToUpload(properties, cdkApp)).build();
+        return builder().properties(properties).images(configuration.getNonBaseImagesToUpload(properties, cdkApp)).build();
     }
 
     public String getEcrPrefix() {

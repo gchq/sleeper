@@ -18,8 +18,9 @@ package sleeper.bulkimport.starter.executor;
 import com.google.gson.Gson;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
 
 /**
@@ -55,19 +57,21 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
         List<String> args = constructArgs(arguments, stateMachineArn);
+        String ephemeralStorage = instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE);
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
+        input.put("executorPodTemplate", ExecutorPodTemplate.forEphemeralStorageRequestAndLimit(ephemeralStorage, ephemeralStorage));
         String inputJson = new Gson().toJson(input);
 
         stepFunctions.startExecution(request -> request
                 .stateMachineArn(stateMachineArn)
-                .name(jobExecutionName(bulkImportJob))
+                .name(DeriveJobExecutionName.jobExecutionName(bulkImportJob))
                 .input(inputJson));
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {
-        Map<String, String> defaultConfig = ConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
+        Map<String, String> defaultConfig = SparkConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties);
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         String jobPodPrefix = jobPodPrefix(bulkImportJob);
         defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);
@@ -111,15 +115,4 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         }
     }
 
-    private static String jobExecutionName(BulkImportJob job) {
-        String tableName = job.getTableName();
-        String jobId = job.getId();
-        // See maximum length restriction in AWS documentation:
-        // https://docs.aws.amazon.com/step-functions/latest/apireference/API_StartExecution.html#API_StartExecution_RequestParameters
-        int spaceForTableName = 80 - jobId.length() - 1;
-        if (tableName.length() > spaceForTableName) {
-            tableName = tableName.substring(0, spaceForTableName);
-        }
-        return String.join("-", tableName, jobId);
-    }
 }

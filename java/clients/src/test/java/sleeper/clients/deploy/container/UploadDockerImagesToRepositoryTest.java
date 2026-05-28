@@ -161,6 +161,9 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedTag = "www.somedocker.com/prefix/data-generation:1.0.0";
         assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
                 buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                 pushImageCommand(expectedTag));
     }
@@ -207,6 +210,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 .deployConfig(DeployConfiguration.fromLocalBuild())
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                .baseImage(baseImage())
                 .version("1.0.0");
     }
 }

@@ -22,7 +22,13 @@
               {
                 "image": "image-placeholder",
                 "name": "spark-submit",
-                "args.$": "$.args"
+                "args.$": "$.args",
+                "env": [
+                  {
+                    "name": "EXECUTOR_POD_TEMPLATE",
+                    "value.$": "$.executorPodTemplate"
+                  }
+                ]
               }
             ],
             "restartPolicy": "Never"

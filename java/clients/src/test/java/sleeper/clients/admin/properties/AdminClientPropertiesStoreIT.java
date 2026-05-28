@@ -51,13 +51,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.ecrPrefix;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.commandsToLoginDockerAndPushImages;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -363,16 +357,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstancePropertyViaCdk(instanceId, OPTIONAL_STACKS, "BulkExportStack");
 
             // Then
-            String ecrPrefix = ecrPrefix(instanceProperties);
-            String expectedTag = ecrPrefix + "/bulk-export-task-execution:" + version;
-            String baseTag = ecrPrefix + "/base:" + version;
-            assertThat(dockerCommandsThatRan).isEqualTo(List.of(
-                    dockerLoginToEcrCommand(instanceProperties),
-                    createBuildxBuilderInstanceCommand(),
-                    useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(baseTag, "./docker/base", baseTag),
-                    buildImageCommand(expectedTag, "./docker/bulk-export-task-execution", baseTag),
-                    pushImageCommand(expectedTag)));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "bulk-export-task-execution"));
         }
 
         @Test
@@ -381,16 +366,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstancePropertyViaCdk(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
-            String ecrPrefix = ecrPrefix(instanceProperties);
-            String expectedTag = ecrPrefix + "/ingest:" + version;
-            String baseTag = ecrPrefix + "/base:" + version;
-            assertThat(dockerCommandsThatRan).isEqualTo(List.of(
-                    dockerLoginToEcrCommand(instanceProperties),
-                    createBuildxBuilderInstanceCommand(),
-                    useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(baseTag, "./docker/base", baseTag),
-                    buildImageCommand(expectedTag, "./docker/ingest", baseTag),
-                    pushImageCommand(expectedTag)));
+            assertThat(dockerCommandsThatRan).isEqualTo(commandsToLoginDockerAndPushImages(instanceProperties, "ingest"));
         }
     }
 

@@ -19,6 +19,7 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.TagProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -27,6 +28,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
+import static sleeper.core.properties.instance.CommonProperty.EXCLUDED_RESOURCES_FROM_TAGS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -61,9 +63,12 @@ public class SleeperCdkApp {
                             .env(environment)
                             .build(),
                     props);
-            instanceProperties.getTags()
-                    .forEach((key, value) -> Tags.of(app).add(key, value));
 
+            Tags tags = Tags.of(app);
+            TagProps tagProps = TagProps.builder()
+                    .excludeResourceTypes(instanceProperties.getList(EXCLUDED_RESOURCES_FROM_TAGS))
+                    .build();
+            instanceProperties.getTags().forEach((key, value) -> tags.add(key, value, tagProps));
             app.synth();
         }
     }
