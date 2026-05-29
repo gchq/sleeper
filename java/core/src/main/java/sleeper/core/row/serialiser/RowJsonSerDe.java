@@ -145,9 +145,17 @@ public class RowJsonSerDe {
                 json.addProperty(field.getName(), (String) null);
             }
         } else if (field.getType() instanceof ListType) {
-            addListToJsonObject(field, (List<Object>) fieldValue, json);
+            if (fieldValue == null) {
+                json.add(field.getName(), JsonNull.INSTANCE);
+            } else {
+                addListToJsonObject(field, (List<Object>) fieldValue, json);
+            }
         } else if (field.getType() instanceof MapType) {
-            addMapToJsonObject(field, (Map<Object, Object>) fieldValue, json);
+            if (fieldValue == null) {
+                json.add(field.getName(), JsonNull.INSTANCE);
+            } else {
+                addMapToJsonObject(field, (Map<Object, Object>) fieldValue, json);
+            }
         } else {
             throw new IllegalArgumentException("Unknown type " + field.getType());
         }
@@ -209,15 +217,21 @@ public class RowJsonSerDe {
     }
 
     private static void getFieldFromJsonObject(Field field, JsonObject json, Row row) {
+        JsonElement element = json.get(field.getName());
+        if (element == null || element.isJsonNull()) {
+            if (field.isNullable()) {
+                row.put(field.getName(), null);
+            }
+            return;
+        }
         if (field.getType() instanceof IntType) {
-            row.put(field.getName(), json.get(field.getName()).getAsInt());
+            row.put(field.getName(), element.getAsInt());
         } else if (field.getType() instanceof LongType) {
-            row.put(field.getName(), json.get(field.getName()).getAsLong());
+            row.put(field.getName(), element.getAsLong());
         } else if (field.getType() instanceof StringType) {
-            row.put(field.getName(), json.get(field.getName()).getAsString());
+            row.put(field.getName(), element.getAsString());
         } else if (field.getType() instanceof ByteArrayType) {
-            String encodedByteArray = json.get(field.getName()).getAsString();
-            row.put(field.getName(), Base64.getDecoder().decode(encodedByteArray));
+            row.put(field.getName(), Base64.getDecoder().decode(element.getAsString()));
         } else if (field.getType() instanceof ListType) {
             getListFromJsonObject(field, json, row);
         } else if (field.getType() instanceof MapType) {

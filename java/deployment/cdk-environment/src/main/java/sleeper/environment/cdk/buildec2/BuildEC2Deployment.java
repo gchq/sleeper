@@ -15,6 +15,7 @@
  */
 package sleeper.environment.cdk.buildec2;
 
+import software.amazon.awscdk.Aws;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.services.ec2.IInstance;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -97,8 +98,8 @@ public class BuildEC2Deployment {
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of(
-                        "arn:aws:iam::*:role/cdk-*",
-                        "arn:aws:iam::*:role/sleeper-admin-*"))
+                        "arn:" + Aws.PARTITION + ":iam::" + Aws.ACCOUNT_ID + ":role/cdk-*",
+                        "arn:" + Aws.PARTITION + ":iam::" + Aws.ACCOUNT_ID + ":role/sleeper-admin-*"))
                 .build());
 
         // Allow creating jars bucket & Docker repositories, working with CloudFormation stacks

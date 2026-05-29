@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script runs SetupInstanceST, to pre-deploy the main system test instance. This is intended for use when you want
+# to run individual system tests against the main instance and you want to ensure the instance is there first. Usually
+# this is used when developing system tests.
+
 set -e
 unset CDPATH
 
@@ -29,7 +33,7 @@ START_TIME=$(record_time)
 
 "$THIS_DIR/deployTest.sh" "$@" \
   -Dsleeper.system.test.cluster.enabled=true \
-  -DrunIT=SetupInstanceIT
+  -DrunIT=SetupInstanceST
 
 FINISH_TIME=$(record_time)
 

@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -164,7 +165,8 @@ public class LambdaJar {
      */
     public String getDockerImageName(InstanceProperties properties) {
         return properties.get(ACCOUNT) + ".dkr.ecr." +
-                properties.get(REGION) + ".amazonaws.com/" +
+                properties.get(REGION) + "." +
+                properties.get(DNS_SUFFIX) + "/" +
                 getEcrRepositoryName(properties) +
                 ":" + properties.get(VERSION);
     }

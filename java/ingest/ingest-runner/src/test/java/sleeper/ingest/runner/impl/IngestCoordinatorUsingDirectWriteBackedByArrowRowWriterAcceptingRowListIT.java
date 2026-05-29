@@ -113,7 +113,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRowWriterAcceptingRowListIT 
         // When
         ingestRows(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
-            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 2 * 1024 * 1024L);
         });
 

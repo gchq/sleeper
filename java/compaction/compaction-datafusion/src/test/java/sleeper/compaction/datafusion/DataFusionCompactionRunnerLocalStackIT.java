@@ -131,7 +131,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private void runTask(CompactionJob job) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
-            compactionTaskTestHelper().runTask(runner, List.of(job));
+            compactionTaskTestHelper().runTask(runner, null, List.of(job));
         }
     }
 

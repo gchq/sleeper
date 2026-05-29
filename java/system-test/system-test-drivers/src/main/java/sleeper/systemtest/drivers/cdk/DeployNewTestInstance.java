@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -58,7 +60,8 @@ public class DeployNewTestInstance {
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+            Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+            PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
@@ -66,7 +69,7 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
             DeployNewInstance.builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, s3Client, ecrClient))
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
                     .accountName(accountName)
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient)

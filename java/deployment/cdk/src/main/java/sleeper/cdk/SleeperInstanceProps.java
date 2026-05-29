@@ -16,6 +16,8 @@
 package sleeper.cdk;
 
 import software.amazon.awscdk.Stack;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -44,6 +46,8 @@ import java.util.Properties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CDK_APP;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
@@ -188,7 +192,11 @@ public class SleeperInstanceProps {
         CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
         instanceProperties.set(VERSION, version);
         instanceProperties.set(ACCOUNT, stack.getAccount());
-        instanceProperties.set(REGION, stack.getRegion());
+        Region region = Region.of(stack.getRegion());
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+        instanceProperties.set(REGION, region.id());
+        instanceProperties.set(PARTITION, partitionMetadata.id());
+        instanceProperties.set(DNS_SUFFIX, partitionMetadata.dnsSuffix());
         instanceProperties.setEnum(CDK_APP, sleeperCdkApp);
         instanceProperties.set(VPC_ID, networking.vpcId());
         instanceProperties.setList(SUBNETS, networking.subnetIds());

@@ -42,6 +42,16 @@ use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
 
+#[macro_export]
+macro_rules! assert_error {
+    ($err_expr: expr, $err_contents: expr) => {
+        assert_eq!(
+            $err_expr.err().map(|e| e.to_string()),
+            Some($err_contents.to_string())
+        )
+    };
+}
+
 #[allow(clippy::missing_panics_doc)]
 #[must_use]
 pub fn file(dir: &TempDir, name: &str) -> Url {

@@ -21,6 +21,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -85,6 +86,8 @@ public interface SystemTestDrivers {
     IngestByQueue ingestByQueue(SystemTestContext context);
 
     DirectBulkImportDriver directEmrServerless(SystemTestContext context);
+
+    EksBulkImportDriver eksBulkImport(SystemTestContext context);
 
     IngestBatcherDriver ingestBatcher(SystemTestContext context);
 

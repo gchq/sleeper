@@ -16,6 +16,8 @@
 package sleeper.clients.deploy;
 
 import org.apache.commons.lang3.EnumUtils;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -138,12 +140,12 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties(), args.cdkApp());
+            images = DockerImageConfiguration.getDefault().getNonBaseImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
-            images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
+            images = DockerImageConfiguration.getDefault().getAllNonBaseImagesToUpload();
         }
 
         try (S3Client s3Client = S3Client.create();
@@ -151,7 +153,8 @@ public class UploadArtefacts {
                 StsClient stsClient = StsClient.create()) {
 
             String accountName = stsClient.getCallerIdentity().account();
-            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+            Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+            PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
             SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
@@ -160,7 +163,7 @@ public class UploadArtefacts {
                             .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    accountName, region);
+                    accountName, region, partitionMetadata);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())

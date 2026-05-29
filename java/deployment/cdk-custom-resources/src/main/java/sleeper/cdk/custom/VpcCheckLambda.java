@@ -17,12 +17,16 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Filter;
 import software.amazon.awssdk.services.ec2.model.VpcEndpoint;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class VpcCheckLambda {
     private final Ec2Client vpcClient;
@@ -55,7 +59,7 @@ public class VpcCheckLambda {
     private void validateVpc(String vpcId, String region) {
         List<VpcEndpoint> vpcEndpoints = vpcClient.describeVpcEndpoints(builder -> builder
                 .filters(Filter.builder().name("vpc-id").values(vpcId).build(),
-                        Filter.builder().name("service-name").values("com.amazonaws." + region + ".s3").build()))
+                        Filter.builder().name("service-name").values(s3VpcEndpointServiceName(region)).build()))
                 .vpcEndpoints();
 
         if (vpcEndpoints.size() != 1) {
@@ -63,5 +67,14 @@ public class VpcCheckLambda {
                     + "for reading and writing data to your data buckets. We strongly encourage you to add an S3 endpoint to your"
                     + " VPC. To disable this check, set the instance property 'sleeper.vpc.endpoint.check' to false.");
         }
+    }
+
+    private static String s3VpcEndpointServiceName(String region) {
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(Region.of(region));
+        String[] suffixParts = partitionMetadata.dnsSuffix().split("\\.");
+        String reversedSuffix = IntStream.range(0, suffixParts.length)
+                .mapToObj(i -> suffixParts[suffixParts.length - 1 - i])
+                .collect(Collectors.joining("."));
+        return reversedSuffix + "." + region + ".s3";
     }
 }

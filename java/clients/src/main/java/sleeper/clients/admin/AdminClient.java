@@ -15,7 +15,8 @@
  */
 package sleeper.clients.admin;
 
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -97,10 +98,11 @@ public class AdminClient {
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder());
                 StsClient stsClient = AwsV2ClientHelper.buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
-            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
+            Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+            PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir, ecrClient),
-                    accountName, regionProvider.getRegion().id());
+                    accountName, region, partitionMetadata);
             AdminClientPropertiesStore propertiesStore = new AdminClientPropertiesStore(
                     accountName, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, DockerImageConfiguration.getDefault());
             errorCode = start(instanceId, propertiesStore, AdminClientTrackerFactory.from(dynamoClient), out, in,
