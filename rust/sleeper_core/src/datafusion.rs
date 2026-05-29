@@ -68,7 +68,6 @@ pub mod output;
 mod region;
 pub mod sketch;
 mod sketch_udf;
-mod sql_sort_fix;
 mod unalias;
 mod util;
 

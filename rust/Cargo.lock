@@ -3621,6 +3621,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "query_sql"
+version = "0.35.4-SNAPSHOT"
+dependencies = [
+ "datafusion",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.39.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4214,6 +4221,7 @@ dependencies = [
  "num-format",
  "object_store",
  "objectstore_ext",
+ "query_sql",
  "regex",
  "rust_sketch",
  "tempfile",

@@ -21,7 +21,6 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        sql_sort_fix::inject_sort_stage,
         util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
 };
@@ -32,10 +31,10 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     logical_expr::{Expr, ident},
     physical_plan::displayable,
-    prelude::SQLOptions,
 };
 use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
+use query_sql::add_sql_stage;
 use std::{
     fmt::{Display, Formatter},
     sync::Arc,
@@ -113,7 +112,13 @@ impl<'a> LeafPartitionQuery<'a> {
 
         let mut frame = completer.complete_frame(frame)?;
 
-        frame = add_sql_stage(self.config.sql_query.as_deref(), &ops, frame, &ctx).await?;
+        frame = add_sql_stage(
+            self.config.sql_query.as_deref(),
+            ops.create_sort_order(),
+            frame,
+            &ctx,
+        )
+        .await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
@@ -229,34 +234,6 @@ impl<'a> LeafPartitionQuery<'a> {
         let (sketcher, frame) = self.maybe_add_sketch_output(ops, frame)?;
         Ok((sketcher, frame, ctx))
     }
-}
-
-/// Applies an optional user-provided SQL query to the `DataFrame`.
-///
-/// The `DataFrame` is exposed as `my_table` for the SQL to reference.
-/// Only SELECT queries are permitted.
-///
-/// # Errors
-/// Returns an error if the SQL query is invalid or uses disallowed statements.
-async fn add_sql_stage(
-    sql: Option<&str>,
-    ops: &SleeperOperations<'_>,
-    frame: DataFrame,
-    ctx: &SessionContext,
-) -> Result<DataFrame, DataFusionError> {
-    let Some(sql) = sql else { return Ok(frame) };
-    ctx.register_table("my_table", frame.into_view())?;
-    let frame = ctx
-        .sql_with_options(
-            sql,
-            SQLOptions::new()
-                .with_allow_ddl(false)
-                .with_allow_dml(false)
-                .with_allow_statements(false),
-        )
-        .await
-        .map_err(|e| DataFusionError::Plan(format!("User SQL query failed: {e}")))?;
-    inject_sort_stage(frame, ops.create_sort_order())
 }
 
 impl LeafPartitionQuery<'_> {
