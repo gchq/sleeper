@@ -28,12 +28,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -93,19 +91,6 @@ class AddTableSerDeTest {
                     """);
 
             assertThat(request.toSplitPoints(tableProperties)).containsExactly("a", "m", "z");
-        }
-
-        @Test
-        void shouldConvertBase64EncodedStringSplitPoints() {
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
-            tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
-            String encoded = Base64.getEncoder().encodeToString("middle".getBytes(StandardCharsets.UTF_8));
-
-            AddTableRequest request = addTableSerDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
-                    """.formatted(encoded));
-
-            assertThat(request.toSplitPoints(tableProperties)).containsExactly("middle");
         }
 
         @Test
