@@ -27,6 +27,11 @@ public class AddTableResponse {
         tableName = builder.tableName;
     }
 
+    @Override
+    public String toString() {
+        return "tableId: " + tableId + ", tableName: " + tableName;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
