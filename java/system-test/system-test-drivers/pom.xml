@@ -188,6 +188,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- Maven doesn't seem to have a good way to get transitive dependencies of test jars. -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <ignoredUnusedDeclaredDependency>sleeper:sketches:test-jar:</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>sleeper:ingest-core:test-jar:</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>sleeper:ingest-runner:test-jar:</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>sleeper:ingest-batcher-core:test-jar:</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>sleeper:query-core:test-jar:</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
