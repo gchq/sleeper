@@ -85,12 +85,11 @@ public class AddTableRequest {
             throw new IllegalArgumentException(
                     "Split points are only supported for tables with a single row key field");
         }
-        boolean stringsBase64Encoded = tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED);
         String joined = splitPoints.stream()
                 .map(JsonElement::getAsString)
                 .collect(Collectors.joining("\n"));
 
-        return ReadSplitPoints.fromString(joined, schema, stringsBase64Encoded);
+        return ReadSplitPoints.fromString(joined, schema, true);
     }
 
     /**
