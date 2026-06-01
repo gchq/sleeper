@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -34,6 +33,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableStatus;
 
@@ -54,13 +54,13 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 class RestApiLambdaTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final SleeperClient sleeperClient = mock(SleeperClient.class);
+    private final AddTable addTable = mock(AddTable.class);
     private final Schema schema = createSchemaWithKey("key", new StringType());
     private RestApiLambda lambda;
 
     @BeforeEach
     void setUp() {
-        lambda = new RestApiLambda(instanceProperties, sleeperClient);
+        lambda = new RestApiLambda(instanceProperties, addTable);
     }
 
     @Nested
@@ -80,7 +80,7 @@ class RestApiLambdaTest {
             ArgumentCaptor<TableProperties> tableCaptor = ArgumentCaptor.forClass(TableProperties.class);
             @SuppressWarnings("unchecked")
             ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-            verify(sleeperClient).addTable(tableCaptor.capture(), splitsCaptor.capture());
+            verify(addTable).addTable(tableCaptor.capture(), splitsCaptor.capture());
             assertThat(tableCaptor.getValue().get(sleeper.core.properties.table.TableProperty.TABLE_NAME))
                     .isEqualTo("my-table");
             assertThat(splitsCaptor.getValue()).isEmpty();
@@ -99,7 +99,7 @@ class RestApiLambdaTest {
             assertThat(response.getStatusCode()).isEqualTo(201);
             @SuppressWarnings("unchecked")
             ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-            verify(sleeperClient).addTable(any(), splitsCaptor.capture());
+            verify(addTable).addTable(any(), splitsCaptor.capture());
             assertThat(splitsCaptor.getValue()).containsExactly("a", "m", "z");
         }
     }
@@ -127,7 +127,7 @@ class RestApiLambdaTest {
 
             assertThat(response.getStatusCode()).isEqualTo(400);
             assertThat(response.getBody()).contains("invalid_request");
-            verify(sleeperClient, never()).addTable(any(), any());
+            verify(addTable, never()).addTable(any(), any());
         }
 
         @Test
@@ -135,7 +135,7 @@ class RestApiLambdaTest {
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent(null));
 
             assertThat(response.getStatusCode()).isEqualTo(400);
-            verify(sleeperClient, never()).addTable(any(), any());
+            verify(addTable, never()).addTable(any(), any());
         }
 
         @Test
@@ -146,14 +146,14 @@ class RestApiLambdaTest {
 
             assertThat(response.getStatusCode()).isEqualTo(400);
             assertThat(response.getBody()).contains("properties");
-            verify(sleeperClient, never()).addTable(any(), any());
+            verify(addTable, never()).addTable(any(), any());
         }
 
         @Test
-        void shouldReturnResponseWhenSleeperClientRejectsProperties() {
+        void shouldReturnResponseWhenAddTableRejectsProperties() {
             Map<SleeperProperty, String> invalidValues = Map.of(CdkDefinedInstanceProperty.ACCOUNT, "Failure");
             doThrow(new SleeperPropertiesInvalidException(invalidValues))
-                    .when(sleeperClient).addTable(any(), any());
+                    .when(addTable).addTable(any(), any());
 
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
@@ -166,7 +166,7 @@ class RestApiLambdaTest {
         void shouldReturn409WhenTableAlreadyExists() {
             TableStatus existing = TableStatus.uniqueIdAndName("table-id", "my-table", true);
             doThrow(new TableAlreadyExistsException(existing))
-                    .when(sleeperClient).addTable(any(), any());
+                    .when(addTable).addTable(any(), any());
 
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
@@ -197,7 +197,7 @@ class RestApiLambdaTest {
         @Test
         void shouldReturn500ForUnexpectedFailure() {
             doThrow(new RuntimeException("kaboom"))
-                    .when(sleeperClient).addTable(any(), any());
+                    .when(addTable).addTable(any(), any());
 
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}

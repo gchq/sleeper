@@ -19,12 +19,15 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.table.AddTable;
 import sleeper.restapi.addTable.AddTableEndpoint;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +42,7 @@ public class RestApiLambda {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(RestApiLambda.class);
 
-    private final SleeperClient sleeperClient;
+    private final AddTable addTable;
     private final InstanceProperties instanceProperties;
     private final Map<String, Route> routes = new HashMap<>();
 
@@ -50,15 +53,18 @@ public class RestApiLambda {
                     "Couldn't get S3 bucket from environment variable " + CONFIG_BUCKET.toEnvironmentVariable());
         }
         S3Client s3Client = S3Client.create();
+        DynamoDbClient dynamoClient = DynamoDbClient.create();
         InstanceProperties properties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.instanceProperties = properties;
-        this.sleeperClient = SleeperClient.builder().instanceProperties(properties).build();
+        this.addTable = new AddTable(
+                S3TableProperties.createStore(properties, s3Client, dynamoClient),
+                StateStoreFactory.createProvider(properties, s3Client, dynamoClient));
         registerRoutes();
     }
 
-    RestApiLambda(InstanceProperties instanceProperties, SleeperClient sleeperClient) {
+    RestApiLambda(InstanceProperties instanceProperties, AddTable addTable) {
         this.instanceProperties = instanceProperties;
-        this.sleeperClient = sleeperClient;
+        this.addTable = addTable;
         registerRoutes();
     }
 
@@ -69,7 +75,7 @@ public class RestApiLambda {
                 .build());
         routes.put("POST /sleeper/tables", event -> AddTableEndpoint.builder()
                 .instanceProperties(instanceProperties)
-                .sleeperClient(sleeperClient)
+                .addTable(addTable)
                 .build().processRequest(event));
     }
 

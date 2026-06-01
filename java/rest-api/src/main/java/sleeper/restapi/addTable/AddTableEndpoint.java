@@ -21,9 +21,9 @@ import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.restapi.RestEndpoint;
 
@@ -35,18 +35,18 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Rest method for adding table to sleeper instance, utilising same process as within the Sleeper Client.
+ * Rest method for adding table to sleeper instance.
  */
 public class AddTableEndpoint extends RestEndpoint {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AddTableEndpoint.class);
-    private InstanceProperties instanceProperties;
-    private SleeperClient sleeperClient;
-    private AddTableSerDe addTableSerDe;
+    private final InstanceProperties instanceProperties;
+    private final AddTable addTable;
+    private final AddTableSerDe addTableSerDe;
 
     private AddTableEndpoint(Builder builder) {
         instanceProperties = requireNonNull(builder.instanceProperties);
-        sleeperClient = requireNonNull(builder.sleeperClient);
+        addTable = requireNonNull(builder.addTable);
         addTableSerDe = new AddTableSerDe();
     }
 
@@ -79,7 +79,7 @@ public class AddTableEndpoint extends RestEndpoint {
             return errorResponse(400, "invalid_request", e.getMessage());
         }
         try {
-            sleeperClient.addTable(tableProperties, splitPoints);
+            addTable.addTable(tableProperties, splitPoints);
         } catch (TableAlreadyExistsException e) {
             LOGGER.info("Add table request rejected: table already exists", e);
             return errorResponse(409, "table_already_exists", e.getMessage());
@@ -107,11 +107,11 @@ public class AddTableEndpoint extends RestEndpoint {
     }
 
     /**
-     * Builder for AddTableRest.
+     * Builder for AddTableEndpoint.
      */
     public static final class Builder {
         private InstanceProperties instanceProperties;
-        private SleeperClient sleeperClient;
+        private AddTable addTable;
 
         private Builder() {
         }
@@ -128,13 +128,13 @@ public class AddTableEndpoint extends RestEndpoint {
         }
 
         /**
-         * Assigns sleeper client for rest method.
+         * Assigns the add table operation.
          *
-         * @param  sleeperClient sleeper client
-         * @return               the builder for further actions
+         * @param  addTable the add table operation
+         * @return          the builder for further actions
          */
-        public Builder sleeperClient(SleeperClient sleeperClient) {
-            this.sleeperClient = sleeperClient;
+        public Builder addTable(AddTable addTable) {
+            this.addTable = addTable;
             return this;
         }
 

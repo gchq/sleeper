@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>clients</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
