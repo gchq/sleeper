@@ -315,6 +315,10 @@ ASM (org.ow2.asm:asm:9.*)
 
 - The 3-Clause BSD License
 
+Fabric8 (io.fabric8:kubernetes-*:6.*)
+
+- Apache License, Version 2.0
+
 Docker Java (com.github.docker-java:docker-java-*:3.*)
 
 - Apache License, Version 2.0

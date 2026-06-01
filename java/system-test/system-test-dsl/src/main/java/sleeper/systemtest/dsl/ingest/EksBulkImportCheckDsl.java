@@ -22,17 +22,20 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * DSL entry point for querying the status of bulk import jobs in an AWS Step Functions state machine.
  */
-public class EksBulkImportStateMachineDsl {
+public class EksBulkImportCheckDsl {
 
-    private final EksBulkImportDriver driver;
+    private final EksBulkImportDriver baseDriver;
+    private final EksBulkImportDriver adminDriver;
     private final PollWithRetriesDriver pollDriver;
 
-    public EksBulkImportStateMachineDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
-        this.driver = baseDrivers.eksBulkImport(context);
+    public EksBulkImportCheckDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.baseDriver = baseDrivers.eksBulkImport(context);
+        this.adminDriver = context.instance().adminDrivers().eksBulkImport(context);
         this.pollDriver = baseDrivers.pollWithRetries();
     }
 
@@ -46,11 +49,19 @@ public class EksBulkImportStateMachineDsl {
         try {
             return pollDriver.poll(poll)
                     .queryUntil("state machine executions finished",
-                            () -> driver.getExecutionStatuses(),
+                            () -> baseDriver.getExecutionStatuses(),
                             statuses -> statuses.stream().noneMatch("RUNNING"::equals));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    public List<String> getPods() {
+        return adminDriver.getPods();
+    }
+
+    public List<String> getJobs() {
+        return adminDriver.getJobs();
     }
 }

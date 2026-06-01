@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.row.Row;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -30,6 +31,7 @@ import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,5 +94,12 @@ public class EksBulkImportST {
                 .hasSize(8);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8);
+        assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))
+                .containsOnly("SUCCEEDED");
+        assertThat(sleeper.eksBulkImportCheck().getPods())
+                .isEmpty();
+        assertThat(sleeper.eksBulkImportCheck().getJobs())
+                .isEmpty();
     }
 }

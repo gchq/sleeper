@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.statemachine;
+package sleeper.systemtest.drivers.ingest;
 
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobList;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.model.DescribeExecutionResponse;
 
 import sleeper.bulkimport.core.statemachine.DeriveJobExecutionName;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
@@ -27,6 +35,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -35,14 +44,22 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  * table IDs using DeriveJobExecutionName, then calls the Step Functions API to retrieve each execution's status.
  */
 public class AwsEksBulkImportDriver implements EksBulkImportDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsEksBulkImportDriver.class);
+
     private final SystemTestInstanceContext instance;
     private final SentIngestJobsContext sentJobs;
     private final SfnClient sfnClient;
+    private final KubernetesClientProvider k8sProvider;
 
     public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SystemTestClients clients) {
+        this(instance, sentJobs, clients.getSfn(), clients::createKubernetesClient);
+    }
+
+    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, KubernetesClientProvider k8sProvider) {
         this.instance = instance;
         this.sentJobs = sentJobs;
-        this.sfnClient = clients.getSfn();
+        this.sfnClient = sfnClient;
+        this.k8sProvider = k8sProvider;
     }
 
     @Override
@@ -54,7 +71,36 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
                     String executionName = DeriveJobExecutionName.jobExecutionName(tableId, jobId);
                     String executionArn = stateMachineArn.replace(":stateMachine:", ":execution:") + ":" + executionName;
                     DescribeExecutionResponse response = sfnClient.describeExecution(req -> req.executionArn(executionArn));
+                    LOGGER.info("Found execution for job {}: {}", jobId, response);
+                    if (response.error() != null) {
+                        LOGGER.info("Error: {}", response.error());
+                        LOGGER.info("Cause: {}", response.cause());
+                    }
                     return response.statusAsString();
                 }).toList();
+    }
+
+    @Override
+    public List<String> getPods() {
+        InstanceProperties properties = instance.getInstanceProperties();
+        PodList list = k8sProvider.getClient(properties).pods()
+                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                .list();
+        LOGGER.info("Found pods in Spark namespace: {}", list);
+        return list.getItems().stream().map(Pod::toString).toList();
+    }
+
+    @Override
+    public List<String> getJobs() {
+        InstanceProperties properties = instance.getInstanceProperties();
+        JobList list = k8sProvider.getClient(properties).batch().v1().jobs()
+                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                .list();
+        LOGGER.info("Found jobs in Spark namespace: {}", list);
+        return list.getItems().stream().map(Job::toString).toList();
+    }
+
+    public interface KubernetesClientProvider {
+        KubernetesClient getClient(InstanceProperties instanceProperties);
     }
 }
