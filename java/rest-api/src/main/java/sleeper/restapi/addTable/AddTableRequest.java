@@ -89,7 +89,7 @@ public class AddTableRequest {
                 .map(JsonElement::getAsString)
                 .collect(Collectors.joining("\n"));
 
-        return ReadSplitPoints.fromString(joined, schema, true);
+        return ReadSplitPoints.fromString(joined, schema, false);
     }
 
     /**
