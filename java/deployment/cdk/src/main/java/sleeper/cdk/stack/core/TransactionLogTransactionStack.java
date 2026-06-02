@@ -155,14 +155,15 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_FOLLOWER)));
 
+        DynamoEventSource.Builder eventSourceBuilder = DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
+                .startingPosition(StartingPosition.LATEST);
+
         if (instanceProperties.getBoolean(TRANSACTION_LOG_METRICS_ENABLE)) {
-            lambda.addEventSource(DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
-                    .startingPosition(StartingPosition.LATEST)
-                    .metricsConfig(MetricsConfig.builder()
-                            .metrics(List.of(MetricType.EVENT_COUNT))
-                            .build())
+            eventSourceBuilder.metricsConfig(MetricsConfig.builder()
+                    .metrics(List.of(MetricType.EVENT_COUNT))
                     .build());
         }
+        lambda.addEventSource(eventSourceBuilder.build());
         coreStacks.grantUpdateJobTrackersFromTransactionLog(lambda);
     }
 }
