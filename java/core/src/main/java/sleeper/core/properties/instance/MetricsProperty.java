@@ -64,8 +64,8 @@ public interface MetricsProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty TRANSACTION_LOG_EVENT_COUNT_METRICS_ENABLE = Index.propertyBuilder("sleeper.statestore.transactionlog.eventcount.metrics.enable")
-            .description("Enables/disabled event count metrics specific to the transaction log follower lambda.")
+    UserDefinedInstanceProperty TRANSACTION_LOG_EVENT_COUNT_METRICS_ENABLE = Index.propertyBuilder("sleeper.statestore.transactionlog.eventcount.metrics.enabled")
+            .description("Enables/disables event count metrics specific to the transaction log follower lambda.")
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
