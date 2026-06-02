@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 /**
- * Test helper for universal actions acorss REST Api testing.
+ * Base class for universal actions across REST Api testing.
  */
 public class RestApiTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
