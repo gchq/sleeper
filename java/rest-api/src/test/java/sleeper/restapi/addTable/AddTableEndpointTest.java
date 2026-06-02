@@ -45,7 +45,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class AddTableTest extends RestApiTestBase {
+public class AddTableEndpointTest extends RestApiTestBase {
     private final Schema schema = createSchemaWithKey("key", new StringType());
 
     @Nested
