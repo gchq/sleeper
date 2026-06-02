@@ -5,6 +5,58 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.35.4
+
+### 2nd June, 2026
+
+This includes support for nullable value fields, ephemeral storage configuration for EKS bulk import,
+improvements to the EKS bulk import driver, and various dependency upgrades.
+
+Bulk import:
+- Added configurable ephemeral storage for Spark executor pods in EKS bulk import. A custom executor pod
+  template is now written at deployment time, controlled by the instance property
+  `sleeper.bulk.import.eks.spark.executor.ephemeral.storage`.
+- Some EKS bulk import properties have been separated from their equivalent EMR properties to allow for
+  more targeted configuration. Shared properties between EMR and EKS have been extracted to generic
+  instance-level properties. Some EKS-specific default values have been updated.
+
+Hadoop configuration:
+- The S3 endpoint is now consistently set across all Hadoop configuration contexts, derived from the
+  instance region and DNS suffix.
+
+Nullable value fields:
+- Value fields in a Sleeper table schema can now be declared as nullable. Rows may be stored and
+  retrieved with null values for these fields. Aggregations over nullable value columns are forbidden.
+
+Compaction:
+- Compaction job row counts are now tracked within the Rust/DataFusion compactor and exposed to the
+  Java layer via FFI.
+
+Configuration:
+- Spaces are now permitted between items in list-valued configuration properties.
+- Certain resource types can now be excluded from tagging.
+
+Deployment:
+- Docker image deployments now track a `baseImage` flag per image, allowing the system to correctly
+  identify and handle base images separately from application images.
+- Docker deployment can now be scoped to a specific CDK app, via `DockerDeployment.cdkApp`.
+- Lambda functions can now have ephemeral storage configured via the Lambda Builder interface.
+- Support for non-standard AWS partitions has been improved: partition is now set explicitly in
+  EksBulkImportStack, BuildEC2Deployment, and the EMR policy.
+
+Build:
+- Upgraded multiple GitHub Actions: checkout to v6, setup-java to v5, Docker actions, sccache-action,
+  and artifacts actions.
+- Added a local registry to store the base image during CI builds.
+
+Documentation:
+- Demonstration deployment scripts have been reworked and given additional comments.
+
+Bugfixes:
+- Log level for cache hits in `TablePropertiesProvider` has been lowered to avoid noise.
+- The EKS cluster is now only enabled during performance tests that require it.
+
+
 ## Version 0.35.3
 
 ### 8th May, 2025
