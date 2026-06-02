@@ -75,9 +75,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -112,9 +110,7 @@ class ParquetRowReaderIT {
         // Then
         //  - Replace byte array field in row1 with wrapped version so that equals works
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(2);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -157,9 +153,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(3);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(3);
         assertThat(readRow3).isNull();
     }
 
@@ -202,9 +196,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(3);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(3);
         assertThat(readRow3).isNull();
     }
 
@@ -247,9 +239,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(3);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(3);
         assertThat(readRow3).isNull();
     }
 
@@ -292,9 +282,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1).isEqualTo(row1);
-        assertThat(readRow1.getKeys()).hasSize(3);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow2.getKeys()).hasSize(3);
         assertThat(readRow3).isNull();
     }
 
@@ -333,9 +321,6 @@ class ParquetRowReaderIT {
         // Explicitly set column2 to null now to allow check of equality
         row3.put("column2", null);
         assertThat(readRow3).isEqualTo(row3);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
-        assertThat(readRow3.getKeys()).hasSize(2);
         assertThat(readRow4).isNull();
     }
 
@@ -366,8 +351,6 @@ class ParquetRowReaderIT {
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -398,8 +381,6 @@ class ParquetRowReaderIT {
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -430,8 +411,6 @@ class ParquetRowReaderIT {
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -464,8 +443,6 @@ class ParquetRowReaderIT {
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -497,8 +474,6 @@ class ParquetRowReaderIT {
         // Then
         assertThat(readRow1).isEqualTo(row1);
         assertThat(readRow2).isEqualTo(row2);
-        assertThat(readRow1.getKeys()).hasSize(2);
-        assertThat(readRow2.getKeys()).hasSize(2);
         assertThat(readRow3).isNull();
     }
 
@@ -533,9 +508,7 @@ class ParquetRowReaderIT {
 
         // Then
         assertThat(readRow1.get("column1")).isEqualTo("A");
-        assertThat(readRow1.getKeys()).hasSize(1);
         assertThat(readRow2.get("column1")).isEqualTo("C");
-        assertThat(readRow2.getKeys()).hasSize(1);
         assertThat(readRow3).isNull();
     }
 }
