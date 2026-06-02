@@ -56,9 +56,11 @@ pub fn inject_sort_stage(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arrow::array::RecordBatch;
     use datafusion::{
-        arrow::datatypes::{DataType, Field, Schema},
+        arrow::{
+            datatypes::{DataType, Field, Schema},
+            record_batch::RecordBatch,
+        },
         execution::context::SessionContext,
         logical_expr::{col, lit},
     };

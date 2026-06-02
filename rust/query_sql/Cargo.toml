@@ -26,3 +26,6 @@ publish = { workspace = true }
 
 [dependencies]
 datafusion = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

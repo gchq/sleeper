@@ -3625,6 +3625,7 @@ name = "query_sql"
 version = "0.35.4-SNAPSHOT"
 dependencies = [
  "datafusion",
+ "tokio",
 ]
 
 [[package]]
