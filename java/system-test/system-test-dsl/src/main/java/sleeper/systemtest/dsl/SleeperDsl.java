@@ -27,7 +27,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
-import sleeper.systemtest.dsl.ingest.EksBulkImportStateMachineDsl;
+import sleeper.systemtest.dsl.ingest.EksBulkImportCheckDsl;
 import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -152,8 +152,8 @@ public class SleeperDsl {
         return new ReportingDsl(context);
     }
 
-    public EksBulkImportStateMachineDsl eksBulkImportStateMachine() {
-        return new EksBulkImportStateMachineDsl(context, baseDrivers);
+    public EksBulkImportCheckDsl eksBulkImportCheck() {
+        return new EksBulkImportCheckDsl(context, baseDrivers);
     }
 
     public TableMetricsDsl tableMetrics() {

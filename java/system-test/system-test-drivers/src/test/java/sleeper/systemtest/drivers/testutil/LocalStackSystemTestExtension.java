@@ -18,8 +18,7 @@ package sleeper.systemtest.drivers.testutil;
 import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
 
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
@@ -33,16 +32,18 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
     }
 
     private static SystemTestDeploymentContext createContext() {
-        Region region = Region.of(SleeperLocalStackContainer.INSTANCE.getRegion());
+        LocalStackSystemTestDrivers drivers = LocalStackSystemTestDrivers.fromContainer();
+        SystemTestClients clients = drivers.clients();
+        Region region = clients.getRegion();
         PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
         return new SystemTestDeploymentContext(
                 SystemTestParametersTestHelper.parametersBuilder()
-                        .account(SleeperLocalStackClients.STS_CLIENT.getCallerIdentity().account())
+                        .account(clients.getSts().getCallerIdentity().account())
                         .shortTestId("localstack")
                         .region(region.id())
                         .dnsSuffix(partitionMetadata.dnsSuffix())
                         .build(),
-                LocalStackSystemTestDrivers.fromContainer());
+                drivers);
     }
 
 }

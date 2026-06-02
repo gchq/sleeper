@@ -16,10 +16,16 @@
 
 package sleeper.systemtest.drivers.util;
 
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -57,7 +63,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME;
+
 public class SystemTestClients {
+    private final Region region;
     private final AwsCredentialsProvider credentialsProvider;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
@@ -83,6 +94,7 @@ public class SystemTestClients {
     private final UnaryOperator<Configuration> configureHadoop;
 
     private SystemTestClients(Builder builder) {
+        region = builder.region;
         credentialsProvider = builder.credentialsProvider;
         s3 = builder.s3;
         s3Async = builder.s3Async;
@@ -113,6 +125,7 @@ public class SystemTestClients {
 
     public static SystemTestClients fromDefaults() {
         return builder()
+                .region(DefaultAwsRegionProviderChain.builder().build().getRegion())
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
@@ -139,6 +152,7 @@ public class SystemTestClients {
         AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
+                .region(region)
                 .credentialsProvider(aws.credentialsProvider())
                 .s3(aws.buildClient(S3Client.builder()))
                 .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
@@ -161,6 +175,10 @@ public class SystemTestClients {
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
+    }
+
+    public Region getRegion() {
+        return region;
     }
 
     public AwsCredentialsProvider getCredentialsProvider() {
@@ -255,6 +273,16 @@ public class SystemTestClients {
         return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
     }
 
+    public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
+        Config config = new ConfigBuilder()
+                .withMasterUrl(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
+                .withCaCertData(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_CA_DATA))
+                .withOauthTokenProvider(() -> EksAuthTokenGenerator.generateToken(
+                        instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider))
+                .build();
+        return new KubernetesClientBuilder().withConfig(config).build();
+    }
+
     public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
         return tableProperties -> createHadoopConf(instanceProperties, tableProperties);
     }
@@ -273,6 +301,7 @@ public class SystemTestClients {
     }
 
     public static class Builder {
+        private Region region;
         private AwsCredentialsProvider credentialsProvider;
         private S3Client s3;
         private S3AsyncClient s3Async;
@@ -297,6 +326,11 @@ public class SystemTestClients {
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
 
         private Builder() {
+        }
+
+        public Builder region(Region region) {
+            this.region = region;
+            return this;
         }
 
         public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
