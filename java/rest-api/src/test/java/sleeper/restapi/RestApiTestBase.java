@@ -29,7 +29,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 /**
  * Test helper for universal actions acorss REST Api testing.
  */
-public class RestApiTestHelper {
+public class RestApiTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     public final AddTable addTable = mock(AddTable.class);
     public RestApiLambda lambda;

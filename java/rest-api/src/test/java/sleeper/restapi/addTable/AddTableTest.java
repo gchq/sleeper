@@ -31,7 +31,7 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableStatus;
-import sleeper.restapi.RestApiTestHelper;
+import sleeper.restapi.RestApiTestBase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class AddTableTest extends RestApiTestHelper {
+public class AddTableTest extends RestApiTestBase {
     private final Schema schema = createSchemaWithKey("key", new StringType());
 
     @Nested

@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class RestApiLambdaTest extends RestApiTestHelper {
+class RestApiLambdaTest extends RestApiTestBase {
 
     private final Schema schema = createSchemaWithKey("key", new StringType());
 
