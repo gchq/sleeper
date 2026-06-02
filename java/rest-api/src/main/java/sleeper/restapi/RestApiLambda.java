@@ -62,7 +62,7 @@ public class RestApiLambda {
         registerRoutes();
     }
 
-    RestApiLambda(InstanceProperties instanceProperties, AddTable addTable) {
+    public RestApiLambda(InstanceProperties instanceProperties, AddTable addTable) {
         this.instanceProperties = instanceProperties;
         this.addTable = addTable;
         registerRoutes();
