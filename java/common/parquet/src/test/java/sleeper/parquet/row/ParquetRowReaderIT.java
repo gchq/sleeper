@@ -507,8 +507,8 @@ class ParquetRowReaderIT {
         Row readRow3 = reader.read();
 
         // Then
-        assertThat(readRow1.get("column1")).isEqualTo("A");
-        assertThat(readRow2.get("column1")).isEqualTo("C");
+        assertThat(readRow1).isEqualTo(new Row(Map.of("column1", "A")));
+        assertThat(readRow2).isEqualTo(new Row(Map.of("column1", "C")));
         assertThat(readRow3).isNull();
     }
 }
