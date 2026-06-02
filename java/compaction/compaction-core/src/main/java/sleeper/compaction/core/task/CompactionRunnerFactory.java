@@ -17,7 +17,6 @@ package sleeper.compaction.core.task;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 /**
@@ -30,10 +29,9 @@ public interface CompactionRunnerFactory {
      * Picks a CompactionRunner implementation that is capable
      * of running a compaction on the given job.
      *
-     * @param  instanceProperties Sleeper instance properties
-     * @param  job                the job
-     * @param  tableProperties    the Sleeper table properties
-     * @return                    a compaction runner
+     * @param  job             the job
+     * @param  tableProperties the Sleeper table properties
+     * @return                 a compaction runner
      */
-    CompactionRunner createCompactor(InstanceProperties instanceProperties, CompactionJob job, TableProperties tableProperties);
+    CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties);
 }

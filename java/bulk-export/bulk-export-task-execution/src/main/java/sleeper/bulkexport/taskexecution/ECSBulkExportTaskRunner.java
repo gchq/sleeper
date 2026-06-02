@@ -171,7 +171,7 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Compaction job details: {}", job);
 
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        CompactionRunner compactor = compactionSelector.createCompactor(instanceProperties, job, tableProperties);
+        CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
         RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
                 .job(job)
                 .tableProperties(tableProperties)

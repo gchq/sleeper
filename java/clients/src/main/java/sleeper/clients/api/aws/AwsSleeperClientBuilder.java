@@ -61,8 +61,8 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
-        SleeperClientQueryProvider provider = getProvider(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = provider.getRowRetrieverProvider(hadoop);
+        SleeperClientQueryProvider getQueryProvider = getProvider(instanceProperties);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = getQueryProvider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
 

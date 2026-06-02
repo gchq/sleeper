@@ -115,7 +115,7 @@ public class CompactionTaskTestHelper {
     }
 
     private CompactionRunnerFactory runnerFactory(CompactionRunner compactionRunner) {
-        return (instanceProperties, job, table) -> compactionRunner;
+        return (job, table) -> compactionRunner;
     }
 
 }

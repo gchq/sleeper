@@ -34,12 +34,6 @@ public class DataFusionAwsConfig {
     private final String sessionToken;
     private final boolean allowHttp;
 
-    /**
-     * Creates a DataFusionAwsConfig.
-     *
-     * @param  builder                  builder object
-     * @throws IllegalArgumentException if only one of secretAccessKey and accessKeyId are null
-     */
     private DataFusionAwsConfig(Builder builder) {
         if (builder.secretAccessKey == null && builder.accessKeyId != null ||
                 builder.secretAccessKey != null && builder.accessKeyId == null) {
@@ -61,16 +55,33 @@ public class DataFusionAwsConfig {
      * Creates the default AWS configuration. Applies configuration from environment
      * variables if set.
      *
+     * @return AWS config for DataFusion
+     */
+    public static DataFusionAwsConfig getDefault() {
+        return getDefaultHelper(null);
+    }
+
+    /**
+     * Creates the default AWS configuration. Applies configuration from environment
+     * variables if set. Instance properties are used to determine AWS S3 endpoint.
+     *
      * @param  instanceProperties Sleeper instance properties
      * @return                    AWS config for DataFusion
      */
     public static DataFusionAwsConfig getDefault(InstanceProperties instanceProperties) {
+        return getDefaultHelper(instanceProperties.evaluateAWSEndpoint("s3"));
+    }
+
+    private static DataFusionAwsConfig getDefaultHelper(String awsEndpoint) {
         String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
             return overrideEndpoint(endpoint);
         } else {
-            return builder().endpoint(instanceProperties.evaluateAWSEndpoint("s3"))
-                    .build();
+            DataFusionAwsConfig.Builder builder = builder();
+            if (awsEndpoint != null) {
+                builder = builder.endpoint(awsEndpoint);
+            }
+            return builder.build();
         }
     }
 
@@ -82,10 +93,7 @@ public class DataFusionAwsConfig {
      * @return          AWs config for DataFusion
      */
     public static DataFusionAwsConfig getDefault(Region region, PartitionMetadata metadata) {
-        return DataFusionAwsConfig.builder()
-                .endpoint(
-                        InstanceProperties.evaluateAWSEndpoint("https", "s3", region.id(), metadata.dnsSuffix()))
-                .build();
+        return getDefaultHelper(InstanceProperties.evaluateAWSEndpoint("https", "s3", region.id(), metadata.dnsSuffix()));
     }
 
     /**

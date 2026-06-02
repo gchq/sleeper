@@ -119,6 +119,7 @@ public class AssumeSleeperRoleAwsSdk {
                 .secretAccessKey(credentials.secretAccessKey())
                 .sessionToken(credentials.sessionToken())
                 .region(region)
+                .endpoint(endpointUrl)
                 .build();
     }
 }

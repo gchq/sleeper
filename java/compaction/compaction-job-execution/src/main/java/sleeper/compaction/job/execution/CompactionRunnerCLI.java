@@ -63,13 +63,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  */
 public class CompactionRunnerCLI {
 
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final CompactionRunnerFactory runnerFactory;
     private final RegionSupplier regionSupplier;
 
-    private CompactionRunnerCLI(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, CompactionRunnerFactory runnerFactory, RegionSupplier regionSupplier) {
-        this.instanceProperties = instanceProperties;
+    private CompactionRunnerCLI(TablePropertiesProvider tablePropertiesProvider, CompactionRunnerFactory runnerFactory, RegionSupplier regionSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.runnerFactory = runnerFactory;
         this.regionSupplier = regionSupplier;
@@ -79,9 +77,9 @@ public class CompactionRunnerCLI {
             String instanceId, String accountName, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) throws ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         return new CompactionRunnerCLI(
-                instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
                 new DefaultCompactionRunnerFactory(
+                        () -> instanceProperties,
                         new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                         TableHadoopConfigurationProvider.forClient(instanceProperties),
                         new S3SketchesStore(s3Client, s3TransferManager)),
@@ -97,13 +95,12 @@ public class CompactionRunnerCLI {
         Region region = readRegionFile(schema, regionPath);
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(schema);
-        return createForFiles(null, tableProperties, region, s3Client, s3TransferManager);
+        return createForFiles(tableProperties, region, s3Client, s3TransferManager);
     }
 
-    public static CompactionRunnerCLI createForFiles(InstanceProperties instanceProperties, TableProperties baseTableProperties, Region region, S3Client s3Client,
+    public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client,
             S3TransferManager s3TransferManager) {
         return new CompactionRunnerCLI(
-                instanceProperties,
                 tableId -> {
                     TableProperties properties = TableProperties.copyOf(baseTableProperties);
                     properties.set(TABLE_ID, tableId);
@@ -120,7 +117,7 @@ public class CompactionRunnerCLI {
     public void runNTimes(CompactionJob job, int times) throws IOException, IteratorCreationException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableId());
         Region region = regionSupplier.getPartitionRegion(tableProperties, job.getPartitionId());
-        CompactionRunner runner = runnerFactory.createCompactor(instanceProperties, job, tableProperties);
+        CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
         CompactionRequest request = CompactionRequest.builder()
                 .job(job)
                 .tableProperties(tableProperties)

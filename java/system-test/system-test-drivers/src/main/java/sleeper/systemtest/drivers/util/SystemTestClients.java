@@ -125,8 +125,9 @@ public class SystemTestClients {
     }
 
     public static SystemTestClients fromDefaults() {
+        Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
         return builder()
-                .region(DefaultAwsRegionProviderChain.builder().build().getRegion())
+                .region(region)
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
@@ -145,7 +146,6 @@ public class SystemTestClients {
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
                 .dataFusionAwsConfig(() -> {
-                    Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
                     PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
                     return DataFusionAwsConfig.getDefault(region, partitionMetadata);
                 })
