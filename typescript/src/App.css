@@ -1,0 +1,33 @@
+.app {
+	max-width: 800px;
+	margin: 0 auto;
+	padding: 2rem;
+	text-align: center;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+h1 {
+	font-size: 2.5rem;
+	margin-bottom: 2rem;
+}
+
+.status-card {
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 2rem;
+	background-color: #f9f9f9;
+}
+
+.status-card h2 {
+	margin-top: 0;
+}
+
+.success {
+	color: #2e7d32;
+	font-weight: bold;
+}
+
+.error {
+	color: #c62828;
+	font-weight: bold;
+}
