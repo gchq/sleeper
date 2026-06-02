@@ -56,6 +56,7 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -146,6 +147,8 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA, bulkImportCluster.getClusterCertificateAuthorityData());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME, bulkImportCluster.getClusterName());
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
@@ -289,6 +292,9 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+
+        cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessForInstanceAdmin", ManagedPoliciesStack.getAdminRoleName(properties)));
+
         List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
         if (roles == null) {
             return;
