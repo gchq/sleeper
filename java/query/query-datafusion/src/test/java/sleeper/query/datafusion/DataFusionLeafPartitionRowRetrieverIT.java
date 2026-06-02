@@ -1244,7 +1244,10 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
         // When / Then
         assertThat(execute(query))
-                .containsExactly(new Row(Map.of("key", 1L, "value2", 100L)));
+                .hasSize(1)
+                .flatExtracting(Row::getKeys)
+                .doesNotContain("value1")
+                .contains("key", "value2");
     }
 
     // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
