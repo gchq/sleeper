@@ -227,6 +227,8 @@
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
         <asm.version>9.10.1</asm.version>
+        <!-- We match the version of Fabric8 used by Spark -->
+        <fabric8.version>6.7.2</fabric8.version>
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
@@ -1070,6 +1072,11 @@
                 <version>${okhttp3.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${okhttp3.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk8</artifactId>
                 <version>${kotlin.version}</version>
@@ -1213,6 +1220,21 @@
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-core</artifactId>
                 <version>${jib.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${fabric8.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-api</artifactId>
+                <version>${fabric8.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${fabric8.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>

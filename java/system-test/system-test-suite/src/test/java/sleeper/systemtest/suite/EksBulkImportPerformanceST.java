@@ -76,9 +76,13 @@ public class EksBulkImportPerformanceST {
                         "jobs finished with one run each")
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(5_000_000, 8_000_000),
                         "meets expected performance");
-        assertThat(sleeper.eksBulkImportStateMachine().waitUntilExecutionsFinishedGetStatuses(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10))))
+        assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))
                 .containsOnly("SUCCEEDED");
+        assertThat(sleeper.eksBulkImportCheck().getPods())
+                .isEmpty();
+        assertThat(sleeper.eksBulkImportCheck().getJobs())
+                .isEmpty();
     }
 
 }
