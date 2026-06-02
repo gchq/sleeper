@@ -18,7 +18,6 @@ package sleeper.systemtest.suite.testutil;
 
 import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -41,7 +40,7 @@ public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
     }
 
     private static SystemTestParameters loadParameters(SystemTestClients clients) {
-        Region region = new DefaultAwsRegionProviderChain().getRegion();
+        Region region = clients.getRegion();
         PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
         return SystemTestParameters.builder()
                 .account(clients.getSts().getCallerIdentity().account())
