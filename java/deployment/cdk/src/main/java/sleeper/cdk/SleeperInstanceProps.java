@@ -168,8 +168,8 @@ public class SleeperInstanceProps {
      * @return              the configuration
      */
     public static Builder builderFromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
-        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
-        SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        Path configurationPath = Path.of(context.tryGetContext("propertiesfile"));
+        SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(configurationPath);
         String instanceId = context.tryGetContext("id");
         if (instanceId != null) {
             configuration.getInstanceProperties().set(ID, instanceId);

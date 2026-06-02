@@ -106,7 +106,7 @@ public class SleeperInstanceConfigurationIT {
     @DisplayName("Load from instance properties")
     class LoadFromInstanceProperties {
         @Test
-        void shouldLoadTablePropertiesAndSchemaIfFoundNearInstanceProperties() throws Exception {
+        void shouldLoadTagsButNotTablesWhenGivenInstancePropertiesFile() throws Exception {
             // Given
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
             Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
@@ -116,6 +116,47 @@ public class SleeperInstanceConfigurationIT {
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
+            assertThat(instanceConfiguration)
+                    .isEqualTo(SleeperInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(List.of())
+                            .build());
+        }
+
+        @Test
+        void shouldLoadNoTablesIfNotFoundNearInstanceProperties() throws Exception {
+            // Given
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+
+            // When
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
+                    propertiesDir.resolve("instance.properties"));
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            assertThat(instanceConfiguration)
+                    .isEqualTo(SleeperInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(List.of())
+                            .build());
+        }
+
+        @Test
+        void shouldLoadFromConfigurationDirectoryWithSingleTable() throws Exception {
+            // Given
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
+            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
+            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+
+            // When
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -132,13 +173,32 @@ public class SleeperInstanceConfigurationIT {
         }
 
         @Test
-        void shouldLoadNoTablesIfNotFoundNearInstanceProperties() throws Exception {
+        void shouldLoadFromConfigurationDirectoryWithTablesSubdirectory() throws Exception {
+            // Given
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Path table1Dir = Files.createDirectories(propertiesDir.resolve("tables/table-1"));
+            Files.writeString(table1Dir.resolve("table.properties"), "sleeper.table.name=table-1");
+            Files.writeString(table1Dir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key1")));
+            Path table2Dir = Files.createDirectories(propertiesDir.resolve("tables/table-2"));
+            Files.writeString(table2Dir.resolve("table.properties"), "sleeper.table.name=table-2");
+            Files.writeString(table2Dir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key2")));
+
+            // When
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
+
+            // Then
+            assertThat(instanceConfiguration.getTableProperties())
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .containsExactly("table-1", "table-2");
+        }
+
+        @Test
+        void shouldLoadFromConfigurationDirectoryWithNoTables() throws Exception {
             // Given
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
-                    propertiesDir.resolve("instance.properties"));
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -200,7 +260,7 @@ public class SleeperInstanceConfigurationIT {
         void shouldPopulateTablePropertiesFromLocalConfig() throws Exception {
             // Given
             writeTemplates();
-            Path instancePropertiesPath = Files.writeString(
+            Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
             Files.writeString(
@@ -212,7 +272,7 @@ public class SleeperInstanceConfigurationIT {
 
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    instancePropertiesPath, fromTemplates);
+                    propertiesDir, fromTemplates);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();

@@ -87,11 +87,11 @@ public class DeployInstance {
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
-        Path propertiesFile = writeLocalProperties.write(instanceConfig);
+        Path configurationDirectory = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(propertiesFile));
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(configurationDirectory));
     }
 
     public interface WriteLocalProperties {
@@ -109,7 +109,7 @@ public class DeployInstance {
                 SaveLocalProperties.saveToDirectory(directory,
                         instanceConfig.getInstanceProperties(),
                         instanceConfig.getTableProperties().stream());
-                return directory.resolve("instance.properties");
+                return directory;
             };
         }
     }
