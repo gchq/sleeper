@@ -1864,6 +1864,10 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.dashboard.time.window.minutes=5
 
+# Enables/disables event count metrics specific to the transaction log follower lambda.
+# (default value shown below, uncomment to set a value)
+# sleeper.statestore.transactionlog.eventcount.metrics.enabled=false
+
 
 ## The following instance properties relate to logging.
 
