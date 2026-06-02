@@ -64,6 +64,11 @@ public interface MetricsProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_METRICS_ENABLE = Index.propertyBuilder("sleeper.statestore.transactionlog.metrics.enable")
+            .description("Whether to enable the Transaction logging within the state store.")
+            .defaultValue("false")
+            .propertyGroup(InstancePropertyGroup.METRICS)
+            .build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

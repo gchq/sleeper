@@ -1864,6 +1864,10 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.dashboard.time.window.minutes=5
 
+# Whether to enable the Transaction logging within the state store.
+# (default value shown below, uncomment to set a value)
+# sleeper.statestore.transactionlog.metrics.enable=false
+
 
 ## The following instance properties relate to logging.
 
