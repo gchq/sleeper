@@ -49,7 +49,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
-import static sleeper.core.properties.instance.MetricsProperty.TRANSACTION_LOG_METRICS_ENABLE;
+import static sleeper.core.properties.instance.MetricsProperty.TRANSACTION_LOG_EVENT_COUNT_METRICS_ENABLE;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
@@ -158,7 +158,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         DynamoEventSource.Builder eventSourceBuilder = DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
                 .startingPosition(StartingPosition.LATEST);
 
-        if (instanceProperties.getBoolean(TRANSACTION_LOG_METRICS_ENABLE)) {
+        if (instanceProperties.getBoolean(TRANSACTION_LOG_EVENT_COUNT_METRICS_ENABLE)) {
             eventSourceBuilder.metricsConfig(MetricsConfig.builder()
                     .metrics(List.of(MetricType.EVENT_COUNT))
                     .build());
