@@ -21,7 +21,6 @@ import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -71,7 +70,7 @@ public class AddTableRequest {
 
     /**
      * Converts the JSON split points to the typed values expected by the partition tree, using the row key type from
-     * the table's schema. Honours {@link TableProperty#SPLIT_POINTS_BASE64_ENCODED} on the supplied table properties.
+     * the table's schema.
      *
      * @param  tableProperties the table properties (must have schema set)
      * @return                 the typed split points, or an empty list if none were supplied
