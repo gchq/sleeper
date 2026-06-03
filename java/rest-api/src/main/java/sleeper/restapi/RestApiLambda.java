@@ -69,10 +69,10 @@ public class RestApiLambda {
     }
 
     private void registerRoutes() {
-        routes.put("POST /sleeper/tables", event -> AddTableRoute.builder()
+        routes.put("POST /sleeper/tables", AddTableRoute.builder()
                 .instanceProperties(instanceProperties)
                 .addTable(addTable)
-                .build().handle(event));
+                .build());
     }
 
     /**
