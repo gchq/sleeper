@@ -3,6 +3,10 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
+  # Golang stdlib
+  - id: CVE-2026-27145
+  - id: CVE-2026-42504
+  - id: CVE-2026-42507
   # github.com/containerd/containerd/v2
   - id: CVE-2026-46680
   # github.com/in-toto/in-toto-golang
