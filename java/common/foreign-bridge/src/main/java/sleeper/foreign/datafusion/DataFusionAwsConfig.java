@@ -53,16 +53,6 @@ public class DataFusionAwsConfig {
 
     /**
      * Creates the default AWS configuration. Applies configuration from environment
-     * variables if set.
-     *
-     * @return AWS config for DataFusion
-     */
-    public static DataFusionAwsConfig getDefault() {
-        return getDefaultHelper(null);
-    }
-
-    /**
-     * Creates the default AWS configuration. Applies configuration from environment
      * variables if set. Instance properties are used to determine AWS S3 endpoint.
      *
      * @param  instanceProperties Sleeper instance properties

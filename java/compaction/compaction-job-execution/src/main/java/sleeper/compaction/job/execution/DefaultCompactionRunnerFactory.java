@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
@@ -33,8 +32,6 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.SketchesStore;
 
-import java.util.function.Supplier;
-
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 /**
@@ -42,7 +39,7 @@ import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
  * other environmental information.
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
-    private final InstanceProperties instanceProperties;
+    private final DataFusionAwsConfig awsConfig;
     private final ObjectFactory objectFactory;
     private final TableHadoopConfigurationProvider hadoopProvider;
     private final SketchesStore sketchesStore;
@@ -53,12 +50,15 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         public static final FFIContext<DataFusionCompactionFunctions> INSTANCE = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class);
     }
 
-    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
-        this(() -> null, objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
+    public DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
+        this.awsConfig = awsConfig;
+        this.objectFactory = objectFactory;
+        this.hadoopProvider = TableHadoopConfigurationProvider.fixed(configuration);
+        this.sketchesStore = sketchesStore;
     }
 
-    public DefaultCompactionRunnerFactory(Supplier<InstanceProperties> propertiesSupplier, ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {
-        this.instanceProperties = propertiesSupplier.get();
+    DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {
+        this.awsConfig = awsConfig;
         this.objectFactory = objectFactory;
         this.hadoopProvider = hadoopProvider;
         this.sketchesStore = sketchesStore;
@@ -84,8 +84,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(instanceProperties != null ? DataFusionAwsConfig.getDefault(instanceProperties) : DataFusionAwsConfig.getDefault(), hadoopConf,
-                        ContextHolder.INSTANCE);
+                return new DataFusionCompactionRunner(awsConfig, hadoopConf, ContextHolder.INSTANCE);
             case JAVA:
             default:
                 return createJavaRunner(hadoopConf);

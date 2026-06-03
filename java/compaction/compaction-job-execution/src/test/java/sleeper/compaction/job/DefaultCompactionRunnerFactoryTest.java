@@ -30,6 +30,7 @@ import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.sketches.store.NoSketchesStore;
 
 import java.util.List;
@@ -77,7 +78,8 @@ public class DefaultCompactionRunnerFactoryTest {
     }
 
     private CompactionRunner createRunner() {
-        return new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), new Configuration(), new NoSketchesStore())
+        return new DefaultCompactionRunnerFactory(DataFusionAwsConfig.getDefault(instanceProperties),
+                ObjectFactory.noUserJars(), new Configuration(), new NoSketchesStore())
                 .createCompactor(exampleCompactionJob(), tableProperties);
     }
 

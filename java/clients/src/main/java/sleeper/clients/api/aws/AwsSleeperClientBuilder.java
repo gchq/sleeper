@@ -61,8 +61,8 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
-        SleeperClientQueryProvider getQueryProvider = getProvider(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = getQueryProvider.getRowRetrieverProvider(hadoop);
+        SleeperClientQueryProvider provider = getQueryProvider(instanceProperties);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = provider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
 
@@ -84,7 +84,7 @@ public class AwsSleeperClientBuilder {
                 .build();
     }
 
-    private SleeperClientQueryProvider getProvider(InstanceProperties instanceProperties) {
+    private SleeperClientQueryProvider getQueryProvider(InstanceProperties instanceProperties) {
         if (queryProvider != null) {
             return queryProvider;
         } else if (queryThreadPoolSize != null) {

@@ -44,6 +44,7 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
@@ -79,7 +80,7 @@ public class CompactionRunnerCLI {
         return new CompactionRunnerCLI(
                 S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
                 new DefaultCompactionRunnerFactory(
-                        () -> instanceProperties,
+                        DataFusionAwsConfig.getDefault(instanceProperties),
                         new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                         TableHadoopConfigurationProvider.forClient(instanceProperties),
                         new S3SketchesStore(s3Client, s3TransferManager)),
@@ -108,6 +109,7 @@ public class CompactionRunnerCLI {
                     return properties;
                 },
                 new DefaultCompactionRunnerFactory(
+                        DataFusionAwsConfig.getDefault(new InstanceProperties()),
                         ObjectFactory.noUserJars(),
                         HadoopConfigurationProvider.getConfigurationForClient(),
                         new S3SketchesStore(s3Client, s3TransferManager)),

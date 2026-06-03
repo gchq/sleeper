@@ -71,6 +71,7 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.dynamodb.tools.DynamoDBUtils;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -466,6 +467,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
+                DataFusionAwsConfig.getDefault(instanceProperties),
                 ObjectFactory.noUserJars(), hadoopConf, new S3SketchesStore(s3Client, s3TransferManager));
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
