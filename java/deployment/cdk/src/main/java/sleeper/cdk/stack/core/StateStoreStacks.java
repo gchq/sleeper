@@ -42,7 +42,6 @@ public final class StateStoreStacks {
         transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
         grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
         transactionLog.grantClearSnapshots(policiesStack.getClearInstancePolicyForGrants());
-        grantAccess(readWritePartitions(), policiesStack.getAddTablesPolicyForGrants());
         grantAccess(readWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
     }
 

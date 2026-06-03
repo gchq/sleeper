@@ -101,7 +101,6 @@ public final class TableIndexStack extends NestedStack {
 
         grantRead(policiesStack.getDirectIngestPolicyForGrants());
         grantRead(policiesStack.getIngestByQueuePolicyForGrants());
-        grantReadWrite(policiesStack.getAddTablesPolicyForGrants());
         grantReadWrite(policiesStack.getEditTablesPolicyForGrants());
         grantReadWrite(policiesStack.getClearInstancePolicyForGrants());
         Utils.addTags(this, instanceProperties);
@@ -113,7 +112,7 @@ public final class TableIndexStack extends NestedStack {
         indexByOnlineDynamoTable.grantReadData(grantee);
     }
 
-    private void grantReadWrite(IGrantable grantee) {
+    public void grantReadWrite(IGrantable grantee) {
         indexByNameDynamoTable.grantReadWriteData(grantee);
         indexByIdDynamoTable.grantReadWriteData(grantee);
         indexByOnlineDynamoTable.grantReadWriteData(grantee);
