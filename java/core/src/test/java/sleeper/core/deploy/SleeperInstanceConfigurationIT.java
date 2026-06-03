@@ -156,7 +156,7 @@ public class SleeperInstanceConfigurationIT {
             Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
 
             // When
-            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -184,7 +184,7 @@ public class SleeperInstanceConfigurationIT {
             Files.writeString(table2Dir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key2")));
 
             // When
-            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
             assertThat(instanceConfiguration.getTableProperties())
@@ -193,12 +193,29 @@ public class SleeperInstanceConfigurationIT {
         }
 
         @Test
+        void shouldLoadFromConfigurationDirectoryWhenGivenInstancePropertiesFileWithinIt() throws Exception {
+            // Given
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
+            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+
+            // When
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(
+                    propertiesDir.resolve("instance.properties"));
+
+            // Then
+            assertThat(instanceConfiguration.getTableProperties())
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .containsExactly("test-table");
+        }
+
+        @Test
         void shouldLoadFromConfigurationDirectoryWithNoTables() throws Exception {
             // Given
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesDir);
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -260,7 +277,7 @@ public class SleeperInstanceConfigurationIT {
         void shouldPopulateTablePropertiesFromLocalConfig() throws Exception {
             // Given
             writeTemplates();
-            Files.writeString(
+            Path instancePropertiesPath = Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
             Files.writeString(
@@ -272,7 +289,7 @@ public class SleeperInstanceConfigurationIT {
 
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    propertiesDir, fromTemplates);
+                    instancePropertiesPath, fromTemplates);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();

@@ -91,7 +91,7 @@ public class DeployInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(configurationDirectory));
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withConfigurationDirectory(configurationDirectory));
     }
 
     public interface WriteLocalProperties {

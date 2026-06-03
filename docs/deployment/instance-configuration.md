@@ -31,9 +31,16 @@ The `.properties` files are Java properties files. The directory containing `ins
 the root directory of your configuration. You can find descriptions of all properties in the
 system [here](usage/property-master.md).
 
-When deploying via the CDK, the `-c propertiesfile=...` context variable may be set either to the path of the
-`instance.properties` file or to the path of this root configuration directory; table properties are loaded from
-the same directory either way.
+When deploying via the CDK, choose one of two context variables to point at your configuration:
+
+* `-c propertiesfile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
+  `tags.properties` are read; table properties are not loaded.
+* `-c configurationdir=<path>` — the path to the root configuration directory. The whole directory structure is read:
+  `instance.properties`, `tags.properties`, `table.properties`, `schema.json`, `splits.txt`, and any tables under a
+  `tables/` subdirectory. Passing the `instance.properties` file path here also works — it falls back to the directory
+  containing it.
+
+Set exactly one of these; setting both, or neither, is an error.
 
 You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
 deployed by Sleeper. An example tags.properties file can be found [here](../../example/full/tags.properties).
