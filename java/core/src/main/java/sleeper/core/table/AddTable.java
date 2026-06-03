@@ -15,6 +15,7 @@
  */
 package sleeper.core.table;
 
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
@@ -41,6 +42,7 @@ public class AddTable {
      *
      * @param  tableProperties                   the table properties
      * @param  splitPoints                       the split points to initialise the partition tree
+     * @throws SleeperPropertiesInvalidException if table properties provided don't validate
      * @throws TableAlreadyExistsException       if the table already exists
      * @throws IllegalArgumentException          if table properties failed validation
      */

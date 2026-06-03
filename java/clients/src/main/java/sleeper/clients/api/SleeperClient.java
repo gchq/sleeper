@@ -29,7 +29,7 @@ import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -65,6 +65,7 @@ public class SleeperClient implements AutoCloseable {
     private final TablePropertiesStore tablePropertiesStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final AddTable tableAdd;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final IngestJobSender ingestJobSender;
@@ -80,6 +81,7 @@ public class SleeperClient implements AutoCloseable {
         tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
+        tableAdd = new AddTable(tablePropertiesStore, stateStoreProvider);
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         rowRetrieverProvider = Objects.requireNonNull(builder.rowRetrieverProvider, "rowRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
@@ -181,10 +183,7 @@ public class SleeperClient implements AutoCloseable {
      * @throws StateStoreException               if the state store failed to initialise
      */
     public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
-        tableProperties.validate();
-        tablePropertiesStore.createTable(tableProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        InitialisePartitionsTransaction.fromSplitPoints(tableProperties, splitPoints).synchronousCommit(stateStore);
+        tableAdd.addTable(tableProperties, splitPoints);
     }
 
     /**
