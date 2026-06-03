@@ -443,8 +443,8 @@ public class SleeperClient implements AutoCloseable {
         /**
          * Sets the addTable to allow for table creation.
          *
-         * @param  stateStoreProvider the provider
-         * @return                    this builder for chaining
+         * @param  AddTable the add table
+         * @return          this builder for chaining
          */
         public Builder addTable(AddTable addTable) {
             this.addTable = addTable;
