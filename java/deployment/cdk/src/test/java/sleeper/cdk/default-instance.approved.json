@@ -12168,11 +12168,6 @@
             "EventSourceArn": {
               "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701StreamArn"
             },
-            "MetricsConfig": {
-              "Metrics": [
-                "EventCount"
-              ]
-            },
             "Tags": [
               {
                 "Key": "DeploymentStack",
