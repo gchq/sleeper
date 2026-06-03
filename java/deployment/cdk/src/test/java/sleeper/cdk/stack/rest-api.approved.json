@@ -2,10 +2,31 @@
   "StackIdToTemplate": {
     "RestApi": {
       "Parameters": {
+        "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn": {
+          "Type": "String"
+        },
         "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Ref": {
           "Type": "String"
         },
+        "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DArn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn": {
+          "Type": "String"
+        },
         "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingrestapihandlerC192B1C1Ref": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn": {
           "Type": "String"
         }
       },
@@ -44,9 +65,23 @@
             }
           }
         },
+        "RestApiPOSTsleepertablestestinstanceFE1642E7": {
+          "Type": "AWS::ApiGatewayV2::Integration",
+          "Properties": {
+            "IntegrationUri": {
+              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
+            },
+            "PayloadFormatVersion": "2.0",
+            "ApiId": {
+              "Ref": "RestApi0C43BF4B"
+            },
+            "IntegrationType": "AWS_PROXY"
+          }
+        },
         "RestApiHandlerlambda15DA15D8": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
+            "RestApiHandlerlambdaServiceRoleDefaultPolicyB7B67261",
             "RestApiHandlerlambdaServiceRoleEB7ED2C9"
           ],
           "Properties": {
@@ -119,17 +154,259 @@
             "Principal": "apigateway.amazonaws.com"
           }
         },
-        "RestApiGETsleepertestinstance7ACA8C30": {
-          "Type": "AWS::ApiGatewayV2::Integration",
+        "RestApiHandlerlambdaServiceRoleDefaultPolicyB7B67261": {
+          "Type": "AWS::IAM::Policy",
           "Properties": {
-            "IntegrationUri": {
-              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
+            "PolicyName": "RestApiHandlerlambdaServiceRoleDefaultPolicyB7B67261",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:GetObject*",
+                    "s3:GetBucket*",
+                    "s3:List*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "s3:DeleteObject*",
+                    "s3:PutObject",
+                    "s3:PutObjectLegalHold",
+                    "s3:PutObjectRetention",
+                    "s3:PutObjectTagging",
+                    "s3:PutObjectVersionTagging",
+                    "s3:Abort*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "s3:GetObject*",
+                    "s3:GetBucket*",
+                    "s3:List*",
+                    "s3:DeleteObject*",
+                    "s3:PutObject",
+                    "s3:PutObjectLegalHold",
+                    "s3:PutObjectRetention",
+                    "s3:PutObjectTagging",
+                    "s3:PutObjectVersionTagging",
+                    "s3:Abort*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DArn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DArn"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                    }
+                  ]
+                }
+              ]
             },
-            "PayloadFormatVersion": "2.0",
-            "ApiId": {
-              "Ref": "RestApi0C43BF4B"
-            },
-            "IntegrationType": "AWS_PROXY"
+            "Roles": [
+              {
+                "Ref": "RestApiHandlerlambdaServiceRoleEB7ED2C9"
+              }
+            ]
           }
         },
         "RestApiDefaultStage58DF1C1E": {
@@ -182,7 +459,7 @@
                 [
                   "integrations/",
                   {
-                    "Ref": "RestApiGETsleepertestinstance7ACA8C30"
+                    "Ref": "RestApiPOSTsleepertablestestinstanceFE1642E7"
                   }
                 ]
               ]
@@ -192,53 +469,6 @@
             "ApiId": {
               "Ref": "RestApi0C43BF4B"
             }
-          }
-        },
-        "RestApiGETsleeper0E7FB094": {
-          "Type": "AWS::ApiGatewayV2::Route",
-          "Properties": {
-            "Target": {
-              "Fn::Join": [
-                "",
-                [
-                  "integrations/",
-                  {
-                    "Ref": "RestApiGETsleepertestinstance7ACA8C30"
-                  }
-                ]
-              ]
-            },
-            "RouteKey": "GET /sleeper",
-            "AuthorizationType": "AWS_IAM",
-            "ApiId": {
-              "Ref": "RestApi0C43BF4B"
-            }
-          }
-        },
-        "RestApiGETsleepertestinstancePermission92BC46E3": {
-          "Type": "AWS::Lambda::Permission",
-          "Properties": {
-            "FunctionName": {
-              "Ref": "RestApiHandlerlambdaCurrentVersion92C3C5EFdd60413ebac3d2d38f2a60c91fd1a938"
-            },
-            "Action": "lambda:InvokeFunction",
-            "SourceArn": {
-              "Fn::Join": [
-                "",
-                [
-                  "arn:",
-                  {
-                    "Ref": "AWS::Partition"
-                  },
-                  ":execute-api:test-region:test-account:",
-                  {
-                    "Ref": "RestApi0C43BF4B"
-                  },
-                  "/*/*/sleeper"
-                ]
-              ]
-            },
-            "Principal": "apigateway.amazonaws.com"
           }
         }
       }
