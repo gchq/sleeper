@@ -26,7 +26,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.AddTable;
-import sleeper.restapi.addTable.AddTableEndpoint;
+import sleeper.restapi.addTable.AddTableRoute;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
@@ -69,14 +69,10 @@ public class RestApiLambda {
     }
 
     private void registerRoutes() {
-        routes.put("GET /sleeper", event -> APIGatewayV2HTTPResponse.builder()
-                .withStatusCode(200)
-                .withBody("API successfully interacted with. Further expansion for functionality required.")
-                .build());
-        routes.put("POST /sleeper/tables", event -> AddTableEndpoint.builder()
+        routes.put("POST /sleeper/tables", event -> AddTableRoute.builder()
                 .instanceProperties(instanceProperties)
                 .addTable(addTable)
-                .build().processRequest(event));
+                .build().handle(event));
     }
 
     /**
@@ -90,7 +86,7 @@ public class RestApiLambda {
         String routeKey = methodAndPath(event);
         Route route = routes.get(routeKey);
         if (route == null) {
-            return RestEndpoint.errorResponse(404, "not_found", "No route registered for " + routeKey);
+            return Route.errorResponse(404, "not_found", "No route registered for " + routeKey);
         }
         return route.handle(event);
     }

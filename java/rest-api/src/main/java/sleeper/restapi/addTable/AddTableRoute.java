@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.restapi.RestEndpoint;
+import sleeper.restapi.Route;
 
 import java.util.List;
 import java.util.Map;
@@ -37,14 +37,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 /**
  * Rest method for adding table to sleeper instance.
  */
-public class AddTableEndpoint extends RestEndpoint {
+public class AddTableRoute implements Route {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AddTableEndpoint.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(AddTableRoute.class);
     private final InstanceProperties instanceProperties;
     private final AddTable addTable;
     private final AddTableSerDe addTableSerDe;
 
-    private AddTableEndpoint(Builder builder) {
+    private AddTableRoute(Builder builder) {
         instanceProperties = requireNonNull(builder.instanceProperties);
         addTable = requireNonNull(builder.addTable);
         addTableSerDe = new AddTableSerDe();
@@ -57,16 +57,16 @@ public class AddTableEndpoint extends RestEndpoint {
      * @return       An APIGateway response detailing whether the addTable action has suceeded or not
      */
     @Override
-    public APIGatewayV2HTTPResponse processRequest(APIGatewayV2HTTPEvent event) {
+    public APIGatewayV2HTTPResponse handle(APIGatewayV2HTTPEvent event) {
         AddTableRequest request;
         try {
-            request = addTableSerDe.fromJson(decodeBody(event));
+            request = addTableSerDe.fromJson(Route.decodeBody(event));
         } catch (JsonSyntaxException e) {
             LOGGER.warn("Add table request body was not valid JSON", e);
-            return errorResponse(400, "invalid_request", "Request body is not valid JSON");
+            return Route.errorResponse(400, "invalid_request", "Request body is not valid JSON");
         }
         if (request == null) {
-            return errorResponse(400, "invalid_request", "Request body is empty");
+            return Route.errorResponse(400, "invalid_request", "Request body is empty");
         }
         TableProperties tableProperties;
         List<Object> splitPoints;
@@ -76,20 +76,20 @@ public class AddTableEndpoint extends RestEndpoint {
         } catch (RuntimeException e) {
             // SchemaSerDe / split-point parsing surface invalid input as runtime exceptions.
             LOGGER.warn("Add table request was invalid", e);
-            return errorResponse(400, "invalid_request", e.getMessage());
+            return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
         try {
             addTable.addTable(tableProperties, splitPoints);
         } catch (TableAlreadyExistsException e) {
             LOGGER.info("Add table request rejected: table already exists", e);
-            return errorResponse(409, "table_already_exists", e.getMessage());
+            return Route.errorResponse(409, "table_already_exists", e.getMessage());
         } catch (IllegalArgumentException e) {
             // SleeperPropertiesInvalidException extends IllegalArgumentException.
             LOGGER.warn("Add table request rejected: properties failed validation", e);
-            return errorResponse(400, "invalid_request", e.getMessage());
+            return Route.errorResponse(400, "invalid_request", e.getMessage());
         } catch (RuntimeException e) {
             LOGGER.error("Add table request failed unexpectedly", e);
-            return errorResponse(500, "internal_error", "Failed to add table");
+            return Route.errorResponse(500, "internal_error", "Failed to add table");
         }
         AddTableResponse response = AddTableResponse.builder()
                 .tableId(tableProperties.get(TABLE_ID))
@@ -138,8 +138,8 @@ public class AddTableEndpoint extends RestEndpoint {
             return this;
         }
 
-        public AddTableEndpoint build() {
-            return new AddTableEndpoint(this);
+        public AddTableRoute build() {
+            return new AddTableRoute(this);
         }
     }
 
