@@ -24,7 +24,6 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -62,7 +61,6 @@ public class SleeperClient implements AutoCloseable {
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
-    private final TablePropertiesStore tablePropertiesStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final AddTable tableAdd;
@@ -78,7 +76,6 @@ public class SleeperClient implements AutoCloseable {
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
-        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
         tableAdd = Objects.requireNonNull(builder.addTable, "addTable must not be null");
@@ -371,7 +368,6 @@ public class SleeperClient implements AutoCloseable {
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
-        private TablePropertiesStore tablePropertiesStore;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
         private AddTable addTable;
@@ -404,17 +400,6 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder tableIndex(TableIndex tableIndex) {
             this.tableIndex = tableIndex;
-            return this;
-        }
-
-        /**
-         * Sets the store of table properties.
-         *
-         * @param  tablePropertiesStore the table properties store
-         * @return                      this builder for chaining
-         */
-        public Builder tablePropertiesStore(TablePropertiesStore tablePropertiesStore) {
-            this.tablePropertiesStore = tablePropertiesStore;
             return this;
         }
 

@@ -81,7 +81,6 @@ public class InMemorySleeperInstance {
         return new SleeperClient.Builder()
                 .instanceProperties(properties)
                 .tableIndex(tableIndex)
-                .tablePropertiesStore(tablePropertiesStore)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(stateStoreProvider)
                 .addTable(new AddTable(tablePropertiesStore, stateStoreProvider))
