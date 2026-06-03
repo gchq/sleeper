@@ -109,7 +109,15 @@ public class ReadSplitPoints {
         }
     }
 
-    private static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {
+    /**
+     * Reads a split point file held in a stream of strings.
+     *
+     * @param  lines                the stream of split points
+     * @param  schema               the Sleeper table schema
+     * @param  stringsBase64Encoded true if string values are Base64 encoded in the stream
+     * @return                      the split point
+     */
+    public static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {
         PrimitiveType rowKey1Type = schema.getRowKeyTypes().get(0);
         return lines.map(line -> readSplitPoint(line, rowKey1Type, stringsBase64Encoded))
                 .collect(Collectors.toUnmodifiableList());

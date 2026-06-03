@@ -27,6 +27,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Decoded JSON body for POST request to /sleeper/tables.
@@ -84,11 +85,10 @@ public class AddTableRequest {
             throw new IllegalArgumentException(
                     "Split points are only supported for tables with a single row key field");
         }
-        String joined = splitPoints.stream()
-                .map(JsonElement::getAsString)
-                .collect(Collectors.joining("\n"));
+        Stream<String> joined = splitPoints.stream()
+                .map(JsonElement::getAsString);
 
-        return ReadSplitPoints.fromString(joined, schema, false);
+        return ReadSplitPoints.fromLines(joined, schema, false);
     }
 
     /**
