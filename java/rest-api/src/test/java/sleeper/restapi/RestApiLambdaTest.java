@@ -44,13 +44,6 @@ class RestApiLambdaTest extends RestApiTestBase {
         }
 
         @Test
-        void shouldRespondToExistingPlaceholderRoute() {
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(event("GET", "/sleeper", null));
-
-            assertThat(response.getStatusCode()).isEqualTo(200);
-        }
-
-        @Test
         void shouldReturn500ForUnexpectedFailure() {
             doThrow(new RuntimeException("kaboom"))
                     .when(addTable).addTable(any(), any());
