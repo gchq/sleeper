@@ -107,7 +107,7 @@ public class AddTableRouteTest extends RestApiTestBase {
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
-            assertThat(response.getBody()).contains("invalid_request");
+            assertThat(response.getBody()).contains("Request body is not valid JSON");
         }
 
         @Test
@@ -138,6 +138,7 @@ public class AddTableRouteTest extends RestApiTestBase {
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
+            assertThat(response.getBody()).contains("Property sleeper.table.name was invalid. It was unset");
         }
 
         @Test
