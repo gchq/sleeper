@@ -21,17 +21,25 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.Reques
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.AddTable;
 
-import static org.mockito.Mockito.mock;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 /**
  * Base class for universal actions across REST Api testing.
  */
 public class RestApiTestBase {
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    public final AddTable addTable = mock(AddTable.class);
+    public final InstanceProperties instanceProperties = createTestInstanceProperties();
+    public final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore();
+    public final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+
+    public final AddTable addTable = new AddTable(tablePropertiesStore, stateStoreProvider);
+
     public RestApiLambda lambda;
 
     @BeforeEach

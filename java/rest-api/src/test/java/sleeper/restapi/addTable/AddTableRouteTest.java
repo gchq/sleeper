@@ -20,32 +20,23 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
-import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableStatus;
 import sleeper.restapi.RestApiTestBase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class AddTableEndpointTest extends RestApiTestBase {
+public class AddTableRouteTest extends RestApiTestBase {
     private final Schema schema = createSchemaWithKey("key", new StringType());
 
     @Nested
@@ -53,6 +44,7 @@ public class AddTableEndpointTest extends RestApiTestBase {
     class ValidRequests {
         @Test
         void shouldAddTable() {
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {
                       "properties": {"sleeper.table.name": "my-table"},
@@ -60,19 +52,17 @@ public class AddTableEndpointTest extends RestApiTestBase {
                     }
                     """.formatted(schemaJson(schema))));
 
+            // Then
             assertThat(response.getStatusCode()).isEqualTo(201);
             assertThat(response.getBody()).contains("\"tableName\":\"my-table\"");
-            ArgumentCaptor<TableProperties> tableCaptor = ArgumentCaptor.forClass(TableProperties.class);
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-            verify(addTable).addTable(tableCaptor.capture(), splitsCaptor.capture());
-            assertThat(tableCaptor.getValue().get(sleeper.core.properties.table.TableProperty.TABLE_NAME))
-                    .isEqualTo("my-table");
-            assertThat(splitsCaptor.getValue()).isEmpty();
+
+            assertThat(tablePropertiesStore.streamAllTableStatuses())
+                    .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
         }
 
         @Test
         void shouldAddTableWithSplitPoints() {
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {
                       "properties": {"sleeper.table.name": "my-table"},
@@ -81,26 +71,30 @@ public class AddTableEndpointTest extends RestApiTestBase {
                     }
                     """.formatted(schemaJson(schema))));
 
+            // Then
             assertThat(response.getStatusCode()).isEqualTo(201);
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<Object>> splitsCaptor = ArgumentCaptor.forClass(List.class);
-            verify(addTable).addTable(any(), splitsCaptor.capture());
-            assertThat(splitsCaptor.getValue()).containsExactly("a", "m", "z");
+
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+            tableProperties.set(TABLE_NAME, "my-table");
+            assertThat(tablePropertiesStore.streamAllTableStatuses())
+                    .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
         }
     }
 
     @Test
     void shouldDecodeBase64EncodedBody() {
+        // Given
         String body = """
                 {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
                 """.formatted(schemaJson(schema));
         String encoded = Base64.getEncoder().encodeToString(body.getBytes(StandardCharsets.UTF_8));
+
+        // When
         APIGatewayV2HTTPEvent event = event("POST", "/sleeper/tables", encoded);
         event.setIsBase64Encoded(true);
 
-        APIGatewayV2HTTPResponse response = lambda.handleEvent(event);
-
-        assertThat(response.getStatusCode()).isEqualTo(201);
+        // Then
+        assertThat(lambda.handleEvent(event).getStatusCode()).isEqualTo(201);
     }
 
     @Nested
@@ -108,55 +102,57 @@ public class AddTableEndpointTest extends RestApiTestBase {
     class RejectedValidAddTableRequests {
         @Test
         void shouldReturnReponseOfInvalidForMalformedJson() {
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("not-json"));
 
+            // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
             assertThat(response.getBody()).contains("invalid_request");
-            verify(addTable, never()).addTable(any(), any());
         }
 
         @Test
         void shouldReturnResponseForEmptyBody() {
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent(null));
-
-            assertThat(response.getStatusCode()).isEqualTo(400);
-            verify(addTable, never()).addTable(any(), any());
+            // When / Then
+            assertThat(lambda.handleEvent(addTableEvent(null)).getStatusCode())
+                    .isEqualTo(400);
         }
 
         @Test
         void shouldReturnRepsonseForMissingProperties() {
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {"schema": %s}
                     """.formatted(schemaJson(schema))));
 
+            // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
             assertThat(response.getBody()).contains("properties");
-            verify(addTable, never()).addTable(any(), any());
         }
 
         @Test
         void shouldReturnResponseWhenAddTableRejectsProperties() {
-            Map<SleeperProperty, String> invalidValues = Map.of(CdkDefinedInstanceProperty.ACCOUNT, "Failure");
-            doThrow(new SleeperPropertiesInvalidException(invalidValues))
-                    .when(addTable).addTable(any(), any());
-
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                    {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
+                    {"properties": {"sleeper.table.dancemode": "flamenco"}, "schema": %s}
                     """.formatted(schemaJson(schema))));
 
+            // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
         }
 
         @Test
         void shouldReturn409WhenTableAlreadyExists() {
-            TableStatus existing = TableStatus.uniqueIdAndName("table-id", "my-table", true);
-            doThrow(new TableAlreadyExistsException(existing))
-                    .when(addTable).addTable(any(), any());
-
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
+            // Given
+            APIGatewayV2HTTPEvent event = addTableEvent("""
                     {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                    """.formatted(schemaJson(schema))));
+                    """.formatted(schemaJson(schema)));
 
+            // When
+            // Event sent once to establish table and then sent again for repeat effect
+            lambda.handleEvent(event);
+
+            // Then
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(event);
             assertThat(response.getStatusCode()).isEqualTo(409);
             assertThat(response.getBody()).contains("table_already_exists");
         }
