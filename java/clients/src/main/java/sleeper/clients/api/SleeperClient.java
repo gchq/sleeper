@@ -81,7 +81,7 @@ public class SleeperClient implements AutoCloseable {
         tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
-        tableAdd = new AddTable(tablePropertiesStore, stateStoreProvider);
+        tableAdd = Objects.requireNonNull(builder.addTable, "addTable must not be null");
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         rowRetrieverProvider = Objects.requireNonNull(builder.rowRetrieverProvider, "rowRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
@@ -374,6 +374,7 @@ public class SleeperClient implements AutoCloseable {
         private TablePropertiesStore tablePropertiesStore;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
+        private AddTable addTable;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private IngestJobSender ingestJobSender;
@@ -436,6 +437,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
+            return this;
+        }
+
+        /**
+         * Sets the addTable to allow for table creation.
+         *
+         * @param  stateStoreProvider the provider
+         * @return                    this builder for chaining
+         */
+        public Builder addTable(AddTable addTable) {
+            this.addTable = addTable;
             return this;
         }
 

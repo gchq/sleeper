@@ -30,6 +30,9 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
@@ -63,13 +66,16 @@ public class AwsSleeperClientBuilder {
         ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo());
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo());
 
         return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(tablePropertiesProvider)
-                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
+                .tablePropertiesStore(tablePropertiesStore)
+                .stateStoreProvider(stateStoreProvider)
+                .addTable(new AddTable(tablePropertiesStore, stateStoreProvider))
                 .objectFactory(ObjectFactory.noUserJars())
                 .rowRetrieverProvider(rowRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
