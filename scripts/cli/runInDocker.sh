@@ -132,8 +132,13 @@ pull_docker_images() {
     REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
-    docker pull "$REMOTE_IMAGE"
-    docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+    # Use docker build rather than docker pull + docker tag, so that BuildKit
+    # fetches the image blobs directly into its own content store. Docker daemon's
+    # pull skips blobs when an uncompressed snapshot already exists (an orphaned
+    # snapshot from a previous install can survive docker system prune), leaving
+    # the compressed blob absent from the content store and causing docker build
+    # export to fail. BuildKit's fetch path does not have this deduplication.
+    echo "FROM $REMOTE_IMAGE" | docker build --pull --provenance=false -t "$LOCAL_IMAGE" -
   done
 }
 
