@@ -21,9 +21,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 import sleeper.restapi.RestApiTestBase;
 
@@ -58,7 +60,7 @@ public class AddTableRouteTest extends RestApiTestBase {
         }
 
         @Test
-        void shouldAddTableWithSplitPoints() {
+        void shouldAddTableWithSplitPoints() throws StateStoreException {
             // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
                     {
@@ -73,6 +75,11 @@ public class AddTableRouteTest extends RestApiTestBase {
 
             assertThat(tablePropertiesStore.streamAllTableStatuses())
                     .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
+
+            TableProperties tableProperties = tablePropertiesStore.loadByName("my-table");
+            assertThat(stateStoreProvider.getStateStore(tableProperties).getLeafPartitions())
+                    .extracting(partition -> partition.getRegion().getRange("key").getMin())
+                    .containsExactlyInAnyOrder("", "a", "m", "z");
         }
     }
 
@@ -97,7 +104,7 @@ public class AddTableRouteTest extends RestApiTestBase {
 
     @Nested
     @DisplayName("Request rejected tests")
-    class RejectedValidAddTableRequests {
+    class RejectedAddTableRequests {
         @Test
         void shouldReturnReponseOfInvalidForMalformedJson() {
             // When
@@ -152,7 +159,6 @@ public class AddTableRouteTest extends RestApiTestBase {
             APIGatewayV2HTTPResponse response = lambda.handleEvent(event);
 
             // Then
-
             assertThat(response.getStatusCode()).isEqualTo(409);
             assertThat(response.getBody()).contains("table_already_exists");
         }
