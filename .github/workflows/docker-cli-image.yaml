@@ -120,7 +120,18 @@ jobs:
           version: latest
       - name: Push image to GitHub
         if: ${{ inputs.pushImages }}
-        run: docker buildx imagetools create --tag ${{ inputs.pushTag }} ${{ env.TEMP_IMAGE }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.context }}
+          push: true
+          sbom: false
+          provenance: false
+          tags: ${{ inputs.pushTag }}
+          platforms: ${{ inputs.platforms }}
+          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ inputs.buildUrl }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
