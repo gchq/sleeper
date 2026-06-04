@@ -10,19 +10,19 @@
 
 # A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
 # globally unique as it will be used to name AWS resources such as S3 buckets.
-sleeper.id=set-automatically
+# sleeper.id=set-automatically
 
 # The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
 # using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
 # can set this in SleeperInstanceProps under networking.
-sleeper.vpc=set-automatically
+# sleeper.vpc=set-automatically
 
 # A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
 # clusters will be deployed in a subnet chosen when the cluster is created. This property may be
 # passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
 # variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
 # networking.
-sleeper.subnets=set-automatically
+# sleeper.subnets=set-automatically
 
 
 ####################
