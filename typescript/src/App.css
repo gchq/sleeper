@@ -1,26 +1,86 @@
-.app {
-	max-width: 800px;
-	margin: 0 auto;
-	padding: 2rem;
-	text-align: center;
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
 	font-family: system-ui, -apple-system, sans-serif;
+	background: #fafafa;
+	color: #1a1a1a;
 }
 
-h1 {
-	font-size: 2.5rem;
-	margin-bottom: 2rem;
+/* ── Layout ── */
+
+.app {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
 }
 
-.status-card {
-	border: 1px solid #e0e0e0;
-	border-radius: 8px;
+.app-header {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+	padding: 0 2rem;
+	background: #fff;
+	border-bottom: 1px solid #e0e0e0;
+	height: 56px;
+}
+
+.app-header h1 {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0;
+	white-space: nowrap;
+}
+
+.app-nav {
+	display: flex;
+	gap: 0.25rem;
+}
+
+.app-nav a {
+	display: inline-block;
+	padding: 0.375rem 0.75rem;
+	border-radius: 4px;
+	text-decoration: none;
+	color: #555;
+	font-size: 0.9rem;
+}
+
+.app-nav a:hover {
+	background: #f0f0f0;
+	color: #1a1a1a;
+}
+
+.app-nav a.active {
+	background: #e8f0fe;
+	color: #1a56db;
+	font-weight: 600;
+}
+
+.app-main {
+	flex: 1;
 	padding: 2rem;
-	background-color: #f9f9f9;
+	max-width: 1200px;
+	width: 100%;
+	margin: 0 auto;
 }
 
-.status-card h2 {
+/* ── Shared page ── */
+
+.page h2 {
 	margin-top: 0;
+	font-size: 1.5rem;
 }
+
+.placeholder {
+	color: #666;
+}
+
+/* ── Status indicators ── */
 
 .success {
 	color: #2e7d32;
@@ -30,4 +90,158 @@ h1 {
 .error {
 	color: #c62828;
 	font-weight: bold;
+}
+
+/* ── Toolbar ── */
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+	flex-wrap: wrap;
+}
+
+.search-input {
+	padding: 0.4rem 0.75rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 0.9rem;
+	width: 280px;
+}
+
+.search-input:focus {
+	outline: none;
+	border-color: #1a56db;
+	box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
+}
+
+.result-count {
+	font-size: 0.85rem;
+	color: #666;
+	flex: 1;
+}
+
+.toolbar-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.btn-link {
+	background: none;
+	border: none;
+	padding: 0.25rem 0.5rem;
+	cursor: pointer;
+	font-size: 0.85rem;
+	color: #1a56db;
+	border-radius: 4px;
+}
+
+.btn-link:hover {
+	background: #e8f0fe;
+}
+
+.no-results {
+	color: #666;
+	font-style: italic;
+}
+
+/* ── Component sections ── */
+
+.component-section {
+	margin-bottom: 1.25rem;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.component-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	background: #f4f6fa;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	font-size: 0.95rem;
+}
+
+.component-header:hover {
+	background: #eaecf4;
+}
+
+.component-name {
+	font-weight: 600;
+	flex: 1;
+}
+
+.component-count {
+	font-size: 0.8rem;
+	background: #dde2f0;
+	color: #374580;
+	border-radius: 10px;
+	padding: 0.1rem 0.5rem;
+	font-weight: 600;
+}
+
+.collapse-icon {
+	font-size: 0.65rem;
+	color: #666;
+}
+
+/* ── Properties table ── */
+
+.properties-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+}
+
+.properties-table th {
+	background: #f9f9f9;
+	text-align: left;
+	padding: 0.5rem 1rem;
+	font-weight: 600;
+	color: #444;
+	border-bottom: 1px solid #e0e0e0;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.properties-table td {
+	padding: 0.5rem 1rem;
+	border-bottom: 1px solid #f0f0f0;
+	vertical-align: top;
+}
+
+.properties-table tr:last-child td {
+	border-bottom: none;
+}
+
+.properties-table tr:hover td {
+	background: #fafbff;
+}
+
+.prop-name {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	color: #1a56db;
+	white-space: nowrap;
+	width: 30%;
+}
+
+.prop-description {
+	color: #333;
+	line-height: 1.4;
+}
+
+.prop-default {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	color: #555;
+	white-space: nowrap;
+	width: 20%;
 }
