@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - develop
+      - 7315-docker-tools
     paths:
       - '.github/workflows/docker-cli-branch.yaml'
       - '.github/workflows/docker-cli.yaml'
