@@ -88,7 +88,12 @@ public class RestApiLambda {
         if (route == null) {
             return Route.errorResponse(404, "not_found", "No route registered for " + routeKey);
         }
-        return route.handle(event);
+        try {
+            return route.handle(event);
+        } catch (RuntimeException ex) {
+            LOGGER.error("Add table request failed unexpectedly", ex);
+            return Route.errorResponse(500, "internal_error", "Failed to add table");
+        }
     }
 
     private static String methodAndPath(APIGatewayV2HTTPEvent event) {

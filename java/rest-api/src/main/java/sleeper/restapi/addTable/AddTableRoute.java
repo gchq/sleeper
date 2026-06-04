@@ -87,9 +87,6 @@ public class AddTableRoute implements Route {
             // SleeperPropertiesInvalidException extends IllegalArgumentException.
             LOGGER.warn("Add table request rejected: properties failed validation", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
-        } catch (RuntimeException e) {
-            LOGGER.error("Add table request failed unexpectedly", e);
-            return Route.errorResponse(500, "internal_error", "Failed to add table");
         }
         AddTableResponse response = AddTableResponse.builder()
                 .tableId(tableProperties.get(TABLE_ID))

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
@@ -32,8 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AddTableRouteTest extends RestApiTestBase {
@@ -74,8 +71,6 @@ public class AddTableRouteTest extends RestApiTestBase {
             // Then
             assertThat(response.getStatusCode()).isEqualTo(201);
 
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-            tableProperties.set(TABLE_NAME, "my-table");
             assertThat(tablePropertiesStore.streamAllTableStatuses())
                     .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
         }
@@ -89,12 +84,15 @@ public class AddTableRouteTest extends RestApiTestBase {
                 """.formatted(schemaJson(schema));
         String encoded = Base64.getEncoder().encodeToString(body.getBytes(StandardCharsets.UTF_8));
 
-        // When
         APIGatewayV2HTTPEvent event = event("POST", "/sleeper/tables", encoded);
         event.setIsBase64Encoded(true);
 
+        // When
+        APIGatewayV2HTTPResponse response = lambda.handleEvent(event);
+
         // Then
-        assertThat(lambda.handleEvent(event).getStatusCode()).isEqualTo(201);
+        assertThat(response.getStatusCode()).isEqualTo(201);
+        assertThat(response.getBody()).contains("tableName\":\"my-table");
     }
 
     @Nested
@@ -148,12 +146,13 @@ public class AddTableRouteTest extends RestApiTestBase {
                     {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
                     """.formatted(schemaJson(schema)));
 
-            // When
-            // Event sent once to establish table and then sent again for repeat effect
             lambda.handleEvent(event);
 
-            // Then
+            // When
             APIGatewayV2HTTPResponse response = lambda.handleEvent(event);
+
+            // Then
+
             assertThat(response.getStatusCode()).isEqualTo(409);
             assertThat(response.getBody()).contains("table_already_exists");
         }
