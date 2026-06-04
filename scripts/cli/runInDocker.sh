@@ -77,17 +77,24 @@ build_temp_runner_image() {
   local SET_GID=$(id -g)
   local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
   TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
+  local TEMP_CONTAINER="sleeper-runner-setup-$TEMP_TAG"
   echo "Propagating current user to Docker image"
   set +e
-  docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
-    --build-arg RUN_IMAGE="$RUN_IMAGE" \
-    --build-arg SET_UID=$SET_UID \
-    --build-arg SET_GID=$SET_GID \
-    --build-arg SET_DOCKER_GID=$SET_DOCKER_GID
-  if [ $? -ne 0 ]; then
+  set -x
+  docker run -d --user root --name "$TEMP_CONTAINER" "$RUN_IMAGE" sleep infinity > /dev/null && \
+  docker exec -u root "$TEMP_CONTAINER" chown "${SET_UID}:${SET_GID}" -R /home/sleeper && \
+  docker exec -u root "$TEMP_CONTAINER" groupmod -g "${SET_GID}" sleeper && \
+  docker exec -u root "$TEMP_CONTAINER" groupmod -g "${SET_DOCKER_GID}" docker && \
+  docker exec -u root "$TEMP_CONTAINER" usermod -u "${SET_UID}" -g "${SET_GID}" sleeper && \
+  docker commit --change "USER sleeper" --change 'CMD ["/bin/bash"]' "$TEMP_CONTAINER" "$TEMP_RUNNER_IMAGE" > /dev/null
+  local BUILD_STATUS=$?
+  docker stop "$TEMP_CONTAINER" > /dev/null 2>&1
+  docker rm "$TEMP_CONTAINER" > /dev/null 2>&1
+  if [ $BUILD_STATUS -ne 0 ]; then
     echo "Failed docker build. Please run 'sleeper cli upgrade'."
     exit
   fi
+  set +x
   set -e
 }
 
