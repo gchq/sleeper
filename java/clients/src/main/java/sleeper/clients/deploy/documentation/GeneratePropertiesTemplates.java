@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.core.properties.instance.CommonProperty.AWS_ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -70,24 +71,27 @@ public class GeneratePropertiesTemplates {
     private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
             ID, "basic-example",
             VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh");
+            SUBNETS, "subnet-abcdefgh",
+            AWS_ACCOUNT, "basic-account");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
             FILTERING_CONFIG, "ageOff(timestamp,3600000)",
             SPLIT_POINTS_FILE, "example/full/splits.txt");
 
-    private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "full-example",
-            VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh",
-            BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key",
-            DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000",
-            LOGGING_LEVEL, "INFO",
-            ROOT_LOGGING_LEVEL, "INFO",
-            APACHE_LOGGING_LEVEL, "INFO",
-            PARQUET_LOGGING_LEVEL, "WARN",
-            AWS_LOGGING_LEVEL, "INFO");
+    //Entries used here of Map.of due to it exceeding 10 pairs
+    private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.ofEntries(
+            Map.entry(ID, "full-example"),
+            Map.entry(VPC_ID, "1234567890"),
+            Map.entry(SUBNETS, "subnet-abcdefgh"),
+            Map.entry(AWS_ACCOUNT, "full-account"),
+            Map.entry(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key"),
+            Map.entry(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000"),
+            Map.entry(LOGGING_LEVEL, "INFO"),
+            Map.entry(ROOT_LOGGING_LEVEL, "INFO"),
+            Map.entry(APACHE_LOGGING_LEVEL, "INFO"),
+            Map.entry(PARQUET_LOGGING_LEVEL, "WARN"),
+            Map.entry(AWS_LOGGING_LEVEL, "INFO"));
 
     private static final Map<TableProperty, String> FULL_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
@@ -101,7 +105,8 @@ public class GeneratePropertiesTemplates {
     private static final Map<InstanceProperty, String> TEMPLATE_INSTANCE_VALUES = Map.of(
             ID, "set-automatically",
             VPC_ID, "set-automatically",
-            SUBNETS, "set-automatically");
+            SUBNETS, "set-automatically",
+            AWS_ACCOUNT, "set-automatically?");
 
     private static final Map<TableProperty, String> TEMPLATE_TABLE_VALUES = Map.of(
             TABLE_NAME, "changeme");

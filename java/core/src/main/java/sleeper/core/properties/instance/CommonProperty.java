@@ -37,6 +37,11 @@ public interface CommonProperty {
             .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
+    UserDefinedInstanceProperty AWS_ACCOUNT = Index.propertyBuilder("sleeper.account")
+            .description("The AWS account number. This is the AWS account that the instance is deployed in.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false)
+            .build();
     UserDefinedInstanceProperty ARTEFACTS_DEPLOYMENT_ID = Index.propertyBuilder("sleeper.artefacts.deployment")
             .description("The ID of the artefacts deployment to use to deploy the Sleeper instance. By default " +
                     "we assume an artefacts deployment with the same ID as the Sleeper instance. This property is " +
