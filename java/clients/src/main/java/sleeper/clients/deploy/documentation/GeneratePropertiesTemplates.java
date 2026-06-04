@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.AWS_ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -72,7 +72,7 @@ public class GeneratePropertiesTemplates {
             ID, "basic-example",
             VPC_ID, "1234567890",
             SUBNETS, "subnet-abcdefgh",
-            AWS_ACCOUNT, "basic-account");
+            ACCOUNT, "basic-account");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
@@ -84,7 +84,7 @@ public class GeneratePropertiesTemplates {
             Map.entry(ID, "full-example"),
             Map.entry(VPC_ID, "1234567890"),
             Map.entry(SUBNETS, "subnet-abcdefgh"),
-            Map.entry(AWS_ACCOUNT, "full-account"),
+            Map.entry(ACCOUNT, "full-account"),
             Map.entry(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key"),
             Map.entry(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000"),
             Map.entry(LOGGING_LEVEL, "INFO"),
@@ -106,7 +106,7 @@ public class GeneratePropertiesTemplates {
             ID, "set-automatically",
             VPC_ID, "set-automatically",
             SUBNETS, "set-automatically",
-            AWS_ACCOUNT, "set-automatically?");
+            ACCOUNT, "set-automatically?");
 
     private static final Map<TableProperty, String> TEMPLATE_TABLE_VALUES = Map.of(
             TABLE_NAME, "changeme");

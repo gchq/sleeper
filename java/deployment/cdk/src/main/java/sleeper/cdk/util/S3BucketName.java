@@ -19,7 +19,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Locale;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 
 /**
  * Build a bucket name to use on S3.

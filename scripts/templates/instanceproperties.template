@@ -13,7 +13,7 @@
 sleeper.id=set-automatically
 
 # The AWS account number. This is the AWS account that the instance is deployed in.
-sleeper.account=set-automatically?
+sleeper.aws.account=set-automatically?
 
 # The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
 # using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you

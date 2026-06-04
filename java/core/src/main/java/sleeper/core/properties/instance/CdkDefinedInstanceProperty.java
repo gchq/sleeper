@@ -55,10 +55,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     // CDK environment
-    CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance is deployed in.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
     CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
             .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)

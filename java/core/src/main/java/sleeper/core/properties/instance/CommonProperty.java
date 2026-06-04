@@ -37,7 +37,7 @@ public interface CommonProperty {
             .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
-    UserDefinedInstanceProperty AWS_ACCOUNT = Index.propertyBuilder("sleeper.account")
+    UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.aws.account")
             .description("The AWS account number. This is the AWS account that the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false)
