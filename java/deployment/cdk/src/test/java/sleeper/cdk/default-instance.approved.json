@@ -25981,7 +25981,7 @@
                   {
                     "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Ref"
                   },
-                  "\nsleeper.ingest.batcher.job.creation.rule\u003d",
+                  "\nsleeper.aws.account\u003dtest-account\nsleeper.ingest.batcher.job.creation.rule\u003d",
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationPeriodicTrigger9FD74049Ref"
                   },
@@ -26237,7 +26237,7 @@
                   {
                     "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Ref"
                   },
-                  "\nsleeper.account\u003dtest-account\nsleeper.compaction.job.creation.dlq.url\u003d",
+                  "\nsleeper.compaction.job.creation.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationDLQB8A078BDRef"
                   },
