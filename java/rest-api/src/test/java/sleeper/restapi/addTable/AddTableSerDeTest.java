@@ -46,17 +46,23 @@ class AddTableSerDeTest {
     class ValidAddTableRequest {
         @Test
         void shouldBuildTablePropertiesAndApplySchema() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new StringType());
             AddTableRequest request = addTableSerDe.fromJson("""
                     {
                       "properties": {"sleeper.table.name": "my-table"},
                       "schema": %s
                     }
-                    """.formatted(schemaJson(createSchemaWithKey("key", new StringType()))));
+                    """.formatted(schemaJson(schema)));
 
+            // When
             TableProperties tableProperties = request.toTableProperties(instanceProperties);
 
-            assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("my-table");
-            assertThat(tableProperties.getSchema().getRowKeyFields()).hasSize(1);
+            // Then
+            TableProperties exectedTableProperties = new TableProperties(instanceProperties);
+            exectedTableProperties.set(TABLE_NAME, "my-table");
+            exectedTableProperties.setSchema(schema);
+            assertThat(tableProperties).isEqualTo(exectedTableProperties);
             assertThat(request.toSplitPoints(tableProperties)).isEmpty();
         }
 
