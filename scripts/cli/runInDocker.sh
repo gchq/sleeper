@@ -71,30 +71,37 @@ run_in_docker() {
 
 build_temp_runner_image() {
   local RUN_IMAGE=$1
-  local TEMP_TAG=$(date +%Y-%m-%d"_"%H_%M_%S)_$RANDOM
   # Propagate current user IDs to image, to avoid mixed file ownership
   local SET_UID=$(id -u)
   local SET_GID=$(id -g)
   local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
-  TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
-  local TEMP_CONTAINER="sleeper-runner-setup-$TEMP_TAG"
+  # Use a deterministic name encoding the base image ID and user IDs, so the
+  # image can be reused on subsequent runs and only rebuilt when something changes
+  local RUN_IMAGE_ID
+  RUN_IMAGE_ID=$(docker inspect --format '{{.Id}}' "$RUN_IMAGE" 2>/dev/null | cut -c8-19)
+  TEMP_RUNNER_IMAGE="sleeper-runner:${RUN_IMAGE_ID}-${SET_UID}-${SET_GID}-${SET_DOCKER_GID}"
+  if docker image inspect "$TEMP_RUNNER_IMAGE" > /dev/null 2>&1; then
+    return
+  fi
+  local TEMP_CONTAINER="sleeper-runner-setup-${RUN_IMAGE_ID}"
   echo "Propagating current user to Docker image"
   set +e
-  set -x
   docker run -d --user root --name "$TEMP_CONTAINER" "$RUN_IMAGE" sleep infinity > /dev/null && \
-  docker exec -u root "$TEMP_CONTAINER" chown "${SET_UID}:${SET_GID}" -R /home/sleeper && \
-  docker exec -u root "$TEMP_CONTAINER" groupmod -g "${SET_GID}" sleeper && \
-  docker exec -u root "$TEMP_CONTAINER" groupmod -g "${SET_DOCKER_GID}" docker && \
-  docker exec -u root "$TEMP_CONTAINER" usermod -u "${SET_UID}" -g "${SET_GID}" sleeper && \
+  docker exec -u root "$TEMP_CONTAINER" sh -c \
+    "chown ${SET_UID}:${SET_GID} -R /home/sleeper \
+     && groupmod -g ${SET_GID} sleeper \
+     && groupmod -g ${SET_DOCKER_GID} docker \
+     && usermod -u ${SET_UID} -g ${SET_GID} sleeper" && \
+  echo "Committing image with updated user" && \
   docker commit --change "USER sleeper" --change 'CMD ["/bin/bash"]' "$TEMP_CONTAINER" "$TEMP_RUNNER_IMAGE" > /dev/null
   local BUILD_STATUS=$?
-  docker stop "$TEMP_CONTAINER" > /dev/null 2>&1
+  # TODO check status code from kill & rm
+  docker kill "$TEMP_CONTAINER" > /dev/null 2>&1
   docker rm "$TEMP_CONTAINER" > /dev/null 2>&1
   if [ $BUILD_STATUS -ne 0 ]; then
     echo "Failed docker build. Please run 'sleeper cli upgrade'."
     exit
   fi
-  set +x
   set -e
 }
 
@@ -104,7 +111,6 @@ run_in_environment_docker() {
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 run_in_builder_docker() {
@@ -117,7 +123,6 @@ run_in_builder_docker() {
     -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
     -e CONTAINER_MOUNT_PATH=/sleeper-builder \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 get_version() {
