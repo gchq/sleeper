@@ -100,7 +100,7 @@ public class CompactionRunnerTestBase {
 
     protected void runTask(CompactionJob job, Configuration hadoopConf, Consumer<Long> progressCallback) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
-                DataFusionAwsConfig.getDefault(instanceProperties), ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
     }

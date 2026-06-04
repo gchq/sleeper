@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.job.execution;
 
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -101,6 +103,8 @@ public class CompactionRunnerCLI {
 
     public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client,
             S3TransferManager s3TransferManager) {
+        software.amazon.awssdk.regions.Region awsRegion = DefaultAwsRegionProviderChain.builder().build().getRegion();
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(awsRegion.id());
         return new CompactionRunnerCLI(
                 tableId -> {
                     TableProperties properties = TableProperties.copyOf(baseTableProperties);
@@ -109,7 +113,7 @@ public class CompactionRunnerCLI {
                     return properties;
                 },
                 new DefaultCompactionRunnerFactory(
-                        DataFusionAwsConfig.getDefault(new InstanceProperties()),
+                        DataFusionAwsConfig.getDefault(awsRegion, partitionMetadata),
                         ObjectFactory.noUserJars(),
                         HadoopConfigurationProvider.getConfigurationForClient(),
                         new S3SketchesStore(s3Client, s3TransferManager)),

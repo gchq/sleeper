@@ -51,10 +51,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     public DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
-        this.awsConfig = awsConfig;
-        this.objectFactory = objectFactory;
-        this.hadoopProvider = TableHadoopConfigurationProvider.fixed(configuration);
-        this.sketchesStore = sketchesStore;
+        this(awsConfig, objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
     }
 
     DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {

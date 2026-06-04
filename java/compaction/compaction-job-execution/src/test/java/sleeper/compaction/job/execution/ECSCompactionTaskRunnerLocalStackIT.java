@@ -467,7 +467,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
-                DataFusionAwsConfig.getDefault(instanceProperties),
+                DataFusionAwsConfig.overrideEndpoint("dummy"),
                 ObjectFactory.noUserJars(), hadoopConf, new S3SketchesStore(s3Client, s3TransferManager));
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
