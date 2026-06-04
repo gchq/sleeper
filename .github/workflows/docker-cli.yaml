@@ -35,8 +35,7 @@ jobs:
         id: plan
         run: |
           ./.github/scripts/planCliBuild.sh \
-            "${{ github.repository_owner }}" \
-            "${{ github.ref }}"
+            "${{ github.repository_owner }}"
       - name: Build Docker dependencies
         uses: docker/build-push-action@v7
         with:
