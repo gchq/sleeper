@@ -32,3 +32,6 @@ echo_github_output_for_image() {
     echo "${ENV_PREFIX}Package=$IMAGE_NAME"
   } >> "$GITHUB_OUTPUT"
 }
+
+echo_github_output_for_image sleeper-builder builder
+echo_github_output_for_image sleeper-local env
