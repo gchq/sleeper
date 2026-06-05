@@ -42,8 +42,6 @@ public class RestApiLambda {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(RestApiLambda.class);
 
-    private final AddTable addTable;
-    private final InstanceProperties instanceProperties;
     private final Map<String, Route> routes = new HashMap<>();
 
     public RestApiLambda() {
@@ -55,20 +53,16 @@ public class RestApiLambda {
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoClient = DynamoDbClient.create();
         InstanceProperties properties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.instanceProperties = properties;
-        this.addTable = new AddTable(
+        registerRoutes(properties, new AddTable(
                 S3TableProperties.createStore(properties, s3Client, dynamoClient),
-                StateStoreFactory.createProvider(properties, s3Client, dynamoClient));
-        registerRoutes();
+                StateStoreFactory.createProvider(properties, s3Client, dynamoClient)));
     }
 
     public RestApiLambda(InstanceProperties instanceProperties, AddTable addTable) {
-        this.instanceProperties = instanceProperties;
-        this.addTable = addTable;
-        registerRoutes();
+        registerRoutes(instanceProperties, addTable);
     }
 
-    private void registerRoutes() {
+    private void registerRoutes(InstanceProperties instanceProperties, AddTable addTable) {
         routes.put("POST /sleeper/tables", AddTableRoute.builder()
                 .instanceProperties(instanceProperties)
                 .addTable(addTable)
