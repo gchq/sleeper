@@ -57,6 +57,8 @@ By default the base image is built from `scripts/docker/base`. Pass a different 
 
 This is intended for non-standard setups only. Every other image is still built from the standard Sleeper Dockerfiles, and they will use your custom base image as their `BASE_IMAGE` build arg. The same override is available on `setDeployConfig.sh` via `--override-base-image-dir <dir>`, so it is also picked up when deploying with `scripts/deploy/deployNew.sh` or `scripts/deploy/deployExisting.sh`. It cannot be combined with `--image-location repository`, because the override only applies when images are built locally.
 
+For the full list of hooks and environment variables that support building Sleeper in restricted network environments, see [building in a custom environment](custom-environment.md).
+
 ### Installing published artefacts
 
 We have scripts to install Sleeper from published artefacts. We have not yet published Sleeper to Maven Central or
