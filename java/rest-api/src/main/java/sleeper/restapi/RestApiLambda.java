@@ -91,14 +91,18 @@ public class RestApiLambda {
         try {
             return route.handle(event);
         } catch (RuntimeException ex) {
-            LOGGER.error("Add table request failed unexpectedly", ex);
-            return Route.errorResponse(500, "internal_error", "Failed to add table");
+            LOGGER.error("handleEvent failed unexpectedly, event: " + keyErrorDetailsFromEvent(event), ex);
+            return Route.errorResponse(500, "internal_error", "Failed to action event: " + keyErrorDetailsFromEvent(event));
         }
     }
 
     private static String methodAndPath(APIGatewayV2HTTPEvent event) {
         APIGatewayV2HTTPEvent.RequestContext.Http http = event.getRequestContext().getHttp();
         return http.getMethod() + " " + http.getPath();
+    }
+
+    private String keyErrorDetailsFromEvent(APIGatewayV2HTTPEvent event) {
+        return "Route: " + event.getRouteKey() + ", body: " + event.getBody();
     }
 
 }
