@@ -18,7 +18,7 @@ Split from:
 
 #### Progress
 
-Please fill in this section with some information about the changes that progress the original issue, and briefly explain how this relates to the issue.
+Please give a brief explanation here of what you've done and how it relates to the original issue.
 
 Give this new issue a name that describes the changes you will include in a pull request.
 
