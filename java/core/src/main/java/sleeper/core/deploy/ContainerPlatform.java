@@ -15,7 +15,9 @@
  */
 package sleeper.core.deploy;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A platform that a container image is built for. Combines an operating system and an architecture, in the same form
@@ -46,6 +48,18 @@ public record ContainerPlatform(String os, String architecture) {
             throw new IllegalArgumentException("Platform must be in the form os/architecture, got: " + value);
         }
         return new ContainerPlatform(value.substring(0, slash), value.substring(slash + 1));
+    }
+
+    /**
+     * Builds an argument suitable to be passed to docker build as the value for the --platform option.
+     *
+     * @param  platforms the platforms
+     * @return           the platform list argument
+     */
+    public static String buildPlatformListArgument(List<ContainerPlatform> platforms) {
+        return platforms.stream()
+                .map(ContainerPlatform::toString)
+                .collect(Collectors.joining(","));
     }
 
     @Override
