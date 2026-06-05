@@ -147,7 +147,7 @@ runMavenSystemTests() {
     fi
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     local TEARDOWN_END=$(record_time)
-    echo "[$(recorded_time_str "$SUITE_END")] Finished teardown of short ID: $SHORT_ID"
+    echo "[$(recorded_time_str "$TEARDOWN_END")] Finished teardown of short ID: $SHORT_ID"
     echo "Started at $(recorded_time_str "$TEST_START")"
     echo "Finished Maven test suite at $(recorded_time_str "$TEST_END"), took $(elapsed_time_str "$TEST_START" "$TEST_END")"
     echo "Finished site HTML at $(recorded_time_str "$SITE_END"), took $(elapsed_time_str "$TEST_END" "$SITE_END")"
