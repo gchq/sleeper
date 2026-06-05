@@ -189,7 +189,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "custom/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base", expectedBaseTag),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),

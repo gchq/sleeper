@@ -619,7 +619,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "custom/base", expectedBaseTag),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base", expectedBaseTag),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
