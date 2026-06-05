@@ -53,7 +53,7 @@ public class AddTableRoute implements Route {
     /**
      * Handles a request matched to the addTableRoute. Includes verifying that the request is valid.
      *
-     * @param  event APIGateway passing into this method from the determined rest api route
+     * @param  event request object containing details to perform add table action
      * @return       an API Gateway response detailing whether the addTable action has suceeded or not
      */
     @Override

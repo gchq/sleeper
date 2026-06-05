@@ -85,8 +85,8 @@ public class RestApiLambda {
         try {
             return route.handle(event);
         } catch (RuntimeException ex) {
-            LOGGER.error("handleEvent failed unexpectedly, event: " + keyErrorDetailsFromEvent(event), ex);
-            return Route.errorResponse(500, "internal_error", "Failed to action event: " + keyErrorDetailsFromEvent(event));
+            LOGGER.error("handleEvent failed unexpectedly, route: " + routeKey, ex);
+            return Route.errorResponse(500, "internal_error", "Failed to action event");
         }
     }
 
@@ -94,9 +94,4 @@ public class RestApiLambda {
         APIGatewayV2HTTPEvent.RequestContext.Http http = event.getRequestContext().getHttp();
         return http.getMethod() + " " + http.getPath();
     }
-
-    private String keyErrorDetailsFromEvent(APIGatewayV2HTTPEvent event) {
-        return "Route: " + event.getRouteKey() + ", body: " + event.getBody();
-    }
-
 }
