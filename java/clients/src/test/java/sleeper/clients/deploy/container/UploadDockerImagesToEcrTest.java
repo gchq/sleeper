@@ -600,6 +600,32 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     }
 
     @Nested
+    @DisplayName("Override base image directory")
+    class OverrideBaseImageDir {
+
+        @Test
+        void shouldBuildBaseImageFromOverrideDirectoryWhenSet() throws Exception {
+            // Given
+            deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDir("./custom/base");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "custom/base", expectedBaseTag),
+                    buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
+                    pushImageCommand(expectedTag));
+        }
+    }
+
+    @Nested
     @DisplayName("Upload a specific image")
     class SpecificImage {
 
