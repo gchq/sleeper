@@ -71,11 +71,6 @@ set +e
 
 END_EXIT_CODE=0
 
-docker buildx rm sleeper
-set -e
-docker buildx create --name sleeper --use
-set +e
-
 copyFolderForParallelRun() {
     local COPY_DIR=$1
     echo "Making parallel build folder: $COPY_DIR"
