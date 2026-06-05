@@ -85,7 +85,7 @@ public class RestApiLambda {
         try {
             return route.handle(event);
         } catch (RuntimeException ex) {
-            LOGGER.error("handleEvent failed unexpectedly, route: " + routeKey, ex);
+            LOGGER.error("handleEvent failed unexpectedly, route: {}", routeKey, ex);
             return Route.errorResponse(500, "internal_error", "Failed to action event");
         }
     }
