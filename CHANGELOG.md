@@ -5,12 +5,12 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
-## Version 0.35.4
+## Version 0.36.0
 
-### 2nd June, 2026
+### 8th June, 2026
 
-This includes support for nullable value fields, ephemeral storage configuration for EKS bulk import,
-improvements to the EKS bulk import driver, and various dependency upgrades.
+This includes support for nullable value fields, ephemeral storage configuration for EKS bulk import and
+various dependency upgrades.
 
 Bulk import:
 - Added configurable ephemeral storage for Spark executor pods in EKS bulk import. A custom executor pod
@@ -20,41 +20,33 @@ Bulk import:
   more targeted configuration. Shared properties between EMR and EKS have been extracted to generic
   instance-level properties. Some EKS-specific default values have been updated.
 
-Hadoop configuration:
-- The S3 endpoint is now consistently set across all Hadoop configuration contexts, derived from the
-  instance region and DNS suffix.
+REST API:
+- An endpoint to add a Sleeper table has been added to the REST API.
 
 Nullable value fields:
 - Value fields in a Sleeper table schema can now be declared as nullable. Rows may be stored and
   retrieved with null values for these fields. Aggregations over nullable value columns are forbidden.
 
-Compaction:
-- Compaction job row counts are now tracked within the Rust/DataFusion compactor and exposed to the
-  Java layer via FFI.
-
 Configuration:
 - Spaces are now permitted between items in list-valued configuration properties.
-- Certain resource types can now be excluded from tagging.
+- Certain resource types can now be excluded from tagging during CDK deployment by using the
+  `sleeper.tags.excluded.resources` property.
+- Support for non-standard AWS partitions has been improved. The Hadoop configuration property
+  `fs.s3a.endpoint.region` is now consistently set across all Hadoop configuration contexts, derived from the instance
+  region and DNS suffix.
+- The Nix Shell configuration has been deleted.
+- Extra configuration can now be set during a Rust build.
+- Added option to enable/disable event count metrics for the follower lambda.
 
 Deployment:
-- Docker image deployments now track a `baseImage` flag per image, allowing the system to correctly
-  identify and handle base images separately from application images.
-- Docker deployment can now be scoped to a specific CDK app, via `DockerDeployment.cdkApp`.
-- Lambda functions can now have ephemeral storage configured via the Lambda Builder interface.
-- Support for non-standard AWS partitions has been improved: partition is now set explicitly in
-  EksBulkImportStack, BuildEC2Deployment, and the EMR policy.
-
-Build:
-- Upgraded multiple GitHub Actions: checkout to v6, setup-java to v5, Docker actions, sccache-action,
-  and artifacts actions.
-- Added a local registry to store the base image during CI builds.
-
-Documentation:
-- Demonstration deployment scripts have been reworked and given additional comments.
+- Support for non-standard AWS partitions has been improved with the partition now set explicitly in a number of places.
+- Demonstration deployment is now part of the normal build script, previously there was a separate build script to
+  include the demonstration artefacts.
 
 Bugfixes:
 - Log level for cache hits in `TablePropertiesProvider` has been lowered to avoid noise.
-- The EKS cluster is now only enabled during performance tests that require it.
+- Logging in EKS bulk import has been fixed.
+- Deploying a pre-published version of Sleeper now correctly uses multiplatform images.
 
 
 ## Version 0.35.3
