@@ -115,7 +115,7 @@ public class ReadSplitPoints {
      * @param  lines                the stream of split points
      * @param  schema               the Sleeper table schema
      * @param  stringsBase64Encoded true if string values are Base64 encoded in the stream
-     * @return                      the split point
+     * @return                      the split points
      */
     public static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {
         PrimitiveType rowKey1Type = schema.getRowKeyTypes().get(0);
