@@ -35,7 +35,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Rest method for adding table to sleeper instance.
+ * REST route for adding a table to a Sleeper instance.
  */
 public class AddTableRoute implements Route {
 
@@ -51,10 +51,10 @@ public class AddTableRoute implements Route {
     }
 
     /**
-     * Decodes details for the AddTableRequest and then actions them within the application.
+     * Handles a request matched to the addTableRoute. Includes verifying that the request is valid.
      *
      * @param  event APIGateway passing into this method from the determined rest api route
-     * @return       An APIGateway response detailing whether the addTable action has suceeded or not
+     * @return       an API Gateway response detailing whether the addTable action has suceeded or not
      */
     @Override
     public APIGatewayV2HTTPResponse handle(APIGatewayV2HTTPEvent event) {
@@ -114,9 +114,9 @@ public class AddTableRoute implements Route {
         }
 
         /**
-         * Assigns instance properties for rest method.
+         * Assigns the instance properties.
          *
-         * @param  instanceProperties instanceProperties
+         * @param  instanceProperties the instance properties
          * @return                    the builder for further actions
          */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
