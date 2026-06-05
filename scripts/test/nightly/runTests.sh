@@ -77,8 +77,8 @@ docker buildx create --name sleeper --use
 set +e
 
 copyFolderForParallelRun() {
-    COPY_DIR=$1
-    echo "Making folder $COPY_DIR for parallel build"
+    local COPY_DIR=$1
+    echo "Making parallel build folder: $COPY_DIR"
     pushd $REPO_PARENT_DIR
     sudo rm -rf $COPY_DIR
     mkdir $COPY_DIR
