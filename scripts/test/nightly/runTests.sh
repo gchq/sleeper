@@ -111,7 +111,7 @@ runMavenSystemTests() {
 
     # Run tests
     local TEST_START=$(record_time)
-    echo "[$(recorded_time_str "$SUITE_START")] Starting test suite: $SHORT_ID"
+    echo "[$(recorded_time_str "$TEST_START")] Running Maven test suite with short ID: $SHORT_ID"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -126,7 +126,7 @@ runMavenSystemTests() {
 
     # Generate site HTML
     pushd "$NEW_MAVEN_DIR"
-    echo "[$(recorded_time_str "$TEST_END")] Generating site HTML for suite: $SHORT_ID"
+    echo "[$(recorded_time_str "$TEST_END")] Generating site HTML for short ID: $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
@@ -147,9 +147,9 @@ runMavenSystemTests() {
     fi
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     local TEARDOWN_END=$(record_time)
-    echo "[$(recorded_time_str "$SUITE_END")] Finished teardown for test suite: $SHORT_ID"
+    echo "[$(recorded_time_str "$SUITE_END")] Finished teardown of short ID: $SHORT_ID"
     echo "Started at $(recorded_time_str "$TEST_START")"
-    echo "Finished tests at $(recorded_time_str "$TEST_END"), took $(elapsed_time_str "$TEST_START" "$TEST_END")"
+    echo "Finished Maven test suite at $(recorded_time_str "$TEST_END"), took $(elapsed_time_str "$TEST_START" "$TEST_END")"
     echo "Finished site HTML at $(recorded_time_str "$SITE_END"), took $(elapsed_time_str "$TEST_END" "$SITE_END")"
     echo "Finished tear down at $(recorded_time_str "$TEARDOWN_END"), took $(elapsed_time_str "$SITE_END" "$TEARDOWN_END")"
 }
