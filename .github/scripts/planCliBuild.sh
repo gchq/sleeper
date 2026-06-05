@@ -18,7 +18,6 @@
 # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
 
 REPO_OWNER=$1
-GIT_REF=$2
 
 echo_github_output_for_image() {
   IMAGE_NAME=$1
@@ -34,9 +33,5 @@ echo_github_output_for_image() {
   } >> "$GITHUB_OUTPUT"
 }
 
-# Strip git ref prefix from version
-BRANCH=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
-if [ "$BRANCH" == "develop" ]; then
-    echo_github_output_for_image sleeper-builder builder
-    echo_github_output_for_image sleeper-local env
-fi
+echo_github_output_for_image sleeper-builder builder
+echo_github_output_for_image sleeper-local env

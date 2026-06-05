@@ -51,7 +51,8 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientQueryProvider queryProvider = SleeperClientQueryProvider.createDefaultForEachClient();
+    private SleeperClientQueryProvider queryProvider;
+    private Integer queryThreadPoolSize;
 
     /**
      * Creates a Sleeper client.
@@ -62,7 +63,8 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
+        SleeperClientQueryProvider provider = getQueryProvider(instanceProperties);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = provider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo());
@@ -83,6 +85,16 @@ public class AwsSleeperClientBuilder {
                         awsClients.awsCredentialsProvider()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
+    }
+
+    private SleeperClientQueryProvider getQueryProvider(InstanceProperties instanceProperties) {
+        if (queryProvider != null) {
+            return queryProvider;
+        } else if (queryThreadPoolSize != null) {
+            return SleeperClientQueryProvider.withThreadPoolForEachClient(instanceProperties, queryThreadPoolSize);
+        } else {
+            return SleeperClientQueryProvider.createDefaultForEachClient(instanceProperties);
+        }
     }
 
     private InstanceProperties loadInstanceProperties(SleeperClientAwsClients awsClients) {
@@ -125,7 +137,8 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+        this.queryThreadPoolSize = queryThreadPoolSize;
+        return this;
     }
 
     /**

@@ -147,7 +147,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.46.1</aws-crt.version>
+        <aws-crt.version>0.47.0</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -190,7 +190,7 @@
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.81.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.257.0</cdk.version>
+        <cdk.version>2.258.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.134.0</jsii.version>
@@ -211,7 +211,7 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.15.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.77.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.78.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>

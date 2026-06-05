@@ -41,6 +41,7 @@ RUN mkdir /sleeper && chown sleeperenv:sleeperenv /sleeper && chmod g+w /sleeper
 
 WORKDIR /sleeper
 COPY --chown=sleeperenv:sleeperenv . .
+RUN chmod g+w /sleeper/app
 ENV PATH=/sleeper/bin:$PATH
 
 # Create non-root user
