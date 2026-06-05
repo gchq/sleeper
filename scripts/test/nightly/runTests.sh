@@ -173,7 +173,7 @@ runTestSuite(){
     removeFolderAfterParallelRun "$SUITE"
     local REMOVE_FOLDER_END=$(record_time)
     echo "[$(recorded_time_str "$REMOVE_FOLDER_END")] Finished test suite: $SUITE"
-    echo "Folder copy ran from $(recorded_time_str "$COPY_START") to $(recorded_time_str "$COPY_START"), took $(elapsed_time_str "$COPY_START" "$COPY_END")"
+    echo "Folder copy ran from $(recorded_time_str "$COPY_START") to $(recorded_time_str "$COPY_END"), took $(elapsed_time_str "$COPY_START" "$COPY_END")"
     echo "Maven operations and tear down ran from $(recorded_time_str "$SUITE_START") to $(recorded_time_str "$SUITE_END"), took $(elapsed_time_str "$SUITE_START" "$SUITE_END")"
     echo "Folder removal finished at $(recorded_time_str "$REMOVE_FOLDER_END"), took $(elapsed_time_str "$SUITE_END" "$REMOVE_FOLDER_END")"
 }
