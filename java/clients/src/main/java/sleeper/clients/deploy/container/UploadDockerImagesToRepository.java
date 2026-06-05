@@ -28,8 +28,9 @@ public class UploadDockerImagesToRepository {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 3) {
-            System.out.println("Usage: <scripts-dir> <repository-prefix-path> <optional-create-buildx-builder-true-or-false>");
+        if (args.length < 2 || args.length > 4) {
+            System.out.println("Usage: <scripts-dir> <repository-prefix-path> " +
+                    "<optional-create-buildx-builder-true-or-false> <optional-override-base-image-dir>");
             System.exit(1);
             return;
         }
@@ -37,10 +38,13 @@ public class UploadDockerImagesToRepository {
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
         boolean createMultiplatformBuilder = optionalArgument(args, 2).map(Boolean::parseBoolean).orElse(true);
+        DeployConfiguration deployConfig = optionalArgument(args, 3)
+                .map(DeployConfiguration::fromLocalBuildWithOverrideBaseImageDir)
+                .orElseGet(DeployConfiguration::fromLocalBuild);
 
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
-                .deployConfig(DeployConfiguration.fromLocalBuild())
+                .deployConfig(deployConfig)
                 .createMultiplatformBuilder(createMultiplatformBuilder)
                 .build();
         uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);

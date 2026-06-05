@@ -48,6 +48,15 @@ docker buildx create --name sleeper --use
 This may not be suitable for all use cases. You can disable this by passing "false" as the second argument. In that
 case, you will need to ensure a Docker builder is set that can build multiplatform images before calling this script.
 
+You can pass an optional third argument to override the directory used as the Docker build context for the base image.
+By default the base image is built from `scripts/docker/base`. Pass a different directory containing your own `Dockerfile` to substitute a custom base image, e.g.:
+
+```bash
+./scripts/dev/publishDocker.sh my.registry.com/path true ../some/path/my/base
+```
+
+This is intended for non-standard setups only. Every other image is still built from the standard Sleeper Dockerfiles, and they will use your custom base image as their `BASE_IMAGE` build arg. The same override is available on `setDeployConfig.sh` via `--override-base-image-dir <dir>`, so it is also picked up when deploying with `scripts/deploy/deployNew.sh` or `scripts/deploy/deployExisting.sh`. It cannot be combined with `--image-location repository`, because the override only applies when images are built locally.
+
 ### Installing published artefacts
 
 We have scripts to install Sleeper from published artefacts. We have not yet published Sleeper to Maven Central or
