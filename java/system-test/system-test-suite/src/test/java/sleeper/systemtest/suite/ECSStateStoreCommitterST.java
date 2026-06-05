@@ -24,6 +24,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -34,6 +35,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.ECS_STATESTORE;
 
 @SystemTest
+@Slow2
 public class ECSStateStoreCommitterST {
 
     @BeforeEach

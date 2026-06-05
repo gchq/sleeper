@@ -9,7 +9,7 @@ it takes to complete the nightly system tests.
 | AutoStopEcsTaskST          | EksBulkImportST                    | CompactionCreationST            |
 | AutoDeleteS3ObjectsST      | CompactionOnEC2ST                  | MultipleTablesST                |
 | RedeployOptionalStacksST   | ECSStateStoreCommitterThroughputST | StateStoreCommitterThroughputST |
-| EmrPersistentBulkImportST  |
+| EmrPersistentBulkImportST  | ECSStateStoreCommitterST
 | OptionalFeaturesDisabledST |
 
 
