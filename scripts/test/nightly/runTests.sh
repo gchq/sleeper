@@ -146,15 +146,20 @@ runMavenSystemTests() {
 
 runTestSuite(){
     SUITE=$3
+    local COPY_START=$(record_time)
     copyFolderForParallelRun "$SUITE"
+    local COPY_END=$(record_time)
+    echo "[$(recorded_time_str "$COPY_END")] Finished folder copy for suite: $SUITE, took $(elapsed_time_str "$COPY_START" "$COPY_END")"
     # Wait short time to not have clashes with other process deploying
     sleep $1
     shift 1
-    echo "[$(time_str)] Starting test suite: $SUITE"
+    local SUITE_START=$(record_time)
+    echo "[$(recorded_time_str "$SUITE_START")] Starting test suite: $SUITE"
     pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
     runMavenSystemTests "$@"
     popd
-    echo "[$(time_str)] Finished test suite: $SUITE"
+    local SUITE_END=$(record_time)
+    echo "[$(recorded_time_str "$SUITE_END")] Finished test suite: $SUITE, took $(elapsed_time_str "$SUITE_START" "$SUITE_END"), folder copy took $(elapsed_time_str "$COPY_START" "$COPY_END")"
     removeFolderAfterParallelRun "$SUITE"
 }
 
