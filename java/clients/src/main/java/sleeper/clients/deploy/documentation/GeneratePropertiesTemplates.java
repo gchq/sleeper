@@ -67,10 +67,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  */
 public class GeneratePropertiesTemplates {
 
-    private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "basic-example",
-            VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh");
+    private static final List<InstanceProperty> SET_BY_COMMAND_LINE = List.of(ID, VPC_ID, SUBNETS);
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
@@ -78,9 +75,9 @@ public class GeneratePropertiesTemplates {
             SPLIT_POINTS_FILE, "example/full/splits.txt");
 
     private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "full-example",
-            VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh",
+            //ID, "full-example",
+            //VPC_ID, "1234567890",
+            //SUBNETS, "subnet-abcdefgh",
             BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key",
             DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000",
             LOGGING_LEVEL, "INFO",
@@ -177,7 +174,7 @@ public class GeneratePropertiesTemplates {
         writeBasicPropertiesTemplate(writer,
                 new InstanceProperties(),
                 InstancePropertyGroup.getAll(),
-                BASIC_INSTANCE_EXAMPLE_VALUES);
+                Map.of());
     }
 
     /**
