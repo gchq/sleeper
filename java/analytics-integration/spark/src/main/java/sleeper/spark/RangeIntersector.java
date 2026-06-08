@@ -39,6 +39,7 @@ public class RangeIntersector {
      * @param  rangeFactory the RangeFactory to use
      * @return              an optional range corresponding to the intersection of the two provided ranges
      */
+    @SuppressWarnings("rawtypes")
     public static Optional<Range> intersectRanges(Range range1, Range range2, RangeFactory rangeFactory) {
         if (!range1.getField().equals(range2.getField())) {
             throw new IllegalArgumentException("Cannot intersect two ranges for different fields");
@@ -63,6 +64,7 @@ public class RangeIntersector {
         return Optional.of(rangeFactory.createRange(range1.getField(), newMin, true, newMax, false));
     }
 
+    @SuppressWarnings("rawtypes")
     private static Comparable validateComparable(Field field, Object value, String description) {
         try {
             PrimitiveType type = (PrimitiveType) field.getType();
