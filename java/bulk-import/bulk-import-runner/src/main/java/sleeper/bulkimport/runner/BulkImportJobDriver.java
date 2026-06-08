@@ -134,18 +134,29 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                         .build());
 
                 LOGGER.info("Running bulk import job with id {}", job.getId());
-                List<FileReference> fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
+                List<FileReference> fileReferences;
+                try {
+                    fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
+                } catch (Exception e) {
+                    markJobAsFailed(runIds, e);
+                    throw e;  // close() runs next via try-with-resources, then exception propagates
+                }
 
                 commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
             }
         } catch (RuntimeException | IOException e) {
-            tracker.jobFailed(IngestJobFailedEvent.builder()
-                    .jobRunIds(runIds)
-                    .failureTime(getTime.get())
-                    .failure(e)
-                    .build());
+            // Handles failures from createContext, preSplit, commitSuccessfulJob
+            markJobAsFailed(runIds, e);
             throw e;
         }
+    }
+
+    private void markJobAsFailed(IngestJobRunIds runIds, Exception e) {
+        tracker.jobFailed(IngestJobFailedEvent.builder()
+                .jobRunIds(runIds)
+                .failureTime(getTime.get())
+                .failure(e)
+                .build());
     }
 
     private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
