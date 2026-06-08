@@ -1,5 +1,5 @@
 # Current Slow and Expensive test suites
-### This looks imbalanced but EKSBulkImportST is a lot slower than others
+### This looks imbalanced but EksBulkImportST is a lot slower than others
 
 These tables show which system tests run in which suite. Each suite runs in parallel to the others to speed up the time
 it takes to complete the nightly system tests.
@@ -9,7 +9,7 @@ it takes to complete the nightly system tests.
 | AutoStopEcsTaskST          | EksBulkImportST                    | CompactionCreationST            |
 | AutoDeleteS3ObjectsST      | CompactionOnEC2ST                  | MultipleTablesST                |
 | RedeployOptionalStacksST   | ECSStateStoreCommitterThroughputST | StateStoreCommitterThroughputST |
-| EmrPersistentBulkImportST  |
+| EmrPersistentBulkImportST  | ECSStateStoreCommitterST
 | OptionalFeaturesDisabledST |
 
 
