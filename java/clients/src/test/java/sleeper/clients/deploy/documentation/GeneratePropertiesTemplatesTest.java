@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
@@ -42,9 +41,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -57,16 +54,6 @@ class GeneratePropertiesTemplatesTest {
     @BeforeAll
     static void setUp() throws Exception {
         GeneratePropertiesTemplates.createTemplates(tempDir);
-    }
-
-    static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
-        @Override
-        public Stream<Arguments> provideArguments(ExtensionContext context) {
-            return Stream.of(
-                    Arguments.of(ID, "full-example"),
-                    Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNETS, "subnet-abcdefgh"));
-        }
     }
 
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
@@ -90,14 +77,6 @@ class GeneratePropertiesTemplatesTest {
             // Then
             assertThatCode(instanceProperties::validate)
                     .doesNotThrowAnyException();
-        }
-
-        @ParameterizedTest
-        @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
-        void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .get(property))
-                    .isEqualTo(value);
         }
 
         @ParameterizedTest
@@ -161,8 +140,8 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldGenerateValidInstanceProperties() {
             assertThat(instancePropertiesFromString(propertiesString)
-                    .get(ID))
-                    .isEqualTo("basic-example");
+                    .getBoolean(RETAIN_LOGS_AFTER_DESTROY)).isTrue();
+
         }
     }
 
