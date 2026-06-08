@@ -82,7 +82,7 @@
         Hadoop uses an old version of Woodstox in hadoop-common.
         We upgraded to the latest version from woodstox-core 5.4.0.
         -->
-        <woodstox.version>7.2.0</woodstox.version>
+        <woodstox.version>7.2.1</woodstox.version>
         <woodstox.stax2.version>4.3.0</woodstox.stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.5.3</ivy.version>
