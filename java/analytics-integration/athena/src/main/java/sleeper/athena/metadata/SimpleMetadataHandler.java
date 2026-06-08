@@ -65,6 +65,7 @@ public class SimpleMetadataHandler extends SleeperMetadataHandler {
         // no op
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public GetSplitsResponse doGetSplits(BlockAllocator allocator, GetSplitsRequest request) {
         Block partitions = request.getPartitions();
