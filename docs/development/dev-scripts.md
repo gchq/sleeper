@@ -70,7 +70,7 @@ grouping, etc.
 
 #### `publishDocker.sh`
 
-Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md).
+Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md). For hooks that adjust how the images are built (e.g. substituting a custom base image), see [building in a custom environment](custom-environment.md).
 
 #### `publishMaven.sh`
 

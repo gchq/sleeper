@@ -24,12 +24,11 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -62,9 +61,9 @@ public class SleeperClient implements AutoCloseable {
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
-    private final TablePropertiesStore tablePropertiesStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final AddTable tableAdd;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final IngestJobSender ingestJobSender;
@@ -77,9 +76,9 @@ public class SleeperClient implements AutoCloseable {
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
-        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
+        tableAdd = Objects.requireNonNull(builder.addTable, "addTable must not be null");
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         rowRetrieverProvider = Objects.requireNonNull(builder.rowRetrieverProvider, "rowRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
@@ -181,10 +180,7 @@ public class SleeperClient implements AutoCloseable {
      * @throws StateStoreException               if the state store failed to initialise
      */
     public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
-        tableProperties.validate();
-        tablePropertiesStore.createTable(tableProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        InitialisePartitionsTransaction.fromSplitPoints(tableProperties, splitPoints).synchronousCommit(stateStore);
+        tableAdd.addTable(tableProperties, splitPoints);
     }
 
     /**
@@ -372,9 +368,9 @@ public class SleeperClient implements AutoCloseable {
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
-        private TablePropertiesStore tablePropertiesStore;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
+        private AddTable addTable;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private IngestJobSender ingestJobSender;
@@ -408,17 +404,6 @@ public class SleeperClient implements AutoCloseable {
         }
 
         /**
-         * Sets the store of table properties.
-         *
-         * @param  tablePropertiesStore the table properties store
-         * @return                      this builder for chaining
-         */
-        public Builder tablePropertiesStore(TablePropertiesStore tablePropertiesStore) {
-            this.tablePropertiesStore = tablePropertiesStore;
-            return this;
-        }
-
-        /**
          * Sets the provider to cache loaded table properties.
          *
          * @param  tablePropertiesProvider the provider
@@ -437,6 +422,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
+            return this;
+        }
+
+        /**
+         * Sets the addTable to allow for table creation.
+         *
+         * @param  addTable the add table
+         * @return          this builder for chaining
+         */
+        public Builder addTable(AddTable addTable) {
+            this.addTable = addTable;
             return this;
         }
 

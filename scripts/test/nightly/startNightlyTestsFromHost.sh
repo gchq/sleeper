@@ -49,7 +49,7 @@ cleanDisk() {
     mkdir -p "$CACHE_DIR_HOST"
     rm -rf "$CACHE_DIR_HOST"/*
     mkdir -p "$RUST_TARGET_DIR_HOST"
-    rm -rf "$RUST_TARGET_DIR_HOST"/*
+    sudo rm -rf "$RUST_TARGET_DIR_HOST"/*
     echo "Finding old logs to delete under $LOGS_DIR_HOST"
     find "$LOGS_DIR_HOST"/* -maxdepth 0 -type d -daystart -mtime +7 -exec echo "Deleting directory:" {} \; -exec rm -rf {} \;
     find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -daystart -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;

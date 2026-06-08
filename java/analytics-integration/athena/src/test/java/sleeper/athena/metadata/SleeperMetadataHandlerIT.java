@@ -119,8 +119,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         assertThat(partitions.getRowCount()).isOne();
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         partitionReader.setPosition(0);
-        List<String> files = (List<String>) new Gson().fromJson(partitionReader.readObject().toString(), List.class);
-        assertThat(files).isEqualTo(relevantFiles);
+        assertThat(readRelevantFiles(partitionReader.readObject().toString()))
+                .isEqualTo(relevantFiles);
     }
 
     @Test
@@ -393,7 +393,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         for (int i = 0; i < 2; i++) {
             partitionReader.setPosition(i);
-            assertThat(new Gson().fromJson(partitionReader.readObject().toString(), List.class)).isEqualTo(relevantFiles.get(i));
+            assertThat(readRelevantFiles(partitionReader.readObject().toString())).isEqualTo(relevantFiles.get(i));
         }
 
         assertThat(sleeperMetadataHandler.writeExtraPartitionDataCalled).isEqualTo(2);
@@ -573,5 +573,10 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
             // Implementation specific no need to test
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> readRelevantFiles(String json) {
+        return (List<String>) new Gson().fromJson(json, List.class);
     }
 }

@@ -33,7 +33,9 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
     private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
     private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
+    @SuppressWarnings("unused")
     private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.TASK_ID);
+    @SuppressWarnings("unused")
     private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.START_TIME);
     private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.FINISH_TIME);
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.DURATION);
