@@ -114,7 +114,7 @@ public class UploadDockerImages {
     }
 
     private void buildAndPushImage(String tag, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
-        Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
+        Path dockerfileDirectory = resolveBuildContext(image);
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
                     jarsDirectory.resolve(jar.getFilename(version)),
@@ -134,6 +134,14 @@ public class UploadDockerImages {
             }
             commandRunner.runOrThrow("docker", "push", tag);
         }
+    }
+
+    public Path resolveBuildContext(StackDockerImage image) {
+        if (image.equals(baseImage)) {
+            return deployConfig.overrideBaseImageDirPath()
+                    .orElseGet(() -> baseDockerDirectory.resolve(image.getDirectoryName()));
+        }
+        return baseDockerDirectory.resolve(image.getDirectoryName());
     }
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
