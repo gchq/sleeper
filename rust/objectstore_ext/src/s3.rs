@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
-use aws_config::{BehaviorVersion, Region};
+use aws_config::{BehaviorVersion, Region, SdkConfig};
 use aws_credential_types::{Credentials, provider::ProvideCredentials};
 use color_eyre::eyre::eyre;
 use futures::Future;
@@ -60,33 +60,46 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AwsConfig {
-    pub region: String,
-    pub endpoint: String,
-    pub access_key: String,
-    pub secret_key: String,
+#[derive(Clone, Debug, Default)]
+pub struct AwsSecrets {
+    pub access_key_id: String,
+    pub secret_access_key: String,
     pub session_token: Option<String>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct AwsConfig {
+    pub secrets: Option<AwsSecrets>,
+    pub region: Option<String>,
+    pub endpoint: Option<String>,
     pub allow_http: bool,
 }
 
 impl AwsConfig {
     /// Create an [`AmazonS3Builder`] from the given configuration object.
     ///
-    /// Credentials are extracted from the given configuration object.
-    #[must_use]
-    fn to_builder(&self) -> AmazonS3Builder {
-        let creds = Credentials::from_keys(
-            &self.access_key,
-            &self.secret_key,
-            self.session_token.clone(),
-        );
-        let region = Region::new(String::from(&self.region));
-        let mut builder = builder_from_creds(&creds, &region);
-        if !self.endpoint.is_empty() {
-            builder = builder.with_endpoint(&self.endpoint);
-        }
-        builder
+    /// Credentials are extracted from the given configuration object if they are present, otherwise a default credentials
+    /// provider is used.
+    ///
+    /// If a region is not specified, then the region is read from the default provider.
+    async fn to_builder(&self) -> color_eyre::Result<AmazonS3Builder> {
+        let config = sdk_credentials().await;
+
+        let creds = match &self.secrets {
+            Some(secrets) => Credentials::from_keys(
+                secrets.access_key_id.clone(),
+                secrets.secret_access_key.clone(),
+                secrets.session_token.clone(),
+            ),
+            None => create_creds_from_config(&config).await?,
+        };
+
+        let region = match &self.region {
+            Some(region) => Region::new(region.clone()),
+            None => create_region_from_config(&config)?,
+        };
+
+        Ok(builder_from_creds(&creds, &region, self.endpoint.as_ref()))
     }
 
     #[must_use]
@@ -100,30 +113,45 @@ impl AwsConfig {
 fn builder_from_creds(
     creds: &aws_credential_types::Credentials,
     region: &Region,
+    endpoint: Option<&String>,
 ) -> AmazonS3Builder {
-    AmazonS3Builder::from_env()
+    let builder = AmazonS3Builder::from_env()
         .with_credentials(Arc::new(CredentialsFromConfigProvider::new(creds)))
-        .with_region(region.as_ref())
+        .with_region(region.as_ref());
+    if let Some(endpoint) = endpoint {
+        builder.with_endpoint(endpoint)
+    } else {
+        builder
+    }
 }
 
-/// Create an [`AmazonS3`] object store from the default credential provider.
+/// Load AWS configuration from the default providers.
+async fn sdk_credentials() -> SdkConfig {
+    aws_config::defaults(BehaviorVersion::latest()).load().await
+}
+
+/// Extract AWS credentials from an SDK configuration.
 ///
 /// # Errors
-///
-/// This function will fail if we can't find any credentials in any of the
-/// [standard places](https://docs.aws.amazon.com/sdk-for-rust/latest/dg/credproviders.html),
-/// or if a default region is not set.
-async fn default_creds_builder() -> color_eyre::Result<AmazonS3Builder> {
-    let config = aws_config::defaults(BehaviorVersion::latest()).load().await;
-    let creds = config
+/// Function will fail if provided configuration doesn't contain credentials.
+async fn create_creds_from_config(config: &SdkConfig) -> color_eyre::Result<Credentials> {
+    config
         .credentials_provider()
         .ok_or(eyre!("Couldn't retrieve AWS credentials"))?
         .provide_credentials()
-        .await?;
-    let region = config
+        .await
+        .map_err(color_eyre::Report::from)
+}
+
+/// Extract AWS region from an SDK configuration.
+///
+/// # Errors
+/// Function will fail if provided configuration doesn't supply a region.
+fn create_region_from_config(config: &SdkConfig) -> color_eyre::Result<Region> {
+    Ok(config
         .region()
-        .ok_or(eyre!("Couldn't retrieve AWS region"))?;
-    Ok(builder_from_creds(&creds, region))
+        .ok_or(eyre!("Couldn't retrieve AWS region"))?
+        .clone())
 }
 
 /// Extract the S3 bucket name from a URL.
@@ -278,10 +306,11 @@ impl ObjectStoreFactory {
     }
 
     async fn make_s3_builder(&self) -> color_eyre::Result<AmazonS3Builder> {
-        match &self.s3_config {
-            Some(config) => Ok(config.to_builder()),
-            None => default_creds_builder().await,
-        }
+        let cfg = match &self.s3_config {
+            Some(config) => config,
+            None => &AwsConfig::default(),
+        };
+        cfg.to_builder().await
     }
 
     fn wrap_s3_store(

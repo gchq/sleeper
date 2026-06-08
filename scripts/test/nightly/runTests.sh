@@ -63,6 +63,7 @@ OUTPUT_DIR="$REPO_PARENT_DIR/logs/$START_TIME-$MAIN_SUITE_NAME"
 mkdir -p "$OUTPUT_DIR"
 "$SCRIPTS_DIR/build/build.sh"
 "$SCRIPTS_DIR/build/buildPython.sh"
+"$SCRIPTS_DIR/dev/buildDockerImage.sh" base sleeper-base:current --multiplatform
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 

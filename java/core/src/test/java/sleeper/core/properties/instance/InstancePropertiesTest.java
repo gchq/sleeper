@@ -42,6 +42,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -255,6 +256,36 @@ class InstancePropertiesTest {
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(SleeperPropertiesInvalidException.class)
                 .hasMessageContaining("-62");
+    }
+
+    @Test
+    void shouldCreateEndpointFromService() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(DNS_SUFFIX, "test.domain.com");
+        properties.set(REGION, "test-region");
+        String service = "s3";
+
+        // When
+        String endpoint = properties.evaluateAWSEndpoint(service);
+
+        // Then
+        assertThat(endpoint).isEqualTo("https://s3.test-region.test.domain.com");
+    }
+
+    @Test
+    void shouldCreateEndpointFromServiceAndProtocol() {
+        // Given
+        String protocol = "test_protocol";
+        String service = "s3";
+        String regionId = "test-region";
+        String dnsSuffix = "test.domain.com";
+
+        // When
+        String endpoint = InstanceProperties.evaluateAWSEndpoint(protocol, service, regionId, dnsSuffix);
+
+        // Then
+        assertThat(endpoint).isEqualTo("test_protocol://s3.test-region.test.domain.com");
     }
 
     @ParameterizedTest(name = "Create with invalid Tags: {0}")

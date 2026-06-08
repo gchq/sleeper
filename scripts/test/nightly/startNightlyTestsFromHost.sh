@@ -23,29 +23,40 @@ TEST_USER=$1
 TEST_TYPE=$2
 
 # Builder mount directory is mounted into sleeper builder Docker container
-BUILDER_MOUNT_HOST="/home/$TEST_USER/.sleeper/builder"
+TEST_HOME_HOST="/home/$TEST_USER"
+BUILDER_MOUNT_HOST="$TEST_HOME_HOST/.sleeper/builder"
 BUILDER_MOUNT_DOCKER="/sleeper-builder"
 
+MVN_DIR_HOST="$TEST_HOME_HOST/.m2"
+CACHE_DIR_HOST="$TEST_HOME_HOST/.cache"
 LOGS_DIR_HOST="$BUILDER_MOUNT_HOST/logs"
+RUST_TARGET_DIR_HOST="$BUILDER_MOUNT_HOST/sleeper/rust/target"
 SETTINGS_FILE_DOCKER="$BUILDER_MOUNT_DOCKER/nightlyTestSettings.json"
 SCRIPTS_DIR_DOCKER="$BUILDER_MOUNT_DOCKER/sleeper/scripts"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-REMOVE_OLD_LOGS_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-remove-old-logs.log"
+CLEAN_DISK_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-clean-disk.log"
 DOCKER_PRUNE_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-docker-prune.log"
 CLI_UPGRADE_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-cli-upgrade.log"
 START_TESTS_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-start-$TEST_TYPE-tests.log"
 
-deleteOldLogs() {
+cleanDisk() {
+    echo "Cleaning up disk to free space"
+    mkdir -p "$MVN_DIR_HOST"
+    rm -rf "$MVN_DIR_HOST"/*
+    mkdir -p "$CACHE_DIR_HOST"
+    rm -rf "$CACHE_DIR_HOST"/*
+    mkdir -p "$RUST_TARGET_DIR_HOST"
+    rm -rf "$RUST_TARGET_DIR_HOST"/*
     echo "Finding old logs to delete under $LOGS_DIR_HOST"
     find "$LOGS_DIR_HOST"/* -maxdepth 0 -type d -daystart -mtime +7 -exec echo "Deleting directory:" {} \; -exec rm -rf {} \;
     find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -daystart -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;
 }
 
 mkdir -p "$LOGS_DIR_HOST"
-deleteOldLogs &> "$REMOVE_OLD_LOGS_LOG_HOST"
+cleanDisk &> "$CLEAN_DISK_LOG_HOST"
 docker system prune -af &> "$DOCKER_PRUNE_LOG_HOST"
 sleeper cli upgrade &> "$CLI_UPGRADE_LOG_HOST"
 sleeper builder "$SCRIPTS_DIR_DOCKER/test/nightly/updateAndRunTests.sh" "$SETTINGS_FILE_DOCKER" "$TEST_TYPE" &> "$START_TESTS_LOG_HOST"

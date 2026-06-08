@@ -50,6 +50,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.dynamodb.tools.DynamoDBUtils;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
@@ -105,7 +106,9 @@ public class ECSCompactionTaskRunner {
 
             ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
 
-            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
+            DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
+                    DataFusionAwsConfig.getDefault(instanceProperties),
+                    objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                     new S3SketchesStore(s3Client, s3TransferManager));
 

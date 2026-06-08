@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.NoSketchesStore;
 
@@ -158,7 +159,7 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Output file path: {}", outputFile);
 
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
-        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
+        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(DataFusionAwsConfig.getDefault(instanceProperties),
                 objectFactory, hadoopConf, new NoSketchesStore());
 
         CompactionJob job = CompactionJob.builder()
