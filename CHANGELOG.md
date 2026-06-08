@@ -31,17 +31,19 @@ Configuration:
 - Spaces are now permitted between items in list-valued configuration properties.
 - Certain resource types can now be excluded from tagging during CDK deployment by using the
   `sleeper.tags.excluded.resources` property.
-- Support for non-standard AWS partitions has been improved. The Hadoop configuration property
-  `fs.s3a.endpoint.region` is now consistently set across all Hadoop configuration contexts, derived from the instance
-  region and DNS suffix.
+- Added option to enable/disable event count metrics for the follower lambda, controlled by
+  `sleeper.statestore.transactionlog.eventcount.metrics.enabled`.
+
+Build:
 - The Nix Shell configuration has been deleted.
-- Extra configuration can now be set during a Rust build.
-- Added option to enable/disable event count metrics for the follower lambda.
+- Extra configuration can now be set for the Rust toolchain during a build.
 
 Deployment:
-- Support for non-standard AWS partitions has been improved with the partition now set explicitly in a number of places.
-- Demonstration deployment is now part of the normal build script, previously there was a separate build script to
-  include the demonstration artefacts.
+- Support for non-standard AWS partitions has been improved with the partition now set explicitly
+  in a number of places and passed through to the DataFusion object store. The Hadoop configuration
+  property `fs.s3a.endpoint.region` is now consistently set across all Hadoop configuration contexts, derived from the instance region and DNS suffix.
+- Demonstration deployment is now part of the normal build script, previously there was a separate
+  build script to include the demonstration artefacts.
 
 Bugfixes:
 - Log level for cache hits in `TablePropertiesProvider` has been lowered to avoid noise.
