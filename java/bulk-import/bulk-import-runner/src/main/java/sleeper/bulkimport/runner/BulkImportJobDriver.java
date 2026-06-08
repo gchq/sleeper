@@ -116,6 +116,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         LOGGER.info("Received bulk import job: {}", runIds);
         LOGGER.info("Job is for table {}: {}", table, job);
 
+        boolean failureAlreadyTracked = false;
         try {
             LOGGER.info("Loading partitions");
             List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
@@ -138,15 +139,19 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 try {
                     fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
                 } catch (Exception e) {
+                    // Mark as failed before context.close() stops Spark, in case Spark shutdown exits the JVM.
+                    failureAlreadyTracked = true;
                     markJobAsFailed(runIds, e);
-                    throw e;  // close() runs next via try-with-resources, then exception propagates
+                    throw e;
                 }
 
                 commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
             }
         } catch (RuntimeException | IOException e) {
             // Handles failures from createContext, preSplit, commitSuccessfulJob
-            markJobAsFailed(runIds, e);
+            if (!failureAlreadyTracked) {
+                markJobAsFailed(runIds, e);
+            }
             throw e;
         }
     }
