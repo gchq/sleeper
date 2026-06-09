@@ -53,6 +53,7 @@ public class SleeperPartitionerTest {
         // Given
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
+        @SuppressWarnings("unchecked")
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         PartitionTree partitionTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -81,6 +82,7 @@ public class SleeperPartitionerTest {
         // Given
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
+        @SuppressWarnings("unchecked")
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         PartitionTree partitionTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -131,6 +133,7 @@ public class SleeperPartitionerTest {
                 .splitToNewChildrenOnDimension("leftPartition", "leftLower", "leftUpper", 1, new byte[]{20})
                 .buildTree();
 
+        @SuppressWarnings("unchecked")
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         when(mockedBroadcast.getValue()).thenReturn(tree.getAllPartitions());
 

@@ -82,6 +82,23 @@ public class DeployConfigurationSerDeTest {
     }
 
     @Test
+    void shouldSerDeDeployFromLocalBuildWithOverrideBaseImageDir() {
+        // Given
+        DeployConfiguration configuration = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDir("../custom/base");
+
+        // When
+        String json = serDe.toJson(configuration);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(configuration);
+        assertThat(json).isEqualTo("""
+                {
+                  "dockerImageLocation": "localBuild",
+                  "overrideBaseImageDir": "../custom/base"
+                }""");
+    }
+
+    @Test
     void shouldNotDeserialiseWhenImageLocationIsNotRecognised() {
         // Given
         String json = """
