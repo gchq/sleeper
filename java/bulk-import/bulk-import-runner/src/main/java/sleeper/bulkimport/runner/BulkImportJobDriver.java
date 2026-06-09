@@ -143,9 +143,9 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 try {
                     fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
                 } catch (Exception e) {
-                    // Mark as failed and signal exit before context.close() calls sparkContext.stop().
-                    // In K8s cluster mode, sparkContext.stop() may call System.exit(0), so we must
-                    // ensure the pod exits with a non-zero code first to cause the K8s Job to fail.
+                    // Mark as failed and forcibly halt the JVM before context.close() calls sparkContext.stop().
+                    // Spark's internal threads may concurrently call System.exit(0) when a job fails;
+                    // Runtime.halt(1) overrides any in-progress System.exit(0) and terminates immediately.
                     failureAlreadyTracked = true;
                     markJobAsFailed(runIds, e);
                     onFailure.run();
@@ -285,7 +285,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender,
                     Instant::now, () -> UUID.randomUUID().toString());
-            driver.run(bulkImportJob, jobRunId, taskId, () -> System.exit(1));
+            driver.run(bulkImportJob, jobRunId, taskId, () -> Runtime.getRuntime().halt(1));
         }
     }
 
