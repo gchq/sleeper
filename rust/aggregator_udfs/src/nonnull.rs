@@ -196,10 +196,6 @@ impl Hash for NonNullable {
 }
 
 impl AggregateUDFImpl for NonNullable {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
     fn name(&self) -> &str {
         &self.func_name
     }
@@ -482,10 +478,10 @@ mod tests {
         },
         scalar::ScalarValue,
     };
+    use mockall::Any;
     use mockall::predicate::*;
     use mockall::*;
     use std::{
-        any::Any,
         collections::HashMap,
         hash::{Hash, Hasher},
         sync::Arc,
@@ -497,7 +493,6 @@ mod tests {
         #[derive(Debug)]
         UDFImpl {}
         impl AggregateUDFImpl for UDFImpl {
-            fn as_any(&self) -> &dyn Any;
             fn name(&self) -> &str;
             fn signature(&self) -> &Signature;
             fn return_type(&self, arg_types: &[DataType]) -> Result<DataType>;
@@ -629,7 +624,7 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .as_any()
+            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -654,7 +649,7 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .as_any()
+            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -679,7 +674,7 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .as_any()
+            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -718,7 +713,7 @@ mod tests {
         let actual = non_nullable(&aggregate);
         let non_nullable = actual
             .inner()
-            .as_any()
+            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable");
         let inner_func = non_nullable.inner.clone();
@@ -779,24 +774,6 @@ mod tests {
             DataFusionError::Execution,
             "Null found in array index 1 in an non-nullable aggregation operator. Array datatype is Int64, length 3, logical null count 1, null count 1"
         );
-    }
-
-    #[test]
-    fn should_not_call_as_any() {
-        // Given
-        let mut mock_udf = MockUDFImpl::new();
-        let mock_any = Box::new("test") as Box<dyn Any>;
-        mock_udf.expect_as_any().never().return_const(mock_any);
-        mock_udf.expect_name().return_const("mockudf".to_owned());
-
-        let nonnull = NonNullable::new(Arc::new(mock_udf));
-
-        // When
-        let any = nonnull.as_any();
-
-        // Then
-        any.downcast_ref::<NonNullable>()
-            .expect("couldn't downcast to NonNullable");
     }
 
     #[test]
@@ -1112,7 +1089,7 @@ mod tests {
         {
             let nonnull = func
                 .inner()
-                .as_any()
+                .any()
                 .downcast_ref::<NonNullable>()
                 .expect("Should be a nonnullable intance");
 
