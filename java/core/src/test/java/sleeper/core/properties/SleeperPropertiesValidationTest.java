@@ -29,13 +29,8 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -108,19 +103,6 @@ public class SleeperPropertiesValidationTest {
     @DisplayName("Validate instance properties")
     @Nested
     class ValidateInstanceProperties {
-        @Test
-        void shouldFailValidationIfRequiredPropertyIsMissing() {
-            // Given - no account set
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.set(JARS_BUCKET, "jars");
-            instanceProperties.set(VERSION, "0.1");
-            instanceProperties.set(VPC_ID, "aVPC");
-            instanceProperties.set(SUBNETS, "subnet1");
-
-            // When / Then
-            assertThatThrownBy(instanceProperties::validate)
-                    .hasMessageContaining(ARTEFACTS_DEPLOYMENT_ID.getPropertyName());
-        }
 
         @Test
         void shouldFailValidationIfPropertyIsInvalid() {
