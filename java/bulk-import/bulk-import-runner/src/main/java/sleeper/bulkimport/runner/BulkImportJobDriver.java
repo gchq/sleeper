@@ -109,6 +109,10 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+        run(job, jobRunId, taskId, () -> {});
+    }
+
+    public void run(BulkImportJob job, String jobRunId, String taskId, Runnable onFailure) throws IOException {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
@@ -139,9 +143,12 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 try {
                     fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
                 } catch (Exception e) {
-                    // Mark as failed before context.close() stops Spark, in case Spark shutdown exits the JVM.
+                    // Mark as failed and signal exit before context.close() calls sparkContext.stop().
+                    // In K8s cluster mode, sparkContext.stop() may call System.exit(0), so we must
+                    // ensure the pod exits with a non-zero code first to cause the K8s Job to fail.
                     failureAlreadyTracked = true;
                     markJobAsFailed(runIds, e);
+                    onFailure.run();
                     throw e;
                 }
 
@@ -278,7 +285,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender,
                     Instant::now, () -> UUID.randomUUID().toString());
-            driver.run(bulkImportJob, jobRunId, taskId);
+            driver.run(bulkImportJob, jobRunId, taskId, () -> System.exit(1));
         }
     }
 
