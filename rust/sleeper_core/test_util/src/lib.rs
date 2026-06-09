@@ -17,7 +17,7 @@ use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
     arrow::{
-        array::{Array, ArrayRef, Int32Array, RecordBatch},
+        array::{ArrayRef, Int32Array, RecordBatch},
         datatypes::{DataType, Field, Schema},
     },
     execution::SendableRecordBatchStream,
@@ -244,8 +244,7 @@ fn get_int_array<'b>(field_name: &str, batch: &'b RecordBatch) -> Result<&'b Int
     batch
         .column_by_name(field_name)
         .ok_or_else(|| Error::msg("field not found"))?
-        .as_any()
-        .downcast_ref::<Int32Array>()
+        .as_ref()
         .ok_or_else(|| Error::msg("could not read field as an integer"))
 }
 

@@ -190,7 +190,7 @@ fn find_filter_exec_stage(
 ) -> Result<Option<Arc<dyn ExecutionPlan>>, DataFusionError> {
     let mut filter_exec = None;
     plan.transform_up(|node| {
-        Ok(if node.as_any().downcast_ref::<FilterExec>().is_some() {
+        Ok(if node.downcast_ref::<FilterExec>().is_some() {
             filter_exec = Some(node.clone());
             Transformed::new(node, false, TreeNodeRecursion::Stop)
         } else {
@@ -272,7 +272,7 @@ mod tests {
 
         // Then the inner FilterExec is returned, not the Projection
         let found = result.expect("filter should be found");
-        assert!(found.as_any().downcast_ref::<FilterExec>().is_some());
+        assert!(found.downcast_ref::<FilterExec>().is_some());
         assert!(Arc::ptr_eq(&found, &filter));
     }
 

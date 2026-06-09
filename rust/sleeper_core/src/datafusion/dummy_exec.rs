@@ -21,7 +21,7 @@ use datafusion::{
         metrics::{Count, ExecutionPlanMetricsSet, MetricBuilder, MetricsSet},
     },
 };
-use std::{any::Any, sync::Arc};
+use std::sync::Arc;
 
 /// An implementation of an execution plan stage, purely for testing. Invoking most
 /// functions will cause a panic.
@@ -55,10 +55,6 @@ impl DummyExec {
 impl ExecutionPlan for DummyExec {
     fn name(&self) -> &'static str {
         "DummyExec"
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn properties(&self) -> &Arc<PlanProperties> {

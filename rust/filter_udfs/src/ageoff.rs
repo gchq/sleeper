@@ -28,7 +28,6 @@ use datafusion::{
     scalar::ScalarValue,
 };
 use std::{
-    any::Any,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };

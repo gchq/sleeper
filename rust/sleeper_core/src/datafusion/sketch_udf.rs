@@ -35,7 +35,6 @@ use datafusion::{
     scalar::ScalarValue,
 };
 use std::{
-    any::Any,
     fmt::Debug,
     hash::{Hash, Hasher},
     iter::zip,
@@ -139,9 +138,6 @@ fn make_sketches_for_schema(schema: &DFSchema, row_key_fields: &[&str]) -> Vec<D
 }
 
 impl ScalarUDFImpl for SketchUDF {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
     fn name(&self) -> &'static str {
         "sketch"
     }

@@ -58,7 +58,7 @@ pub fn unalias_view_projection_columns(
         // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
             Ok(
-                if let Some(projection) = plan_node.as_any().downcast_ref::<ProjectionExec>() {
+                if let Some(projection) = plan_node.downcast_ref::<ProjectionExec>() {
                     // Schema of stage before projection
                     let schema = projection.input().schema();
                     // Unalias column names
@@ -200,7 +200,7 @@ mod tests {
         };
 
         // The new projection should have unaliased column names matching original schema
-        if let Some(p) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
+        if let Some(p) = new_plan.downcast_ref::<ProjectionExec>() {
             let exprs = p.expr();
             // Alias should be removed to original_col
             assert_eq!(exprs[0].alias, "original_col");
@@ -263,11 +263,11 @@ mod tests {
         };
 
         // The top projection should be unaliased but inner remains aliased
-        if let Some(top_proj) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
+        if let Some(top_proj) = new_plan.downcast_ref::<ProjectionExec>() {
             let exprs = top_proj.expr();
             assert_eq!(exprs[0].alias, "alias_a");
             // The input to this projection should still be inner_projection
-            if let Some(inner_proj) = top_proj.input().as_any().downcast_ref::<ProjectionExec>() {
+            if let Some(inner_proj) = top_proj.input().downcast_ref::<ProjectionExec>() {
                 // Inner projection remains unchanged
                 let exprs = inner_proj.expr();
                 assert_eq!(exprs[0].alias, "alias_a");

@@ -118,8 +118,7 @@ pub fn calculate_metadata_size_hint(largest_file: u64) -> u64 {
 /// # Errors
 /// If a `SortExec` stage is found in the given plan.
 pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusionError> {
-    let contains_sort_exec =
-        plan.exists(|node| Ok(node.as_any().downcast_ref::<SortExec>().is_some()))?;
+    let contains_sort_exec = plan.exists(|node| Ok(node.downcast_ref::<SortExec>().is_some()))?;
     if contains_sort_exec {
         plan_err!("Physical plan contains SortExec stage. Please file a bug report.")
     } else {
@@ -220,8 +219,7 @@ pub fn remove_coalesce_physical_stage(
         // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
             Ok(
-                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
-                {
+                if let Some(coalesce) = plan_node.downcast_ref::<CoalescePartitionsExec>() {
                     // Swap it out for a SortPreservingMergeExec
                     let replacement =
                         SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
@@ -256,9 +254,7 @@ pub fn apply_full_sort_ordering(
         // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
             Ok(
-                if let Some(sort_preserve) =
-                    plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
-                {
+                if let Some(sort_preserve) = plan_node.downcast_ref::<SortPreservingMergeExec>() {
                     // Swap for a sort merging stage with complete sort order
                     let replacement = SortPreservingMergeExec::new(
                         ordering.clone(),
@@ -456,12 +452,7 @@ mod tests {
 
         // Then
         let contains_sort_preserving_merge = result
-            .exists(|node| {
-                Ok(node
-                    .as_any()
-                    .downcast_ref::<SortPreservingMergeExec>()
-                    .is_some())
-            })
+            .exists(|node| Ok(node.downcast_ref::<SortPreservingMergeExec>().is_some()))
             .unwrap();
         assert!(
             contains_sort_preserving_merge,
@@ -505,19 +496,11 @@ mod tests {
 
         // Then
         let contains_coalesce_inner = result
-            .exists(|node| {
-                Ok(node
-                    .as_any()
-                    .downcast_ref::<CoalescePartitionsExec>()
-                    .is_some())
-            })
+            .exists(|node| Ok(node.downcast_ref::<CoalescePartitionsExec>().is_some()))
             .unwrap();
         assert!(contains_coalesce_inner, "Inner coalesce should remain");
 
-        let root_is_coalesce = result
-            .as_any()
-            .downcast_ref::<CoalescePartitionsExec>()
-            .is_some();
+        let root_is_coalesce = result.downcast_ref::<CoalescePartitionsExec>().is_some();
         assert!(!root_is_coalesce, "Outer root should not be coalesce");
         Ok(())
     }
@@ -572,7 +555,7 @@ mod tests {
         let contains_partial_sort = result
             .exists(|node| {
                 Ok(
-                    if let Some(stage) = node.as_any().downcast_ref::<SortPreservingMergeExec>() {
+                    if let Some(stage) = node.downcast_ref::<SortPreservingMergeExec>() {
                         // Does this stage only contain the original partial ordering?
                         *stage.expr() != full_ordering
                     } else {

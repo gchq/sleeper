@@ -430,7 +430,7 @@ pub async fn output_sketch(
     sketch_func: &Arc<ScalarUDF>,
 ) -> Result<(), DataFusionError> {
     let binding = sketch_func.inner();
-    let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
+    let inner_function: Option<&SketchUDF> = binding.downcast_ref();
     if let Some(func) = inner_function {
         {
             // Limit scope of MutexGuard

@@ -38,7 +38,6 @@ use datafusion::{
     scalar::ScalarValue,
 };
 use std::{
-    any::Any,
     hash::{Hash, Hasher},
     sync::{Arc, LazyLock},
 };
@@ -478,7 +477,6 @@ mod tests {
         },
         scalar::ScalarValue,
     };
-    use mockall::Any;
     use mockall::predicate::*;
     use mockall::*;
     use std::{
@@ -624,7 +622,6 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -649,7 +646,6 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -674,7 +670,6 @@ mod tests {
         let expect_nonnullable = aggregate.func;
         let inner_func = expect_nonnullable
             .inner()
-            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable")
             .inner
@@ -713,7 +708,6 @@ mod tests {
         let actual = non_nullable(&aggregate);
         let non_nullable = actual
             .inner()
-            .any()
             .downcast_ref::<NonNullable>()
             .expect("Inner implementation should be NonNullable");
         let inner_func = non_nullable.inner.clone();
@@ -1089,7 +1083,6 @@ mod tests {
         {
             let nonnull = func
                 .inner()
-                .any()
                 .downcast_ref::<NonNullable>()
                 .expect("Should be a nonnullable intance");
 
