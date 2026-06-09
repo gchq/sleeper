@@ -101,25 +101,26 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void runQueries(TableProperties tableProperties) throws InterruptedException {
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
-        while (true) {
-            System.out.println("Send output to S3 results bucket (s) or SQS (q)?");
-            String type = scanner.nextLine();
-            if ("".equals(type)) {
+        try (Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8)) {
+            while (true) {
+                System.out.println("Send output to S3 results bucket (s) or SQS (q)?");
+                String type = scanner.nextLine();
+                if ("".equals(type)) {
+                    break;
+                }
+                if ("s".equalsIgnoreCase(type)) {
+                    // Nothing to do - empty resultsPublisherConfig will cause the
+                    // results to be published to S3.
+                    System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
+                } else if ("q".equals(type)) {
+                    resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
+                    System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
+                } else {
+                    continue;
+                }
                 break;
             }
-            if ("s".equalsIgnoreCase(type)) {
-                // Nothing to do - empty resultsPublisherConfig will cause the
-                // results to be published to S3.
-                System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
-            } else if ("q".equals(type)) {
-                resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
-                System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
-            } else {
-                continue;
-            }
-            break;
         }
         super.runQueries(tableProperties);
     }

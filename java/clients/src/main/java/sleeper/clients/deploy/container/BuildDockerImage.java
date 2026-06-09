@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.ContainerPlatform;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.util.cli.CommandArguments;
@@ -45,12 +46,15 @@ public class BuildDockerImage {
         CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("scripts directory", "image name", "tag"))
                 .systemArguments(List.of("scripts directory"))
-                .options(List.of(CommandOption.longFlag("lambda")))
+                .options(List.of(CommandOption.longFlag("lambda"), CommandOption.longFlag("multiplatform")))
                 .helpSummary("Available Docker deployment image names: " +
                         DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
                         "Available lambda image names: " +
                         LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
-                        "Other arguments will be passed through to Docker as options when specified at the end.")
+                        "The --lambda flag specifies that the image is one of the lambda options. The --multiplatform " +
+                        "flag specifies to build a multiplatform image if it's configured to be built that way. By " +
+                        "default an image is only built for the default platform. Other arguments will be passed " +
+                        "through to Docker as options when specified at the end.")
                 .passThroughExtraArguments(true)
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
@@ -58,11 +62,13 @@ public class BuildDockerImage {
                 arguments.getString("image name"),
                 arguments.getString("tag"),
                 arguments.isFlagSet("lambda"),
+                arguments.isFlagSet("multiplatform"),
                 arguments.getPassthroughArguments()));
         DockerImageConfiguration configuration = DockerImageConfiguration.getDefault();
         CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
         Path dockerfileDirectory;
+        List<ContainerPlatform> platforms = List.of();
         if (args.isLambda()) {
             dockerfileDirectory = args.dockerDir().resolve("lambda");
             LambdaJar jar = configuration.getLambdaJarByImageName(args.imageName()).orElseThrow();
@@ -72,16 +78,23 @@ public class BuildDockerImage {
         } else {
             DockerDeployment deployment = configuration.getDockerDeploymentByName(args.imageName()).orElseThrow();
             dockerfileDirectory = args.dockerDir().resolve(deployment.getDeploymentName());
+            platforms = deployment.getPlatforms();
         }
 
         List<String> dockerCommand = new ArrayList<>();
-        dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+        if (args.isMultiplatform() && !platforms.isEmpty()) {
+            UploadDockerImages.useBuildXBuilder(commandRunner);
+            String platformList = ContainerPlatform.buildPlatformListArgument(platforms);
+            dockerCommand.addAll(List.of("docker", "buildx", "build", "--platform", platformList, "-t", args.tag(), "--load"));
+        } else {
+            dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+        }
         dockerCommand.addAll(args.dockerOptions());
         dockerCommand.add(dockerfileDirectory.toString());
         commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
     }
 
-    private record Arguments(Path scriptsDir, String imageName, String tag, boolean isLambda, List<String> dockerOptions) {
+    private record Arguments(Path scriptsDir, String imageName, String tag, boolean isLambda, boolean isMultiplatform, List<String> dockerOptions) {
 
         Path dockerDir() {
             return scriptsDir.resolve("docker");

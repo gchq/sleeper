@@ -63,6 +63,7 @@ OUTPUT_DIR="$REPO_PARENT_DIR/logs/$START_TIME-$MAIN_SUITE_NAME"
 mkdir -p "$OUTPUT_DIR"
 "$SCRIPTS_DIR/build/build.sh"
 "$SCRIPTS_DIR/build/buildPython.sh"
+"$SCRIPTS_DIR/dev/buildDockerImage.sh" base sleeper-base:current --multiplatform
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 
@@ -70,14 +71,9 @@ set +e
 
 END_EXIT_CODE=0
 
-docker buildx rm sleeper
-set -e
-docker buildx create --name sleeper --use
-set +e
-
 copyFolderForParallelRun() {
-    COPY_DIR=$1
-    echo "Making folder $COPY_DIR for parallel build"
+    local COPY_DIR=$1
+    echo "Making parallel build folder: $COPY_DIR"
     pushd $REPO_PARENT_DIR
     sudo rm -rf $COPY_DIR
     mkdir $COPY_DIR
@@ -98,17 +94,19 @@ removeFolderAfterParallelRun() {
 
 runMavenSystemTests() {
     # Setup
-    NEW_MAVEN_DIR=$(cd ../../java && pwd)
-    SHORT_ID=$1
-    TEST_NAME=$2
+    local NEW_MAVEN_DIR=$(cd ../../java && pwd)
+    local SHORT_ID=$1
+    local TEST_NAME=$2
     shift 2
-    TEST_EXIT_CODE=0
-    EXTRA_MAVEN_PARAMS=("$@")
-    TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
+    local TEST_EXIT_CODE=0
+    local EXTRA_MAVEN_PARAMS=("$@")
+    local TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
 
     # Run tests
+    local TEST_START=$(record_time)
+    echo "[$(recorded_time_str "$TEST_START")] Running Maven test suite with short ID: $SHORT_ID"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -119,10 +117,11 @@ runMavenSystemTests() {
       END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
+    local TEST_END=$(record_time)
 
     # Generate site HTML
     pushd "$NEW_MAVEN_DIR"
-    echo "Generating site HTML for $SHORT_ID"
+    echo "[$(recorded_time_str "$TEST_END")] Generating site HTML for short ID: $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
@@ -131,30 +130,47 @@ runMavenSystemTests() {
     zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
     popd
     rm -rf "$TEST_OUTPUT_DIR/site"
+    local SITE_END=$(record_time)
 
     # Tear down instances used for tests
-    SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
+    local SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
-    TEARDOWN_EXIT_CODE=$?
+    local TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
       TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
       END_EXIT_CODE=$TEARDOWN_EXIT_CODE
     fi
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
+    local TEARDOWN_END=$(record_time)
+    echo "[$(recorded_time_str "$TEARDOWN_END")] Finished teardown of short ID: $SHORT_ID"
+    echo "Started at $(recorded_time_str "$TEST_START")"
+    echo "Finished Maven test suite at $(recorded_time_str "$TEST_END"), took $(elapsed_time_str "$TEST_START" "$TEST_END")"
+    echo "Finished site HTML at $(recorded_time_str "$SITE_END"), took $(elapsed_time_str "$TEST_END" "$SITE_END")"
+    echo "Finished tear down at $(recorded_time_str "$TEARDOWN_END"), took $(elapsed_time_str "$SITE_END" "$TEARDOWN_END")"
 }
 
 runTestSuite(){
-    SUITE=$3
+    local SUITE=$3
+    local COPY_START=$(record_time)
     copyFolderForParallelRun "$SUITE"
+    local COPY_END=$(record_time)
+    echo "[$(recorded_time_str "$COPY_END")] Finished folder copy for suite: $SUITE, took $(elapsed_time_str "$COPY_START" "$COPY_END")"
     # Wait short time to not have clashes with other process deploying
     sleep $1
     shift 1
-    echo "[$(time_str)] Starting test suite: $SUITE"
+    local SUITE_START=$(record_time)
+    echo "[$(recorded_time_str "$SUITE_START")] Starting test suite: $SUITE"
     pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
     runMavenSystemTests "$@"
     popd
-    echo "[$(time_str)] Finished test suite: $SUITE"
+    local SUITE_END=$(record_time)
+    echo "[$(recorded_time_str "$SUITE_END")] Removing folder for test suite: $SUITE"
     removeFolderAfterParallelRun "$SUITE"
+    local REMOVE_FOLDER_END=$(record_time)
+    echo "[$(recorded_time_str "$REMOVE_FOLDER_END")] Finished test suite: $SUITE"
+    echo "Folder copy ran from $(recorded_time_str "$COPY_START") to $(recorded_time_str "$COPY_END"), took $(elapsed_time_str "$COPY_START" "$COPY_END")"
+    echo "Maven operations and tear down ran from $(recorded_time_str "$SUITE_START") to $(recorded_time_str "$SUITE_END"), took $(elapsed_time_str "$SUITE_START" "$SUITE_END")"
+    echo "Folder removal finished at $(recorded_time_str "$REMOVE_FOLDER_END"), took $(elapsed_time_str "$SUITE_END" "$REMOVE_FOLDER_END")"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then

@@ -15,23 +15,34 @@
  */
 package sleeper.foreign.datafusion;
 
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
+
+import sleeper.core.properties.instance.InstanceProperties;
+
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
+ *
+ * All fields are nullable, however secretAccessKey and accessKeyId must either both be null or non-null.
  */
 public class DataFusionAwsConfig {
 
     private final String region;
     private final String endpoint;
-    private final String accessKey;
-    private final String secretKey;
+    private final String accessKeyId;
+    private final String secretAccessKey;
     private final String sessionToken;
     private final boolean allowHttp;
 
     private DataFusionAwsConfig(Builder builder) {
+        if (builder.secretAccessKey == null && builder.accessKeyId != null ||
+                builder.secretAccessKey != null && builder.accessKeyId == null) {
+            throw new IllegalArgumentException("secretAccessKey and accessKeyId must either both be null or non-null");
+        }
         region = builder.region;
         endpoint = builder.endpoint;
-        accessKey = builder.accessKey;
-        secretKey = builder.secretKey;
+        accessKeyId = builder.accessKeyId;
+        secretAccessKey = builder.secretAccessKey;
         sessionToken = builder.sessionToken;
         allowHttp = builder.allowHttp;
     }
@@ -41,34 +52,78 @@ public class DataFusionAwsConfig {
     }
 
     /**
-     * Creates the default AWS configuration. Usually this will be null. Applies configuration from environment
-     * variables if set.
+     * Creates the default AWS configuration. Applies configuration from environment
+     * variables if set. Instance properties are used to determine AWS S3 endpoint.
      *
-     * @return the configuration, if set
+     * @param  instanceProperties Sleeper instance properties
+     * @return                    AWS config for DataFusion
      */
-    public static DataFusionAwsConfig getDefault() {
+    public static DataFusionAwsConfig getDefault(InstanceProperties instanceProperties) {
+        return getDefaultHelper(instanceProperties.evaluateAWSEndpoint("s3"));
+    }
+
+    private static DataFusionAwsConfig getDefaultHelper(String awsEndpoint) {
         String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
             return overrideEndpoint(endpoint);
         } else {
-            return null;
+            DataFusionAwsConfig.Builder builder = builder();
+            if (awsEndpoint != null) {
+                builder = builder.endpoint(awsEndpoint);
+            }
+            return builder.build();
         }
+    }
+
+    /**
+     * Creates the default AWS configuration from given region and partition.
+     *
+     * @param  region   AWS region
+     * @param  metadata AWS partition metadata
+     * @return          AWs config for DataFusion
+     */
+    public static DataFusionAwsConfig getDefault(Region region, PartitionMetadata metadata) {
+        return getDefaultHelper(InstanceProperties.evaluateAWSEndpoint("https", "s3", region.id(), metadata.dnsSuffix()));
     }
 
     /**
      * Creates a configuration to run against a LocalStack endpoint.
      *
-     * @param  endpoint the endpoint
+     * @param  endpoint the endpoint to use
      * @return          the configuration
      */
     public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
         return builder()
                 .endpoint(endpoint)
                 .region("us-east-1")
-                .accessKey("test-access-key")
-                .secretKey("test-secret-key")
+                .accessKeyId("test-access-key-id")
+                .secretAccessKey("test-secret-access-key")
                 .allowHttp(true)
                 .build();
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public String getAccessKeyId() {
+        return accessKeyId;
+    }
+
+    public String getSecretAccessKey() {
+        return secretAccessKey;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public boolean isAllowHttp() {
+        return allowHttp;
     }
 
     /**
@@ -80,10 +135,10 @@ public class DataFusionAwsConfig {
     public FFIAwsConfig toFfi(jnr.ffi.Runtime runtime) {
         FFIAwsConfig config = new FFIAwsConfig(runtime);
         config.region.set(region);
-        config.endpoint.set(endpoint == null ? "" : endpoint);
-        config.access_key.set(accessKey);
-        config.secret_key.set(secretKey);
-        config.session_token.set(sessionToken == null ? "" : sessionToken);
+        config.endpoint.set(endpoint);
+        config.access_key_id.set(accessKeyId);
+        config.secret_access_key.set(secretAccessKey);
+        config.session_token.set(sessionToken);
         config.allow_http.set(allowHttp);
         return config;
     }
@@ -94,8 +149,8 @@ public class DataFusionAwsConfig {
     public static class Builder {
         private String region;
         private String endpoint;
-        private String accessKey;
-        private String secretKey;
+        private String accessKeyId;
+        private String secretAccessKey;
         private String sessionToken;
         private boolean allowHttp;
 
@@ -125,24 +180,24 @@ public class DataFusionAwsConfig {
         }
 
         /**
-         * Sets the access key.
+         * Sets the access key ID.
          *
-         * @param  accessKey the access key
-         * @return           the builder for chaining
+         * @param  accessKeyId the access key ID
+         * @return             the builder for chaining
          */
-        public Builder accessKey(String accessKey) {
-            this.accessKey = accessKey;
+        public Builder accessKeyId(String accessKeyId) {
+            this.accessKeyId = accessKeyId;
             return this;
         }
 
         /**
-         * Sets the secret key.
+         * Sets the secret access key.
          *
-         * @param  secretKey the secret key
-         * @return           the builder for chaining
+         * @param  secretAccessKey the secret key
+         * @return                 the builder for chaining
          */
-        public Builder secretKey(String secretKey) {
-            this.secretKey = secretKey;
+        public Builder secretAccessKey(String secretAccessKey) {
+            this.secretAccessKey = secretAccessKey;
             return this;
         }
 

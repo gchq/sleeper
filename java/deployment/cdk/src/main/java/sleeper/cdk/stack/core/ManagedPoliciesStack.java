@@ -154,7 +154,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private Role createAdminRole() {
         Role role = Role.Builder.create(this, "AdminRole")
-                .assumedBy(new AccountRootPrincipal())
+                .assumedBy(new AccountRootPrincipal().withSessionTags())
                 .roleName(getAdminRoleName(instanceProperties))
                 .build();
 

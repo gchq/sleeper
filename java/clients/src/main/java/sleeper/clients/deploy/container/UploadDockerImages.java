@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -84,6 +83,11 @@ public class UploadDockerImages {
         return deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD;
     }
 
+    public static void useBuildXBuilder(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
+        commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
+        commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
+    }
+
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
@@ -93,8 +97,7 @@ public class UploadDockerImages {
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
                 && createMultiplatformBuilder) {
-            commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
-            commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
+            useBuildXBuilder(commandRunner);
         }
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
@@ -111,7 +114,7 @@ public class UploadDockerImages {
     }
 
     private void buildAndPushImage(String tag, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
-        Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
+        Path dockerfileDirectory = resolveBuildContext(image);
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
                     jarsDirectory.resolve(jar.getFilename(version)),
@@ -119,9 +122,7 @@ public class UploadDockerImages {
         });
 
         if (image.isMultiplatform()) {
-            String platformList = image.getPlatforms().stream()
-                    .map(ContainerPlatform::toString)
-                    .collect(Collectors.joining(","));
+            String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
             commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
         } else {
             if (image.getLambdaJar().isPresent()) {
@@ -133,6 +134,14 @@ public class UploadDockerImages {
             }
             commandRunner.runOrThrow("docker", "push", tag);
         }
+    }
+
+    public Path resolveBuildContext(StackDockerImage image) {
+        if (image.equals(baseImage)) {
+            return deployConfig.overrideBaseImageDirPath()
+                    .orElseGet(() -> baseDockerDirectory.resolve(image.getDirectoryName()));
+        }
+        return baseDockerDirectory.resolve(image.getDirectoryName());
     }
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {

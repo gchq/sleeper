@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
@@ -124,8 +125,9 @@ public class SystemTestClients {
     }
 
     public static SystemTestClients fromDefaults() {
+        Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
         return builder()
-                .region(DefaultAwsRegionProviderChain.builder().build().getRegion())
+                .region(region)
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
@@ -143,8 +145,11 @@ public class SystemTestClients {
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
+                .dataFusionAwsConfig(() -> {
+                    PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+                    return DataFusionAwsConfig.getDefault(region, partitionMetadata);
+                })
                 .sfn(SfnClient.create())
-                .dataFusionAwsConfig(DataFusionAwsConfig::getDefault)
                 .build();
     }
 

@@ -42,6 +42,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ItemEvent;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class DrawDependencyGraph {
     private boolean showTransitiveDependencies = false;
 
@@ -135,7 +136,7 @@ public class DrawDependencyGraph {
             JOptionPane pane = new JOptionPane(INSTRUCTIONS);
             JDialog dialog = pane.createDialog(frame, "Help");
             dialog.setModal(false);
-            dialog.show();
+            dialog.setVisible(true);
         });
 
         JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
