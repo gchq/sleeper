@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -68,16 +67,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  */
 public class GeneratePropertiesTemplates {
 
-    private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ARTEFACTS_DEPLOYMENT_ID, "basic-example");
-
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
             FILTERING_CONFIG, "ageOff(timestamp,3600000)",
             SPLIT_POINTS_FILE, "example/full/splits.txt");
 
     private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ARTEFACTS_DEPLOYMENT_ID, "full-example",
             BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key",
             DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000",
             LOGGING_LEVEL, "INFO",
@@ -174,7 +169,7 @@ public class GeneratePropertiesTemplates {
         writeBasicPropertiesTemplate(writer,
                 new InstanceProperties(),
                 InstancePropertyGroup.getAll(),
-                BASIC_INSTANCE_EXAMPLE_VALUES);
+                Map.of());
     }
 
     /**

@@ -24,7 +24,6 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * Definitions of instance properties commonly set for any instance.
@@ -43,7 +42,6 @@ public interface CommonProperty {
                     "we assume an artefacts deployment with the same ID as the Sleeper instance. This property is " +
                     "used to compute the default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.")
             .defaultProperty(ID)
-            .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
