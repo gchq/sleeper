@@ -15,6 +15,8 @@
  */
 package sleeper.bulkexport.taskexecution;
 
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +26,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.taskexecution.SqsBulkExportQueueHandler.SqsMessageHandle;
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionRequest;
-import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
-import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
@@ -36,17 +33,22 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketches.store.NoSketchesStore;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.rowretrieval.RowRetrievalException;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -75,8 +77,9 @@ public class ECSBulkExportTaskRunner {
      *                                   processing.
      * @throws IOException               If there is an error interacting with S3 or
      *                                   other I/O operations.
+     * @throws RowRetrievalException     if there is an error retrieving the query results
      */
-    public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
+    public static void main(String[] args) throws ObjectFactoryException, IOException, RowRetrievalException {
 
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
@@ -103,21 +106,20 @@ public class ECSBulkExportTaskRunner {
      * This method initialises the SQS bulk export queue handler and processes
      * messages from the SQS queue for bulk export tasks.
      *
-     * @param  instanceProperties        the instance properties
-     * @param  tablePropertiesProvider   a table properties provider
-     * @param  sqsClient                 an SQS client
-     * @param  s3Client                  an S3 client
-     * @param  dynamoDBClient            a DynamoDB client
-     * @param  hadoopConf                a Hadoop configuration
-     * @throws IOException               if there is an error interacting with S3
-     * @throws IteratorCreationException if there is an error creating iterators
-     * @throws ObjectFactoryException    if there is an error creating objects
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider a table properties provider
+     * @param  sqsClient               an SQS client
+     * @param  s3Client                an S3 client
+     * @param  dynamoDBClient          a DynamoDB client
+     * @param  hadoopConf              a Hadoop configuration
+     * @throws IOException             if there is an error interacting with S3
+     * @throws RowRetrievalException   if there is an error retrieving the query results
      *
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf) throws RuntimeException, IOException, ObjectFactoryException, IteratorCreationException {
+            Configuration hadoopConf) throws RuntimeException, IOException, RowRetrievalException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
@@ -137,7 +139,7 @@ public class ECSBulkExportTaskRunner {
                 runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient, hadoopConf);
                 messageHandle.deleteFromQueue();
                 LOGGER.info("Successfully processed and deleted message from queue");
-            } catch (RuntimeException | IOException | ObjectFactoryException | IteratorCreationException e) {
+            } catch (RuntimeException | RowRetrievalException e) {
                 LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
@@ -151,37 +153,60 @@ public class ECSBulkExportTaskRunner {
             TablePropertiesProvider tablePropertiesProvider,
             S3Client s3Client,
             DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
+            Configuration hadoopConf) throws RowRetrievalException {
         LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
 
         String outputFile = bulkExportLeafPartitionQuery.getOutputFile(instanceProperties);
         LOGGER.debug("Output file path: {}", outputFile);
 
-        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
-        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(DataFusionAwsConfig.getDefault(instanceProperties),
-                objectFactory, hadoopConf, new NoSketchesStore());
+        // ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
+        // DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(DataFusionAwsConfig.getDefault(instanceProperties),
+        //         objectFactory, hadoopConf, new NoSketchesStore());
 
-        CompactionJob job = CompactionJob.builder()
-                .jobId(bulkExportLeafPartitionQuery.getSubExportId())
+        // CompactionJob job = CompactionJob.builder()
+        //         .jobId(bulkExportLeafPartitionQuery.getSubExportId())
+        //         .tableId(bulkExportLeafPartitionQuery.getTableId())
+        //         .partitionId(bulkExportLeafPartitionQuery.getLeafPartitionId())
+        //         .inputFiles(bulkExportLeafPartitionQuery.getFiles())
+        //         .outputFile(outputFile)
+        //         .build();
+        // LOGGER.debug("Compaction job details: {}", job);
+
+        TableProperties tableProperties = tablePropertiesProvider.getById(bulkExportLeafPartitionQuery.getTableId());
+        Schema schema = tableProperties.getSchema();
+
+        // CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
+
+        LeafPartitionQuery query = LeafPartitionQuery.builder()
+                .files(bulkExportLeafPartitionQuery.getFiles())
+                .leafPartitionId(bulkExportLeafPartitionQuery.getLeafPartitionId())
+                .partitionRegion(bulkExportLeafPartitionQuery.getPartitionRegion())
+                .queryId(bulkExportLeafPartitionQuery.getExportId())
+                .regions(List.of(bulkExportLeafPartitionQuery.getPartitionRegion()))
+                .subQueryId(bulkExportLeafPartitionQuery.getSubExportId())
                 .tableId(bulkExportLeafPartitionQuery.getTableId())
-                .partitionId(bulkExportLeafPartitionQuery.getLeafPartitionId())
-                .inputFiles(bulkExportLeafPartitionQuery.getFiles())
-                .outputFile(outputFile)
+                .processingConfig(QueryProcessingConfig.none())
                 .build();
-        LOGGER.debug("Compaction job details: {}", job);
+        LOGGER.debug("Query details: {}", query);
 
-        TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
-        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
-                .job(job)
-                .tableProperties(tableProperties)
-                .region(bulkExportLeafPartitionQuery.getPartitionRegion())
-                .build());
-        LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
-                bulkExportLeafPartitionQuery.getTableId(),
-                bulkExportLeafPartitionQuery.getLeafPartitionId(),
-                rowsProcessed.getRowsRead(),
-                rowsProcessed.getRowsWritten());
+        try (BufferAllocator allocator = new RootAllocator();
+                FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
+            DataFusionLeafPartitionRowRetriever dataFusion = (DataFusionLeafPartitionRowRetriever) new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties),
+                    allocator, context)
+                    .getRowRetriever(tableProperties);
+            RowsProcessed rowsProcessed = dataFusion.queryToFile(query, outputFile, schema, tableProperties);
+
+            // RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+            //         .job(job)
+            //         .tableProperties(tableProperties)
+            //         .region(bulkExportLeafPartitionQuery.getPartitionRegion())
+            //         .build());
+            LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
+                    bulkExportLeafPartitionQuery.getTableId(),
+                    bulkExportLeafPartitionQuery.getLeafPartitionId(),
+                    rowsProcessed.getRowsRead(),
+                    rowsProcessed.getRowsWritten());
+        }
     }
 }
