@@ -35,7 +35,6 @@ public interface CommonProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets. \n" +
                     "This property is set at deployment of an instance and as such not present within the properties file.")
-            //.validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty ARTEFACTS_DEPLOYMENT_ID = Index.propertyBuilder("sleeper.artefacts.deployment")
@@ -154,7 +153,6 @@ public interface CommonProperty {
             .description("The id of the VPC to deploy to. This property may be passed as an argument during " +
                     "deployment. If using the Sleeper CDK app, you can set the context variable \"vpc\". If using " +
                     "your own CDK app, you can set this in SleeperInstanceProps under networking.")
-            //.validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = Index.propertyBuilder("sleeper.vpc.endpoint.check")
@@ -169,7 +167,6 @@ public interface CommonProperty {
                     "This property may be passed as an argument during deployment. If using the Sleeper CDK app, you " +
                     "can set the context variable \"subnets\". If using your own CDK app, you can set this in " +
                     "SleeperInstanceProps under networking.")
-            //.validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty FILE_SYSTEM = Index.propertyBuilder("sleeper.filesystem")
