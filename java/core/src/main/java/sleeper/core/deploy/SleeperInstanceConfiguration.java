@@ -68,13 +68,13 @@ public class SleeperInstanceConfiguration {
     /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file
-     * @param  fromTemplates          the settings to load the templates
-     * @return                        the instance configuration
+     * @param  configurationPath the path to the local configuration instance properties file
+     * @param  fromTemplates     the settings to load the templates
+     * @return                   the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingTables(
-            Path instancePropertiesPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
-        SleeperInstanceConfiguration configuration = fromLocalConfigurationDirectory(instancePropertiesPath);
+            Path configurationPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
+        SleeperInstanceConfiguration configuration = fromLocalConfigurationDirectory(configurationPath);
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -86,15 +86,15 @@ public class SleeperInstanceConfiguration {
      * Creates a configuration for a new instance, setting instance properties from templates if not
      * specified.
      *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file, or null if not
-     *                                present
-     * @param  templatesDir           the directory to load the templates from
-     * @return                        the instance configuration
+     * @param  configurationPath the path to the local configuration instance properties file, or null if not
+     *                           present
+     * @param  templatesDir      the directory to load the templates from
+     * @return                   the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingInstance(
-            Path instancePropertiesPath, Path templatesDir) {
-        if (instancePropertiesPath != null) {
-            return fromLocalConfigurationDirectory(instancePropertiesPath);
+            Path configurationPath, Path templatesDir) {
+        if (configurationPath != null) {
+            return fromLocalConfigurationDirectory(configurationPath);
         } else {
             return new SleeperInstanceConfiguration(SleeperInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir),
                     List.of());
