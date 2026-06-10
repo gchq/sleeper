@@ -284,6 +284,8 @@ public class SystemTestClients {
                 .withCaCertData(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_CA_DATA))
                 .withOauthTokenProvider(() -> EksAuthTokenGenerator.generateToken(
                         instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider))
+                .withConnectionTimeout(30 * 1000)
+                .withRequestTimeout(60 * 1000)
                 .build();
         return new KubernetesClientBuilder().withConfig(config).build();
     }
