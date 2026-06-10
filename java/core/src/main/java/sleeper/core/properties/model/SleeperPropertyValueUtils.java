@@ -148,14 +148,18 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is a non-empty string with a maximum length.
+     * Checks if a property value is a string within a maximum length.
      *
      * @param  string the value
      * @param  length the maximum length
      * @return        true if the value meets the requirement
      */
-    public static boolean isNonNullNonEmptyStringWithMaxLength(String string, int length) {
-        return isNonNullNonEmptyString(string) && string.length() <= length;
+    public static boolean isStringWithinMaxLength(String string, int length) {
+        if (string != null) {
+            return string.length() <= length;
+        } else {
+            return true;
+        }
     }
 
     /**
