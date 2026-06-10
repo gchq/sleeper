@@ -57,6 +57,7 @@ import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +68,6 @@ import java.util.Spliterators;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -92,8 +92,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private static final Logger LOGGER = Logger.get(SleeperRawAwsConnection.class);
 
     private static final int NO_OF_EXECUTOR_THREADS = 10;
-    private static final int PARTITION_CACHE_EXPIRY_VALUE = 60;
-    private static final TimeUnit PARTITION_CACHE_EXPIRY_UNITS = TimeUnit.MINUTES;
+    private static final Duration PARTITION_CACHE_EXPIRY = Duration.ofMinutes(60);
     public static final int MAX_NO_OF_ROWS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
     public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
     public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
@@ -164,14 +163,14 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 String tableId = keyPair.getLeft();
                 Instant instant = keyPair.getRight();
                 // Check that this transaction is not older than the cache expiry time as this will confuse the cache
-                if (instant.isBefore(Instant.now().minus(PARTITION_CACHE_EXPIRY_VALUE, PARTITION_CACHE_EXPIRY_UNITS.toChronoUnit()))) {
-                    throw new UnsupportedOperationException(String.format("Transactions longer than %s %s are not supported", PARTITION_CACHE_EXPIRY_UNITS, PARTITION_CACHE_EXPIRY_UNITS));
+                if (instant.isBefore(Instant.now().minus(PARTITION_CACHE_EXPIRY))) {
+                    throw new UnsupportedOperationException(String.format("Transactions longer than %s are not supported", PARTITION_CACHE_EXPIRY));
                 }
                 return getSleeperTablePartitionStructure(tablePropertiesProvider.getById(tableId), instant);
             }
         };
         this.sleeperTablePartitionStructureCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(PARTITION_CACHE_EXPIRY_VALUE, PARTITION_CACHE_EXPIRY_UNITS)
+                .expireAfterWrite(PARTITION_CACHE_EXPIRY)
                 .build(cacheLoader);
     }
 

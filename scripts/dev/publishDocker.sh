@@ -16,8 +16,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <repository-prefix-path> <optional-create-buildx-builder-true-or-false>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
+  echo "Usage: $0 <repository-prefix-path> <optional-create-buildx-builder-true-or-false> <optional-override-base-image-dir>"
   exit 1
 fi
 

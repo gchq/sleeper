@@ -289,7 +289,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                     .collect(Collectors.toList());
 
             long totalRows = relevantFiles.stream()
-                    .map(FileReference::getNumberOfRows)
+                    .mapToLong(FileReference::getNumberOfRows)
                     .reduce(Long::sum)
                     .orElseThrow();
 
