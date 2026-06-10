@@ -17,6 +17,7 @@ package sleeper.bulkimport.runner;
 
 import com.joom.spark.ExplicitRepartitionStrategy$;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.logging.log4j.LogManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -53,6 +54,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
  */
 public class BulkImportSparkContext implements BulkImportContext<BulkImportSparkContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkContext.class);
+    private static final org.apache.logging.log4j.Logger LOG4J2 = LogManager.getLogger(BulkImportSparkContext.class);
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
@@ -151,9 +153,9 @@ public class BulkImportSparkContext implements BulkImportContext<BulkImportSpark
      * Stops the Spark context. This is the same as calling {@link #close()}.
      */
     public void stopSparkContext() {
-        LOGGER.info("DIAGNOSTIC: BulkImportSparkContext.stopSparkContext() called - if halt(1) fired this should not appear");
+        LOG4J2.info("DIAGNOSTIC: BulkImportSparkContext.stopSparkContext() called - if halt(1) fired this should not appear");
         sparkContext.stop();
-        LOGGER.info("DIAGNOSTIC: sparkContext.stop() returned normally");
+        LOG4J2.info("DIAGNOSTIC: sparkContext.stop() returned normally");
     }
 
     public InstanceProperties getInstanceProperties() {
