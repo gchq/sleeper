@@ -241,7 +241,9 @@ public final class EksBulkImportStack extends NestedStack {
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
                                         .next(Choice.Builder.create(this, "JobStatusDecision").build()
-                                                .when(Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", "finished"),
+                                                .when(Condition.or(
+                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", "finished"),
+                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", "addedFiles")),
                                                         CustomState.Builder.create(this, "DeleteDriverPod")
                                                                 .stateJson(deleteDriverPodState).build()
                                                                 .next(CustomState.Builder.create(this, "DeleteJob")
