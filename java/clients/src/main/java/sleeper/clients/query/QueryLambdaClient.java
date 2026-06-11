@@ -95,7 +95,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             out.println("Finished query processing with final state of: " + state);
         } catch (QueryTrackerException | InterruptedException e) {
             out.println("Failed to get status");
-            e.printStackTrace();
+            out.printStackTrace(e);
         }
     }
 
