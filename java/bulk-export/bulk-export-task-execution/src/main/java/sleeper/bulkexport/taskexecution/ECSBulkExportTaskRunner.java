@@ -28,7 +28,6 @@ import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.taskexecution.SqsBulkExportQueueHandler.SqsMessageHandle;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,7 +35,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -69,16 +67,12 @@ public class ECSBulkExportTaskRunner {
      * and table properties, and processes messages from the SQS queue for bulk
      * export tasks.
      *
-     * @param  args                      Command line arguments
-     * @throws ObjectFactoryException    If there is an error creating objects
-     *                                   dynamically.
-     * @throws IteratorCreationException If there is an error creating iterators for
-     *                                   processing.
-     * @throws IOException               If there is an error interacting with S3 or
-     *                                   other I/O operations.
-     * @throws RowRetrievalException     if there is an error retrieving the query results
+     * @param  args                  Command line arguments
+     * @throws IOException           If there is an error interacting with S3 or
+     *                               other I/O operations.
+     * @throws RowRetrievalException if there is an error retrieving the query results
      */
-    public static void main(String[] args) throws ObjectFactoryException, IOException, RowRetrievalException, Exception {
+    public static void main(String[] args) throws IOException, RowRetrievalException {
 
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
@@ -119,7 +113,7 @@ public class ECSBulkExportTaskRunner {
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf, DataFusionAwsConfig awsConfig) throws RuntimeException, IOException, RowRetrievalException, Exception {
+            Configuration hadoopConf, DataFusionAwsConfig awsConfig) throws RuntimeException, IOException, RowRetrievalException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
@@ -153,7 +147,7 @@ public class ECSBulkExportTaskRunner {
             TablePropertiesProvider tablePropertiesProvider,
             S3Client s3Client,
             DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf, DataFusionAwsConfig awsConfig) throws RowRetrievalException, Exception {
+            Configuration hadoopConf, DataFusionAwsConfig awsConfig) throws RowRetrievalException {
         LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
 
