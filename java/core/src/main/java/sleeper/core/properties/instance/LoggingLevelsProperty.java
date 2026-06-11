@@ -27,7 +27,7 @@ public interface LoggingLevelsProperty {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
-            .defaultValue("INFO")
+            .defaultValue("WARN")
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.apache")
