@@ -47,11 +47,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-execution</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>query-datafusion</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

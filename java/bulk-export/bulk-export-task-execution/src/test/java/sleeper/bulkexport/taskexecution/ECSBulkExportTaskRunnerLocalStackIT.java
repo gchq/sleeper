@@ -20,6 +20,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
@@ -43,7 +44,9 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -216,7 +219,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .tableId(tableProperties.get(TABLE_ID))
                 .exportId(exportId)
                 .subExportId(subExportId)
-                .regions(List.of())
+                // Query across full region
+                .regions(List.of(partitions.getPartition(partitionId).getRegion()))
                 .leafPartitionId(partitionId)
                 .partitionRegion(partitions.getPartition(partitionId).getRegion())
                 .files(Stream.of(files).map(FileReference::getFilename).toList());
@@ -224,7 +228,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private void runTask() throws Exception {
         ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, dynamoClient, hadoopConf);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client,
+                dynamoClient, hadoopConf, createAwsConfig());
     }
 
     private StateStore stateStore() {
@@ -325,5 +330,10 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .build())
                 .attributes()
                 .get(QueueAttributeName.QUEUE_ARN);
+    }
+
+    private static DataFusionAwsConfig createAwsConfig() {
+        LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
+        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
     }
 }
