@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.runner;
 
-import org.apache.logging.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkSystemSetting;
@@ -79,7 +78,6 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMM
  */
 public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
-    private static final org.apache.logging.log4j.Logger LOG4J2 = LogManager.getLogger(BulkImportJobDriver.class);
 
     private final ContextCreator<C> contextCreator;
     private final PartitionPreSplitter<C> preSplitter;
@@ -145,25 +143,18 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 try {
                     fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
                 } catch (Exception e) {
-                    LOG4J2.error("DIAGNOSTIC: inner catch reached for job {}, exception type: {}, message: {}",
-                            runIds.getJobId(), e.getClass().getName(), e.getMessage(), e);
                     // Mark as failed and forcibly halt the JVM before context.close() calls sparkContext.stop().
                     // Spark's internal threads may concurrently call System.exit(0) when a job fails;
                     // Runtime.halt(1) overrides any in-progress System.exit(0) and terminates immediately.
                     failureAlreadyTracked = true;
                     markJobAsFailed(runIds, e);
-                    LOG4J2.error("DIAGNOSTIC: job marked as failed, about to call onFailure (halt(1))");
                     onFailure.run();
-                    LOG4J2.error("DIAGNOSTIC: onFailure returned without halting - this should never appear");
                     throw e;
                 }
 
-                LOG4J2.info("DIAGNOSTIC: createFileReferences completed successfully, committing job");
                 commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
             }
         } catch (RuntimeException | IOException e) {
-            LOG4J2.error("DIAGNOSTIC: outer catch reached for job {}, failureAlreadyTracked={}, exception type: {}, message: {}",
-                    runIds.getJobId(), failureAlreadyTracked, e.getClass().getName(), e.getMessage(), e);
             // Handles failures from createContext, preSplit, commitSuccessfulJob
             if (!failureAlreadyTracked) {
                 markJobAsFailed(runIds, e);
@@ -244,10 +235,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     public static void start(String[] args, BulkImportJobRunner runner) {
         try {
             startOrThrow(args, runner);
-            LOG4J2.info("DIAGNOSTIC: startOrThrow completed successfully");
         } catch (Exception e) {
-            LOG4J2.error("DIAGNOSTIC: exception reached start() catch, type: {}, message: {}",
-                    e.getClass().getName(), e.getMessage(), e);
             LOGGER.error("Bulk import job driver failed, exiting with code 1", e);
             System.exit(1);
         }
@@ -263,18 +251,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         String taskId = args[2];
         String jobRunId = args[3];
         String bulkImportMode = args[4];
-
-        // Shutdown hooks run on System.exit() but NOT on Runtime.halt() — so if this fires it means
-        // halt(1) was not called and System.exit() reached us first (likely Spark's own exit(0)).
-        // Uses System.err so it reaches CloudWatch even if Logback has already shut down.
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->
-                System.err.println("DIAGNOSTIC: JVM shutdown hook fired for job " + jobId
-                        + " - System.exit() was called (not halt), JVM will exit via normal shutdown sequence")));
-
-        // Log uncaught exceptions from Spark background threads to stderr so they reach CloudWatch
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
-                System.err.println("DIAGNOSTIC: uncaught exception in thread " + thread.getName()
-                        + ": " + throwable.getClass().getName() + " - " + throwable.getMessage()));
 
         LOGGER.info("Starting bulk import job driver");
         LOGGER.info("Config bucket: {}", configBucket);
