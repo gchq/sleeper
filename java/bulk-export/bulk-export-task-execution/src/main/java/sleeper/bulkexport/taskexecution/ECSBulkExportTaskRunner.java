@@ -167,7 +167,7 @@ public class ECSBulkExportTaskRunner {
                 runExport(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient, hadoopConf, awsConfig);
                 messageHandle.deleteFromQueue();
                 LOGGER.info("Successfully processed and deleted message from queue");
-            } catch (RuntimeException | RowRetrievalException e) {
+            } catch (RuntimeException | RowRetrievalException | IOException | ObjectFactoryException | IteratorCreationException e) {
                 LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
