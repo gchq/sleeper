@@ -306,8 +306,7 @@ public class ECSBulkExportTaskRunner {
 
             try (BufferAllocator allocator = new RootAllocator();
                     FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
-                DataFusionLeafPartitionRowRetriever dataFusion = (DataFusionLeafPartitionRowRetriever) new DataFusionLeafPartitionRowRetriever.Provider(
-                        awsConfig, allocator, context).getRowRetriever(tableProperties);
+                DataFusionLeafPartitionRowRetriever dataFusion = new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
                 return dataFusion.queryToFile(query, outputFile, schema, tableProperties);
             }
         }
