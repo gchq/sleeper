@@ -24,11 +24,10 @@ import sleeper.bulkexport.taskexecution.ECSBulkExportTaskRunner.JavaCompactionEx
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
-import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 
