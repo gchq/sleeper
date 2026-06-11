@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.query.QueryLambdaClient;
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -80,7 +81,7 @@ public class MultipleQueries {
 
     public void run() {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient);
-        QueryLambdaClient queryLambdaClient = new QueryLambdaClient(systemTestProperties, s3Client, dynamoClient, sqsClient, ConsoleInput.stdIn());
+        QueryLambdaClient queryLambdaClient = new QueryLambdaClient(systemTestProperties, s3Client, dynamoClient, sqsClient, ConsoleOutput.stdOut(), ConsoleInput.stdIn());
 
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);

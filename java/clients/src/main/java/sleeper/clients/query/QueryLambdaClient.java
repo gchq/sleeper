@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -46,6 +47,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  * execute the query.
  */
 public class QueryLambdaClient extends QueryCommandLineClient {
+    private final ConsoleOutput out;
     private final ConsoleInput in;
     private final SqsClient sqsClient;
     private final DynamoDBQueryTracker queryTracker;
@@ -53,8 +55,9 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private final String queryQueueUrl;
     private final QuerySerDe querySerDe;
 
-    public QueryLambdaClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, ConsoleInput in) {
+    public QueryLambdaClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, ConsoleOutput out, ConsoleInput in) {
         super(s3Client, dynamoClient, instanceProperties);
+        this.out = out;
         this.in = in;
         this.sqsClient = sqsClient;
         this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
@@ -69,14 +72,14 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
-        System.out.println("Submitting query with id " + query.getQueryId());
+        out.println("Submitting query with id " + query.getQueryId());
         submitQuery(query);
         long sleepTime = 1000L;
         try {
             QueryState state;
             int count = 0;
             while (true) {
-                System.out.println("Polling query tracker");
+                out.println("Polling query tracker");
                 TrackedQuery trackedQuery = queryTracker.getStatus(query.getQueryId());
                 if (trackedQuery != null) {
                     state = trackedQuery.getLastKnownState();
@@ -90,12 +93,12 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 } else if (count > 10) {
                     sleepTime = 2000L;
                 }
-                System.out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
+                out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
                 Thread.sleep(sleepTime);
             }
-            System.out.println("Finished query processing with final state of: " + state);
+            out.println("Finished query processing with final state of: " + state);
         } catch (QueryTrackerException | InterruptedException e) {
-            System.out.println("Failed to get status");
+            out.println("Failed to get status");
             e.printStackTrace();
         }
     }
@@ -111,10 +114,10 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             if ("s".equalsIgnoreCase(type)) {
                 // Nothing to do - empty resultsPublisherConfig will cause the
                 // results to be published to S3.
-                System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
+                out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
             } else if ("q".equals(type)) {
                 resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
-                System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
+                out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
             } else {
                 continue;
             }
@@ -141,7 +144,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-            QueryLambdaClient queryLambdaClient = new QueryLambdaClient(instanceProperties, s3Client, dynamoClient, sqsClient, ConsoleInput.stdIn());
+            QueryLambdaClient queryLambdaClient = new QueryLambdaClient(instanceProperties, s3Client, dynamoClient, sqsClient, ConsoleOutput.stdOut(), ConsoleInput.stdIn());
             queryLambdaClient.run();
         }
     }
