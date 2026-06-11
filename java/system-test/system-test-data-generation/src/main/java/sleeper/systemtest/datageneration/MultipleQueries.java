@@ -24,10 +24,12 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.api.QuerySender;
 import sleeper.clients.query.QueryLambdaClient;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
@@ -37,8 +39,10 @@ import sleeper.core.row.ResultsBatch;
 import sleeper.core.row.Row;
 import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
@@ -80,8 +84,13 @@ public class MultipleQueries {
     }
 
     public void run() {
+        TableIndex tableIndex = new DynamoDBTableIndex(systemTestProperties, dynamoClient);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient);
-        QueryLambdaClient queryLambdaClient = new QueryLambdaClient(systemTestProperties, s3Client, dynamoClient, sqsClient, ConsoleOutput.stdOut(), ConsoleInput.stdIn());
+        QueryLambdaClient queryLambdaClient = new QueryLambdaClient(
+                systemTestProperties, tableIndex, tablePropertiesProvider,
+                QuerySender.toSqs(systemTestProperties, tablePropertiesProvider, sqsClient),
+                new DynamoDBQueryTracker(systemTestProperties, dynamoClient),
+                ConsoleInput.stdIn(), ConsoleOutput.stdOut());
 
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
