@@ -89,21 +89,28 @@ public interface CommonProperty {
             .defaultValue("DeploymentStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.infra.after.destroy")
+    UserDefinedInstanceProperty RETAIN_DETAILS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy")
+            .description("Overall policy of whether to keep the details of instance when it is destroyed. " +
+                    "Covers both the infrastructure of sleeper and the logs.")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .defaultValue("true")
+            .runCdkDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();;
+    UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.infra")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
-                    "when the instance is destroyed.")
-            .defaultValue("true")
+                    "when the instance is destroyed. Overrides default values set within \"sleeper.retain.after.destroy\"")
+            .defaultProperty(RETAIN_DETAILS_AFTER_DESTROY)
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true)
-            .includedInBasicTemplate(true).build();
-    UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.logs.after.destroy")
-            .description("Whether to keep the sleeper log groups when the instance is destroyed.")
-            .defaultValue("true")
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.logs")
+            .description("Whether to keep the sleeper log groups when the instance is destroyed. Overrides " +
+                    "default value set within \"sleeper.retain.after.destroy\"")
+            .defaultProperty(RETAIN_DETAILS_AFTER_DESTROY)
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true)
-            .includedInBasicTemplate(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.default.table.retain.after.removal")
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
                     "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
