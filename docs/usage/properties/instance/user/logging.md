@@ -4,7 +4,7 @@ The following instance properties relate to logging.
 
 | Property Name                 | Description                                                                                                          | Default Value | Run CDK Deploy When Changed |
 |-------------------------------|----------------------------------------------------------------------------------------------------------------------|---------------|-----------------------------|
-| sleeper.logging.level         | The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO. | INFO          | true                        |
+| sleeper.logging.level         | The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO. | WARN          | true                        |
 | sleeper.logging.level.apache  | The logging level for Apache logs that are not Parquet. Overrides the default set in "sleeper.logging.level".        |               | true                        |
 | sleeper.logging.level.parquet | The logging level for Parquet logs. Overrides the default set in "sleeper.logging.level".                            |               | true                        |
 | sleeper.logging.level.aws     | The logging level for AWS logs. Overrides the default set in "sleeper.logging.level".                                |               | true                        |
