@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.SdkHttpRequest;
@@ -36,11 +38,13 @@ import java.util.Base64;
  * x-k8s-aws-id header is part of the signed canonical request, which is what binds the token to a specific cluster.
  */
 public class EksAuthTokenGenerator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EksAuthTokenGenerator.class);
 
     private EksAuthTokenGenerator() {
     }
 
     public static String generateToken(String clusterName, Region region, AwsCredentialsProvider credentialsProvider) {
+        LOGGER.info("Generating token for cluster {}", clusterName);
         PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
         SdkHttpRequest request = SdkHttpRequest.builder()
                 .method(SdkHttpMethod.GET)
@@ -53,7 +57,7 @@ public class EksAuthTokenGenerator {
                 .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "sts")
                 .putProperty(AwsV4HttpSigner.REGION_NAME, region.id())
                 .putProperty(AwsV4HttpSigner.AUTH_LOCATION, AwsV4HttpSigner.AuthLocation.QUERY_STRING)
-                .putProperty(AwsV4HttpSigner.EXPIRATION_DURATION, Duration.ofSeconds(60))
+                .putProperty(AwsV4HttpSigner.EXPIRATION_DURATION, Duration.ofMinutes(15))
                 .request(request)
                 .build());
         String presignedUrl = signed.request().getUri().toString();
