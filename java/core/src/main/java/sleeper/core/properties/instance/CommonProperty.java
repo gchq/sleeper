@@ -24,6 +24,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Definitions of instance properties commonly set for any instance.
@@ -34,7 +35,8 @@ public interface CommonProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.\n" +
                     "This property may be passed as an argument during deployment. If using your own CDK app, " +
-                    "you can set this in the context variable \"id\".")
+                    "you can set this directly.")
+            .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty ARTEFACTS_DEPLOYMENT_ID = Index.propertyBuilder("sleeper.artefacts.deployment")
@@ -42,6 +44,7 @@ public interface CommonProperty {
                     "we assume an artefacts deployment with the same ID as the Sleeper instance. This property is " +
                     "used to compute the default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.")
             .defaultProperty(ID)
+            .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
@@ -153,6 +156,7 @@ public interface CommonProperty {
                     "deployment. If using the Sleeper CDK app, you can set the context variable \"vpc\". If using " +
                     "your own CDK app, you can set this in SleeperInstanceProps under networking.")
             .propertyGroup(InstancePropertyGroup.COMMON)
+            .validationPredicate(Objects::nonNull)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = Index.propertyBuilder("sleeper.vpc.endpoint.check")
             .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint. " +
@@ -167,6 +171,7 @@ public interface CommonProperty {
                     "can set the context variable \"subnets\". If using your own CDK app, you can set this in " +
                     "SleeperInstanceProps under networking.")
             .propertyGroup(InstancePropertyGroup.COMMON)
+            .validationPredicate(Objects::nonNull)
             .editable(false).build();
     UserDefinedInstanceProperty FILE_SYSTEM = Index.propertyBuilder("sleeper.filesystem")
             .description("The Hadoop filesystem used to connect to S3.")

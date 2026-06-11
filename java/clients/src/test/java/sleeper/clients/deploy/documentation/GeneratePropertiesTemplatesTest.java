@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
@@ -41,7 +42,11 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -64,6 +69,16 @@ class GeneratePropertiesTemplatesTest {
         }
     }
 
+    static class DeploymentInstancePropertyValues implements ArgumentsProvider {
+        @Override
+        public Stream<Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of(ID),
+                    Arguments.of(VPC_ID),
+                    Arguments.of(SUBNETS));
+        }
+    }
+
     @Nested
     @DisplayName("Generate full example instance properties")
     class GenerateFullInstanceProperties {
@@ -71,12 +86,16 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidInstanceProperties() {
-            // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+            // When / Then
+            assertThat(instancePropertiesFromString(propertiesString).get(SNAPSHOT_CREATION_BATCH_SIZE))
+                    .isEqualTo("1");
+        }
 
-            // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
+        @ParameterizedTest
+        @ArgumentsSource(DeploymentInstancePropertyValues.class)
+        void shouldNotSetDeploymentProperties(UserDefinedInstanceProperty property) {
+            assertThat(instancePropertiesFromString(propertiesString)
+                    .get(property)).isNull();
         }
 
         @ParameterizedTest
@@ -245,7 +264,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        return InstanceProperties.createAndValidate(loadProperties(propertiesString));
+        return InstanceProperties.createAndValidate(loadProperties(propertiesString), true);
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
