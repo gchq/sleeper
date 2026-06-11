@@ -16,6 +16,7 @@
 
 package sleeper.core.deploy;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -105,126 +106,98 @@ public class SleeperInstanceConfigurationIT {
     @Nested
     @DisplayName("Load from instance properties")
     class LoadFromInstanceProperties {
+
+        @BeforeEach
+        void writeInstanceProperties() throws IOException {
+            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
+        }
+
         @Test
         void shouldLoadTagsButNotTablesWhenGivenInstancePropertiesFile() throws Exception {
             // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
-            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
-            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+            writeTagsProperties();
+            writeTableFiles(propertiesDir, "test-table", "key");
 
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
+            InstanceProperties expectedInstanceProperties = expectedInstanceProperties();
             expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
             assertThat(instanceConfiguration)
-                    .isEqualTo(SleeperInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(List.of())
-                            .build());
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
         }
 
         @Test
         void shouldLoadNoTablesIfNotFoundNearInstanceProperties() throws Exception {
-            // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
             assertThat(instanceConfiguration)
-                    .isEqualTo(SleeperInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(List.of())
-                            .build());
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties(), List.of()));
         }
 
         @Test
         void shouldLoadFromConfigurationDirectoryWithSingleTable() throws Exception {
             // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
-            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
-            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+            writeTagsProperties();
+            writeTableFiles(propertiesDir, "test-table", "key");
 
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
+            InstanceProperties expectedInstanceProperties = expectedInstanceProperties();
             expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(createSchemaWithKey("key"));
             assertThat(instanceConfiguration)
-                    .isEqualTo(SleeperInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(expectedTableProperties)
-                            .build());
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties,
+                            expectedTableProperties(expectedInstanceProperties, "test-table", "key")));
         }
 
         @Test
         void shouldLoadFromConfigurationDirectoryWithTablesSubdirectory() throws Exception {
             // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Path table1Dir = Files.createDirectories(propertiesDir.resolve("tables/table-1"));
-            Files.writeString(table1Dir.resolve("table.properties"), "sleeper.table.name=table-1");
-            Files.writeString(table1Dir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key1")));
-            Path table2Dir = Files.createDirectories(propertiesDir.resolve("tables/table-2"));
-            Files.writeString(table2Dir.resolve("table.properties"), "sleeper.table.name=table-2");
-            Files.writeString(table2Dir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key2")));
+            writeTableFiles(Files.createDirectories(propertiesDir.resolve("tables/table-1")), "table-1", "key1");
+            writeTableFiles(Files.createDirectories(propertiesDir.resolve("tables/table-2")), "table-2", "key2");
 
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
-            assertThat(instanceConfiguration.getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("table-1", "table-2");
+            InstanceProperties expectedInstanceProperties = expectedInstanceProperties();
+            assertThat(instanceConfiguration)
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of(
+                            expectedTableProperties(expectedInstanceProperties, "table-1", "key1"),
+                            expectedTableProperties(expectedInstanceProperties, "table-2", "key2"))));
         }
 
         @Test
         void shouldLoadFromConfigurationDirectoryWhenGivenInstancePropertiesFileWithinIt() throws Exception {
             // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-            Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
-            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+            writeTableFiles(propertiesDir, "test-table", "key");
 
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
-            assertThat(instanceConfiguration.getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("test-table");
+            InstanceProperties expectedInstanceProperties = expectedInstanceProperties();
+            assertThat(instanceConfiguration)
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties,
+                            expectedTableProperties(expectedInstanceProperties, "test-table", "key")));
         }
 
         @Test
         void shouldLoadFromConfigurationDirectoryWithNoTables() throws Exception {
-            // Given
-            Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
-
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
 
             // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(ID, "test-instance");
             assertThat(instanceConfiguration)
-                    .isEqualTo(SleeperInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(List.of())
-                            .build());
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties(), List.of()));
         }
     }
 
@@ -323,6 +296,28 @@ public class SleeperInstanceConfigurationIT {
             expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
             assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
         }
+    }
+
+    private void writeTagsProperties() throws IOException {
+        Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
+    }
+
+    private void writeTableFiles(Path directory, String tableName, String schemaKey) throws IOException {
+        Files.writeString(directory.resolve("table.properties"), "sleeper.table.name=" + tableName);
+        Files.writeString(directory.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey(schemaKey)));
+    }
+
+    private InstanceProperties expectedInstanceProperties() {
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        return expected;
+    }
+
+    private TableProperties expectedTableProperties(InstanceProperties instanceProperties, String tableName, String schemaKey) {
+        TableProperties expected = new TableProperties(instanceProperties);
+        expected.set(TABLE_NAME, tableName);
+        expected.setSchema(createSchemaWithKey(schemaKey));
+        return expected;
     }
 
     private void writeTemplates() throws IOException {
