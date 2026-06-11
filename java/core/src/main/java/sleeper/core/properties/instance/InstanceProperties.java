@@ -68,6 +68,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * Creates and validates an instance of this class with the given property values when loaded from a file.
      *
      * @param  properties the property values
+     * @param  fromFile   whether the properties orignated from a loaded file
      * @return            the instance properties
      */
     public static InstanceProperties createAndValidate(Properties properties, Boolean fromFile) {

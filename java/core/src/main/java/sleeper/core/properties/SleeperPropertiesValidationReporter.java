@@ -42,7 +42,7 @@ public class SleeperPropertiesValidationReporter {
      * @param value    the value
      */
     public void invalidProperty(SleeperProperty property, String value) {
-        if ((!fromFile) || (value != null)) {
+        if (!fromFile || value != null) {
             invalidValues.put(property, value);
         }
     }
