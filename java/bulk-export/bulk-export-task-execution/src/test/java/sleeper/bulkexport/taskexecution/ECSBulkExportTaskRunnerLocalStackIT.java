@@ -94,7 +94,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_ID, "t-id");
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
         instanceProperties.setNumber(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
         instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
@@ -108,6 +108,28 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     public void shouldRunOneBulkExportSubQuery() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
+        BulkExportLeafPartitionQuery query1 = createQueryWithIdsAndFiles("e-1", "se-1", file).build();
+        BulkExportLeafPartitionQuery query2 = createQueryWithIdsAndFiles("e-2", "se-2", file).build();
+        send(query1);
+        send(query2);
+
+        // When
+        runTask();
+
+        // Then
+        assertThat(readOutputFile(query1)).containsExactly(row1, row2);
+        assertThat(getMessagesFromDlq()).isEmpty();
+        assertThat(getJobsFromQueue()).containsExactly(query2);
+    }
+
+    @Test
+    public void shouldRunOneBulkExportSubQueryViaDataFusion() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
