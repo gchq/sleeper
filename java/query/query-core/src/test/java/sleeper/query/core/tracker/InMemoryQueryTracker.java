@@ -43,6 +43,10 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
     private final Map<String, TrackedQuery> queryIdToStatus = new HashMap<>();
     private final Map<String, TrackedQuery> subQueryIdToStatus = new HashMap<>();
 
+    public InMemoryQueryTracker(InstanceProperties instanceProperties) {
+        this(instanceProperties, Instant::now);
+    }
+
     public InMemoryQueryTracker(InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.timeSupplier = timeSupplier;
