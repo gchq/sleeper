@@ -18,6 +18,7 @@ package sleeper.query.datafusion;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,8 +42,11 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.table.TableFilePaths;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
@@ -50,6 +54,9 @@ import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.RowReadSupport;
+import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
@@ -1270,6 +1277,125 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // When / Then
         assertThat(execute(query))
                 .containsExactly(new Row(Map.of("key", 1L, "securityLabel", "secret", "value", 10L)));
+    }
+
+    @Nested
+    @DisplayName("Query to file")
+    class QueryToFile {
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        }
+
+        @Test
+        void shouldWriteRowsToFile() throws Exception {
+            // Given
+            Row row1 = new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L));
+            Row row2 = new Row(Map.of("key", 2L, "value1", 20L, "value2", 200L));
+            ingestData(List.of(row1, row2));
+            List<String> files = filesForPartition("root");
+            String outputFile = outputFilePath();
+
+            // When
+            RowsProcessed result = queryToFile("root", files, outputFile);
+
+            // Then
+            assertThat(result).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readOutputFile(outputFile)).containsExactly(row1, row2);
+        }
+
+        @Test
+        void shouldWriteRowsFromMultipleInputFilesToFile() throws Exception {
+            // Given
+            Row row1 = new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L));
+            Row row2 = new Row(Map.of("key", 2L, "value1", 20L, "value2", 200L));
+            ingestData(List.of(row1));
+            ingestData(List.of(row2));
+            List<String> files = filesForPartition("root");
+            String outputFile = outputFilePath();
+
+            // When
+            RowsProcessed result = queryToFile("root", files, outputFile);
+
+            // Then
+            assertThat(result).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readOutputFile(outputFile)).containsExactly(row1, row2);
+        }
+
+        @Test
+        void shouldFilterRowsByPartitionRegion() throws Exception {
+            // Given
+            tableProperties.setSchema(getLongKeySchema());
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildTree();
+            update(stateStore).initialise(tree);
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 3L, "value1", 30L, "value2", 300L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
+                    new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)));
+            ingestData(rows);
+            List<String> leftFiles = filesForPartition("left");
+            String outputFile = outputFilePath();
+
+            // When
+            RowsProcessed result = queryToFile("left", leftFiles, outputFile);
+
+            // Then
+            assertThat(result).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readOutputFile(outputFile)).containsExactly(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 3L, "value1", 30L, "value2", 300L)));
+        }
+
+        private RowsProcessed queryToFile(String partitionId, List<String> files, String outputFile) throws Exception {
+            Schema schema = tableProperties.getSchema();
+            Region partitionRegion = stateStore.getAllPartitions().stream()
+                    .filter(p -> p.getId().equals(partitionId))
+                    .findFirst().orElseThrow()
+                    .getRegion();
+            LeafPartitionQuery query = LeafPartitionQuery.builder()
+                    .tableId(tableProperties.get(sleeper.core.properties.table.TableProperty.TABLE_ID))
+                    .queryId("test-query")
+                    .subQueryId("test-sub-query")
+                    .leafPartitionId(partitionId)
+                    .partitionRegion(partitionRegion)
+                    .regions(List.of(partitionRegion))
+                    .files(files)
+                    .processingConfig(QueryProcessingConfig.none())
+                    .build();
+            DataFusionLeafPartitionRowRetriever dataFusion = (DataFusionLeafPartitionRowRetriever) new DataFusionLeafPartitionRowRetriever.Provider(
+                    DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT).getRowRetriever(tableProperties);
+            return dataFusion.queryToFile(query, outputFile, schema, tableProperties);
+        }
+
+        private List<String> filesForPartition(String partitionId) throws Exception {
+            return stateStore.getFileReferences().stream()
+                    .filter(f -> f.getPartitionId().equals(partitionId))
+                    .map(FileReference::getFilename)
+                    .toList();
+        }
+
+        private String outputFilePath() throws Exception {
+            return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                    .constructPartitionParquetFilePath("output", "result.parquet");
+        }
+
+        private List<Row> readOutputFile(String filename) throws Exception {
+            List<Row> rows = new ArrayList<>();
+            try (ParquetReaderIterator reader = new ParquetReaderIterator(
+                    ParquetReader.builder(new RowReadSupport(tableProperties.getSchema()),
+                            new org.apache.hadoop.fs.Path(filename)).build())) {
+                while (reader.hasNext()) {
+                    rows.add(new Row(reader.next()));
+                }
+            }
+            return rows;
+        }
     }
 
     private RangeFactory rangeFactory() {
