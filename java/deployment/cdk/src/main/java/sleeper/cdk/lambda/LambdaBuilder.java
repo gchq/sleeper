@@ -16,6 +16,7 @@
 package sleeper.cdk.lambda;
 
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.Size;
 import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
@@ -90,6 +91,15 @@ public interface LambdaBuilder {
      * @return        this builder
      */
     LambdaBuilder events(List<IEventSource> events);
+
+    /**
+     * Sets the ephemeral storage size for the lambda. See
+     * {@link software.amazon.awscdk.services.lambda.Function.Builder#ephemeralStorageSize(Size)}.
+     *
+     * @param  ephemeralStorageSize the ephemeral storage size
+     * @return                      this builder
+     */
+    LambdaBuilder ephemeralStorageSize(Size ephemeralStorageSize);
 
     /**
      * Sets the reserved concurrent executions. See

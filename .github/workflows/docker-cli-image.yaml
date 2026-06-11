@@ -54,8 +54,8 @@ jobs:
           rm -rf /opt/ghc
           rm -rf "/usr/local/share/boost"
           rm -rf "$AGENT_TOOLSDIRECTORY"
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'corretto'
@@ -73,13 +73,13 @@ jobs:
         if: inputs.mavenCmd != 'none'
         run: ${{ inputs.mavenCmd }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           driver-opts: network=host
       - name: Download artifacts from previous workflows
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: dependencies-image
       - name: Load dependencies image
@@ -89,13 +89,13 @@ jobs:
       - name: Expose dependencies image to Docker Buildx via local registry
         run: docker push ${{ env.DEPENDENCIES_IMAGE }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ inputs.context }}
           push: true
@@ -108,22 +108,30 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ inputs.buildUrl }}
       - name: Pull image from registry
+        if: ${{ inputs.runTrivy }}
         run: docker pull ${{ env.TEMP_IMAGE }}
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         if: ${{ inputs.runTrivy }}
         with:
           image-ref: ${{ env.TEMP_IMAGE }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          version: latest
-      - name: Retag image for GitHub
-        if: ${{ inputs.pushImages }}
-        run: docker tag ${{ env.TEMP_IMAGE }} ${{ inputs.pushTag }}
       - name: Push image to GitHub
         if: ${{ inputs.pushImages }}
-        run: docker push ${{ inputs.pushTag }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.context }}
+          push: true
+          sbom: false
+          provenance: false
+          tags: ${{ inputs.pushTag }}
+          platforms: ${{ inputs.platforms }}
+          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ inputs.buildUrl }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build

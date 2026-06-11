@@ -22,6 +22,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -74,6 +75,11 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
 
     @Override
     public DirectBulkImportDriver directEmrServerless(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public EksBulkImportDriver eksBulkImport(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 

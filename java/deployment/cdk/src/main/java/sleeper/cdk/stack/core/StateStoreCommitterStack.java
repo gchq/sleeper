@@ -178,7 +178,7 @@ public class StateStoreCommitterStack extends NestedStack {
                                 .userData(UserData.forLinux())
                                 .securityGroup(ecsSecurityGroup)
                                 .role(Role.Builder.create(this, "role")
-                                        .assumedBy(ServicePrincipal.fromStaticServicePrincipleName("ec2.amazonaws.com"))
+                                        .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                                         .build())
                                 .build())
                         .vpc(vpc)

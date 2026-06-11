@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2026 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.taskexecution.SqsBulkExportQueueHandler.SqsMessageHandle;
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
@@ -39,6 +40,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.NoSketchesStore;
 
@@ -157,7 +159,7 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Output file path: {}", outputFile);
 
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
-        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
+        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(DataFusionAwsConfig.getDefault(instanceProperties),
                 objectFactory, hadoopConf, new NoSketchesStore());
 
         CompactionJob job = CompactionJob.builder()
@@ -171,7 +173,11 @@ public class ECSBulkExportTaskRunner {
 
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, bulkExportLeafPartitionQuery.getPartitionRegion());
+        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+                .job(job)
+                .tableProperties(tableProperties)
+                .region(bulkExportLeafPartitionQuery.getPartitionRegion())
+                .build());
         LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),

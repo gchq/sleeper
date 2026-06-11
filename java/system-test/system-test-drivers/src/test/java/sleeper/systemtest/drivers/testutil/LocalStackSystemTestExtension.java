@@ -15,24 +15,35 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
+
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
-            SystemTestParametersTestHelper.parametersBuilder()
-                    .account(SleeperLocalStackClients.STS_CLIENT.getCallerIdentity().account())
-                    .shortTestId("localstack")
-                    .region(SleeperLocalStackContainer.INSTANCE.getRegion())
-                    .build(),
-            LocalStackSystemTestDrivers.fromContainer());
+    private static final SystemTestDeploymentContext CONTEXT = createContext();
 
     private LocalStackSystemTestExtension() {
         super(CONTEXT);
+    }
+
+    private static SystemTestDeploymentContext createContext() {
+        LocalStackSystemTestDrivers drivers = LocalStackSystemTestDrivers.fromContainer();
+        SystemTestClients clients = drivers.clients();
+        Region region = clients.getRegion();
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+        return new SystemTestDeploymentContext(
+                SystemTestParametersTestHelper.parametersBuilder()
+                        .account(clients.getSts().getCallerIdentity().account())
+                        .shortTestId("localstack")
+                        .region(region.id())
+                        .dnsSuffix(partitionMetadata.dnsSuffix())
+                        .build(),
+                drivers);
     }
 
 }

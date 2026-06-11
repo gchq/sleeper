@@ -17,6 +17,7 @@ package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -36,6 +38,11 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 public class DockerDeployment {
 
     private static final List<DockerDeployment> ALL = new ArrayList<>();
+    public static final DockerDeployment BASE = builder()
+            .deploymentName("base")
+            .multiplatform(true)
+            .baseImage(true)
+            .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)
@@ -58,19 +65,27 @@ public class DockerDeployment {
             .committerPlatform(StateStoreCommitterPlatform.EC2)
             .multiplatform(true)
             .add();
+    public static final DockerDeployment SYSTEM_TEST = builder()
+            .deploymentName("system-test")
+            .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
+            .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;
     private final StateStoreCommitterPlatform committerPlatform;
-    private final boolean multiplatform;
+    private final Collection<SleeperInternalCdkApp> cdkApps;
+    private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
+    private final boolean baseImage;
 
     private DockerDeployment(Builder builder) {
         deploymentName = builder.deploymentName;
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
-        multiplatform = builder.multiplatform;
+        cdkApps = builder.cdkApps;
+        platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        baseImage = builder.baseImage;
     }
 
     public static Builder builder() {
@@ -99,7 +114,7 @@ public class DockerDeployment {
      * Retrieves which optional stack uses this deployment. If the optional stack is not enabled, this Docker image is
      * not needed.
      *
-     * @return the optional stack
+     * @return the optional stack, or null if it's not specific to an optional stack
      */
     public OptionalStack getOptionalStack() {
         return optionalStack;
@@ -108,20 +123,38 @@ public class DockerDeployment {
     /**
      * Retrieves which state store committer platform uses this deployment.
      *
-     * @return the platform
+     * @return the platform, or null if it's used for every platform
      */
     public StateStoreCommitterPlatform getCommitterPlatform() {
         return committerPlatform;
     }
 
     /**
+     * Retrieves which CDK apps use this deployment. If null, the deployment is used by any CDK app that deploys a
+     * Sleeper instance.
+     *
+     * @return the CDK app, or null if applicable to all Sleeper instances
+     */
+    public Collection<SleeperInternalCdkApp> getCdkApps() {
+        return cdkApps;
+    }
+
+    public boolean isBaseImage() {
+        return baseImage;
+    }
+
+    /**
      * Checks whether this deployment is deployed given some configuration.
      *
+     * @param  cdkApp            the CDK app being deployed
      * @param  committerPlatform the platform used to deploy the state store committer
      * @param  optionalStacks    the enabled optional stacks in the instance
      * @return                   true if this is deployed
      */
-    public boolean isDeployed(StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+    public boolean isDeployed(SleeperInternalCdkApp cdkApp, StateStoreCommitterPlatform committerPlatform, Collection<OptionalStack> optionalStacks) {
+        if (this.cdkApps != null && !this.cdkApps.contains(cdkApp)) {
+            return false;
+        }
         if (this.committerPlatform != null && this.committerPlatform != committerPlatform) {
             return false;
         }
@@ -137,7 +170,17 @@ public class DockerDeployment {
      * @return true if the image is multiplatform
      */
     public boolean isMultiplatform() {
-        return multiplatform;
+        return platforms.size() > 1;
+    }
+
+    /**
+     * Retrieves the platforms this image should be built and transferred for. If empty, the default platform of the
+     * build/transfer tool is used.
+     *
+     * @return the platforms
+     */
+    public List<ContainerPlatform> getPlatforms() {
+        return platforms;
     }
 
     /**
@@ -158,7 +201,8 @@ public class DockerDeployment {
      */
     public String getDockerImageName(InstanceProperties properties) {
         return properties.get(ACCOUNT) + ".dkr.ecr." +
-                properties.get(REGION) + ".amazonaws.com/" +
+                properties.get(REGION) + "." +
+                properties.get(DNS_SUFFIX) + "/" +
                 getEcrRepositoryName(properties) +
                 ":" + properties.get(VERSION);
     }
@@ -175,8 +219,8 @@ public class DockerDeployment {
 
     @Override
     public String toString() {
-        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", multiplatform=" + multiplatform
-                + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
+        return "DockerDeployment{deploymentName=" + deploymentName + ", optionalStack=" + optionalStack + ", committerPlatform=" + committerPlatform + ", cdkApps=" + cdkApps
+                + ", platforms=" + platforms + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy + "}";
     }
 
     /**
@@ -186,8 +230,10 @@ public class DockerDeployment {
         private String deploymentName;
         private OptionalStack optionalStack;
         private StateStoreCommitterPlatform committerPlatform;
+        private Collection<SleeperInternalCdkApp> cdkApps;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
+        private boolean baseImage;
 
         /**
          * Sets the name of this deployment. Used as part of Docker image names and ECR repository names.
@@ -224,9 +270,21 @@ public class DockerDeployment {
         }
 
         /**
+         * Sets which CDK apps use this deployment. If unset, the deployment is included for any CDK app that deploys a
+         * Sleeper instance.
+         *
+         * @param  cdkApps the CDK apps
+         * @return         this builder
+         */
+        public Builder cdkApps(Collection<SleeperInternalCdkApp> cdkApps) {
+            this.cdkApps = cdkApps;
+            return this;
+        }
+
+        /**
          * Sets whether the Docker image should be built for multiple platforms.
          *
-         * @param  multiplatform true if the image is multiplatform
+         * @param  multiplatform true if the image should be multiplatform
          * @return               this builder
          */
         public Builder multiplatform(boolean multiplatform) {
@@ -242,6 +300,17 @@ public class DockerDeployment {
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        /**
+         * Sets whether this is the base image, and required to build all others.
+         *
+         * @param  baseImage true if this is the base image
+         * @return           this builder
+         */
+        public Builder baseImage(boolean baseImage) {
+            this.baseImage = baseImage;
             return this;
         }
 

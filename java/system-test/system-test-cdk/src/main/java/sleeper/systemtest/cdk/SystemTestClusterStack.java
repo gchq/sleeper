@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.cdk;
 
+import software.amazon.awscdk.Aws;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
@@ -40,10 +41,10 @@ import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.EcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
-import sleeper.systemtest.configuration.SystemTestDockerRepository;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -112,7 +113,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestTaskDefinitionFamily", taskDefinitionFamilyOutputProps);
 
-        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", SystemTestDockerRepository.getRepositoryName(instanceProperties));
+        IRepository repository = Repository.fromRepositoryName(this, "SystemTestECR", DockerDeployment.SYSTEM_TEST.getEcrRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
@@ -135,7 +136,7 @@ public class SystemTestClusterStack extends NestedStack {
         taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
-                .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
+                .resources(List.of("arn:" + Aws.PARTITION + ":iam::*:role/sleeper-ingest-*"))
                 .build());
     }
 }

@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
@@ -23,16 +25,13 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -42,8 +41,6 @@ public class DeployNewTestInstance {
 
     private DeployNewTestInstance() {
     }
-
-    public static final StackDockerImage SYSTEM_TEST_IMAGE = dockerBuildImage("system-test");
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 5 || args.length > 7) {
@@ -63,7 +60,8 @@ public class DeployNewTestInstance {
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+            Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+            PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
@@ -71,12 +69,11 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
             DeployNewInstance.builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, s3Client, ecrClient))
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
                     .accountName(accountName)
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient)
                     .deployInstanceConfiguration(config)
-                    .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
                     .deployPaused(deployPaused)
                     .build().deploy();

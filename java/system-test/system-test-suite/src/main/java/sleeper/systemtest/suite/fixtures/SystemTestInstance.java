@@ -66,7 +66,6 @@ import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BAT
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
@@ -101,6 +100,7 @@ public class SystemTestInstance {
             .build();
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE_EKS = usingSystemTestDefaults("eksprf", SystemTestInstance::createBulkImportOnEksPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cptec2", SystemTestInstance::createCompactionOnEC2Configuration);
@@ -222,7 +222,6 @@ public class SystemTestInstance {
     private static SleeperInstanceConfiguration createBulkImportPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
-        properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
         setSystemTestTags(properties, "bulkImportPerformance", "Sleeper Maven system test bulk import performance");
         return createInstanceConfiguration(properties);
     }
@@ -231,6 +230,13 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "bulkImportOnEks", "Sleeper Maven system test bulk import on EKS");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static SleeperInstanceConfiguration createBulkImportOnEksPerformanceConfiguration() {
+        InstanceProperties properties = createInstancePropertiesWithDefaults();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
     }
 

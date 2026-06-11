@@ -154,8 +154,8 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private Role createAdminRole() {
         Role role = Role.Builder.create(this, "AdminRole")
-                .assumedBy(new AccountRootPrincipal())
-                .roleName("sleeper-admin-" + instanceProperties.cleanInstanceId())
+                .assumedBy(new AccountRootPrincipal().withSessionTags())
+                .roleName(getAdminRoleName(instanceProperties))
                 .build();
 
         instanceAdminPolicies().forEach(policy -> policy.attachToRole(role));
@@ -163,6 +163,10 @@ public class ManagedPoliciesStack extends NestedStack {
 
         instanceProperties.set(ADMIN_ROLE_ARN, role.getRoleArn());
         return role;
+    }
+
+    public static String getAdminRoleName(InstanceProperties instanceProperties) {
+        return "sleeper-admin-" + instanceProperties.cleanInstanceId();
     }
 
     private Stream<ManagedPolicy> instanceAdminPolicies() {

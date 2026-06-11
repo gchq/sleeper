@@ -24,6 +24,7 @@ import java.util.List;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -35,24 +36,27 @@ public class DockerImageCommandTestData {
 
     private static final String DEFAULT_ECR_HOSTNAME = "123.dkr.ecr.test-region.amazonaws.com";
 
-    public static List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
-        return commandsToLoginDockerAndPushImages(DEFAULT_ECR_HOSTNAME, "test-instance", "1.0.0", images);
-    }
-
     public static List<CommandPipeline> commandsToLoginDockerAndPushImages(InstanceProperties instanceProperties, String... images) {
-        String ecrHostname = instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + ".amazonaws.com";
-        return commandsToLoginDockerAndPushImages(ecrHostname, instanceProperties.get(ECR_REPOSITORY_PREFIX), instanceProperties.get(VERSION), images);
-    }
-
-    private static List<CommandPipeline> commandsToLoginDockerAndPushImages(String ecrHostname, String ecrPrefix, String version, String... images) {
         List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(dockerLoginToEcrCommand(ecrHostname));
+        commands.add(dockerLoginToEcrCommand(ecrHostname(instanceProperties)));
+        commands.add(createBuildxBuilderInstanceCommand());
+        commands.add(useBuildxBuilderInstanceCommand());
+        String baseTag = tag(instanceProperties, "base");
+        commands.add(buildAndPushMultiplatformImageCommand(baseTag, "./docker/base", baseTag));
         for (String image : images) {
-            String tag = ecrHostname + "/" + ecrPrefix + "/" + image + ":" + version;
-            commands.add(buildImageCommand(tag, "./docker/" + image));
+            String tag = tag(instanceProperties, image);
+            commands.add(buildImageCommand(tag, "./docker/" + image, baseTag));
             commands.add(pushImageCommand(tag));
         }
         return commands;
+    }
+
+    private static String tag(InstanceProperties instanceProperties, String image) {
+        return ecrHostname(instanceProperties) + "/" + instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + image + ":" + instanceProperties.get(VERSION);
+    }
+
+    private static String ecrHostname(InstanceProperties instanceProperties) {
+        return instanceProperties.get(ACCOUNT) + ".dkr.ecr." + instanceProperties.get(REGION) + "." + instanceProperties.get(DNS_SUFFIX);
     }
 
     public static CommandPipeline dockerLoginToEcrCommand() {
@@ -64,12 +68,12 @@ public class DockerImageCommandTestData {
                 command("docker", "login", "--username", "AWS", "--password-stdin", ecrHostname));
     }
 
-    public static CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+    public static CommandPipeline buildImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerDirectory));
     }
 
-    public static CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "--provenance=false", "-t", tag, dockerDirectory));
+    public static CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "build", "--provenance=false", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerDirectory));
     }
 
     public static CommandPipeline pullImageCommand(String tag) {
@@ -96,8 +100,8 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "buildx", "use", "sleeper"));
     }
 
-    public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+    public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {
+        return pipeline(command("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
 

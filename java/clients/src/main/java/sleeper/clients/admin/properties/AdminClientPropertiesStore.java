@@ -107,7 +107,7 @@ public class AdminClientPropertiesStore {
 
     public void saveInstancePropertiesViaCdk(InstanceProperties properties, SleeperInternalCdkApp cdkApp) {
         saveInstanceProperties(properties, () -> {
-            uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerImageConfiguration));
+            uploadDockerImages.upload(UploadDockerImagesToEcrRequest.forDeployment(properties, cdkApp, dockerImageConfiguration));
             LOGGER.info("Deploying by CDK");
             cdk.invoke(cdkApp, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
         });

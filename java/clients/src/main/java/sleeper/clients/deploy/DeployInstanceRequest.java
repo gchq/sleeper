@@ -15,12 +15,10 @@
  */
 package sleeper.clients.deploy;
 
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
-import java.util.List;
 import java.util.Objects;
 
 public class DeployInstanceRequest {
@@ -28,13 +26,11 @@ public class DeployInstanceRequest {
     private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
     private final SleeperInternalCdkApp cdkApp;
-    private final List<StackDockerImage> extraDockerImages;
 
     private DeployInstanceRequest(Builder builder) {
         instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
         cdkCommand = Objects.requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
         cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
-        extraDockerImages = Objects.requireNonNull(builder.extraDockerImages, "extraDockerImages must not be null");
     }
 
     public static Builder builder() {
@@ -53,19 +49,10 @@ public class DeployInstanceRequest {
         return cdkCommand;
     }
 
-    public List<StackDockerImage> getExtraDockerImages() {
-        return extraDockerImages;
-    }
-
-    public List<String> getExtraDockerImageNames() {
-        return extraDockerImages.stream().map(StackDockerImage::getImageName).toList();
-    }
-
     public static class Builder {
         private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
         private SleeperInternalCdkApp cdkApp;
-        private List<StackDockerImage> extraDockerImages = List.of();
 
         public Builder instanceConfig(SleeperInstanceConfiguration instanceConfig) {
             this.instanceConfig = instanceConfig;
@@ -79,11 +66,6 @@ public class DeployInstanceRequest {
 
         public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
             this.cdkApp = cdkApp;
-            return this;
-        }
-
-        public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {
-            this.extraDockerImages = extraDockerImages;
             return this;
         }
 

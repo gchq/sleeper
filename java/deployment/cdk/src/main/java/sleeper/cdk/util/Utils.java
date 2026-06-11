@@ -17,6 +17,7 @@ package sleeper.cdk.util;
 
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.TagProps;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static sleeper.core.properties.instance.CommonProperty.EXCLUDED_RESOURCES_FROM_TAGS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -110,15 +112,19 @@ public class Utils {
             case 3653:
                 return RetentionDays.TEN_YEARS;
             default:
-                throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
+                throw new IllegalArgumentException(
+                        "Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
     }
 
     public static void addTags(Stack stack, InstanceProperties properties) {
         Tags tags = Tags.of(stack);
-        properties.getTags().forEach(tags::add);
+        TagProps tagProps = TagProps.builder()
+                .excludeResourceTypes(properties.getList(EXCLUDED_RESOURCES_FROM_TAGS))
+                .build();
+        properties.getTags().forEach((key, value) -> tags.add(key, value, tagProps));
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
-                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId()));
+                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId(), tagProps));
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {

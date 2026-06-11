@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name="sleeper",
-    version="0.35.3.dev1",
+    version="0.35.4.dev1",
     description="Python client for Sleeper",
     install_requires=[
         "pyarrow",

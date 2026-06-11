@@ -25,10 +25,9 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         return new Builder();
     }
 
-    public static CdkCommand deployArtefacts(String deploymentId, List<String> extraEcrImages) {
+    public static CdkCommand deployArtefacts(String deploymentId) {
         return builder().deploy()
                 .context("id", deploymentId)
-                .context("extraEcrImages", String.join(",", extraEcrImages))
                 .build();
     }
 

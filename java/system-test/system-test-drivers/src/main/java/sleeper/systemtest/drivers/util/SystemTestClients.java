@@ -16,11 +16,16 @@
 
 package sleeper.systemtest.drivers.util;
 
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -37,6 +42,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaClientBuilder;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
@@ -58,9 +64,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME;
+
 public class SystemTestClients {
+    private final Region region;
     private final AwsCredentialsProvider credentialsProvider;
-    private final AwsRegionProvider regionProvider;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
@@ -78,14 +88,15 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
+    private final SfnClient sfn;
     private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
 
     private SystemTestClients(Builder builder) {
+        region = builder.region;
         credentialsProvider = builder.credentialsProvider;
-        regionProvider = builder.regionProvider;
         s3 = builder.s3;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
@@ -103,6 +114,7 @@ public class SystemTestClients {
         cloudWatch = builder.cloudWatch;
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
+        sfn = builder.sfn;
         dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
@@ -113,9 +125,10 @@ public class SystemTestClients {
     }
 
     public static SystemTestClients fromDefaults() {
+        Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
         return builder()
+                .region(region)
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
-                .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
                 .dynamo(DynamoDbClient.create())
@@ -132,7 +145,11 @@ public class SystemTestClients {
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
-                .dataFusionAwsConfig(DataFusionAwsConfig::getDefault)
+                .dataFusionAwsConfig(() -> {
+                    PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+                    return DataFusionAwsConfig.getDefault(region, partitionMetadata);
+                })
+                .sfn(SfnClient.create())
                 .build();
     }
 
@@ -140,8 +157,8 @@ public class SystemTestClients {
         AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
+                .region(region)
                 .credentialsProvider(aws.credentialsProvider())
-                .regionProvider(regionProvider)
                 .s3(aws.buildClient(S3Client.builder()))
                 .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
                 .dynamo(aws.buildClient(DynamoDbClient.builder()))
@@ -158,18 +175,19 @@ public class SystemTestClients {
                 .cloudWatch(aws.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
+                .sfn(aws.buildClient(SfnClient.builder()))
                 .dataFusionAwsConfig(aws::dataFusionAwsConfig)
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
     }
 
-    public AwsCredentialsProvider getCredentialsProvider() {
-        return credentialsProvider;
+    public Region getRegion() {
+        return region;
     }
 
-    public AwsRegionProvider getRegionProvider() {
-        return regionProvider;
+    public AwsCredentialsProvider getCredentialsProvider() {
+        return credentialsProvider;
     }
 
     public S3Client getS3() {
@@ -240,6 +258,10 @@ public class SystemTestClients {
         return cloudWatchEvents;
     }
 
+    public SfnClient getSfn() {
+        return sfn;
+    }
+
     public CommandPipelineRunner getCommandRunner() {
         return commandRunner;
     }
@@ -254,6 +276,18 @@ public class SystemTestClients {
 
     public Configuration createHadoopConf() {
         return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
+    }
+
+    public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
+        Config config = new ConfigBuilder()
+                .withMasterUrl(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
+                .withCaCertData(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_CA_DATA))
+                .withOauthTokenProvider(() -> EksAuthTokenGenerator.generateToken(
+                        instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider))
+                .withConnectionTimeout(30 * 1000)
+                .withRequestTimeout(60 * 1000)
+                .build();
+        return new KubernetesClientBuilder().withConfig(config).build();
     }
 
     public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
@@ -274,8 +308,8 @@ public class SystemTestClients {
     }
 
     public static class Builder {
+        private Region region;
         private AwsCredentialsProvider credentialsProvider;
-        private AwsRegionProvider regionProvider;
         private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
@@ -293,6 +327,7 @@ public class SystemTestClients {
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
+        private SfnClient sfn;
         private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
@@ -300,13 +335,13 @@ public class SystemTestClients {
         private Builder() {
         }
 
-        public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
-            this.credentialsProvider = credentialsProvider;
+        public Builder region(Region region) {
+            this.region = region;
             return this;
         }
 
-        public Builder regionProvider(AwsRegionProvider regionProvider) {
-            this.regionProvider = regionProvider;
+        public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
+            this.credentialsProvider = credentialsProvider;
             return this;
         }
 
@@ -388,6 +423,11 @@ public class SystemTestClients {
 
         public Builder cloudWatchEvents(CloudWatchEventsClient cloudWatchEvents) {
             this.cloudWatchEvents = cloudWatchEvents;
+            return this;
+        }
+
+        public Builder sfn(SfnClient sfn) {
+            this.sfn = sfn;
             return this;
         }
 

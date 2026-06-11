@@ -71,15 +71,21 @@ run_in_docker() {
 
 build_temp_runner_image() {
   local RUN_IMAGE=$1
-  local TEMP_TAG=$(date +%Y-%m-%d"_"%H_%M_%S)_$RANDOM
   # Propagate current user IDs to image, to avoid mixed file ownership
   local SET_UID=$(id -u)
   local SET_GID=$(id -g)
   local SET_DOCKER_GID=$(getent group docker | cut -d: -f3)
-  TEMP_RUNNER_IMAGE="sleeper-runner:$TEMP_TAG"
+  # Use a deterministic name encoding the base image ID and user IDs, so the
+  # image can be reused on subsequent runs and only rebuilt when something changes
+  local RUN_IMAGE_ID
+  RUN_IMAGE_ID=$(docker inspect --format '{{.Id}}' "$RUN_IMAGE" 2>/dev/null | cut -c8-19)
+  TEMP_RUNNER_IMAGE="sleeper-runner:${RUN_IMAGE_ID}-${SET_UID}-${SET_GID}-${SET_DOCKER_GID}"
+  if docker image inspect "$TEMP_RUNNER_IMAGE" > /dev/null 2>&1; then
+    return
+  fi
   echo "Propagating current user to Docker image"
   set +e
-  docker build "$RUNNER_PATH" --quiet -t "$TEMP_RUNNER_IMAGE" \
+  docker build "$RUNNER_PATH" --quiet --provenance=false -t "$TEMP_RUNNER_IMAGE" \
     --build-arg RUN_IMAGE="$RUN_IMAGE" \
     --build-arg SET_UID=$SET_UID \
     --build-arg SET_GID=$SET_GID \
@@ -97,7 +103,6 @@ run_in_environment_docker() {
   run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 run_in_builder_docker() {
@@ -110,7 +115,6 @@ run_in_builder_docker() {
     -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
     -e CONTAINER_MOUNT_PATH=/sleeper-builder \
     "$TEMP_RUNNER_IMAGE" "$@"
-  docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
 
 get_version() {
@@ -128,8 +132,13 @@ pull_docker_images() {
     REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
-    docker pull "$REMOTE_IMAGE"
-    docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+    # Use docker build rather than docker pull + docker tag, so that BuildKit
+    # fetches the image blobs directly into its own content store. Docker daemon's
+    # pull skips blobs when an uncompressed snapshot already exists (an orphaned
+    # snapshot from a previous install can survive docker system prune), leaving
+    # the compressed blob absent from the content store and causing docker build
+    # export to fail. BuildKit's fetch path does not have this deduplication.
+    echo "FROM $REMOTE_IMAGE" | docker build --pull --provenance=false -t "$LOCAL_IMAGE" -
   done
 }
 

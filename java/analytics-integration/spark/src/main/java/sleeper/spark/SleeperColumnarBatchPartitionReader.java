@@ -78,7 +78,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
                 .build();
         numBatches = 0L;
         try {
-            this.arrowReader = new DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig.getDefault(), allocator, ffiContext)
+            this.arrowReader = new DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig.getDefault(instanceProperties), allocator, ffiContext)
                     .getArrowReader(leafPartitionQuery, schema, tableProperties);
             LOGGER.info("Created ArrowReader");
         } catch (RowRetrievalException e) {

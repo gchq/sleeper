@@ -27,13 +27,13 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -51,13 +51,14 @@ public class DataGenerationClusterDsl {
     private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
+    private final SentIngestJobsContext sentJobs;
     private final PollWithRetriesDriver pollDriver;
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
-    private final List<String> jobIds = new ArrayList<>();
 
     public DataGenerationClusterDsl(
             SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context.systemTest();
+        this.sentJobs = context.sentIngestJobs();
         instance = context.instance();
         SystemTestDrivers instanceAdminDrivers = instance.adminDrivers();
         driver = baseDrivers.dataGenerationTasks(context);
@@ -88,7 +89,7 @@ public class DataGenerationClusterDsl {
     }
 
     public DataGenerationClusterDsl sendAllGeneratedFilesAsOneJob(CdkDefinedInstanceProperty queueUrlProperty) {
-        jobIds.add(ingestByQueue.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
+        sentJobs.addSentJob(ingestByQueue.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }
 
@@ -115,10 +116,10 @@ public class DataGenerationClusterDsl {
     }
 
     private List<String> jobIds() {
-        if (jobIds.isEmpty()) {
-            jobIds.addAll(lastGeneratedFiles.getJobIdsFromIndividualFiles());
+        if (sentJobs.getJobIds().isEmpty()) {
+            sentJobs.addSentJobs(lastGeneratedFiles.getJobIdsFromIndividualFiles());
         }
-        return jobIds;
+        return sentJobs.getJobIds();
     }
 
     public void waitForTotalFileReferences(int expectedFileReferences) {

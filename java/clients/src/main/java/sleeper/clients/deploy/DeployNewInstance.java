@@ -17,13 +17,14 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -36,7 +37,6 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -51,7 +51,6 @@ public class DeployNewInstance {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
-    private final List<StackDockerImage> extraDockerImages;
     private final SleeperInternalCdkApp cdkApp;
     private final boolean deployPaused;
 
@@ -61,7 +60,6 @@ public class DeployNewInstance {
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
-        extraDockerImages = builder.extraDockerImages;
         cdkApp = builder.cdkApp;
         deployPaused = builder.deployPaused;
     }
@@ -86,7 +84,8 @@ public class DeployNewInstance {
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
-            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+            Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
+            PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
                     instancePropertiesFile, scriptsDirectory.resolve("templates"));
@@ -96,7 +95,7 @@ public class DeployNewInstance {
             config.getInstanceProperties().set(SUBNETS, subnetIds);
 
             builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, s3Client, ecrClient))
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
                     .accountName(accountName)
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient)
@@ -113,7 +112,6 @@ public class DeployNewInstance {
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(deployInstanceConfiguration)
                 .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
-                .extraDockerImages(extraDockerImages)
                 .cdkApp(cdkApp)
                 .build());
 
@@ -134,7 +132,6 @@ public class DeployNewInstance {
         private S3Client s3Client;
         private DynamoDbClient dynamoClient;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
-        private List<StackDockerImage> extraDockerImages = List.of();
         private SleeperInternalCdkApp cdkApp;
         private boolean deployPaused;
 
@@ -163,11 +160,6 @@ public class DeployNewInstance {
 
         public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
-            return this;
-        }
-
-        public Builder extraDockerImages(List<StackDockerImage> extraDockerImages) {
-            this.extraDockerImages = extraDockerImages;
             return this;
         }
 

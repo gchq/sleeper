@@ -16,17 +16,38 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import sleeper.systemtest.drivers.instance.AwsSystemTestParameters;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
+
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
-            AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+    private static final SystemTestDeploymentContext CONTEXT = createDeploymentContext();
 
     public AwsSleeperSystemTestExtension() {
         super(CONTEXT);
+    }
+
+    private static SystemTestDeploymentContext createDeploymentContext() {
+        SystemTestClients clients = SystemTestClients.fromDefaults();
+        return new SystemTestDeploymentContext(
+                loadParameters(clients), new AwsSystemTestDrivers(clients));
+    }
+
+    private static SystemTestParameters loadParameters(SystemTestClients clients) {
+        Region region = clients.getRegion();
+        PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+        return SystemTestParameters.builder()
+                .account(clients.getSts().getCallerIdentity().account())
+                .region(region.id())
+                .dnsSuffix(partitionMetadata.dnsSuffix())
+                .loadFromSystemProperties()
+                .findDirectories()
+                .build();
     }
 }

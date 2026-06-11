@@ -51,6 +51,7 @@ public class SystemTestParameters {
     private final String shortTestId;
     private final String account;
     private final String region;
+    private final String dnsSuffix;
     private final String vpcId;
     private final String subnetIds;
     private final Path scriptsDirectory;
@@ -68,6 +69,7 @@ public class SystemTestParameters {
         shortTestId = Objects.requireNonNull(builder.shortTestId, "shortTestId must not be null");
         account = Objects.requireNonNull(builder.account, "account must not be null");
         region = Objects.requireNonNull(builder.region, "region must not be null");
+        dnsSuffix = Objects.requireNonNull(builder.dnsSuffix, "dnsSuffix must not be null");
         vpcId = Objects.requireNonNull(builder.vpcId, "vpcId must not be null");
         subnetIds = Objects.requireNonNull(builder.subnetIds, "subnetIds must not be null");
         scriptsDirectory = Objects.requireNonNull(builder.scriptsDirectory, "scriptsDirectory must not be null");
@@ -108,6 +110,10 @@ public class SystemTestParameters {
 
     public String getRegion() {
         return region;
+    }
+
+    public String getDnsSuffix() {
+        return dnsSuffix;
     }
 
     public String getVpcId() {
@@ -193,8 +199,8 @@ public class SystemTestParameters {
         return instancePropertiesOverrides.isSet(property);
     }
 
-    private static Path findScriptsDir() {
-        return getParentOrFail(findJavaDir()).resolve("scripts");
+    public static Path findProjectRootDirectory() {
+        return getParentOrFail(findJavaDir());
     }
 
     private static Path findJavaDir() {
@@ -209,11 +215,7 @@ public class SystemTestParameters {
         }
     }
 
-    private static Path findPythonDir() {
-        return getParentOrFail(findJavaDir()).resolve("python");
-    }
-
-    private static Path getParentOrFail(Path path) {
+    public static Path getParentOrFail(Path path) {
         Path parent = path.getParent();
         if (parent == null) {
             throw new IllegalArgumentException("No parent of path " + path);
@@ -226,6 +228,7 @@ public class SystemTestParameters {
         private String shortTestId;
         private String account;
         private String region;
+        private String dnsSuffix;
         private String vpcId;
         private String subnetIds;
         private Path scriptsDirectory;
@@ -254,6 +257,11 @@ public class SystemTestParameters {
 
         public Builder region(String region) {
             this.region = region;
+            return this;
+        }
+
+        public Builder dnsSuffix(String dnsSuffix) {
+            this.dnsSuffix = dnsSuffix;
             return this;
         }
 
@@ -321,7 +329,6 @@ public class SystemTestParameters {
             return shortTestId(System.getProperty("sleeper.system.test.short.id"))
                     .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                     .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
-                    .findDirectories()
                     .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
                             .map(Path::of)
                             .orElse(null))
@@ -341,8 +348,12 @@ public class SystemTestParameters {
         }
 
         public Builder findDirectories() {
-            return scriptsDirectory(findScriptsDir())
-                    .pythonDirectory(findPythonDir());
+            return sleeperRootDirectory(findProjectRootDirectory());
+        }
+
+        public Builder sleeperRootDirectory(Path sleeperRootDirectory) {
+            return scriptsDirectory(sleeperRootDirectory.resolve("scripts"))
+                    .pythonDirectory(sleeperRootDirectory.resolve("python"));
         }
 
         public SystemTestParameters build() {

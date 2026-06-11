@@ -45,39 +45,28 @@ public interface EKSProperty {
                     "spark.driver.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("12g")
+            .defaultValue("16g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.memory")
             .description("(EKS mode only) The amount of memory allocated to a Spark executor. Used to set " +
                     "spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's " +
                     "default values.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("12g")
+            .defaultValue("16g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.memory.overhead")
             .description("(EKS mode only) The memory overhead for the Spark driver. Used to set " +
                     "spark.driver.memoryOverhead. Fargate provides extra memory so no need to include extra which " +
                     "also messes up the scheduler.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("1g")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.memory.overhead")
             .description("(EKS mode only) The memory overhead for a Spark executor. Used to set " +
                     "spark.executor.memoryOverhead. Fargate provides extra memory so no need to include extra which " +
                     "also messes up the scheduler.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("1g")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_SERVICE_ACCOUNT_NAME = Index.propertyBuilder("sleeper.bulk.import.eks.spark.kubernetes.driver.service.account.name")
-            .description("(EKS mode only) The Kubernetes service account used by the Spark driver pod. Used to set " +
-                    "spark.kubernetes.authenticate.driver.serviceAccountName.\n" +
-                    "See https://spark.apache.org/docs/latest/running-on-kubernetes.html.")
-            .defaultValue("spark")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_HADOOP_S3A_CREDENTIALS_PROVIDER = Index.propertyBuilder("sleeper.bulk.import.eks.spark.hadoop.fs.s3a.aws.credentials.provider")
-            .description("(EKS mode only) The AWS credentials provider class used by the S3A Hadoop filesystem. " +
-                    "Used to set spark.hadoop.fs.s3a.aws.credentials.provider.")
-            .defaultValue("software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider")
+            .defaultValue("1706m")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_HADOOP_S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.bulk.import.eks.spark.hadoop.fs.s3a.experimental.input.fadvise")
             .description("(EKS mode only) The S3A input read policy. Used to set " +
@@ -166,6 +155,15 @@ public interface EKSProperty {
             .description("Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.ephemeral.storage")
+            .description("(EKS mode only) The amount of ephemeral storage allocated to each Spark executor pod on Fargate. " +
+                    "Set as the ephemeral-storage request and limit on the executor container via a Spark pod template, " +
+                    "which Fargate uses to provision ephemeral storage for the pod beyond the default 20 GiB.\n" +
+                    "Accepted values 20Gi - 175Gi. See:\n" +
+                    "https://spark.apache.org/docs/latest/running-on-kubernetes.html\n" +
+                    "https://docs.aws.amazon.com/eks/latest/userguide/fargate-pod-configuration.html#fargate-storage")
+            .defaultValue("175Gi")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

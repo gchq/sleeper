@@ -48,6 +48,13 @@
         </fileSet>
         <!-- Docker files -->
         <fileSet>
+            <directory>${project.basedir}/../common/docker-base/docker</directory>
+            <outputDirectory>scripts/docker/base</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../common/docker-lambda/docker</directory>
             <outputDirectory>scripts/docker/lambda</outputDirectory>
             <excludes>
@@ -89,6 +96,13 @@
         <fileSet>
             <directory>${project.basedir}/../statestore-committer/docker</directory>
             <outputDirectory>scripts/docker/statestore-committer</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../system-test/system-test-data-generation/docker</directory>
+            <outputDirectory>scripts/docker/system-test</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
             </excludes>
@@ -265,6 +279,41 @@
             </source>
             <outputDirectory>scripts/docker/lambda</outputDirectory>
             <destName>aws-lambda-java-runtime.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../system-test/system-test-data-generation/target/system-test-data-generation-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/docker/system-test</outputDirectory>
+            <destName>system-test.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../system-test/system-test-data-generation/target/system-test-data-generation-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>system-test-data-generation-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../system-test/system-test-drivers/target/system-test-drivers-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>system-test-${project.version}-utility.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../system-test/system-test-cdk/target/system-test-cdk-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>system-test-cdk-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../example-iterators/target/example-iterators-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>example-iterators-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>
