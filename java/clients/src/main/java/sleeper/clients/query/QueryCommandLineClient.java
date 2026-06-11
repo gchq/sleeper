@@ -57,8 +57,8 @@ public abstract class QueryCommandLineClient {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
     private final Supplier<String> queryIdSupplier;
-    protected ConsoleInput in;
-    protected ConsoleOutput out;
+    protected final ConsoleInput in;
+    protected final ConsoleOutput out;
 
     protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties,
             ConsoleInput in, ConsoleOutput out) {
