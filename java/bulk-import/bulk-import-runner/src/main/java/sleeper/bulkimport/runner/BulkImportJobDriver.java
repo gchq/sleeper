@@ -109,10 +109,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
-        run(job, jobRunId, taskId, () -> {});
-    }
-
-    public void run(BulkImportJob job, String jobRunId, String taskId, Runnable onFailure) throws IOException {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
@@ -143,12 +139,8 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 try {
                     fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
                 } catch (Exception e) {
-                    // Mark as failed and forcibly halt the JVM before context.close() calls sparkContext.stop().
-                    // Spark's internal threads may concurrently call System.exit(0) when a job fails;
-                    // Runtime.halt(1) overrides any in-progress System.exit(0) and terminates immediately.
                     failureAlreadyTracked = true;
                     markJobAsFailed(runIds, e);
-                    onFailure.run();
                     throw e;
                 }
 
@@ -158,7 +150,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
             // Handles failures from createContext, preSplit, commitSuccessfulJob
             if (!failureAlreadyTracked) {
                 markJobAsFailed(runIds, e);
-                onFailure.run();
             }
             throw e;
         }
@@ -286,7 +277,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                     BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender,
                     Instant::now, () -> UUID.randomUUID().toString());
-            driver.run(bulkImportJob, jobRunId, taskId, () -> Runtime.getRuntime().halt(1));
+            driver.run(bulkImportJob, jobRunId, taskId);
         }
     }
 

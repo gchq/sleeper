@@ -53,7 +53,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -364,86 +363,11 @@ class BulkImportJobDriverTest {
 
     }
 
-    @Nested
-    @DisplayName("On failure callback")
-    class OnFailureCallback {
-
-        @Test
-        void shouldCallOnFailureWhenSparkJobFails() throws Exception {
-            // Given
-            BulkImportJob job = singleFileImportJob();
-            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-            Instant failureTime = Instant.parse("2023-04-06T12:41:01Z");
-            RuntimeException jobFailure = new RuntimeException("Failed running job");
-            AtomicBoolean onFailureCalled = new AtomicBoolean(false);
-            var driver = driver(failWithException(jobFailure), startAndFinishTime(startTime, failureTime));
-
-            // When
-            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver,
-                    () -> onFailureCalled.set(true)))
-                    .isSameAs(jobFailure);
-
-            // Then
-            assertThat(onFailureCalled.get()).isTrue();
-        }
-
-        @Test
-        void shouldCallOnFailureWhenStateStoreUpdateFails() throws Exception {
-            // Given
-            BulkImportJob job = singleFileImportJob();
-            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-            RuntimeException storeFailure = new RuntimeException("Failed updating files");
-            List<FileReference> outputFiles = List.of(defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
-            filesLogStore.atStartOfNextAddTransaction(() -> {
-                throw storeFailure;
-            });
-            AtomicBoolean onFailureCalled = new AtomicBoolean(false);
-            var driver = driver(successfulWithOutput(outputFiles), stateStore,
-                    startFinishAndFailureTime(startTime, finishTime, finishTime));
-
-            // When
-            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver,
-                    () -> onFailureCalled.set(true)))
-                    .isInstanceOf(RuntimeException.class);
-
-            // Then
-            assertThat(onFailureCalled.get()).isTrue();
-        }
-
-        @Test
-        void shouldNotCallOnFailureWhenJobSucceeds() throws Exception {
-            // Given
-            BulkImportJob job = singleFileImportJob();
-            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-            List<FileReference> outputFiles = List.of(defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
-            AtomicBoolean onFailureCalled = new AtomicBoolean(false);
-
-            // When
-            runJob(job, "test-run", "test-task", validationTime,
-                    driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)),
-                    () -> onFailureCalled.set(true));
-
-            // Then
-            assertThat(onFailureCalled.get()).isFalse();
-        }
-    }
-
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
             BulkImportJobDriver<FakeBulkImportContext> driver) throws Exception {
-        runJob(job, jobRunId, taskId, validationTime, driver, () -> {});
-    }
-
-    private void runJob(
-            BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
-            BulkImportJobDriver<FakeBulkImportContext> driver, Runnable onFailure) throws Exception {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        driver.run(job, jobRunId, taskId, onFailure);
+        driver.run(job, jobRunId, taskId);
     }
 
     private BulkImportJobDriver<FakeBulkImportContext> driver(
