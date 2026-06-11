@@ -27,27 +27,22 @@ public interface LoggingLevelsProperty {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
-            .defaultValue("INFO")
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.apache")
             .description("The logging level for Apache logs that are not Parquet.")
-            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.parquet")
             .description("The logging level for Parquet logs.")
-            .defaultValue("WARN")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty AWS_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.aws")
             .description("The logging level for AWS logs.")
-            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.root")
             .description("The logging level for everything else.")
-            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RUST_BACKTRACE = Index.propertyBuilder("sleeper.logging.backtrace")
