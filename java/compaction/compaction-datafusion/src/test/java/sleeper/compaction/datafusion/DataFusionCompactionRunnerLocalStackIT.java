@@ -86,6 +86,40 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     @Test
+    void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
+        // Given
+        int iterations = Integer.getInteger("sleeper.test.compaction.stress.iterations", 1);
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("key", "row-1"));
+        Row row2 = new Row(Map.of("key", "row-2"));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
+
+            // When / Then — if the JVM crashes with SIGSEGV the test fails
+            for (int i = 0; i < iterations; i++) {
+                StateStore iterationStateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+                iterationStateStore.fixFileUpdateTime(null);
+                update(iterationStateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file1, 1));
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file2, 1));
+                String jobId = "stress-job-" + i;
+                CompactionJob job = new CompactionJobFactory(instanceProperties, tableProperties)
+                        .createCompactionJobWithFilenames(jobId, List.of(file1, file2), "root");
+                update(iterationStateStore).assignJobId(jobId, "root", List.of(file1, file2));
+                CompactionTaskTestHelper iterationHelper = new CompactionTaskTestHelper(
+                        instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                        FixedStateStoreProvider.singleTable(tableProperties, iterationStateStore), jobTracker);
+                iterationHelper.runTask(runner, null, List.of(job));
+            }
+        }
+    }
+
+    @Test
     void shouldRunCompactionJob() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new StringType());

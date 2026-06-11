@@ -604,6 +604,40 @@ public class DataFusionCompactionRunnerIT {
         }
     }
 
+    @Test
+    void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
+        // Given
+        int iterations = Integer.getInteger("sleeper.test.compaction.stress.iterations", 1);
+        tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("key", 1L));
+        Row row2 = new Row(Map.of("key", 2L));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(
+                    DataFusionAwsConfig.overrideEndpoint("dummy"),
+                    new Configuration(), context);
+
+            // When / Then — if the JVM crashes with SIGSEGV the test fails
+            for (int i = 0; i < iterations; i++) {
+                StateStore iterationStateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+                iterationStateStore.fixFileUpdateTime(null);
+                update(iterationStateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file1, 1));
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file2, 1));
+                String jobId = "stress-job-" + i;
+                CompactionJob job = compactionFactory().createCompactionJobWithFilenames(jobId, List.of(file1, file2), "root");
+                update(iterationStateStore).assignJobId(jobId, "root", List.of(file1, file2));
+                CompactionTaskTestHelper iterationHelper = new CompactionTaskTestHelper(
+                        instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                        FixedStateStoreProvider.singleTable(tableProperties, iterationStateStore), jobTracker);
+                iterationHelper.runTask(runner, null, List.of(job));
+            }
+        }
+    }
+
     private void runTask(CompactionJob job) throws Exception {
         runTask(job, null);
     }
