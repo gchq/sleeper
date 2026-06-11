@@ -47,8 +47,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  * execute the query.
  */
 public class QueryLambdaClient extends QueryCommandLineClient {
-    private final ConsoleOutput out;
-    private final ConsoleInput in;
     private final SqsClient sqsClient;
     private final DynamoDBQueryTracker queryTracker;
     private Map<String, String> resultsPublisherConfig;
@@ -56,9 +54,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private final QuerySerDe querySerDe;
 
     public QueryLambdaClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, ConsoleOutput out, ConsoleInput in) {
-        super(s3Client, dynamoClient, instanceProperties);
-        this.out = out;
-        this.in = in;
+        super(s3Client, dynamoClient, instanceProperties, in, out);
         this.sqsClient = sqsClient;
         this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         this.queryQueueUrl = instanceProperties.get(QUERY_QUEUE_URL);
