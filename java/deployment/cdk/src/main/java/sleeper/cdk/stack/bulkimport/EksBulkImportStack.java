@@ -22,21 +22,26 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
-import software.amazon.awscdk.services.eks.AwsAuthMapping;
-import software.amazon.awscdk.services.eks.Cluster;
-import software.amazon.awscdk.services.eks.FargateCluster;
-import software.amazon.awscdk.services.eks.FargateProfile;
-import software.amazon.awscdk.services.eks.FargateProfileOptions;
-import software.amazon.awscdk.services.eks.KubernetesManifest;
-import software.amazon.awscdk.services.eks.KubernetesVersion;
-import software.amazon.awscdk.services.eks.Selector;
-import software.amazon.awscdk.services.eks.ServiceAccount;
-import software.amazon.awscdk.services.eks.ServiceAccountOptions;
+import software.amazon.awscdk.services.eks_v2.AccessEntry;
+import software.amazon.awscdk.services.eks_v2.AccessPolicy;
+import software.amazon.awscdk.services.eks_v2.AccessPolicyNameOptions;
+import software.amazon.awscdk.services.eks_v2.AccessScopeType;
+import software.amazon.awscdk.services.eks_v2.Cluster;
+import software.amazon.awscdk.services.eks_v2.FargateCluster;
+import software.amazon.awscdk.services.eks_v2.FargateProfile;
+import software.amazon.awscdk.services.eks_v2.FargateProfileOptions;
+import software.amazon.awscdk.services.eks_v2.KubectlProviderOptions;
+import software.amazon.awscdk.services.eks_v2.KubernetesManifest;
+import software.amazon.awscdk.services.eks_v2.KubernetesVersion;
+import software.amazon.awscdk.services.eks_v2.Selector;
+import software.amazon.awscdk.services.eks_v2.ServiceAccount;
+import software.amazon.awscdk.services.eks_v2.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.LayerVersion;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
@@ -62,6 +67,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EksClusterType;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.io.IOException;
@@ -78,6 +84,8 @@ import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_ST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -138,32 +146,57 @@ public final class EksBulkImportStack extends NestedStack {
         coreStacks.grantValidateBulkImport(bulkImportJobStarter.getRole());
 
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
-        Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
-                .clusterName(uniqueBulkImportId)
-                .version(KubernetesVersion.V1_35)
-                .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"))
-                .vpc(coreStacks.getVpc())
-                .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
-                .build();
 
+        EksClusterType bulkImportClusterType = instanceProperties.getEnumValue(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.class);
+
+        KubectlProviderOptions.Builder kubectlProviderOptions = KubectlProviderOptions.builder()
+                .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"));
+
+        String awscliLayerArn = instanceProperties.get(BULK_IMPORT_EKS_AWSCLI_LAYER_ARN);
+        if (awscliLayerArn != null && !awscliLayerArn.isEmpty()) {
+            kubectlProviderOptions.awscliLayer(LayerVersion.fromLayerVersionArn(this, "awsclilayer", awscliLayerArn));
+        }
+
+        Cluster bulkImportCluster;
+        if (bulkImportClusterType == EksClusterType.AUTOMODE) {
+            bulkImportCluster = Cluster.Builder.create(this, "EksBulkImportCluster")
+                    .clusterName(uniqueBulkImportId)
+                    .version(KubernetesVersion.V1_35)
+                    .kubectlProviderOptions(kubectlProviderOptions.build())
+                    .vpc(coreStacks.getVpc())
+                    .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                    .build();
+
+        } else if (bulkImportClusterType == EksClusterType.FARGATE) {
+            bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
+                    .clusterName(uniqueBulkImportId)
+                    .version(KubernetesVersion.V1_35)
+                    .kubectlProviderOptions(kubectlProviderOptions.build())
+                    .vpc(coreStacks.getVpc())
+                    .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                    .build();
+
+            FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
+                    .fargateProfileName(uniqueBulkImportId)
+                    .vpc(coreStacks.getVpc())
+                    .subnetSelection(SubnetSelection.builder()
+                            .subnets(List.of(coreStacks.getSubnets().get(0)))
+                            .build())
+                    .selectors(List.of(Selector.builder()
+                            .namespace(uniqueBulkImportId)
+                            .build()))
+                    .build());
+
+            addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+        } else {
+            throw new IllegalArgumentException("Unknown Bulk Import EKS cluster type: " + bulkImportClusterType);
+        }
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA, bulkImportCluster.getClusterCertificateAuthorityData());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME, bulkImportCluster.getClusterName());
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
-
-        FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
-                .fargateProfileName(uniqueBulkImportId)
-                .vpc(coreStacks.getVpc())
-                .subnetSelection(SubnetSelection.builder()
-                        .subnets(List.of(coreStacks.getSubnets().get(0)))
-                        .build())
-                .selectors(List.of(Selector.builder()
-                        .namespace(uniqueBulkImportId)
-                        .build()))
-                .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -183,9 +216,19 @@ public final class EksBulkImportStack extends NestedStack {
         StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
-        bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
-                .groups(List.of())
-                .build());
+        // Replace AmazonEKSEditPolicy with .groups(List.of("step-function")) when available:
+        // https://github.com/aws/aws-cdk/issues/30604
+        AccessEntry.Builder.create(this, "StateMachineRoleAccessEntry")
+                .cluster(bulkImportCluster)
+                .principal(stateMachine.getRole().getRoleArn())
+                .accessPolicies(List.of(
+                        AccessPolicy.fromAccessPolicyName("AmazonEKSEditPolicy", AccessPolicyNameOptions.builder()
+                                .accessScopeType(AccessScopeType.NAMESPACE)
+                                .namespaces(List.of(uniqueBulkImportId))
+                                .build())
+                ))
+                .build();
+
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
         addRoleManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
@@ -197,7 +240,6 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
-
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(List.of("eks:*", "states:*"))
                 .effect(Effect.ALLOW)
@@ -292,15 +334,16 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
-
-        cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessForInstanceAdmin", ManagedPoliciesStack.getAdminRoleName(properties)));
+        cluster.grantClusterAdmin("ClusterAccessForInstanceAdmin",
+                Role.fromRoleName(this, "InstanceAdminRole", ManagedPoliciesStack.getAdminRoleName(properties)).getRoleArn());
 
         List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
         if (roles == null) {
             return;
         }
         for (String role : roles) {
-            cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessFor" + role, role));
+            cluster.grantClusterAdmin("ClusterAccessFor" + role,
+                    Role.fromRoleName(this, "Role" + role, role).getRoleArn());
         }
     }
 
@@ -313,8 +356,7 @@ public final class EksBulkImportStack extends NestedStack {
                 cluster.addManifest("SparkRole", parseJson("/k8s/spark-role.json", namespaceReplacement(namespaceName))),
                 cluster.addManifest("SparkRoleBinding", parseJson("/k8s/spark-role-binding.json", namespaceReplacement(namespaceName))),
                 cluster.addManifest("StepFunctionRole", parseJson("/k8s/step-function-role.json", namespaceReplacement(namespaceName))),
-                cluster.addManifest("StepFunctionRoleBinding", parseJson("/k8s/step-function-role-binding.json",
-                        namespaceReplacement(namespaceName).andThen(replacement("user-placeholder", stateMachineRole.getRoleArn())))));
+                cluster.addManifest("StepFunctionRoleBinding", parseJson("/k8s/step-function-role-binding.json", namespaceReplacement(namespaceName))));
     }
 
     private void withDependencyOn(KubernetesManifest namespace, KubernetesManifest... manifests) {

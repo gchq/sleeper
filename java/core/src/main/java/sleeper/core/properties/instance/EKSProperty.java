@@ -17,8 +17,11 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.EksClusterType;
 
 import java.util.List;
+
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties relating to bulk import on AWS EKS.
@@ -35,6 +38,19 @@ public interface EKSProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .defaultValue("false")
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AWSCLI_LAYER_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.awscli.layer.arn")
+            .description("(EKS mode only) The ARN of a Lambda Layer providing the AWS CLI to use with the EKS " +
+                    "kubectl provider. If not set, the default AWS CLI layer included with the CDK will be used.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_TYPE = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.type")
+            .description("(EKS mode only) The type of EKS cluster to deploy for bulk import.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
+            .defaultValue(EksClusterType.FARGATE.toString())
+            .validationPredicate(EksClusterType::isValid)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.instances")
             .description("(EKS mode only) The number of Spark executors. Used to set spark.executor.instances.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
