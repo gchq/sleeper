@@ -1875,24 +1875,25 @@ sleeper.subnets=set-automatically
 
 # The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is
 # always set to INFO.
-# (uncomment to set a value)
-# sleeper.logging.level=
+# (default value shown below, uncomment to set a value)
+# sleeper.logging.level=INFO
 
-# The logging level for Apache logs that are not Parquet.
-# (uncomment to set a value)
-# sleeper.logging.apache.level=
+# The logging level for Apache logs that are not Parquet. Overrides the default set in
+# "sleeper.logging.level". 
+# (default value shown below, uncomment to set a value)
+# sleeper.logging.level.apache=INFO
 
-# The logging level for Parquet logs.
-# (uncomment to set a value)
-# sleeper.logging.parquet.level=
+# The logging level for Parquet logs. Overrides the default set in "sleeper.logging.level".
+# (default value shown below, uncomment to set a value)
+# sleeper.logging.level.parquet=INFO
 
-# The logging level for AWS logs.
-# (uncomment to set a value)
-# sleeper.logging.aws.level=
+# The logging level for AWS logs. Overrides the default set in "sleeper.logging.level".
+# (default value shown below, uncomment to set a value)
+# sleeper.logging.level.aws=INFO
 
-# The logging level for everything else.
-# (uncomment to set a value)
-# sleeper.logging.root.level=
+# The logging level for everything else. Overrides the default set in "sleeper.logging.level".
+# (default value shown below, uncomment to set a value)
+# sleeper.logging.level.root=INFO
 
 # Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.
 # (uncomment to set a value)

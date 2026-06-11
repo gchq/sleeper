@@ -27,21 +27,28 @@ public interface LoggingLevelsProperty {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.apache.level")
-            .description("The logging level for Apache logs that are not Parquet.")
+            .defaultValue("INFO")
+            .runCdkDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
+    UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.apache")
+            .description("The logging level for Apache logs that are not Parquet. Overrides the default set " +
+                    "in \"sleeper.logging.level\". ")
+            .defaultProperty(LOGGING_LEVEL)
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.parquet.level")
-            .description("The logging level for Parquet logs.")
+    UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.parquet")
+            .description("The logging level for Parquet logs. Overrides the default set in \"sleeper.logging.level\".")
+            .defaultProperty(LOGGING_LEVEL)
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty AWS_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.aws.level")
-            .description("The logging level for AWS logs.")
+    UserDefinedInstanceProperty AWS_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.aws")
+            .description("The logging level for AWS logs. Overrides the default set in \"sleeper.logging.level\".")
+            .defaultProperty(LOGGING_LEVEL)
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.root.level")
-            .description("The logging level for everything else.")
+    UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level.root")
+            .description("The logging level for everything else. Overrides the default set in \"sleeper.logging.level\".")
+            .defaultProperty(LOGGING_LEVEL)
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RUST_BACKTRACE = Index.propertyBuilder("sleeper.logging.backtrace")
