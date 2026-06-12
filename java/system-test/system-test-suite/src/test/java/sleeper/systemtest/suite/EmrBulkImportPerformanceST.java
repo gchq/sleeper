@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
@@ -46,7 +47,12 @@ public class EmrBulkImportPerformanceST {
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
+    // This was failing regularly and we can't find out why because the logs are not kept.
+    // See issue: https://github.com/gchq/sleeper/issues/7420
+    // We can consider turning it back on after we save the EMR bulk import logs in the following issue:
+    // https://github.com/gchq/sleeper/issues/5912
     @Test
+    @Disabled
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperDsl sleeper) {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster()
