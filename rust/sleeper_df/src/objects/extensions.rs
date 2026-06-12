@@ -16,7 +16,7 @@
 */
 use crate::objects::query_extensions::FFISQLExtension;
 use color_eyre::eyre::{bail, eyre};
-use std::{collections::HashMap, ffi::c_char, fmt::Display, slice};
+use std::{collections::HashMap, fmt::Display, slice};
 
 /// Type tag for an extension.
 ///
@@ -97,6 +97,7 @@ impl FFIExtension {
     ///
     /// # Errors
     /// Fails if a NULL is found
+    #[allow(dead_code)]
     fn check_non_null_data(&self) -> Result<(), color_eyre::Report> {
         match self.variant {
             FFIExtensionVariant::SQL => {
@@ -113,6 +114,7 @@ impl FFIExtension {
 ///
 /// # Errors
 /// Error will occur if any extension is type is contained more than its permitted maximum.
+#[allow(dead_code)]
 pub fn validate_extensions(
     extensions: *const FFIExtension,
     extensions_len: usize,
@@ -145,7 +147,10 @@ pub fn validate_extensions(
 mod tests {
     use super::*;
 
-    fn create_extension_with_data(variant: FFIExtensionVariant, data_ptr: *const FFISQLExtension) -> FFIExtension {
+    fn create_extension_with_data(
+        variant: FFIExtensionVariant,
+        data_ptr: *const FFISQLExtension,
+    ) -> FFIExtension {
         FFIExtension {
             variant,
             data: FFIExtensionData { sql: data_ptr },
@@ -165,7 +170,7 @@ mod tests {
                 let sql_ext = FFISQLExtension {
                     sql: c"SELECT * FROM test".as_ptr(),
                 };
-                create_extension_with_data(variant, std::ptr::addr_of!(sql_ext) as *const FFISQLExtension)
+                create_extension_with_data(variant, &raw const sql_ext)
             }
         }
     }
