@@ -30,6 +30,8 @@ import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
+import sleeper.bulkexport.taskexecution.ECSBulkExportTaskRunner.DataFusionQueryExporter;
+import sleeper.bulkexport.taskexecution.ECSBulkExportTaskRunner.JavaCompactionExporter;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -258,8 +260,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private void runTask() throws Exception {
         DataFusionAwsConfig awsConfig = createAwsConfig();
-        runTask(ECSBulkExportTaskRunner.createJavaExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
-                ECSBulkExportTaskRunner.createDataFusionExporter(awsConfig));
+        runTask(new JavaCompactionExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
+                new DataFusionQueryExporter(awsConfig));
     }
 
     private void runTask(ECSBulkExportTaskRunner.BulkExporter javaExporter,

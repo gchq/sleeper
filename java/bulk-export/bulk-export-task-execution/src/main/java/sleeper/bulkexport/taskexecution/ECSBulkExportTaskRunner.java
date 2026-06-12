@@ -84,52 +84,6 @@ public class ECSBulkExportTaskRunner {
     }
 
     /**
-     * Functional interface for performing a bulk export and returning the rows processed.
-     */
-    @FunctionalInterface
-    public interface BulkExporter {
-        /**
-         * Performs the bulk export.
-         *
-         * @param  query                     the leaf partition query to export
-         * @param  outputFile                the output file path
-         * @param  tableProperties           the properties for the table being exported
-         * @return                           the number of rows read and written
-         * @throws RowRetrievalException     if there is an error retrieving rows via DataFusion
-         * @throws IOException               if there is an I/O error
-         * @throws ObjectFactoryException    if there is an error creating objects dynamically
-         * @throws IteratorCreationException if there is an error creating iterators
-         */
-        RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile,
-                TableProperties tableProperties) throws RowRetrievalException, IOException, ObjectFactoryException, IteratorCreationException;
-    }
-
-    /**
-     * Creates an expoter that uses the Java compaction code path.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  s3Client           an S3 client
-     * @param  hadoopConf         a Hadoop configuration
-     * @param  awsConfig          DataFusion AWS S3 configuration
-     * @return                    a {@link JavaCompactionExporter}
-     */
-    public static JavaCompactionExporter createJavaExporter(
-            InstanceProperties instanceProperties, S3Client s3Client,
-            Configuration hadoopConf, DataFusionAwsConfig awsConfig) {
-        return new JavaCompactionExporter(instanceProperties, s3Client, hadoopConf, awsConfig);
-    }
-
-    /**
-     * Creates an exporter that uses the DataFusion query code path.
-     *
-     * @param  awsConfig DataFusion AWS S3 configuration
-     * @return           a {@link DataFusionQueryExporter}
-     */
-    public static DataFusionQueryExporter createDataFusionExporter(DataFusionAwsConfig awsConfig) {
-        return new DataFusionQueryExporter(awsConfig);
-    }
-
-    /**
      * Main method to run the ECS bulk export task.
      *
      * This method initializes AWS clients for DynamoDB, SQS, and S3, loads instance
@@ -163,8 +117,8 @@ public class ECSBulkExportTaskRunner {
             Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
             DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault(instanceProperties);
             new ECSBulkExportTaskRunner(
-                    createJavaExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
-                    createDataFusionExporter(awsConfig))
+                    new JavaCompactionExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
+                    new DataFusionQueryExporter(awsConfig))
                     .runECSBulkExportTaskRunner(instanceProperties, tablePropertiesProvider, sqsClient);
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
@@ -242,7 +196,7 @@ public class ECSBulkExportTaskRunner {
      * @param  tableProperties    the properties for the table being exported
      * @param  javaExporter       the exporter to use for the Java data engine
      * @param  dataFusionExporter the exporter to use for the DataFusion data engine
-     * @return                    the {@link BulkExporter} for the table's data engine
+     * @return                    the exporter for the table's data engine
      */
     public static BulkExporter exporterFor(
             TableProperties tableProperties,
@@ -252,6 +206,27 @@ public class ECSBulkExportTaskRunner {
             case JAVA -> javaExporter;
             case DATAFUSION, DATAFUSION_EXPERIMENTAL -> dataFusionExporter;
         };
+    }
+
+    /**
+     * Functional interface for performing a bulk export and returning the rows processed.
+     */
+    @FunctionalInterface
+    public interface BulkExporter {
+        /**
+         * Performs the bulk export.
+         *
+         * @param  query                     the leaf partition query to export
+         * @param  outputFile                the output file path
+         * @param  tableProperties           the properties for the table being exported
+         * @return                           the number of rows read and written
+         * @throws RowRetrievalException     if there is an error retrieving rows via DataFusion
+         * @throws IOException               if there is an I/O error
+         * @throws ObjectFactoryException    if there is an error creating objects dynamically
+         * @throws IteratorCreationException if there is an error creating iterators
+         */
+        RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile,
+                TableProperties tableProperties) throws RowRetrievalException, IOException, ObjectFactoryException, IteratorCreationException;
     }
 
     /**
