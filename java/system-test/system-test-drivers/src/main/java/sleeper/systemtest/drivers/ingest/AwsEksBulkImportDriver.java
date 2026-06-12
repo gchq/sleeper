@@ -35,6 +35,7 @@ import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.Socket;
@@ -134,14 +135,14 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
             } else {
                 LOGGER.error("Live EKS endpoint diverges from cached value. cached={}, live={}", endpoint, liveEndpoint);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.error("Failed to describe EKS cluster {}", clusterName, e);
         }
         URI uri = URI.create(endpoint);
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(uri.getHost(), uri.getPort() == -1 ? 443 : uri.getPort()), 30000);
             LOGGER.info("Raw TCP connect OK");
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LOGGER.error("Raw TCP connect failed", e);
         }
     }
