@@ -138,15 +138,16 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         BulkExportLeafPartitionQuery query2 = createQueryWithIdsAndFiles("e-2", "se-2", file).build();
         send(query1);
         send(query2);
-        DataFusionAwsConfig awsConfig = createAwsConfig();
+        ECSBulkExportTaskRunner.BulkExporter fakeJavaExporter = (query, outputFile, tableProps) -> {
+            throw new IllegalStateException("Java exporter should not be called for DataFusion engine");
+        };
         ECSBulkExportTaskRunner.BulkExporter fakeDataFusionExporter = (query, outputFile, tableProps) -> {
             writeRowsToPath(new Path(outputFile), List.of(row1, row2));
             return new RowsProcessed(2, 2);
         };
 
         // When
-        runTask(ECSBulkExportTaskRunner.createJavaExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
-                fakeDataFusionExporter);
+        runTask(fakeJavaExporter, fakeDataFusionExporter);
 
         // Then
         assertThat(readOutputFile(query1)).containsExactly(row1, row2);

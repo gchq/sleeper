@@ -87,7 +87,7 @@ public class ECSBulkExportTaskRunner {
      * Functional interface for performing a bulk export and returning the rows processed.
      */
     @FunctionalInterface
-    public static interface BulkExporter {
+    public interface BulkExporter {
         /**
          * Performs the bulk export.
          *
@@ -105,7 +105,7 @@ public class ECSBulkExportTaskRunner {
     }
 
     /**
-     * Creates a {@link BulkExporter} that uses the Java compaction code path.
+     * Creates an expoter that uses the Java compaction code path.
      *
      * @param  instanceProperties the instance properties
      * @param  s3Client           an S3 client
@@ -120,7 +120,7 @@ public class ECSBulkExportTaskRunner {
     }
 
     /**
-     * Creates a {@link BulkExporter} that uses the DataFusion query code path.
+     * Creates an exporter that uses the DataFusion query code path.
      *
      * @param  awsConfig DataFusion AWS S3 configuration
      * @return           a {@link DataFusionQueryExporter}
