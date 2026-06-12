@@ -67,7 +67,7 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesfile=instance.properties",
+                    "-c", "propertiesFile=instance.properties",
                     "*")));
         }
 
@@ -81,7 +81,7 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesfile=instance.properties",
+                    "-c", "propertiesFile=instance.properties",
                     "*")));
         }
 
@@ -95,8 +95,8 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesfile=instance.properties",
-                    "-c", "newinstance=true",
+                    "-c", "propertiesFile=instance.properties",
+                    "-c", "newInstance=true",
                     "*")));
         }
 
@@ -110,7 +110,7 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesfile=instance.properties",
+                    "-c", "propertiesFile=instance.properties",
                     "-c", "skipVersionCheck=true",
                     "*")));
         }
@@ -125,8 +125,8 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesfile=instance.properties",
-                    "-c", "newinstance=true",
+                    "-c", "propertiesFile=instance.properties",
+                    "-c", "newInstance=true",
                     "-c", "deployPaused=true",
                     "*")));
         }
@@ -156,7 +156,7 @@ class InvokeCdkTest {
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "destroy", "--force",
-                    "-c", "propertiesfile=instance.properties",
+                    "-c", "propertiesFile=instance.properties",
                     "-c", "validate=false",
                     "*")));
         }
@@ -170,7 +170,7 @@ class InvokeCdkTest {
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "destroy", "--force",
-                    "-c", "propertiesfile=instance.properties",
+                    "-c", "propertiesFile=instance.properties",
                     "-c", "validate=false",
                     "*")));
         }

@@ -114,8 +114,8 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" \
-    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
-    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
+    -c id=$INSTANCE_ID -c propertiesFile="$INSTANCE_PROPERTIES" \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newInstance=true
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -134,8 +134,8 @@ cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.
     -c id=$INSTANCE_ID
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --cdk-app demonstration
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SleeperDemonstrationCdkApp" \
-    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
-    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
+    -c id=$INSTANCE_ID -c propertiesFile="$INSTANCE_PROPERTIES" \
+    -c vpc=$VPC_ID -c subnets=$SUBNETS -c newInstance=true
 # Write some random data
 "$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID system-test
 java -cp "$SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar" \
@@ -154,6 +154,6 @@ INSTANCE_ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -c propertiesFile="$INSTANCE_PROPERTIES" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```

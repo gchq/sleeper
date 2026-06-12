@@ -68,7 +68,7 @@ class SleeperInstancePropsIT {
 
     @BeforeEach
     void setUp() {
-        cdkContext.put("propertiesfile", tempDir.resolve("instance.properties").toString());
+        cdkContext.put("propertiesFile", tempDir.resolve("instance.properties").toString());
     }
 
     @Nested

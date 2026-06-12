@@ -168,7 +168,7 @@ public class SleeperInstanceProps {
      * @return              the configuration
      */
     public static Builder builderFromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
-        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
+        Path propertiesFile = Path.of(context.tryGetContext("propertiesFile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         String instanceId = context.tryGetContext("id");
         if (instanceId != null) {
@@ -182,7 +182,7 @@ public class SleeperInstanceProps {
                 .tableProperties(configuration.getTableProperties())
                 .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
-                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
+                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newInstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
                 .deployPaused(context.getBooleanOrDefault("deployPaused", false));
     }
