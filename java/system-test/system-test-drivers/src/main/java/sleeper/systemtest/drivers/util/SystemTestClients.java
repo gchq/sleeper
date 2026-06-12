@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.eks.EksClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -82,6 +83,7 @@ public class SystemTestClients {
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
     private final SfnClient sfn;
+    private final EksClient eks;
     private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
@@ -108,6 +110,7 @@ public class SystemTestClients {
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
         sfn = builder.sfn;
+        eks = builder.eks;
         dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
@@ -143,6 +146,7 @@ public class SystemTestClients {
                     return DataFusionAwsConfig.getDefault(region, partitionMetadata);
                 })
                 .sfn(SfnClient.create())
+                .eks(EksClient.create())
                 .build();
     }
 
@@ -169,6 +173,7 @@ public class SystemTestClients {
                 .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
                 .sfn(aws.buildClient(SfnClient.builder()))
+                .eks(aws.buildClient(EksClient.builder()))
                 .dataFusionAwsConfig(aws::dataFusionAwsConfig)
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
@@ -255,6 +260,10 @@ public class SystemTestClients {
         return sfn;
     }
 
+    public EksClient getEks() {
+        return eks;
+    }
+
     public CommandPipelineRunner getCommandRunner() {
         return commandRunner;
     }
@@ -313,6 +322,7 @@ public class SystemTestClients {
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
         private SfnClient sfn;
+        private EksClient eks;
         private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
@@ -413,6 +423,11 @@ public class SystemTestClients {
 
         public Builder sfn(SfnClient sfn) {
             this.sfn = sfn;
+            return this;
+        }
+
+        public Builder eks(EksClient eks) {
+            this.eks = eks;
             return this;
         }
 

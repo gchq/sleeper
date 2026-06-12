@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.eks.EksClient;
+import software.amazon.awssdk.services.eks.model.DescribeClusterResponse;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sfn.model.DescribeExecutionResponse;
 
@@ -40,6 +42,7 @@ import java.net.URI;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -54,16 +57,18 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     private final SystemTestInstanceContext instance;
     private final SentIngestJobsContext sentJobs;
     private final SfnClient sfnClient;
+    private final EksClient eksClient;
     private final KubernetesClientFactory k8sFactory;
 
     public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SystemTestClients clients) {
-        this(instance, sentJobs, clients.getSfn(), clients::createKubernetesClient);
+        this(instance, sentJobs, clients.getSfn(), clients.getEks(), clients::createKubernetesClient);
     }
 
-    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, KubernetesClientFactory k8sFactory) {
+    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, EksClient eksClient, KubernetesClientFactory k8sFactory) {
         this.instance = instance;
         this.sentJobs = sentJobs;
         this.sfnClient = sfnClient;
+        this.eksClient = eksClient;
         this.k8sFactory = k8sFactory;
     }
 
@@ -87,8 +92,8 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
 
     @Override
     public List<String> getPods() {
-        checkRawTcpConnection();
         InstanceProperties properties = instance.getInstanceProperties();
+        logEndpointDiagnostics(properties);
         PodList list;
         try (KubernetesClient client = k8sFactory.getClient(properties)) {
             list = client.pods()
@@ -102,6 +107,7 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     @Override
     public List<String> getJobs() {
         InstanceProperties properties = instance.getInstanceProperties();
+        logEndpointDiagnostics(properties);
         JobList list;
         try (KubernetesClient client = k8sFactory.getClient(properties)) {
             list = client.batch().v1().jobs()
@@ -112,10 +118,25 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
         return list.getItems().stream().map(Job::toString).toList();
     }
 
-    private void checkRawTcpConnection() {
-        String endpoint = instance.getInstanceProperties().get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT);
-        LOGGER.info("Checking raw TCP connection to cluster endpoint {}, https.proxyHost={}, defaultProxySelector={}",
+    private void logEndpointDiagnostics(InstanceProperties properties) {
+        String endpoint = properties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT);
+        LOGGER.info("Found cluster endpoint: {}, https.proxyHost={}, defaultProxySelector={}",
                 endpoint, System.getProperty("https.proxyHost"), ProxySelector.getDefault());
+        if (endpoint == null) {
+            return;
+        }
+        String clusterName = properties.get(BULK_IMPORT_EKS_CLUSTER_NAME);
+        try {
+            DescribeClusterResponse response = eksClient.describeCluster(req -> req.name(clusterName));
+            String liveEndpoint = response.cluster().endpoint();
+            if (endpoint.equals(liveEndpoint)) {
+                LOGGER.info("Live EKS endpoint matches cached value: {}", liveEndpoint);
+            } else {
+                LOGGER.error("Live EKS endpoint diverges from cached value. cached={}, live={}", endpoint, liveEndpoint);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to describe EKS cluster {}", clusterName, e);
+        }
         URI uri = URI.create(endpoint);
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(uri.getHost(), uri.getPort() == -1 ? 443 : uri.getPort()), 30000);
