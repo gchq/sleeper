@@ -115,6 +115,10 @@ public class ManagedPoliciesStack extends NestedStack {
         return adminPolicy;
     }
 
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return adminPolicy;
+    }
+
     public ManagedPolicy getInvokeCompactionPolicyForGrants() {
         // Avoid creating empty policy when we're not deploying compaction stack
         if (invokeCompactionPolicy == null) {
