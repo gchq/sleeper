@@ -74,6 +74,15 @@ public class ConsoleOutput {
     }
 
     /**
+     * Prints a stack trace to the console.
+     *
+     * @param e the error or exception
+     */
+    public void printStackTrace(Throwable e) {
+        e.printStackTrace(out);
+    }
+
+    /**
      * Creates a print writer to write to the console. Sets autoFlush to true. Uses {@link StandardCharsets#UTF_8}.
      *
      * @return the print writer
