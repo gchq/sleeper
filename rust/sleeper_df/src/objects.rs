@@ -177,7 +177,3 @@ pub fn to_strings(ffi_bytes: *const FFIBytes, len: usize) -> Result<Vec<String>,
             .collect()
     }
 }
-
-pub trait ExtensionFFIDetails {
-    const MAX_CARDINALITY: usize;
-}
