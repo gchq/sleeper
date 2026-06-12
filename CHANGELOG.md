@@ -7,7 +7,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.36.0
 
-### 8th June, 2026
+### 15th June, 2026
 
 This includes support for nullable value fields, ephemeral storage configuration for EKS bulk import and
 various dependency upgrades.
