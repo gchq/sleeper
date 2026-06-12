@@ -192,7 +192,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     wait
 else
     echo "Running custom test suite. Start time: [$(time_str)]"
-    runTestSuite 0 "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
 fi
 
 echo "[$(time_str)] Uploading test output"
