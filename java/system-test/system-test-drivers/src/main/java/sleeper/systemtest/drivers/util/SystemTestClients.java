@@ -16,10 +16,7 @@
 
 package sleeper.systemtest.drivers.util;
 
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -63,10 +60,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME;
 
 public class SystemTestClients {
     private final Region region;
@@ -279,15 +272,7 @@ public class SystemTestClients {
     }
 
     public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
-        Config config = new ConfigBuilder()
-                .withMasterUrl(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
-                .withCaCertData(instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_CA_DATA))
-                .withOauthTokenProvider(() -> EksAuthTokenGenerator.generateToken(
-                        instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME), region, credentialsProvider))
-                .withConnectionTimeout(30 * 1000)
-                .withRequestTimeout(60 * 1000)
-                .build();
-        return new KubernetesClientBuilder().withConfig(config).build();
+        return EksClientFactory.createKubernetesClient(instanceProperties, region, credentialsProvider);
     }
 
     public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
