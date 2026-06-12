@@ -107,10 +107,9 @@ When deploying via the CDK, choose one of two context variables to point at your
 
 * `-c propertiesfile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
   `tags.properties` are read; table properties are not loaded.
-* `-c configurationdir=<path>` — the path to the root configuration directory. The whole directory structure is read:
-  `instance.properties`, `tags.properties`, `table.properties`, `schema.json`, `splits.txt`, and any tables under a
-  `tables/` subdirectory. Passing the `instance.properties` file path here also works — it falls back to the directory
-  containing it.
+* `-c configurationdir=<path>` — the path to the root configuration directory. The whole directory structure is read including `instance.properties` and `table.properties`. Passing the `instance.properties` file path here also works — it falls back to the directory
+  containing it. For a full description of what can be defined in the directory, refer to the configuration folder structure in the
+   [instant configuration documentation](./instance-configuration.md#configuration-folder-structure).
 
 Set exactly one of these; setting both, or neither, is an error.
 
