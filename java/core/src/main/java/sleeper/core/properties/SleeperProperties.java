@@ -158,8 +158,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
 
     /**
-     * Writes the property values to the given writer in a human-readable string
-     * format.
+     * Writes the property values to the given writer in a human-readable string format.
      *
      * @param writer the writer
      */
