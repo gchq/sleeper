@@ -191,6 +191,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     runTestSuite 900 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
     wait
 else
+    echo "Running custom test suite. Start time: [$(time_str)]"
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
 fi
 

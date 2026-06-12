@@ -368,6 +368,10 @@ public class SleeperCoreStacks {
         return policiesStack.getPurgeQueuesPolicyForGrants();
     }
 
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return policiesStack.getAdminPolicyForGrants();
+    }
+
     public void createRoles() {
         roles = policiesStack.createRoles();
     }

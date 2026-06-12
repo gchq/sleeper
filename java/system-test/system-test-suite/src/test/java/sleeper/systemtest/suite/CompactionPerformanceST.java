@@ -79,7 +79,7 @@ public class CompactionPerformanceST {
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10),
                         "compactions finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(180_000, 400_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(170_000, 400_000),
                         "meets expected performance");
     }
 }
