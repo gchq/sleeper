@@ -398,7 +398,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @param newProperties the properties to set
      */
     public void resetAndValidate(Properties newProperties) {
-        resetAndValidate(newProperties, false);
+        resetAndValidate(newProperties, Boolean.FALSE);
     }
 
     /**

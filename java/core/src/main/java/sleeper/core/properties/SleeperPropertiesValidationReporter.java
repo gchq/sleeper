@@ -25,7 +25,7 @@ import java.util.Map;
 public class SleeperPropertiesValidationReporter {
 
     private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
-    private Boolean fromFile = false;
+    private Boolean fromFile = Boolean.FALSE;
 
     public SleeperPropertiesValidationReporter() {
     }
