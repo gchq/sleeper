@@ -52,7 +52,7 @@ public class S3InstanceProperties {
      * @return             the loaded instance properties
      */
     public static InstanceProperties loadGivenAccountAndInstanceId(S3Client s3Client, String accountName, String instanceId) {
-        return InstanceProperties.createAndValidate(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId), Boolean.FALSE);
+        return InstanceProperties.createAndValidate(loadPropertiesGivenAccountAndInstanceId(s3Client, accountName, instanceId), Boolean.TRUE);
     }
 
     /**
@@ -75,7 +75,7 @@ public class S3InstanceProperties {
      * @return          the loaded instance properties
      */
     public static InstanceProperties loadFromBucket(S3Client s3Client, String bucket) {
-        return InstanceProperties.createAndValidate(loadPropertiesFromBucket(s3Client, bucket), Boolean.FALSE);
+        return InstanceProperties.createAndValidate(loadPropertiesFromBucket(s3Client, bucket), Boolean.TRUE);
     }
 
     /**

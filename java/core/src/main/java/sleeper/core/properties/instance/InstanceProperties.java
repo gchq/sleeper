@@ -68,12 +68,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * Creates and validates an instance of this class with the given property values when loaded from a file.
      *
      * @param  properties the property values
-     * @param  fromFile   whether the properties orignated from a loaded file
+     * @param  ignoreNull whether to ignore null vales when validating
      * @return            the instance properties
      */
-    public static InstanceProperties createAndValidate(Properties properties, Boolean fromFile) {
+    public static InstanceProperties createAndValidate(Properties properties, Boolean ignoreNull) {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.resetAndValidate(properties, fromFile);
+        instanceProperties.resetAndValidate(properties, ignoreNull);
         return instanceProperties;
     }
 

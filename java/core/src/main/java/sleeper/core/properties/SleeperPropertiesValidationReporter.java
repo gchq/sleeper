@@ -25,13 +25,13 @@ import java.util.Map;
 public class SleeperPropertiesValidationReporter {
 
     private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
-    private Boolean fromFile = Boolean.FALSE;
+    private Boolean ignoreNull = Boolean.FALSE;
 
     public SleeperPropertiesValidationReporter() {
     }
 
-    public SleeperPropertiesValidationReporter(Boolean fromFile) {
-        this.fromFile = fromFile;
+    public SleeperPropertiesValidationReporter(Boolean ignoreNull) {
+        this.ignoreNull = ignoreNull;
     }
 
     /**
@@ -42,7 +42,7 @@ public class SleeperPropertiesValidationReporter {
      * @param value    the value
      */
     public void invalidProperty(SleeperProperty property, String value) {
-        if (!fromFile || value != null) {
+        if (!ignoreNull || value != null) {
             invalidValues.put(property, value);
         }
     }
