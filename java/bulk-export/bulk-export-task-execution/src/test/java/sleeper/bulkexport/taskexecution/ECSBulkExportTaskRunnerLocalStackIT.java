@@ -44,6 +44,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
@@ -137,9 +138,15 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         BulkExportLeafPartitionQuery query2 = createQueryWithIdsAndFiles("e-2", "se-2", file).build();
         send(query1);
         send(query2);
+        DataFusionAwsConfig awsConfig = createAwsConfig();
+        ECSBulkExportTaskRunner.BulkExporter fakeDataFusionExporter = (query, outputFile, tableProps) -> {
+            writeRowsToPath(new Path(outputFile), List.of(row1, row2));
+            return new RowsProcessed(2, 2);
+        };
 
         // When
-        runTask();
+        runTask(ECSBulkExportTaskRunner.createJavaExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
+                fakeDataFusionExporter);
 
         // Then
         assertThat(readOutputFile(query1)).containsExactly(row1, row2);
@@ -249,9 +256,15 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private void runTask() throws Exception {
-        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client,
-                dynamoClient, hadoopConf, createAwsConfig());
+        DataFusionAwsConfig awsConfig = createAwsConfig();
+        runTask(ECSBulkExportTaskRunner.createJavaExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
+                ECSBulkExportTaskRunner.createDataFusionExporter(awsConfig));
+    }
+
+    private void runTask(ECSBulkExportTaskRunner.BulkExporter javaExporter,
+            ECSBulkExportTaskRunner.BulkExporter dataFusionExporter) throws Exception {
+        new ECSBulkExportTaskRunner(javaExporter, dataFusionExporter)
+                .runECSBulkExportTaskRunner(instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient);
     }
 
     private StateStore stateStore() {
@@ -260,7 +273,12 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private FileReference addPartitionFile(String partitionId, String name, List<Row> rows) {
         FileReference reference = fileFactory().partitionFile(partitionId, name, rows.size());
-        Path path = new Path(reference.getFilename());
+        writeRowsToPath(new Path(reference.getFilename()), rows);
+        update(stateStore()).addFile(reference);
+        return reference;
+    }
+
+    private void writeRowsToPath(Path path, Iterable<Row> rows) {
         try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, tableProperties, hadoopConf)) {
             for (Row row : rows) {
                 writer.write(row);
@@ -268,8 +286,6 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        update(stateStore()).addFile(reference);
-        return reference;
     }
 
     private List<Row> readOutputFile(BulkExportLeafPartitionQuery query) {

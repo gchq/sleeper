@@ -94,6 +94,8 @@ public class ECSBulkExportTaskRunnerExporterTest {
 
     private BulkExporter exporterFor() {
         return ECSBulkExportTaskRunner.exporterFor(
-                query, instanceProperties, null, null, awsConfig, "output-file", tableProperties);
+                tableProperties,
+                ECSBulkExportTaskRunner.createJavaExporter(instanceProperties, null, null, awsConfig),
+                ECSBulkExportTaskRunner.createDataFusionExporter(awsConfig));
     }
 }
