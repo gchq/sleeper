@@ -33,8 +33,13 @@ import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.SentIngestJobsContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.Socket;
+import java.net.URI;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -82,6 +87,7 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
 
     @Override
     public List<String> getPods() {
+        checkRawTcpConnection();
         InstanceProperties properties = instance.getInstanceProperties();
         PodList list;
         try (KubernetesClient client = k8sFactory.getClient(properties)) {
@@ -104,6 +110,19 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
         }
         LOGGER.info("Found jobs in Spark namespace: {}", list);
         return list.getItems().stream().map(Job::toString).toList();
+    }
+
+    private void checkRawTcpConnection() {
+        String endpoint = instance.getInstanceProperties().get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT);
+        LOGGER.info("Checking raw TCP connection to cluster endpoint {}, https.proxyHost={}, defaultProxySelector={}",
+                endpoint, System.getProperty("https.proxyHost"), ProxySelector.getDefault());
+        URI uri = URI.create(endpoint);
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(uri.getHost(), uri.getPort() == -1 ? 443 : uri.getPort()), 30000);
+            LOGGER.info("Raw TCP connect OK");
+        } catch (Exception e) {
+            LOGGER.error("Raw TCP connect failed", e);
+        }
     }
 
     public interface KubernetesClientFactory {
