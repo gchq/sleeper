@@ -32,6 +32,9 @@
         "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn": {
           "Type": "String"
         },
+        "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Ref": {
+          "Type": "String"
+        },
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn": {
           "Type": "String"
         },
@@ -417,7 +420,22 @@
                 {
                   "Action": "dynamodb:GetItem",
                   "Effect": "Allow",
-                  "Resource": "arn:aws:dynamodb:test-region:test-account:table/sleeper-test-instance-ingest-job-lookup"
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                          },
+                          "/index/*"
+                        ]
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -2088,7 +2106,11 @@
                       "Endpoint"
                     ]
                   },
-                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"CheckJobStatus\":{\"Next\":\"JobStatusDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::aws-sdk:dynamodb:getItem\",\"Parameters\":{\"TableName\":\"sleeper-test-instance-ingest-job-lookup\",\"Key\":{\"JobId\":{\"S.$\":\"$.job.id\"}}},\"ResultPath\":\"$.jobStatus\"},\"JobStatusDecision\":{\"Type\":\"Choice\",\"Choices\":[{\"Or\":[{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"finished\"},{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"addedFiles\"}],\"Next\":\"DeleteDriverPod\"}],\"Default\":\"CreateErrorMessage\"},\"CreateErrorMessage\":{\"Type\":\"Pass\",\"Parameters\":{\"errorMessage.$\":\"States.Format(\u0027Bulk import job {} failed. Check the pod logs for details.\u0027, $.job.id)\"},\"Next\":\"AlertUserFailedSparkSubmit\"},\"AlertUserFailedSparkSubmit\":{\"Next\":\"FailedJobState\",\"Type\":\"Task\",\"Resource\":\"arn:",
+                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"CheckJobStatus\":{\"Next\":\"JobStatusDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::aws-sdk:dynamodb:getItem\",\"Parameters\":{\"TableName\":\"",
+                  {
+                    "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Ref"
+                  },
+                  "\",\"Key\":{\"JobId\":{\"S.$\":\"$.job.id\"}}},\"ResultPath\":\"$.jobStatus\"},\"JobStatusDecision\":{\"Type\":\"Choice\",\"Choices\":[{\"Or\":[{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"finished\"},{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"addedFiles\"}],\"Next\":\"DeleteDriverPod\"}],\"Default\":\"CreateErrorMessage\"},\"CreateErrorMessage\":{\"Type\":\"Pass\",\"Parameters\":{\"errorMessage.$\":\"States.Format(\u0027Bulk import job {} failed. Check the pod logs for details.\u0027, $.job.id)\"},\"Next\":\"AlertUserFailedSparkSubmit\"},\"AlertUserFailedSparkSubmit\":{\"Next\":\"FailedJobState\",\"Type\":\"Task\",\"Resource\":\"arn:",
                   {
                     "Ref": "AWS::Partition"
                   },

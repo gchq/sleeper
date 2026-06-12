@@ -108,7 +108,17 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         this.getTime = getTime;
     }
 
-    public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+    /**
+     * Runs a bulk import job. Note that in addition to {@link IOException}, Spark operations may throw
+     * {@link org.apache.spark.SparkException}, which extends {@link Exception} but is thrown unchecked at runtime
+     * because Spark is implemented in Scala, which does not enforce checked exceptions.
+     *
+     * @param job      the bulk import job to run
+     * @param jobRunId the ID of this run of the job
+     * @param taskId   the ID of the task running the job
+     * @throws Exception if the job fails for any reason, including Spark failures
+     */
+    public void run(BulkImportJob job, String jobRunId, String taskId) throws Exception {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
@@ -116,7 +126,6 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         LOGGER.info("Received bulk import job: {}", runIds);
         LOGGER.info("Job is for table {}: {}", table, job);
 
-        boolean failureAlreadyTracked = false;
         try {
             LOGGER.info("Loading partitions");
             List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
@@ -135,32 +144,18 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                         .build());
 
                 LOGGER.info("Running bulk import job with id {}", job.getId());
-                List<FileReference> fileReferences;
-                try {
-                    fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
-                } catch (Exception e) {
-                    failureAlreadyTracked = true;
-                    markJobAsFailed(runIds, e);
-                    throw e;
-                }
+                List<FileReference> fileReferences = bulkImporter.createFileReferences(contextAfterSplit);
 
                 commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
             }
-        } catch (RuntimeException | IOException e) {
-            // Handles failures from createContext, preSplit, commitSuccessfulJob
-            if (!failureAlreadyTracked) {
-                markJobAsFailed(runIds, e);
-            }
+        } catch (Exception e) {
+            tracker.jobFailed(IngestJobFailedEvent.builder()
+                    .jobRunIds(runIds)
+                    .failureTime(getTime.get())
+                    .failure(e)
+                    .build());
             throw e;
         }
-    }
-
-    private void markJobAsFailed(IngestJobRunIds runIds, Exception e) {
-        tracker.jobFailed(IngestJobFailedEvent.builder()
-                .jobRunIds(runIds)
-                .failureTime(getTime.get())
-                .failure(e)
-                .build());
     }
 
     private void commitSuccessfulJob(TableProperties tableProperties, IngestJobRunIds runIds, Instant startTime, List<FileReference> fileReferences) {
@@ -220,7 +215,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
 
     @FunctionalInterface
     public interface BulkImporter<C extends BulkImportContext<C>> {
-        List<FileReference> createFileReferences(C context) throws IOException;
+        List<FileReference> createFileReferences(C context) throws Exception;
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) {

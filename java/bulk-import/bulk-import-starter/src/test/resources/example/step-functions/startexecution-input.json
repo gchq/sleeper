@@ -54,8 +54,6 @@
     "--conf",
     "spark.kubernetes.namespace=eks-namespace",
     "--conf",
-    "spark.kubernetes.submission.waitAppCompletion=true",
-    "--conf",
     "spark.master=k8s://null",
     "--conf",
     "spark.memory.fraction=0.75",

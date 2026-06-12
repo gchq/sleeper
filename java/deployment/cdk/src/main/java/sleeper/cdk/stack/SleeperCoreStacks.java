@@ -330,6 +330,14 @@ public class SleeperCoreStacks {
         ingestTracker.grantWriteJobEvent(grantee);
     }
 
+    public void grantReadIngestJobLookup(IGrantable grantee) {
+        ingestTracker.grantReadJobLookup(grantee);
+    }
+
+    public String getIngestJobLookupTableName(String instanceId) {
+        return ingestTracker.getJobLookupTableName(instanceId);
+    }
+
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
     // This means SpotBugs complains if we pass that role into attachToRole.
     // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,

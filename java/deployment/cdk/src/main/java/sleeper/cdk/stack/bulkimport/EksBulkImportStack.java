@@ -209,7 +209,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
-        String jobLookupTableName = DynamoDBIngestJobTracker.jobLookupTableName(instanceProperties.get(ID));
+        String jobLookupTableName = coreStacks.getIngestJobLookupTableName(instanceProperties.get(ID));
 
         Map<String, Object> runJobState = parseEksStepDefinition(
                 "/step-functions/run-job.json", instanceProperties, cluster,
@@ -246,8 +246,8 @@ public final class EksBulkImportStack extends NestedStack {
                                 .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
                                         .next(Choice.Builder.create(this, "JobStatusDecision").build()
                                                 .when(Condition.or(
-                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", "finished"),
-                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", "addedFiles")),
+                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_FINISHED),
+                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_ADDED_FILES)),
                                                         CustomState.Builder.create(this, "DeleteDriverPod")
                                                                 .stateJson(deleteDriverPodState).build()
                                                                 .next(CustomState.Builder.create(this, "DeleteJob")
@@ -257,11 +257,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
 
-        stateMachine.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("dynamodb:GetItem"))
-                .resources(List.of("arn:aws:dynamodb:" + this.getRegion() + ":" + this.getAccount() + ":table/" + jobLookupTableName))
-                .build());
+        coreStacks.grantReadIngestJobLookup(stateMachine);
 
         return stateMachine;
     }

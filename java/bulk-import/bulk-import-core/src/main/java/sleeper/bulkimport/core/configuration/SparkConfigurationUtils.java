@@ -210,7 +210,6 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         sparkConf.put("spark.kubernetes.container.image", DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
         sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        sparkConf.put("spark.kubernetes.submission.waitAppCompletion", "true");
         sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         sparkConf.put("spark.kubernetes.executor.podTemplateFile", "/tmp/executor-template.yaml");
 

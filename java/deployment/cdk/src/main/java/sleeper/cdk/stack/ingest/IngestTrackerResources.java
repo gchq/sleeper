@@ -21,6 +21,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
@@ -30,6 +31,13 @@ public interface IngestTrackerResources {
     }
 
     default void grantWriteTaskEvent(IGrantable grantee) {
+    }
+
+    default void grantReadJobLookup(IGrantable grantee) {
+    }
+
+    default String getJobLookupTableName(String instanceId) {
+        return DynamoDBIngestJobTracker.jobLookupTableName(instanceId);
     }
 
     static IngestTrackerResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {

@@ -132,4 +132,14 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
     public void grantWriteTaskEvent(IGrantable grantee) {
         tasksTable.grantWriteData(grantee);
     }
+
+    @Override
+    public void grantReadJobLookup(IGrantable grantee) {
+        jobsTable.grant(grantee, "dynamodb:GetItem");
+    }
+
+    @Override
+    public String getJobLookupTableName(String instanceId) {
+        return jobsTable.getTableName();
+    }
 }
