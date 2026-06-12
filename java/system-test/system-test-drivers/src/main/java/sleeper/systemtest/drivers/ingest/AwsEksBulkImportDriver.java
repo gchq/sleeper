@@ -49,17 +49,17 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     private final SystemTestInstanceContext instance;
     private final SentIngestJobsContext sentJobs;
     private final SfnClient sfnClient;
-    private final KubernetesClientProvider k8sProvider;
+    private final KubernetesClientFactory k8sFactory;
 
     public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SystemTestClients clients) {
         this(instance, sentJobs, clients.getSfn(), clients::createKubernetesClient);
     }
 
-    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, KubernetesClientProvider k8sProvider) {
+    public AwsEksBulkImportDriver(SystemTestInstanceContext instance, SentIngestJobsContext sentJobs, SfnClient sfnClient, KubernetesClientFactory k8sFactory) {
         this.instance = instance;
         this.sentJobs = sentJobs;
         this.sfnClient = sfnClient;
-        this.k8sProvider = k8sProvider;
+        this.k8sFactory = k8sFactory;
     }
 
     @Override
@@ -83,9 +83,12 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     @Override
     public List<String> getPods() {
         InstanceProperties properties = instance.getInstanceProperties();
-        PodList list = k8sProvider.getClient(properties).pods()
-                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
-                .list();
+        PodList list;
+        try (KubernetesClient client = k8sFactory.getClient(properties)) {
+            list = client.pods()
+                    .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                    .list();
+        }
         LOGGER.info("Found pods in Spark namespace: {}", list);
         return list.getItems().stream().map(Pod::toString).toList();
     }
@@ -93,14 +96,17 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     @Override
     public List<String> getJobs() {
         InstanceProperties properties = instance.getInstanceProperties();
-        JobList list = k8sProvider.getClient(properties).batch().v1().jobs()
-                .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
-                .list();
+        JobList list;
+        try (KubernetesClient client = k8sFactory.getClient(properties)) {
+            list = client.batch().v1().jobs()
+                    .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                    .list();
+        }
         LOGGER.info("Found jobs in Spark namespace: {}", list);
         return list.getItems().stream().map(Job::toString).toList();
     }
 
-    public interface KubernetesClientProvider {
+    public interface KubernetesClientFactory {
         KubernetesClient getClient(InstanceProperties instanceProperties);
     }
 }
