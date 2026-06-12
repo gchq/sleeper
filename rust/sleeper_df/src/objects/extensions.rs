@@ -20,8 +20,8 @@ use std::fmt::Display;
 
 /// Type tag for an extension.
 ///
-/// FIXME: *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValueType.java.
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/extension/FFIExtensionVariant.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl Display for FFIExtensionVariant {
 /// This is a union type, storage for all members overlaps!
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// FIXME: you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValue.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/extension/FFIExtensionData.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub union FFIExtensionData {
@@ -69,7 +69,7 @@ pub union FFIExtensionData {
 /// times depending on its purpose.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// FIXME: you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValue.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/extension/FFIExtension.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIExtension {

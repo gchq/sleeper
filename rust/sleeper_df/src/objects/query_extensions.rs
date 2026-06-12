@@ -20,7 +20,7 @@ use std::ffi::c_char;
 /// Defines data required for the SQL in queries.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// FIXME: you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFIRowKeyValue.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/extensions/FFISQLExtension.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Debug)]
