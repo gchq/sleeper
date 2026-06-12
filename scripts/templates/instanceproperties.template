@@ -36,7 +36,6 @@
 # The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
 # artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
 # default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
-# (default value shown below, uncomment to set a value)
 # sleeper.artefacts.deployment=set-automatically
 
 # The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set by the
@@ -49,7 +48,6 @@
 # default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
 # is not.
 # ECR repository names are generated in the format `<prefix>/<image name>`.
-# (default value shown below, uncomment to set a value)
 # sleeper.ecr.repository.prefix=set-automatically
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
