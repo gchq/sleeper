@@ -21,7 +21,7 @@ import jnr.ffi.Struct;
 /**
  * Contains extra data relating to a Sleeper compaction or query. Each extension type maybe specified once or multiple
  * times depending on its purpose.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/extensions.rs. The order and types
  * of the fields must match exactly.

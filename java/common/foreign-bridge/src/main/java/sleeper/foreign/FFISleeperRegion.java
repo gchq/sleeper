@@ -30,9 +30,9 @@ import java.util.List;
 
 /**
  * A C ABI compatible representation of a Sleeper region.
- *
+ * <p>
  * All arrays MUST be same length.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/sleeper_region.rs. The order and
  * types of

@@ -20,7 +20,7 @@ import jnr.ffi.Struct;
 
 /**
  * Defines data required for the SQL in queries.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/query_extensions.rs. The order and
  * types

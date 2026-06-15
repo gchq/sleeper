@@ -19,7 +19,7 @@ import jnr.ffi.util.EnumMapper;
 
 /**
  * Specifies the type of an extension.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this enum (variants, ordinal values, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/extensions.rs. The order and types
  * must match exactly.

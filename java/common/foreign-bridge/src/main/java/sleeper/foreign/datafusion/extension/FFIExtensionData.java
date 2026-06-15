@@ -22,7 +22,7 @@ import jnr.ffi.Union;
 /**
  * Variant type for an extension of a specific type.
  * This is a union type, storage for all members overlaps!
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this union (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/extensions.rs. The order and types
  * of the fields must match exactly.
