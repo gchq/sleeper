@@ -11,7 +11,7 @@
 # A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
 # globally unique as it will be used to name AWS resources such as S3 buckets.
 # This property may be passed as an argument during deployment. If using your own CDK app, you can set
-# this directly.
+# the context variable "id".
 sleeper.id=set-automatically
 
 # The id of the VPC to deploy to. This property may be passed as an argument during deployment. If

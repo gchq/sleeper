@@ -35,7 +35,7 @@ public interface CommonProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.\n" +
                     "This property may be passed as an argument during deployment. If using your own CDK app, " +
-                    "you can set this directly.")
+                    "you can set the context variable \"id\".")
             .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
