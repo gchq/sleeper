@@ -44,7 +44,6 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 4))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -86,7 +85,6 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 6))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -128,7 +126,6 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 9))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -170,7 +167,6 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 6, 9))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -214,7 +210,6 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
             SleeperRegion::new(single_int_range("key", 4, 9)),
         ],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -258,7 +253,6 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
             SleeperRegion::new(single_int_range("key", 7, 9)),
         ],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -299,7 +293,6 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
         explain_plans: false,
         ranges: vec![],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // Then
@@ -343,7 +336,6 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 1, 5))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When
@@ -390,7 +382,6 @@ async fn should_return_results_as_file_without_sketch() -> Result<(), Error> {
         explain_plans: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 1, 5))],
         requested_value_fields: None,
-        sql_query: None,
     };
 
     // When

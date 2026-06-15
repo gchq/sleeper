@@ -92,7 +92,6 @@ impl FFILeafPartitionQueryConfig {
             ranges,
             requested_value_fields: requested_value_columns,
             explain_plans: self.explain_plans,
-            sql_query: None,
         })
     }
 }
