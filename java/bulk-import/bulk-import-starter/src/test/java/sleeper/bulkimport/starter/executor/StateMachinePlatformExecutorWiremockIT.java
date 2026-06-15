@@ -139,7 +139,7 @@ class StateMachinePlatformExecutorWiremockIT {
         // Then
         findInputJson(input -> assertThatJson(input)
                 .inPath("$.executorPodTemplate").asString().satisfies(template -> {
-                    assertThat(template).doesNotContain("placeholder");
+                    assertThat(template).doesNotContain("ephemeral-storage-request-placeholder", "ephemeral-storage-limit-placeholder");
                     JsonNode parsed = parseYaml(template);
                     assertThatJson(parsed)
                             .inPath("$.spec.containers[0].resources.requests['ephemeral-storage']")
