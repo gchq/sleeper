@@ -73,7 +73,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      */
     public static InstanceProperties createAndValidate(Properties properties) {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.resetAndValidate(properties, ignoreNull);
+        instanceProperties.resetAndValidate(properties);
         return instanceProperties;
     }
 

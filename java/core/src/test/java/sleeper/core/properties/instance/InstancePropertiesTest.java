@@ -116,7 +116,7 @@ class InstancePropertiesTest {
         // When
         File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
-        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(file), Boolean.TRUE);
+        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(file));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -129,7 +129,7 @@ class InstancePropertiesTest {
 
         // When
         String string = instanceProperties.saveAsString();
-        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(string), Boolean.TRUE);
+        InstanceProperties loaded = InstanceProperties.createAndValidate(loadProperties(string));
 
         // Then
         assertThat(loaded).isEqualTo(instanceProperties);
@@ -219,8 +219,7 @@ class InstancePropertiesTest {
         // Given
         InstanceProperties properties = InstanceProperties.createAndValidate(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +
-                        "sleeper.systemtest.writers=123"),
-                Boolean.TRUE);
+                        "sleeper.systemtest.writers=123"));
 
         assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isTrue();
     }
@@ -230,8 +229,7 @@ class InstancePropertiesTest {
         // Given
         InstanceProperties properties = InstanceProperties.createAndValidate(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +
-                        "unknown.property=123"),
-                Boolean.TRUE);
+                        "unknown.property=123"));
 
         // When / Then
         assertThat(properties.getUnknownProperties())

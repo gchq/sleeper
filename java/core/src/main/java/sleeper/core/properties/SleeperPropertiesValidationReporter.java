@@ -34,9 +34,7 @@ public class SleeperPropertiesValidationReporter {
      * @param value    the value
      */
     public void invalidProperty(SleeperProperty property, String value) {
-        if (value != null) {
-            invalidValues.put(property, value);
-        }
+        invalidValues.put(property, value);
     }
 
     /**

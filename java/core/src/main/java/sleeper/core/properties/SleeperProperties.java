@@ -389,7 +389,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     public void resetAndValidate(Properties newProperties) {
         properties.clear();
         properties.putAll(newProperties);
-        validate();
+        init();
     }
 
     /**
