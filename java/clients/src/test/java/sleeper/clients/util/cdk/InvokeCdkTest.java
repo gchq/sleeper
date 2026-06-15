@@ -40,6 +40,7 @@ class InvokeCdkTest {
 
     private final List<CommandPipeline> commandsThatRan = new ArrayList<>();
     private final Path propertiesFile = Path.of("instance.properties");
+    private final Path configurationDirectory = Path.of("config");
 
     private InvokeCdk cdk() {
         return cdk(recordCommandsRun(commandsThatRan));
@@ -59,7 +60,7 @@ class InvokeCdkTest {
         @Test
         void shouldDeployStandardCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployPropertiesChange(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.STANDARD, CdkCommand.deployPropertiesChange(configurationDirectory));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command(
@@ -67,21 +68,21 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesFile=instance.properties",
+                    "-c", "configurationdir=config",
                     "*")));
         }
 
         @Test
         void shouldDeployDemonstrationCdkApp() throws IOException, InterruptedException {
             // When
-            cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.deployPropertiesChange(propertiesFile));
+            cdk().invoke(SleeperInternalCdkApp.DEMONSTRATION, CdkCommand.deployPropertiesChange(configurationDirectory));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "propertiesFile=instance.properties",
+                    "-c", "configurationdir=config",
                     "*")));
         }
 
