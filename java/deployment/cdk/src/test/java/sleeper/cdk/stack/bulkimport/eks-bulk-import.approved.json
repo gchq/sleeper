@@ -182,38 +182,87 @@
             ]
           }
         },
-        "EksBulkImportClusterKubectlHandlerRoleDefaultPolicy0B166054": {
-          "Type": "AWS::IAM::Policy",
+        "EksBulkImportClusterKubectlProviderHandlerServiceRole3FD4FF1B": {
+          "Type": "AWS::IAM::Role",
           "Properties": {
-            "PolicyName": "EksBulkImportClusterKubectlHandlerRoleDefaultPolicy0B166054",
-            "PolicyDocument": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              },
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+                  ]
+                ]
+              },
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+                  ]
+                ]
+              },
+              {
+                "Fn::If": [
+                  "EksBulkImportClusterKubectlProviderHandlerHasEcrPublic7BF46746",
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":iam::aws:policy/AmazonElasticContainerRegistryPublicReadOnly"
+                      ]
+                    ]
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Action": "eks:DescribeCluster",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
                   "Action": "sts:AssumeRole",
                   "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "EksBulkImportClusterCreationRoleA8DC6AB5",
-                      "Arn"
-                    ]
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
                   }
                 }
               ]
             },
-            "Roles": [
+            "Tags": [
               {
-                "Ref": "EksBulkImportClusterKubectlHandlerRole3111D06C"
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -270,21 +319,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c8415ca898a1fc693830566184aae878bdbbc7918b",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8415ca898a1fc693830566184aae878bdbbc7918b\":\"\"},\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"services\",\"configmaps\"],\"verbs\":[\"*\"]}]}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8415ca898a1fc693830566184aae878bdbbc7918b\":\"\"},\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"services\",\"configmaps\"],\"verbs\":[\"*\"]}]}]"
           }
         },
         "EksBulkImportClustermanifestSparkRoleBF98CDBF": {
@@ -298,21 +341,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c81c0c5cd0a7c30760e8d90bf116c33d00bad6c735",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c81c0c5cd0a7c30760e8d90bf116c33d00bad6c735\":\"\"},\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"configmaps\"],\"verbs\":[\"*\"]}]}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c81c0c5cd0a7c30760e8d90bf116c33d00bad6c735\":\"\"},\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"services\",\"configmaps\"],\"verbs\":[\"*\"]}]}]"
           }
         },
         "EksBulkImportClustermanifestSparkRoleBinding4D0E45B5": {
@@ -326,21 +363,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c88b1332d4a92330c0e4970e03cdca70c9efab12ac",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c88b1332d4a92330c0e4970e03cdca70c9efab12ac\":\"\"},\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"spark\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"}]}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c88b1332d4a92330c0e4970e03cdca70c9efab12ac\":\"\"},\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"spark\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"spark\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"}]}]"
           }
         },
         "CustomAWSCDKOpenIdConnectProviderCustomResourceProviderRole517FED65": {
@@ -733,14 +764,13 @@
         "EksBulkImportClusterKubectlReadyBarrier70AEA7AF": {
           "Type": "AWS::SSM::Parameter",
           "DependsOn": [
+            "EksBulkImportClusterClusterAdminRoleAccess3CA037DE",
             "EksBulkImportClusterfargateprofiledefaultPodExecutionRoleF7A62A7B",
             "EksBulkImportClusterfargateprofiledefaultDC5054C0",
             "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRoleDefaultPolicyF29AA553",
             "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRole10F149FF",
             "EksBulkImportClusterfargateprofileEksBulkImportFargateProfile56891057",
-            "EksBulkImportClusterCreationRoleDefaultPolicyCA2B52A0",
-            "EksBulkImportClusterCreationRoleA8DC6AB5",
-            "EksBulkImportCluster24C73662"
+            "EksBulkImportClusterCA73CFAF"
           ],
           "Properties": {
             "Type": "String",
@@ -817,6 +847,16 @@
             ]
           }
         },
+        "EksBulkImportClusterKubectlProviderAwsCliLayerD3B79AB8": {
+          "Type": "AWS::Lambda::LayerVersion",
+          "Properties": {
+            "Description": "/opt/awscli/aws",
+            "Content": {
+              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
+              "S3Key": "a72522445441e9b66c2f16956c54d4786af8c61c156b80c48a6e7c32fcc49023.zip"
+            }
+          }
+        },
         "EksBulkImportClusterRole0181E659": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -858,12 +898,37 @@
             ]
           }
         },
-        "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454": {
-          "Type": "AWS::CloudFormation::Stack",
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
+        "EksBulkImportClusterClusterAdminRoleAccess3CA037DE": {
+          "Type": "AWS::EKS::AccessEntry",
           "Properties": {
-            "TemplateURL": "removed-for-test",
+            "PrincipalArn": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterKubectlProviderHandlerServiceRole3FD4FF1B",
+                "Arn"
+              ]
+            },
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "AccessPolicies": [
+              {
+                "AccessScope": {
+                  "Type": "cluster"
+                },
+                "PolicyArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                    ]
+                  ]
+                }
+              }
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -894,10 +959,96 @@
             ],
             "Url": {
               "Fn::GetAtt": [
-                "EksBulkImportCluster24C73662",
+                "EksBulkImportClusterCA73CFAF",
                 "OpenIdConnectIssuerUrl"
               ]
             }
+          }
+        },
+        "EksBulkImportClusterKubectlProviderHandlerServiceRoleDefaultPolicyE3A4D343": {
+          "Type": "AWS::IAM::Policy",
+          "Properties": {
+            "PolicyName": "EksBulkImportClusterKubectlProviderHandlerServiceRoleDefaultPolicyE3A4D343",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "eks:DescribeCluster",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "EksBulkImportClusterCA73CFAF",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            },
+            "Roles": [
+              {
+                "Ref": "EksBulkImportClusterKubectlProviderHandlerServiceRole3FD4FF1B"
+              }
+            ]
+          }
+        },
+        "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A": {
+          "Type": "AWS::Lambda::Function",
+          "DependsOn": [
+            "EksBulkImportClusterKubectlProviderframeworkonEventServiceRoleDefaultPolicy5440E6C8",
+            "EksBulkImportClusterKubectlProviderframeworkonEventServiceRole9F8D468C"
+          ],
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterKubectlProviderframeworkonEventServiceRole9F8D468C",
+                "Arn"
+              ]
+            },
+            "Runtime": "nodejs22.x",
+            "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/EksBulkImportCluster/KubectlProvider/Provider)",
+            "VpcConfig": {
+              "SecurityGroupIds": [
+                {
+                  "Fn::GetAtt": [
+                    "EksBulkImportClusterCA73CFAF",
+                    "ClusterSecurityGroupId"
+                  ]
+                }
+              ],
+              "SubnetIds": [
+                "test-subnet"
+              ]
+            },
+            "Timeout": 900,
+            "LoggingConfig": {
+              "LogFormat": "JSON",
+              "ApplicationLogLevel": "FATAL"
+            },
+            "Environment": {
+              "Variables": {
+                "USER_ON_EVENT_FUNCTION_ARN": {
+                  "Fn::GetAtt": [
+                    "EksBulkImportClusterKubectlProviderHandler91DFDF42",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Handler": "framework.onEvent",
+            "Code": {
+              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EksBulkImportClustermanifestEksBulkImportNamespaceD8BAEC22": {
@@ -910,21 +1061,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c80101945898da7d6836536039470f6498491b1315",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c80101945898da7d6836536039470f6498491b1315\":\"\"},\"name\":\"sleeper-test-instance-bulk-import-eks\"}}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c80101945898da7d6836536039470f6498491b1315\":\"\"},\"name\":\"sleeper-test-instance-bulk-import-eks\"}}]"
           }
         },
         "EksBulkImportClusterSparkServiceAccountRoleB8611675": {
@@ -978,21 +1123,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c8d21758946719d8c947df8aa78a4d5ec24c65d002",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8d21758946719d8c947df8aa78a4d5ec24c65d002\":\"\"},\"name\":\"step-function\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"batch\"],\"resources\":[\"jobs\"],\"verbs\":[\"*\"]},{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"pods/log\"],\"verbs\":[\"*\"]}]}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8d21758946719d8c947df8aa78a4d5ec24c65d002\":\"\"},\"name\":\"step-function\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"rules\":[{\"apiGroups\":[\"batch\"],\"resources\":[\"jobs\"],\"verbs\":[\"*\"]},{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"pods/log\"],\"verbs\":[\"*\"]}]}]"
           }
         },
         "BulkImportEKSJobStarterServiceRoleFD90B2E5": {
@@ -1047,110 +1186,87 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c8db2762596eae622790431da5c6e7bf9ac501ec3e",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "manifest-with-refs-scrubbed-for-test",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8db2762596eae622790431da5c6e7bf9ac501ec3e\":\"\"},\"name\":\"step-function\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"step-function\"},\"subjects\":[{\"kind\":\"Group\",\"name\":\"step-function\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"}]}]"
           }
         },
         "EksBulkImportClusterfargateprofileEksBulkImportFargateProfile56891057": {
-          "Type": "Custom::AWSCDK-EKS-FargateProfile",
+          "Type": "AWS::EKS::FargateProfile",
           "DependsOn": [
             "EksBulkImportClusterfargateprofiledefaultPodExecutionRoleF7A62A7B",
             "EksBulkImportClusterfargateprofiledefaultDC5054C0"
           ],
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
           "Properties": {
-            "ServiceToken": {
-              "Fn::GetAtt": [
-                "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksClusterResourceProviderframeworkonEvent212B7300Arn"
-              ]
+            "Subnets": [
+              "test-subnet"
+            ],
+            "FargateProfileName": "sleeper-test-instance-bulk-import-eks",
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Config": {
-              "podExecutionRoleArn": {
-                "Fn::GetAtt": [
-                  "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRole10F149FF",
-                  "Arn"
-                ]
-              },
-              "fargateProfileName": "sleeper-test-instance-bulk-import-eks",
-              "clusterName": {
-                "Ref": "EksBulkImportCluster24C73662"
-              },
-              "subnets": [
-                "test-subnet"
-              ],
-              "selectors": [
-                {
-                  "namespace": "sleeper-test-instance-bulk-import-eks"
-                }
-              ],
-              "tags": {
-                "InstanceID": "test-instance",
-                "DeploymentStack": "EksBulkImport"
-              }
-            },
-            "AssumeRoleArn": {
+            "PodExecutionRoleArn": {
               "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
+                "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRole10F149FF",
                 "Arn"
               ]
-            }
+            },
+            "Selectors": [
+              {
+                "Labels": [],
+                "Namespace": "sleeper-test-instance-bulk-import-eks"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EksBulkImportClusterfargateprofiledefaultDC5054C0": {
-          "Type": "Custom::AWSCDK-EKS-FargateProfile",
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
+          "Type": "AWS::EKS::FargateProfile",
           "Properties": {
-            "ServiceToken": {
-              "Fn::GetAtt": [
-                "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksClusterResourceProviderframeworkonEvent212B7300Arn"
-              ]
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Config": {
-              "podExecutionRoleArn": {
-                "Fn::GetAtt": [
-                  "EksBulkImportClusterfargateprofiledefaultPodExecutionRoleF7A62A7B",
-                  "Arn"
-                ]
-              },
-              "clusterName": {
-                "Ref": "EksBulkImportCluster24C73662"
-              },
-              "selectors": [
-                {
-                  "namespace": "default"
-                },
-                {
-                  "namespace": "kube-system"
-                }
-              ],
-              "tags": {
-                "InstanceID": "test-instance",
-                "DeploymentStack": "EksBulkImport"
-              }
-            },
-            "AssumeRoleArn": {
+            "PodExecutionRoleArn": {
               "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
+                "EksBulkImportClusterfargateprofiledefaultPodExecutionRoleF7A62A7B",
                 "Arn"
               ]
-            }
+            },
+            "Selectors": [
+              {
+                "Labels": [],
+                "Namespace": "default"
+              },
+              {
+                "Labels": [],
+                "Namespace": "kube-system"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EksBulkImportClusterSparkSubmitServiceAccountmanifestSparkSubmitServiceAccountServiceAccountResource65580796": {
@@ -1164,21 +1280,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c896a88adc929705f2d9a8661e3127328dda5dcea9",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "manifest-with-refs-scrubbed-for-test",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "manifest-with-refs-scrubbed-for-test"
           }
         },
         "AWSCDKCfnUtilsProviderCustomResourceProviderRoleFE0EE867": {
@@ -1203,41 +1313,54 @@
             }
           }
         },
-        "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B": {
-          "Type": "AWS::CloudFormation::Stack",
-          "DependsOn": [
-            "EksBulkImportClusterKubectlHandlerRoleDefaultPolicy0B166054",
-            "EksBulkImportClusterKubectlHandlerRole3111D06C"
-          ],
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
+        "EksBulkImportClusterKubectlProviderframeworkonEventServiceRoleDefaultPolicy5440E6C8": {
+          "Type": "AWS::IAM::Policy",
           "Properties": {
-            "TemplateURL": "removed-for-test",
-            "Parameters": {
-              "referencetoTestInstanceEksBulkImportKubectlLayer7C152F44Ref": {
-                "Ref": "KubectlLayer600207B5"
-              },
-              "referencetoTestInstanceEksBulkImportEksBulkImportClusterAB691C03ClusterSecurityGroupId": {
-                "Fn::GetAtt": [
-                  "EksBulkImportCluster24C73662",
-                  "ClusterSecurityGroupId"
-                ]
-              },
-              "referencetoTestInstanceEksBulkImportEksBulkImportClusterKubectlHandlerRoleD246D905Arn": {
-                "Fn::GetAtt": [
-                  "EksBulkImportClusterKubectlHandlerRole3111D06C",
-                  "Arn"
-                ]
-              }
+            "PolicyName": "EksBulkImportClusterKubectlProviderframeworkonEventServiceRoleDefaultPolicy5440E6C8",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "lambda:InvokeFunction",
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "EksBulkImportClusterKubectlProviderHandler91DFDF42",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "EksBulkImportClusterKubectlProviderHandler91DFDF42",
+                              "Arn"
+                            ]
+                          },
+                          ":*"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Action": "lambda:GetFunction",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "EksBulkImportClusterKubectlProviderHandler91DFDF42",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
             },
-            "Tags": [
+            "Roles": [
               {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
+                "Ref": "EksBulkImportClusterKubectlProviderframeworkonEventServiceRole9F8D468C"
               }
             ]
           }
@@ -1729,6 +1852,55 @@
             ]
           }
         },
+        "EksBulkImportClusterClusterAccessForInstanceAdmin3263A3C6": {
+          "Type": "AWS::EKS::AccessEntry",
+          "Properties": {
+            "PrincipalArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":iam::test-account:role/sleeper-admin-test-instance"
+                ]
+              ]
+            },
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "AccessPolicies": [
+              {
+                "AccessScope": {
+                  "Type": "cluster"
+                },
+                "PolicyArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
         "BulkImportEKSJobStarter3F7F0618": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -1779,133 +1951,101 @@
             ]
           }
         },
-        "EksBulkImportClusterCreationRoleDefaultPolicyCA2B52A0": {
-          "Type": "AWS::IAM::Policy",
+        "StateMachineRoleAccessEntry44D1B662": {
+          "Type": "AWS::EKS::AccessEntry",
           "Properties": {
-            "PolicyName": "EksBulkImportClusterCreationRoleDefaultPolicyCA2B52A0",
-            "PolicyDocument": {
+            "PrincipalArn": {
+              "Fn::GetAtt": [
+                "EksBulkImportStateMachineRoleAACC984F",
+                "Arn"
+              ]
+            },
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "AccessPolicies": [
+              {
+                "AccessScope": {
+                  "Namespaces": [
+                    "sleeper-test-instance-bulk-import-eks"
+                  ],
+                  "Type": "namespace"
+                },
+                "PolicyArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
+        "EksBulkImportClusterKubectlProviderframeworkonEventServiceRole9F8D468C": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              },
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Action": "iam:PassRole",
+                  "Action": "sts:AssumeRole",
                   "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "EksBulkImportClusterRole0181E659",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": [
-                    "eks:CreateCluster",
-                    "eks:DescribeCluster",
-                    "eks:DescribeUpdate",
-                    "eks:DeleteCluster",
-                    "eks:UpdateClusterVersion",
-                    "eks:UpdateClusterConfig",
-                    "eks:CreateFargateProfile",
-                    "eks:TagResource",
-                    "eks:UntagResource"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          "arn:",
-                          {
-                            "Ref": "AWS::Partition"
-                          },
-                          ":eks:test-region:test-account:cluster/sleeper-test-instance-bulk-import-eks"
-                        ]
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          "arn:",
-                          {
-                            "Ref": "AWS::Partition"
-                          },
-                          ":eks:test-region:test-account:cluster/sleeper-test-instance-bulk-import-eks/*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": [
-                    "eks:DescribeFargateProfile",
-                    "eks:DeleteFargateProfile"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::Join": [
-                      "",
-                      [
-                        "arn:",
-                        {
-                          "Ref": "AWS::Partition"
-                        },
-                        ":eks:test-region:test-account:fargateprofile/sleeper-test-instance-bulk-import-eks/*"
-                      ]
-                    ]
-                  }
-                },
-                {
-                  "Action": [
-                    "iam:GetRole",
-                    "iam:listAttachedRolePolicies"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "iam:CreateServiceLinkedRole",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": [
-                    "ec2:DescribeInstances",
-                    "ec2:DescribeNetworkInterfaces",
-                    "ec2:DescribeSecurityGroups",
-                    "ec2:DescribeSubnets",
-                    "ec2:DescribeRouteTables",
-                    "ec2:DescribeDhcpOptions",
-                    "ec2:DescribeVpcs"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "iam:PassRole",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "EksBulkImportClusterfargateprofiledefaultPodExecutionRoleF7A62A7B",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": "iam:PassRole",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRole10F149FF",
-                      "Arn"
-                    ]
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
                   }
                 }
               ]
             },
-            "Roles": [
+            "Tags": [
               {
-                "Ref": "EksBulkImportClusterCreationRoleA8DC6AB5"
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
@@ -1920,21 +2060,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c8c037b5cd9b300deade7df3472a8c86134d72967c",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws-observability\":\"enabled\",\"aws.cdk.eks/prune-c8c037b5cd9b300deade7df3472a8c86134d72967c\":\"\"},\"name\":\"aws-observability\"}}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws-observability\":\"enabled\",\"aws.cdk.eks/prune-c8c037b5cd9b300deade7df3472a8c86134d72967c\":\"\"},\"name\":\"aws-observability\"}}]"
           }
         },
         "EksBulkImportClusterSparkServiceAccountmanifestSparkServiceAccountServiceAccountResource97CC2A94": {
@@ -1948,21 +2082,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c85e5e974dc650b063e4f54bea1637da4fac2dd8ed",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "manifest-with-refs-scrubbed-for-test",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "manifest-with-refs-scrubbed-for-test"
           }
         },
         "BulkImportEKSJobStarterSqsEventSourceTestInstanceEksBulkImportBulkImportEKSJobQueueFF31A584DC64470A": {
@@ -1999,6 +2127,121 @@
             "FunctionName": {
               "Ref": "BulkImportEKSJobStarter3F7F0618"
             }
+          }
+        },
+        "EksBulkImportClusterCA73CFAF": {
+          "Type": "AWS::EKS::Cluster",
+          "Properties": {
+            "ComputeConfig": {
+              "Enabled": false
+            },
+            "StorageConfig": {
+              "BlockStorage": {
+                "Enabled": false
+              }
+            },
+            "Version": "1.35",
+            "AccessConfig": {
+              "AuthenticationMode": "API"
+            },
+            "KubernetesNetworkConfig": {
+              "IpFamily": "ipv4",
+              "ElasticLoadBalancing": {
+                "Enabled": false
+              }
+            },
+            "ResourcesVpcConfig": {
+              "EndpointPublicAccess": true,
+              "EndpointPrivateAccess": true,
+              "SecurityGroupIds": [
+                {
+                  "Fn::GetAtt": [
+                    "EksBulkImportClusterControlPlaneSecurityGroup2C157D7A",
+                    "GroupId"
+                  ]
+                }
+              ],
+              "SubnetIds": [
+                "test-subnet"
+              ]
+            },
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterRole0181E659",
+                "Arn"
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ],
+            "Name": "sleeper-test-instance-bulk-import-eks"
+          }
+        },
+        "EksBulkImportClusterKubectlProviderHandler91DFDF42": {
+          "Type": "AWS::Lambda::Function",
+          "DependsOn": [
+            "EksBulkImportClusterKubectlProviderHandlerServiceRoleDefaultPolicyE3A4D343",
+            "EksBulkImportClusterKubectlProviderHandlerServiceRole3FD4FF1B"
+          ],
+          "Properties": {
+            "Role": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterKubectlProviderHandlerServiceRole3FD4FF1B",
+                "Arn"
+              ]
+            },
+            "MemorySize": 1024,
+            "Runtime": "python3.13",
+            "Description": "onEvent handler for EKS kubectl resource provider",
+            "VpcConfig": {
+              "SecurityGroupIds": [
+                {
+                  "Fn::GetAtt": [
+                    "EksBulkImportClusterCA73CFAF",
+                    "ClusterSecurityGroupId"
+                  ]
+                }
+              ],
+              "SubnetIds": [
+                "test-subnet"
+              ]
+            },
+            "Timeout": 900,
+            "Environment": {
+              "Variables": {
+                "AWS_STS_REGIONAL_ENDPOINTS": "regional"
+              }
+            },
+            "Handler": "index.handler",
+            "Code": {
+              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
+              "S3Key": "d1f0dc4bbd7f19a0c9d47ff23ed15d3972cdb7bd292c1c20c0f442d0021d9eb8.zip"
+            },
+            "Layers": [
+              {
+                "Ref": "EksBulkImportClusterKubectlProviderAwsCliLayerD3B79AB8"
+              },
+              {
+                "Ref": "KubectlLayer600207B5"
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
           }
         },
         "EksBulkImportClusterSparkServiceAccountRoleOverflowPolicy1A5D71DA5": {
@@ -2067,19 +2310,19 @@
                 [
                   "{\"StartAt\":\"RunSparkJob\",\"States\":{\"RunSparkJob\":{\"Next\":\"SuccessDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:runJob.sync\",\"Parameters\":{\"ClusterName\":\"",
                   {
-                    "Ref": "EksBulkImportCluster24C73662"
+                    "Ref": "EksBulkImportClusterCA73CFAF"
                   },
                   "\",\"CertificateAuthority\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "CertificateAuthorityData"
                     ]
                   },
                   "\",\"Endpoint\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "Endpoint"
                     ]
                   },
@@ -2093,37 +2336,37 @@
                   },
                   "\",\"Message.$\":\"$.errorMessage\"}},\"FailedJobState\":{\"Type\":\"Fail\",\"Cause\":\"Spark job failed\"},\"DeleteDriverPod\":{\"Next\":\"DeleteJob\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:call\",\"Parameters\":{\"ClusterName\":\"",
                   {
-                    "Ref": "EksBulkImportCluster24C73662"
+                    "Ref": "EksBulkImportClusterCA73CFAF"
                   },
                   "\",\"CertificateAuthority\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "CertificateAuthorityData"
                     ]
                   },
                   "\",\"Endpoint\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "Endpoint"
                     ]
                   },
                   "\",\"Method\":\"DELETE\",\"Path.$\":\"States.Format(\u0027/api/v1/namespaces/sleeper-test-instance-bulk-import-eks/pods/{}\u0027, $.jobPodPrefix)\"},\"ResultPath\":\"$.deleteDriverPodOutput\"},\"DeleteJob\":{\"End\":true,\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:call\",\"Parameters\":{\"ClusterName\":\"",
                   {
-                    "Ref": "EksBulkImportCluster24C73662"
+                    "Ref": "EksBulkImportClusterCA73CFAF"
                   },
                   "\",\"CertificateAuthority\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "CertificateAuthorityData"
                     ]
                   },
                   "\",\"Endpoint\":\"",
                   {
                     "Fn::GetAtt": [
-                      "EksBulkImportCluster24C73662",
+                      "EksBulkImportClusterCA73CFAF",
                       "Endpoint"
                     ]
                   },
@@ -2162,62 +2405,10 @@
             ]
           }
         },
-        "EksBulkImportCluster24C73662": {
-          "Type": "Custom::AWSCDK-EKS-Cluster",
-          "DependsOn": [
-            "EksBulkImportClusterCreationRoleDefaultPolicyCA2B52A0",
-            "EksBulkImportClusterCreationRoleA8DC6AB5"
-          ],
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
-          "Properties": {
-            "ServiceToken": {
-              "Fn::GetAtt": [
-                "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksClusterResourceProviderframeworkonEvent212B7300Arn"
-              ]
-            },
-            "Config": {
-              "resourcesVpcConfig": {
-                "endpointPrivateAccess": true,
-                "securityGroupIds": [
-                  {
-                    "Fn::GetAtt": [
-                      "EksBulkImportClusterControlPlaneSecurityGroup2C157D7A",
-                      "GroupId"
-                    ]
-                  }
-                ],
-                "endpointPublicAccess": true,
-                "subnetIds": [
-                  "test-subnet"
-                ]
-              },
-              "roleArn": {
-                "Fn::GetAtt": [
-                  "EksBulkImportClusterRole0181E659",
-                  "Arn"
-                ]
-              },
-              "name": "sleeper-test-instance-bulk-import-eks",
-              "accessConfig": {},
-              "version": "1.35",
-              "kubernetesNetworkConfig": {
-                "ipFamily": "ipv4"
-              }
-            },
-            "AssumeRoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            },
-            "AttributesRevision": 5
-          }
-        },
         "EksBulkImportClusterCoreDnsComputeTypePatchF968E07C": {
           "Type": "Custom::AWSCDK-EKS-KubernetesPatch",
           "DependsOn": [
+            "EksBulkImportClusterClusterAdminRoleAccess3CA037DE",
             "EksBulkImportClusterKubectlReadyBarrier70AEA7AF"
           ],
           "DeletionPolicy": "Delete",
@@ -2225,8 +2416,8 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "ResourceNamespace": "kube-system",
@@ -2234,15 +2425,9 @@
             "RestorePatchJson": "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"eks.amazonaws.com/compute-type\":\"ec2\"}}}}}",
             "ResourceName": "deployment/coredns",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "PatchType": "strategic",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "PatchType": "strategic"
           }
         },
         "EksBulkImportClustermanifestSparkSubmitRoleBindingB0B09731": {
@@ -2256,77 +2441,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c8900947d91b36047701ed277367e22451a0eae2b1",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8900947d91b36047701ed277367e22451a0eae2b1\":\"\"},\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"spark-submit\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"}]}]",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
-          }
-        },
-        "EksBulkImportClusterCreationRoleA8DC6AB5": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "AWS": {
-                      "Fn::GetAtt": [
-                        "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454",
-                        "Outputs.TestInstanceEksBulkImportawscdkawseksClusterResourceProviderOnEventHandlerServiceRole2E48270DArn"
-                      ]
-                    }
-                  }
-                },
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "AWS": {
-                      "Fn::GetAtt": [
-                        "awscdkawseksClusterResourceProviderNestedStackawscdkawseksClusterResourceProviderNestedStackResource9827C454",
-                        "Outputs.TestInstanceEksBulkImportawscdkawseksClusterResourceProviderIsCompleteHandlerServiceRole6CE5CC92Arn"
-                      ]
-                    }
-                  }
-                },
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "AWS": {
-                      "Fn::GetAtt": [
-                        "EksBulkImportClusterKubectlHandlerRole3111D06C",
-                        "Arn"
-                      ]
-                    }
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
+            "Manifest": "[{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8900947d91b36047701ed277367e22451a0eae2b1\":\"\"},\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"spark-submit\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"spark-submit\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"}]}]"
           }
         },
         "EksBulkImportClustermanifestLoggingConfig7BE30DD1": {
@@ -2340,21 +2463,15 @@
           "Properties": {
             "ServiceToken": {
               "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
               ]
             },
             "PruneLabel": "aws.cdk.eks/prune-c822d76d598389c7787411f90fd4c0cce61756e33f",
             "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "manifest-with-refs-scrubbed-for-test",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
+            "Manifest": "manifest-with-refs-scrubbed-for-test"
           }
         },
         "CustomAWSCDKOpenIdConnectProviderCustomResourceProviderHandlerF2C543E0": {
@@ -2379,91 +2496,6 @@
             }
           }
         },
-        "EksBulkImportClusterKubectlHandlerRole3111D06C": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              },
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-                  ]
-                ]
-              },
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/AmazonEC2ContainerRegistryPullOnly"
-                  ]
-                ]
-              },
-              {
-                "Fn::If": [
-                  "EksBulkImportClusterHasEcrPublic3B7C7B76",
-                  {
-                    "Fn::Join": [
-                      "",
-                      [
-                        "arn:",
-                        {
-                          "Ref": "AWS::Partition"
-                        },
-                        ":iam::aws:policy/AmazonElasticContainerRegistryPublicReadOnly"
-                      ]
-                    ]
-                  },
-                  {
-                    "Ref": "AWS::NoValue"
-                  }
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
         "EksBulkImportClusterControlPlaneSecurityGroup2C157D7A": {
           "Type": "AWS::EC2::SecurityGroup",
           "Properties": {
@@ -2486,34 +2518,6 @@
                 "Value": "test-instance"
               }
             ]
-          }
-        },
-        "EksBulkImportClusterAwsAuthmanifest6024D0E7": {
-          "Type": "Custom::AWSCDK-EKS-KubernetesResource",
-          "DependsOn": [
-            "EksBulkImportClusterKubectlReadyBarrier70AEA7AF"
-          ],
-          "DeletionPolicy": "Delete",
-          "UpdateReplacePolicy": "Delete",
-          "Properties": {
-            "ServiceToken": {
-              "Fn::GetAtt": [
-                "awscdkawseksKubectlProviderNestedStackawscdkawseksKubectlProviderNestedStackResourceA7AEBA6B",
-                "Outputs.TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn"
-              ]
-            },
-            "Overwrite": true,
-            "PruneLabel": "aws.cdk.eks/prune-c8d4f3192a84fcca6bb7ce83b9b85df702bcadb918",
-            "ClusterName": {
-              "Ref": "EksBulkImportCluster24C73662"
-            },
-            "Manifest": "manifest-with-refs-scrubbed-for-test",
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "EksBulkImportClusterCreationRoleA8DC6AB5",
-                "Arn"
-              ]
-            }
           }
         },
         "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRoleDefaultPolicyF29AA553": {
@@ -2545,1164 +2549,13 @@
         }
       },
       "Conditions": {
-        "EksBulkImportClusterHasEcrPublic3B7C7B76": {
+        "EksBulkImportClusterKubectlProviderHandlerHasEcrPublic7BF46746": {
           "Fn::Equals": [
             {
               "Ref": "AWS::Partition"
             },
             "aws"
           ]
-        }
-      }
-    },
-    "@aws-cdk--aws-eks.ClusterResourceProvider": {
-      "Outputs": {
-        "TestInstanceEksBulkImportawscdkawseksClusterResourceProviderframeworkonEvent212B7300Arn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "ProviderframeworkonEvent83C1D0A7",
-              "Arn"
-            ]
-          }
-        },
-        "TestInstanceEksBulkImportawscdkawseksClusterResourceProviderOnEventHandlerServiceRole2E48270DArn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "OnEventHandlerServiceRole15A26729",
-              "Arn"
-            ]
-          }
-        },
-        "TestInstanceEksBulkImportawscdkawseksClusterResourceProviderIsCompleteHandlerServiceRole6CE5CC92Arn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "IsCompleteHandlerServiceRole5810CC58",
-              "Arn"
-            ]
-          }
-        }
-      },
-      "Resources": {
-        "OnEventHandlerServiceRole15A26729": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "IsCompleteHandler7073F4DA": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "IsCompleteHandlerServiceRole5810CC58"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "IsCompleteHandlerServiceRole5810CC58",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "isComplete handler for EKS cluster resource provider",
-            "Timeout": 60,
-            "Environment": {
-              "Variables": {
-                "AWS_STS_REGIONAL_ENDPOINTS": "regional"
-              }
-            },
-            "Handler": "index.isComplete",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
-            },
-            "Layers": [
-              {
-                "Ref": "NodeProxyAgentLayer924C1971"
-              }
-            ],
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "NodeProxyAgentLayer924C1971": {
-          "Type": "AWS::Lambda::LayerVersion",
-          "Properties": {
-            "Description": "/opt/nodejs/node_modules/proxy-agent",
-            "Content": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "9a746caeb230acdc3265185e86b9466a51c3ec22cffc1616d837969aabd69237.zip"
-            }
-          }
-        },
-        "ProviderframeworkisComplete26D7B0CB": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "ProviderframeworkisCompleteServiceRoleDefaultPolicy2E7140AC",
-            "ProviderframeworkisCompleteServiceRoleB1087139"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "ProviderframeworkisCompleteServiceRoleB1087139",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "AWS CDK resource provider framework - isComplete (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
-            "Timeout": 900,
-            "LoggingConfig": {
-              "LogFormat": "JSON",
-              "ApplicationLogLevel": "FATAL"
-            },
-            "Environment": {
-              "Variables": {
-                "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "OnEventHandler42BEBAE0",
-                    "Arn"
-                  ]
-                },
-                "USER_IS_COMPLETE_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "IsCompleteHandler7073F4DA",
-                    "Arn"
-                  ]
-                }
-              }
-            },
-            "Handler": "framework.isComplete",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "IsCompleteHandlerServiceRole5810CC58": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "OnEventHandler42BEBAE0",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "OnEventHandler42BEBAE0",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "OnEventHandler42BEBAE0",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "IsCompleteHandler7073F4DA",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "IsCompleteHandler7073F4DA",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "IsCompleteHandler7073F4DA",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": "states:StartExecution",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Ref": "Providerwaiterstatemachine5D4A9DF0"
-                  }
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "ProviderframeworkonEventServiceRole9FF04296"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkisCompleteServiceRoleB1087139": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderwaiterstatemachineRole0C7159F9": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "states.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonEvent83C1D0A7": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133",
-            "ProviderframeworkonEventServiceRole9FF04296"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "ProviderframeworkonEventServiceRole9FF04296",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
-            "Timeout": 900,
-            "LoggingConfig": {
-              "LogFormat": "JSON",
-              "ApplicationLogLevel": "FATAL"
-            },
-            "Environment": {
-              "Variables": {
-                "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "OnEventHandler42BEBAE0",
-                    "Arn"
-                  ]
-                },
-                "WAITER_STATE_MACHINE_ARN": {
-                  "Ref": "Providerwaiterstatemachine5D4A9DF0"
-                },
-                "USER_IS_COMPLETE_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "IsCompleteHandler7073F4DA",
-                    "Arn"
-                  ]
-                }
-              }
-            },
-            "Handler": "framework.onEvent",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkisCompleteServiceRoleDefaultPolicy2E7140AC": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "ProviderframeworkisCompleteServiceRoleDefaultPolicy2E7140AC",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "OnEventHandler42BEBAE0",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "OnEventHandler42BEBAE0",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "OnEventHandler42BEBAE0",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "IsCompleteHandler7073F4DA",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "IsCompleteHandler7073F4DA",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "IsCompleteHandler7073F4DA",
-                      "Arn"
-                    ]
-                  }
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "ProviderframeworkisCompleteServiceRoleB1087139"
-              }
-            ]
-          }
-        },
-        "OnEventHandler42BEBAE0": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "OnEventHandlerServiceRole15A26729"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "OnEventHandlerServiceRole15A26729",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "onEvent handler for EKS cluster resource provider",
-            "Timeout": 60,
-            "Environment": {
-              "Variables": {
-                "AWS_STS_REGIONAL_ENDPOINTS": "regional"
-              }
-            },
-            "Handler": "index.onEvent",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
-            },
-            "Layers": [
-              {
-                "Ref": "NodeProxyAgentLayer924C1971"
-              }
-            ],
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonTimeout0B47CA38": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "ProviderframeworkonTimeoutServiceRoleDefaultPolicy2688969F",
-            "ProviderframeworkonTimeoutServiceRole28643D26"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "ProviderframeworkonTimeoutServiceRole28643D26",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "AWS CDK resource provider framework - onTimeout (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
-            "Timeout": 900,
-            "LoggingConfig": {
-              "LogFormat": "JSON",
-              "ApplicationLogLevel": "FATAL"
-            },
-            "Environment": {
-              "Variables": {
-                "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "OnEventHandler42BEBAE0",
-                    "Arn"
-                  ]
-                },
-                "USER_IS_COMPLETE_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "IsCompleteHandler7073F4DA",
-                    "Arn"
-                  ]
-                }
-              }
-            },
-            "Handler": "framework.onTimeout",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "Providerwaiterstatemachine5D4A9DF0": {
-          "Type": "AWS::StepFunctions::StateMachine",
-          "DependsOn": [
-            "ProviderwaiterstatemachineRoleDefaultPolicyD3C3DA1A",
-            "ProviderwaiterstatemachineRole0C7159F9"
-          ],
-          "Properties": {
-            "DefinitionString": {
-              "Fn::Join": [
-                "",
-                [
-                  "{\"StartAt\":\"framework-isComplete-task\",\"States\":{\"framework-isComplete-task\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"States.ALL\"],\"IntervalSeconds\":60,\"MaxAttempts\":60,\"BackoffRate\":1}],\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"Next\":\"framework-onTimeout-task\"}],\"Type\":\"Task\",\"Resource\":\"",
-                  {
-                    "Fn::GetAtt": [
-                      "ProviderframeworkisComplete26D7B0CB",
-                      "Arn"
-                    ]
-                  },
-                  "\"},\"framework-onTimeout-task\":{\"End\":true,\"Type\":\"Task\",\"Resource\":\"",
-                  {
-                    "Fn::GetAtt": [
-                      "ProviderframeworkonTimeout0B47CA38",
-                      "Arn"
-                    ]
-                  },
-                  "\"}}}"
-                ]
-              ]
-            },
-            "RoleArn": {
-              "Fn::GetAtt": [
-                "ProviderwaiterstatemachineRole0C7159F9",
-                "Arn"
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonEventServiceRole9FF04296": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonTimeoutServiceRoleDefaultPolicy2688969F": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "ProviderframeworkonTimeoutServiceRoleDefaultPolicy2688969F",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "OnEventHandler42BEBAE0",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "OnEventHandler42BEBAE0",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "OnEventHandler42BEBAE0",
-                      "Arn"
-                    ]
-                  }
-                },
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "IsCompleteHandler7073F4DA",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "IsCompleteHandler7073F4DA",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "IsCompleteHandler7073F4DA",
-                      "Arn"
-                    ]
-                  }
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "ProviderframeworkonTimeoutServiceRole28643D26"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonTimeoutServiceRole28643D26": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderwaiterstatemachineRoleDefaultPolicyD3C3DA1A": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "ProviderwaiterstatemachineRoleDefaultPolicyD3C3DA1A",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "ProviderframeworkisComplete26D7B0CB",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "ProviderframeworkisComplete26D7B0CB",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "ProviderframeworkonTimeout0B47CA38",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "ProviderframeworkonTimeout0B47CA38",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "ProviderwaiterstatemachineRole0C7159F9"
-              }
-            ]
-          }
-        }
-      }
-    },
-    "@aws-cdk--aws-eks.KubectlProvider": {
-      "Parameters": {
-        "referencetoTestInstanceEksBulkImportKubectlLayer7C152F44Ref": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceEksBulkImportEksBulkImportClusterAB691C03ClusterSecurityGroupId": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceEksBulkImportEksBulkImportClusterKubectlHandlerRoleD246D905Arn": {
-          "Type": "String"
-        }
-      },
-      "Outputs": {
-        "TestInstanceEksBulkImportawscdkawseksKubectlProviderframeworkonEvent2D369C83Arn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "ProviderframeworkonEvent83C1D0A7",
-              "Arn"
-            ]
-          }
-        }
-      },
-      "Resources": {
-        "AwsCliLayerF44AAF94": {
-          "Type": "AWS::Lambda::LayerVersion",
-          "Properties": {
-            "Description": "/opt/awscli/aws",
-            "Content": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "a72522445441e9b66c2f16956c54d4786af8c61c156b80c48a6e7c32fcc49023.zip"
-            }
-          }
-        },
-        "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::GetAtt": [
-                        "Handler886CB40B",
-                        "Arn"
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Fn::GetAtt": [
-                              "Handler886CB40B",
-                              "Arn"
-                            ]
-                          },
-                          ":*"
-                        ]
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Action": "lambda:GetFunction",
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::GetAtt": [
-                      "Handler886CB40B",
-                      "Arn"
-                    ]
-                  }
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "ProviderframeworkonEventServiceRole9FF04296"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonEventServiceRole9FF04296": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              },
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "Handler886CB40B": {
-          "Type": "AWS::Lambda::Function",
-          "Properties": {
-            "Role": {
-              "Ref": "referencetoTestInstanceEksBulkImportEksBulkImportClusterKubectlHandlerRoleD246D905Arn"
-            },
-            "MemorySize": 1024,
-            "Runtime": "python3.13",
-            "Description": "onEvent handler for EKS kubectl resource provider",
-            "VpcConfig": {
-              "SecurityGroupIds": [
-                {
-                  "Ref": "referencetoTestInstanceEksBulkImportEksBulkImportClusterAB691C03ClusterSecurityGroupId"
-                }
-              ],
-              "SubnetIds": [
-                "test-subnet"
-              ]
-            },
-            "Timeout": 900,
-            "Environment": {
-              "Variables": {
-                "AWS_STS_REGIONAL_ENDPOINTS": "regional"
-              }
-            },
-            "Handler": "index.handler",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "a4a3a38c8e5a85724e76a5d93eb8b8985f94e4ef5ff9f769aa88aad6b6c1c5bf.zip"
-            },
-            "Layers": [
-              {
-                "Ref": "AwsCliLayerF44AAF94"
-              },
-              {
-                "Ref": "referencetoTestInstanceEksBulkImportKubectlLayer7C152F44Ref"
-              }
-            ],
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
-        "ProviderframeworkonEvent83C1D0A7": {
-          "Type": "AWS::Lambda::Function",
-          "DependsOn": [
-            "ProviderframeworkonEventServiceRoleDefaultPolicy48CD2133",
-            "ProviderframeworkonEventServiceRole9FF04296"
-          ],
-          "Properties": {
-            "Role": {
-              "Fn::GetAtt": [
-                "ProviderframeworkonEventServiceRole9FF04296",
-                "Arn"
-              ]
-            },
-            "Runtime": "nodejs22.x",
-            "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.KubectlProvider/Provider)",
-            "VpcConfig": {
-              "SecurityGroupIds": [
-                {
-                  "Ref": "referencetoTestInstanceEksBulkImportEksBulkImportClusterAB691C03ClusterSecurityGroupId"
-                }
-              ],
-              "SubnetIds": [
-                "test-subnet"
-              ]
-            },
-            "Timeout": 900,
-            "LoggingConfig": {
-              "LogFormat": "JSON",
-              "ApplicationLogLevel": "FATAL"
-            },
-            "Environment": {
-              "Variables": {
-                "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Fn::GetAtt": [
-                    "Handler886CB40B",
-                    "Arn"
-                  ]
-                }
-              }
-            },
-            "Handler": "framework.onEvent",
-            "Code": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
         }
       }
     }
