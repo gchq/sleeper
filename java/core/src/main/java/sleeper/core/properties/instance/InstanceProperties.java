@@ -49,7 +49,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super();
     }
 
-    public InstanceProperties(Properties properties) {
+    protected InstanceProperties(Properties properties) {
         super(properties);
         tags = csvTagsToMap(get(TAGS));
     }
