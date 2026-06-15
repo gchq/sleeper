@@ -68,7 +68,7 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "configurationdir=config",
+                    "-c", "configurationDir=config",
                     "*")));
         }
 
@@ -82,7 +82,7 @@ class InvokeCdkTest {
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "configurationdir=config",
+                    "-c", "configurationDir=config",
                     "*")));
         }
 
