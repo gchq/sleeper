@@ -169,6 +169,39 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     @Test
+    void shouldBuildBaseImageFromOverrideDirectoryWhenSet() throws Exception {
+        // Given
+        DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
+        UploadDockerImages uploader = uploaderBuilder()
+                .deployConfig(DeployConfiguration.fromLocalBuildWithOverrideBaseImageDir("./custom/base"))
+                .build();
+
+        // When
+        uploadAllImages(dockerImageConfiguration, uploader);
+
+        // Then
+        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
+        String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
+        String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
+        String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
+        String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
+        assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base", expectedBaseTag),
+                buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
+                pushImageCommand(expectedCommitterTag),
+                buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
+                pushImageCommand(expectedIngestTag),
+                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedBaseTag),
+                pushImageCommand(expectedBulkImportTag),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
+                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
+                pushImageCommand(expectedEmrTag));
+    }
+
+    @Test
     void shouldFailWhenDockerBuildFails() {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();

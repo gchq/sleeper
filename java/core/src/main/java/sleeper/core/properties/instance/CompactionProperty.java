@@ -56,7 +56,8 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
-            .description("The visibility timeout for the queue of compaction jobs.")
+            .description("The visibility timeout for the queue of compaction jobs.\n" +
+                    "This should be greater than the value of sleeper.compaction.keepalive.period.seconds.")
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();

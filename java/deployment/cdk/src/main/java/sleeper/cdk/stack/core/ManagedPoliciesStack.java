@@ -115,6 +115,10 @@ public class ManagedPoliciesStack extends NestedStack {
         return adminPolicy;
     }
 
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return adminPolicy;
+    }
+
     public ManagedPolicy getInvokeCompactionPolicyForGrants() {
         // Avoid creating empty policy when we're not deploying compaction stack
         if (invokeCompactionPolicy == null) {
@@ -154,7 +158,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
     private Role createAdminRole() {
         Role role = Role.Builder.create(this, "AdminRole")
-                .assumedBy(new AccountRootPrincipal())
+                .assumedBy(new AccountRootPrincipal().withSessionTags())
                 .roleName(getAdminRoleName(instanceProperties))
                 .build();
 

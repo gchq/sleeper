@@ -38,7 +38,7 @@ pub use datafusion::{
     SleeperRegion, simulate_compaction_row_reads, sketch::DataSketchVariant,
     stream_to_ffi_arrow_stream,
 };
-pub use objectstore_ext::s3::AwsConfig;
+pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 
 /// Compacts the given Parquet files and reads the schema from the first.
 ///

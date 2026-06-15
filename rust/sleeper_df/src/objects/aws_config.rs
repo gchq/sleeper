@@ -16,7 +16,7 @@
 */
 use crate::{objects::ffi_common_config::FFICommonConfig, unpack::unpack_string};
 use color_eyre::eyre::bail;
-use sleeper_core::AwsConfig;
+use sleeper_core::{AwsConfig, AwsSecrets};
 use std::ffi::c_char;
 
 pub fn unpack_aws_config(params: &FFICommonConfig) -> Option<AwsConfig> {
@@ -36,34 +36,53 @@ pub fn unpack_aws_config(params: &FFICommonConfig) -> Option<AwsConfig> {
 pub struct FFIAwsConfig {
     pub region: *const c_char,
     pub endpoint: *const c_char,
-    pub access_key: *const c_char,
-    pub secret_key: *const c_char,
+    pub access_key_id: *const c_char,
+    pub secret_access_key: *const c_char,
     pub session_token: *const c_char,
     pub allow_http: bool,
+}
+
+/// Convert a raw pointer into an [`Option`].
+///
+/// A NULL pointer becomes a [`None`].
+fn to_option<T>(ptr: *const T) -> Option<*const T> {
+    if ptr.is_null() { None } else { Some(ptr) }
 }
 
 impl TryFrom<&FFIAwsConfig> for AwsConfig {
     type Error = color_eyre::Report;
 
     fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
-        if value.region.is_null() {
-            bail!("FFIAwsConfig region pointer is NULL");
-        }
-        if value.endpoint.is_null() {
-            bail!("FFIAwsConfig endpoint pointer is NULL");
-        }
-        if value.access_key.is_null() {
-            bail!("FFIAwsConfig access_key pointer is NULL");
-        }
-        if value.secret_key.is_null() {
-            bail!("FFIAwsConfig secret_key pointer is NULL");
-        }
+        let session_token = to_option(value.session_token)
+            .map(unpack_string)
+            .transpose()?;
+
+        // access_key_id and secret_access_key must either both be null or both specified
+        let secrets = match (
+            to_option(value.access_key_id),
+            to_option(value.secret_access_key),
+        ) {
+            (Some(access_key_id), Some(secret_access_key)) => Some(AwsSecrets {
+                access_key_id: unpack_string(access_key_id)?,
+                secret_access_key: unpack_string(secret_access_key)?,
+                session_token,
+            }),
+            (None, None) => None,
+            (None, Some(_)) => bail!(
+                "FFIAwsConfig access_key_id is NULL, but secret_access_key was supplied. Supply both or neither"
+            ),
+            (Some(_), None) => bail!(
+                "FFIAwsConfig secret_access_key is NULL, but access_key_id was supplied. Supply both or neither"
+            ),
+        };
+
+        let region = to_option(value.region).map(unpack_string).transpose()?;
+        let endpoint = to_option(value.endpoint).map(unpack_string).transpose()?;
+
         Ok(AwsConfig {
-            region: unpack_string(value.region)?,
-            endpoint: unpack_string(value.endpoint)?,
-            access_key: unpack_string(value.access_key)?,
-            secret_key: unpack_string(value.secret_key)?,
-            session_token: Some(unpack_string(value.session_token)?).filter(|s| !s.is_empty()),
+            secrets,
+            region,
+            endpoint,
             allow_http: value.allow_http,
         })
     }

@@ -21,6 +21,7 @@ import org.apache.arrow.memory.RootAllocator;
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.clients.util.UncheckedAutoCloseables;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
@@ -52,27 +53,29 @@ public interface SleeperClientQueryProvider {
      * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
      * Sleeper client and closed when the Sleeper client is closed.
      *
-     * @return the provider
+     * @param  instanceProperties Sleeper instance properties
+     * @return                    the provider
      */
-    static SleeperClientQueryProvider createDefaultForEachClient() {
-        return withThreadPoolForEachClient(10);
+    static SleeperClientQueryProvider createDefaultForEachClient(InstanceProperties instanceProperties) {
+        return withThreadPoolForEachClient(instanceProperties, 10);
     }
 
     /**
      * Creates a provider that will create a new thread pool for each Sleeper client, that will be closed when the
      * Sleeper client is closed.
      *
-     * @param  threadPoolSize the number of threads in the thread pool for each client
-     * @return                the provider
+     * @param  instanceProperties Sleeper instance properties
+     * @param  threadPoolSize     the number of threads in the thread pool for each client
+     * @return                    the provider
      */
-    static SleeperClientQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
+    static SleeperClientQueryProvider withThreadPoolForEachClient(InstanceProperties instanceProperties, int threadPoolSize) {
         return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
             BufferAllocator allocator = new RootAllocator();
             FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
 
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context);
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context);
             return ShutdownWrapper.shutdown(
                     QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
                     new UncheckedAutoCloseables(List.of(
@@ -85,29 +88,32 @@ public interface SleeperClientQueryProvider {
     /**
      * Creates a provider backed by one thread pool. Please ensure the returned provider is closed.
      *
-     * @param  threadPoolSize the number of threads in the thread pool
-     * @return                the provider
+     * @param  instanceProperties Sleeper instance properties
+     * @param  threadPoolSize     the number of threads in the thread pool
+     * @return                    the provider
      */
-    static PersistentThreadPool withPersistentThreadPool(int threadPoolSize) {
-        return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
+    static PersistentThreadPool withPersistentThreadPool(InstanceProperties instanceProperties, int threadPoolSize) {
+        return new PersistentThreadPool(instanceProperties, Executors.newFixedThreadPool(threadPoolSize));
     }
 
     /**
      * A query provider backed by a single thread pool.
      */
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
+        private final InstanceProperties instanceProperties;
         private final ExecutorService executorService;
         private final BufferAllocator allocator = new RootAllocator();
         private final FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
 
-        private PersistentThreadPool(ExecutorService executorService) {
+        private PersistentThreadPool(InstanceProperties instanceProperties, ExecutorService executorService) {
+            this.instanceProperties = instanceProperties;
             this.executorService = executorService;
         }
 
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context);
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context);
             return ShutdownWrapper.noShutdown(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider));
         }
 

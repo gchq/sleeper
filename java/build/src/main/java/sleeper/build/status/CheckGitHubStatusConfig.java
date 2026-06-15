@@ -20,7 +20,7 @@ import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectChunksYaml;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRuns;
-import sleeper.build.github.api.GitHubWorkflowRunsImpl;
+import sleeper.build.github.api.GitHubApi;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -59,8 +59,8 @@ public class CheckGitHubStatusConfig {
                 .build();
     }
 
-    public GitHubWorkflowRunsImpl gitHubWorkflowRuns() {
-        return new GitHubWorkflowRunsImpl(token);
+    public GitHubApi gitHubApi() {
+        return GitHubApi.withToken(token);
     }
 
     public ChunkStatuses checkStatus(GitHubWorkflowRuns runs) {

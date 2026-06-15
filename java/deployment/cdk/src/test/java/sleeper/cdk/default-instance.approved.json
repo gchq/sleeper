@@ -4406,7 +4406,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -4542,7 +4542,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -4985,7 +4985,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -6907,7 +6907,10 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Action": "sts:AssumeRole",
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ],
                   "Effect": "Allow",
                   "Principal": {
                     "AWS": {
@@ -11932,11 +11935,6 @@
             "EventSourceArn": {
               "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701StreamArn"
             },
-            "MetricsConfig": {
-              "Metrics": [
-                "EventCount"
-              ]
-            },
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -13664,7 +13662,7 @@
             "Handler": "__entrypoint__.handler",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "c398d076c966a47ee4ef862fbaf5ea530bf035b867a0195292c99f77b323ed80.zip"
+              "S3Key": "3fc3a788e8730811e7ec758fb84134e1e24877f8248901484d1e046dee803b5a.zip"
             }
           }
         },
@@ -14559,7 +14557,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -26431,7 +26429,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {

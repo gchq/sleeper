@@ -273,14 +273,14 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 1_000_000L));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(
-                ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), SCHEMA).build());
-        while (parquetReaderIterator.hasNext()) {
-            parquetReaderIterator.next();
+        long numberOfRecords;
+        try (ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(
+                ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), SCHEMA).build())) {
+            while (parquetReaderIterator.hasNext()) {
+                parquetReaderIterator.next();
+            }
+            numberOfRecords = parquetReaderIterator.getNumberOfRowsRead();
         }
-
-        long numberOfRecords = parquetReaderIterator.getNumberOfRowsRead();
-
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(numberOfRecords);
     }

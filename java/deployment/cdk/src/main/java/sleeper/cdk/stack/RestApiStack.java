@@ -69,9 +69,11 @@ public class RestApiStack extends NestedStack {
 
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
         restHttpApi.addRoutes(AddRoutesOptions.builder()
-                .path("/sleeper")
-                .methods(List.of(HttpMethod.GET))
+                .path("/sleeper/tables")
+                .methods(List.of(HttpMethod.POST))
                 .integration(integration).build());
+
+        coreStacks.grandReadAndWriteTablesConfig(lambda);
 
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
                 .value(restHttpApi.getApiEndpoint())

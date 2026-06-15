@@ -57,6 +57,37 @@ public Partition(Builder builder) {
 }
 ```
 
+## Null handling
+
+When we need an empty value, we prefer a non-null value, e.g. a no-op instead of a null for a Supplier object. Many
+types have a more natural empty value than a null. Usually it is not necessary to wrap a value in an Optional to achieve
+this, but it can be useful to clarify the optionality in a limited context.
+
+We avoid using an Optional as a function parameter or a field. A null can be used for these purposes, but we use
+various patterns to avoid dealing with a null explicitly.
+
+When a class does contain a nullable field or an optional parameter, we expect it to bear the responsibility of managing
+null values within a limited context, internal to the class. It should present an API that avoids the need for null
+checks, or passing a null explicitly. For example, we avoid passing a null to test helper methods.
+
+We avoid using null as an uninitialised value for later initialisation. We avoid leaving fields uninitialised, except in
+a builder, where fields will be set before the object is built. Wherever possible we ensure an object is fully
+initialised after it's constructed.
+
+### Patterns for optional values
+
+We consider using multiple function signatures, where one includes the optional parameter as non-optional, and the other
+doesn't include it at all.
+
+We consider a [parameter object](https://refactoring.guru/introduce-parameter-object), where setting the null can be the
+responsibility of a builder or a static factory method.
+
+A builder pattern is often helpful for managing optional fields, where we can document explicitly which are optional,
+and we don't need to call the setter methods when not initialising those fields.
+
+In a data class, a field can be null if it's optional by necessity. An Optional can be used to expose the value outside
+the class. Wherever possible, we avoid using null values in a class responsible for logic, wiring or high level policy.
+
 ## Ordering within a Java class
 
 We try to keep to this ordering of elements in a class declaration:

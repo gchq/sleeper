@@ -218,3 +218,7 @@ See the [release process guide](development/release-process.md) for instructions
 ## Development scripts
 
 See [development scripts](development/dev-scripts.md) for scripts that can assist you while working on Sleeper.
+
+## Building in a custom environment
+
+If your build environment needs to substitute the default container base image, route `cargo` or `rustup` traffic through internal mirrors, or trust a private certificate authority, see [building in a custom environment](development/custom-environment.md) for the available hooks and environment variables.

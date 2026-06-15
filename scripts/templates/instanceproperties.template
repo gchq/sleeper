@@ -1451,6 +1451,7 @@ sleeper.subnets=set-automatically
 # sleeper.compaction.job.commit.batching.window.seconds=30
 
 # The visibility timeout for the queue of compaction jobs.
+# This should be greater than the value of sleeper.compaction.keepalive.period.seconds.
 # (default value shown below, uncomment to set a value)
 # sleeper.compaction.queue.visibility.timeout.seconds=900
 
@@ -1863,6 +1864,10 @@ sleeper.subnets=set-automatically
 # The period in minutes used in the dashboard.
 # (default value shown below, uncomment to set a value)
 # sleeper.dashboard.time.window.minutes=5
+
+# Enables/disables event count metrics specific to the transaction log follower lambda.
+# (default value shown below, uncomment to set a value)
+# sleeper.statestore.transactionlog.eventcount.metrics.enabled=false
 
 
 ## The following instance properties relate to logging.
