@@ -157,7 +157,7 @@ cdk destroy --all -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" -c
 cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
 
-### CDK context variables
+#### CDK context variables
 
 When deploying via the CDK, choose one of two context variables to point at your configuration:
 
