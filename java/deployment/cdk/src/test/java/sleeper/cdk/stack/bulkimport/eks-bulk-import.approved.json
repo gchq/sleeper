@@ -89,7 +89,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
@@ -2378,7 +2378,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
@@ -2644,7 +2644,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "isComplete handler for EKS cluster resource provider",
             "Timeout": 60,
             "Environment": {
@@ -2697,7 +2697,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - isComplete (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -2954,7 +2954,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -3097,7 +3097,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "onEvent handler for EKS cluster resource provider",
             "Timeout": 60,
             "Environment": {
@@ -3140,7 +3140,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onTimeout (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -3668,7 +3668,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.KubectlProvider/Provider)",
             "VpcConfig": {
               "SecurityGroupIds": [
