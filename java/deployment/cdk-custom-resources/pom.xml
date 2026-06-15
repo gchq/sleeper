@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>deployment</artifactId>
-        <version>0.35.4-SNAPSHOT</version>
+        <version>0.36.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
