@@ -49,7 +49,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super();
     }
 
-    protected InstanceProperties(Properties properties) {
+    public InstanceProperties(Properties properties) {
         super(properties);
         tags = csvTagsToMap(get(TAGS));
     }
@@ -71,7 +71,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @param  ignoreNull whether to ignore null vales when validating
      * @return            the instance properties
      */
-    public static InstanceProperties createAndValidate(Properties properties, Boolean ignoreNull) {
+    public static InstanceProperties createAndValidate(Properties properties) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.resetAndValidate(properties, ignoreNull);
         return instanceProperties;

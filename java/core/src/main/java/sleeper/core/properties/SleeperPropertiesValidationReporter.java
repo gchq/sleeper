@@ -25,14 +25,6 @@ import java.util.Map;
 public class SleeperPropertiesValidationReporter {
 
     private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
-    private Boolean ignoreNull = Boolean.FALSE;
-
-    public SleeperPropertiesValidationReporter() {
-    }
-
-    public SleeperPropertiesValidationReporter(Boolean ignoreNull) {
-        this.ignoreNull = ignoreNull;
-    }
 
     /**
      * Records that the given property value is invalid. If reporter source was set from a file, additional validation
@@ -42,7 +34,7 @@ public class SleeperPropertiesValidationReporter {
      * @param value    the value
      */
     public void invalidProperty(SleeperProperty property, String value) {
-        if (!ignoreNull || value != null) {
+        if (value != null) {
             invalidValues.put(property, value);
         }
     }

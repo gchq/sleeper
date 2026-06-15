@@ -78,17 +78,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @throws SleeperPropertiesInvalidException if any value is invalid
      */
     public final void validate() throws SleeperPropertiesInvalidException {
-        validate(Boolean.FALSE);
-    }
-
-    /**
-     * Validate the values of all properties with additional consideration if loaded from a file.
-     *
-     * @param  ignoreNull                        trigger if null values are to be ignore as failues
-     * @throws SleeperPropertiesInvalidException if any value is invalid
-     */
-    public final void validate(Boolean ignoreNull) throws SleeperPropertiesInvalidException {
-        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter(ignoreNull);
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
         validate(reporter);
         reporter.throwIfFailed();
     }
@@ -397,20 +387,9 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @param newProperties the properties to set
      */
     public void resetAndValidate(Properties newProperties) {
-        resetAndValidate(newProperties, Boolean.FALSE);
-    }
-
-    /**
-     * Clears all values, resets them from the given object, and validates the new values. If loaded from a file,
-     * triggers additional behaviour as part of validation.
-     *
-     * @param newProperties the properties to set
-     * @param ignoreNull    whether to ignore null values when validating
-     */
-    public void resetAndValidate(Properties newProperties, Boolean ignoreNull) {
         properties.clear();
         properties.putAll(newProperties);
-        validate(ignoreNull);
+        validate();
     }
 
     /**
