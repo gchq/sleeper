@@ -263,7 +263,7 @@ mod tests {
 
         // Then
         let batches = result.collect().await.unwrap();
-        let total_rows: usize = batches.iter().map(|b| b.num_rows()).sum();
+        let total_rows: usize = batches.iter().map(RecordBatch::num_rows).sum();
         assert_eq!(total_rows, 2, "Expected 2 rows total across all batches");
 
         let mut all_results: Vec<(String, i64)> = Vec::new();
@@ -286,7 +286,10 @@ mod tests {
         }
         all_results.sort();
 
-        assert_eq!(all_results, vec![("A".to_string(), 40), ("B".to_string(), 60)]);
+        assert_eq!(
+            all_results,
+            vec![("A".to_string(), 40), ("B".to_string(), 60)]
+        );
     }
 
     #[tokio::test]

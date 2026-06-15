@@ -26,6 +26,9 @@ use std::{cell::RefCell, sync::Arc};
 ///
 /// Searches bottom-up for the first non-Filter node that has a Filter child,
 /// then inserts a Sort stage between them in a single pass.
+///
+/// # Errors
+/// If the plan transformation can't proceed for some reason.
 pub fn inject_sort_stage(frame: DataFrame, expr: Vec<SortExpr>) -> Result<DataFrame> {
     let (state, plan) = frame.into_parts();
     // RefCell allows moving `expr` out of the FnMut closure. We stop traversal after
