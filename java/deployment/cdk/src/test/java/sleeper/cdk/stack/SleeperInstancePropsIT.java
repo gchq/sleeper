@@ -28,6 +28,7 @@ import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
+import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -52,6 +53,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class SleeperInstancePropsIT {
 
@@ -228,6 +231,55 @@ class SleeperInstancePropsIT {
             // When/Then
             assertThatCode(() -> readProps())
                     .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("Choose between propertiesfile and configurationdir context variables")
+    class ChooseConfigurationSource {
+
+        @Test
+        void shouldLoadFromConfigurationDirectoryIncludingTables() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            TableProperties tableProperties = new TableProperties(properties);
+            tableProperties.set(TABLE_NAME, "test-table");
+            tableProperties.setSchema(createSchemaWithKey("key"));
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+            cdkContext.clear();
+            cdkContext.put("configurationdir", tempDir.toString());
+
+            // When
+            SleeperInstanceProps props = readProps();
+
+            // Then
+            assertThat(props.getTableProperties())
+                    .extracting(p -> p.get(TABLE_NAME))
+                    .containsExactly("test-table");
+        }
+
+        @Test
+        void shouldFailWhenBothPropertiesFileAndConfigurationDirAreSet() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+            cdkContext.put("configurationdir", tempDir.toString());
+
+            // When / Then
+            assertThatThrownBy(() -> readProps())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Both 'propertiesfile' and 'configurationdir'");
+        }
+
+        @Test
+        void shouldFailWhenNeitherPropertiesFileNorConfigurationDirIsSet() {
+            // Given
+            cdkContext.clear();
+
+            // When / Then
+            assertThatThrownBy(() -> readProps())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Either 'propertiesfile' or 'configurationdir'");
         }
     }
 
