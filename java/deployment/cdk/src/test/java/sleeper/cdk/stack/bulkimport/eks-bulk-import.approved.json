@@ -65,6 +65,14 @@
               "Arn"
             ]
           }
+        },
+        "TestInstanceEksBulkImportEksBulkImportClusterAB691C03Arn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "EksBulkImportCluster24C73662",
+              "Arn"
+            ]
+          }
         }
       },
       "Resources": {
