@@ -104,7 +104,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         tablePropertiesStore.save(tableProperties);
     }
 
-    protected Path propertiesFile() {
-        return tempDir.resolve("instance.properties");
+    protected Path configurationDirectory() {
+        return tempDir;
     }
 }

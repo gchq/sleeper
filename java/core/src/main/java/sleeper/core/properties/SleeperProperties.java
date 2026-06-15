@@ -44,13 +44,11 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 /**
- * Holds values for Sleeper configuration properties. Abstract class which backs
- * both
+ * Holds values for Sleeper configuration properties. Abstract class which backs both
  * {@link sleeper.core.properties.instance.InstanceProperties} and
  * {@link sleeper.core.properties.table.TableProperties}.
  *
- * @param <T> the type of properties held, to ensure only relevant properties
- *            are added or retrieved
+ * @param <T> the type of properties held, to ensure only relevant properties are added or retrieved
  */
 public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
     private final Properties properties;
@@ -64,10 +62,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * A method to be called any time the properties are reloaded as a whole. This
-     * should perform any operations that
-     * would be done in the constructor, and also revalidate the values. This should
-     * be overridden if any metadata needs
+     * A method to be called any time the properties are reloaded as a whole. This should perform any operations that
+     * would be done in the constructor, and also revalidate the values. This should be overridden if any metadata needs
      * to be set at load time.
      *
      * @throws SleeperPropertiesInvalidException if any value is invalid
@@ -82,25 +78,13 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @throws SleeperPropertiesInvalidException if any value is invalid
      */
     public final void validate() throws SleeperPropertiesInvalidException {
-        validate(false);
-    }
-
-    /**
-     * Validate the values of all properties with additional consideration if loaded
-     * from a file.
-     *
-     * @param fromFile if any value is invalid
-     * @throws SleeperPropertiesInvalidException if any value is invalid
-     */
-    public final void validate(Boolean fromFile) throws SleeperPropertiesInvalidException {
-        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter(fromFile);
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
         validate(reporter);
         reporter.throwIfFailed();
     }
 
     /**
-     * Validates the values of all properties, and reports any failues to the given
-     * reporter.
+     * Validates the values of all properties, and reports any failues to the given reporter.
      *
      * @param reporter the reporter to receive failures
      */
@@ -138,8 +122,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Retrieves an index of definitions of all properties that can be set for this
-     * object. Deals with metadata rather
+     * Retrieves an index of definitions of all properties that can be set for this object. Deals with metadata rather
      * than property values.
      *
      * @return the index
@@ -156,17 +139,15 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Retrieves a printer to output the property values in a human-readable string
-     * format.
+     * Retrieves a printer to output the property values in a human-readable string format.
      *
-     * @param writer a writer to print to
-     * @return the pretty printer
+     * @param  writer a writer to print to
+     * @return        the pretty printer
      */
     protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
 
     /**
-     * Writes the property values to the given writer in a human-readable string
-     * format.
+     * Writes the property values to the given writer in a human-readable string format.
      *
      * @param writer the writer
      */
@@ -178,17 +159,13 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     public abstract String get(T property);
 
     /**
-     * Computes the value of a property. This should be used in implementations of
-     * {@link #get}. Handles ignoring empty
-     * strings for properties where this is equivalent to no value being set. The
-     * post-processing compute method can be
-     * used to provide the default value of a property, or handle other logic to
-     * replace the value under some condition.
+     * Computes the value of a property. This should be used in implementations of {@link #get}. Handles ignoring empty
+     * strings for properties where this is equivalent to no value being set. The post-processing compute method can be
+     * used to provide the default value of a property, or handle other logic to replace the value under some condition.
      *
-     * @param property the property
-     * @param compute  the method to post-process the value of a property, including
-     *                 null if it is unset
-     * @return the value of the property
+     * @param  property the property
+     * @param  compute  the method to post-process the value of a property, including null if it is unset
+     * @return          the value of the property
      */
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
@@ -199,8 +176,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Sets the value of a property. Please call the setter relevant to the type of
-     * the property, see other methods on
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
      * @param property the property
@@ -213,8 +189,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Sets the value of a property. Please call the setter relevant to the type of
-     * the property, see other methods on
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
      * @param property the property
@@ -225,8 +200,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Sets the value of a property. Please call the setter relevant to the type of
-     * the property, see other methods on
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
      * @param property the property
@@ -237,8 +211,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Adds any missing values to a property which contains a list of strings.
-     * Appends any missing values to the end of
+     * Adds any missing values to a property which contains a list of strings. Appends any missing values to the end of
      * the list. Avoids any duplicates.
      *
      * @param property the property
@@ -255,8 +228,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Sets the value of a property. Please call the setter relevant to the type of
-     * the property, see other methods on
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
      * @param <E>      the enum type representing valid values of the property
@@ -268,8 +240,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Sets the value of a property. Please call the setter relevant to the type of
-     * the property, see other methods on
+     * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
      * @param <E>      the enum type representing valid values of the property
@@ -293,11 +264,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Checks if any property has been set with a name that starts with the given
-     * prefix.
+     * Checks if any property has been set with a name that starts with the given prefix.
      *
-     * @param propertyNameStart the prefix to check
-     * @return true if any property has been set with the prefix
+     * @param  propertyNameStart the prefix to check
+     * @return                   true if any property has been set with the prefix
      */
     public boolean isAnyPropertySetStartingWith(String propertyNameStart) {
         return properties.stringPropertyNames().stream().anyMatch(name -> name.startsWith(propertyNameStart));
@@ -306,8 +276,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     /**
      * Checks if a property has been set.
      *
-     * @param property the property
-     * @return true if the property is set to any value
+     * @param  property the property
+     * @return          true if the property is set to any value
      */
     public boolean isSet(T property) {
         if (!properties.containsKey(property.getPropertyName())) {
@@ -352,8 +322,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Saves a properties file with the set values to the given output stream. This
-     * will only contain the values, and
+     * Saves a properties file with the set values to the given output stream. This will only contain the values, and
      * will not contain descriptions or other aids for human readability.
      *
      * @param outputStream the output stream
@@ -367,8 +336,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Saves a properties file with the set values. This will only contain the
-     * values, and will not contain descriptions
+     * Saves a properties file with the set values. This will only contain the values, and will not contain descriptions
      * or other aids for human readability.
      *
      * @param file the file to save to
@@ -383,8 +351,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Saves a properties file with the set values. This will only contain the
-     * values, and will not contain descriptions
+     * Saves a properties file with the set values. This will only contain the values, and will not contain descriptions
      * or other aids for human readability.
      *
      * @param file the path to save to
@@ -399,8 +366,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Creates a properties file with the set values. This will only contain the
-     * values, and will not contain
+     * Creates a properties file with the set values. This will only contain the values, and will not contain
      * descriptions or other aids for human readability.
      *
      * @return a string with the contents of a properties file
@@ -416,32 +382,18 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Clears all values, resets them from the given object, and validates the new
-     * values.
+     * Clears all values, resets them from the given object, and validates the new values.
      *
      * @param newProperties the properties to set
      */
     public void resetAndValidate(Properties newProperties) {
-        resetAndValidate(newProperties, false);
-    }
-
-    /**
-     * Clears all values, resets them from the given object, and validates the new
-     * values. If loaded from a file, triggers additional behaviour as part of
-     * validation.
-     *
-     * @param newProperties the properties to set
-     * @param fromFile      whether the details where loaded from a file previous
-     */
-    public void resetAndValidate(Properties newProperties, Boolean fromFile) {
         properties.clear();
         properties.putAll(newProperties);
-        validate(fromFile);
+        init();
     }
 
     /**
-     * Retrieves the names of any properties that have values but are not present in
-     * the property metadata index.
+     * Retrieves the names of any properties that have values but are not present in the property metadata index.
      *
      * @return the entries for the values of unknown properties
      */

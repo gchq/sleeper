@@ -101,20 +101,19 @@ described in the section above. You can either use the instance ID as the deploy
 set the deployment ID in the CDK context variable `artefactsId`, or the instance property `sleeper.artefacts.deployment`.
 
 You can use the same CDK apps used by the automated scripts, or your own CDK configuration. We'll give examples with the
-CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance, or upgrade a previously
-deployed instance to the version of Sleeper you're using:
+CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance, or upgrade a previously deployed instance to the version of Sleeper you're using:
 
 ```bash
-INSTANCE_PROPERTIES=/path/to/instance.properties
+CONFIGURATION_DIR=/path/to/configuration-dir # Contains instance.properties, tables/, etc.
 INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
-"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties "$CONFIGURATION_DIR/instance.properties"
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" \
-    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
+    -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 ```
 
@@ -124,7 +123,7 @@ command.
 If you'd like to include random data generation, use the demonstration CDK app instead.
 
 ```bash
-INSTANCE_PROPERTIES=/path/to/instance.properties
+CONFIGURATION_DIR=/path/to/configuration-dir # Contains instance.properties, tables/, etc.
 INSTANCE_ID=my-instance-id
 VPC_ID=my-vpc-id
 SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
@@ -132,9 +131,9 @@ SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" \
     -c id=$INSTANCE_ID
-"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties $INSTANCE_PROPERTIES --cdk-app demonstration
+"$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties "$CONFIGURATION_DIR/instance.properties" --cdk-app demonstration
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SleeperDemonstrationCdkApp" \
-    -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" \
+    -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 # Write some random data
 "$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID system-test
@@ -149,11 +148,23 @@ If the artefacts and the Sleeper instance are each deployed in their own CDK app
 CLI. You may need to delete the Sleeper instance before deleting the artefacts used to deploy it. Here's an example:
 
 ```bash
-INSTANCE_PROPERTIES=/path/to/instance.properties
+CONFIGURATION_DIR=/path/to/configuration-dir # Contains instance.properties, tables/, etc.
 INSTANCE_ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c id=$INSTANCE_ID -c propertiesfile="$INSTANCE_PROPERTIES" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
+
+#### CDK context variables
+
+When deploying via the CDK, choose one of two context variables to point at your configuration:
+
+* `-c propertiesfile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
+  `tags.properties` are read; table properties are not loaded.
+* `-c configurationdir=<path>` — the path to the root configuration directory. The whole directory structure is read including `instance.properties` and `table.properties`. Passing the `instance.properties` file path here also works — it falls back to the directory
+  containing it. For a full description of what can be defined in the directory, refer to the configuration folder structure in the
+   [instant configuration documentation](./instance-configuration.md#configuration-folder-structure).
+
+Set exactly one of these; setting both, or neither, is an error.

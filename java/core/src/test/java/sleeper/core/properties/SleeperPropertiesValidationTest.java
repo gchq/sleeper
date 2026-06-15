@@ -111,6 +111,7 @@ public class SleeperPropertiesValidationTest {
 
         @Test
         void shouldFailValidationIfRequiredPropertyIsMissing() {
+            // Given
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.set(JARS_BUCKET, "jars");
             instanceProperties.set(VERSION, "0.1");

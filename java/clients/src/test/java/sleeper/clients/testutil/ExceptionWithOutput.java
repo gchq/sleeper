@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin.testutils;
+package sleeper.clients.testutil;
 
-public class AdminClientFailedException extends RuntimeException {
+public class ExceptionWithOutput extends RuntimeException {
 
-    private final String output;
+    private final ToStringConsoleOutput output;
 
-    public AdminClientFailedException(String output, Throwable cause) {
-        super("Admin client failed with output: " + output, cause);
+    public ExceptionWithOutput(ToStringConsoleOutput output, Throwable cause) {
+        super("Failed with output: " + output, cause);
         this.output = output;
     }
 
     public String getOutput() {
-        return output;
+        return output.toString();
     }
 
 }

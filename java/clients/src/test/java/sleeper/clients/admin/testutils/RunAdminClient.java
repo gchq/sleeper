@@ -17,6 +17,7 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientTrackerFactory;
+import sleeper.clients.testutil.ExceptionWithOutput;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
@@ -119,7 +120,7 @@ public class RunAdminClient {
         try {
             harness.startClient(trackers, queueClient);
         } catch (Exception e) {
-            throw new AdminClientFailedException(out.toString(), e);
+            throw new ExceptionWithOutput(out, e);
         }
         return out.toString();
     }
