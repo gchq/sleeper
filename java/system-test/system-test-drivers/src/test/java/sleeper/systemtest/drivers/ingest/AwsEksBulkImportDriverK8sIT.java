@@ -101,7 +101,7 @@ public class AwsEksBulkImportDriverK8sIT {
     }
 
     private AwsEksBulkImportDriver driver() {
-        return new AwsEksBulkImportDriver(context.instance(), context.sentIngestJobs(), null, properties -> client);
+        return new AwsEksBulkImportDriver(context.instance(), context.sentIngestJobs(), null, null, properties -> client);
     }
 
 }
