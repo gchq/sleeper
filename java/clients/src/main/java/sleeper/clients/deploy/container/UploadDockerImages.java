@@ -28,6 +28,8 @@ import sleeper.container.images.ContainerImageTransferRequest;
 import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.ContainerPlatform;
+import sleeper.core.deploy.DockerDeployment;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -48,6 +50,7 @@ public class UploadDockerImages {
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final CopyContainerImage copyImage;
+    private final StackDockerImage baseImage;
     private final String version;
     private final boolean createMultiplatformBuilder;
 
@@ -58,6 +61,7 @@ public class UploadDockerImages {
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.localBuildOnly());
+        baseImage = requireNonNull(builder.baseImage, "baseImage must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -79,6 +83,11 @@ public class UploadDockerImages {
         return deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD;
     }
 
+    public static void useBuildXBuilder(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
+        commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
+        commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
+    }
+
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
@@ -87,26 +96,25 @@ public class UploadDockerImages {
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder
-                && imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
-            commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
-            commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
+                && createMultiplatformBuilder) {
+            useBuildXBuilder(commandRunner);
         }
 
-        for (StackDockerImage image : imagesToUpload) {
-            String tag = buildTag(repositoryPrefix, image);
-            if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-                buildAndPushImage(tag, image);
-            } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
-                pullAndPushImage(tag, image);
-            } else {
-                throw new IllegalArgumentException("Unrecognised Docker image location: " + deployConfig.dockerImageLocation());
+        if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
+            String baseTag = buildTag(repositoryPrefix, baseImage);
+            buildAndPushImage(baseTag, baseImage, baseTag);
+            for (StackDockerImage image : imagesToUpload) {
+                buildAndPushImage(buildTag(repositoryPrefix, image), image, baseTag);
+            }
+        } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
+            for (StackDockerImage image : imagesToUpload) {
+                pullAndPushImage(buildTag(repositoryPrefix, image), image);
             }
         }
     }
 
-    private void buildAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
-        Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
+    private void buildAndPushImage(String tag, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
+        Path dockerfileDirectory = resolveBuildContext(image);
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
                     jarsDirectory.resolve(jar.getFilename(version)),
@@ -114,22 +122,31 @@ public class UploadDockerImages {
         });
 
         if (image.isMultiplatform()) {
-            commandRunner.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
+            String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
+            commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
         } else {
             if (image.getLambdaJar().isPresent()) {
                 // At time of writing AWS Lambda does not support images with provenance enabled.
                 // See https://docs.aws.amazon.com/lambda/latest/dg/java-image.html
-                commandRunner.runOrThrow("docker", "build", "--provenance=false", "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow("docker", "build", "--provenance=false", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
             } else {
-                commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
             }
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }
 
+    public Path resolveBuildContext(StackDockerImage image) {
+        if (image.equals(baseImage)) {
+            return deployConfig.overrideBaseImageDirPath()
+                    .orElseGet(() -> baseDockerDirectory.resolve(image.getDirectoryName()));
+        }
+        return baseDockerDirectory.resolve(image.getDirectoryName());
+    }
+
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
         String sourceTag = buildTag(deployConfig.dockerRepositoryPrefix(), image);
-        copyImage.copy(sourceTag, tag, deployConfig.dockerCredentials());
+        copyImage.copy(sourceTag, tag, image.getPlatforms(), deployConfig.dockerCredentials());
     }
 
     private String buildTag(String repositoryPrefix, StackDockerImage image) {
@@ -151,6 +168,7 @@ public class UploadDockerImages {
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private CopyContainerImage copyImage;
+        private StackDockerImage baseImage = StackDockerImage.fromDockerDeployment(DockerDeployment.BASE);
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
 
@@ -192,6 +210,11 @@ public class UploadDockerImages {
             return this;
         }
 
+        public Builder baseImage(StackDockerImage baseImage) {
+            this.baseImage = baseImage;
+            return this;
+        }
+
         public Builder version(String version) {
             this.version = version;
             return this;
@@ -222,10 +245,10 @@ public class UploadDockerImages {
 
     public interface CopyContainerImage {
 
-        void copy(String source, String target, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
+        void copy(String source, String target, List<ContainerPlatform> platforms, ContainerRegistryCredentials sourceCredentials) throws IOException, InterruptedException;
 
         static CopyContainerImage localBuildOnly() {
-            return (source, target, sourceCredentials) -> {
+            return (source, target, platforms, sourceCredentials) -> {
                 throw new UnsupportedOperationException(
                         "Copying container images is not configured correctly, expected to always build images locally.");
             };
@@ -240,10 +263,11 @@ public class UploadDockerImages {
 
         static CopyContainerImage withTransferManager(ContainerImageTransferManager transferManager, EcrClient ecrClient) {
             EcrCredentialRetriever ecrCredentialRetriever = new EcrCredentialRetriever(ecrClient);
-            return (source, target, sourceCredentials) -> {
+            return (source, target, platforms, sourceCredentials) -> {
                 transferManager.transfer(ContainerImageTransferRequest.builder()
                         .sourceImageReference(source)
                         .targetImageReference(target)
+                        .platforms(platforms)
                         .sourceCredentials(sourceCredentials)
                         .targetCredentialsRetriever(ecrCredentialRetriever)
                         .build());

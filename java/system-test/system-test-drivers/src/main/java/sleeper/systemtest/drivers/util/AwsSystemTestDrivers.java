@@ -23,6 +23,7 @@ import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.gc.AwsGarbageCollectionDriver;
 import sleeper.systemtest.drivers.ingest.AwsDataGenerationTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
+import sleeper.systemtest.drivers.ingest.AwsEksBulkImportDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
@@ -58,6 +59,7 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
+import sleeper.systemtest.dsl.ingest.EksBulkImportDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -92,11 +94,7 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class AwsSystemTestDrivers implements SystemTestDrivers {
     private final SystemTestClients clients;
 
-    public AwsSystemTestDrivers() {
-        this(SystemTestClients.fromDefaults());
-    }
-
-    protected AwsSystemTestDrivers(SystemTestClients clients) {
+    public AwsSystemTestDrivers(SystemTestClients clients) {
         this.clients = clients;
     }
 
@@ -163,6 +161,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public DirectBulkImportDriver directEmrServerless(SystemTestContext context) {
         return new DirectEmrServerlessDriver(context.instance(), clients);
+    }
+
+    @Override
+    public EksBulkImportDriver eksBulkImport(SystemTestContext context) {
+        return new AwsEksBulkImportDriver(context.instance(), context.sentIngestJobs(), clients);
     }
 
     @Override

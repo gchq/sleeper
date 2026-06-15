@@ -50,7 +50,6 @@ public class SleeperArtefactsCdkApp {
                 .env(environment)
                 .build());
         SleeperArtefactRepositories.Builder.create(stack, deploymentId)
-                .extraEcrImages(context.getList("extraEcrImages"))
                 .deploy(ToDeploy.fromString(context.tryGetContext("deploy")))
                 .build();
         app.synth();

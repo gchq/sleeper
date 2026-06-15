@@ -29,8 +29,10 @@ import io.trino.spi.type.VarcharType;
 
 import sleeper.trino.handle.SleeperColumnHandle;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.IntegerType.INTEGER;
@@ -58,6 +60,9 @@ public class SleeperPageBlockUtils {
             int positionNo) {
         Type trinoType = sleeperColumnHandlesInChannelOrder.get(channelNo).getColumnTrinoType();
         Block block = page.getBlock(channelNo);
+        if (block.isNull(positionNo)) {
+            return null;
+        }
         if (trinoType.equals(IntegerType.INTEGER)) {
             return block.getInt(positionNo, 0);
         }
@@ -85,11 +90,9 @@ public class SleeperPageBlockUtils {
         } else {
             Type elementType = fieldType.getElementType();
             if (elementType.equals(BIGINT)) {
-                Slice slice = generateLongSlice(element);
-                blockBuilder.writeEntry(slice, 0, slice.length());
+                writeViaDynamicSlice(blockBuilder, slice -> slice.writeLong((Long) element));
             } else if (elementType.equals(INTEGER)) {
-                Slice slice = generateIntegerSlice(element);
-                blockBuilder.writeEntry(slice, 0, slice.length());
+                writeViaDynamicSlice(blockBuilder, slice -> slice.writeInt((Integer) element));
             } else if (elementType.equals(VARCHAR)) {
                 Slice slice = Slices.utf8Slice((String) element);
                 blockBuilder.writeEntry(slice, 0, slice.length());
@@ -100,15 +103,13 @@ public class SleeperPageBlockUtils {
         }
     }
 
-    private static Slice generateLongSlice(Object value) throws UncheckedIOException {
-        DynamicSliceOutput output = new DynamicSliceOutput(0);
-        output.writeLong((Long) value);
-        return output.slice();
-    }
-
-    private static Slice generateIntegerSlice(Object value) throws UncheckedIOException {
-        DynamicSliceOutput output = new DynamicSliceOutput(0);
-        output.writeInt((Integer) value);
-        return output.slice();
+    private static void writeViaDynamicSlice(VariableWidthBlockBuilder blockBuilder, Consumer<DynamicSliceOutput> write) {
+        try (DynamicSliceOutput output = new DynamicSliceOutput(0)) {
+            write.accept(output);
+            Slice slice = output.slice();
+            blockBuilder.writeEntry(slice, 0, slice.length());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -108,7 +108,7 @@ public class TablePropertiesProvider {
             cache(properties, currentTime);
         } else {
             properties = currentEntry.getTableProperties();
-            LOGGER.debug("Cache hit for table {}", properties.getStatus());
+            LOGGER.trace("Cache hit for table {}", properties.getStatus());
         }
         return properties;
     }

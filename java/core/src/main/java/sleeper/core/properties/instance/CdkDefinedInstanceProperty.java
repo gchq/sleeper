@@ -63,6 +63,14 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
+    CdkDefinedInstanceProperty PARTITION = Index.propertyBuilder("sleeper.partition")
+            .description("The ID of the AWS partition the instance is deployed in, e.g. aws.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty DNS_SUFFIX = Index.propertyBuilder("sleeper.dns.suffix")
+            .description("The DNS suffix for the AWS partition the instance is deployed in, e.g. amazonaws.com.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
     CdkDefinedInstanceProperty CDK_APP = Index.propertyBuilder("sleeper.cdk.app")
             .description("Which CDK app was used to deploy the instance. If you use your own custom CDK " +
                     "app, this should be left empty.\n" +
@@ -779,12 +787,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty BULK_IMPORT_EKS_NAMESPACE = Index
             .propertyBuilder("sleeper.bulk.import.eks.k8s.namespace")
-            .description("The namespace ID of the bulk import cluster using EKS.")
+            .description("The ID of the Kubernetes namespace where Spark jobs will run for bulk import.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_NAME = Index
+            .propertyBuilder("sleeper.bulk.import.eks.k8s.cluster.name")
+            .description("The name of the EKS cluster for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = Index
             .propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
-            .description("The endpoint of the bulk import cluster using EKS.")
+            .description("The endpoint of the EKS cluster for bulk import.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_CA_DATA = Index
+            .propertyBuilder("sleeper.bulk.import.eks.k8s.ca.data")
+            .description("The certificate authority data of the EKS cluster for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 

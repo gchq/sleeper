@@ -31,7 +31,13 @@ import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
 
 public class DockerImagesTestBase {
+    private static final DockerDeployment BASE = DockerDeployment.builder()
+            .deploymentName("base")
+            .multiplatform(true)
+            .baseImage(true)
+            .build();
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
+            BASE,
             DockerDeployment.builder()
                     .deploymentName("statestore-committer")
                     .committerPlatform(StateStoreCommitterPlatform.EC2)
@@ -100,11 +106,15 @@ public class DockerImagesTestBase {
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(List.of(), LAMBDA_HANDLERS);
+        return new DockerImageConfiguration(List.of(BASE), LAMBDA_HANDLERS);
+    }
+
+    protected StackDockerImage baseImage() {
+        return StackDockerImage.fromDockerDeployment(BASE);
     }
 
     protected DockerImageConfiguration optionalLambdasImageConfig() {
-        return new DockerImageConfiguration(List.of(),
+        return new DockerImageConfiguration(List.of(BASE),
                 LAMBDA_HANDLERS.stream().filter(lambda -> !lambda.getOptionalStacks().isEmpty()).toList());
     }
 

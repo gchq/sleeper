@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script calls build.sh and then deployTest.sh.
+# Use when you want to build the system and deploy a demonstration instance, and you want some test data to be added
+# automatically.
+# If you've already built the system you can run deployTest.sh directly.
+# If you don't want test data to be added automatically, use buildDeploy.sh or deploy.sh.
+
 set -e
 unset CDPATH
 
@@ -27,7 +33,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/build/buildForTest.sh"
+"$SCRIPTS_DIR/build/build.sh"
 END_BUILD_TIME=$(record_time)
 
 "$THIS_DIR/deployTest.sh" "$@"

@@ -19,13 +19,17 @@
     <parent>
         <artifactId>common</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.35.3</version>
+        <version>0.36.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>foreign-bridge</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>regions</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>

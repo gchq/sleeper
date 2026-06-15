@@ -13,6 +13,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Run tests
         run: scripts/functions/test/runAllTests.sh

@@ -32,7 +32,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -223,35 +223,35 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
-        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
+        Map<String, String> emrSparkProps = SparkConfigurationUtils.getSparkEMRConfiguration();
         CfnCluster.ConfigurationProperty emrConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark")
                 .configurationProperties(emrSparkProps)
                 .build();
         configurations.add(emrConfigurations);
 
-        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
+        Map<String, String> yarnConf = SparkConfigurationUtils.getYarnConfiguration();
         CfnCluster.ConfigurationProperty yarnConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("yarn-site")
                 .configurationProperties(yarnConf)
                 .build();
         configurations.add(yarnConfigurations);
 
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, architecture);
+        Map<String, String> sparkConf = SparkConfigurationUtils.getSparkConfigurationForEMRFromInstanceProperties(instanceProperties, architecture);
         CfnCluster.ConfigurationProperty sparkDefaultsConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark-defaults")
                 .configurationProperties(sparkConf)
                 .build();
         configurations.add(sparkDefaultsConfigurations);
 
-        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
+        Map<String, String> mapReduceSiteConf = SparkConfigurationUtils.getMapRedSiteConfiguration();
         CfnCluster.ConfigurationProperty mapRedSiteConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("mapred-site")
                 .configurationProperties(mapReduceSiteConf)
                 .build();
         configurations.add(mapRedSiteConfigurations);
 
-        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration(architecture);
+        Map<String, String> javaHomeConf = SparkConfigurationUtils.getJavaHomeConfiguration(architecture);
         CfnCluster.ConfigurationProperty hadoopEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
                 .configurationProperties(javaHomeConf)

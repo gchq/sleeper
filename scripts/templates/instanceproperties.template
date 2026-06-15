@@ -57,6 +57,12 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.userjars=
 
+# A comma separated list of resources to exclude from tagging. These should be CDK resource types to
+# set in excludeResourceTypes when adding tags, e.g. AWS::EC2::Subnet.
+# See the AWS documentation: https://docs.aws.amazon.com/cdk/v2/guide/tagging.html#tagging-props
+# (uncomment to set a value)
+# sleeper.tags.excluded.resources=
+
 # A name for a tag to identify the stack that deployed a resource. This will be set for all AWS
 # resources, to the ID of the CDK stack that they are deployed under. This can be used to organise the
 # cost explorer for billing.
@@ -1156,6 +1162,133 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.is.native.libs.image=false
 
+# (EKS mode only) The number of Spark executors. Used to set spark.executor.instances.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.instances=29
+
+# (EKS mode only) The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.
+# Default values are overridden because Fargate doesn't work with Spark's default values.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.memory=16g
+
+# (EKS mode only) The amount of memory allocated to a Spark executor. Used to set
+# spark.executor.memory. Default values are overridden because Fargate doesn't work with Spark's
+# default values.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.memory=16g
+
+# (EKS mode only) The memory overhead for the Spark driver. Used to set spark.driver.memoryOverhead.
+# Fargate provides extra memory so no need to include extra which also messes up the scheduler.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.memory.overhead=1706m
+
+# (EKS mode only) The memory overhead for a Spark executor. Used to set spark.executor.memoryOverhead.
+# Fargate provides extra memory so no need to include extra which also messes up the scheduler.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.memory.overhead=1706m
+
+# (EKS mode only) The S3A input read policy. Used to set
+# spark.hadoop.fs.s3a.experimental.input.fadvise.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.hadoop.fs.s3a.experimental.input.fadvise=sequential
+
+# (EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores.
+# Should reflect the Fargate task shape rather than the EMR EC2 instance type.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.cores=5
+
+# (EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. Should
+# reflect the Fargate task shape rather than the EMR EC2 instance type.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.cores=5
+
+# (EKS mode only) The default parallelism for the Spark job. Used to set spark.default.parallelism.
+# Should scale with the total cores across the EKS cluster, which may differ from EMR.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.default.parallelism=290
+
+# (EKS mode only) The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to
+# set spark.sql.shuffle.partitions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.sql.shuffle.partitions=290
+
+# (EKS mode only) Whether Spark should use dynamic allocation to scale resources up and down. Used to
+# set spark.dynamicAllocation.enabled. Kubernetes support for dynamic allocation is more limited than
+# YARN's; consider leaving this disabled on EKS.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.dynamic.allocation.enabled=false
+
+# JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# The interval between heartbeats from executors to the driver. Used to set
+# spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.heartbeat.interval=60s
+
+# The default timeout for network interactions in Spark. Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.network.timeout=800s
+
+# The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.memory.fraction=0.80
+
+# The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
+# execution and storage. Used to set spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.memory.storage.fraction=0.30
+
+# The storage to use for temporary caching. Used to set spark.storage.level.
+# See https://aws.amazon.com/blogs/containers/best-practices-for-running-spark-on-amazon-eks/
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.storage.level=MEMORY_AND_DISK_SER
+
+# Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.rdd.compress=true
+
+# Whether to compress map output files. Used to set spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.shuffle.compress=true
+
+# Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.shuffle.spill.compress=true
+
+# (EKS mode only) The amount of ephemeral storage allocated to each Spark executor pod on Fargate. Set
+# as the ephemeral-storage request and limit on the executor container via a Spark pod template, which
+# Fargate uses to provision ephemeral storage for the pod beyond the default 20 GiB.
+# Accepted values 20Gi - 175Gi. See:
+# https://spark.apache.org/docs/latest/running-on-kubernetes.html
+# https://docs.aws.amazon.com/eks/latest/userguide/fargate-pod-configuration.html#fargate-storage
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.spark.executor.ephemeral.storage=175Gi
+
 
 ## The following instance properties relate to the splitting of partitions.
 
@@ -1318,6 +1451,7 @@ sleeper.subnets=set-automatically
 # sleeper.compaction.job.commit.batching.window.seconds=30
 
 # The visibility timeout for the queue of compaction jobs.
+# This should be greater than the value of sleeper.compaction.keepalive.period.seconds.
 # (default value shown below, uncomment to set a value)
 # sleeper.compaction.queue.visibility.timeout.seconds=900
 
@@ -1730,6 +1864,10 @@ sleeper.subnets=set-automatically
 # The period in minutes used in the dashboard.
 # (default value shown below, uncomment to set a value)
 # sleeper.dashboard.time.window.minutes=5
+
+# Enables/disables event count metrics specific to the transaction log follower lambda.
+# (default value shown below, uncomment to set a value)
+# sleeper.statestore.transactionlog.eventcount.metrics.enabled=false
 
 
 ## The following instance properties relate to logging.

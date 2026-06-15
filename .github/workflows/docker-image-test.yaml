@@ -20,6 +20,7 @@ on:
         type: string
 
 env:
+  BASE_IMAGE: localhost:5000/base:test
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"
   RUST_BUILD_IMAGE_AARCH64: "ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
@@ -30,6 +31,12 @@ jobs:
     name: Test Docker image ${{ inputs.imageName }}
     runs-on: ubuntu-latest
 
+    services:
+      registry:
+        image: registry:3
+        ports:
+          - 5000:5000
+
     steps:
       - name: Delete huge unnecessary tools folder
         run: |
@@ -38,19 +45,19 @@ jobs:
           rm -rf /opt/ghc
           rm -rf "/usr/local/share/boost"
           rm -rf "$AGENT_TOOLSDIRECTORY"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           driver-opts: network=host
           name: sleeper
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Cache dependencies
         uses: actions/cache/restore@v5
         with:
@@ -67,13 +74,14 @@ jobs:
       - name: Copy build output
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
+      - name: Build base image
+        run: ./scripts/dev/buildDockerImage.sh base ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --push
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }}
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker
           rm -rf ./scripts/jars
-          docker buildx rm --force sleeper
       - name: Docker image tests
         working-directory: ./java
         if: ${{ inputs.testClassNames != '' }}
@@ -82,10 +90,9 @@ jobs:
         env:
           TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
           TRIVY_SHOW_SUPPRESSED: true
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: '${{ inputs.imageName }}:test'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          version: latest

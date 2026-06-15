@@ -209,6 +209,13 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
+    public void grandReadAndWriteTablesConfig(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        configBucketStack.grantWrite(grantee);
+        tableIndexStack.grantReadWrite(grantee);
+        stateStoreStacks.grantReadWritePartitions(grantee);
+    }
+
     public void grantReadTableDataBucket(IGrantable grantee) {
         dataStack.grantRead(grantee);
     }
@@ -359,6 +366,10 @@ public class SleeperCoreStacks {
 
     public IGrantable getPurgeQueuesPolicyForGrants() {
         return policiesStack.getPurgeQueuesPolicyForGrants();
+    }
+
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return policiesStack.getAdminPolicyForGrants();
     }
 
     public void createRoles() {

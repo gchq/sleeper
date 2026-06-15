@@ -35,30 +35,6 @@ Here are some example steps to set this up in Windows:
 6. Click the prompt to open the dev container, or use ctrl+shift+P, Dev Containers: Reopen in Container
 7. The dev container will build, open, and install VS Code extensions
 
-#### Nix shell
-
-You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all the
-dependencies except Docker and Bash. When you have Nix installed, an easy way to get a development environment is to run
-`nix-shell` at the root of the Sleeper Git repository. This will start a shell with all the Sleeper dependencies
-installed, without installing them in your system. If you run your IDE from that shell, the dependencies will be
-available in your IDE. You can run `nix-shell` again whenever you want to work with Sleeper.
-
-**This has problems working with Python code.** The Nix package for the AWS CLI adds a number of libraries to the
-system Python, and pins them to specific versions. It's not possible to override this in a virtual environment, so it's
-likely there will be conflicts with the AWS library used in the Python code for Sleeper. This may prevent execution of
-the Sleeper Python code. If you change the Python dependencies in the Nix shell, this may break the AWS CLI.
-
-You can also download [shell.nix](/shell.nix) directly if you'd like to avoid installing Git. You can then `git clone`
-the repository from the Nix shell. Here's an example to get the latest release:
-
-```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/main/shell.nix" -o ./shell.nix
-nix-shell ./shell.nix
-git clone https://github.com/gchq/sleeper.git
-cd sleeper
-git checkout --track origin/main
-```
-
 #### Sleeper builder image
 
 If you've installed the [Sleeper Docker tools](deployment/docker-tools.md), you can use `sleeper builder` to get a
@@ -111,7 +87,7 @@ Provided script (recommended) - this builds the code and copies the jars into th
 work. Starting from the root of the Git repository:
 
 ```bash
-./scripts/build/buildForTest.sh
+./scripts/build/build.sh
 ```
 
 You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
@@ -242,3 +218,7 @@ See the [release process guide](development/release-process.md) for instructions
 ## Development scripts
 
 See [development scripts](development/dev-scripts.md) for scripts that can assist you while working on Sleeper.
+
+## Building in a custom environment
+
+If your build environment needs to substitute the default container base image, route `cargo` or `rustup` traffic through internal mirrors, or trust a private certificate authority, see [building in a custom environment](development/custom-environment.md) for the available hooks and environment variables.

@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.emr.model.InstanceTypeConfig;
 import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.core.configuration.ConfigurationUtils;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 
@@ -131,21 +131,21 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
             InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<Configuration> configurations = new ArrayList<>();
 
-        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
+        Map<String, String> emrSparkProps = SparkConfigurationUtils.getSparkEMRConfiguration();
         Configuration emrConfiguration = Configuration.builder()
                 .classification("spark")
                 .properties(emrSparkProps)
                 .build();
         configurations.add(emrConfiguration);
 
-        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
+        Map<String, String> yarnConf = SparkConfigurationUtils.getYarnConfiguration();
         Configuration yarnConfiguration = Configuration.builder()
                 .classification("yarn-site")
                 .properties(yarnConf)
                 .build();
         configurations.add(yarnConfiguration);
 
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(
+        Map<String, String> sparkConf = SparkConfigurationUtils.getSparkConfigurationForEMRFromInstanceProperties(
                 instanceProperties, architecture);
         Configuration sparkDefaultsConfigurations = Configuration.builder()
                 .classification("spark-defaults")
@@ -154,7 +154,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         configurations.add(sparkDefaultsConfigurations);
 
         Map<String, String> sparkExecutorJavaHome = new HashMap<>();
-        sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome(architecture));
+        sparkExecutorJavaHome.put("JAVA_HOME", SparkConfigurationUtils.getJavaHome(architecture));
         Configuration sparkEnvExportConfigurations = Configuration.builder()
                 .classification("export")
                 .properties(sparkExecutorJavaHome)
@@ -165,14 +165,14 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 .build();
         configurations.add(sparkEnvConfigurations);
 
-        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
+        Map<String, String> mapReduceSiteConf = SparkConfigurationUtils.getMapRedSiteConfiguration();
         Configuration mapRedSiteConfigurations = Configuration.builder()
                 .classification("mapred-site")
                 .properties(mapReduceSiteConf)
                 .build();
         configurations.add(mapRedSiteConfigurations);
 
-        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration(architecture);
+        Map<String, String> javaHomeConf = SparkConfigurationUtils.getJavaHomeConfiguration(architecture);
 
         Configuration hadoopEnvExportConfigurations = Configuration.builder()
                 .classification("export")

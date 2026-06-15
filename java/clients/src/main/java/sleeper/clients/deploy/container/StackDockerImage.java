@@ -16,9 +16,11 @@
 
 package sleeper.clients.deploy.container;
 
+import sleeper.core.deploy.ContainerPlatform;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,14 +30,14 @@ import java.util.Optional;
 public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
-    private final boolean multiplatform;
+    private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
     private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
-        multiplatform = builder.multiplatform;
+        platforms = builder.platforms;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         lambdaJar = builder.lambdaJar;
     }
@@ -51,7 +53,7 @@ public class StackDockerImage {
         return StackDockerImage.builder()
                 .imageName(deployment.getDeploymentName())
                 .directoryName(deployment.getDeploymentName())
-                .multiplatform(deployment.isMultiplatform())
+                .platforms(deployment.getPlatforms())
                 .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
                 .build();
     }
@@ -95,7 +97,11 @@ public class StackDockerImage {
     }
 
     public boolean isMultiplatform() {
-        return multiplatform;
+        return platforms.size() > 1;
+    }
+
+    public List<ContainerPlatform> getPlatforms() {
+        return platforms;
     }
 
     public boolean isCreateEmrServerlessPolicy() {
@@ -108,7 +114,7 @@ public class StackDockerImage {
 
     @Override
     public int hashCode() {
-        return Objects.hash(imageName, directoryName, multiplatform, createEmrServerlessPolicy, lambdaJar);
+        return Objects.hash(imageName, directoryName, platforms, createEmrServerlessPolicy, lambdaJar);
     }
 
     @Override
@@ -120,14 +126,14 @@ public class StackDockerImage {
             return false;
         }
         StackDockerImage other = (StackDockerImage) obj;
-        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && multiplatform == other.multiplatform
+        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && Objects.equals(platforms, other.platforms)
                 && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar);
     }
 
     @Override
     public String toString() {
         return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
-                ", isBuildx=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
+                ", platforms=" + platforms + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
                 ", lambdaJar=" + lambdaJar + "}";
     }
 
@@ -137,7 +143,7 @@ public class StackDockerImage {
     public static final class Builder {
         private String imageName;
         private String directoryName;
-        private boolean multiplatform;
+        private List<ContainerPlatform> platforms = List.of();
         private boolean createEmrServerlessPolicy;
         private LambdaJar lambdaJar;
 
@@ -169,13 +175,14 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets whether this image should be built for multiple platforms.
+         * Sets which platforms this image should be built and transferred for. An empty list means the default platform
+         * of the build/transfer tool will be used.
          *
-         * @param  multiplatform true if the image should be multiplatform
-         * @return               this builder
+         * @param  platforms the platforms
+         * @return           this builder
          */
-        public Builder multiplatform(boolean multiplatform) {
-            this.multiplatform = multiplatform;
+        public Builder platforms(List<ContainerPlatform> platforms) {
+            this.platforms = platforms;
             return this;
         }
 

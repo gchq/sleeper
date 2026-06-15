@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.environment.cdk.util;
 
-import java.io.BufferedReader;
+package sleeper.bulkimport.starter.executor;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-public class MyIpUtil {
+public class ExecutorPodTemplate {
 
-    private MyIpUtil() {
-        // Prevent instantiation
+    private ExecutorPodTemplate() {
     }
 
-    public static String findMyIp() {
-        try {
-            URL url = new URL("https://checkip.amazonaws.com/");
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
-                return br.readLine();
-            }
+    public static String forEphemeralStorageRequestAndLimit(String request, String limit) {
+        return loadTemplate()
+                .replace("ephemeral-storage-request-placeholder", request)
+                .replace("ephemeral-storage-limit-placeholder", limit);
+    }
+
+    private static String loadTemplate() {
+        try (InputStream is = ExecutorPodTemplate.class.getResourceAsStream("/executor-pod-template.yaml")) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException("Could not find my IP", e);
+            throw new UncheckedIOException(e);
         }
     }
 }

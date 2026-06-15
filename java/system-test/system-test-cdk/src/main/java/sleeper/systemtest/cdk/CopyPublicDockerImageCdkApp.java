@@ -79,7 +79,7 @@ public class CopyPublicDockerImageCdkApp extends Stack {
                         .removalPolicy(RemovalPolicy.RETAIN)
                         .build())
                 .build();
-        CustomResource copyImage = copyImageProvider.createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri());
+        CustomResource copyImage = copyImageProvider.createCopyContainerImage(this, "CopyImage", props.sourceImageName(), repository.getRepositoryUri(), List.of());
         CfnOutput.Builder.create(this, "Digest")
                 .value(copyImage.getAttString("digest"))
                 .build();

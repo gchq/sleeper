@@ -20,25 +20,28 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.api.QuerySender;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.table.TableIndex;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
+import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
@@ -47,18 +50,16 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  * execute the query.
  */
 public class QueryLambdaClient extends QueryCommandLineClient {
-    private final SqsClient sqsClient;
-    private final DynamoDBQueryTracker queryTracker;
+    private final QuerySender querySender;
+    private final QueryTrackerStore queryTracker;
     private Map<String, String> resultsPublisherConfig;
-    private final String queryQueueUrl;
-    private final QuerySerDe querySerDe;
 
-    public QueryLambdaClient(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, InstanceProperties instanceProperties) {
-        super(s3Client, dynamoClient, instanceProperties);
-        this.sqsClient = sqsClient;
-        this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-        this.queryQueueUrl = instanceProperties.get(QUERY_QUEUE_URL);
-        this.querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
+    public QueryLambdaClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            QuerySender querySender, QueryTrackerStore queryTracker, ConsoleInput in, ConsoleOutput out) {
+        super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
+        this.querySender = querySender;
+        this.queryTracker = queryTracker;
     }
 
     @Override
@@ -68,14 +69,14 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
-        System.out.println("Submitting query with id " + query.getQueryId());
+        out.println("Submitting query with id " + query.getQueryId());
         submitQuery(query);
         long sleepTime = 1000L;
         try {
             QueryState state;
             int count = 0;
             while (true) {
-                System.out.println("Polling query tracker");
+                out.println("Polling query tracker");
                 TrackedQuery trackedQuery = queryTracker.getStatus(query.getQueryId());
                 if (trackedQuery != null) {
                     state = trackedQuery.getLastKnownState();
@@ -89,33 +90,31 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 } else if (count > 10) {
                     sleepTime = 2000L;
                 }
-                System.out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
+                out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
                 Thread.sleep(sleepTime);
             }
-            System.out.println("Finished query processing with final state of: " + state);
+            out.println("Finished query processing with final state of: " + state);
         } catch (QueryTrackerException | InterruptedException e) {
-            System.out.println("Failed to get status");
-            e.printStackTrace();
+            out.println("Failed to get status");
+            out.printStackTrace(e);
         }
     }
 
     @Override
     protected void runQueries(TableProperties tableProperties) throws InterruptedException {
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
-            System.out.println("Send output to S3 results bucket (s) or SQS (q)?");
-            String type = scanner.nextLine();
+            String type = in.promptLine("Send output to S3 results bucket (s) or SQS (q)?");
             if ("".equals(type)) {
                 break;
             }
             if ("s".equalsIgnoreCase(type)) {
                 // Nothing to do - empty resultsPublisherConfig will cause the
                 // results to be published to S3.
-                System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
+                out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
             } else if ("q".equals(type)) {
                 resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
-                System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
+                out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
             } else {
                 continue;
             }
@@ -125,9 +124,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     public void submitQuery(Query query) {
-        sqsClient.sendMessage(request -> request.queueUrl(queryQueueUrl)
-                .messageBody(querySerDe.toJson(
-                        query.withResultsPublisherConfig(resultsPublisherConfig))));
+        querySender.sendQuery(query.withResultsPublisherConfig(resultsPublisherConfig));
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -142,7 +139,13 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 StsClient stsClient = StsClient.create()) {
             String accountName = stsClient.getCallerIdentity().account();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-            QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, instanceProperties);
+            TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client);
+            QueryLambdaClient queryLambdaClient = new QueryLambdaClient(
+                    instanceProperties, tableIndex, tablePropertiesProvider,
+                    QuerySender.toSqs(instanceProperties, tablePropertiesProvider, sqsClient),
+                    new DynamoDBQueryTracker(instanceProperties, dynamoClient),
+                    ConsoleInput.stdIn(), ConsoleOutput.stdOut());
             queryLambdaClient.run();
         }
     }

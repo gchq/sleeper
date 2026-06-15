@@ -56,6 +56,7 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -76,6 +77,7 @@ import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -145,6 +147,8 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_CA_DATA, bulkImportCluster.getClusterCertificateAuthorityData());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME, bulkImportCluster.getClusterName());
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
@@ -188,6 +192,12 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
+
+        coreStacks.getAdminPolicyForGrants().addStatements(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("eks:DescribeCluster"))
+                .resources(List.of(bulkImportCluster.getClusterArn()))
+                .build());
 
         Utils.addTags(this, instanceProperties);
     }
@@ -288,6 +298,9 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+
+        cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessForInstanceAdmin", ManagedPoliciesStack.getAdminRoleName(properties)));
+
         List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
         if (roles == null) {
             return;
@@ -325,6 +338,7 @@ public final class EksBulkImportStack extends NestedStack {
         return parseJson(resource,
                 namespaceReplacement(instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE))
                         .andThen(replacements(Map.of(
+                                "partition-placeholder", instanceProperties.get(PARTITION),
                                 "endpoint-placeholder", instanceProperties.get(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT),
                                 "cluster-placeholder", cluster.getClusterName(),
                                 "ca-placeholder", cluster.getClusterCertificateAuthorityData())))

@@ -29,17 +29,18 @@ public class FFIAwsConfig extends Struct {
 
     final Struct.UTF8StringRef region = new Struct.UTF8StringRef();
     final Struct.UTF8StringRef endpoint = new Struct.UTF8StringRef();
-    final Struct.UTF8StringRef access_key = new Struct.UTF8StringRef();
-    final Struct.UTF8StringRef secret_key = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef access_key_id = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef secret_access_key = new Struct.UTF8StringRef();
     final Struct.UTF8StringRef session_token = new Struct.UTF8StringRef();
     final Struct.Boolean allow_http = new Struct.Boolean();
 
     public FFIAwsConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
-        region.set("");
-        endpoint.set("");
-        access_key.set("");
-        secret_key.set("");
-        session_token.set("");
+        region.set(null);
+        endpoint.set(null);
+        access_key_id.set(null);
+        secret_access_key.set(null);
+        session_token.set(null);
+        allow_http.set(false);
     }
 }

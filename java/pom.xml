@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.35.3</version>
+    <version>0.36.0</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -63,7 +63,7 @@
         -->
         <spark.version>3.5.6</spark.version>
         <hadoop.version>3.4.1</hadoop.version>
-        <parquet.version>1.17.0</parquet.version>
+        <parquet.version>1.17.1</parquet.version>
         <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
@@ -82,7 +82,7 @@
         Hadoop uses an old version of Woodstox in hadoop-common.
         We upgraded to the latest version from woodstox-core 5.4.0.
         -->
-        <woodstox.version>7.1.1</woodstox.version>
+        <woodstox.version>7.2.1</woodstox.version>
         <woodstox.stax2.version>4.3.0</woodstox.stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.5.3</ivy.version>
@@ -94,24 +94,27 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.34.1</protobuf.version>
+        <protobuf.version>4.35.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
+        <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
+        <org.lz4.version>1.8.1</org.lz4.version>
+        <yawk.lz4.version>1.11.0</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.1</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
-        <dnsjava.version>3.6.4</dnsjava.version>
+        <dnsjava.version>3.6.5</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.12</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>5.3.2</okhttp3.version>
+        <okhttp3.version>5.4.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
         -->
-        <kotlin.version>2.3.21</kotlin.version>
+        <kotlin.version>2.4.0</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
@@ -124,13 +127,13 @@
         <roaringbitmap.version>1.6.14</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.32</logback.version>
+        <logback.version>1.5.34</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
         -->
-        <log4j.version>2.25.4</log4j.version>
-        <aws-java-sdk-v2.version>2.44.2</aws-java-sdk-v2.version>
+        <log4j.version>2.26.0</log4j.version>
+        <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -144,7 +147,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.45.2</aws-crt.version>
+        <aws-crt.version>0.47.0</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -152,7 +155,7 @@
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.22.0</commons-codec.version>
         <commons-io.version>2.22.0</commons-io.version>
-        <commons-configuration.version>2.14.0</commons-configuration.version>
+        <commons-configuration.version>2.15.1</commons-configuration.version>
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-text.version>1.15.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
@@ -164,35 +167,35 @@
         <httpclient4.version>4.5.14</httpclient4.version>
         <httpclient5.version>5.6.1</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.0.15</jline.version>
+        <jline.version>4.1.3</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-8</zstd-jni.version>
+        <zstd-jni.version>1.5.7-11</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.61.0</opentelemetry.version>
+        <opentelemetry.version>1.63.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.5</zookeeper.version>
-        <jackson.version>2.21.3</jackson.version>
-        <jackson.annotations.version>2.21</jackson.annotations.version>
+        <jackson.version>2.22.0</jackson.version>
+        <jackson.annotations.version>2.22</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.6.0-jre</guava.version>
-        <google.errorprone.version>2.49.0</google.errorprone.version>
+        <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.1.0</google.http-client.version>
-        <google.grpc.version>1.81.0</google.grpc.version>
+        <google.grpc.version>1.82.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.252.0</cdk.version>
+        <cdk.version>2.258.1</cdk.version>
         <constructs.version>10.6.0</constructs.version>
-        <cdk.kubectl.35.version>2.2.1</cdk.kubectl.35.version>
-        <jsii.version>1.129.0</jsii.version>
+        <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
+        <jsii.version>1.135.0</jsii.version>
         <gson.version>2.14.0</gson.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
         <pty4j.version>0.13.12</pty4j.version>
@@ -206,9 +209,9 @@
         <!-- This is not managed for the whole project as it conflicts with Trino. -->
         <jersey.build.version>4.0.0</jersey.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.13.Final</netty.version>
+        <netty.version>4.2.15.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.77.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.78.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -223,7 +226,9 @@
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.1</jib.version>
-        <asm.version>9.9.1</asm.version>
+        <asm.version>9.10.1</asm.version>
+        <!-- We match the version of Fabric8 used by Spark -->
+        <fabric8.version>6.7.2</fabric8.version>
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
@@ -233,10 +238,10 @@
         <handlebars.version>4.5.1</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>30.1.0</approvaltests.version>
+        <approvaltests.version>30.1.1</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
-        <xmlunit.version>2.11.0</xmlunit.version>
-        <jsonunit.version>5.1.1</jsonunit.version>
+        <xmlunit.version>2.12.0</xmlunit.version>
+        <jsonunit.version>5.1.2</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
@@ -252,23 +257,23 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
-        <surefire.plugin.version>3.5.5</surefire.plugin.version>
-        <failsafe.plugin.version>3.5.5</failsafe.plugin.version>
+        <surefire.plugin.version>3.5.6</surefire.plugin.version>
+        <failsafe.plugin.version>3.5.6</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
         <assembly.plugin.version>3.8.0</assembly.plugin.version>
         <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.15.0</compiler.plugin.version>
-        <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
+        <enforcer.plugin.version>3.6.3</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.version>4.9.8</spotbugs.version>
+        <spotbugs.version>4.10.2</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <findbugs.version>3.0.2</findbugs.version>
-        <dependency.plugin.version>3.10.0</dependency.plugin.version>
+        <dependency.plugin.version>3.11.0</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>12.2.2</dependency-check.plugin.version>
-        <site.plugin.version>3.21.0</site.plugin.version>
+        <site.plugin.version>3.22.0</site.plugin.version>
         <exec.plugin.version>3.6.3</exec.plugin.version>
         <resources.plugin.version>3.5.0</resources.plugin.version>
         <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
@@ -465,6 +470,11 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
+                <artifactId>eks</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
@@ -585,10 +595,6 @@
                 <artifactId>spark-sql_${scala.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-slf4j2-impl</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
@@ -991,6 +997,16 @@
                 <version>${protobuf.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${org.lz4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>at.yawk.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${yawk.lz4.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${nimbus-jose-jwt.version}</version>
@@ -1058,6 +1074,11 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
+                <version>${okhttp3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
                 <version>${okhttp3.version}</version>
             </dependency>
             <dependency>
@@ -1204,6 +1225,21 @@
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-core</artifactId>
                 <version>${jib.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${fabric8.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-api</artifactId>
+                <version>${fabric8.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${fabric8.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>

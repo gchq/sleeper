@@ -31,4 +31,6 @@ public class QueryClientTestConstants {
     public static final String PROMPT_MAX_INCLUSIVE = "Is the maximum inclusive? (y/n) \n";
     public static final String PROMPT_MIN_ROW_KEY_LONG_TYPE = "Enter a minimum key for row key field key of type = LongType{} - hit return for no minimum: \n";
     public static final String PROMPT_MAX_ROW_KEY_LONG_TYPE = "Enter a maximum key for row key field key of type = LongType{} - hit return for no maximum: \n";
+    public static final String SEND_TO_S3_OPTION = "s";
+    public static final String SEND_TO_SQS_OPTION = "q";
 }

@@ -18,7 +18,6 @@ package sleeper.core.properties.model;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.deploy.ClientJar;
-import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -47,20 +46,6 @@ public enum SleeperInternalCdkApp {
     }
 
     /**
-     * Validates whether a Sleeper property value identifies a CDK app that deploys a Sleeper instance.
-     *
-     * @param  propertyValue the property value
-     * @return               true if it is a CDK app that deploys a Sleeper instance
-     */
-    public static boolean isCdkAppDeployingSleeperInstance(String propertyValue) {
-        SleeperInternalCdkApp app = EnumUtils.getEnumIgnoreCase(SleeperInternalCdkApp.class, propertyValue);
-        if (app == null) {
-            return false;
-        }
-        return app.isDeploysSleeperInstance();
-    }
-
-    /**
      * Reads a string value that we expect to identify a CDK app used to deploy a Sleeper instance.
      *
      * @param  propertyValue the value
@@ -72,20 +57,6 @@ public enum SleeperInternalCdkApp {
             return Optional.empty();
         }
         return Optional.of(app).filter(SleeperInternalCdkApp::isDeploysSleeperInstance);
-    }
-
-    /**
-     * Infers which app was used based on whether any system test properties are set.
-     *
-     * @param  instanceProperties the instance properties
-     * @return                    the CDK app
-     */
-    public static SleeperInternalCdkApp inferBySystemTestProperties(InstanceProperties instanceProperties) {
-        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return SleeperInternalCdkApp.DEMONSTRATION;
-        } else {
-            return SleeperInternalCdkApp.STANDARD;
-        }
     }
 
     /**
@@ -150,7 +121,7 @@ public enum SleeperInternalCdkApp {
          * @return the retriever to resolve the path
          */
         static GetJarPath systemTestJarFile() {
-            return (jarsDirectory, version) -> jarsDirectory.resolve(String.format("system-test-cdk-%s.jar", version));
+            return (jarsDirectory, version) -> jarsDirectory.resolve(ClientJar.SYSTEM_TEST_CDK.getFormattedFilename(version));
         }
     }
 

@@ -22,13 +22,20 @@ import com.google.cloud.tools.jib.api.ImageReference;
 import com.google.cloud.tools.jib.api.InvalidImageReferenceException;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.JibContainer;
+import com.google.cloud.tools.jib.api.JibContainerBuilder;
 import com.google.cloud.tools.jib.api.RegistryException;
 import com.google.cloud.tools.jib.api.RegistryImage;
+import com.google.cloud.tools.jib.api.buildplan.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.deploy.ContainerPlatform;
+
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -60,7 +67,7 @@ public class ContainerImageTransferManager {
         try {
             ImageReference sourceRef = ImageReference.parse(request.getSourceImageReference());
             ImageReference targetRef = ImageReference.parse(request.getTargetImageReference());
-            JibContainer container = Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever()))
+            JibContainer container = configure(Jib.from(registryImage(sourceRef, request.getSourceCredentialsRetriever())), request)
                     .containerize(configure(Containerizer.to(registryImage(targetRef, request.getTargetCredentialsRetriever()))));
             return new ContainerImageTransferResult(
                     container.getTargetImage().toString(),
@@ -77,6 +84,18 @@ public class ContainerImageTransferManager {
                     .map(credentials -> Credential.from(credentials.username(), credentials.password())));
         }
         return image;
+    }
+
+    private static JibContainerBuilder configure(JibContainerBuilder builder, ContainerImageTransferRequest request) {
+        List<ContainerPlatform> platforms = request.getPlatforms();
+        if (platforms.isEmpty()) {
+            return builder;
+        }
+        Set<Platform> jibPlatforms = new LinkedHashSet<>();
+        for (ContainerPlatform platform : platforms) {
+            jibPlatforms.add(new Platform(platform.architecture(), platform.os()));
+        }
+        return builder.setPlatforms(jibPlatforms);
     }
 
     private Containerizer configure(Containerizer containerizer) {

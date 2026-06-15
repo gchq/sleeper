@@ -37,7 +37,6 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,18 +52,15 @@ public class SleeperArtefactRepositories {
 
     private final Construct scope;
     private final String deploymentId;
-    private final List<String> extraEcrImages;
     private final ToDeploy deploy;
     private final IBucket jarsBucket;
     private final Map<LambdaJar, IRepository> jarToRepository = new HashMap<>();
     private final Map<DockerDeployment, IRepository> deploymentToRepository = new HashMap<>();
-    private final List<IRepository> extraRepositories = new ArrayList<>();
 
     private SleeperArtefactRepositories(Builder builder) {
         scope = Objects.requireNonNull(builder.scope, "scope must not be null");
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
         String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
-        extraEcrImages = Optional.ofNullable(builder.extraEcrImages).orElse(List.of());
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
         jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
         if (deploy.isDeployImages()) {
@@ -122,8 +118,6 @@ public class SleeperArtefactRepositories {
             }
             deploymentToRepository.put(deployment, repository);
         }
-
-        extraEcrImages.forEach(image -> extraRepositories.add(createRepository(image)));
     }
 
     private Repository createRepository(String imageName) {
@@ -152,7 +146,6 @@ public class SleeperArtefactRepositories {
         private final Construct scope;
         private final String deploymentId;
         private String accountName;
-        private List<String> extraEcrImages;
         private ToDeploy deploy;
 
         private Builder(Construct scope, String deploymentId) {
@@ -169,11 +162,6 @@ public class SleeperArtefactRepositories {
 
         public Builder accountName(String accountName) {
             this.accountName = accountName;
-            return this;
-        }
-
-        public Builder extraEcrImages(List<String> extraEcrImages) {
-            this.extraEcrImages = extraEcrImages;
             return this;
         }
 

@@ -15,7 +15,6 @@
  */
 package sleeper.core.properties.model;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -442,7 +441,9 @@ public class SleeperPropertyValueUtils {
         if (value == null || value.length() < 1) {
             return List.of();
         } else {
-            return Lists.newArrayList(value.split(","));
+            return Stream.of(value.split(","))
+                    .map(String::trim)
+                    .toList();
         }
     }
 

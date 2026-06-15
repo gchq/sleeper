@@ -29,12 +29,14 @@ import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.core.deploy.ContainerPlatform;
 import sleeper.core.deploy.LambdaHandler;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"})
 public class CopyContainerImageProvider {
@@ -86,16 +88,24 @@ public class CopyContainerImageProvider {
     /**
      * Creates a custom resource to copy an image.
      *
-     * @param  scope  the stack to add the custom resource to
-     * @param  id     the CDK construct ID for the custom resource
-     * @param  source the source image name, including repository and path
-     * @param  target the target image name, including repository and path
-     * @return        the custom resource
+     * @param  scope     the stack to add the custom resource to
+     * @param  id        the CDK construct ID for the custom resource
+     * @param  source    the source image name, including repository and path
+     * @param  target    the target image name, including repository and path
+     * @param  platforms The platforms to transfer from a multi-platform source image. If this is empty, a single image
+     *                   will be transferred as is, but for a multi-platform image the behaviour is undefined.
+     * @return           the custom resource
      */
-    public CustomResource createCopyContainerImage(Construct scope, String id, String source, String target) {
+    public CustomResource createCopyContainerImage(Construct scope, String id, String source, String target, List<ContainerPlatform> platforms) {
+        String platformsProperty = platforms.stream()
+                .map(ContainerPlatform::toString)
+                .collect(Collectors.joining(","));
         return CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::CopyContainerImage")
-                .properties(Map.of("source", source, "target", target))
+                .properties(Map.of(
+                        "source", source,
+                        "target", target,
+                        "platforms", platformsProperty))
                 .serviceToken(provider.getServiceToken())
                 .build();
     }

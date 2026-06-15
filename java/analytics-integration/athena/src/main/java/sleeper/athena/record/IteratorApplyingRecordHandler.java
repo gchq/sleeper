@@ -123,7 +123,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema,
             TableProperties tableProperties) throws RowRetrievalException, IteratorCreationException {
         Split split = recordsRequest.getSplit();
-        Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
+        Set<String> relevantFiles = readRelevantFiles(split);
         List<Field> rowKeyFields = schema.getRowKeyFields();
 
         List<FieldAsString> rowKeys = split.getProperties().entrySet().stream()
@@ -135,6 +135,11 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         List<Object> maxRowKeys = getRowKey(rowKeys, rowKeyFields, "Max");
 
         return createIterator(relevantFiles, minRowKeys, maxRowKeys, schema, tableProperties, recordsRequest.getConstraints().getSummary());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> readRelevantFiles(Split split) {
+        return new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
     }
 
     private List<Object> getRowKey(List<FieldAsString> rowKeyStream, List<Field> rowKeyFields, String indicator) {

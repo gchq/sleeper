@@ -16,12 +16,17 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
-  echo "Usage: $0 <properties-template> <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
+if [ "$#" -lt 4 ]; then
+  echo "Usage: $0 <shortId> <vpc> <csv-list-of-subnets> <test> <optional-maven-params>"
   exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+SHORT_ID=$1
+VPC=$2
+SUBNETS=$3
+TEST=$4
+shift 4
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.drivers.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "$@"
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+
+"$THIS_DIR/buildDeployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" -Dsleeper.system.test.cluster.enabled=true "-DrunIT=$TEST" "$@"

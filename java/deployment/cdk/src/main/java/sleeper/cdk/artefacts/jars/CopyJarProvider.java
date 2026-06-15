@@ -16,6 +16,7 @@
 package sleeper.cdk.artefacts.jars;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awscdk.Aws;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
@@ -68,7 +69,7 @@ public class CopyJarProvider {
 
         String wildcardJarsBucketName = SleeperArtefactsLocation.getDefaultJarsBucketName("*", "*");
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .resources(List.of("arn:aws:s3:::" + wildcardJarsBucketName, "arn:aws:s3:::" + wildcardJarsBucketName + "/*"))
+                .resources(List.of("arn:" + Aws.PARTITION + ":s3:::" + wildcardJarsBucketName, "arn:" + Aws.PARTITION + ":s3:::" + wildcardJarsBucketName + "/*"))
                 .actions(List.of(
                         "s3:PutObject",
                         "s3:ListMultipartUploadParts",
