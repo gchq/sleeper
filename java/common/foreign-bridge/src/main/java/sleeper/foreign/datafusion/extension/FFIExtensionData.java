@@ -27,7 +27,7 @@ import jnr.ffi.Union;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/extensions.rs. The order and types
  * of the fields must match exactly.
  */
-@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
+@SuppressFBWarnings({"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "URF_UNREAD_FIELD"})
 public class FFIExtensionData extends Union {
     /** SQL extension data. */
     public final Struct.StructRef<FFISQLExtension> sql = new Struct.StructRef<>(FFISQLExtension.class);
