@@ -39,7 +39,7 @@ pub async fn add_sql_stage(
     ctx: &SessionContext,
 ) -> Result<DataFrame, DataFusionError> {
     let Some(sql) = sql else { return Ok(frame) };
-    ctx.register_table("my_table", frame.into_view())?;
+    ctx.register_table("query_results", frame.into_view())?;
     let frame = ctx
         .sql_with_options(
             sql,
@@ -137,7 +137,7 @@ mod tests {
         let sort_exprs: Vec<SortExpr> = vec![];
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM my_table"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -155,7 +155,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_single();
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM my_table"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -173,7 +173,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_multiple();
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM my_table"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -192,7 +192,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT * FROM my_table WHERE a > 2"),
+            Some("SELECT * FROM query_results WHERE a > 2"),
             sort_exprs,
             frame,
             &ctx,
@@ -221,7 +221,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_single();
 
         // When
-        let result = add_sql_stage(Some("SELECT a FROM my_table"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage(Some("SELECT a FROM query_results"), sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -253,7 +253,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT category, SUM(value) as total FROM my_table GROUP BY category"),
+            Some("SELECT category, SUM(value) as total FROM query_results GROUP BY category"),
             sort_exprs,
             frame,
             &ctx,
@@ -301,7 +301,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT * FROM my_table ORDER BY a DESC"),
+            Some("SELECT * FROM query_results ORDER BY a DESC"),
             sort_exprs,
             frame,
             &ctx,
@@ -375,7 +375,7 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result = add_sql_stage(Some("DROP TABLE my_table"), sort_exprs, frame, &ctx).await;
+        let result = add_sql_stage(Some("DROP TABLE query_results"), sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -392,7 +392,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("ALTER TABLE my_table ADD COLUMN c INT"),
+            Some("ALTER TABLE query_results ADD COLUMN c INT"),
             sort_exprs,
             frame,
             &ctx,
@@ -414,7 +414,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("INSERT INTO my_table VALUES (5, 'test')"),
+            Some("INSERT INTO query_results VALUES (5, 'test')"),
             sort_exprs,
             frame,
             &ctx,
@@ -435,8 +435,13 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result =
-            add_sql_stage(Some("UPDATE my_table SET a = 10"), sort_exprs, frame, &ctx).await;
+        let result = add_sql_stage(
+            Some("UPDATE query_results SET a = 10"),
+            sort_exprs,
+            frame,
+            &ctx,
+        )
+        .await;
 
         // Then
         assert!(result.is_err());
@@ -453,7 +458,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("DELETE FROM my_table WHERE a = 1"),
+            Some("DELETE FROM query_results WHERE a = 1"),
             sort_exprs,
             frame,
             &ctx,
@@ -492,7 +497,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT nonexistent_column FROM my_table"),
+            Some("SELECT nonexistent_column FROM query_results"),
             sort_exprs,
             frame,
             &ctx,
