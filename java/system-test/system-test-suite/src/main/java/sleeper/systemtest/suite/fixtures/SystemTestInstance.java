@@ -49,6 +49,8 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COM
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
@@ -261,6 +263,8 @@ public class SystemTestInstance {
                 // Enable GC to reduce the number of files needing deletion during teardown
                 List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "200");
+        properties.set(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, "20");
+        properties.set(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, "5");
         properties.unset(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS); // Use default
         setSystemTestTags(properties, "compactionInParallel", "Sleeper Maven system test compaction in parallel");
         return createInstanceConfiguration(properties);

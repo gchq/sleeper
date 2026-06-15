@@ -409,7 +409,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        }).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(configurationDirectory())));
     }
 
     private void createTableInS3(String tableName) {
@@ -434,10 +434,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void verifyAnyAppDeployedWithCdk() throws Exception {
-        verify(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        verify(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(configurationDirectory())));
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        doThrow(throwable).when(cdk).invoke(any(), eq(CdkCommand.deployPropertiesChange(configurationDirectory())));
     }
 }

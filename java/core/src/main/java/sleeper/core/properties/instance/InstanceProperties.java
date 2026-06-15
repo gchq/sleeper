@@ -49,7 +49,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super();
     }
 
-    protected InstanceProperties(Properties properties) {
+    public InstanceProperties(Properties properties) {
         super(properties);
         tags = csvTagsToMap(get(TAGS));
     }
@@ -65,7 +65,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     /**
-     * Creates and validates an instance of this class with the given property values.
+     * Creates and validates an instance of this class with the given property values when loaded from a file.
      *
      * @param  properties the property values
      * @return            the instance properties

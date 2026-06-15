@@ -126,17 +126,17 @@ class SleeperPropertyValueUtilsTest {
 
         @Test
         void shouldValidateStringWhenStringLengthIsLowerThanMaxLength() {
-            assertThat(SleeperPropertyValueUtils.isStringWithinMaxLength("test", 5)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 5)).isTrue();
         }
 
         @Test
         void shouldFailToValidateWhenStringLengthExceedsMaxLength() {
-            assertThat(SleeperPropertyValueUtils.isStringWithinMaxLength("test", 1)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 1)).isFalse();
         }
 
         @Test
         void shouldValidateStringWhenStringLengthMeetsMaxLength() {
-            assertThat(SleeperPropertyValueUtils.isStringWithinMaxLength("test", 4)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
         }
     }
 

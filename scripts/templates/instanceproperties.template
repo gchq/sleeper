@@ -1463,6 +1463,7 @@ sleeper.subnets=set-automatically
 # sleeper.compaction.job.commit.batching.window.seconds=30
 
 # The visibility timeout for the queue of compaction jobs.
+# This should be greater than the value of sleeper.compaction.keepalive.period.seconds.
 # (default value shown below, uncomment to set a value)
 # sleeper.compaction.queue.visibility.timeout.seconds=900
 
