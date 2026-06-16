@@ -231,22 +231,24 @@ public final class EksBulkImportStack extends NestedStack {
         CustomState deleteDriverPod = CustomState.Builder.create(this, "DeleteDriverPod").stateJson(deleteDriverPodState).build();
         CustomState deleteJob = CustomState.Builder.create(this, "DeleteJob").stateJson(deleteJobState).build();
 
+        SnsPublish publishError = SnsPublish.Builder
+                .create(this, "AlertUserFailedSparkSubmit")
+                .message(TaskInput.fromJsonPathAt("$.errorMessage"))
+                .topic(coreStacks.getAlertsTopic())
+                .build();
+
+        Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
+                .parameters(Map.of("errorMessage.$",
+                        "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)"))
+                .build();
+
+        Fail failedJobState = Fail.Builder.create(this, "FailedJobState").cause("Spark job failed").build();
+
         IChainable definition;
         if (jobLookupTableName.isPresent()) {
             Map<String, Object> checkJobStatusState = parseJson(
                     "/step-functions/check-job-status.json",
                     replacement("table-name-placeholder", jobLookupTableName.get()));
-
-            SnsPublish publishError = SnsPublish.Builder
-                    .create(this, "AlertUserFailedSparkSubmit")
-                    .message(TaskInput.fromJsonPathAt("$.errorMessage"))
-                    .topic(coreStacks.getAlertsTopic())
-                    .build();
-
-            Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
-                    .parameters(Map.of("errorMessage.$",
-                            "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)"))
-                    .build();
 
             definition = runSparkJob
                     .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
@@ -255,10 +257,16 @@ public final class EksBulkImportStack extends NestedStack {
                                             Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_FINISHED),
                                             Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_ADDED_FILES)),
                                             deleteDriverPod.next(deleteJob))
-                                    .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                            .create(this, "FailedJobState").cause("Spark job failed").build()))));
+                                    .otherwise(createErrorMessage.next(publishError).next(failedJobState))));
         } else {
-            definition = runSparkJob.next(deleteDriverPod.next(deleteJob));
+            // Without the tracker, check the EKS job result directly.
+            // CreateErrorMessage must also be reachable here so CDK includes it in the definition —
+            // run-job.json's Catch block unconditionally references it by name.
+            definition = runSparkJob
+                    .next(Choice.Builder.create(this, "CheckSparkJobResult").build()
+                            .when(Condition.numberGreaterThan("$.jobResult.succeeded", 0),
+                                    deleteDriverPod.next(deleteJob))
+                            .otherwise(createErrorMessage.next(publishError).next(failedJobState)));
         }
 
         StateMachine stateMachine = StateMachine.Builder.create(this, "EksBulkImportStateMachine")
