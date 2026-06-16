@@ -63,6 +63,7 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
@@ -334,7 +335,7 @@ public class SleeperCoreStacks {
         ingestTracker.grantReadJobLookup(grantee);
     }
 
-    public String getIngestJobLookupTableName(String instanceId) {
+    public Optional<String> getIngestJobLookupTableName(String instanceId) {
         return ingestTracker.getJobLookupTableName(instanceId);
     }
 

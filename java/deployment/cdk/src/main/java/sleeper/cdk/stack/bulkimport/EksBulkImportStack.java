@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.stepfunctions.Condition;
 import software.amazon.awscdk.services.stepfunctions.CustomState;
 import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
 import software.amazon.awscdk.services.stepfunctions.Fail;
+import software.amazon.awscdk.services.stepfunctions.IChainable;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
@@ -72,6 +73,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
@@ -209,15 +211,11 @@ public final class EksBulkImportStack extends NestedStack {
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
-        String jobLookupTableName = coreStacks.getIngestJobLookupTableName(instanceProperties.get(ID));
+        Optional<String> jobLookupTableName = coreStacks.getIngestJobLookupTableName(instanceProperties.get(ID));
 
         Map<String, Object> runJobState = parseEksStepDefinition(
                 "/step-functions/run-job.json", instanceProperties, cluster,
                 replacements(Map.of("image-placeholder", imageName)));
-
-        Map<String, Object> checkJobStatusState = parseJson(
-                "/step-functions/check-job-status.json",
-                replacement("table-name-placeholder", jobLookupTableName));
 
         // Deleting the driver pod is necessary as a Spark job does not delete the pod afterwards:
         // https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html#how-it-works
@@ -229,31 +227,42 @@ public final class EksBulkImportStack extends NestedStack {
         Map<String, Object> deleteJobState = parseEksStepDefinition(
                 "/step-functions/delete-job.json", instanceProperties, cluster);
 
-        SnsPublish publishError = SnsPublish.Builder
-                .create(this, "AlertUserFailedSparkSubmit")
-                .message(TaskInput.fromJsonPathAt("$.errorMessage"))
-                .topic(coreStacks.getAlertsTopic())
-                .build();
+        CustomState runSparkJob = CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build();
+        CustomState deleteDriverPod = CustomState.Builder.create(this, "DeleteDriverPod").stateJson(deleteDriverPodState).build();
+        CustomState deleteJob = CustomState.Builder.create(this, "DeleteJob").stateJson(deleteJobState).build();
 
-        Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
-                .parameters(Map.of("errorMessage.$",
-                        "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)"))
-                .build();
+        IChainable definition;
+        if (jobLookupTableName.isPresent()) {
+            Map<String, Object> checkJobStatusState = parseJson(
+                    "/step-functions/check-job-status.json",
+                    replacement("table-name-placeholder", jobLookupTableName.get()));
+
+            SnsPublish publishError = SnsPublish.Builder
+                    .create(this, "AlertUserFailedSparkSubmit")
+                    .message(TaskInput.fromJsonPathAt("$.errorMessage"))
+                    .topic(coreStacks.getAlertsTopic())
+                    .build();
+
+            Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
+                    .parameters(Map.of("errorMessage.$",
+                            "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)"))
+                    .build();
+
+            definition = runSparkJob
+                    .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
+                            .next(Choice.Builder.create(this, "JobStatusDecision").build()
+                                    .when(Condition.or(
+                                            Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_FINISHED),
+                                            Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_ADDED_FILES)),
+                                            deleteDriverPod.next(deleteJob))
+                                    .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
+                                            .create(this, "FailedJobState").cause("Spark job failed").build()))));
+        } else {
+            definition = runSparkJob.next(deleteDriverPod.next(deleteJob));
+        }
 
         StateMachine stateMachine = StateMachine.Builder.create(this, "EksBulkImportStateMachine")
-                .definitionBody(DefinitionBody.fromChainable(
-                        CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
-                                .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
-                                        .next(Choice.Builder.create(this, "JobStatusDecision").build()
-                                                .when(Condition.or(
-                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_FINISHED),
-                                                        Condition.stringEquals("$.jobStatus.Item.LastUpdateType.S", DynamoDBIngestJobTracker.UPDATE_TYPE_ADDED_FILES)),
-                                                        CustomState.Builder.create(this, "DeleteDriverPod")
-                                                                .stateJson(deleteDriverPodState).build()
-                                                                .next(CustomState.Builder.create(this, "DeleteJob")
-                                                                        .stateJson(deleteJobState).build()))
-                                                .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                                        .create(this, "FailedJobState").cause("Spark job failed").build()))))))
+                .definitionBody(DefinitionBody.fromChainable(definition))
                 .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
 
