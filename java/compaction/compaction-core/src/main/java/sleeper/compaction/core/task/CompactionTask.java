@@ -203,6 +203,7 @@ public class CompactionTask {
                 throw e;
             } catch (Exception e) {
                 if (Thread.currentThread().isInterrupted()) {
+                    LOGGER.warn("Compaction task interrupted, terminating");
                     throw new RuntimeException(e);
                 }
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
