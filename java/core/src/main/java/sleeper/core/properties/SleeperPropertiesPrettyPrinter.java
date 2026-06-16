@@ -131,12 +131,11 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         }
         String value = properties.get(property);
         if (value != null) {
-            if ((value.equals(property.getDefaultValue())) ||
-                    (property.getDefaultProperty() != null && value.equals(property.getDefaultProperty().getDefaultValue()))) {
-                //if (!properties.isSet(property)) {
+            if (value.equals(property.getDefaultValue()) ||
+                    property.getDefaultProperty() != null && value.equals(property.getDefaultProperty().getDefaultValue())) {
                 println("# (default value shown below, uncomment to set a value)");
-            }
-            if (printTemplate) {
+                print("# ");
+            } else if (printTemplate) {
                 print("# ");
             }
             printSetPropertyValue(property.getPropertyName(), value);

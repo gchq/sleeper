@@ -37,11 +37,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -272,8 +274,11 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private Stream<InstanceProperty> instancePropertiesWithDefaultValues() {
+        // List of exemptions, where they have a default property but neither it or the default are set
+        List<InstanceProperty> exemptions = List.of(ARTEFACTS_DEPLOYMENT_ID);
+
         return InstanceProperty.getAll().stream()
-                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+                .filter(property -> (property.getDefaultValue() != null || property.getDefaultProperty() != null) && !exemptions.contains(property));
     }
 
     private Stream<TableProperty> tablePropertiesWithDefaultValues() {
