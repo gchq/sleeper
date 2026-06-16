@@ -113,7 +113,7 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp" -c id=$INSTANCE_ID
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties "$CONFIGURATION_DIR/instance.properties"
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" \
-    -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" \
+    -c id=$INSTANCE_ID -c configurationDir="$CONFIGURATION_DIR" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 ```
 
@@ -133,7 +133,7 @@ cdk deploy --all --app "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.
     -c id=$INSTANCE_ID
 "$SCRIPTS_DIR/deploy/uploadArtefacts.sh" --id $INSTANCE_ID --properties "$CONFIGURATION_DIR/instance.properties" --cdk-app demonstration
 cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sleeper.systemtest.cdk.SleeperDemonstrationCdkApp" \
-    -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" \
+    -c id=$INSTANCE_ID -c configurationDir="$CONFIGURATION_DIR" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 # Write some random data
 "$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID system-test
@@ -153,7 +153,7 @@ INSTANCE_ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c id=$INSTANCE_ID -c configurationdir="$CONFIGURATION_DIR" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$INSTANCE_ID -c configurationDir="$CONFIGURATION_DIR" -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
 
@@ -161,9 +161,9 @@ cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION
 
 When deploying via the CDK, choose one of two context variables to point at your configuration:
 
-* `-c propertiesfile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
+* `-c propertiesFile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
   `tags.properties` are read; table properties are not loaded.
-* `-c configurationdir=<path>` — the path to the root configuration directory. The whole directory structure is read including `instance.properties` and `table.properties`. Passing the `instance.properties` file path here also works — it falls back to the directory
+* `-c configurationDir=<path>` — the path to the root configuration directory. The whole directory structure is read including `instance.properties` and `table.properties`. Passing the `instance.properties` file path here also works — it falls back to the directory
   containing it. For a full description of what can be defined in the directory, refer to the configuration folder structure in the
    [instant configuration documentation](./instance-configuration.md#configuration-folder-structure).
 
