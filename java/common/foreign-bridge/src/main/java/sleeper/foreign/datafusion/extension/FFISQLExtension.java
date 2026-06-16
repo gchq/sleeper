@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign;
+package sleeper.foreign.datafusion.extension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 /**
- * The file output data that the native code will populate.
+ * Defines data required for the SQL in queries.
  * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
- * the fields must match exactly.
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/query_extensions.rs. The order and
+ * types
+ * of the fields must match exactly.
  */
-@SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class FFIFileResult extends Struct {
-    public final Struct.size_t rows_read = new Struct.size_t();
-    public final Struct.size_t rows_written = new Struct.size_t();
+@SuppressWarnings("checkstyle:membername")
+@SuppressFBWarnings("PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE")
+public class FFISQLExtension extends Struct {
+    /** The SQL query string to use for filtering a Sleeper query. */
+    public final Struct.UTF8StringRef sql = new Struct.UTF8StringRef();
 
-    public FFIFileResult(jnr.ffi.Runtime runtime) {
+    public FFISQLExtension(jnr.ffi.Runtime runtime) {
         super(runtime);
+    }
+
+    public FFISQLExtension(jnr.ffi.Runtime runtime, java.lang.String sql) {
+        this(runtime);
+        this.sql.set(sql);
     }
 }
