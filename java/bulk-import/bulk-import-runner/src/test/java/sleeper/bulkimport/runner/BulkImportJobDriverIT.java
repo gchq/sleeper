@@ -167,7 +167,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException {
+    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws Exception {
         // Given
         // - Write some data to be imported
         List<Row> rows = getRows();
@@ -202,7 +202,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws Exception {
         // Given
         // - Write some data to be imported
         List<Row> rows = getRowsIdenticalRowKey();
@@ -226,7 +226,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
         // Given
         // - Write some data to be imported
         List<Row> rows = getRows();
@@ -263,7 +263,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
         // Given
         // - Write some data to be imported
         List<Row> rows = getLotsOfRows();
@@ -330,7 +330,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws Exception {
         // Given
         // - Write some data to be imported
         List<Row> rows = getRows();
@@ -360,7 +360,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("getStreamOfBulkImportJobRunners")
-    void shouldImportDataWithNullableValueField(BulkImportJobRunner runner) throws IOException {
+    void shouldImportDataWithNullableValueField(BulkImportJobRunner runner) throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
@@ -556,7 +556,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    private void runJob(BulkImportJobRunner runner, BulkImportJob job) throws IOException {
+    private void runJob(BulkImportJobRunner runner, BulkImportJob job) throws Exception {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
