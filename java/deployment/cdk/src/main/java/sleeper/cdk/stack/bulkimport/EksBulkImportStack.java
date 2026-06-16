@@ -61,7 +61,6 @@ import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -93,6 +92,7 @@ import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROL
  * it creates a state machine which can run bulk import jobs on the cluster.
  */
 public final class EksBulkImportStack extends NestedStack {
+    private final Cluster bulkImportCluster;
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
@@ -157,7 +157,6 @@ public final class EksBulkImportStack extends NestedStack {
             kubectlProviderOptions.awscliLayer(LayerVersion.fromLayerVersionArn(this, "awsclilayer", awscliLayerArn));
         }
 
-        Cluster bulkImportCluster;
         if (bulkImportClusterType == EksClusterType.AUTOMODE) {
             bulkImportCluster = Cluster.Builder.create(this, "EksBulkImportCluster")
                     .clusterName(uniqueBulkImportId)
@@ -334,9 +333,6 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
-        cluster.grantClusterAdmin("ClusterAccessForInstanceAdmin",
-                Role.fromRoleName(this, "InstanceAdminRole", ManagedPoliciesStack.getAdminRoleName(properties)).getRoleArn());
-
         List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
         if (roles == null) {
             return;
@@ -345,6 +341,14 @@ public final class EksBulkImportStack extends NestedStack {
             cluster.grantClusterAdmin("ClusterAccessFor" + role,
                     Role.fromRoleName(this, "Role" + role, role).getRoleArn());
         }
+    }
+
+    public Cluster getCluster() {
+        return bulkImportCluster;
+    }
+
+    public Queue getBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 
     @SuppressWarnings("unchecked")
@@ -411,10 +415,6 @@ public final class EksBulkImportStack extends NestedStack {
             }
             return str;
         };
-    }
-
-    public Queue getBulkImportJobQueue() {
-        return bulkImportJobQueue;
     }
 
     public static class JsonTypeToken extends TypeToken<Map<String, Object>> {

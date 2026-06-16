@@ -1852,55 +1852,6 @@
             ]
           }
         },
-        "EksBulkImportClusterClusterAccessForInstanceAdmin3263A3C6": {
-          "Type": "AWS::EKS::AccessEntry",
-          "Properties": {
-            "PrincipalArn": {
-              "Fn::Join": [
-                "",
-                [
-                  "arn:",
-                  {
-                    "Ref": "AWS::Partition"
-                  },
-                  ":iam::test-account:role/sleeper-admin-test-instance"
-                ]
-              ]
-            },
-            "ClusterName": {
-              "Ref": "EksBulkImportClusterCA73CFAF"
-            },
-            "AccessPolicies": [
-              {
-                "AccessScope": {
-                  "Type": "cluster"
-                },
-                "PolicyArn": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:",
-                      {
-                        "Ref": "AWS::Partition"
-                      },
-                      ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-                    ]
-                  ]
-                }
-              }
-            ],
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "EksBulkImport"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
         "BulkImportEKSJobStarter3F7F0618": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [

@@ -39,6 +39,7 @@ import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -46,10 +47,17 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class SleeperOptionalStacks {
 
-    private SleeperOptionalStacks() {
+    private final EksBulkImportStack eksBulkImportStack;
+
+    private SleeperOptionalStacks(EksBulkImportStack eksBulkImportStack) {
+        this.eksBulkImportStack = eksBulkImportStack;
     }
 
-    public static void create(
+    public Optional<EksBulkImportStack> getEksBulkImportStack() {
+        return Optional.ofNullable(eksBulkImportStack);
+    }
+
+    public static SleeperOptionalStacks create(
             Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         SleeperInstanceArtefacts artefacts = props.getArtefacts();
@@ -187,6 +195,8 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.KeepLambdaWarmStack)) {
             new KeepLambdaWarmStack(scope, "KeepLambdaWarmExecution", props, coreStacks, queryQueueStack);
         }
+
+        return new SleeperOptionalStacks(eksBulkImportStack);
     }
 
 }

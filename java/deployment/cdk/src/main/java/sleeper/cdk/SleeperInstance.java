@@ -23,6 +23,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
+import sleeper.cdk.stack.bulkimport.BulkImportEksAdminAccessStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -108,10 +109,12 @@ public class SleeperInstance {
      */
     public static SleeperInstance create(Stack stack, SleeperInstanceProps props) {
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(stack, props);
-        SleeperOptionalStacks.create(stack, props, coreStacks);
+        SleeperOptionalStacks optionalStacks = SleeperOptionalStacks.create(stack, props, coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         coreStacks.createRoles();
+        optionalStacks.getEksBulkImportStack().ifPresent(eks -> new BulkImportEksAdminAccessStack(
+                stack, "BulkImportEKSAdminAccess", eks.getCluster(), coreStacks.getRoles().instanceAdmin()));
         // Only write properties after CDK-defined properties are set
         new PropertiesStack(stack, "Properties", props.getInstanceProperties(), props.getArtefacts(), coreStacks);
         return new SleeperInstance(props.getInstanceProperties(), coreStacks);
