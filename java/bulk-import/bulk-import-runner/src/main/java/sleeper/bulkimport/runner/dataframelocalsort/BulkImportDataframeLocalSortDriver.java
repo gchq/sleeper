@@ -42,7 +42,7 @@ public class BulkImportDataframeLocalSortDriver {
     private BulkImportDataframeLocalSortDriver() {
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileReferences);
     }
 

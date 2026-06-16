@@ -39,7 +39,7 @@ public class TestConsoleInput {
             String prompt = invocation.getArgument(0);
             out.println(prompt);
             if (nextPrompts.isEmpty()) {
-                throw new IllegalStateException("User was prompted when all specified prompts were exhausted");
+                throw new IllegalStateException("User was prompted when all specified prompts were exhausted, prompt was: " + prompt);
             }
             return nextPrompts.poll();
         });

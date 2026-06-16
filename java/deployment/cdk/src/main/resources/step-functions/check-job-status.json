@@ -1,0 +1,13 @@
+{
+  "Type": "Task",
+  "Resource": "arn:aws:states:::aws-sdk:dynamodb:getItem",
+  "Parameters": {
+    "TableName": "table-name-placeholder",
+    "Key": {
+      "JobId": {
+        "S.$": "$.job.id"
+      }
+    }
+  },
+  "ResultPath": "$.jobStatus"
+}

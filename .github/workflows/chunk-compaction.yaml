@@ -41,6 +41,8 @@ on:
       - 'java/core/**'
       - 'java/common/foreign-bridge/**'
       - 'java/common/arrow/**'
+      - 'java/query/query-datafusion/**'
+      - 'java/query/query-core/**'
 
 jobs:
   chunk-workflow:

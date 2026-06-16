@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.35.4-SNAPSHOT</version>
+    <version>0.36.1-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -94,7 +94,7 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.35.0</protobuf.version>
+        <protobuf.version>4.35.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
@@ -170,7 +170,7 @@
         <jline.version>4.1.3</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-10</zstd-jni.version>
+        <zstd-jni.version>1.5.7-11</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -190,10 +190,10 @@
         <google.http-client.version>2.1.0</google.http-client.version>
         <google.grpc.version>1.82.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.258.1</cdk.version>
+        <cdk.version>2.259.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
-        <jsii.version>1.134.0</jsii.version>
+        <jsii.version>1.135.0</jsii.version>
         <gson.version>2.14.0</gson.version>
         <slf4j.version>2.0.18</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
@@ -211,7 +211,7 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.15.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.78.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.79.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -466,6 +466,11 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>sfn</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>eks</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <dependency>

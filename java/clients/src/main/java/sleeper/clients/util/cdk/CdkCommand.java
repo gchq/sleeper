@@ -31,8 +31,8 @@ public record CdkCommand(List<String> command, List<String> arguments) {
                 .build();
     }
 
-    public static CdkCommand deployPropertiesChange(Path propertiesFile) {
-        return builder().deploy().propertiesFile(propertiesFile).build();
+    public static CdkCommand deployPropertiesChange(Path configurationDirectory) {
+        return builder().deploy().configurationDirectory(configurationDirectory).build();
     }
 
     public static CdkCommand deploySystemTestStandalone(Path propertiesFile) {
@@ -63,6 +63,10 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
     }
 
+    public CdkCommand withConfigurationDirectory(Path configurationDirectory) {
+        return builder().command(command).configurationDirectory(configurationDirectory).arguments(arguments).build();
+    }
+
     public static final class Builder {
         private List<String> command;
         private List<String> arguments = new ArrayList<>();
@@ -90,11 +94,15 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         }
 
         public Builder propertiesFile(Path propertiesFile) {
-            return context("propertiesfile", propertiesFile.toString());
+            return context("propertiesFile", propertiesFile.toString());
+        }
+
+        public Builder configurationDirectory(Path configurationDirectory) {
+            return context("configurationDir", configurationDirectory.toString());
         }
 
         public Builder ensureNewInstance(boolean ensureNewInstance) {
-            return context("newinstance", ensureNewInstance);
+            return context("newInstance", ensureNewInstance);
         }
 
         public Builder skipVersionCheck(boolean skipVersionCheck) {
