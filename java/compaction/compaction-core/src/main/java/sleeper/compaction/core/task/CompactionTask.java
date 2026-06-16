@@ -178,6 +178,10 @@ public class CompactionTask {
             message.deleteFromQueue();
             return false;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
             LOGGER.error("Failed preparing compaction job, putting job back on queue", e);
             failureTracker.incrementConsecutiveFailures();
             message.returnToQueue();
@@ -198,6 +202,9 @@ public class CompactionTask {
                 message.deleteFromQueue();
                 throw e;
             } catch (Exception e) {
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new RuntimeException(e);
+                }
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 failureTracker.incrementConsecutiveFailures();
                 message.returnToQueue();
@@ -208,6 +215,9 @@ public class CompactionTask {
             jobTracker.jobFailed(message.getJob()
                     .failedEventBuilder(timeSupplier.get())
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
+            if (Thread.currentThread().isInterrupted()) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -223,6 +233,9 @@ public class CompactionTask {
             failureTracker.resetConsecutiveFailures();
             idleTimeTracker.setLastActiveTime(summary.getFinishTime());
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw e;
+            }
             if (e.getCause() instanceof FileNotFoundException || e.getCause() instanceof FileReferenceNotAssignedToJobException) {
                 LOGGER.error("Found invalid job while committing to state store, deleting from queue", e);
                 message.deleteFromQueue();

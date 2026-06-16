@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_JITTER_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES;
@@ -195,6 +196,28 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Then
             assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Stop if interrupted")
+    class StopIfInterrupted {
+
+        @Test
+        void shouldTerminateIfInterruptedDuringCompaction() throws Exception {
+            // Given
+            createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When / Then
+            assertThatThrownBy(() -> runTask(request -> {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(new InterruptedException());
+            })).isInstanceOf(RuntimeException.class);
+            assertThat(consumedJobs).as("interrupted job should not be deleted from queue").isEmpty();
+            assertThat(jobsReturnedToQueue).as("interrupted job should not be explicitly returned to queue").isEmpty();
+            assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
+            Thread.interrupted(); // clear interrupt flag set during test
         }
     }
 
