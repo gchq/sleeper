@@ -94,15 +94,15 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         }
 
         public Builder propertiesFile(Path propertiesFile) {
-            return context("propertiesfile", propertiesFile.toString());
+            return context("propertiesFile", propertiesFile.toString());
         }
 
         public Builder configurationDirectory(Path configurationDirectory) {
-            return context("configurationdir", configurationDirectory.toString());
+            return context("configurationDir", configurationDirectory.toString());
         }
 
         public Builder ensureNewInstance(boolean ensureNewInstance) {
-            return context("newinstance", ensureNewInstance);
+            return context("newInstance", ensureNewInstance);
         }
 
         public Builder skipVersionCheck(boolean skipVersionCheck) {

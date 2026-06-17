@@ -63,6 +63,7 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
@@ -328,6 +329,14 @@ public class SleeperCoreStacks {
         stateStoreStacks.grantReadAllSnapshotsTable(grantee);
         compactionTracker.grantWriteJobEvent(grantee);
         ingestTracker.grantWriteJobEvent(grantee);
+    }
+
+    public void grantReadIngestJobLookup(IGrantable grantee) {
+        ingestTracker.grantReadJobLookup(grantee);
+    }
+
+    public Optional<String> getIngestJobLookupTableName(String instanceId) {
+        return ingestTracker.getJobLookupTableName(instanceId);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
