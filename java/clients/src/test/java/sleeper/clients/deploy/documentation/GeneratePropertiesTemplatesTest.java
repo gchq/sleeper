@@ -160,7 +160,7 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/instance.properties");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
+        void shouldGenerateEmptyInstanceProperties() {
             assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
     }
