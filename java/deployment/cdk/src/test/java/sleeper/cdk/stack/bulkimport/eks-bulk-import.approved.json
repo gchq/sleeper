@@ -2682,7 +2682,7 @@
             "Handler": "index.isComplete",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
+              "S3Key": "bfbae86c81618a2c2c677e2a4efb41c4825b00c39abc4536b486d92e99b944c8.zip"
             },
             "Layers": [
               {
@@ -3135,7 +3135,7 @@
             "Handler": "index.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
+              "S3Key": "bfbae86c81618a2c2c677e2a4efb41c4825b00c39abc4536b486d92e99b944c8.zip"
             },
             "Layers": [
               {
