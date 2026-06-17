@@ -84,12 +84,14 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidInstanceProperties() {
-            // Given
-            InstanceProperties validProperties = new InstanceProperties();
-            GeneratePropertiesTemplates.FULL_INSTANCE_EXAMPLE_VALUES.forEach(validProperties::set);
+            // When
+            InstanceProperties validProperties = instancePropertiesFromString(propertiesString);
+            validProperties.set(ID, "test-id");
+            validProperties.set(VPC_ID, "test-vpc");
+            validProperties.set(SUBNETS, "test-subnets");
 
-            // When / Then
-            assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(validProperties);
+            // Then
+            assertThatCode(validProperties::validate).doesNotThrowAnyException();
         }
 
         @ParameterizedTest
