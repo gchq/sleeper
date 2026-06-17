@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign;
+package sleeper.foreign.datafusion.extension;
 
 import jnr.ffi.util.EnumMapper;
 
 /**
- * Specifies the contents of an FFIElement.
+ * Specifies the type of an extension.
  * <p>
- * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
- * the fields must match exactly.
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this enum (variants, ordinal values, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/extensions.rs. The order and types
+ * must match exactly.
  */
-public enum FFIRowKeyValueType implements EnumMapper.IntegerEnum {
-    Int32(1),
-    Int64(2),
-    String(3),
-    ByteArray(4),
-    Empty(5);
+public enum FFIExtensionVariant implements EnumMapper.IntegerEnum {
+    SQL(1);
 
     private final int value;
 
-    FFIRowKeyValueType(int value) {
+    FFIExtensionVariant(int value) {
         this.value = value;
     }
 

@@ -27,10 +27,10 @@ import java.util.Objects;
 
 /**
  * Provides a high level interface to foreign function code.
- *
+ * <p>
  * If this class is shared between threads, external synchronisation must be
  * used.
- *
+ * <p>
  * Clients should create an instance of this class in a <a
  * href=
  * "https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">

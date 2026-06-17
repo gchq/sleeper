@@ -108,9 +108,10 @@ public class SleeperPropertiesValidationTest {
     @DisplayName("Validate instance properties")
     @Nested
     class ValidateInstanceProperties {
+
         @Test
         void shouldFailValidationIfRequiredPropertyIsMissing() {
-            // Given - no account set
+            // Given
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.set(JARS_BUCKET, "jars");
             instanceProperties.set(VERSION, "0.1");
