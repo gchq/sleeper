@@ -20,11 +20,21 @@ use sleeper_core::{
     filter_aggregation_config::aggregate::Aggregate, run_compaction,
     sleeper_context::SleeperContext,
 };
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{
+    collections::HashMap,
+    path::Path,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize},
+    },
+};
 use tempfile::tempdir;
 use test_log::test;
 use test_util::*;
 use url::Url;
+
+static CALLBACK_CALLED: AtomicBool = AtomicBool::new(false);
+static CALLBACK_VALUE: AtomicUsize = AtomicUsize::new(0);
 
 fn create_output_for_compaction(output_path: &Url) -> OutputType {
     OutputType::File {
@@ -60,6 +70,57 @@ async fn should_merge_two_files() -> Result<(), Error> {
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
     assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
+    Ok(())
+}
+
+extern "C" fn progress_callback(rows_read: usize) {
+    // This function pointer is created inside the test, so it has access to callback_state
+    // We use thread-local storage or a static to communicate across the FFI boundary
+    // For now, we'll use a workaround with a global that's safe in test context
+    CALLBACK_VALUE.store(rows_read, std::sync::atomic::Ordering::SeqCst);
+    CALLBACK_CALLED.store(true, std::sync::atomic::Ordering::SeqCst);
+}
+
+#[test(tokio::test)]
+async fn should_call_progress_callback_during_compaction() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
+    write_file_of_ints(&file_1, "key", vec![1, 3])?;
+    write_file_of_ints(&file_2, "key", vec![2, 4])?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["key"]))
+        .region(SleeperRegion::new(single_int_range("key", 0, 5)))
+        .output(create_output_for_compaction(&output))
+        .build()?;
+
+    // When
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        Some(progress_callback),
+    )
+    .await?;
+
+    // Then
+    assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
+    assert_eq!([result.rows_read, result.rows_written], [4, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
+    assert!(
+        CALLBACK_CALLED.load(std::sync::atomic::Ordering::SeqCst),
+        "progress callback should have been called"
+    );
+    assert_eq!(
+        CALLBACK_VALUE.load(std::sync::atomic::Ordering::SeqCst),
+        4,
+        "callback should have reported 4 rows read"
+    );
     Ok(())
 }
 
