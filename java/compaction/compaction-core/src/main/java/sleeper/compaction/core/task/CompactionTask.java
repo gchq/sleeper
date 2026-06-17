@@ -177,11 +177,10 @@ public class CompactionTask {
             LOGGER.error("Found invalid job while waiting for input file assignment, deleting from queue", e);
             message.deleteFromQueue();
             return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
             LOGGER.error("Failed preparing compaction job, putting job back on queue", e);
             failureTracker.incrementConsecutiveFailures();
             message.returnToQueue();
@@ -204,7 +203,7 @@ public class CompactionTask {
             } catch (Exception e) {
                 if (Thread.currentThread().isInterrupted()) {
                     LOGGER.warn("Compaction task interrupted, terminating");
-                    throw new RuntimeException(e);
+                    throw e;
                 }
                 LOGGER.error("Failed processing compaction job, putting job back on queue", e);
                 failureTracker.incrementConsecutiveFailures();
