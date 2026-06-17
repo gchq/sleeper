@@ -88,7 +88,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
         // Given
-        int iterations = Integer.getInteger("sleeper.test.compaction.stress.iterations", 1);
+        int iterations = Integer.getInteger("sleeper.test.compaction.stress.iterations", 1000);
         Schema schema = createSchemaWithKey("key", new StringType());
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());

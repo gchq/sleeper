@@ -99,7 +99,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         Future<Void> pollerFuture = null;
         IOException compactionException = null;
         try {
+            // Create new FFI context as poller runs on different thread
             pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
             // Guarantee at least one update
@@ -121,6 +127,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                     LocalDateTime.now());
             return result;
+
         } catch (RejectedExecutionException e) {
             compactionException = new IOException(e);
         } catch (IOException e) {
@@ -240,27 +247,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
-    private Optional<Long> getCompactionRowsRead(String compactionJobId) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
-        FFIFileResult rowData = new FFIFileResult(runtime);
-
-        int result = context.getFunctions().get_compaction_rows_read(context, compactionJobId, rowData);
-
-        /*
-         * The native function returns 0 on successful read of a row count, -1 if no data was available for the given
-         * job ID. This is indicated in Java with an empty return value.
-         * All other values are error codes.
-         */
-        if (result == 0) {
-            return Optional.of(rowData.rows_read.get());
-        } else if (result == -1) {
-            return Optional.empty();
-        } else {
-            throw new IOException("Failed reading compaction row progress count, return code " + result);
-        }
-    }
-
-    private class ProgressPoller implements Callable<Void> {
+    private static class ProgressPoller implements Callable<Void> {
         private final String jobID;
         private final Consumer<Long> progressCallback;
 
@@ -271,11 +258,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
         @Override
         public Void call() {
-            try {
+            try (FFIContext<DataFusionCompactionFunctions> ffiContext = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class)) {
                 while (!Thread.currentThread().isInterrupted()) {
-                    Thread.sleep(5000);
+                    Thread.sleep(5000000);
 
-                    Optional<Long> currentProgress = getCompactionRowsRead(jobID);
+                    Optional<Long> currentProgress = getCompactionRowsRead(jobID, ffiContext);
                     currentProgress.ifPresent(progressCallback);
                 }
             } catch (InterruptedException e) {
@@ -285,6 +272,27 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 throw new UncheckedIOException(e);
             }
             return null;
+        }
+
+        private Optional<Long> getCompactionRowsRead(String compactionJobId, FFIContext<DataFusionCompactionFunctions> ffiContext) throws IOException {
+            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(ffiContext.getFunctions());
+            FFIFileResult rowData = new FFIFileResult(runtime);
+
+            int result = ffiContext.getFunctions().get_compaction_rows_read(ffiContext, compactionJobId, rowData);
+
+            /*
+             * The native function returns 0 on successful read of a row count, -1 if no data was available for the
+             * given
+             * job ID. This is indicated in Java with an empty return value.
+             * All other values are error codes.
+             */
+            if (result == 0) {
+                return Optional.of(rowData.rows_read.get());
+            } else if (result == -1) {
+                return Optional.empty();
+            } else {
+                throw new IOException("Failed reading compaction row progress count, return code " + result);
+            }
         }
     }
 }
