@@ -20,7 +20,7 @@ import jnr.ffi.Struct;
 
 /**
  * The file output data that the native code will populate.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.

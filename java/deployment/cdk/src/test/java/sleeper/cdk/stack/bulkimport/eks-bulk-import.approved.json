@@ -32,6 +32,9 @@
         "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn": {
           "Type": "String"
         },
+        "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Ref": {
+          "Type": "String"
+        },
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn": {
           "Type": "String"
         },
@@ -65,6 +68,14 @@
               "Arn"
             ]
           }
+        },
+        "TestInstanceEksBulkImportEksBulkImportClusterAB691C03Arn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "EksBulkImportCluster24C73662",
+              "Arn"
+            ]
+          }
         }
       },
       "Resources": {
@@ -81,7 +92,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
@@ -413,6 +424,26 @@
                   ],
                   "Effect": "Allow",
                   "Resource": "*"
+                },
+                {
+                  "Action": "dynamodb:GetItem",
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                          },
+                          "/index/*"
+                        ]
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -2065,7 +2096,7 @@
               "Fn::Join": [
                 "",
                 [
-                  "{\"StartAt\":\"RunSparkJob\",\"States\":{\"RunSparkJob\":{\"Next\":\"SuccessDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:runJob.sync\",\"Parameters\":{\"ClusterName\":\"",
+                  "{\"StartAt\":\"RunSparkJob\",\"States\":{\"RunSparkJob\":{\"Next\":\"CheckJobStatus\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:runJob.sync\",\"Parameters\":{\"ClusterName\":\"",
                   {
                     "Ref": "EksBulkImportCluster24C73662"
                   },
@@ -2083,7 +2114,11 @@
                       "Endpoint"
                     ]
                   },
-                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"SuccessDecision\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.jobResult.succeeded\",\"NumericEquals\":1,\"Next\":\"DeleteDriverPod\"}],\"Default\":\"CreateErrorMessage\"},\"CreateErrorMessage\":{\"Type\":\"Pass\",\"Parameters\":{\"errorMessage.$\":\"States.Format(\u0027Bulk import job {} failed. Check the pod logs for details.\u0027, $.job.id)\"},\"Next\":\"AlertUserFailedSparkSubmit\"},\"AlertUserFailedSparkSubmit\":{\"Next\":\"FailedJobState\",\"Type\":\"Task\",\"Resource\":\"arn:",
+                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"CheckJobStatus\":{\"Next\":\"JobStatusDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::aws-sdk:dynamodb:getItem\",\"Parameters\":{\"TableName\":\"",
+                  {
+                    "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Ref"
+                  },
+                  "\",\"Key\":{\"JobId\":{\"S.$\":\"$.job.id\"}}},\"ResultPath\":\"$.jobStatus\"},\"JobStatusDecision\":{\"Type\":\"Choice\",\"Choices\":[{\"Or\":[{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"finished\"},{\"Variable\":\"$.jobStatus.Item.LastUpdateType.S\",\"StringEquals\":\"addedFiles\"}],\"Next\":\"DeleteDriverPod\"}],\"Default\":\"CreateErrorMessage\"},\"CreateErrorMessage\":{\"Type\":\"Pass\",\"Parameters\":{\"errorMessage.$\":\"States.Format(\u0027Bulk import job {} failed. Check the pod logs for details.\u0027, $.job.id)\"},\"Next\":\"AlertUserFailedSparkSubmit\"},\"AlertUserFailedSparkSubmit\":{\"Next\":\"FailedJobState\",\"Type\":\"Task\",\"Resource\":\"arn:",
                   {
                     "Ref": "AWS::Partition"
                   },
@@ -2370,7 +2405,7 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
@@ -2636,7 +2671,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "isComplete handler for EKS cluster resource provider",
             "Timeout": 60,
             "Environment": {
@@ -2647,7 +2682,7 @@
             "Handler": "index.isComplete",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
+              "S3Key": "bfbae86c81618a2c2c677e2a4efb41c4825b00c39abc4536b486d92e99b944c8.zip"
             },
             "Layers": [
               {
@@ -2689,7 +2724,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - isComplete (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -2946,7 +2981,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -3089,7 +3124,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "onEvent handler for EKS cluster resource provider",
             "Timeout": 60,
             "Environment": {
@@ -3100,7 +3135,7 @@
             "Handler": "index.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "f60efe59790b96fb8aeca9cfc9916538f14b340c680b9bcbfa6ca4465a156bcd.zip"
+              "S3Key": "bfbae86c81618a2c2c677e2a4efb41c4825b00c39abc4536b486d92e99b944c8.zip"
             },
             "Layers": [
               {
@@ -3132,7 +3167,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onTimeout (TestInstance/EksBulkImport/@aws-cdk--aws-eks.ClusterResourceProvider/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -3660,7 +3695,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/EksBulkImport/@aws-cdk--aws-eks.KubectlProvider/Provider)",
             "VpcConfig": {
               "SecurityGroupIds": [

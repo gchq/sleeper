@@ -53,8 +53,7 @@ public class JobsFinishedStatistics {
     }
 
     public boolean isAllFinishedOneRunEach(int expectedJobs) {
-        return numJobs == expectedJobs
-                && numFinishedJobs == expectedJobs
+        return isAllFinished(expectedJobs)
                 && numJobRuns == expectedJobs
                 && numFinishedJobRuns == expectedJobs;
     }
@@ -64,6 +63,21 @@ public class JobsFinishedStatistics {
             return false;
         }
         return isAllFinishedOneRunEach(numJobs);
+    }
+
+    public boolean isAllFinished(int expectedJobs) {
+        return numJobs == expectedJobs
+                && numFinishedJobs == expectedJobs;
+    }
+
+    public boolean isAllFinishedWithMinimumJobsAndMaxRetries(int minimumJobs, int maxRetries) {
+        if (numJobs < minimumJobs) {
+            return false;
+        }
+        if (numJobRuns > numJobs + maxRetries) {
+            return false;
+        }
+        return isAllFinished(numJobs);
     }
 
     public boolean isAverageRunRowsPerSecondInRange(double minRate, double maxRate) {

@@ -63,6 +63,7 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
@@ -330,6 +331,14 @@ public class SleeperCoreStacks {
         ingestTracker.grantWriteJobEvent(grantee);
     }
 
+    public void grantReadIngestJobLookup(IGrantable grantee) {
+        ingestTracker.grantReadJobLookup(grantee);
+    }
+
+    public Optional<String> getIngestJobLookupTableName(String instanceId) {
+        return ingestTracker.getJobLookupTableName(instanceId);
+    }
+
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
     // This means SpotBugs complains if we pass that role into attachToRole.
     // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
@@ -366,6 +375,10 @@ public class SleeperCoreStacks {
 
     public IGrantable getPurgeQueuesPolicyForGrants() {
         return policiesStack.getPurgeQueuesPolicyForGrants();
+    }
+
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return policiesStack.getAdminPolicyForGrants();
     }
 
     public void createRoles() {

@@ -22,6 +22,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -67,13 +68,13 @@ public class SleeperInstanceConfiguration {
     /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file
-     * @param  fromTemplates          the settings to load the templates
-     * @return                        the instance configuration
+     * @param  configurationPath the path to the local configuration instance properties file
+     * @param  fromTemplates     the settings to load the templates
+     * @return                   the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingTables(
-            Path instancePropertiesPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
-        SleeperInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
+            Path configurationPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
+        SleeperInstanceConfiguration configuration = fromLocalConfigurationDirectory(configurationPath);
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -85,15 +86,15 @@ public class SleeperInstanceConfiguration {
      * Creates a configuration for a new instance, setting instance properties from templates if not
      * specified.
      *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file, or null if not
-     *                                present
-     * @param  templatesDir           the directory to load the templates from
-     * @return                        the instance configuration
+     * @param  configurationPath the path to the local configuration instance properties file, or null if not
+     *                           present
+     * @param  templatesDir      the directory to load the templates from
+     * @return                   the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingInstance(
-            Path instancePropertiesPath, Path templatesDir) {
-        if (instancePropertiesPath != null) {
-            return fromLocalConfiguration(instancePropertiesPath);
+            Path configurationPath, Path templatesDir) {
+        if (configurationPath != null) {
+            return fromLocalConfigurationDirectory(configurationPath);
         } else {
             return new SleeperInstanceConfiguration(SleeperInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir),
                     List.of());
@@ -101,15 +102,39 @@ public class SleeperInstanceConfiguration {
     }
 
     /**
-     * Creates an instance configuration from local files.
+     * Creates an instance configuration from a local instance.properties file. Only that file and an adjacent
+     * tags.properties are read - table properties are not loaded. To load the full configuration from a directory
+     * structure (instance.properties, tags.properties, table.properties, schema.json, splits.txt, and any tables
+     * under a tables/ subdirectory), use {@link #fromLocalConfigurationDirectory(Path)}.
      *
-     * @param  instancePropertiesPath the path to the local configuration instance properties file
+     * @param  instancePropertiesFile the path to the instance.properties file
      * @return                        the instance configuration
      */
-    public static SleeperInstanceConfiguration fromLocalConfiguration(Path instancePropertiesPath) {
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesPath);
+    public static SleeperInstanceConfiguration fromLocalConfiguration(Path instancePropertiesFile) {
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesFile);
+        return SleeperInstanceConfiguration.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(List.of()).build();
+    }
+
+    /**
+     * Creates an instance configuration from a local configuration directory. All configuration files defined by the
+     * directory structure are read: instance.properties, tags.properties, table.properties, schema.json, splits.txt,
+     * and any tables under a tables/ subdirectory. If the given path points to a file rather than a directory (e.g.
+     * the instance.properties file itself), the configuration is loaded from the directory containing that file.
+     *
+     * @param  configurationDirectory the path to the configuration directory, or to a file within it
+     * @return                        the instance configuration
+     */
+    public static SleeperInstanceConfiguration fromLocalConfigurationDirectory(Path configurationDirectory) {
+        Path directory = configurationDirectory;
+        if (!Files.isDirectory(directory)) {
+            Path parent = directory.getParent();
+            directory = parent != null ? parent : Path.of(".");
+        }
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidationFromDirectory(directory);
         List<TableProperties> tableProperties = LoadLocalProperties
-                .loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesPath)
+                .loadTablesFromDirectoryNoValidation(instanceProperties, directory)
                 .collect(Collectors.toUnmodifiableList());
         return SleeperInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)

@@ -15,7 +15,8 @@
 * limitations under the License.
 */
 use crate::objects::{
-    FFIBytes, ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion,
+    FFIBytes, extensions::FFIExtension, ffi_common_config::FFICommonConfig,
+    sleeper_region::FFISleeperRegion,
 };
 use color_eyre::eyre::bail;
 use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
@@ -43,6 +44,10 @@ pub struct FFILeafPartitionQueryConfig {
     pub requested_value_fields: *const FFIBytes,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
+    /// Length of extension array
+    pub extensions_len: usize,
+    /// Array of optional extensions
+    pub extensions: *const FFIExtension,
 }
 
 impl FFILeafPartitionQueryConfig {
