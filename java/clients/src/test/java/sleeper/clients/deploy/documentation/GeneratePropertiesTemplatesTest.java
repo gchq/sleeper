@@ -45,10 +45,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -88,9 +86,14 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidInstanceProperties() {
-            // When / Then
-            assertThat(instancePropertiesFromString(propertiesString).get(SNAPSHOT_CREATION_BATCH_SIZE))
-                    .isEqualTo("1");
+            // When
+            InstanceProperties validProperties = instancePropertiesFromString(propertiesString);
+            validProperties.set(ID, "test-id");
+            validProperties.set(VPC_ID, "test-vpc");
+            validProperties.set(SUBNETS, "test-subnets");
+
+            // Then
+            assertThatCode(validProperties::validate).doesNotThrowAnyException();
         }
 
         @ParameterizedTest
@@ -159,10 +162,8 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/instance.properties");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .getBoolean(RETAIN_LOGS_AFTER_DESTROY)).isTrue();
-
+        void shouldGenerateEmptyInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
     }
 
@@ -266,7 +267,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        return new InstanceProperties(loadProperties(propertiesString));
+        return InstanceProperties.createWithoutValidation(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {

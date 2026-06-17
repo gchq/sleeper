@@ -27,8 +27,7 @@ public class SleeperPropertiesValidationReporter {
     private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
 
     /**
-     * Records that the given property value is invalid. If reporter source was set from a file, additional validation
-     * is included to exclude null values being invalid properties.
+     * Records that the given property value is invalid.
      *
      * @param property the property
      * @param value    the value
