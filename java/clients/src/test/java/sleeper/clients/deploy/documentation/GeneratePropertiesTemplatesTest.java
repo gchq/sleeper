@@ -47,8 +47,9 @@ import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYME
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
@@ -140,9 +141,15 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // When
+            // Given
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+            assertThat(TableProperty.getAll().stream()
+                    .allMatch(presentProperty -> tableProperties.isSet(presentProperty) == Boolean.FALSE))
+                    .isTrue();
+
+            // When
             tableProperties.setSchema(createSchemaWithKey("key"));
+            setDefaultTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -178,6 +185,8 @@ class GeneratePropertiesTemplatesTest {
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
             tableProperties.setSchema(createSchemaWithKey("key"));
 
+            setDefaultTableProperties(tableProperties);
+
             // Then
             assertThatCode(tableProperties::validate)
                     .doesNotThrowAnyException();
@@ -188,13 +197,6 @@ class GeneratePropertiesTemplatesTest {
             assertThat(propertiesString)
                     .doesNotContain("sleeper.table.parquet.compression.codec");
         }
-
-        @Test
-        void shouldIncludeSpecificallySetProperty() {
-            assertThat(tablePropertiesFromString(propertiesString)
-                    .get(FILTERING_CONFIG))
-                    .isEqualTo("ageOff(timestamp,3600000)");
-        }
     }
 
     @Nested
@@ -203,13 +205,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
+        void shouldGenerateEmptyInstanceProperties() {
             // When
             InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
         }
 
         @Test
@@ -238,9 +239,15 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // When
+            // Given
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+            assertThat(TableProperty.getAll().stream()
+                    .allMatch(presentProperty -> tableProperties.isSet(presentProperty) == Boolean.FALSE))
+                    .isTrue();
+
+            // When
             tableProperties.setSchema(createSchemaWithKey("key"));
+            setDefaultTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -285,5 +292,10 @@ class GeneratePropertiesTemplatesTest {
     private Stream<TableProperty> tablePropertiesWithDefaultValues() {
         return TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+    }
+
+    private void setDefaultTableProperties(TableProperties tableProperties) {
+        tableProperties.set(TABLE_ID, "test-table-id");
+        tableProperties.set(TABLE_NAME, "test-table-name");
     }
 }
