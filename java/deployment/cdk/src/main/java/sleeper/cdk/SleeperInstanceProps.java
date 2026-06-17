@@ -181,17 +181,17 @@ public class SleeperInstanceProps {
                 .tableProperties(configuration.getTableProperties())
                 .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
-                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
+                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newInstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
                 .deployPaused(context.getBooleanOrDefault("deployPaused", false));
     }
 
     private static SleeperInstanceConfiguration loadConfiguration(CdkContext context) {
-        String propertiesFile = context.tryGetContext("propertiesfile");
-        String configurationDir = context.tryGetContext("configurationdir");
+        String propertiesFile = context.tryGetContext("propertiesFile");
+        String configurationDir = context.tryGetContext("configurationDir");
         if (propertiesFile != null && configurationDir != null) {
             throw new IllegalArgumentException(
-                    "Both 'propertiesfile' and 'configurationdir' context variables are set - specify exactly one");
+                    "Both 'propertiesFile' and 'configurationDir' context variables are set - specify exactly one");
         }
         if (propertiesFile != null) {
             return SleeperInstanceConfiguration.fromLocalConfiguration(Path.of(propertiesFile));
@@ -200,7 +200,7 @@ public class SleeperInstanceProps {
             return SleeperInstanceConfiguration.fromLocalConfigurationDirectory(Path.of(configurationDir));
         }
         throw new IllegalArgumentException(
-                "Either 'propertiesfile' or 'configurationdir' context variable must be set");
+                "Either 'propertiesFile' or 'configurationDir' context variable must be set");
     }
 
     public void prepareProperties(Stack stack, SleeperNetworking networking) {

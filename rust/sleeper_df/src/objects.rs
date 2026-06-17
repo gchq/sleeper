@@ -19,9 +19,11 @@ use sleeper_core::PartitionBound;
 use std::{ffi::c_uchar, fmt::Display, slice};
 
 pub mod aws_config;
+pub mod extensions;
 pub mod ffi_common_config;
 pub mod ffi_parquet_options;
 pub mod query;
+pub mod query_extensions;
 pub mod sleeper_region;
 
 /// Contains all output data from a file output operation.
