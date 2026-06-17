@@ -72,7 +72,7 @@ public class GeneratePropertiesTemplates {
             FILTERING_CONFIG, "ageOff(timestamp,3600000)",
             SPLIT_POINTS_FILE, "example/full/splits.txt");
 
-    private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
+    public static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
             BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key",
             DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000",
             LOGGING_LEVEL, "INFO",
