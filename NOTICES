@@ -653,6 +653,10 @@ cbindgen (https://github.com/mozilla/cbindgen)
 
 - Mozilla Public License Version 2.0
 
+uuid (https://github.com/uuid-rs/uuid)
+
+- Apache 2 License
+
 
 The build pipeline uses the following GitHub Actions from the marketplace.
 

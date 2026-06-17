@@ -28,7 +28,9 @@ use ::log::{error, warn};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
+use sleeper_core::{
+    CompletedOutput, ProgressCallback, run_compaction, run_query, stream_to_ffi_arrow_stream,
+};
 use std::ffi::{c_char, c_int};
 
 mod context;
@@ -46,6 +48,9 @@ mod unpack;
 ///
 /// The `output_data` field is an out parameter. It is assumed the caller has allocated valid
 /// memory at the address pointed to!
+///
+/// If callback is non-NULL, then it will be periodically called with the number of rows written
+/// as output from a compaction.
 ///
 /// The return value for this function gives the result for the compaction. *If an error code is returned,
 /// then the result of all other fields in the `output_data` field are
@@ -71,6 +76,8 @@ pub extern "C" fn native_compact(
     ctx_ptr: *const FFIContext,
     input_ptr: *mut FFICommonConfig,
     output_ptr: *mut FFIFileResult,
+    // Rust FFI includes explicit handling of nullable function pointers like this
+    callback_ptr: Option<ProgressCallback>,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -97,9 +104,11 @@ pub extern "C" fn native_compact(
     };
 
     // Run compaction
-    let result = context
-        .rt
-        .block_on(run_compaction(&details, &context.sleeper_context));
+    let result = context.rt.block_on(run_compaction(
+        &details,
+        &context.sleeper_context,
+        callback_ptr,
+    ));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_ptr.as_mut() } {

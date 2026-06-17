@@ -39,7 +39,6 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
-    // job_id can be NULL
     pub job_id: *const c_char,
     // If this field is NULL use defaults.
     pub aws_config: *const FFIAwsConfig,
@@ -89,6 +88,9 @@ impl FFICommonConfig {
         &self,
         file_output_enabled: bool,
     ) -> Result<CommonConfig<'a>, color_eyre::Report> {
+        if self.job_id.is_null() {
+            bail!("FFICommonConfig job_id is NULL, file output selected");
+        }
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }
@@ -140,12 +142,8 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
-        let job_id = unsafe { self.job_id.as_ref() }
-            .map(|p| unpack_string(p))
-            .transpose()?;
-
         CommonConfigBuilder::new()
-            .job_id(job_id)
+            .job_id(unpack_string(self.job_id)?)
             .aws_config(unpack_aws_config(self))
             .input_files(self.input_files()?)
             .input_files_sorted(self.input_files_sorted)
