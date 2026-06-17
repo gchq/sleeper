@@ -12,7 +12,7 @@
 # globally unique as it will be used to name AWS resources such as S3 buckets.
 # This property may be passed as an argument during deployment. If using using the Sleeper CDK app,
 # you can set the context variable "id". If using your own CDK app, you can set this directly.
-sleeper.id=set-automatically
+# sleeper.id=set-automatically
 
 # The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
 # using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
