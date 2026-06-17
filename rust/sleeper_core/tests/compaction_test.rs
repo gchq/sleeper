@@ -54,7 +54,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
@@ -83,7 +83,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
@@ -112,7 +112,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
@@ -150,7 +150,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(
@@ -191,7 +191,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(
@@ -241,7 +241,7 @@ async fn should_aggregate_ints() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(
@@ -288,7 +288,7 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert_eq!(
@@ -322,7 +322,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &SleeperContext::default()).await?;
+    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
     assert!(!Path::new(output.as_str()).try_exists()?);

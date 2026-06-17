@@ -57,6 +57,7 @@ pub type ProgressCallback = extern "C" fn(usize);
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
+/// # use std::sync::Arc;
 /// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_compaction, CommonConfig, CommonConfigBuilder,
 /// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
@@ -77,7 +78,7 @@ pub type ProgressCallback = extern "C" fn(usize);
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
-/// let result = run_compaction(&compaction_input, &SleeperContext::default(), None).await;
+/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -96,7 +97,7 @@ pub async fn run_compaction(
     let mut handle = None;
 
     if let Some(callback) = progress_callback.as_ref() {
-        let callback_clone = callback.clone();
+        let callback_clone = *callback;
         let job_id = config.job_id().clone();
         let context_clone = sleeper_context.clone();
         let task_token = token.clone();
@@ -105,10 +106,10 @@ pub async fn run_compaction(
             // loop until cancellation token is triggered
             loop {
                 tokio::select! {
-                    _ = task_token.cancelled() => {
+                    () = task_token.cancelled() => {
                         break;
                     }
-                    _ = sleep(Duration::from_secs(5)) => {
+                    () = sleep(Duration::from_secs(5)) => {
                         if let Some(row_count) = context_clone.get_compaction_rows_read(&job_id) {
                             callback_clone(row_count);
                         }
@@ -126,6 +127,14 @@ pub async fn run_compaction(
         token.cancel();
         let _ = handle.await;
     }
+
+    // Guarantee one progress update
+    if let Ok(rows) = &result
+        && let Some(callback) = progress_callback.as_ref()
+    {
+        callback(rows.rows_written);
+    }
+
     result
 }
 

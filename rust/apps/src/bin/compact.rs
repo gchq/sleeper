@@ -73,6 +73,10 @@ struct CmdLineArgs {
     filter_config: Option<String>,
 }
 
+extern "C" fn progress(rows: usize) {
+    println!("Compaction has read {rows} rows");
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     // Install coloured errors
@@ -170,10 +174,6 @@ async fn main() -> color_eyre::Result<()> {
         .build()?;
 
     let context = Arc::new(SleeperContext::default());
-
-    extern "C" fn progress(rows: usize) {
-        println!("Compaction has read {rows} rows");
-    }
 
     let result = run_compaction(&details, &context, Some(progress)).await?;
     info!(
