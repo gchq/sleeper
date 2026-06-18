@@ -148,33 +148,15 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeInstancePropertiesTemplate(Writer out) {
         InstanceProperties properties = new InstanceProperties();
-        TEMPLATE_INSTANCE_VALUES.forEach(properties::set);
-
-        Map<Boolean, List<InstanceProperty>> propertiesByIsSet = properties.getPropertiesIndex()
-                .getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate)
-                .collect(Collectors.groupingBy(properties::isSet));
-        List<InstanceProperty> templateProperties = propertiesByIsSet.get(true);
-        List<InstanceProperty> defaultProperties = propertiesByIsSet.get(false);
+        List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
 
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
         writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
         writer.println("#################################################################################");
         writer.println();
-        writer.println("############################");
-        writer.println("# Properties set by script #");
-        writer.println("############################");
-        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
-                templateProperties, InstancePropertyGroup.getAll(), writer)
-                .printGroupDetails(false)
-                .build().print(properties);
-        writer.println();
-        writer.println();
-        writer.println("####################");
-        writer.println("# Other properties #");
-        writer.println("####################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                defaultProperties, InstancePropertyGroup.getAll(), writer)
+                propertiesByIsSet, InstancePropertyGroup.getAll(), writer)
                 .print(properties);
     }
 

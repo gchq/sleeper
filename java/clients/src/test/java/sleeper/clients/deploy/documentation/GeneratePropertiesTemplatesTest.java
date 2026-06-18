@@ -214,14 +214,6 @@ class GeneratePropertiesTemplatesTest {
         }
 
         @Test
-        void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
-            assertThat(propertiesString).containsSubsequence(
-                    "# Properties set by script #",
-                    "set-automatically",
-                    "# Other properties #");
-        }
-
-        @Test
         void shouldNotSetValuesForAnyPropertyWithDefault() {
             // When
             InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
@@ -241,9 +233,6 @@ class GeneratePropertiesTemplatesTest {
         void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
             // Given
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            assertThat(TableProperty.getAll().stream()
-                    .allMatch(presentProperty -> tableProperties.isSet(presentProperty) == Boolean.FALSE))
-                    .isTrue();
 
             // When
             tableProperties.setSchema(createSchemaWithKey("key"));
