@@ -49,7 +49,7 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * </ul>
      */
     @FunctionalInterface
-    public interface ProgressCallback {
+    interface ProgressCallback {
         /**
          * Progress callback function.
          *

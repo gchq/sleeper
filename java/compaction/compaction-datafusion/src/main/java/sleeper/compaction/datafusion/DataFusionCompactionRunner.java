@@ -78,11 +78,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
 
         if (result.getRowsWritten() < 1) {
