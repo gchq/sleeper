@@ -40,18 +40,7 @@ import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -89,81 +78,29 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
-        // Daemon thread so progress polling can't keep the JVM alive
-        ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "compaction-progress-" + job.getId());
-            t.setDaemon(true);
-            return t;
-        });
-
-        Future<Void> pollerFuture = null;
-        IOException compactionException = null;
         try {
-            // Create new FFI context as poller runs on different thread
-            pollerFuture = executorService.submit(new ProgressPoller(job.getId(), progressCallback));
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
-
-            // Guarantee at least one update
-            progressCallback.accept(result.getRowsRead());
-
-            if (result.getRowsWritten() < 1) {
-                Path outputPath = new Path(job.getOutputFile());
-                FileSystem fs = outputPath.getFileSystem(hadoopConf);
-                if (!fs.exists(outputPath)) {
-                    try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                            outputPath, tableProperties, hadoopConf)) {
-                        // Write an empty file. This should be temporary, as we expect DataFusion to add
-                        // support for this.
-                        // See the test should_merge_empty_files in compaction_test.rs
-                    }
-                }
-            }
-
-            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                    LocalDateTime.now());
-            return result;
-
-        } catch (RejectedExecutionException e) {
-            compactionException = new IOException(e);
-        } catch (IOException e) {
-            compactionException = e;
-        } finally {
-            try {
-                shutdownPoller(executorService, pollerFuture);
-            } catch (IOException e) {
-                if (compactionException != null) {
-                    compactionException.addSuppressed(e);
-                } else {
-                    compactionException = e;
-                }
-            }
-        }
-        throw compactionException;
-    }
-
-    private static void shutdownPoller(ExecutorService executorService, Future<Void> pollerFuture) throws IOException {
-        executorService.shutdownNow();
-        try {
-            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                LOGGER.warn("Compaction progress monitoring thread still running");
-            }
-            if (pollerFuture != null) {
-                pollerFuture.get(1, TimeUnit.SECONDS);
-            }
+            Thread.sleep(100);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (CancellationException e) {
-            // expected: shutdownNow interrupted the poller
-        } catch (ExecutionException e) {
-            throw new IOException(e.getCause());
-        } catch (TimeoutException e) {
-            throw new IOException(e);
+            e.printStackTrace();
         }
+        RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
+
+        if (result.getRowsWritten() < 1) {
+            Path outputPath = new Path(job.getOutputFile());
+            FileSystem fs = outputPath.getFileSystem(hadoopConf);
+            if (!fs.exists(outputPath)) {
+                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                        outputPath, tableProperties, hadoopConf)) {
+                    // Write an empty file. This should be temporary, as we expect DataFusion to add
+                    // support for this.
+                    // See the test should_merge_empty_files in compaction_test.rs
+                }
+            }
+        }
+
+        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                LocalDateTime.now());
+        return result;
     }
 
     /**
@@ -222,16 +159,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
      * @param  context          the open context for FFI calls
+     * @param  progressCallback the function to receive callbacks
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
-            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context) throws IOException {
+            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, Consumer<Long> progressCallback) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
 
-        int result = context.getFunctions().compact(context, compactionParams, compactionData);
+        int result = context.getFunctions().compact(context, compactionParams, compactionData, rows -> progressCallback.accept(rows));
         // Check result
         if (result != 0) {
             LOGGER.error("DataFusion compaction failed, return code: {}", result);
@@ -245,54 +183,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    private static class ProgressPoller implements Callable<Void> {
-        private final String jobID;
-        private final Consumer<Long> progressCallback;
-
-        ProgressPoller(String jobID, Consumer<Long> progressCallback) {
-            this.jobID = jobID;
-            this.progressCallback = progressCallback;
-        }
-
-        @Override
-        public Void call() {
-            try (FFIContext<DataFusionCompactionFunctions> ffiContext = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class)) {
-                while (!Thread.currentThread().isInterrupted()) {
-                    Thread.sleep(5000000);
-
-                    Optional<Long> currentProgress = getCompactionRowsRead(jobID, ffiContext);
-                    currentProgress.ifPresent(progressCallback);
-                }
-            } catch (InterruptedException e) {
-                // preserve status
-                Thread.currentThread().interrupt();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return null;
-        }
-
-        private Optional<Long> getCompactionRowsRead(String compactionJobId, FFIContext<DataFusionCompactionFunctions> ffiContext) throws IOException {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(ffiContext.getFunctions());
-            FFIFileResult rowData = new FFIFileResult(runtime);
-
-            int result = ffiContext.getFunctions().get_compaction_rows_read(ffiContext, compactionJobId, rowData);
-
-            /*
-             * The native function returns 0 on successful read of a row count, -1 if no data was available for the
-             * given
-             * job ID. This is indicated in Java with an empty return value.
-             * All other values are error codes.
-             */
-            if (result == 0) {
-                return Optional.of(rowData.rows_read.get());
-            } else if (result == -1) {
-                return Optional.empty();
-            } else {
-                throw new IOException("Failed reading compaction row progress count, return code " + result);
-            }
-        }
     }
 }

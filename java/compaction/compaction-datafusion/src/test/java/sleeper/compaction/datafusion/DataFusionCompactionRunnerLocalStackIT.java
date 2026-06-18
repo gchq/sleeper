@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.localstack.LocalStackContainer;
@@ -85,6 +86,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
+    @Disabled("Expensive long running test only used for manual debugging")
     @Test
     void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
         // Given
