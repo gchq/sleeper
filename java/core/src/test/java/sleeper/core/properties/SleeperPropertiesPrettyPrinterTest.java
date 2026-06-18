@@ -122,8 +122,7 @@ class SleeperPropertiesPrettyPrinterTest {
                             "# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html\n" +
                             "# for valid options.\n" +
                             "# Use -1 to indicate infinite retention.\n" +
-                            "# (default value shown below, uncomment to set a value)\n" +
-                            "# sleeper.log.retention.days=30");
+                            "sleeper.log.retention.days=30");
         }
 
         @Test
@@ -147,7 +146,7 @@ class SleeperPropertiesPrettyPrinterTest {
         void shouldPrintDefaultedPropertyValue() {
             // When / Then
             assertThat(printEmptyInstanceProperties())
-                    .contains("# (default value shown below, uncomment to set a value)\n" +
+                    .contains("# (using default value shown below, uncomment to set a value)\n" +
                             "# sleeper.retain.infra.after.destroy=true\n");
         }
 
