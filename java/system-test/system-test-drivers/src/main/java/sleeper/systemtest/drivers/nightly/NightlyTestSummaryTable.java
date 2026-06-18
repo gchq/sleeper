@@ -35,11 +35,15 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 
@@ -105,6 +109,31 @@ public class NightlyTestSummaryTable {
         }
         if (first.isAnyTestFailed()) {
             throw new LastRunFailedException(first);
+        }
+        checkNoTestsFailedAndNotRepeated(now);
+    }
+
+    private void checkNoTestsFailedAndNotRepeated(Instant now) {
+        Set<String> passed = new HashSet<>();
+        Instant maxStartTimeToCheck = now.minus(Duration.ofDays(7));
+        for (Execution execution : executions) {
+            if (execution.getStartTime().isBefore(maxStartTimeToCheck)) {
+                break;
+            }
+            List<Test> failed = new ArrayList<>();
+            for (Test test : execution.getTests()) {
+                if (passed.contains(test.getName())) {
+                    continue;
+                }
+                if (test.isFailed()) {
+                    failed.add(test);
+                } else {
+                    passed.add(test.getName());
+                }
+            }
+            if (!failed.isEmpty()) {
+                throw new TestFailedAndNotRepeatedException(execution, failed);
+            }
         }
     }
 
@@ -190,8 +219,12 @@ public class NightlyTestSummaryTable {
             return startTime;
         }
 
+        public List<Test> getTests() {
+            return tests;
+        }
+
         public String describeFailedTests() {
-            return tests.stream().filter(Test::isFailed).map(Test::getDescription).collect(joining(", "));
+            return Test.describe(tests.stream().filter(Test::isFailed));
         }
 
         public boolean isAnyTestFailed() {
@@ -212,6 +245,18 @@ public class NightlyTestSummaryTable {
             this.exitCode = exitCode;
             this.instanceId = null;
             this.shortId = shortId;
+        }
+
+        public static String describe(List<Test> tests) {
+            return describe(tests.stream());
+        }
+
+        public static String describe(Stream<Test> tests) {
+            return tests.map(Test::getDescription).collect(joining(", "));
+        }
+
+        public String getName() {
+            return name;
         }
 
         public String getShortId() {
