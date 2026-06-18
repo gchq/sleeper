@@ -59,21 +59,21 @@ class GeneratePropertiesTemplatesTest {
         GeneratePropertiesTemplates.createTemplates(tempDir);
     }
 
-    static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
-        @Override
-        public Stream<Arguments> provideArguments(ExtensionContext context) {
-            return Stream.of(
-                    Arguments.of(ID, "full-example"),
-                    Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNETS, "subnet-abcdefgh"));
-        }
-    }
-
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
         @Override
         public Stream<Arguments> provideArguments(ExtensionContext context) {
             return CdkDefinedInstanceProperty.getAll().stream()
                     .map(Arguments::of);
+        }
+    }
+
+    static class DeploymentInstancePropertyValues implements ArgumentsProvider {
+        @Override
+        public Stream<Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of(ID),
+                    Arguments.of(VPC_ID),
+                    Arguments.of(SUBNETS));
         }
     }
 
@@ -85,19 +85,20 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldGenerateValidInstanceProperties() {
             // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+            InstanceProperties validProperties = instancePropertiesFromString(propertiesString);
+            validProperties.set(ID, "test-id");
+            validProperties.set(VPC_ID, "test-vpc");
+            validProperties.set(SUBNETS, "test-subnets");
 
             // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThatCode(validProperties::validate).doesNotThrowAnyException();
         }
 
         @ParameterizedTest
-        @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
-        void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
+        @ArgumentsSource(DeploymentInstancePropertyValues.class)
+        void shouldNotSetDeploymentProperties(UserDefinedInstanceProperty property) {
             assertThat(instancePropertiesFromString(propertiesString)
-                    .get(property))
-                    .isEqualTo(value);
+                    .get(property)).isNull();
         }
 
         @ParameterizedTest
@@ -159,10 +160,8 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/instance.properties");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .get(ID))
-                    .isEqualTo("basic-example");
+        void shouldGenerateEmptyInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
     }
 
@@ -266,7 +265,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        return InstanceProperties.createAndValidate(loadProperties(propertiesString));
+        return InstanceProperties.createWithoutValidation(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {

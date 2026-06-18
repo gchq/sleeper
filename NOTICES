@@ -167,7 +167,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:*:5.*, org.apache.httpcomponents.core5:*:5.*)
 
 - Apache License, Version 2.0
 
@@ -453,6 +453,10 @@ Checkstyle (com.puppycrawl.tools:checkstyle:12.*)
 - GNU Lesser General Public License, version 2.1
 
 Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
+
+- Apache License, Version 2.0
+
+Exec Maven Plugin (org.codehaus.mojo:exec-maven-plugin:3.*)
 
 - Apache License, Version 2.0
 

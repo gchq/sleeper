@@ -21,6 +21,8 @@ import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
+import software.amazon.awscdk.services.ec2.Peer;
+import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
@@ -82,6 +84,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.EKS_API_ALLOWED_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -191,6 +194,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .groups(List.of())
                 .build());
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
+        addApiIngressFromAllowedSecurityGroups(bulkImportCluster, instanceProperties);
 
         addRoleManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
@@ -338,6 +342,15 @@ public final class EksBulkImportStack extends NestedStack {
         }
         for (String role : roles) {
             cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessFor" + role, role));
+        }
+    }
+
+    private void addApiIngressFromAllowedSecurityGroups(Cluster cluster, InstanceProperties properties) {
+        for (String securityGroupId : properties.getList(EKS_API_ALLOWED_SECURITY_GROUPS)) {
+            cluster.getClusterSecurityGroup().addIngressRule(
+                    Peer.securityGroupId(securityGroupId),
+                    Port.tcp(443),
+                    "Allow " + securityGroupId + " to reach the EKS Kubernetes API");
         }
     }
 
