@@ -81,22 +81,24 @@ public class AddTable {
                         "\n" +
                         "--config-dir <dir>\n" +
                         "Path to a directory containing schema.json and table.properties. " +
-                        "Cannot be combined with --schema or --table-properties.")
+                        "Can be combined with --schema or --table-properties to override the corresponding file " +
+                        "from the directory, but not both at the same time.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> {
             Optional<Path> schemaFile = arguments.getOptionalString("schema").map(Path::of);
+            Optional<Path> tablePropertiesFile = arguments.getOptionalString("table-properties").map(Path::of);
             Optional<Path> configDir = arguments.getOptionalString("config-dir").map(Path::of);
             if (schemaFile.isEmpty() && configDir.isEmpty()) {
                 throw new CommandArgumentsException("Either --schema or --config-dir must be provided");
             }
-            if (schemaFile.isPresent() && configDir.isPresent()) {
-                throw new CommandArgumentsException("Cannot specify both --schema and --config-dir");
+            if (schemaFile.isPresent() && tablePropertiesFile.isPresent() && configDir.isPresent()) {
+                throw new CommandArgumentsException("Cannot specify --schema, --table-properties, and --config-dir together");
             }
             return new Arguments(
                     arguments.getString("instance-id"),
                     arguments.getString("table-name"),
                     schemaFile,
-                    arguments.getOptionalString("table-properties").map(Path::of),
+                    tablePropertiesFile,
                     configDir);
         });
 

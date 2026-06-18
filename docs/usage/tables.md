@@ -62,7 +62,15 @@ positional argument and will override any name set in a table properties file.
 
 # Create a table using a configuration directory containing schema.json and table.properties
 ./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir>
+
+# Use a config directory but override the schema file
+./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir> --schema <schema-file>
+
+# Use a config directory but override the table properties file
+./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir> --table-properties <table-properties-file>
 ```
+
+Note: `--schema`, `--table-properties`, and `--config-dir` cannot all be specified at the same time.
 
 See [creating a schema](schema.md) for how to create a schema file.
 
