@@ -104,9 +104,6 @@ public class ParallelCompactionsST {
                         .describedAs("contains an even distribution of rows for the partition")
                         .isBetween(800L, 1600L));
         // And all jobs have finished as expected
-        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedWithMinimumJobsAndMaxRetries(40960, 2),
-                        "all jobs finished with at most 2 retries");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")

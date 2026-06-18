@@ -33,12 +33,14 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
     /**
      * Type for callback functions for compactions.
-     *
+     * <p>
      * <strong>Technical notes:</strong>
      * <ul>
      * <li>do <strong>NOT</strong> make any assumptions about which thread calls this function! It will not be the
-     * thread that invoked the native compaction, and it may not always be the same native thread that calls this function
-     * during a single compaction! Therefore, any mutable state changes made by implementations of this interface, must be
+     * thread that invoked the native compaction, and it may not always be the same native thread that calls this
+     * function
+     * during a single compaction! Therefore, any mutable state changes made by implementations of this interface, must
+     * be
      * appropriately synchronised.</li>
      * <li>This function should execute quickly. If you need to do further work, consider using a thread-safe container
      * to hand work off to a separate Java thread.</li>
@@ -58,11 +60,12 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
     /**
      * Invokes a native compaction.
-     *
+     * <p>
      * Progress updates are delivered periodically by a native thread calling the given progress function. This
      * parameter may be null.
-     *
+     * <p>
      * The provided context object must be open.
+     * <p>
      * The return code will be 0 if successful.
      *
      * @param  context               Java context object
