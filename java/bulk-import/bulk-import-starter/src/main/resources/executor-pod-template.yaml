@@ -6,7 +6,7 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
             matchExpressions:
-              - key: spark-app-selector
+              - key: spark-app-name
                 operator: In
                 values:
                   - spark-app-selector-placeholder

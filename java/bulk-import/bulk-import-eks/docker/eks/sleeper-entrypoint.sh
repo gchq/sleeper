@@ -17,10 +17,6 @@ set -euo pipefail
 
 if [ -n "${EXECUTOR_POD_TEMPLATE:-}" ]; then
     printf '%s' "$EXECUTOR_POD_TEMPLATE" > /tmp/executor-template.yaml
-
-    if [ -n "${SPARK_APPLICATION_ID:-}" ]; then
-        sed -i "s/spark-app-selector-placeholder/${SPARK_APPLICATION_ID}/g" /tmp/executor-template.yaml
-    fi
 fi
 
 exec /opt/entrypoint.sh "$@"
