@@ -1826,16 +1826,16 @@
                   "Outputs.TestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version"
                 ]
               },
-              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref": {
-                "Fn::GetAtt": [
-                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
-                  "Outputs.TestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref"
-                ]
-              },
               "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
                 "Fn::GetAtt": [
                   "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
                   "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn"
+                ]
+              },
+              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref": {
+                "Fn::GetAtt": [
+                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
+                  "Outputs.TestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref"
                 ]
               },
               "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
@@ -1868,6 +1868,12 @@
                   "Outputs.TestInstanceIngestBatcherIngestBatcherJobCreationPeriodicTrigger9FD74049Ref"
                 ]
               },
+              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
+                "Fn::GetAtt": [
+                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
+                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref"
+                ]
+              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -1878,12 +1884,6 @@
                 "Fn::GetAtt": [
                   "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
                   "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationScheduleD7BB96C6Ref"
-                ]
-              },
-              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
-                "Fn::GetAtt": [
-                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
-                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref"
                 ]
               },
               "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref": {
@@ -1916,16 +1916,16 @@
                   "Outputs.TestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Ref"
                 ]
               },
-              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref": {
-                "Fn::GetAtt": [
-                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
-                  "Outputs.TestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref"
-                ]
-              },
               "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn": {
                 "Fn::GetAtt": [
                   "IngestBatcherNestedStackIngestBatcherNestedStackResource7DE08FC6",
                   "Outputs.TestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn"
+                ]
+              },
+              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref": {
+                "Fn::GetAtt": [
+                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
+                  "Outputs.TestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref"
                 ]
               },
               "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFRef": {
@@ -2186,16 +2186,16 @@
                   "Outputs.TestInstanceGarbageCollectorGarbageCollectorPeriodicTrigger26CF0C4ERef"
                 ]
               },
-              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref": {
-                "Fn::GetAtt": [
-                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
-                  "Outputs.TestInstanceIngestIngestClusterA4B79DA6Ref"
-                ]
-              },
               "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref": {
                 "Fn::GetAtt": [
                   "LoggingNestedStackLoggingNestedStackResourceBF8F7D28",
                   "Outputs.TestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                ]
+              },
+              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref": {
+                "Fn::GetAtt": [
+                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
+                  "Outputs.TestInstanceIngestIngestClusterA4B79DA6Ref"
                 ]
               },
               "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesIngestByQueueRoleC3D723FBArn": {
@@ -2276,16 +2276,16 @@
                   "Outputs.TestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FRef"
                 ]
               },
-              "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef": {
-                "Fn::GetAtt": [
-                  "GarbageCollectorNestedStackGarbageCollectorNestedStackResource6471D6BF",
-                  "Outputs.TestInstanceGarbageCollectorGCJobQueueD56E334DRef"
-                ]
-              },
               "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref": {
                 "Fn::GetAtt": [
                   "PartitionSplittingNestedStackPartitionSplittingNestedStackResource67512590",
                   "Outputs.TestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref"
+                ]
+              },
+              "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef": {
+                "Fn::GetAtt": [
+                  "GarbageCollectorNestedStackGarbageCollectorNestedStackResource6471D6BF",
+                  "Outputs.TestInstanceGarbageCollectorGCJobQueueD56E334DRef"
                 ]
               },
               "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Ref": {
@@ -2318,28 +2318,28 @@
                   "Outputs.TestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Version"
                 ]
               },
-              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion": {
-                "Fn::GetAtt": [
-                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
-                  "Outputs.TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion"
-                ]
-              },
               "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
                 "Fn::GetAtt": [
                   "QueryNestedStackQueryNestedStackResource4085691D",
                   "Outputs.TestInstanceQueryQueryResultsQueue40C89520Arn"
                 ]
               },
-              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref": {
+              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion": {
                 "Fn::GetAtt": [
-                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
-                  "Outputs.TestInstanceCompactionCompactionCommitQueue4935D065Ref"
+                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
+                  "Outputs.TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion"
                 ]
               },
               "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDVersion": {
                 "Fn::GetAtt": [
                   "GarbageCollectorNestedStackGarbageCollectorNestedStackResource6471D6BF",
                   "Outputs.TestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDVersion"
+                ]
+              },
+              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref": {
+                "Fn::GetAtt": [
+                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
+                  "Outputs.TestInstanceCompactionCompactionCommitQueue4935D065Ref"
                 ]
               },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
@@ -2378,16 +2378,16 @@
                   "Outputs.TestInstancePartitionSplittingFindPartitionsToSplitTriggerLambda41F9A274Ref"
                 ]
               },
-              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreator3E24B967Ref": {
-                "Fn::GetAtt": [
-                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
-                  "Outputs.TestInstanceIngestIngestTasksCreator3E24B967Ref"
-                ]
-              },
               "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn": {
                 "Fn::GetAtt": [
                   "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
                   "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn"
+                ]
+              },
+              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreator3E24B967Ref": {
+                "Fn::GetAtt": [
+                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
+                  "Outputs.TestInstanceIngestIngestTasksCreator3E24B967Ref"
                 ]
               },
               "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Arn": {
@@ -9224,17 +9224,17 @@
             "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAE347f22d27601eb8c30e9e2d62ea562ac"
           }
         },
+        "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
+          "Value": {
+            "Ref": "TransactionLogSnapshotDeletionQueueC5F5102E"
+          }
+        },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Arn": {
           "Value": {
             "Fn::GetAtt": [
               "TransactionLogSnapshotDeletionDeadLetterQueue593E1FD8",
               "Arn"
             ]
-          }
-        },
-        "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
-          "Value": {
-            "Ref": "TransactionLogSnapshotDeletionQueueC5F5102E"
           }
         },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922QueueName": {
@@ -17171,19 +17171,19 @@
             ]
           }
         },
-        "TestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DArn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "CompactionJobDefinitionsDeadLetterQueue52791FB3",
-              "Arn"
-            ]
-          }
-        },
         "TestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version": {
           "Value": {
             "Fn::GetAtt": [
               "CompactionTasksCreatorCurrentVersion2E3420E48810f724dcab3328a7389ffa2b00e477",
               "Version"
+            ]
+          }
+        },
+        "TestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DArn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "CompactionJobDefinitionsDeadLetterQueue52791FB3",
+              "Arn"
             ]
           }
         }
@@ -21623,14 +21623,6 @@
             ]
           }
         },
-        "TestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFArn": {
-          "Value": {
-            "Fn::GetAtt": [
-              "LeafPartitionQueryDeadLetterQueue1090F3DB",
-              "Arn"
-            ]
-          }
-        },
         "TestInstanceQueryQueryExecutorLambdaServiceRoleF73B7ACCRef": {
           "Value": {
             "Ref": "QueryExecutorLambdaServiceRoleA47BCEB3"
@@ -21639,6 +21631,14 @@
         "TestInstanceQueryQueryTrackingTableD59EF8F3Ref": {
           "Value": {
             "Ref": "QueryTrackingTableEE351F53"
+          }
+        },
+        "TestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFArn": {
+          "Value": {
+            "Fn::GetAtt": [
+              "LeafPartitionQueryDeadLetterQueue1090F3DB",
+              "Arn"
+            ]
           }
         },
         "TestInstanceQueryQueryResultsQueue40C89520Arn": {
@@ -25351,10 +25351,10 @@
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version": {
           "Type": "String"
         },
-        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref": {
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
           "Type": "String"
         },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
+        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref": {
           "Type": "String"
         },
         "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
@@ -25372,13 +25372,13 @@
         "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationPeriodicTrigger9FD74049Ref": {
           "Type": "String"
         },
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
+          "Type": "String"
+        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationScheduleD7BB96C6Ref": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
           "Type": "String"
         },
         "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref": {
@@ -25396,10 +25396,10 @@
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Ref": {
           "Type": "String"
         },
-        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref": {
+        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn": {
           "Type": "String"
         },
-        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn": {
+        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref": {
           "Type": "String"
         },
         "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFRef": {
@@ -25531,10 +25531,10 @@
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorPeriodicTrigger26CF0C4ERef": {
           "Type": "String"
         },
-        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref": {
+        "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref": {
           "Type": "String"
         },
-        "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref": {
+        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref": {
           "Type": "String"
         },
         "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesIngestByQueueRoleC3D723FBArn": {
@@ -25576,10 +25576,10 @@
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FRef": {
           "Type": "String"
         },
-        "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef": {
+        "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref": {
           "Type": "String"
         },
-        "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref": {
+        "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef": {
           "Type": "String"
         },
         "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Ref": {
@@ -25597,16 +25597,16 @@
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Version": {
           "Type": "String"
         },
-        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion": {
-          "Type": "String"
-        },
         "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
           "Type": "String"
         },
-        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref": {
+        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion": {
           "Type": "String"
         },
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDVersion": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref": {
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
@@ -25627,10 +25627,10 @@
         "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitTriggerLambda41F9A274Ref": {
           "Type": "String"
         },
-        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreator3E24B967Ref": {
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn": {
           "Type": "String"
         },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn": {
+        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreator3E24B967Ref": {
           "Type": "String"
         },
         "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Arn": {
@@ -25880,153 +25880,17 @@
               "Fn::Join": [
                 "",
                 [
-                  "sleeper.account\u003dtest-account\nsleeper.admin.role.arn\u003d",
+                  "sleeper.ingest.batcher.submit.dlq.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesAdminRole0994A69EArn"
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn"
                   },
-                  "\nsleeper.bulk.import.bucket\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportBucketNestedStackBulkImportBucketNestedStackResource454CC05EOutputsTestInstanceBulkImportBucket58F540BARef"
-                  },
-                  "\nsleeper.bulk.import.emr.ec2.role.name\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRCommonNestedStackBulkImportEMRCommonNestedStackResource26CE6AACOutputsTestInstanceBulkImportEMRCommonEc2Role5E4FFAE3Ref"
-                  },
-                  "\nsleeper.bulk.import.emr.role.name\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRCommonNestedStackBulkImportEMRCommonNestedStackResource26CE6AACOutputsTestInstanceBulkImportEMRCommonEmrRoleCE2BA540Ref"
-                  },
-                  "\nsleeper.bulk.import.emr.security.conf.name\u003dsleeper-test-instance-EMRSecurityConfigurationProps\nsleeper.bulk.import.emr.serverless.application.id\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerless6FCED42BApplicationId"
-                  },
-                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
-                  },
-                  "\nsleeper.bulk.import.emr.serverless.job.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FRef"
-                  },
-                  "\nsleeper.bulk.import.emr.serverless.release\u003demr-1.2.3\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessEmrServerlessRole192390D8Arn"
-                  },
-                  "\nsleeper.bulk.import.emr.serverless.studio.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceEmrStudioNestedStackEmrStudioNestedStackResource42F85517OutputsTestInstanceEmrStudioTestInstanceEmrStudio7355CF8DC8B80669Url"
-                  },
-                  "\nsleeper.compaction.cluster\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCluster66A74FE8Ref"
-                  },
-                  "\nsleeper.compaction.commit.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn"
-                  },
-                  "\nsleeper.compaction.commit.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Ref"
-                  },
-                  "\nsleeper.compaction.commit.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn"
-                  },
-                  "\nsleeper.compaction.commit.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref"
-                  },
-                  "\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.compaction.job.creation.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationDLQB8A078BDArn"
-                  },
-                  "\nsleeper.compaction.job.creation.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationDLQB8A078BDRef"
-                  },
-                  "\nsleeper.compaction.job.creation.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FArn"
-                  },
-                  "\nsleeper.compaction.job.creation.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FRef"
-                  },
-                  "\nsleeper.compaction.job.creation.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref"
-                  },
-                  "\nsleeper.compaction.job.creation.trigger.lambda.function\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerC181F572Ref"
-                  },
-                  "\\:",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Version"
-                  },
-                  "\nsleeper.compaction.job.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DArn"
-                  },
-                  "\nsleeper.compaction.job.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DRef"
-                  },
-                  "\nsleeper.compaction.job.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn"
-                  },
-                  "\nsleeper.compaction.job.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref"
-                  },
-                  "\nsleeper.compaction.pending.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn"
-                  },
-                  "\nsleeper.compaction.pending.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECRef"
-                  },
-                  "\nsleeper.compaction.pending.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn"
-                  },
-                  "\nsleeper.compaction.pending.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Ref"
-                  },
-                  "\nsleeper.compaction.task.creation.lambda.function\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorFE525A06Ref"
-                  },
-                  "\\:",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version"
-                  },
-                  "\nsleeper.compaction.task.creation.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreationPeriodicTrigger39ADC4A9Ref"
-                  },
-                  "\nsleeper.config.bucket\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Ref"
-                  },
-                  "\nsleeper.data.bucket\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
-                  },
-                  "\nsleeper.default.table.data.engine\u003djava\nsleeper.default.table.statestore.commit.async.behaviour\u003ddisabled\nsleeper.default.table.statestore.transactionlog.snapshot.load.min.transactions.ahead\u003d1\nsleeper.dns.suffix\u003damazonaws.com\nsleeper.ecs.security.group.id\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
-                  },
-                  "\nsleeper.fs.s3a.max-connections\u003d5\nsleeper.gc.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobDeadLetterQueueF823F313Arn"
-                  },
-                  "\nsleeper.gc.dlq.url\u003d",
+                  "\nsleeper.subnets\u003dtest-subnet\nsleeper.gc.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobDeadLetterQueueF823F313Ref"
+                  },
+                  "\nsleeper.ingest.arrow.max.single.write.to.file.rows\u003d128\nsleeper.statestore.committer.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterDLQ73D14465Ref"
                   },
                   "\nsleeper.gc.lambda.function\u003d",
                   {
@@ -26036,37 +25900,161 @@
                   {
                     "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDVersion"
                   },
-                  "\nsleeper.gc.queue.arn\u003d",
+                  "\nsleeper.statestore.transactionlog.snapshots.creation.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn"
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn"
                   },
-                  "\nsleeper.gc.queue.url\u003d",
+                  "\nsleeper.partition.splitting.job.dlq.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef"
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingDeadLetterQueue5B7A4956Arn"
                   },
-                  "\nsleeper.gc.rule\u003d",
+                  "\nsleeper.bulk.import.emr.ec2.role.name\u003d",
                   {
-                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorPeriodicTrigger26CF0C4ERef"
+                    "Ref": "referencetoTestInstanceBulkImportEMRCommonNestedStackBulkImportEMRCommonNestedStackResource26CE6AACOutputsTestInstanceBulkImportEMRCommonEc2Role5E4FFAE3Ref"
                   },
-                  "\nsleeper.id\u003dtest-instance\nsleeper.ingest.arrow.batch.buffer.bytes\u003d16777216\nsleeper.ingest.arrow.max.local.store.bytes\u003d536870912\nsleeper.ingest.arrow.max.single.write.to.file.rows\u003d128\nsleeper.ingest.arrow.working.buffer.bytes\u003d16777216\nsleeper.ingest.batcher.job.creation.lambda\u003d",
+                  "\nsleeper.query.leaf.partition.dlq.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambda218123AERef"
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFRef"
+                  },
+                  "\nsleeper.compaction.task.creation.lambda.function\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorFE525A06Ref"
                   },
                   "\\:",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Version"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version"
+                  },
+                  "\nsleeper.ingest.batcher.submit.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Ref"
+                  },
+                  "\nsleeper.fs.s3a.max-connections\u003d5\nsleeper.statestore.committer.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterDLQ73D14465Arn"
+                  },
+                  "\nsleeper.region\u003dtest-region\nsleeper.statestore.transactionlog.dynamo.partition.log.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Ref"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.creation.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Ref"
+                  },
+                  "\nsleeper.query.role.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryExecutorLambdaServiceRoleF73B7ACCRef"
+                  },
+                  "\nsleeper.ingest.batcher.submit.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn"
+                  },
+                  "\nsleeper.tables.name.index.dynamo.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Ref"
+                  },
+                  "\nsleeper.statestore.transactionlog.transaction.deletion.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3Arn"
+                  },
+                  "\nsleeper.bulk.import.emr.security.conf.name\u003dsleeper-test-instance-EMRSecurityConfigurationProps\nsleeper.statestore.transactionlog.dynamo.latest.snapshots.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FRef"
+                  },
+                  "\nsleeper.config.bucket\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Ref"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.deletion.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref"
+                  },
+                  "\nsleeper.partition.splitting.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref"
+                  },
+                  "\nsleeper.partition.splitting.finder.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Arn"
+                  },
+                  "\nsleeper.query.tracker.table.name\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryTrackingTableD59EF8F3Ref"
+                  },
+                  "\nsleeper.query.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Ref"
                   },
                   "\nsleeper.ingest.batcher.job.creation.rule\u003d",
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationPeriodicTrigger9FD74049Ref"
                   },
-                  "\nsleeper.ingest.batcher.submit.dlq.arn\u003d",
+                  "\nsleeper.sqs.table.metrics.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Arn"
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Ref"
                   },
-                  "\nsleeper.ingest.batcher.submit.dlq.url\u003d",
+                  "\nsleeper.ingest.max.local.rows\u003d1000\nsleeper.statestore.transactionlog.transaction.deletion.rule\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449Ref"
+                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionScheduleBC70F1ECRef"
+                  },
+                  "\nsleeper.partition.splitting.finder.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Ref"
+                  },
+                  "\nsleeper.bulk.import.emr.serverless.release\u003demr-1.2.3\nsleeper.tables.id.index.dynamo.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref"
+                  },
+                  "\nsleeper.lambda.table.metrics.function\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsTrigger1B6EB004Ref"
+                  },
+                  "\\:",
+                  {
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsTriggerCurrentVersion65A885FBVersion"
+                  },
+                  "\nsleeper.partition.splitting.job.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingDeadLetterQueue5B7A4956Ref"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.deletion.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionSchedule579388F9Ref"
+                  },
+                  "\nsleeper.bulk.import.emr.serverless.application.id\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerless6FCED42BApplicationId"
+                  },
+                  "\nsleeper.ingest.arrow.working.buffer.bytes\u003d16777216\nsleeper.query.leaf.partition.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFArn"
+                  },
+                  "\nsleeper.vpc\u003dvpc-12345\nsleeper.sqs.table.metrics.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Ref"
+                  },
+                  "\nsleeper.statestore.committer.log.group\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                  },
+                  "\nsleeper.compaction.job.creation.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FArn"
+                  },
+                  "\nsleeper.partition.splitting.finder.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Ref"
+                  },
+                  "\nsleeper.compaction.commit.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Ref"
+                  },
+                  "\nsleeper.compaction.job.creation.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationDLQB8A078BDArn"
                   },
                   "\nsleeper.ingest.batcher.submit.lambda\u003d",
                   {
@@ -26076,41 +26064,189 @@
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherSubmitToIngestBatcherLambdaCurrentVersion9D7068BDVersion"
                   },
-                  "\nsleeper.ingest.batcher.submit.queue.arn\u003d",
+                  "\nsleeper.compaction.job.creation.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FRef"
                   },
-                  "\nsleeper.ingest.batcher.submit.queue.url\u003d",
+                  "\nsleeper.partition.splitting.finder.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FRef"
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn"
                   },
-                  "\nsleeper.ingest.by.queue.role.arn\u003d",
+                  "\nsleeper.statestore.transactionlog.snapshots.deletion.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesIngestByQueueRoleC3D723FBArn"
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Arn"
                   },
-                  "\nsleeper.ingest.cluster\u003d",
+                  "\nsleeper.partition\u003daws\nsleeper.compaction.commit.dlq.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitDLQ5632FB33Arn"
                   },
-                  "\nsleeper.ingest.direct.role.arn\u003d",
+                  "\nsleeper.query.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesDirectIngestRole53BF6564Arn"
+                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn"
                   },
-                  "\nsleeper.ingest.job.dlq.arn\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.studio.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFArn"
+                    "Ref": "referencetoTestInstanceEmrStudioNestedStackEmrStudioNestedStackResource42F85517OutputsTestInstanceEmrStudioTestInstanceEmrStudio7355CF8DC8B80669Url"
                   },
-                  "\nsleeper.ingest.job.dlq.url\u003d",
+                  "\nsleeper.statestore.committer.event.source.id\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFRef"
+                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterCurrentVersionSqsEventSourceTestInstanceStateStoreCommitterStateStoreCommitterQueue33B0078EDD58441ARef"
+                  },
+                  "\nsleeper.gc.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DRef"
+                  },
+                  "\nsleeper.ingest.batcher.job.creation.lambda\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambda218123AERef"
+                  },
+                  "\\:",
+                  {
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Version"
+                  },
+                  "\nsleeper.ingest.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreationPeriodicTriggerCA9BE66FRef"
                   },
                   "\nsleeper.ingest.job.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobQueue349E97BCArn"
                   },
+                  "\nsleeper.statestore.transactionlog.dynamo.file.log.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Ref"
+                  },
+                  "\nsleeper.bulk.import.emr.serverless.cluster.name\u003dsleeper-test-instance\nsleeper.compaction.fargate.task.definition\u003dsleeper-test-instance-CompactionTaskOnFargate\nsleeper.ecs.security.group.id\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceAutoStopEcsClusterTasksNestedStackAutoStopEcsClusterTasksNestedStackResource139EB607OutputsTestInstanceAutoStopEcsClusterTasksECS15A58BCEGroupId"
+                  },
+                  "\nsleeper.query.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Ref"
+                  },
+                  "\nsleeper.compaction.job.creation.trigger.lambda.function\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerC181F572Ref"
+                  },
+                  "\\:",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Version"
+                  },
+                  "\nsleeper.ingest.direct.role.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesDirectIngestRole53BF6564Arn"
+                  },
+                  "\nsleeper.compaction.commit.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Ref"
+                  },
+                  "\nsleeper.gc.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn"
+                  },
+                  "\nsleeper.gc.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobDeadLetterQueueF823F313Arn"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn"
+                  },
+                  "\nsleeper.query.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Arn"
+                  },
+                  "\nsleeper.partition.splitting.job.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Ref"
+                  },
+                  "\nsleeper.version\u003d1.2.3\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessEmrServerlessRole192390D8Arn"
+                  },
+                  "\nsleeper.admin.role.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesAdminRole0994A69EArn"
+                  },
+                  "\nsleeper.compaction.commit.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn"
+                  },
+                  "\nsleeper.jars.bucket\u003dsleeper-test-instance-jars-test-account\nsleeper.partition.splitting.job.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Arn"
+                  },
+                  "\nsleeper.query.results.bucket\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsBucket6975CD73Ref"
+                  },
+                  "\nsleeper.ingest.arrow.batch.buffer.bytes\u003d16777216\nsleeper.statestore.transactionlog.snapshots.creation.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationScheduleD7BB96C6Ref"
+                  },
+                  "\nsleeper.compaction.job.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DArn"
+                  },
+                  "\nsleeper.default.table.statestore.transactionlog.snapshot.load.min.transactions.ahead\u003d1\nsleeper.compaction.job.creation.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationPeriodicTrigger8BCEF486Ref"
+                  },
                   "\nsleeper.ingest.job.queue.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobQueue349E97BCRef"
+                  },
+                  "\nsleeper.gc.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorPeriodicTrigger26CF0C4ERef"
+                  },
+                  "\nsleeper.ingest.cluster\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestClusterA4B79DA6Ref"
+                  },
+                  "\nsleeper.query.leaf.partition.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Ref"
+                  },
+                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.dns.suffix\u003damazonaws.com\nsleeper.bulk.import.emr.serverless.job.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
+                  },
+                  "\nsleeper.compaction.job.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsDeadLetterQueue8829DA3DRef"
+                  },
+                  "\nsleeper.query.results.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn"
+                  },
+                  "\nsleeper.data.bucket\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
+                  },
+                  "\nsleeper.ingest.partition.refresh.period\u003d2147483647\nsleeper.bulk.import.emr.role.name\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportEMRCommonNestedStackBulkImportEMRCommonNestedStackResource26CE6AACOutputsTestInstanceBulkImportEMRCommonEmrRoleCE2BA540Ref"
+                  },
+                  "\nsleeper.bulk.import.bucket\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportBucketNestedStackBulkImportBucketNestedStackResource454CC05EOutputsTestInstanceBulkImportBucket58F540BARef"
+                  },
+                  "\nsleeper.bulk.import.emr.serverless.job.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FRef"
+                  },
+                  "\nsleeper.statestore.transactionlog.transaction.deletion.queue.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Ref"
+                  },
+                  "\nsleeper.account\u003dtest-account\nsleeper.compaction.job.creation.dlq.url\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationDLQB8A078BDRef"
+                  },
+                  "\nsleeper.statestore.transactionlog.transaction.deletion.queue.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn"
                   },
                   "\nsleeper.ingest.lambda.function\u003d",
                   {
@@ -26120,53 +26256,13 @@
                   {
                     "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion"
                   },
-                  "\nsleeper.ingest.max.local.rows\u003d1000\nsleeper.ingest.memory.max.batch.size\u003d100000\nsleeper.ingest.partition.refresh.period\u003d2147483647\nsleeper.ingest.rule\u003d",
+                  "\nsleeper.statestore.committer.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreationPeriodicTriggerCA9BE66FRef"
+                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterQueue595DA4CERef"
                   },
-                  "\nsleeper.ingest.task.definition.family\u003dsleeper-test-instance-IngestTask\nsleeper.jars.bucket\u003dsleeper-test-instance-jars-test-account\nsleeper.lambda.table.metrics.function\u003d",
+                  "\nsleeper.default.table.statestore.commit.async.behaviour\u003ddisabled\nsleeper.ingest.by.queue.role.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsTrigger1B6EB004Ref"
-                  },
-                  "\\:",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsTriggerCurrentVersion65A885FBVersion"
-                  },
-                  "\nsleeper.partition\u003daws\nsleeper.partition.splitting.finder.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Arn"
-                  },
-                  "\nsleeper.partition.splitting.finder.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Ref"
-                  },
-                  "\nsleeper.partition.splitting.finder.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn"
-                  },
-                  "\nsleeper.partition.splitting.finder.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Ref"
-                  },
-                  "\nsleeper.partition.splitting.job.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingDeadLetterQueue5B7A4956Arn"
-                  },
-                  "\nsleeper.partition.splitting.job.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingDeadLetterQueue5B7A4956Ref"
-                  },
-                  "\nsleeper.partition.splitting.job.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Arn"
-                  },
-                  "\nsleeper.partition.splitting.job.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Ref"
-                  },
-                  "\nsleeper.partition.splitting.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref"
+                    "Ref": "referencetoTestInstancePoliciesNestedStackPoliciesNestedStackResourceD8B71FB2OutputsTestInstancePoliciesIngestByQueueRoleC3D723FBArn"
                   },
                   "\nsleeper.partition.splitting.trigger.lambda.function\u003d",
                   {
@@ -26176,191 +26272,95 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitTriggerLambdaCurrentVersionD6930CA9Version"
                   },
-                  "\nsleeper.query.dlq.arn\u003d",
+                  "\nsleeper.compaction.pending.dlq.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Arn"
-                  },
-                  "\nsleeper.query.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueueQueryDeadLetterQueue496F8592Ref"
-                  },
-                  "\nsleeper.query.leaf.partition.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFArn"
-                  },
-                  "\nsleeper.query.leaf.partition.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFRef"
-                  },
-                  "\nsleeper.query.leaf.partition.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Arn"
-                  },
-                  "\nsleeper.query.leaf.partition.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Ref"
-                  },
-                  "\nsleeper.query.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn"
-                  },
-                  "\nsleeper.query.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Ref"
-                  },
-                  "\nsleeper.query.results.bucket\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsBucket6975CD73Ref"
-                  },
-                  "\nsleeper.query.results.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn"
-                  },
-                  "\nsleeper.query.results.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref"
-                  },
-                  "\nsleeper.query.role.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryExecutorLambdaServiceRoleF73B7ACCRef"
-                  },
-                  "\nsleeper.query.tracker.table.name\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryTrackingTableD59EF8F3Ref"
-                  },
-                  "\nsleeper.region\u003dtest-region\nsleeper.schedule.table.metrics.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsPublishSchedule30F78292Ref"
-                  },
-                  "\nsleeper.sqs.table.metrics.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Arn"
-                  },
-                  "\nsleeper.sqs.table.metrics.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Ref"
-                  },
-                  "\nsleeper.sqs.table.metrics.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn"
-                  },
-                  "\nsleeper.sqs.table.metrics.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Ref"
-                  },
-                  "\nsleeper.statestore.committer.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterDLQ73D14465Arn"
-                  },
-                  "\nsleeper.statestore.committer.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterDLQ73D14465Ref"
-                  },
-                  "\nsleeper.statestore.committer.event.source.id\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterCurrentVersionSqsEventSourceTestInstanceStateStoreCommitterStateStoreCommitterQueue33B0078EDD58441ARef"
-                  },
-                  "\nsleeper.statestore.committer.log.group\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn"
                   },
                   "\nsleeper.statestore.committer.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterQueue595DA4CEArn"
                   },
-                  "\nsleeper.statestore.committer.queue.url\u003d",
+                  "\nsleeper.compaction.job.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterQueue595DA4CERef"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn"
                   },
-                  "\nsleeper.statestore.transactionlog.dynamo.all.snapshots.table\u003d",
+                  "\nsleeper.compaction.pending.dlq.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Ref"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECRef"
                   },
-                  "\nsleeper.statestore.transactionlog.dynamo.file.log.table\u003d",
+                  "\nsleeper.tags\u003dInstanceID,test-instance\nsleeper.ingest.arrow.max.local.store.bytes\u003d536870912\nsleeper.sqs.table.metrics.dlq.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Ref"
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.dynamo.latest.snapshots.table\u003d",
+                  "\nsleeper.query.leaf.partition.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FRef"
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Arn"
                   },
-                  "\nsleeper.statestore.transactionlog.dynamo.partition.log.table\u003d",
+                  "\nsleeper.compaction.pending.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Ref"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.arn\u003d",
+                  "\nsleeper.compaction.job.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Arn"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.snapshots.creation.dlq.url\u003d",
+                  "\nsleeper.schedule.table.metrics.rule\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Ref"
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsPublishSchedule30F78292Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.snapshots.creation.queue.arn\u003d",
+                  "\nsleeper.ingest.job.dlq.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.creation.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Ref"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.creation.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationScheduleD7BB96C6Ref"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.deletion.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Arn"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.deletion.dlq.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Ref"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.deletion.queue.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Arn"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.deletion.queue.url\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref"
-                  },
-                  "\nsleeper.statestore.transactionlog.snapshots.deletion.rule\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionSchedule579388F9Ref"
-                  },
-                  "\nsleeper.statestore.transactionlog.transaction.deletion.dlq.arn\u003d",
-                  {
-                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3Arn"
+                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFRef"
                   },
                   "\nsleeper.statestore.transactionlog.transaction.deletion.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionDeadLetterQueue9AE45FC3Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.transaction.deletion.queue.arn\u003d",
+                  "\nsleeper.compaction.cluster\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCluster66A74FE8Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.transaction.deletion.queue.url\u003d",
+                  "\nsleeper.query.results.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Ref"
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Ref"
                   },
-                  "\nsleeper.statestore.transactionlog.transaction.deletion.rule\u003d",
+                  "\nsleeper.id\u003dtest-instance\nsleeper.ingest.memory.max.batch.size\u003d100000\nsleeper.statestore.transactionlog.snapshots.deletion.dlq.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionScheduleBC70F1ECRef"
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Ref"
                   },
-                  "\nsleeper.subnets\u003dtest-subnet\nsleeper.tables.id.index.dynamo.table\u003d",
+                  "\nsleeper.ingest.batcher.submit.queue.url\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref"
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FRef"
                   },
-                  "\nsleeper.tables.name.index.dynamo.table\u003d",
+                  "\nsleeper.compaction.pending.queue.arn\u003d",
                   {
-                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Ref"
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn"
+                  },
+                  "\nsleeper.sqs.table.metrics.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Arn"
+                  },
+                  "\nsleeper.compaction.task.creation.rule\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreationPeriodicTrigger39ADC4A9Ref"
+                  },
+                  "\nsleeper.ingest.job.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobDeadLetterQueueE7DE67BFArn"
+                  },
+                  "\nsleeper.statestore.transactionlog.dynamo.all.snapshots.table\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Ref"
+                  },
+                  "\nsleeper.statestore.transactionlog.snapshots.deletion.dlq.arn\u003d",
+                  {
+                    "Ref": "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionDeadLetterQueue4B6BA922Arn"
                   },
                   "\nsleeper.tables.online.index.dynamo.table\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DRef"
                   },
-                  "\nsleeper.tags\u003dInstanceID,test-instance\nsleeper.version\u003d1.2.3\nsleeper.vpc\u003dvpc-12345\n"
+                  "\nsleeper.default.table.data.engine\u003djava\n"
                 ]
               ]
             }
