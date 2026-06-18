@@ -72,7 +72,7 @@ class NightlyTestSummaryTableTest {
         }
 
         @Test
-        void shouldRecordInstanceId() {
+        void shouldRecordShortId() {
             // Given
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                     NightlyTestTimestamp.from(Instant.parse("2023-05-22T16:14:00Z")),
@@ -89,7 +89,7 @@ class NightlyTestSummaryTableTest {
                             "\"tests\": [{" +
                             "\"name\":\"bulkImportPerformance\", " +
                             "\"exitCode\":0, " +
-                            "\"instanceId\":\"bulk-import-instance\"" +
+                            "\"shortId\":\"bulk-import-instance\"" +
                             "}]" +
                             "}]}");
         }
@@ -147,14 +147,15 @@ class NightlyTestSummaryTableTest {
             // Given
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
                     .add(
-                            NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
                             NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
                                     "splittingPerformance", 0,
                                     "bulkImportPerformance", 0,
                                     "compactionPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
 
             // When / Then
-            assertThatCode(summary::checkPassedRecently)
+            assertThatCode(() -> summary.checkPassedRecently(now))
                     .doesNotThrowAnyException();
         }
 
@@ -168,11 +169,24 @@ class NightlyTestSummaryTableTest {
                                     testResultWithShortId("splittingPerformance", "aa06172003sp", 1),
                                     testResultWithShortId("bulkImportPerformance", "aa06172003bp", 0),
                                     testResultWithShortId("compactionPerformance", "aa06172003cp", 0))));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
 
             // When / Then
-            assertThatThrownBy(summary::checkPassedRecently)
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
                     .isInstanceOf(LastRunFailedException.class)
                     .hasMessage("Last run failed, started at 2026-06-17T20:03:00Z, failed test suites: splittingPerformance (short ID aa06172003sp)");
+        }
+
+        @Test
+        void shouldFailWithNoRuns() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty();
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(NoRecentRunException.class)
+                    .hasMessage("No test runs found");
         }
     }
 }

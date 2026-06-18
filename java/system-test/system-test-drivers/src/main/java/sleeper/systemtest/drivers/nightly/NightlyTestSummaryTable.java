@@ -94,7 +94,10 @@ public class NightlyTestSummaryTable {
         return this;
     }
 
-    public void checkPassedRecently() {
+    public void checkPassedRecently(Instant now) {
+        if (executions.isEmpty()) {
+            throw new NoRecentRunException();
+        }
         Execution first = executions.getFirst();
         if (first.isAnyTestFailed()) {
             throw new LastRunFailedException(first);
