@@ -123,34 +123,6 @@ public class NightlyTestSummaryTable {
         LOGGER.info("All tests passed, last run started at {}", lastRun.getStartTime());
     }
 
-    private Execution getLastRun() {
-        return executions.getFirst();
-    }
-
-    private void checkNoTestsFailedAndNotRepeated(Instant now) throws TestFailureException {
-        Set<String> passed = new HashSet<>();
-        Instant maxStartTimeToCheck = now.minus(Duration.ofDays(7));
-        for (Execution execution : executions) {
-            if (execution.getStartTime().isBefore(maxStartTimeToCheck)) {
-                break;
-            }
-            List<Test> failed = new ArrayList<>();
-            for (Test test : execution.getTests()) {
-                if (passed.contains(test.getName())) {
-                    continue;
-                }
-                if (test.isFailed()) {
-                    failed.add(test);
-                } else {
-                    passed.add(test.getName());
-                }
-            }
-            if (!failed.isEmpty()) {
-                throw new TestFailedAndNotRepeatedException(execution, failed);
-            }
-        }
-    }
-
     public String toJson() {
         return GSON.toJson(this);
     }
@@ -195,6 +167,34 @@ public class NightlyTestSummaryTable {
             return "PASSED";
         } else {
             return "FAILED";
+        }
+    }
+
+    private Execution getLastRun() {
+        return executions.getFirst();
+    }
+
+    private void checkNoTestsFailedAndNotRepeated(Instant now) throws TestFailureException {
+        Set<String> passed = new HashSet<>();
+        Instant maxStartTimeToCheck = now.minus(Duration.ofDays(7));
+        for (Execution execution : executions) {
+            if (execution.getStartTime().isBefore(maxStartTimeToCheck)) {
+                break;
+            }
+            List<Test> failed = new ArrayList<>();
+            for (Test test : execution.getTests()) {
+                if (passed.contains(test.getName())) {
+                    continue;
+                }
+                if (test.isFailed()) {
+                    failed.add(test);
+                } else {
+                    passed.add(test.getName());
+                }
+            }
+            if (!failed.isEmpty()) {
+                throw new TestFailedAndNotRepeatedException(execution, failed);
+            }
         }
     }
 
