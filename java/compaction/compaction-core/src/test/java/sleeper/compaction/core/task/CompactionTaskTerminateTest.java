@@ -224,7 +224,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             assertThat(jobsReturnedToQueue).as("interrupted job should be put back on queue").containsExactly(job1);
             assertThat(consumedJobs).as("interrupted job should not be deleted from queue").isEmpty();
             assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
-            Thread.interrupted(); // clear interrupt flag set during test
+            assertThat(Thread.interrupted()).isTrue(); // clear interrupt flag set during test
         }
 
         @Test
@@ -241,7 +241,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             assertThat(consumedJobs).as("interrupted job should be committed and deleted from queue").containsExactly(job1);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
-            Thread.interrupted(); // clear interrupt flag set during test
+            assertThat(Thread.interrupted()).isTrue(); // clear interrupt flag set during test
         }
     }
 
