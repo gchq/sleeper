@@ -74,7 +74,10 @@ struct CmdLineArgs {
 }
 
 extern "C" fn progress(rows: usize) {
-    println!("Compaction has read {rows} rows");
+    println!(
+        "Compaction has written {} rows",
+        rows.to_formatted_string(&Locale::en)
+    );
 }
 
 #[tokio::main(flavor = "multi_thread")]

@@ -96,8 +96,7 @@ pub async fn run_compaction(
     let token = CancellationToken::new();
     let mut handle = None;
 
-    if let Some(callback) = progress_callback.as_ref() {
-        let callback_clone = *callback;
+    if let Some(callback) = progress_callback {
         let job_id = config.job_id().clone();
         let context_clone = sleeper_context.clone();
         let task_token = token.clone();
@@ -111,7 +110,7 @@ pub async fn run_compaction(
                     }
                     () = sleep(Duration::from_secs(5)) => {
                         if let Some(row_count) = context_clone.get_compaction_rows_read(&job_id) {
-                            callback_clone(row_count);
+                            callback(row_count);
                         }
                     }
                 }

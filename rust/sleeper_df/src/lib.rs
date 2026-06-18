@@ -22,21 +22,22 @@ use crate::{
         ffi_common_config::FFICommonConfig,
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
-    unpack::unpack_string,
 };
 use ::log::{error, warn};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{
-    CompletedOutput, ProgressCallback, run_compaction, run_query, stream_to_ffi_arrow_stream,
-};
-use std::ffi::{c_char, c_int};
+use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
+use std::ffi::c_int;
 
 mod context;
 mod log;
 mod objects;
 mod unpack;
+
+/// Callback function pointer type. This will be called periodically during compactions to tell the caller
+/// how many compaction output rows have been written.
+pub type ProgressCallback = Option<extern "C" fn(usize)>;
 
 /// Provides the C FFI interface to calling the [`run_compaction`] function.
 ///
@@ -76,8 +77,7 @@ pub extern "C" fn native_compact(
     ctx_ptr: *const FFIContext,
     input_ptr: *mut FFICommonConfig,
     output_ptr: *mut FFIFileResult,
-    // Rust FFI includes explicit handling of nullable function pointers like this
-    callback_ptr: Option<ProgressCallback>,
+    callback: ProgressCallback,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -104,11 +104,9 @@ pub extern "C" fn native_compact(
     };
 
     // Run compaction
-    let result = context.rt.block_on(run_compaction(
-        &details,
-        &context.sleeper_context,
-        callback_ptr,
-    ));
+    let result = context
+        .rt
+        .block_on(run_compaction(&details, &context.sleeper_context, callback));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_ptr.as_mut() } {
