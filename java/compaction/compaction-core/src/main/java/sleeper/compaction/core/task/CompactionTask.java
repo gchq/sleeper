@@ -157,6 +157,10 @@ public class CompactionTask {
                     processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
                 }
             }
+            if (Thread.currentThread().isInterrupted()) {
+                LOGGER.warn("Compaction task interrupted, terminating");
+                break;
+            }
         }
         return timeSupplier.get();
     }
@@ -178,6 +182,9 @@ public class CompactionTask {
             message.deleteFromQueue();
             return false;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             LOGGER.error("Failed preparing compaction job, putting job back on queue", e);
             failureTracker.incrementConsecutiveFailures();
             message.returnToQueue();

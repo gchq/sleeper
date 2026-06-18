@@ -55,13 +55,14 @@ public class BuildEC2Deployment {
         this.vpc = vpc;
         BuildEC2Image image = params.image();
 
+        SecurityGroup securityGroup = createSecurityGroup(scope);
         instance = Instance.Builder.create(scope, "BuildEC2")
                 .vpc(vpc)
-                .securityGroup(createSecurityGroup(scope))
+                .securityGroup(securityGroup)
                 .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.XLARGE2))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
-                .userData(UserData.custom(LoadUserDataUtil.userData(params)))
+                .userData(UserData.custom(LoadUserDataUtil.userData(params, securityGroup.getSecurityGroupId())))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();

@@ -33,6 +33,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_ALIVE_TIME_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
@@ -195,6 +196,52 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             // Then
             assertThat(supplier.getRemainingTimes()).isEmpty();
             assertThat(sleeps).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Stop if interrupted")
+    class StopIfInterrupted {
+
+        @Test
+        void shouldTerminateIfInterruptedDuringFileAssignment() throws Exception {
+            // Given
+            instanceProperties.set(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT, "true");
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When
+            runTaskCheckingFiles(
+                    new StateStoreWaitForFiles(0, null, null, null, null, null, null, null) {
+                        @Override
+                        public void wait(CompactionJob job, String taskId, String jobRunId) throws InterruptedException {
+                            throw new InterruptedException();
+                        }
+                    },
+                    processNoJobs());
+
+            // Then
+            assertThat(jobsReturnedToQueue).as("interrupted job should be put back on queue").containsExactly(job1);
+            assertThat(consumedJobs).as("interrupted job should not be deleted from queue").isEmpty();
+            assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
+            assertThat(Thread.interrupted()).isTrue(); // clear interrupt flag set during test
+        }
+
+        @Test
+        void shouldTerminateIfInterruptedDuringCommit() throws Exception {
+            // Given
+            setSyncCommit(tableProperties);
+            CompactionJob job1 = createJobOnQueue("job1");
+            CompactionJob job2 = createJobOnQueue("job2");
+
+            // When
+            runTask(processJobs(jobSucceeds().withAction(Thread.currentThread()::interrupt)));
+
+            // Then
+            assertThat(consumedJobs).as("interrupted job should be committed and deleted from queue").containsExactly(job1);
+            assertThat(jobsReturnedToQueue).isEmpty();
+            assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
+            assertThat(Thread.interrupted()).isTrue(); // clear interrupt flag set during test
         }
     }
 
