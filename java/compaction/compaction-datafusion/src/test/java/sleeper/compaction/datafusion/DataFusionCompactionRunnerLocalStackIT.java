@@ -63,6 +63,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -164,10 +166,39 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(0, 0));
     }
 
+    @Test
+    void shouldCallProgressCallbackWithCorrectRowCount() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("key", "row-1"));
+        Row row2 = new Row(Map.of("key", "row-2"));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+        AtomicLong callbackRowCount = new AtomicLong(-1);
+
+        // When
+        runTask(job, rowCount -> callbackRowCount.set(Math.toIntExact(rowCount)));
+
+        // Then
+        assertThat(readDataFile(schema, job.getOutputFile()))
+                .containsExactly(row1, row2);
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
+        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+        assertThat(callbackRowCount.get()).isEqualTo(2);
+    }
+
     private void runTask(CompactionJob job) throws Exception {
+        runTask(job, null);
+    }
+
+    private void runTask(CompactionJob job, Consumer<Long> progressCallback) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
-            compactionTaskTestHelper().runTask(runner, null, List.of(job));
+            compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
         }
     }
 
