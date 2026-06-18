@@ -255,7 +255,7 @@ public class NightlyTestSummaryTable {
 
         private final String name;
         private final Integer exitCode;
-        private final String instanceId; // This is an old field which is no longer set but used to contain the short ID
+        private final String instanceId; // This is kept in order to read old data with GSON. It contained the short ID.
         private final String shortId;
 
         public Test(String name, Integer exitCode, String shortId) {
