@@ -250,7 +250,7 @@ public class NightlyTestSummaryTable {
         }
     }
 
-    @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
+    @SuppressFBWarnings("UWF_NULL_FIELD") // instanceId may be set by GSON with old data
     public static class Test {
 
         private final String name;
