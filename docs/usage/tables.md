@@ -39,23 +39,8 @@ with `adminClient.sh`.
 Here's an example of how you might use these together to create and add data to a table:
 
 ```bash
-cat ./scripts/templates/schema.template
-{
-  "rowKeyFields": [
-    {
-      "name": "key",
-      "type": "StringType"
-    }
-  ],
-  "valueFields": [
-    {
-      "name": "value",
-      "type": "StringType"
-    }
-  ]
-}
 ID=my-instance-id
-./scripts/utility/addTable.sh $ID table1
+./scripts/utility/addTable.sh $ID table1 --schema ./schema.json
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
@@ -64,16 +49,22 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 
 ### Add table
 
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
+The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
+file with `--schema` or as part of a configuration directory with `--config-dir`. The table name is always passed as a
+positional argument and will override any name set in a table properties file.
 
 ```bash
-cd scripts
-editor templates/tableproperties.template
-editor templates/schema.template
-./utility/addTable.sh <instance-id> <table-name>
+# Create a table with just a schema file (default table properties will be used)
+./scripts/utility/addTable.sh <instance-id> <table-name> --schema <schema-file>
+
+# Create a table with a schema and custom table properties
+./scripts/utility/addTable.sh <instance-id> <table-name> --schema <schema-file> --table-properties <table-properties-file>
+
+# Create a table using a configuration directory containing schema.json and table.properties
+./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir>
 ```
+
+See [creating a schema](schema.md) for how to create a schema file.
 
 ### Pre-split partitions
 
