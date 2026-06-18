@@ -20,6 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.nightly.failures.LastRunFailedException;
+import sleeper.systemtest.drivers.nightly.failures.NoRecentRunException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailedAndNotRepeatedException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailureException;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;

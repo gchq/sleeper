@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.nightly;
+package sleeper.systemtest.drivers.nightly.failures;
 
-public class LastRunFailedException extends TestFailureException {
+import java.time.Instant;
 
-    public LastRunFailedException(NightlyTestSummaryTable.Execution execution) {
-        super("Last run failed, started at " + execution.getStartTime() + ", failed test suites: " + execution.describeFailedTests());
+public class NoRecentRunException extends TestFailureException {
+
+    public NoRecentRunException(Instant lastRunTime) {
+        super("No recent test run found, last run time: " + lastRunTime);
+    }
+
+    public NoRecentRunException() {
+        super("No test runs found");
     }
 
 }

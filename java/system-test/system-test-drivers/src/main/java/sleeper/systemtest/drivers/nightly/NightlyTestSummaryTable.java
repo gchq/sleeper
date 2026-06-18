@@ -29,6 +29,10 @@ import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
+import sleeper.systemtest.drivers.nightly.failures.LastRunFailedException;
+import sleeper.systemtest.drivers.nightly.failures.NoRecentRunException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailedAndNotRepeatedException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailureException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

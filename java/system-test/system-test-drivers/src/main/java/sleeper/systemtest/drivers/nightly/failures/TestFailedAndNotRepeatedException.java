@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.nightly;
+package sleeper.systemtest.drivers.nightly.failures;
+
+import sleeper.systemtest.drivers.nightly.NightlyTestSummaryTable;
 
 import java.util.List;
 
