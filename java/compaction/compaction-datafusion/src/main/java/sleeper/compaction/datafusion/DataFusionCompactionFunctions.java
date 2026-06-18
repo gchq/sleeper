@@ -37,15 +37,12 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * <strong>Technical notes:</strong>
      * <ul>
      * <li>do <strong>NOT</strong> make any assumptions about which thread calls this function! It will not be the
-     * thread
-     * that invoked the native compaction, and it may not always be the same native thread that calls this function
-     * during
-     * a single compaction! Therefore, any mutable state changes made by implementations of this interface, must be
+     * thread that invoked the native compaction, and it may not always be the same native thread that calls this function
+     * during a single compaction! Therefore, any mutable state changes made by implementations of this interface, must be
      * appropriately synchronised.</li>
      * <li>This function should execute quickly. If you need to do further work, consider using a thread-safe container
-     * to
-     * hand work off to a separate Java thread.</li>
-     * <li>Do not make further native calls inside a callback function</li>
+     * to hand work off to a separate Java thread.</li>
+     * <li>Do not make further native calls inside a callback function.</li>
      * </ul>
      */
     @FunctionalInterface
