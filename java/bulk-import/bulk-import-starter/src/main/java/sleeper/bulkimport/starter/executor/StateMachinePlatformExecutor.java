@@ -96,6 +96,10 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
             jarLocation = SPARK_IMAGE_JAR_LOCATION;
         }
 
+        // Ensure pods aren't disrupted/evicted before they finish
+        baseSparkConfig.put("spark.kubernetes.driver.annotation.karpenter.sh/do-not-disrupt", "true");
+        baseSparkConfig.put("spark.kubernetes.executor.annotation.karpenter.sh/do-not-disrupt", "true");
+
         return arguments.sparkSubmitCommandForEKSCluster(taskId, jarLocation, baseSparkConfig);
     }
 
