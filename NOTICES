@@ -456,6 +456,10 @@ Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 
 - Apache License, Version 2.0
 
+Exec Maven Plugin (org.codehaus.mojo:exec-maven-plugin:3.*)
+
+- Apache License, Version 2.0
+
 
 The file java/core/src/main/java/sleeper/core/schema/type/ByteArray.java contains code that is heavily based on
 ByteArray from the Facebook JCommon Collections library, licensed under the Apache License, Version 2.0.
