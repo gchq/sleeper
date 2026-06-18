@@ -26,6 +26,9 @@ import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.testResultWithShortId;
 
 class NightlyTestSummaryTableTest {
     @Nested
@@ -75,7 +78,7 @@ class NightlyTestSummaryTableTest {
                     NightlyTestTimestamp.from(Instant.parse("2023-05-22T16:14:00Z")),
                     new NightlyTestOutput(List.of(TestResult.builder()
                             .testName("bulkImportPerformance")
-                            .instanceId("bulk-import-instance")
+                            .shortId("bulk-import-instance")
                             .exitCode(0)
                             .build())));
 
@@ -132,6 +135,44 @@ class NightlyTestSummaryTableTest {
                     "| START_TIME           | bulkImportPerformance | compactionPerformance | splittingPerformance |\n" +
                     "| 2023-05-03T15:15:00Z | PASSED                | PASSED                | PASSED               |\n" +
                     "-----------------------------------------------------------------------------------------------\n");
+        }
+    }
+
+    @Nested
+    @DisplayName("Check recent test suite runs")
+    class CheckTests {
+
+        @Test
+        void shouldPassWhenOneRunSucceededInLastDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 0)));
+
+            // When / Then
+            assertThatCode(summary::checkPassedRecently)
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldFailWhenOneRunFailedInLastDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            new NightlyTestOutput(List.of(
+                                    testResultWithShortId("splittingPerformance", "aa06172003sp", 1),
+                                    testResultWithShortId("bulkImportPerformance", "aa06172003bp", 0),
+                                    testResultWithShortId("compactionPerformance", "aa06172003cp", 0))));
+
+            // When / Then
+            assertThatThrownBy(summary::checkPassedRecently)
+                    .isInstanceOf(LastRunFailedException.class)
+                    .hasMessage("Last run failed, started at 2026-06-17T20:03:00Z, failed test suites: splittingPerformance (short ID aa06172003sp)");
         }
     }
 }

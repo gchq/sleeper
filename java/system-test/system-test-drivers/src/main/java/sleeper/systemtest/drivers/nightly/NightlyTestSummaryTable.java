@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.joining;
+
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class NightlyTestSummaryTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestSummaryTable.class);
@@ -90,6 +92,13 @@ public class NightlyTestSummaryTable {
             NightlyTestTimestamp timestamp, NightlyTestOutput output) {
         executions.addFirst(execution(timestamp, output));
         return this;
+    }
+
+    public void checkPassedRecently() {
+        Execution first = executions.getFirst();
+        if (first.isAnyTestFailed()) {
+            throw new LastRunFailedException(first);
+        }
     }
 
     public String toJson() {
@@ -154,7 +163,7 @@ public class NightlyTestSummaryTable {
 
     private static List<Test> tests(List<TestResult> testResults) {
         return testResults.stream()
-                .map(result -> new Test(result.getTestName(), result.getExitCode(), result.getInstanceId()))
+                .map(result -> new Test(result.getTestName(), result.getExitCode(), result.getShortId()))
                 .sorted(Comparator.comparing(o -> o.name))
                 .collect(Collectors.toList());
     }
@@ -169,6 +178,18 @@ public class NightlyTestSummaryTable {
             this.startTime = startTime;
             this.tests = tests;
         }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public String describeFailedTests() {
+            return tests.stream().filter(Test::isFailed).map(Test::getDescription).collect(joining(", "));
+        }
+
+        public boolean isAnyTestFailed() {
+            return tests.stream().anyMatch(Test::isFailed);
+        }
     }
 
     @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
@@ -177,11 +198,29 @@ public class NightlyTestSummaryTable {
         private final String name;
         private final Integer exitCode;
         private final String instanceId;
+        private final String shortId;
 
-        public Test(String name, Integer exitCode, String instanceId) {
+        public Test(String name, Integer exitCode, String shortId) {
             this.name = name;
             this.exitCode = exitCode;
-            this.instanceId = instanceId;
+            this.instanceId = null;
+            this.shortId = shortId;
+        }
+
+        public String getShortId() {
+            if (instanceId != null) {
+                return instanceId;
+            } else {
+                return shortId;
+            }
+        }
+
+        public String getDescription() {
+            return name + " (short ID " + getShortId() + ")";
+        }
+
+        public boolean isFailed() {
+            return exitCode != 0;
         }
     }
 }
