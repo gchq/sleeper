@@ -75,15 +75,6 @@ public class NightlyTestSummaryTable {
         }
     }
 
-    private static boolean doesObjectExist(S3Client s3Client, String bucketName, String objectKey) {
-        try {
-            s3Client.headObject(request -> request.bucket(bucketName).key(objectKey));
-            return true;
-        } catch (NoSuchKeyException e) {
-            return false;
-        }
-    }
-
     public void saveToS3(S3Client s3Client, String bucketName) {
         LOGGER.info("Saving test summary with {} executions to S3 bucket: {}", executions.size(), bucketName);
         s3Client.putObject(
@@ -145,6 +136,15 @@ public class NightlyTestSummaryTable {
             return "PASSED";
         } else {
             return "FAILED";
+        }
+    }
+
+    private static boolean doesObjectExist(S3Client s3Client, String bucketName, String objectKey) {
+        try {
+            s3Client.headObject(request -> request.bucket(bucketName).key(objectKey));
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
         }
     }
 
