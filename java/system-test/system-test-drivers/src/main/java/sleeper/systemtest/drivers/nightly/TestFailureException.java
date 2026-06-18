@@ -15,10 +15,10 @@
  */
 package sleeper.systemtest.drivers.nightly;
 
-public class LastRunFailedException extends TestFailureException {
+public class TestFailureException extends RuntimeException {
 
-    public LastRunFailedException(NightlyTestSummaryTable.Execution execution) {
-        super("Last run failed, started at " + execution.getStartTime() + ", failed test suites: " + execution.describeFailedTests());
+    public TestFailureException(String message) {
+        super(message);
     }
 
 }

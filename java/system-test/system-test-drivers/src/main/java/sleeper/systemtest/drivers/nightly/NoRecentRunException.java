@@ -17,7 +17,7 @@ package sleeper.systemtest.drivers.nightly;
 
 import java.time.Instant;
 
-public class NoRecentRunException extends RuntimeException {
+public class NoRecentRunException extends TestFailureException {
 
     public NoRecentRunException(Instant lastRunTime) {
         super("No recent test run found, last run time: " + lastRunTime);

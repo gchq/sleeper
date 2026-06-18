@@ -174,6 +174,7 @@ class NightlyTestSummaryTableTest {
             // When / Then
             assertThatThrownBy(() -> summary.checkPassedRecently(now))
                     .isInstanceOf(LastRunFailedException.class)
+                    .isInstanceOf(TestFailureException.class)
                     .hasMessage("Last run failed, started at 2026-06-17T20:03:00Z, failed test suites: splittingPerformance (short ID aa06172003sp)");
         }
 
@@ -186,6 +187,7 @@ class NightlyTestSummaryTableTest {
             // When / Then
             assertThatThrownBy(() -> summary.checkPassedRecently(now))
                     .isInstanceOf(NoRecentRunException.class)
+                    .isInstanceOf(TestFailureException.class)
                     .hasMessage("No test runs found");
         }
 
@@ -227,6 +229,7 @@ class NightlyTestSummaryTableTest {
             // When / Then
             assertThatThrownBy(() -> summary.checkPassedRecently(now))
                     .isInstanceOf(TestFailedAndNotRepeatedException.class)
+                    .isInstanceOf(TestFailureException.class)
                     .hasMessage("Run contains a test failure which has not been re-run, started at 2026-06-16T20:03:00Z, failed test suites: compactionPerformance (short ID aa06172003cp)");
         }
 

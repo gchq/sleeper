@@ -99,7 +99,16 @@ public class NightlyTestSummaryTable {
         return this;
     }
 
-    public void checkPassedRecently(Instant now) {
+    public void checkPassedRecentlyOrExit() {
+        try {
+            checkPassedRecently(Instant.now());
+        } catch (TestFailureException e) {
+            LOGGER.error(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    public void checkPassedRecently(Instant now) throws TestFailureException {
         if (executions.isEmpty()) {
             throw new NoRecentRunException();
         }
@@ -111,13 +120,14 @@ public class NightlyTestSummaryTable {
             throw new LastRunFailedException(lastRun);
         }
         checkNoTestsFailedAndNotRepeated(now);
+        LOGGER.info("All tests passed, last run started at {}", lastRun.getStartTime());
     }
 
     private Execution getLastRun() {
         return executions.getFirst();
     }
 
-    private void checkNoTestsFailedAndNotRepeated(Instant now) {
+    private void checkNoTestsFailedAndNotRepeated(Instant now) throws TestFailureException {
         Set<String> passed = new HashSet<>();
         Instant maxStartTimeToCheck = now.minus(Duration.ofDays(7));
         for (Execution execution : executions) {

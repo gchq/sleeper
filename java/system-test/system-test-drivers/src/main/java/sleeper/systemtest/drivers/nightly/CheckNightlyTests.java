@@ -17,8 +17,6 @@ package sleeper.systemtest.drivers.nightly;
 
 import software.amazon.awssdk.services.s3.S3Client;
 
-import java.time.Instant;
-
 public class CheckNightlyTests {
 
     private CheckNightlyTests() {
@@ -32,7 +30,7 @@ public class CheckNightlyTests {
 
         try (S3Client s3Client = S3Client.create()) {
             NightlyTestSummaryTable.fromS3(s3Client, bucketName)
-                    .checkPassedRecently(Instant.now());
+                    .checkPassedRecentlyOrExit();
         }
     }
 

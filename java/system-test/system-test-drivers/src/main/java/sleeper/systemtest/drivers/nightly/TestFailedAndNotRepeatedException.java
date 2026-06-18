@@ -17,7 +17,7 @@ package sleeper.systemtest.drivers.nightly;
 
 import java.util.List;
 
-public class TestFailedAndNotRepeatedException extends RuntimeException {
+public class TestFailedAndNotRepeatedException extends TestFailureException {
 
     public TestFailedAndNotRepeatedException(NightlyTestSummaryTable.Execution execution, List<NightlyTestSummaryTable.Test> tests) {
         super("Run contains a test failure which has not been re-run, started at " + execution.getStartTime() + ", failed test suites: " + NightlyTestSummaryTable.Test.describe(tests));
