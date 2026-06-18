@@ -1,4 +1,4 @@
-//! Contains code to replace the sort stage that [`DataFrame`] as SQL table functionality incorrectly drops it.
+//! Contains code to replace the sort stage that incorrectly drops when we add an SQL query to the end of a Sleeper query.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
