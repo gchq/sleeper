@@ -103,7 +103,10 @@ public class ParallelCompactionsST {
                 .allSatisfy(file -> assertThat(file.getNumberOfRows())
                         .describedAs("contains an even distribution of rows for the partition")
                         .isBetween(800L, 1600L));
-        // And all jobs have finished as expected
+        // And all jobs have finished and only ran once
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(statistics -> statistics.isAllFinishedOneRunEachWithMinimum(40960),
+                        "all jobs finished and ran once");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
