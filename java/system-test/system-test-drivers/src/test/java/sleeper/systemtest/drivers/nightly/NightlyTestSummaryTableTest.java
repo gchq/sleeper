@@ -188,5 +188,23 @@ class NightlyTestSummaryTableTest {
                     .isInstanceOf(NoRecentRunException.class)
                     .hasMessage("No test runs found");
         }
+
+        @Test
+        void shouldFailWithRunOlderThanOneDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-16T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(NoRecentRunException.class)
+                    .hasMessage("No recent test run found, last run time: 2026-06-16T20:03:00Z");
+        }
     }
 }

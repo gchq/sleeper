@@ -33,6 +33,7 @@ import sleeper.clients.util.tablewriter.TableWriterFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -99,6 +100,9 @@ public class NightlyTestSummaryTable {
             throw new NoRecentRunException();
         }
         Execution first = executions.getFirst();
+        if (first.getStartTime().isBefore(now.minus(Duration.ofDays(1)))) {
+            throw new NoRecentRunException(first.getStartTime());
+        }
         if (first.isAnyTestFailed()) {
             throw new LastRunFailedException(first);
         }
