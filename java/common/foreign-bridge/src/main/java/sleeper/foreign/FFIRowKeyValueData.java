@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
  * Java mapping of C union type for containing a Sleeper row key value.
  * Unions in C use overlapping storage for their members. Only
  * one member may be "active" at a time.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.

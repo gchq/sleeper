@@ -32,7 +32,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STAT
 /**
  * Contains all the Sleeper options for DataFusion operation. These may not be needed for every DataFusion usage,
  * so come with reasonable defaults. All defaults are documented in Rust code.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/ffi_sleeper_options.rs. The
  * order and types of the fields must match exactly.
