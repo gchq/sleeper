@@ -89,7 +89,7 @@ impl FFICommonConfig {
         file_output_enabled: bool,
     ) -> Result<CommonConfig<'a>, color_eyre::Report> {
         if self.job_id.is_null() {
-            bail!("FFICommonConfig job_id is NULL, file output selected");
+            bail!("FFICommonConfig job_id is NULL");
         }
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");

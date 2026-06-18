@@ -63,8 +63,7 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * Invokes a native compaction.
      *
      * Progress updates are delivered periodically by a native thread calling the given progress function. This
-     * parameter
-     * may be null.
+     * parameter may be null.
      *
      * The provided context object must be open.
      * The return code will be 0 if successful.

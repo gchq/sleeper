@@ -5,8 +5,6 @@
 //!
 //! We have an internal "details" module that encapsulates the internal workings. All the
 //! public API should be in this module.
-use std::{sync::Arc, time::Duration};
-
 /*
 * Copyright 2022-2026 Crown Copyright
 *
@@ -27,6 +25,7 @@ use crate::{
     sleeper_context::SleeperContext,
 };
 use color_eyre::eyre::Result;
+use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 
@@ -129,7 +128,7 @@ pub async fn run_compaction(
 
     // Guarantee one progress update
     if let Ok(rows) = &result
-        && let Some(callback) = progress_callback.as_ref()
+        && let Some(callback) = progress_callback
     {
         callback(rows.rows_written);
     }
