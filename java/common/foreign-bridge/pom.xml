@@ -68,7 +68,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>${resources.plugin.version}</version>
                 <goals>
                     <goal>copy-resources</goal>
                 </goals>
@@ -107,7 +106,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>${exec.plugin.version}</version>
                         <executions>
                             <!-- You need one execution per cross target you are building. Make sure
                             you add
