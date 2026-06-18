@@ -31,6 +31,16 @@ public interface EKSProperty {
             .description("(EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EKS_API_ALLOWED_SECURITY_GROUPS = Index.propertyBuilder("sleeper.bulk.import.eks.api.allowed.security.groups")
+            .description("(EKS mode only) IDs of security groups that should be permitted to reach the EKS Kubernetes " +
+                    "API. Each ID listed here is added as an ingress rule on TCP/443 to the cluster's security " +
+                    "group.\n" +
+                    "Required if you want to call the API from another host inside the cluster's VPC, since the " +
+                    "cluster's default security group only permits traffic from the cluster itself. Leave unset for " +
+                    "deployments where only the cluster's own components need API access, or where the API accessed " +
+                    "from outside the VPC.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty EKS_IS_NATIVE_LIBS_IMAGE = Index.propertyBuilder("sleeper.bulk.import.eks.is.native.libs.image")
             .description("(EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with " +
                     "native Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be " +

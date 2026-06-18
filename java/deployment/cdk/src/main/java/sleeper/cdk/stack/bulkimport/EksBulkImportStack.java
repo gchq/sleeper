@@ -21,6 +21,8 @@ import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v35.KubectlV35Layer;
+import software.amazon.awscdk.services.ec2.Peer;
+import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.eks_v2.AccessEntry;
 import software.amazon.awscdk.services.eks_v2.AccessPolicy;
@@ -89,6 +91,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
+import static sleeper.core.properties.instance.EKSProperty.EKS_API_ALLOWED_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -233,6 +236,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
+        addApiIngressFromAllowedSecurityGroups(bulkImportCluster, instanceProperties);
 
         addRoleManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
@@ -386,6 +390,15 @@ public final class EksBulkImportStack extends NestedStack {
 
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+
+    private void addApiIngressFromAllowedSecurityGroups(Cluster cluster, InstanceProperties properties) {
+        for (String securityGroupId : properties.getList(EKS_API_ALLOWED_SECURITY_GROUPS)) {
+            cluster.getClusterSecurityGroup().addIngressRule(
+                    Peer.securityGroupId(securityGroupId),
+                    Port.tcp(443),
+                    "Allow " + securityGroupId + " to reach the EKS Kubernetes API");
+        }
     }
 
     @SuppressWarnings("unchecked")
