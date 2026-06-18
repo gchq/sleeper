@@ -103,14 +103,18 @@ public class NightlyTestSummaryTable {
         if (executions.isEmpty()) {
             throw new NoRecentRunException();
         }
-        Execution first = executions.getFirst();
-        if (first.getStartTime().isBefore(now.minus(Duration.ofDays(1)))) {
-            throw new NoRecentRunException(first.getStartTime());
+        Execution lastRun = getLastRun();
+        if (lastRun.getStartTime().isBefore(now.minus(Duration.ofDays(1)))) {
+            throw new NoRecentRunException(lastRun.getStartTime());
         }
-        if (first.isAnyTestFailed()) {
-            throw new LastRunFailedException(first);
+        if (lastRun.isAnyTestFailed()) {
+            throw new LastRunFailedException(lastRun);
         }
         checkNoTestsFailedAndNotRepeated(now);
+    }
+
+    private Execution getLastRun() {
+        return executions.getFirst();
     }
 
     private void checkNoTestsFailedAndNotRepeated(Instant now) {
