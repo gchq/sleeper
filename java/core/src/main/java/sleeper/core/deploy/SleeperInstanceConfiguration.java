@@ -120,19 +120,24 @@ public class SleeperInstanceConfiguration {
     /**
      * Creates an instance configuration from a local configuration directory. All configuration files defined by the
      * directory structure are read: instance.properties, tags.properties, table.properties, schema.json, splits.txt,
-     * and any tables under a tables/ subdirectory. If the given path points to a file rather than a directory (e.g.
-     * the instance.properties file itself), the configuration is loaded from the directory containing that file.
+     * and any tables under a tables/ subdirectory. If the given path points to a file rather than a directory, that
+     * file is loaded as the instance properties file, and table properties are loaded from the directory containing it.
      *
-     * @param  configurationDirectory the path to the configuration directory, or to a file within it
+     * @param  configurationDirectory the path to the configuration directory, or to the instance properties file
      * @return                        the instance configuration
      */
     public static SleeperInstanceConfiguration fromLocalConfigurationDirectory(Path configurationDirectory) {
-        Path directory = configurationDirectory;
-        if (!Files.isDirectory(directory)) {
-            Path parent = directory.getParent();
+        Path directory;
+        Path instancePropertiesFile;
+        if (Files.isDirectory(configurationDirectory)) {
+            directory = configurationDirectory;
+            instancePropertiesFile = directory.resolve("instance.properties");
+        } else {
+            instancePropertiesFile = configurationDirectory;
+            Path parent = configurationDirectory.getParent();
             directory = parent != null ? parent : Path.of(".");
         }
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidationFromDirectory(directory);
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(instancePropertiesFile);
         List<TableProperties> tableProperties = LoadLocalProperties
                 .loadTablesFromDirectoryNoValidation(instanceProperties, directory)
                 .collect(Collectors.toUnmodifiableList());

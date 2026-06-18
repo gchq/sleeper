@@ -34,7 +34,7 @@ SYSTEM_TEST_JAR="${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-PROPERTIES_FILE="$THIS_DIR/instance.properties"
+PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
 if [ ! -f "$PROPERTIES_FILE" ]; then
    cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
 fi
