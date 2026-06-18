@@ -39,12 +39,13 @@ class LoadUserDataUtilTest {
                 LOGIN_USER.value("test-user"),
                 REPOSITORY.value("a-repo"),
                 FORK.value("a-fork"),
-                BRANCH.value("feature/something")))))
+                BRANCH.value("feature/something"))), "sg-12345"))
                 .startsWith("Content-Type: multipart/mixed;")
                 .contains("LOGIN_USER=test-user" + System.lineSeparator() +
                         "REPOSITORY=a-repo" + System.lineSeparator() +
                         "FORK=a-fork" + System.lineSeparator() +
                         "BRANCH=feature/something" + System.lineSeparator())
+                .contains("sleeper.bulk.import.eks.api.allowed.security.groups=sg-12345")
                 .doesNotContain("write_files");
     }
 
@@ -59,12 +60,13 @@ class LoadUserDataUtilTest {
                 NIGHTLY_TEST_DEPLOY_ID.value("mt"),
                 VPC_ID.value("my-vpc"),
                 NIGHTLY_TEST_SUBNETS.value("subnet-1", "subnet-2"),
-                NIGHTLY_TEST_BUCKET.value("my-bucket")))))
+                NIGHTLY_TEST_BUCKET.value("my-bucket"))), "sg-12345"))
                 .startsWith("Content-Type: multipart/mixed;")
                 .contains("LOGIN_USER=test-user" + System.lineSeparator() +
                         "REPOSITORY=a-repo" + System.lineSeparator() +
                         "FORK=a-fork" + System.lineSeparator() +
                         "BRANCH=feature/something" + System.lineSeparator())
+                .contains("sleeper.bulk.import.eks.api.allowed.security.groups=sg-12345")
                 .contains("write_files");
     }
 
