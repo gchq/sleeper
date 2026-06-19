@@ -40,7 +40,7 @@ Here's an example of how you might use these together to create and add data to 
 
 ```bash
 ID=my-instance-id
-./scripts/utility/addTable.sh $ID table1 --schema ./schema.json
+./scripts/utility/addTable.sh $ID --table-name table1 --schema ./schema.json
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
@@ -50,24 +50,31 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 ### Add table
 
 The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
-file with `--schema` or as part of a configuration directory with `--config-dir`. The table name is always passed as a
-positional argument and will override any name set in a table properties file.
+file with `--schema` or as part of a configuration directory with `--config-dir`. The table name can be supplied with
+`--table-name`, or read from the table properties file passed to `--table-properties` or `--config-dir`. If
+`--table-name` is provided alongside `--table-properties` or `--config-dir`, it overrides any name set in the file.
 
 ```bash
-# Create a table with just a schema file (default table properties will be used)
-./scripts/utility/addTable.sh <instance-id> <table-name> --schema <schema-file>
+# Create a table with a name and schema file (default table properties will be used)
+./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file>
 
-# Create a table with a schema and custom table properties
-./scripts/utility/addTable.sh <instance-id> <table-name> --schema <schema-file> --table-properties <table-properties-file>
+# Create a table with a schema and custom table properties (table name read from the properties file)
+./scripts/utility/addTable.sh <instance-id> --schema <schema-file> --table-properties <table-properties-file>
 
-# Create a table using a configuration directory containing schema.json and table.properties
-./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir>
+# Override the table name from a properties file
+./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file> --table-properties <table-properties-file>
+
+# Create a table using a configuration directory containing schema.json and table.properties (table name read from table.properties)
+./scripts/utility/addTable.sh <instance-id> --config-dir <config-dir>
+
+# Use a config directory but override the table name
+./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir>
 
 # Use a config directory but override the schema file
-./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir> --schema <schema-file>
+./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir> --schema <schema-file>
 
 # Use a config directory but override the table properties file
-./scripts/utility/addTable.sh <instance-id> <table-name> --config-dir <config-dir> --table-properties <table-properties-file>
+./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir> --table-properties <table-properties-file>
 ```
 
 Note: `--schema`, `--table-properties`, and `--config-dir` cannot all be specified at the same time.

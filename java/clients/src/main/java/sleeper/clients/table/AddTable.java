@@ -65,13 +65,18 @@ public class AddTable {
 
     public static void main(String[] rawArgs) throws IOException {
         CommandLineUsage usage = CommandLineUsage.builder()
-                .positionalArguments(List.of("instance-id", "table-name"))
+                .positionalArguments(List.of("instance-id"))
                 .options(List.of(
+                        CommandOption.longOption("table-name"),
                         CommandOption.longOption("schema"),
                         CommandOption.longOption("table-properties"),
                         CommandOption.longOption("config-dir")))
                 .helpSummary("" +
                         "Adds a new table to an existing Sleeper instance.\n" +
+                        "\n" +
+                        "--table-name <name>\n" +
+                        "Name of the new table. May also be set in --table-properties or --config-dir. " +
+                        "If --table-name is provided alongside --table-properties or --config-dir, it overrides the name in the file.\n" +
                         "\n" +
                         "--schema <file>\n" +
                         "Path to the schema JSON file.\n" +
@@ -85,21 +90,12 @@ public class AddTable {
                         "from the directory, but not both at the same time.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> {
-            Optional<Path> schemaFile = arguments.getOptionalString("schema").map(Path::of);
-            Optional<Path> tablePropertiesFile = arguments.getOptionalString("table-properties").map(Path::of);
-            Optional<Path> configDir = arguments.getOptionalString("config-dir").map(Path::of);
-            if (schemaFile.isEmpty() && configDir.isEmpty()) {
-                throw new CommandArgumentsException("Either --schema or --config-dir must be provided");
-            }
-            if (schemaFile.isPresent() && tablePropertiesFile.isPresent() && configDir.isPresent()) {
-                throw new CommandArgumentsException("Cannot specify --schema, --table-properties, and --config-dir together");
-            }
             return new Arguments(
                     arguments.getString("instance-id"),
-                    arguments.getString("table-name"),
-                    schemaFile,
-                    tablePropertiesFile,
-                    configDir);
+                    arguments.getOptionalString("table-name").orElse(null),
+                    getPath(arguments.getOptionalString("schema")),
+                    getPath(arguments.getOptionalString("table-properties")),
+                    getPath(arguments.getOptionalString("config-dir")));
         });
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
@@ -110,14 +106,14 @@ public class AddTable {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId());
 
-            Path schemaFile = args.schemaFile().orElseGet(() -> args.configDir().get().resolve("schema.json"));
-            Optional<Path> tablePropertiesFile = args.tablePropertiesFile()
-                    .or(() -> args.configDir().map(dir -> dir.resolve("table.properties")));
+            Path schemaFile = args.resolveSchemaFile();
 
-            TableProperties tableProperties = tablePropertiesFile.isPresent()
-                    ? new TableProperties(instanceProperties, loadProperties(tablePropertiesFile.get()))
-                    : new TableProperties(instanceProperties);
-            tableProperties.set(TABLE_NAME, args.tableName());
+            TableProperties tableProperties = createTableProperties(instanceProperties, args);
+            if (tableProperties.get(TABLE_NAME) == null || tableProperties.get(TABLE_NAME).isBlank()) {
+                System.out.println(usage.createUsageMessage());
+                System.out.println("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+                System.exit(1);
+            }
             tableProperties.setSchema(Schema.load(schemaFile));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
@@ -126,11 +122,54 @@ public class AddTable {
         }
     }
 
+    static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) throws IOException {
+        TableProperties tableProperties;
+        if (args.tablePropertiesFile() != null) {
+            tableProperties = new TableProperties(instanceProperties, loadProperties(args.tablePropertiesFile()));
+        } else if (args.configDir() != null) {
+            tableProperties = new TableProperties(instanceProperties, loadProperties(args.configDir().resolve("table.properties")));
+        } else {
+            tableProperties = new TableProperties(instanceProperties);
+        }
+        if (args.tableName() != null) {
+            tableProperties.set(TABLE_NAME, args.tableName());
+        }
+        return tableProperties;
+    }
+
+    private static Path getPath(Optional<String> pathString) {
+        if (pathString.isPresent()) {
+            return Path.of(pathString.get());
+        }
+        return null;
+    }
+
     public record Arguments(
             String instanceId,
             String tableName,
-            Optional<Path> schemaFile,
-            Optional<Path> tablePropertiesFile,
-            Optional<Path> configDir) {
+            Path schemaFile,
+            Path tablePropertiesFile,
+            Path configDir) {
+
+        public Arguments {
+            if (instanceId == null) {
+                throw new CommandArgumentsException("instance-id must not be null");
+            }
+            if (tableName == null && tablePropertiesFile == null && configDir == null) {
+                throw new CommandArgumentsException("A table name is required. Provide --table-name, or set it in --table-properties or --config-dir.");
+            }
+
+            if (schemaFile == null && configDir == null) {
+                throw new CommandArgumentsException("Either --schema or --config-dir must be provided");
+            }
+
+            if (schemaFile != null && tablePropertiesFile != null && configDir != null) {
+                throw new CommandArgumentsException("Cannot specify --schema, --table-properties, and --config-dir together");
+            }
+        }
+
+        public Path resolveSchemaFile() {
+            return schemaFile != null ? schemaFile : configDir.resolve("schema.json");
+        }
     }
 }
