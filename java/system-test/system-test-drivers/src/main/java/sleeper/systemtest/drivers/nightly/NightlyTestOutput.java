@@ -130,7 +130,7 @@ public class NightlyTestOutput {
             builder.exitCode(Integer.parseInt(parts[0]));
         }
         if (parts.length > 1) {
-            builder.instanceId(parts[1]);
+            builder.shortId(parts[1]);
         }
     }
 
