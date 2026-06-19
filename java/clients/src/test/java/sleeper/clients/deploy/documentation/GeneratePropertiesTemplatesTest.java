@@ -149,7 +149,7 @@ class GeneratePropertiesTemplatesTest {
 
             // When
             tableProperties.setSchema(createSchemaWithKey("key"));
-            setDefaultTableProperties(tableProperties);
+            setMandatoryTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -185,7 +185,7 @@ class GeneratePropertiesTemplatesTest {
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
             tableProperties.setSchema(createSchemaWithKey("key"));
 
-            setDefaultTableProperties(tableProperties);
+            setMandatoryTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -236,7 +236,7 @@ class GeneratePropertiesTemplatesTest {
 
             // When
             tableProperties.setSchema(createSchemaWithKey("key"));
-            setDefaultTableProperties(tableProperties);
+            setMandatoryTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -283,7 +283,7 @@ class GeneratePropertiesTemplatesTest {
                 .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
     }
 
-    private void setDefaultTableProperties(TableProperties tableProperties) {
+    private void setMandatoryTableProperties(TableProperties tableProperties) {
         tableProperties.set(TABLE_ID, "test-table-id");
         tableProperties.set(TABLE_NAME, "test-table-name");
     }
