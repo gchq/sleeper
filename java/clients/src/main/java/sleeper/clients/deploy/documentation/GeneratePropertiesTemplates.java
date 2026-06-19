@@ -33,29 +33,16 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Generates template files to be filled in when deploying an instance of Sleeper, or creating tables.
  */
 public class GeneratePropertiesTemplates {
-
-    private static final Map<InstanceProperty, String> TEMPLATE_INSTANCE_VALUES = Map.of(
-            ID, "set-automatically",
-            VPC_ID, "set-automatically",
-            SUBNETS, "set-automatically");
-
-    private static final Map<TableProperty, String> TEMPLATE_TABLE_VALUES = Map.of(
-            TABLE_NAME, "changeme");
 
     private GeneratePropertiesTemplates() {
     }
@@ -103,7 +90,6 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeExampleFullInstanceProperties(Writer writer) {
         InstanceProperties properties = new InstanceProperties();
-        //FULL_INSTANCE_EXAMPLE_VALUES.forEach(properties::set);
 
         writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
     }
@@ -115,7 +101,7 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeExampleFullTableProperties(Writer writer) {
         TableProperties properties = new TableProperties(new InstanceProperties());
-        //FULL_TABLE_EXAMPLE_VALUES.forEach(properties::set);
+
         writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
     }
 
@@ -167,7 +153,6 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeTablePropertiesTemplate(Writer out) {
         TableProperties properties = new TableProperties(new InstanceProperties());
-        TEMPLATE_TABLE_VALUES.forEach(properties::set);
 
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
@@ -181,11 +166,6 @@ public class GeneratePropertiesTemplates {
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
             Writer out, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) {
-        /*
-         * List<T> definitionsForExampleProperties = properties.getPropertiesIndex().getUserDefined().stream()
-         * .filter(properties::isSet)
-         * .toList();
-         */
         List<T> definitionsForTemplate = properties.getPropertiesIndex().getUserDefined().stream()
                 .filter(SleeperProperty::isIncludedInTemplate)
                 .filter(not(properties::isSet))
