@@ -36,6 +36,7 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.foreign.datafusion.extension.FFIExtension;
+import sleeper.foreign.datafusion.extension.FFISQLExtension;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
@@ -43,6 +44,8 @@ import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
@@ -256,7 +259,15 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.setCommonConfig(common);
-        queryConfig.setExtensions(new FFIExtension[0]);
+
+        List<FFIExtension> extensions = new ArrayList<>();
+        if (query.getSqlQuery() != null) {
+            FFISQLExtension sqlExtension = new FFISQLExtension(runtime, query.getSqlQuery());
+            FFIExtension extension = new FFIExtension(runtime);
+            extension.setSqlExtension(sqlExtension);
+            extensions.add(extension);
+        }
+        queryConfig.setExtensions(extensions.toArray(FFIExtension[]::new));
 
         // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
         // requested value fields, if it does, grab the value fields from the dataReadSchema, since this

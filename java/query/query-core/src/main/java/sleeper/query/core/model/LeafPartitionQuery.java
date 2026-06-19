@@ -85,6 +85,10 @@ public class LeafPartitionQuery {
         return processingConfig.getRequestedValueFields();
     }
 
+    public String getSqlQuery() {
+        return processingConfig.getSqlQuery();
+    }
+
     public String getSubQueryId() {
         return subQueryId;
     }
