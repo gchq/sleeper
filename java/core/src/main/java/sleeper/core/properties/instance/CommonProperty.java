@@ -34,8 +34,8 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.\n" +
-                    "This property may be passed as an argument during deployment. If using your own CDK app, " +
-                    "you can set the context variable \"id\".")
+                    "This property may be passed as an argument during deployment. If using using the Sleeper CDK app, " +
+                    "you can set the context variable \"id\". If using your own CDK app, you can set this directly.")
             .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();

@@ -2,42 +2,21 @@
 #                           SLEEPER INSTANCE PROPERTIES                         #
 #################################################################################
 
-############################
-# Properties set by script #
-############################
 
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
 # globally unique as it will be used to name AWS resources such as S3 buckets.
-# This property may be passed as an argument during deployment. If using your own CDK app, you can set
-# the context variable "id".
-sleeper.id=set-automatically
-
-# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
-# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
-# can set this in SleeperInstanceProps under networking.
-sleeper.vpc=set-automatically
-
-# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
-# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
-# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
-# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
-# networking.
-sleeper.subnets=set-automatically
-
-
-####################
-# Other properties #
-####################
-
-## The following instance properties are commonly used throughout Sleeper.
+# This property may be passed as an argument during deployment. If using using the Sleeper CDK app,
+# you can set the context variable "id". If using your own CDK app, you can set this directly.
+# (uncomment to set a value)
+# sleeper.id=
 
 # The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
 # artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
 # default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
-# (default value shown below, uncomment to set a value)
-# sleeper.artefacts.deployment=set-automatically
+# (uncomment to set a value)
+# sleeper.artefacts.deployment=
 
 # The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set by the
 # CDK during deployment, based on `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
@@ -49,8 +28,8 @@ sleeper.subnets=set-automatically
 # default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
 # is not.
 # ECR repository names are generated in the format `<prefix>/<image name>`.
-# (default value shown below, uncomment to set a value)
-# sleeper.ecr.repository.prefix=set-automatically
+# (uncomment to set a value)
+# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
 # assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that bucket contains two
@@ -125,10 +104,24 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.endpoint.url=
 
+# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
+# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
+# can set this in SleeperInstanceProps under networking.
+# (uncomment to set a value)
+# sleeper.vpc=
+
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
 # (default value shown below, uncomment to set a value)
 # sleeper.vpc.endpoint.check=true
+
+# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
+# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
+# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
+# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
+# networking.
+# (uncomment to set a value)
+# sleeper.subnets=
 
 # The Hadoop filesystem used to connect to S3.
 # (default value shown below, uncomment to set a value)
@@ -1167,6 +1160,15 @@ sleeper.subnets=set-automatically
 # (EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.
 # (uncomment to set a value)
 # sleeper.bulk.import.eks.cluster.admin.roles=
+
+# (EKS mode only) IDs of security groups that should be permitted to reach the EKS Kubernetes API.
+# Each ID listed here is added as an ingress rule on TCP/443 to the cluster's security group.
+# Required if you want to call the API from another host inside the cluster's VPC, since the cluster's
+# default security group only permits traffic from the cluster itself. Leave unset for deployments
+# where only the cluster's own components need API access, or where the API accessed from outside the
+# VPC.
+# (uncomment to set a value)
+# sleeper.bulk.import.eks.api.allowed.security.groups=
 
 # (EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with native
 # Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be built based

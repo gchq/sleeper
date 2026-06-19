@@ -37,18 +37,19 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
@@ -86,9 +87,14 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidInstanceProperties() {
-            // When / Then
-            assertThat(instancePropertiesFromString(propertiesString).get(SNAPSHOT_CREATION_BATCH_SIZE))
-                    .isEqualTo("1");
+            // When
+            InstanceProperties validProperties = instancePropertiesFromString(propertiesString);
+            validProperties.set(ID, "test-id");
+            validProperties.set(VPC_ID, "test-vpc");
+            validProperties.set(SUBNETS, "test-subnets");
+
+            // Then
+            assertThatCode(validProperties::validate).doesNotThrowAnyException();
         }
 
         @ParameterizedTest
@@ -135,9 +141,15 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // When
+            // Given
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+            assertThat(TableProperty.getAll().stream()
+                    .allMatch(presentProperty -> tableProperties.isSet(presentProperty) == Boolean.FALSE))
+                    .isTrue();
+
+            // When
             tableProperties.setSchema(createSchemaWithKey("key"));
+            setDefaultTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -157,10 +169,8 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/instance.properties");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .getBoolean(RETAIN_LOGS_AFTER_DESTROY)).isTrue();
-
+        void shouldGenerateEmptyInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
     }
 
@@ -175,6 +185,8 @@ class GeneratePropertiesTemplatesTest {
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
             tableProperties.setSchema(createSchemaWithKey("key"));
 
+            setDefaultTableProperties(tableProperties);
+
             // Then
             assertThatCode(tableProperties::validate)
                     .doesNotThrowAnyException();
@@ -185,13 +197,6 @@ class GeneratePropertiesTemplatesTest {
             assertThat(propertiesString)
                     .doesNotContain("sleeper.table.parquet.compression.codec");
         }
-
-        @Test
-        void shouldIncludeSpecificallySetProperty() {
-            assertThat(tablePropertiesFromString(propertiesString)
-                    .get(FILTERING_CONFIG))
-                    .isEqualTo("ageOff(timestamp,3600000)");
-        }
     }
 
     @Nested
@@ -200,21 +205,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
+        void shouldGenerateEmptyInstanceProperties() {
             // When
             InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
-        }
-
-        @Test
-        void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
-            assertThat(propertiesString).containsSubsequence(
-                    "# Properties set by script #",
-                    "set-automatically",
-                    "# Other properties #");
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
         }
 
         @Test
@@ -235,9 +231,12 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // When
+            // Given
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+
+            // When
             tableProperties.setSchema(createSchemaWithKey("key"));
+            setDefaultTableProperties(tableProperties);
 
             // Then
             assertThatCode(tableProperties::validate)
@@ -272,12 +271,20 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private Stream<InstanceProperty> instancePropertiesWithDefaultValues() {
+        // List of exemptions, where they have a default property but neither it or the default are set
+        List<InstanceProperty> exemptions = List.of(ARTEFACTS_DEPLOYMENT_ID);
+
         return InstanceProperty.getAll().stream()
-                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+                .filter(property -> (property.getDefaultValue() != null || property.getDefaultProperty() != null) && !exemptions.contains(property));
     }
 
     private Stream<TableProperty> tablePropertiesWithDefaultValues() {
         return TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+    }
+
+    private void setDefaultTableProperties(TableProperties tableProperties) {
+        tableProperties.set(TABLE_ID, "test-table-id");
+        tableProperties.set(TABLE_NAME, "test-table-name");
     }
 }

@@ -71,7 +71,7 @@ class SleeperInstancePropsIT {
 
     @BeforeEach
     void setUp() {
-        cdkContext.put("propertiesfile", tempDir.resolve("instance.properties").toString());
+        cdkContext.put("propertiesFile", tempDir.resolve("instance.properties").toString());
     }
 
     @Nested
@@ -235,7 +235,7 @@ class SleeperInstancePropsIT {
     }
 
     @Nested
-    @DisplayName("Choose between propertiesfile and configurationdir context variables")
+    @DisplayName("Choose between propertiesFile and configurationDir context variables")
     class ChooseConfigurationSource {
 
         @Test
@@ -247,7 +247,7 @@ class SleeperInstancePropsIT {
             tableProperties.setSchema(createSchemaWithKey("key"));
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.of(tableProperties));
             cdkContext.clear();
-            cdkContext.put("configurationdir", tempDir.toString());
+            cdkContext.put("configurationDir", tempDir.toString());
 
             // When
             SleeperInstanceProps props = readProps();
@@ -263,12 +263,12 @@ class SleeperInstancePropsIT {
             // Given
             InstanceProperties properties = createUserDefinedInstanceProperties();
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
-            cdkContext.put("configurationdir", tempDir.toString());
+            cdkContext.put("configurationDir", tempDir.toString());
 
             // When / Then
             assertThatThrownBy(() -> readProps())
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Both 'propertiesfile' and 'configurationdir'");
+                    .hasMessageContaining("Both 'propertiesFile' and 'configurationDir'");
         }
 
         @Test
@@ -279,7 +279,7 @@ class SleeperInstancePropsIT {
             // When / Then
             assertThatThrownBy(() -> readProps())
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Either 'propertiesfile' or 'configurationdir'");
+                    .hasMessageContaining("Either 'propertiesFile' or 'configurationDir'");
         }
     }
 

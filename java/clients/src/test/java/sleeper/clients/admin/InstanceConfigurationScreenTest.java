@@ -468,7 +468,7 @@ class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
                     "-a", "java -cp \"./test/jars/cdk-1.2.3.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
-                    "-c", "configurationdir=./test/generated",
+                    "-c", "configurationDir=./test/generated",
                     "*")));
             // And this is displayed to the user
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
