@@ -238,7 +238,7 @@ class TablePropertyImpl implements TableProperty {
     /**
      * An index of all instance property definitions.
      */
-    class Index {
+    static class Index {
         private Index() {
         }
 
