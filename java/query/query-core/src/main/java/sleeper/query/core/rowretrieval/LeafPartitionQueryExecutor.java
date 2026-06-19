@@ -23,6 +23,7 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.IteratorFactory;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
@@ -38,6 +39,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 /**
  * Executes a sub-query for a leaf partition, retrieving and processing rows.
@@ -72,11 +75,15 @@ public class LeafPartitionQueryExecutor {
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
+
+        if (leafPartitionQuery.getSqlQuery() != null && !retriever.supportsSqlFiltering()) {
+            throw new QueryException("Query contains SQL query filter which is not supported by data engine: " + tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class));
+        }
+
         Schema tableSchema = tableProperties.getSchema();
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
         boolean needFiltersAndAggregations = !retriever.supportsFiltersAndAggregations();
-
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties), needFiltersAndAggregations);
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
