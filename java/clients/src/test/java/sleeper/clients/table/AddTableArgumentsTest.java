@@ -37,32 +37,6 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 
 public class AddTableArgumentsTest {
 
-    private static Properties tablePropertiesWithName(String name) {
-        Properties props = new Properties();
-        props.setProperty("sleeper.table.name", name);
-        return props;
-    }
-
-    private static Arguments withTableNameAndSchema(String tableName, String schemaFile) {
-        return new Arguments("instance-id", tableName, Path.of(schemaFile), null, null, null);
-    }
-
-    private static Arguments withTablePropertiesAndSchema(Properties props, String schemaFile) {
-        return new Arguments("instance-id", null, Path.of(schemaFile), props, Path.of("table.properties"), null);
-    }
-
-    private static Arguments withTableNameAndTablePropertiesAndSchema(String tableName, Properties props, String schemaFile) {
-        return new Arguments("instance-id", tableName, Path.of(schemaFile), props, Path.of("table.properties"), null);
-    }
-
-    private static Arguments withConfigDir(Properties props, String configDir) {
-        return new Arguments("instance-id", null, null, props, null, Path.of(configDir));
-    }
-
-    private static Arguments withTableNameAndConfigDir(String tableName, Properties props, String configDir) {
-        return new Arguments("instance-id", tableName, null, props, null, Path.of(configDir));
-    }
-
     @Nested
     class ArgumentsValidation {
 
@@ -146,6 +120,31 @@ public class AddTableArgumentsTest {
 
     @Nested
     class CreateTableProperties {
+        private static Properties tablePropertiesWithName(String name) {
+            Properties props = new Properties();
+            props.setProperty("sleeper.table.name", name);
+            return props;
+        }
+
+        private static Arguments withTableNameAndSchema(String tableName, String schemaFile) {
+            return new Arguments("instance-id", tableName, Path.of(schemaFile), null, null, null);
+        }
+
+        private static Arguments withTablePropertiesAndSchema(Properties props, String schemaFile) {
+            return new Arguments("instance-id", null, Path.of(schemaFile), props, Path.of("table.properties"), null);
+        }
+
+        private static Arguments withTableNameAndTablePropertiesAndSchema(String tableName, Properties props, String schemaFile) {
+            return new Arguments("instance-id", tableName, Path.of(schemaFile), props, Path.of("table.properties"), null);
+        }
+
+        private static Arguments withConfigDir(Properties props, String configDir) {
+            return new Arguments("instance-id", null, null, props, null, Path.of(configDir));
+        }
+
+        private static Arguments withTableNameAndConfigDir(String tableName, Properties props, String configDir) {
+            return new Arguments("instance-id", tableName, null, props, null, Path.of(configDir));
+        }
 
         private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
