@@ -43,6 +43,10 @@ vulnerabilities:
   # org.apache.commons:commons-lang3
   # (hadoop-client-runtime-3.4.1.jar)
   - id: CVE-2025-48924
+  # org.jline:jline-remote-telnet
+  # (hadoop-client-runtime-3.4.1.jar)
+  - id: GHSA-2r2c-cx56-8933
+  - id: GHSA-47qp-hqvx-6r3f
   # org.eclipse.jetty:jetty-http
   # (bulk-import-runner.jar)
   # (hadoop-client-runtime-3.4.1.jar)
