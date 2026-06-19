@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.localstack.LocalStackContainer;
@@ -62,6 +63,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -83,6 +86,41 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
+    }
+
+    @Disabled("Expensive long running test only used for manual debugging")
+    @Test
+    void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
+        // Given
+        int iterations = Integer.getInteger("sleeper.test.compaction.stress.iterations", 1000);
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("key", "row-1"));
+        Row row2 = new Row(Map.of("key", "row-2"));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
+
+            // When / Then — if the JVM crashes with SIGSEGV the test fails
+            for (int i = 0; i < iterations; i++) {
+                StateStore iterationStateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+                iterationStateStore.fixFileUpdateTime(null);
+                update(iterationStateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file1, 1));
+                update(iterationStateStore).addFile(FileReferenceFactory.from(iterationStateStore).partitionFile("root", file2, 1));
+                String jobId = "stress-job-" + i;
+                CompactionJob job = new CompactionJobFactory(instanceProperties, tableProperties)
+                        .createCompactionJobWithFilenames(jobId, List.of(file1, file2), "root");
+                update(iterationStateStore).assignJobId(jobId, "root", List.of(file1, file2));
+                CompactionTaskTestHelper iterationHelper = new CompactionTaskTestHelper(
+                        instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                        FixedStateStoreProvider.singleTable(tableProperties, iterationStateStore), jobTracker);
+                iterationHelper.runTask(runner, null, List.of(job));
+            }
+        }
     }
 
     @Test
@@ -128,10 +166,39 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(0, 0));
     }
 
+    @Test
+    void shouldCallProgressCallbackWithCorrectRowCount() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("key", "row-1"));
+        Row row2 = new Row(Map.of("key", "row-2"));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+        AtomicLong callbackRowCount = new AtomicLong(-1);
+
+        // When
+        runTask(job, rowCount -> callbackRowCount.set(Math.toIntExact(rowCount)));
+
+        // Then
+        assertThat(readDataFile(schema, job.getOutputFile()))
+                .containsExactly(row1, row2);
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
+        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+        assertThat(callbackRowCount.get()).isEqualTo(2);
+    }
+
     private void runTask(CompactionJob job) throws Exception {
+        runTask(job, null);
+    }
+
+    private void runTask(CompactionJob job, Consumer<Long> progressCallback) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
-            compactionTaskTestHelper().runTask(runner, null, List.of(job));
+            compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
         }
     }
 

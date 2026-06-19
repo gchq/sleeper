@@ -31,8 +31,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RandomRowSupplierTest {
-    private static final RandomGenerator RANDOM_GENERATOR = new JDKRandomGenerator(10);
     private static final int SAMPLE_SIZE = 1000;
+    private final RandomGenerator randomGenerator = new JDKRandomGenerator(10);
 
     @Test
     void shouldNeverGenerateNullForNonNullableField() {
@@ -41,7 +41,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), randomGenerator);
 
         // When
         List<Row> rows = generateRows(supplier);
@@ -57,7 +57,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType(), true))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), randomGenerator);
 
         // When
         List<Row> rows = generateRows(supplier);
@@ -75,7 +75,7 @@ class RandomRowSupplierTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType(), true))
                 .build();
-        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), RANDOM_GENERATOR);
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, SystemTestRandomDataSettings.fromDefaults(), randomGenerator);
 
         // When
         List<Row> rows = generateRows(supplier);
