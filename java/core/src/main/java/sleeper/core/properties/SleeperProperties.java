@@ -169,7 +169,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      */
     protected String compute(T property, UnaryOperator<String> compute) {
         String value = properties.getProperty(property.getPropertyName());
-        if (property.isIgnoreEmptyValue() && value.isBlank()) {
+        if (property.isIgnoreEmptyValue() && "".equals(value)) {
             value = null;
         }
         return compute.apply(value);
@@ -310,7 +310,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     private String getValueIfSet(T property) {
         String rawValue = properties.getProperty(property.getPropertyName());
-        if (property.isIgnoreEmptyValue() && rawValue.isBlank()) {
+        if (property.isIgnoreEmptyValue() && "".equals(rawValue)) {
             return null;
         } else {
             return rawValue;
