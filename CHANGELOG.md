@@ -25,7 +25,7 @@ Bulk import:
 
 Bugfixes:
 - When Spark throws an exception during bulk import, it is now correctly stored in the job tracker for reporting.
-- When a bulk import job fails in EKS, the StepFunctions state machine now correctly reports it as failed.
+- When a bulk import job fails in EKS, the StepFunctions state machine now reports it as failed based on the job tracker.
 - Prevented an occasional SIGSEGV that could occur in compaction tasks.
 - When interrupted, a compaction task will now terminate after the current job finishes.
 
