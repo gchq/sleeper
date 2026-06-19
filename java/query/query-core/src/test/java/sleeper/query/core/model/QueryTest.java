@@ -141,6 +141,57 @@ public class QueryTest {
     }
 
     @Test
+    public void testEqualsAndHashcodeWithSqlQuery() {
+        // Given
+        Field field = new Field("key", new LongType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range = rangeFactory.createRange(field, 1L, true, 10L, true);
+        Region region = new Region(range);
+        String tableName = UUID.randomUUID().toString();
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results")
+                        .build())
+                .queryId("A")
+                .regions(List.of(region))
+                .build();
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results")
+                        .build())
+                .queryId("A")
+                .regions(List.of(region))
+                .build();
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results LIMIT 1")
+                        .build())
+                .queryId("B")
+                .regions(List.of(region))
+                .build();
+
+        // When
+        boolean test1 = query1.equals(query2);
+        boolean test2 = query1.equals(query3);
+        int hashCode1 = query1.hashCode();
+        int hashCode2 = query2.hashCode();
+        int hashCode3 = query3.hashCode();
+
+        // Then
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+    }
+
+    @Test
     public void testEqualsAndHashcodeWithMultipleRanges() {
         // Given
         Field field = new Field("key", new LongType());

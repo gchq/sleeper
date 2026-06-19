@@ -85,6 +85,7 @@ public class QuerySerDeTest {
                 .requestedValueFields(List.of("integer"))
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
                 .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))
+                .sqlQuery("SELECT key,sum(value) FROM query_results LIMIT 1")
                 .build();
         Query query = Query.builder()
                 .queryId("test-query")
