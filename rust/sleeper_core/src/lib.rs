@@ -25,6 +25,9 @@ use crate::{
     sleeper_context::SleeperContext,
 };
 use color_eyre::eyre::Result;
+use std::{sync::Arc, time::Duration};
+use tokio::time::sleep;
+use tokio_util::sync::CancellationToken;
 
 mod common_config;
 mod datafusion;
@@ -40,6 +43,10 @@ pub use datafusion::{
 };
 pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 
+/// Callback function pointer type. This will be called periodically during compactions to tell the caller
+/// how many compaction output rows have been written.
+pub type ProgressCallback = extern "C" fn(usize);
+
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
@@ -49,6 +56,7 @@ pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
+/// # use std::sync::Arc;
 /// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_compaction, CommonConfig, CommonConfigBuilder,
 /// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
@@ -69,7 +77,7 @@ pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
-/// let result = run_compaction(&compaction_input, &SleeperContext::default()).await;
+/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -80,12 +88,52 @@ pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 ///
 pub async fn run_compaction(
     config: &CommonConfig<'_>,
-    sleeper_context: &SleeperContext,
+    sleeper_context: &Arc<SleeperContext>,
+    progress_callback: Option<ProgressCallback>,
 ) -> Result<CompactionResult> {
     let store_factory = config.create_object_store_factory();
-    crate::datafusion::compact(&store_factory, config, sleeper_context)
+    let token = CancellationToken::new();
+    let mut handle = None;
+
+    if let Some(callback) = progress_callback {
+        let job_id = config.job_id().clone();
+        let context_clone = sleeper_context.clone();
+        let task_token = token.clone();
+
+        handle = Some(tokio::spawn(async move {
+            // loop until cancellation token is triggered
+            loop {
+                tokio::select! {
+                    () = task_token.cancelled() => {
+                        break;
+                    }
+                    () = sleep(Duration::from_secs(5)) => {
+                        if let Some(row_count) = context_clone.get_compaction_rows_read(&job_id) {
+                            callback(row_count);
+                        }
+                    }
+                }
+            }
+        }));
+    }
+
+    let result = crate::datafusion::compact(&store_factory, config, sleeper_context)
         .await
-        .map_err(Into::into)
+        .map_err(Into::into);
+
+    if let Some(handle) = handle {
+        token.cancel();
+        let _ = handle.await;
+    }
+
+    // Guarantee one progress update
+    if let Ok(rows) = &result
+        && let Some(callback) = progress_callback
+    {
+        callback(rows.rows_written);
+    }
+
+    result
 }
 
 /// Runs the given Sleeper leaf partition query on the given Parquet files and reads the schema from the first.
