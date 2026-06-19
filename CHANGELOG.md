@@ -5,6 +5,31 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.36.1
+
+### 22nd June, 2026
+
+This is primarily a bug fix release with some usability improvements. Note that some CDK context variables have been
+renamed for consistent capitalisation.
+
+Deployment:
+- Sleeper's CDK apps now have separate context variables for reading instance properties or a full configuration.
+- Sleeper's CDK context variables have been renamed to use camelCase consistently.
+
+Configuration:
+- Removed values from the configuration examples that are usually set separately during deployment.
+
+Bulk import:
+- Added an option to allow access to the EKS Kubernetes API from a security group in the same VPC,
+  with `sleeper.bulk.import.eks.api.allowed.security.groups`.
+
+Bugfixes:
+- When Spark throws an exception during bulk import, it is now correctly stored in the job tracker for reporting.
+- When a bulk import job fails in EKS, the StepFunctions state machine now correctly reports it as failed.
+- Prevented an occasional SIGSEGV that could occur in compaction tasks.
+- When interrupted, a compaction task will now terminate after the current job finishes.
+
+
 ## Version 0.36.0
 
 ### 15th June, 2026
