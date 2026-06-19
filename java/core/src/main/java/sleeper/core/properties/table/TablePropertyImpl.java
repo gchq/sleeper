@@ -20,6 +20,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Objects;
@@ -43,6 +44,7 @@ class TablePropertyImpl implements TableProperty {
     private final Predicate<String> validationPredicate;
     private final boolean editable;
     private final boolean includedInTemplate;
+    private final boolean includedInBasicTemplate;
     private final boolean setBySleeper;
 
     private TablePropertyImpl(Builder builder) {
@@ -55,6 +57,7 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
+        includedInBasicTemplate = builder.includedInBasicTemplate;
         setBySleeper = builder.setBySleeper;
     }
 
@@ -121,6 +124,11 @@ class TablePropertyImpl implements TableProperty {
         return includedInTemplate;
     }
 
+    @Override
+    public boolean isIncludedInBasicTemplate() {
+        return includedInBasicTemplate;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -139,6 +147,7 @@ class TablePropertyImpl implements TableProperty {
         private Consumer<TableProperty> addToIndex;
         private boolean editable = true;
         private boolean includedInTemplate = true;
+        private boolean includedInBasicTemplate = false;
         private boolean setBySleeper;
 
         private Builder() {
@@ -202,6 +211,11 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        public Builder includedInBasicTemplate(boolean includedInBasicTemplate) {
+            this.includedInBasicTemplate = includedInBasicTemplate;
+            return this;
+        }
+
         public Builder setBySleeper(boolean setBySleeper) {
             this.setBySleeper = setBySleeper;
             return this;
@@ -218,6 +232,22 @@ class TablePropertyImpl implements TableProperty {
             TableProperty property = new TablePropertyImpl(this);
             addToIndex.accept(property);
             return property;
+        }
+    }
+
+    /**
+     * An index of all instance property definitions.
+     */
+    static class Index {
+        private Index() {
+        }
+
+        static final SleeperPropertyIndex<TableProperty> INSTANCE = createInstance();
+
+        private static SleeperPropertyIndex<TableProperty> createInstance() {
+            SleeperPropertyIndex<TableProperty> index = new SleeperPropertyIndex<TableProperty>();
+            index.addAll(TableProperty.getAll());
+            return index;
         }
     }
 }

@@ -50,7 +50,6 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -140,20 +139,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/full/table.properties");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // Given
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            assertThat(TableProperty.getAll().stream()
-                    .allMatch(presentProperty -> tableProperties.isSet(presentProperty) == Boolean.FALSE))
-                    .isTrue();
-
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromFullExample() {
             // When
-            tableProperties.setSchema(createSchemaWithKey("key"));
-            setDefaultTableProperties(tableProperties);
+            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(tableProperties).isEqualTo(new TableProperties(new InstanceProperties()));
         }
 
         @Test
@@ -180,16 +171,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/table.properties");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromBasicExample() {
             // When
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            tableProperties.setSchema(createSchemaWithKey("key"));
-
-            setDefaultTableProperties(tableProperties);
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
         }
 
         @Test
@@ -230,17 +217,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
-            // Given
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromTemplate() {
+            // When
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
 
-            // When
-            tableProperties.setSchema(createSchemaWithKey("key"));
-            setDefaultTableProperties(tableProperties);
-
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(tableProperties).isEqualTo(new TableProperties(new InstanceProperties()));
         }
 
         @Test
@@ -283,7 +265,7 @@ class GeneratePropertiesTemplatesTest {
                 .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
     }
 
-    private void setDefaultTableProperties(TableProperties tableProperties) {
+    private void setMandatoryTableProperties(TableProperties tableProperties) {
         tableProperties.set(TABLE_ID, "test-table-id");
         tableProperties.set(TABLE_NAME, "test-table-name");
     }

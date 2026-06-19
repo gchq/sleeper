@@ -21,13 +21,14 @@ use color_eyre::eyre::{Result, bail};
 use objectstore_ext::s3::{AwsConfig, ObjectStoreFactory};
 use std::fmt::{Display, Formatter};
 use url::Url;
+use uuid::Uuid;
 
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
 #[derive(Debug)]
 pub struct CommonConfig<'a> {
     /// Job ID
-    job_id: Option<String>,
+    job_id: String,
     /// Aws credentials configuration
     aws_config: Option<AwsConfig>,
     /// Input file URLs
@@ -107,8 +108,8 @@ impl CommonConfig<'_> {
         &self.filters
     }
 
-    pub(crate) fn job_id(&self) -> Option<&String> {
-        self.job_id.as_ref()
+    pub(crate) fn job_id(&self) -> &String {
+        &self.job_id
     }
 }
 
@@ -137,7 +138,7 @@ impl Display for CommonConfig<'_> {
 /// Builder for `CommonConfig`.
 #[allow(clippy::struct_excessive_bools)]
 pub struct CommonConfigBuilder<'a> {
-    job_id: Option<String>,
+    job_id: String,
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
     input_files_sorted: bool,
@@ -154,7 +155,7 @@ pub struct CommonConfigBuilder<'a> {
 impl Default for CommonConfigBuilder<'_> {
     fn default() -> Self {
         Self {
-            job_id: None,
+            job_id: Uuid::new_v4().to_string(),
             aws_config: None,
             input_files: Vec::default(),
             input_files_sorted: true,
@@ -177,7 +178,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn job_id(mut self, job_id: Option<String>) -> Self {
+    pub fn job_id(mut self, job_id: String) -> Self {
         self.job_id = job_id;
         self
     }
