@@ -16,7 +16,7 @@
 */
 use crate::objects::query_extensions::FFISQLExtension;
 use color_eyre::eyre::{bail, eyre};
-use std::{collections::HashMap, fmt::Display, slice};
+use std::{collections::HashMap, fmt::Display, mem::discriminant, slice};
 
 /// Type tag for an extension.
 ///
@@ -31,7 +31,11 @@ pub enum FFIExtensionVariant {
 }
 
 pub trait ExtensionFFIDetails {
+    /// States how many occurrences of this extension type can appear in a single query.
     const MAX_CARDINALITY: usize;
+
+    /// Check that this extension type contains valid data.
+    fn validate(&self) -> Result<(), color_eyre::Report>;
 }
 
 impl FFIExtensionVariant {
@@ -97,11 +101,12 @@ impl FFIExtension {
     ///
     /// # Errors
     /// Fails if a NULL is found
-    #[allow(dead_code)]
     fn check_non_null_data(&self) -> Result<(), color_eyre::Report> {
         match self.variant {
             FFIExtensionVariant::SQL => {
-                if unsafe { self.data.sql.is_null() } {
+                if let Some(sql) = unsafe { self.data.sql.as_ref() } {
+                    sql.validate()?;
+                } else {
                     bail!("SQL variant of FFIExtension contains NULL union member pointer");
                 }
             }
@@ -110,11 +115,23 @@ impl FFIExtension {
     }
 }
 
+/// Get all instances of a given extension type from an array.
+pub fn find_extensions_type<'a>(
+    variant: FFIExtensionVariant,
+    extensions: *const FFIExtension,
+    extensions_len: usize,
+) -> Vec<&'a FFIExtension> {
+    unsafe { slice::from_raw_parts(extensions, extensions_len) }
+        .iter()
+        // only keep instances that match the given extension type
+        .filter(|v| discriminant(&v.variant) == discriminant(&variant))
+        .collect()
+}
+
 /// Checks the extension array and ensures all extensions are permitted.
 ///
 /// # Errors
 /// Error will occur if any extension is type is contained more than its permitted maximum.
-#[allow(dead_code)]
 pub fn validate_extensions(
     extensions: *const FFIExtension,
     extensions_len: usize,
@@ -146,32 +163,15 @@ pub fn validate_extensions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::c_char;
 
-    fn create_extension_with_data(
-        variant: FFIExtensionVariant,
-        data_ptr: *const FFISQLExtension,
-    ) -> FFIExtension {
+    fn create_sql_extension(sql: *const c_char) -> FFIExtension {
+        let sql_ext = Box::leak(Box::new(FFISQLExtension { sql }));
         FFIExtension {
-            variant,
-            data: FFIExtensionData { sql: data_ptr },
-        }
-    }
-
-    fn create_extension(variant: FFIExtensionVariant) -> FFIExtension {
-        // DANGER: This creates an FFIExtension with pointers to stack-allocated data.
-        // THIS FUNCTION IS ONLY FOR NULL-CHECKING TESTS — NEVER for cardinality tests
-        // or any test that would call check_non_null_data() or validate_extensions().
-        // The pointer must NEVER be dereferenced. Use only to test:
-        // - validate_extensions() with null pointer checks
-        // - error message formatting
-        // ANY DEREFERENCE WILL CAUSE USE-AFTER-FREE when the stack frame exits.
-        match variant {
-            FFIExtensionVariant::SQL => {
-                let sql_ext = FFISQLExtension {
-                    sql: c"SELECT * FROM test".as_ptr(),
-                };
-                create_extension_with_data(variant, &raw const sql_ext)
-            }
+            variant: FFIExtensionVariant::SQL,
+            data: FFIExtensionData {
+                sql: sql_ext as *const FFISQLExtension,
+            },
         }
     }
 
@@ -208,7 +208,7 @@ mod tests {
     #[test]
     pub fn should_succeed_with_single_extension() {
         // Given
-        let extensions = [create_extension(FFIExtensionVariant::SQL)];
+        let extensions = [create_sql_extension(c"SELECT * FROM test".as_ptr())];
 
         // When
         let result = validate_extensions(extensions.as_ptr(), 1);
@@ -221,8 +221,8 @@ mod tests {
     pub fn should_fail_when_exceeding_cardinality() {
         // Given
         let extensions = [
-            create_extension(FFIExtensionVariant::SQL),
-            create_extension(FFIExtensionVariant::SQL),
+            create_sql_extension(c"SELECT * FROM test".as_ptr()),
+            create_sql_extension(c"SELECT * FROM test2".as_ptr()),
         ];
 
         // When
@@ -231,14 +231,13 @@ mod tests {
         // Then
         assert!(result.is_err());
         let error = result.unwrap_err().to_string();
-        assert!(error.contains("2 instances"));
-        assert!(error.contains("maximum is 1"));
+        assert!(error.contains("2 instances") && error.contains("maximum is 1"));
     }
 
     #[test]
-    pub fn should_fail_on_null_data_pointer() {
+    pub fn should_fail_on_null_sql_query() {
         // Given
-        let ext = create_extension_with_data(FFIExtensionVariant::SQL, std::ptr::null());
+        let ext = create_sql_extension(std::ptr::null());
 
         // When
         let result = ext.check_non_null_data();
@@ -249,19 +248,109 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("NULL union member pointer")
+                .contains("SQL query string is NULL")
         );
+    }
+
+    #[test]
+    pub fn should_fail_on_invalid_utf8_sql_query() {
+        // Given - create invalid UTF-8 sequence
+        let invalid_bytes = vec![0x80u8, 0x81u8, 0x82u8, 0x00u8];
+        let ext = create_sql_extension(invalid_bytes.as_ptr() as *const c_char);
+
+        // When
+        let result = ext.check_non_null_data();
+
+        // Then
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("invalid utf-8"));
     }
 
     #[test]
     pub fn should_succeed_with_valid_data_pointer() {
         // Given
-        let ext = create_extension(FFIExtensionVariant::SQL);
+        let ext = create_sql_extension(c"SELECT * FROM test".as_ptr());
 
         // When
         let result = ext.check_non_null_data();
 
         // Then
         assert!(result.is_ok());
+    }
+
+    #[test]
+    pub fn find_extensions_type_returns_empty_for_empty_array() {
+        // Given - empty extension array
+        let extensions: Vec<FFIExtension> = vec![];
+
+        // When
+        let result = find_extensions_type(
+            FFIExtensionVariant::SQL,
+            extensions.as_ptr(),
+            extensions.len(),
+        );
+
+        // Then - should find nothing
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    pub fn find_extensions_type_returns_single_instance() {
+        // Given - one SQL extension
+        let extensions = [create_sql_extension(c"SELECT * FROM test".as_ptr())];
+
+        // When
+        let result = find_extensions_type(
+            FFIExtensionVariant::SQL,
+            extensions.as_ptr(),
+            extensions.len(),
+        );
+
+        // Then - should find exactly one
+        assert_eq!(result.len(), 1);
+        assert_eq!(
+            result[0].variant as usize,
+            FFIExtensionVariant::SQL as usize
+        );
+    }
+
+    #[test]
+    pub fn find_extensions_type_filters_by_variant() {
+        // Given - two SQL extensions
+        let extensions = [
+            create_sql_extension(c"SELECT 1".as_ptr()),
+            create_sql_extension(c"SELECT 2".as_ptr()),
+        ];
+
+        // When - search for SQL extensions
+        let result = find_extensions_type(
+            FFIExtensionVariant::SQL,
+            extensions.as_ptr(),
+            extensions.len(),
+        );
+
+        // Then - should find both
+        assert_eq!(result.len(), 2);
+        assert!(
+            result
+                .iter()
+                .all(|e| e.variant as usize == FFIExtensionVariant::SQL as usize)
+        );
+    }
+
+    #[test]
+    pub fn find_extensions_type_returns_references_to_original_data() {
+        // Given
+        let extensions = [create_sql_extension(c"SELECT * FROM test".as_ptr())];
+
+        // When
+        let result = find_extensions_type(
+            FFIExtensionVariant::SQL,
+            extensions.as_ptr(),
+            extensions.len(),
+        );
+
+        // Then - references should point to the original array
+        assert_eq!(result[0] as *const _, extensions.as_ptr());
     }
 }

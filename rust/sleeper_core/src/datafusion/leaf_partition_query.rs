@@ -34,6 +34,7 @@ use datafusion::{
 };
 use log::{debug, info};
 use objectstore_ext::s3::ObjectStoreFactory;
+use query_sql::add_sql_stage;
 use std::{
     fmt::{Display, Formatter},
     sync::Arc,
@@ -50,6 +51,8 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
+    /// SQL query string
+    pub sql_query: Option<String>,
 }
 
 impl Display for LeafPartitionQueryConfig<'_> {
@@ -100,24 +103,29 @@ impl<'a> LeafPartitionQuery<'a> {
         let ops = SleeperOperations::new(&self.config.common);
         info!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
-        let (sketcher, frame, _ctx) = self.build_query_dataframe(&ops).await?;
+        let (sketcher, frame, ctx) = self.build_query_dataframe(&ops).await?;
 
         // Ensure sort ordering is created before adding more stages to plan, as completer might add stages
         // to plan which change schema, e.g. adding a data sink stage
         let sort_ordering = ops.create_physical_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
 
-        let frame = completer.complete_frame(frame)?;
+        let mut frame = completer.complete_frame(frame)?;
+
+        if let Some(query) = &self.config.sql_query {
+            frame = add_sql_stage(&query, ops.create_sort_order(), frame, &ctx).await?;
+        }
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
         }
+
         let task_ctx = Arc::new(frame.task_ctx());
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         // Check physical plan is free of `SortExec` stages.
         // Issue <https://github.com/gchq/sleeper/issues/5248>
-        if ops.config.input_files_sorted() {
+        if ops.config.input_files_sorted() && self.config.sql_query.is_none() {
             check_for_sort_exec(&physical_plan)?;
         }
 

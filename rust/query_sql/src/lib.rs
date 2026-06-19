@@ -33,12 +33,11 @@ pub use sql_sort_fix::inject_sort_stage;
 /// # Errors
 /// Returns an error if the SQL query is invalid or uses disallowed statements.
 pub async fn add_sql_stage(
-    sql: Option<&str>,
+    sql: &str,
     expr: Vec<SortExpr>,
     frame: DataFrame,
     ctx: &SessionContext,
 ) -> Result<DataFrame, DataFusionError> {
-    let Some(sql) = sql else { return Ok(frame) };
     ctx.register_table("query_results", frame.into_view())?;
     let frame = ctx
         .sql_with_options(

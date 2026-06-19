@@ -14,9 +14,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::objects::{
-    FFIBytes, extensions::FFIExtension, ffi_common_config::FFICommonConfig,
-    sleeper_region::FFISleeperRegion,
+use crate::{
+    objects::{
+        FFIBytes,
+        extensions::{FFIExtension, validate_extensions},
+        ffi_common_config::FFICommonConfig,
+        query_extensions::find_ffi_sql_extension,
+        sleeper_region::FFISleeperRegion,
+    },
+    unpack::unpack_string,
 };
 use color_eyre::eyre::bail;
 use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
@@ -92,11 +98,17 @@ impl FFILeafPartitionQueryConfig {
             None
         };
 
+        validate_extensions(self.extensions, self.extensions_len)?;
+        let sql_data = find_ffi_sql_extension(self.extensions, self.extensions_len)
+            .map(|v| unpack_string(v.sql))
+            .transpose()?;
+
         Ok(LeafPartitionQueryConfig {
             common,
             ranges,
             requested_value_fields: requested_value_columns,
             explain_plans: self.explain_plans,
+            sql_query: sql_data,
         })
     }
 }
