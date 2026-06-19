@@ -121,7 +121,7 @@ public class SleeperInstanceConfiguration {
      * Creates an instance configuration from a local configuration directory. All configuration files defined by the
      * directory structure are read: instance.properties, tags.properties, table.properties, schema.json, splits.txt,
      * and any tables under a tables/ subdirectory. If the given path points to a file rather than a directory, that
-     * file is loaded as the instance properties file, and table properties are loaded from the directory containing it.
+     * file is loaded as the instance properties file, and the configuration is loaded from the directory containing it.
      *
      * @param  configurationDirectory the path to the configuration directory, or to the instance properties file
      * @return                        the instance configuration
