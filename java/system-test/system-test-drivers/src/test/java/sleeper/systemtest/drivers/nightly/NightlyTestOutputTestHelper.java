@@ -35,4 +35,8 @@ public class NightlyTestOutputTestHelper {
                 .sorted(Comparator.comparing(TestResult::getTestName))
                 .collect(Collectors.toList()));
     }
+
+    public static TestResult testResultWithShortId(String name, String shortId, int exitCode) {
+        return TestResult.builder().testName(name).shortId(shortId).exitCode(exitCode).build();
+    }
 }
