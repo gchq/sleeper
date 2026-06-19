@@ -22,7 +22,7 @@ use crate::{
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
-        util::{explain_plan, retrieve_object_metas},
+        util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
     sleeper_context::SleeperContext,
 };
