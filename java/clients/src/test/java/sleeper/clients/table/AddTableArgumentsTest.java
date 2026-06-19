@@ -28,6 +28,7 @@ import sleeper.core.util.cli.CommandArgumentsException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,59 +37,110 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 
 public class AddTableArgumentsTest {
 
+    private static Properties tablePropertiesWithName(String name) {
+        Properties props = new Properties();
+        props.setProperty("sleeper.table.name", name);
+        return props;
+    }
+
+    private static Arguments withTableNameAndSchema(String tableName, String schemaFile) {
+        return new Arguments("instance-id", tableName, Path.of(schemaFile), null, null, null);
+    }
+
+    private static Arguments withTablePropertiesAndSchema(Properties props, String schemaFile) {
+        return new Arguments("instance-id", null, Path.of(schemaFile), props, Path.of("table.properties"), null);
+    }
+
+    private static Arguments withTableNameAndTablePropertiesAndSchema(String tableName, Properties props, String schemaFile) {
+        return new Arguments("instance-id", tableName, Path.of(schemaFile), props, Path.of("table.properties"), null);
+    }
+
+    private static Arguments withConfigDir(Properties props, String configDir) {
+        return new Arguments("instance-id", null, null, props, null, Path.of(configDir));
+    }
+
+    private static Arguments withTableNameAndConfigDir(String tableName, Properties props, String configDir) {
+        return new Arguments("instance-id", tableName, null, props, null, Path.of(configDir));
+    }
+
     @Nested
     class ArgumentsValidation {
 
+        @TempDir
+        Path tempDir;
+
         @Test
         void shouldAcceptTableNameWithSchemaFile() {
-            Arguments args = new Arguments("instance-id", "my-table", Path.of("schema.json"), null, null);
+            Arguments args = AddTable.parseArguments("instance-id", "--table-name", "my-table", "--schema", "schema.json");
+
             assertThat(args.tableName()).isEqualTo("my-table");
         }
 
         @Test
-        void shouldAcceptTablePropertiesFileAsTableNameSource() {
-            Arguments args = new Arguments("instance-id", null, Path.of("schema.json"), Path.of("table.properties"), null);
-            assertThat(args.tablePropertiesFile()).isEqualTo(Path.of("table.properties"));
+        void shouldAcceptTablePropertiesFileAsTableNameSource() throws IOException {
+            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=file-table\n");
+
+            Arguments args = AddTable.parseArguments("instance-id", "--schema", "schema.json",
+                    "--table-properties", tableProps.toString());
+
+            assertThat(args.rawTableProperties().getProperty("sleeper.table.name")).isEqualTo("file-table");
         }
 
         @Test
-        void shouldAcceptConfigDirAsTableNameAndSchemaSource() {
-            Arguments args = new Arguments("instance-id", null, null, null, Path.of("config"));
-            assertThat(args.configDir()).isEqualTo(Path.of("config"));
+        void shouldAcceptConfigDirAsTableNameAndSchemaSource() throws IOException {
+            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=config-table\n");
+
+            Arguments args = AddTable.parseArguments("instance-id", "--config-dir", tempDir.toString());
+
+            assertThat(args.configDir()).isEqualTo(tempDir);
         }
 
         @Test
         void shouldRejectWhenNoTableNameSourceExists() {
-            assertThatThrownBy(() -> new Arguments("instance-id", null, Path.of("schema.json"), null, null))
+            assertThatThrownBy(() -> AddTable.parseArguments("instance-id", "--schema", "schema.json"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("A table name is required. Provide --table-name, or set it in --table-properties or --config-dir.");
+                    .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+        }
+
+        @Test
+        void shouldRejectWhenTableNameNotSetInPropertiesFile() throws IOException {
+            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.other.property=value\n");
+
+            assertThatThrownBy(() -> AddTable.parseArguments("instance-id", "--schema", "schema.json",
+                    "--table-properties", tableProps.toString()))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
         }
 
         @Test
         void shouldRejectWhenNoSchemaSource() {
-            assertThatThrownBy(() -> new Arguments("instance-id", "my-table", null, null, null))
+            assertThatThrownBy(() -> AddTable.parseArguments("instance-id", "--table-name", "my-table"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --schema or --config-dir must be provided");
         }
 
         @Test
-        void shouldRejectWhenAllThreeFileSourcesSpecified() {
-            assertThatThrownBy(() -> new Arguments("instance-id", "my-table",
-                    Path.of("schema.json"), Path.of("table.properties"), Path.of("config")))
+        void shouldRejectWhenAllThreeFileSourcesSpecified() throws IOException {
+            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=my-table\n");
+
+            assertThatThrownBy(() -> AddTable.parseArguments("instance-id", "--table-name", "my-table",
+                    "--schema", "schema.json", "--table-properties", tableProps.toString(),
+                    "--config-dir", tempDir.toString()))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot specify --schema, --table-properties, and --config-dir together");
         }
 
         @Test
         void shouldResolveSchemaFileFromSchemaOption() {
-            Arguments args = new Arguments("instance-id", "my-table", Path.of("schema.json"), null, null);
+            Arguments args = AddTable.parseArguments("instance-id", "--table-name", "my-table", "--schema", "schema.json");
             assertThat(args.resolveSchemaFile()).isEqualTo(Path.of("schema.json"));
         }
 
         @Test
-        void shouldResolveSchemaFileFromConfigDir() {
-            Arguments args = new Arguments("instance-id", null, null, null, Path.of("config"));
-            assertThat(args.resolveSchemaFile()).isEqualTo(Path.of("config", "schema.json"));
+        void shouldResolveSchemaFileFromConfigDir() throws IOException {
+            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=any-table\n");
+            Arguments args = AddTable.parseArguments("instance-id", "--config-dir", tempDir.toString());
+            assertThat(args.resolveSchemaFile()).isEqualTo(tempDir.resolve("schema.json"));
         }
     }
 
@@ -97,12 +149,9 @@ public class AddTableArgumentsTest {
 
         private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
-        @TempDir
-        private Path tempDir;
-
         @Test
-        void shouldSetTableNameFromOption() throws IOException {
-            Arguments args = new Arguments("instance-id", "test-table", tempDir.resolve("schema.json"), null, null);
+        void shouldSetTableNameFromOption() {
+            Arguments args = withTableNameAndSchema("test-table", "schema.json");
 
             TableProperties result = AddTable.createTableProperties(instanceProperties, args);
 
@@ -110,10 +159,8 @@ public class AddTableArgumentsTest {
         }
 
         @Test
-        void shouldLoadTableNameFromPropertiesFile() throws IOException {
-            Path propsFile = tempDir.resolve("table.properties");
-            Files.writeString(propsFile, "sleeper.table.name=file-table\n");
-            Arguments args = new Arguments("instance-id", null, tempDir.resolve("schema.json"), propsFile, null);
+        void shouldLoadTableNameFromPropertiesFile() {
+            Arguments args = withTablePropertiesAndSchema(tablePropertiesWithName("file-table"), "schema.json");
 
             TableProperties result = AddTable.createTableProperties(instanceProperties, args);
 
@@ -121,10 +168,8 @@ public class AddTableArgumentsTest {
         }
 
         @Test
-        void shouldOverrideTableNameInPropertiesFileWithOption() throws IOException {
-            Path propsFile = tempDir.resolve("table.properties");
-            Files.writeString(propsFile, "sleeper.table.name=file-table\n");
-            Arguments args = new Arguments("instance-id", "override-table", tempDir.resolve("schema.json"), propsFile, null);
+        void shouldOverrideTableNameInPropertiesFileWithOption() {
+            Arguments args = withTableNameAndTablePropertiesAndSchema("override-table", tablePropertiesWithName("file-table"), "schema.json");
 
             TableProperties result = AddTable.createTableProperties(instanceProperties, args);
 
@@ -132,11 +177,8 @@ public class AddTableArgumentsTest {
         }
 
         @Test
-        void shouldLoadTableNameFromConfigDir() throws IOException {
-            Path configDir = tempDir.resolve("config");
-            Files.createDirectories(configDir);
-            Files.writeString(configDir.resolve("table.properties"), "sleeper.table.name=config-table\n");
-            Arguments args = new Arguments("instance-id", null, null, null, configDir);
+        void shouldLoadTableNameFromConfigDir() {
+            Arguments args = withConfigDir(tablePropertiesWithName("config-table"), "config");
 
             TableProperties result = AddTable.createTableProperties(instanceProperties, args);
 
@@ -144,26 +186,12 @@ public class AddTableArgumentsTest {
         }
 
         @Test
-        void shouldOverrideTableNameInConfigDirWithOption() throws IOException {
-            Path configDir = tempDir.resolve("config");
-            Files.createDirectories(configDir);
-            Files.writeString(configDir.resolve("table.properties"), "sleeper.table.name=config-table\n");
-            Arguments args = new Arguments("instance-id", "override-table", null, null, configDir);
+        void shouldOverrideTableNameInConfigDirWithOption() {
+            Arguments args = withTableNameAndConfigDir("override-table", tablePropertiesWithName("config-table"), "config");
 
             TableProperties result = AddTable.createTableProperties(instanceProperties, args);
 
             assertThat(result.get(TABLE_NAME)).isEqualTo("override-table");
-        }
-
-        @Test
-        void shouldReturnNoTableNameWhenNotSetInPropertiesFile() throws IOException {
-            Path propsFile = tempDir.resolve("table.properties");
-            Files.writeString(propsFile, "");
-            Arguments args = new Arguments("instance-id", null, tempDir.resolve("schema.json"), propsFile, null);
-
-            TableProperties result = AddTable.createTableProperties(instanceProperties, args);
-
-            assertThat(result.get(TABLE_NAME)).isNullOrEmpty();
         }
     }
 }

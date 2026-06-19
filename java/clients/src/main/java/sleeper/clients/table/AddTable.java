@@ -38,10 +38,9 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
+import java.util.Properties;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class AddTable {
@@ -63,40 +62,55 @@ public class AddTable {
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 
+    static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id"))
+            .options(List.of(
+                    CommandOption.longOption("table-name"),
+                    CommandOption.longOption("schema"),
+                    CommandOption.longOption("table-properties"),
+                    CommandOption.longOption("config-dir")))
+            .helpSummary("" +
+                    "Adds a new table to an existing Sleeper instance.\n" +
+                    "\n" +
+                    "--table-name <name>\n" +
+                    "Name of the new table. May also be set in --table-properties or --config-dir. " +
+                    "If --table-name is provided alongside --table-properties or --config-dir, it overrides the name in the file.\n" +
+                    "\n" +
+                    "--schema <file>\n" +
+                    "Path to the schema JSON file.\n" +
+                    "\n" +
+                    "--table-properties <file>\n" +
+                    "Optional path to a table properties file. If not set, default table properties will be used.\n" +
+                    "\n" +
+                    "--config-dir <dir>\n" +
+                    "Path to a directory containing schema.json and table.properties. " +
+                    "Can be combined with --schema or --table-properties to override the corresponding file " +
+                    "from the directory, but not both at the same time.")
+            .build();
+
+    static Arguments parseArguments(String... rawArgs) {
+        return CommandArguments.parse(USAGE, rawArgs, AddTable::readArguments);
+    }
+
+    private static Arguments readArguments(CommandArguments arguments) {
+        Path tablePropertiesFile = arguments.getOptionalPath("table-properties");
+        Path configDir = arguments.getOptionalPath("config-dir");
+        Properties rawTableProperties = tablePropertiesFile != null
+                ? CommandArguments.loadPropertiesFile(tablePropertiesFile)
+                : configDir != null
+                        ? CommandArguments.loadPropertiesFile(configDir.resolve("table.properties"))
+                        : null;
+        return new Arguments(
+                arguments.getString("instance-id"),
+                arguments.getOptionalString("table-name").orElse(null),
+                arguments.getOptionalPath("schema"),
+                rawTableProperties,
+                tablePropertiesFile,
+                configDir);
+    }
+
     public static void main(String[] rawArgs) throws IOException {
-        CommandLineUsage usage = CommandLineUsage.builder()
-                .positionalArguments(List.of("instance-id"))
-                .options(List.of(
-                        CommandOption.longOption("table-name"),
-                        CommandOption.longOption("schema"),
-                        CommandOption.longOption("table-properties"),
-                        CommandOption.longOption("config-dir")))
-                .helpSummary("" +
-                        "Adds a new table to an existing Sleeper instance.\n" +
-                        "\n" +
-                        "--table-name <name>\n" +
-                        "Name of the new table. May also be set in --table-properties or --config-dir. " +
-                        "If --table-name is provided alongside --table-properties or --config-dir, it overrides the name in the file.\n" +
-                        "\n" +
-                        "--schema <file>\n" +
-                        "Path to the schema JSON file.\n" +
-                        "\n" +
-                        "--table-properties <file>\n" +
-                        "Optional path to a table properties file. If not set, default table properties will be used.\n" +
-                        "\n" +
-                        "--config-dir <dir>\n" +
-                        "Path to a directory containing schema.json and table.properties. " +
-                        "Can be combined with --schema or --table-properties to override the corresponding file " +
-                        "from the directory, but not both at the same time.")
-                .build();
-        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> {
-            return new Arguments(
-                    arguments.getString("instance-id"),
-                    arguments.getOptionalString("table-name").orElse(null),
-                    getPath(arguments.getOptionalString("schema")),
-                    getPath(arguments.getOptionalString("table-properties")),
-                    getPath(arguments.getOptionalString("config-dir")));
-        });
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, AddTable::readArguments);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
@@ -106,15 +120,8 @@ public class AddTable {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId());
 
-            Path schemaFile = args.resolveSchemaFile();
-
             TableProperties tableProperties = createTableProperties(instanceProperties, args);
-            if (tableProperties.get(TABLE_NAME) == null || tableProperties.get(TABLE_NAME).isBlank()) {
-                System.out.println(usage.createUsageMessage());
-                System.out.println("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
-                System.exit(1);
-            }
-            tableProperties.setSchema(Schema.load(schemaFile));
+            tableProperties.setSchema(Schema.load(args.resolveSchemaFile()));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -122,32 +129,21 @@ public class AddTable {
         }
     }
 
-    static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) throws IOException {
-        TableProperties tableProperties;
-        if (args.tablePropertiesFile() != null) {
-            tableProperties = new TableProperties(instanceProperties, loadProperties(args.tablePropertiesFile()));
-        } else if (args.configDir() != null) {
-            tableProperties = new TableProperties(instanceProperties, loadProperties(args.configDir().resolve("table.properties")));
-        } else {
-            tableProperties = new TableProperties(instanceProperties);
-        }
+    static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) {
+        TableProperties tableProperties = args.rawTableProperties() != null
+                ? new TableProperties(instanceProperties, args.rawTableProperties())
+                : new TableProperties(instanceProperties);
         if (args.tableName() != null) {
             tableProperties.set(TABLE_NAME, args.tableName());
         }
         return tableProperties;
     }
 
-    private static Path getPath(Optional<String> pathString) {
-        if (pathString.isPresent()) {
-            return Path.of(pathString.get());
-        }
-        return null;
-    }
-
     public record Arguments(
             String instanceId,
             String tableName,
             Path schemaFile,
+            Properties rawTableProperties,
             Path tablePropertiesFile,
             Path configDir) {
 
@@ -155,14 +151,17 @@ public class AddTable {
             if (instanceId == null) {
                 throw new CommandArgumentsException("instance-id must not be null");
             }
-            if (tableName == null && tablePropertiesFile == null && configDir == null) {
-                throw new CommandArgumentsException("A table name is required. Provide --table-name, or set it in --table-properties or --config-dir.");
+            if (tableName == null) {
+                String resolvedName = rawTableProperties != null
+                        ? rawTableProperties.getProperty("sleeper.table.name") : null;
+                if (resolvedName == null || resolvedName.isBlank()) {
+                    throw new CommandArgumentsException(
+                            "Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+                }
             }
-
             if (schemaFile == null && configDir == null) {
                 throw new CommandArgumentsException("Either --schema or --config-dir must be provided");
             }
-
             if (schemaFile != null && tablePropertiesFile != null && configDir != null) {
                 throw new CommandArgumentsException("Cannot specify --schema, --table-properties, and --config-dir together");
             }

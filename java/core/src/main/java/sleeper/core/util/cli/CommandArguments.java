@@ -15,9 +15,13 @@
  */
 package sleeper.core.util.cli;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Function;
 
 /**
@@ -69,6 +73,20 @@ public class CommandArguments {
             exitWithFailure(usage, e);
             return null;
         }
+    }
+
+    /**
+     * Reads command line arguments and detects arguments and options. Throws a {@link CommandArgumentsException} if
+     * validation fails. Intended for use in tests where {@link System#exit} is not acceptable.
+     *
+     * @param  <T>           the type to read the arguments into
+     * @param  usage         information about how arguments and options are specified
+     * @param  arguments     the arguments from the command line
+     * @param  readArguments the function to read the arguments
+     * @return               the result from the function
+     */
+    public static <T> T parse(CommandLineUsage usage, String[] arguments, Function<CommandArguments, T> readArguments) {
+        return readArguments.apply(CommandArgumentReader.parse(usage, arguments));
     }
 
     public static Builder builder() {
@@ -157,6 +175,48 @@ public class CommandArguments {
             return Integer.parseInt(string);
         } catch (NumberFormatException e) {
             throw new CommandArgumentsException("Expected integer for argument \"" + name + "\", found \"" + string + "\"", e);
+        }
+    }
+
+    /**
+     * Retrieves the value of an optional path argument.
+     *
+     * @param  name the name of the argument
+     * @return      the path, if the argument was set
+     */
+    public Path getOptionalPath(String name) {
+        return getOptionalString(name).map(Path::of).orElse(null);
+    }
+
+    /**
+     * Loads a properties file from the path given by an optional argument. Returns null if the argument was not set.
+     * Throws a {@link CommandArgumentsException} if the file cannot be read.
+     *
+     * @param  name the name of the argument
+     * @return      the loaded properties, or null if the argument was not set
+     */
+    public Properties loadOptionalProperties(String name) {
+        Path path = getOptionalPath(name);
+        if (path == null) {
+            return null;
+        }
+        return loadPropertiesFile(path);
+    }
+
+    /**
+     * Loads a properties file from the given path. Throws a {@link CommandArgumentsException} if the file cannot be
+     * read, so that the error is handled the same way as other argument validation failures.
+     *
+     * @param  path the path to the properties file
+     * @return      the loaded properties
+     */
+    public static Properties loadPropertiesFile(Path path) {
+        try (var reader = Files.newBufferedReader(path)) {
+            Properties properties = new Properties();
+            properties.load(reader);
+            return properties;
+        } catch (IOException e) {
+            throw new CommandArgumentsException("Failed to read file: " + path, e);
         }
     }
 
