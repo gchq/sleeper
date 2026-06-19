@@ -20,12 +20,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.nightly.failures.LastRunFailedException;
+import sleeper.systemtest.drivers.nightly.failures.NoRecentRunException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailedAndNotRepeatedException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailureException;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.testResultWithShortId;
 
 class NightlyTestSummaryTableTest {
     @Nested
@@ -69,13 +77,13 @@ class NightlyTestSummaryTableTest {
         }
 
         @Test
-        void shouldRecordInstanceId() {
+        void shouldRecordShortId() {
             // Given
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                     NightlyTestTimestamp.from(Instant.parse("2023-05-22T16:14:00Z")),
                     new NightlyTestOutput(List.of(TestResult.builder()
                             .testName("bulkImportPerformance")
-                            .instanceId("bulk-import-instance")
+                            .shortId("bulk-import-instance")
                             .exitCode(0)
                             .build())));
 
@@ -86,7 +94,7 @@ class NightlyTestSummaryTableTest {
                             "\"tests\": [{" +
                             "\"name\":\"bulkImportPerformance\", " +
                             "\"exitCode\":0, " +
-                            "\"instanceId\":\"bulk-import-instance\"" +
+                            "\"shortId\":\"bulk-import-instance\"" +
                             "}]" +
                             "}]}");
         }
@@ -132,6 +140,145 @@ class NightlyTestSummaryTableTest {
                     "| START_TIME           | bulkImportPerformance | compactionPerformance | splittingPerformance |\n" +
                     "| 2023-05-03T15:15:00Z | PASSED                | PASSED                | PASSED               |\n" +
                     "-----------------------------------------------------------------------------------------------\n");
+        }
+    }
+
+    @Nested
+    @DisplayName("Check recent test suite runs")
+    class CheckTests {
+
+        @Test
+        void shouldPassWhenOneRunSucceededInLastDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatCode(() -> summary.checkPassedRecently(now))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldFailWhenOneRunFailedInLastDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            new NightlyTestOutput(List.of(
+                                    testResultWithShortId("splittingPerformance", "aa06172003sp", 1),
+                                    testResultWithShortId("bulkImportPerformance", "aa06172003bp", 0),
+                                    testResultWithShortId("compactionPerformance", "aa06172003cp", 0))));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(LastRunFailedException.class)
+                    .isInstanceOf(TestFailureException.class)
+                    .hasMessage("Last run failed, started at 2026-06-17T20:03:00Z, failed test suites: splittingPerformance (short ID aa06172003sp)");
+        }
+
+        @Test
+        void shouldFailWithNoRuns() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty();
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(NoRecentRunException.class)
+                    .isInstanceOf(TestFailureException.class)
+                    .hasMessage("No test runs found");
+        }
+
+        @Test
+        void shouldFailWithRunOlderThanOneDay() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-16T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(NoRecentRunException.class)
+                    .hasMessage("No recent test run found, last run time: 2026-06-16T20:03:00Z");
+        }
+
+        @Test
+        void shouldFailWhenOneTestSuiteFailedInTheLastWeekAndHasNotReRun() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-16T20:03:00Z")),
+                            new NightlyTestOutput(List.of(
+                                    testResultWithShortId("splittingPerformance", "aa06172003sp", 0),
+                                    testResultWithShortId("bulkImportPerformance", "aa06172003bp", 0),
+                                    testResultWithShortId("compactionPerformance", "aa06172003cp", 1))))
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatThrownBy(() -> summary.checkPassedRecently(now))
+                    .isInstanceOf(TestFailedAndNotRepeatedException.class)
+                    .isInstanceOf(TestFailureException.class)
+                    .hasMessage("Run contains a test failure which has not been re-run, started at 2026-06-16T20:03:00Z, failed test suites: compactionPerformance (short ID aa06172003cp)");
+        }
+
+        @Test
+        void shouldPassWhenOneTestSuiteFailedMoreThanAWeekAgoAndHasNotReRun() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-10T20:03:00Z")),
+                            new NightlyTestOutput(List.of(
+                                    testResultWithShortId("splittingPerformance", "aa06172003sp", 0),
+                                    testResultWithShortId("bulkImportPerformance", "aa06172003bp", 0),
+                                    testResultWithShortId("compactionPerformance", "aa06172003cp", 1))))
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatCode(() -> summary.checkPassedRecently(now))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldPassWhenTestSuiteFailedAndHasReRun() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-16T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 1,
+                                    "bulkImportPerformance", 0)))
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2026-06-17T20:03:00Z")),
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0)));
+            Instant now = Instant.parse("2026-06-18T12:13:00Z");
+
+            // When / Then
+            assertThatCode(() -> summary.checkPassedRecently(now))
+                    .doesNotThrowAnyException();
         }
     }
 }
