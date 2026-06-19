@@ -198,6 +198,14 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         return true;
     }
 
+    /**
+     * Returns true since DataFusion query path supports native SQL.
+     */
+    @Override
+    public boolean supportsSqlFiltering() {
+        return true;
+    }
+
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
             jnr.ffi.Runtime runtime) {
