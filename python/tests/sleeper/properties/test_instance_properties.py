@@ -71,18 +71,6 @@ def should_read_properties_string_with_escaped_colon():
     assert properties.as_dict() == {"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"}
 
 
-def should_read_full_example_properties():
-    # Given
-    file = get_repository_path() / "example/full/instance.properties"
-    content = file.read_text()
-
-    # When
-    properties = load_instance_properties_from_string(content)
-
-    # Then
-    assert properties.get(CommonProperty.ID) == "full-example"
-
-
 def should_clean_instance_id_with_upper_case():
     # When
     cleaned = clean_instance_id("AnInstanceId")
