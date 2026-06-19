@@ -41,7 +41,7 @@ import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -74,7 +74,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         CompactionJob job = request.getJob();
         TableProperties tableProperties = request.getTableProperties();
         Region region = request.getRegion();
-        Consumer<Long> progressCallback = request.getProgressCallback();
+        LongConsumer progressCallback = request.getProgressCallback();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -159,7 +159,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
-            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, Consumer<Long> progressCallback) throws IOException {
+            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, LongConsumer progressCallback) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
