@@ -36,19 +36,19 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class AddTableSerDeTest {
+class AddTableRequestSerDeTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final AddTableSerDe addTableSerDe = new AddTableSerDe();
+    private final AddTableRequestSerDe serDe = new AddTableRequestSerDe();
 
     @Nested
-    @DisplayName("Valid add table requests")
-    class ValidAddTableRequest {
+    @DisplayName("Deserialise add table requests")
+    class DeserialiseRequests {
         @Test
         void shouldBuildTablePropertiesAndApplySchema() {
             // Given
             Schema schema = createSchemaWithKey("key", new StringType());
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {
                       "properties": {"sleeper.table.name": "my-table"},
                       "schema": %s
@@ -59,10 +59,10 @@ class AddTableSerDeTest {
             TableProperties tableProperties = request.toTableProperties(instanceProperties);
 
             // Then
-            TableProperties exectedTableProperties = new TableProperties(instanceProperties);
-            exectedTableProperties.set(TABLE_NAME, "my-table");
-            exectedTableProperties.setSchema(schema);
-            assertThat(tableProperties).isEqualTo(exectedTableProperties);
+            TableProperties expectedTableProperties = new TableProperties(instanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "my-table");
+            expectedTableProperties.setSchema(schema);
+            assertThat(tableProperties).isEqualTo(expectedTableProperties);
             assertThat(request.toSplitPoints(tableProperties)).isEmpty();
         }
 
@@ -70,7 +70,7 @@ class AddTableSerDeTest {
         void shouldConvertIntSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
 
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
                     """);
 
@@ -81,7 +81,7 @@ class AddTableSerDeTest {
         void shouldConvertLongSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new LongType()));
 
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["10", "20"]}
                     """);
 
@@ -92,7 +92,7 @@ class AddTableSerDeTest {
         void shouldConvertStringSplitPoints() {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
 
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["a", "m", "z"]}
                     """);
 
@@ -104,7 +104,7 @@ class AddTableSerDeTest {
             TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new ByteArrayType()));
             String encoded = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
 
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
                     """.formatted(encoded));
 
@@ -115,12 +115,12 @@ class AddTableSerDeTest {
     }
 
     @Nested
-    @DisplayName("Invalid add table request tests")
-    class InvalidAddTableRequests {
+    @DisplayName("Invalid add table requests")
+    class InvalidRequests {
 
         @Test
         void shouldRejectMissingProperties() {
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"schema": {}}
                     """);
 
@@ -131,7 +131,7 @@ class AddTableSerDeTest {
 
         @Test
         void shouldRejectMissingSchema() {
-            AddTableRequest request = addTableSerDe.fromJson("""
+            AddTableRequest request = serDe.fromJson("""
                     {"properties": {}}
                     """);
 
@@ -142,16 +142,43 @@ class AddTableSerDeTest {
     }
 
     @Nested
-    @DisplayName("Valid add table response")
-    class ValidAddTableResponse {
+    @DisplayName("Serialise add table requests")
+    class SerialiseRequests {
         @Test
-        void shouldAddTableResponseCorrectlyConvertedtoJson() {
-            String responseJson = addTableSerDe.toJson(AddTableResponse.builder()
-                    .tableId("table-id")
-                    .tableName("table-name")
-                    .build());
+        void shouldRoundTripRequestWithPropertiesAndSchema() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new StringType());
+            AddTableRequest request = serDe.fromJson("""
+                    {
+                      "properties": {"sleeper.table.name": "my-table"},
+                      "schema": %s
+                    }
+                    """.formatted(schemaJson(schema)));
 
-            assertThat(responseJson).isEqualTo("{\"tableId\":\"table-id\",\"tableName\":\"table-name\"}");
+            // When
+            AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
+
+            // Then
+            TableProperties tableProperties = deserialisedRequest.toTableProperties(instanceProperties);
+            TableProperties expectedTableProperties = new TableProperties(instanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "my-table");
+            expectedTableProperties.setSchema(schema);
+            assertThat(tableProperties).isEqualTo(expectedTableProperties);
+        }
+
+        @Test
+        void shouldRoundTripRequestWithSplitPoints() {
+            // Given
+            AddTableRequest request = serDe.fromJson("""
+                    {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
+                    """);
+
+            // When
+            AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
+
+            // Then
+            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
+            assertThat(deserialisedRequest.toSplitPoints(tableProperties)).containsExactly(1, 2, 3);
         }
     }
 
