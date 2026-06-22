@@ -87,9 +87,7 @@ public class ApiGatewayWebSocketOutput {
         ApiGatewayManagementApiClientBuilder clientBuilder = ApiGatewayManagementApiClient.builder()
                 .region(Region.of(region))
                 .endpointOverride(URI.create(endpoint))
-                .overrideConfiguration(ClientOverrideConfiguration.builder()
-                        .retryPolicy(retryPolicyExcludingLimitExceeded())
-                        .build());
+                .overrideConfiguration(overrideNoRetriesForLimitExceeded());
 
         String accessKey = config.get(WebSocketOutput.ACCESS_KEY);
         String secretKey = config.get(WebSocketOutput.SECRET_KEY);
@@ -138,11 +136,14 @@ public class ApiGatewayWebSocketOutput {
         throw new IOException(lastLimitExceeded);
     }
 
-    private static RetryPolicy retryPolicyExcludingLimitExceeded() {
-        return RetryPolicy.defaultRetryPolicy().toBuilder()
-                .retryCondition(AndRetryCondition.create(
-                        RetryCondition.defaultRetryCondition(),
-                        context -> !(context.exception() instanceof LimitExceededException)))
+    @SuppressWarnings("deprecation") // RetryStrategy does not yet support disabling retries for a specific failure
+    private static ClientOverrideConfiguration overrideNoRetriesForLimitExceeded() {
+        return ClientOverrideConfiguration.builder()
+                .retryPolicy(RetryPolicy.defaultRetryPolicy().toBuilder()
+                        .retryCondition(AndRetryCondition.create(
+                                RetryCondition.defaultRetryCondition(),
+                                context -> !(context.exception() instanceof LimitExceededException)))
+                        .build())
                 .build();
     }
 
