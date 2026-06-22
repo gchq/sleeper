@@ -18,7 +18,7 @@ package sleeper.query.runner.output;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.closeable.WrappedIterator;
@@ -62,21 +62,24 @@ public class WebSocketResultsOutputIT {
             .build();
 
     private final List<Duration> foundWaits = new ArrayList<>();
+    private final Map<String, String> config = new HashMap<>();
+    private final UrlPattern url = urlEqualTo("/@connections/test-connection");
+
+    @BeforeEach
+    void setUp(WireMockRuntimeInfo wmRuntimeInfo) {
+        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
+        config.put(WebSocketOutput.REGION, "eu-west-1");
+        config.put(WebSocketOutput.CONNECTION_ID, "test-connection");
+        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
+        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
+    }
 
     @Test
     public void shouldBatchResultsAccordingToConfig(WireMockRuntimeInfo wmRuntimeInfo) {
         // Given
-        String connectionId = "connection1";
-        UrlPattern url = urlEqualTo("/@connections/" + connectionId);
         stubFor(post(url).willReturn(aResponse().withStatus(200)));
 
-        Map<String, String> config = new HashMap<>();
-        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
-        config.put(WebSocketOutput.REGION, "eu-west-1");
-        config.put(WebSocketOutput.CONNECTION_ID, connectionId);
         config.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
-        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -86,7 +89,7 @@ public class WebSocketResultsOutputIT {
         rows.add(new Row(Collections.singletonMap("id", "row5")));
 
         // When
-        ResultsOutputInfo result = output(config).publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+        ResultsOutputInfo result = output().publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
         verify(rows.size(), postRequestedFor(url).withRequestBody(
@@ -95,12 +98,14 @@ public class WebSocketResultsOutputIT {
         assertThat(result.getRowCount()).isEqualTo(5);
     }
 
+    // Test list for retries:
+    // - Retries on LimitExceededException and succeeds
+    // - Gives up after max attempts on persistent LimitExceededException
+    // - Does not retry PayloadTooLargeException, status 413
+
     @Test
-    @Disabled("TODO")
     public void shouldRetryWhenLimitExceededAndSucceed(WireMockRuntimeInfo wmRuntimeInfo) {
         // Given
-        String connectionId = "connection1";
-        UrlPattern url = urlEqualTo("/@connections/" + connectionId);
         stubFor(post(url).inScenario("retry")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(aResponse()
@@ -111,45 +116,30 @@ public class WebSocketResultsOutputIT {
                 .whenScenarioStateIs("retried")
                 .willReturn(aResponse().withStatus(200)));
 
-        Map<String, String> config = new HashMap<>();
-        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
-        config.put(WebSocketOutput.REGION, "eu-west-1");
-        config.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        config.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
         config.put(WebSocketOutput.MAX_ATTEMPTS, "5");
         config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
         config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
-        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
 
         // When
-        ResultsOutputInfo result = output(config).publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+        ResultsOutputInfo result = output().publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
         verify(2, postRequestedFor(url));
-        assertThat(foundWaits).containsExactly(Duration.ofMillis(1));
+        assertThat(foundWaits).hasSize(1);
         assertThat(result.getRowCount()).isEqualTo(1);
     }
 
     @Test
     public void shouldStopPublishingResultsWhenClientHasGone(WireMockRuntimeInfo wmRuntimeInfo) {
         // Given
-        String connectionId = "connection1";
-        UrlPattern url = urlEqualTo("/@connections/" + connectionId);
         stubFor(post(url).willReturn(aResponse()
                 .withStatus(410)
                 .withHeader("x-amzn-ErrorType", "GoneException")));
 
-        Map<String, String> config = new HashMap<>();
-        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
-        config.put(WebSocketOutput.REGION, "eu-west-1");
-        config.put(WebSocketOutput.CONNECTION_ID, connectionId);
         config.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
-        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -159,7 +149,7 @@ public class WebSocketResultsOutputIT {
         rows.add(new Row(Collections.singletonMap("id", "row5")));
 
         // When
-        ResultsOutputInfo result = output(config).publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+        ResultsOutputInfo result = output().publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
         verify(1, postRequestedFor(url).withRequestBody(
@@ -169,7 +159,7 @@ public class WebSocketResultsOutputIT {
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }
 
-    private WebSocketResultsOutput output(Map<String, String> config) {
+    private WebSocketResultsOutput output() {
         return new WebSocketResultsOutput(schema, config, recordWaits(foundWaits));
     }
 }

@@ -45,7 +45,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
 
     public WebSocketResultsOutput(Schema schema, Map<String, String> config, ThreadSleep waiter) {
         this.serDe = QueryWebSocketMessageSerDe.fromConfig(schema, config);
-        this.output = ApiGatewayWebSocketOutput.fromConfig(config);
+        this.output = ApiGatewayWebSocketOutput.fromConfig(config, waiter);
         this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(WebSocketOutput.ENDPOINT)));
         this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(WebSocketOutput.CONNECTION_ID)));
     }
