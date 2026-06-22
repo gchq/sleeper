@@ -9,6 +9,11 @@ vulnerabilities:
   - id: CVE-2026-42507
   # github.com/containerd/containerd/v2
   - id: CVE-2026-46680
+  - id: CVE-2026-53488
+  - id: CVE-2026-53489
+  - id: CVE-2026-53492
+  - id: CVE-2026-47262
+  - id: CVE-2026-50195
   # github.com/in-toto/in-toto-golang
   - id: GHSA-pmwq-pjrm-6p5r
   # github.com/docker/docker
@@ -17,3 +22,9 @@ vulnerabilities:
   # go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
   # go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
   - id: CVE-2026-39882
+
+  # Node js
+  - id: CVE-2026-12151
+  - id: CVE-2026-9679
+  - id: CVE-2026-11525
+  - id: CVE-2026-6733
