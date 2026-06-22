@@ -96,9 +96,9 @@ public class ApiGatewayWebSocketOutput {
                     AwsBasicCredentials.create(accessKey, secretKey)));
         }
 
-        double firstWaitCeilingSecs = configDouble(config, WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, DEFAULT_FIRST_WAIT_CEILING_SECS);
-        double maxWaitCeilingSecs = configDouble(config, WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, DEFAULT_MAX_WAIT_CEILING_SECS);
-        int maxAttempts = configInt(config, WebSocketOutput.MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
+        double firstWaitCeilingSecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, DEFAULT_FIRST_WAIT_CEILING_SECS);
+        double maxWaitCeilingSecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, DEFAULT_MAX_WAIT_CEILING_SECS);
+        int maxAttempts = WebSocketOutput.getIntOrDefault(config, WebSocketOutput.MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
         ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
                 WaitRange.firstAndMaxWaitCeilingSecs(firstWaitCeilingSecs, maxWaitCeilingSecs),
                 Math::random, waiter);
@@ -145,16 +145,6 @@ public class ApiGatewayWebSocketOutput {
                                 context -> !(context.exception() instanceof LimitExceededException)))
                         .build())
                 .build();
-    }
-
-    private static double configDouble(Map<String, String> config, String key, double defaultValue) {
-        String value = config.get(key);
-        return value == null ? defaultValue : Double.parseDouble(value);
-    }
-
-    private static int configInt(Map<String, String> config, String key, int defaultValue) {
-        String value = config.get(key);
-        return value == null ? defaultValue : Integer.parseInt(value);
     }
 
 }

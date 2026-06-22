@@ -15,6 +15,8 @@
  */
 package sleeper.query.runner.output;
 
+import java.util.Map;
+
 public class WebSocketOutput {
     public static final String DESTINATION_NAME = "WEBSOCKET";
     public static final String REGION = "webSocketManagementApiRegion";
@@ -28,5 +30,15 @@ public class WebSocketOutput {
     public static final String LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS = "limitExceededMaxWaitCeilingSecs";
 
     private WebSocketOutput() {
+    }
+
+    public static double getDoubleOrDefault(Map<String, String> config, String key, double defaultValue) {
+        String value = config.get(key);
+        return value == null ? defaultValue : Double.parseDouble(value);
+    }
+
+    public static int getIntOrDefault(Map<String, String> config, String key, int defaultValue) {
+        String value = config.get(key);
+        return value == null ? defaultValue : Integer.parseInt(value);
     }
 }
