@@ -23,7 +23,7 @@ vulnerabilities:
   # go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
   - id: CVE-2026-39882
 
-  # Node js
+  # Node js undici
   - id: CVE-2026-12151
   - id: CVE-2026-9679
   - id: CVE-2026-11525
