@@ -93,21 +93,21 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_DETAILS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy")
             .description("Overall policy of whether to keep the details of instance when it is destroyed. " +
-                    "Covers both the infrastructure of sleeper and the logs.")
+                    "Covers both the infrastructure of Sleeper and the logs.")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .defaultValue("true")
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.infra")
-            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
+            .description("Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed. Overrides default value set within \"sleeper.retain.after.destroy\"")
             .defaultProperty(RETAIN_DETAILS_AFTER_DESTROY)
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.logs")
-            .description("Whether to keep the sleeper log groups when the instance is destroyed. Overrides " +
+            .description("Whether to keep the Sleeper log groups when the instance is destroyed. Overrides " +
                     "default value set within \"sleeper.retain.after.destroy\"")
             .defaultProperty(RETAIN_DETAILS_AFTER_DESTROY)
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
