@@ -139,7 +139,7 @@ class SleeperPropertiesPrettyPrinterTest {
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     .contains("# (no value set, uncomment to set a value)\n" +
-                            "# sleeper.logging.root.level=\n");
+                            "# sleeper.logging.level.root=\n");
         }
 
         @Test
@@ -153,25 +153,25 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyValueSetToEmptyString() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.logging.root.level="))
-                    .contains("\n# sleeper.logging.root.level=\n");
+            assertThat(printInstanceProperties("sleeper.logging.level.root="))
+                    .contains("\n# sleeper.logging.level.root=\n");
         }
 
         @Test
         void shouldPrintSpacingBetweenProperties() {
             // When / Then
             assertThat(printInstanceProperties("" +
-                    "sleeper.logging.parquet.level=INFO\n" +
-                    "sleeper.logging.aws.level=INFO\n" +
-                    "sleeper.logging.root.level=INFO"))
+                    "sleeper.logging.level.parquet=INFO\n" +
+                    "sleeper.logging.level.aws=INFO\n" +
+                    "sleeper.logging.level.root=INFO"))
                     .contains("# The logging level for Parquet logs.\n" +
-                            "sleeper.logging.parquet.level=INFO\n" +
+                            "sleeper.logging.level.parquet=INFO\n" +
                             "\n" +
                             "# The logging level for AWS logs.\n" +
-                            "sleeper.logging.aws.level=INFO\n" +
+                            "sleeper.logging.level.aws=INFO\n" +
                             "\n" +
                             "# The logging level for everything else.\n" +
-                            "sleeper.logging.root.level=INFO");
+                            "sleeper.logging.level.root=INFO");
         }
 
         @Test

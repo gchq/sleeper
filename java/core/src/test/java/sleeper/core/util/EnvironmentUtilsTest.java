@@ -65,10 +65,10 @@ public class EnvironmentUtilsTest {
         // Then
         assertThat(environment).isEqualTo(Map.of("JAVA_TOOL_OPTIONS", "" +
                 "-Dsleeper.logging.level=INFO " +
-                "-Dsleeper.logging.root.level=WARN " +
-                "-Dsleeper.logging.apache.level=TRACE " +
-                "-Dsleeper.logging.parquet.level=DEBUG " +
-                "-Dsleeper.logging.aws.level=ERROR " + DEFAULT_TOOL_OPTIONS));
+                "-Dsleeper.logging.level.root=WARN " +
+                "-Dsleeper.logging.level.apache=TRACE " +
+                "-Dsleeper.logging.level.parquet=DEBUG " +
+                "-Dsleeper.logging.level.aws=ERROR " + DEFAULT_TOOL_OPTIONS));
     }
 
     @Test
