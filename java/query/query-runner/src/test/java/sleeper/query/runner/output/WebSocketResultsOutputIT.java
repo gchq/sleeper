@@ -133,6 +133,30 @@ public class WebSocketResultsOutputIT {
     }
 
     @Test
+    public void shouldGiveUpAfterMaxAttemptsOnPersistentLimitExceeded(WireMockRuntimeInfo wmRuntimeInfo) {
+        // Given
+        stubFor(post(url).willReturn(aResponse()
+                .withStatus(429)
+                .withHeader("x-amzn-ErrorType", "LimitExceededException")));
+
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
+        config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
+        config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
+
+        List<Row> rows = new ArrayList<>();
+        rows.add(new Row(Collections.singletonMap("id", "row1")));
+
+        // When
+        ResultsOutputInfo result = output().publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+
+        // Then
+        verify(3, postRequestedFor(url));
+        assertThat(foundWaits).hasSize(2);
+        assertThat(result.getRowCount()).isZero();
+        assertThat(result.getError()).hasMessageContaining("LimitExceededException");
+    }
+
+    @Test
     public void shouldStopPublishingResultsWhenClientHasGone(WireMockRuntimeInfo wmRuntimeInfo) {
         // Given
         stubFor(post(url).willReturn(aResponse()
