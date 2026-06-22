@@ -20,10 +20,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.retries.StandardRetryStrategy;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -33,6 +36,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.EcsClientBuilder;
 import software.amazon.awssdk.services.eks.EksClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
@@ -134,7 +138,7 @@ public class SystemTestClients {
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
                 .emr(EmrClient.create())
-                .ecs(EcsClient.create())
+                .ecs(systemTestEcsClientBuilder().build())
                 .autoScaling(AutoScalingClient.create())
                 .ecr(EcrClient.create())
                 .ec2(Ec2Client.create())
@@ -165,7 +169,7 @@ public class SystemTestClients {
                 .cloudFormation(aws.buildClient(CloudFormationClient.builder()))
                 .emrServerless(aws.buildClient(EmrServerlessClient.builder()))
                 .emr(aws.buildClient(EmrClient.builder()))
-                .ecs(aws.buildClient(EcsClient.builder()))
+                .ecs(aws.buildClient(systemTestEcsClientBuilder()))
                 .autoScaling(aws.buildClient(AutoScalingClient.builder()))
                 .ecr(aws.buildClient(EcrClient.builder()))
                 .ec2(aws.buildClient(Ec2Client.builder()))
@@ -293,12 +297,28 @@ public class SystemTestClients {
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
+        // This is intended to allow for direct synchronous lambda invocations from a test,
+        // accommodating the timeout of a lambda invocation.
         return LambdaClient.builder()
                 .overrideConfiguration(builder -> builder
                         .apiCallTimeout(Duration.ofMinutes(11))
                         .apiCallAttemptTimeout(Duration.ofMinutes(11)))
                 .httpClientBuilder(ApacheHttpClient.builder()
                         .socketTimeout(Duration.ofMinutes(11)));
+    }
+
+    private static EcsClientBuilder systemTestEcsClientBuilder() {
+        // This is intended to accommodate situations where the ECS API is having problems, and we still want a test to
+        // be able to eventually start data generation ECS tasks.
+        BackoffStrategy backoffStrategy = BackoffStrategy.exponentialDelay(Duration.ofSeconds(1), Duration.ofMinutes(1));
+        return EcsClient.builder()
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .retryStrategy(StandardRetryStrategy.builder()
+                                .maxAttempts(10)
+                                .backoffStrategy(backoffStrategy)
+                                .throttlingBackoffStrategy(backoffStrategy)
+                                .build())
+                        .build());
     }
 
     public static class Builder {
