@@ -98,7 +98,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .defaultValue("true")
             .runCdkDeployWhenChanged(true)
-            .includedInBasicTemplate(true).build();;
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.infra")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed. Overrides default value set within \"sleeper.retain.after.destroy\"")
