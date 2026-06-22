@@ -121,7 +121,7 @@ public class SqsLeafPartitionQueryProcessor {
         } else if (S3ResultsOutput.S3.equals(destination)) {
             return new S3ResultsOutput(instanceProperties, tableProperties, hadoopProvider.getConfiguration(tableProperties), resultsPublisherConfig);
         } else if (WebSocketOutput.DESTINATION_NAME.equals(destination)) {
-            return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
+            return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig, Thread::sleep);
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
             return new NoResultsOutput();
         } else {

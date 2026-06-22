@@ -23,6 +23,9 @@ public class WebSocketOutput {
     public static final String ACCESS_KEY = "awsAccessKey";
     public static final String SECRET_KEY = "awsSecretKey";
     public static final String MAX_BATCH_SIZE = "maxBatchSize";
+    public static final String MAX_ATTEMPTS = "maxAttempts";
+    public static final String LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS = "limitExceededFirstWaitCeilingSecs";
+    public static final String LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS = "limitExceededMaxWaitCeilingSecs";
 
     private WebSocketOutput() {
     }
