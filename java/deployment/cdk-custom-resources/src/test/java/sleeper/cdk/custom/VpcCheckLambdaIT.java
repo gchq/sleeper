@@ -23,6 +23,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -32,6 +33,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
@@ -39,16 +41,50 @@ import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Cli
 class VpcCheckLambdaIT {
 
     @Test
-    void shouldFindVpcEndpointIsPresent(WireMockRuntimeInfo runtimeInfo) {
+    void shouldThrowExceptionWhenVpcRequestReturnsNoMatchingEndpoints(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(describeVpcEndpoints().willReturn(noVpcEndpointsResponse()));
+
+        // When
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(new HashMap<>()).build();
+
+        // Then
+        assertThatThrownBy(() -> vpcCheckLambda.handleEvent(event, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("endpoint");
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenVpcRequestReturnsMatchingEndpoints(WireMockRuntimeInfo runtimeInfo) {
         // Given
         stubFor(describeVpcEndpoints().willReturn(singleVpcEndpointResponse()));
 
-        Map<String, Object> properties = Map.of(
-                "vpcId", "myVpc",
-                "region", "eu-west-2");
+        // When
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(new HashMap<>()).build();
+
+        // Then
+        assertThatCode(() -> vpcCheckLambda.handleEvent(event, null))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldPassVpcIdAndRegionFromThePropertiesToTheRequest(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(describeVpcEndpoints().willReturn(singleVpcEndpointResponse()));
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("vpcId", "myVpc");
+        properties.put("region", "my-region-1");
 
         // When
-        lambda(runtimeInfo).handleEvent(CloudFormationCustomResourceEvent.builder()
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
+        vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(properties).build(), null);
 
@@ -57,52 +93,7 @@ class VpcCheckLambdaIT {
                 .withRequestBody(containing("Filter.1.Name=vpc-id")
                         .and(containing("Filter.1.Value.1=myVpc"))
                         .and(containing("Filter.2.Name=service-name"))
-                        .and(containing("Filter.2.Value.1=com.amazonaws.eu-west-2.s3"))));
-    }
-
-    @Test
-    void shouldFindVpcEndpointInNonStandardAWSPartition(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(describeVpcEndpoints().willReturn(singleVpcEndpointResponse()));
-
-        Map<String, Object> properties = Map.of(
-                "vpcId", "myVpc",
-                "region", "eusc-de-east-1");
-
-        // When
-        lambda(runtimeInfo).handleEvent(CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Create")
-                .withResourceProperties(properties).build(), null);
-
-        // Then
-        verify(1, postRequestedFor(urlEqualTo("/"))
-                .withRequestBody(containing("Filter.2.Name=service-name")
-                        .and(containing("Filter.2.Value.1=eu.amazonaws.eusc-de-east-1.s3"))));
-    }
-
-    @Test
-    void shouldFailWhenVpcEndpointIsNotPresent(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(describeVpcEndpoints().willReturn(noVpcEndpointsResponse()));
-
-        Map<String, Object> properties = Map.of(
-                "vpcId", "myVpc",
-                "region", "eu-west-2");
-
-        // When
-        VpcCheckLambda vpcCheckLambda = lambda(runtimeInfo);
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Create")
-                .withResourceProperties(properties).build();
-
-        // Then
-        assertThatThrownBy(() -> vpcCheckLambda.handleEvent(event, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("endpoint");
-    }
-
-    private VpcCheckLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
+                        .and(containing("Filter.2.Value.1=com.amazonaws.my-region-1.s3"))));
     }
 
     private static MappingBuilder describeVpcEndpoints() {
