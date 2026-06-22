@@ -77,7 +77,7 @@ class VpcCheckLambdaIT {
         // Then
         verify(1, postRequestedFor(urlEqualTo("/"))
                 .withRequestBody(containing("Filter.2.Name=service-name")
-                        .and(containing("Filter.2.Value.1=eu.amazonaws.eusc-de-east-1.s3"))));
+                        .and(containing("Filter.2.Value.1=com.amazonaws.eusc-de-east-1.s3"))));
     }
 
     @Test

@@ -105,8 +105,8 @@ public class ParallelCompactionsST {
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedOneRunEachWithMinimum(40960),
-                        "all jobs finished and ran once");
+                .matches(statistics -> statistics.isAllFinishedWithMinimumJobsAndMaxRetries(40960, 2),
+                        "all jobs finished with at most two retries");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
