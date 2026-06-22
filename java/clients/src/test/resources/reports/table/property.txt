@@ -1,4 +1,4 @@
 | Property Name                     | Description                                                                                                                              | Default Value | Run CDK Deploy When Changed |
 |-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------|-----------------------------|
-| sleeper.retain.after.destroy.logs | Whether to keep the sleeper log groups when the instance is destroyed. Overrides default value set within "sleeper.retain.after.destroy" |               | true                        |
+| sleeper.retain.after.destroy.logs | Whether to keep the Sleeper log groups when the instance is destroyed. Overrides default value set within "sleeper.retain.after.destroy" |               | true                        |
 | sleeper.filesystem                | The Hadoop filesystem used to connect to S3.                                                                                             | s3a://        | false                       |

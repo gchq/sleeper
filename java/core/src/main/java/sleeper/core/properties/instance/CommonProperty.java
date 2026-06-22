@@ -92,7 +92,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_DETAILS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy")
-            .description("Overall policy of whether to keep the details of instance when it is destroyed. " +
+            .description("Overall policy of whether to keep the details of/an instance when it is destroyed. " +
                     "Covers both the infrastructure of Sleeper and the logs.")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
