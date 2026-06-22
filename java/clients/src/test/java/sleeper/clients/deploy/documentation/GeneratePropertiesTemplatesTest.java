@@ -48,8 +48,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -263,10 +261,5 @@ class GeneratePropertiesTemplatesTest {
     private Stream<TableProperty> tablePropertiesWithDefaultValues() {
         return TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
-    }
-
-    private void setMandatoryTableProperties(TableProperties tableProperties) {
-        tableProperties.set(TABLE_ID, "test-table-id");
-        tableProperties.set(TABLE_NAME, "test-table-name");
     }
 }
