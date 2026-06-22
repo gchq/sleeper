@@ -98,11 +98,6 @@ public class WebSocketResultsOutputIT {
         assertThat(result.getRowCount()).isEqualTo(5);
     }
 
-    // Test list for retries:
-    // - Retries on LimitExceededException and succeeds
-    // - Gives up after max attempts on persistent LimitExceededException
-    // - Does not retry PayloadTooLargeException, status 413
-
     @Test
     public void shouldRetryWhenLimitExceededAndSucceed(WireMockRuntimeInfo wmRuntimeInfo) {
         // Given
@@ -154,6 +149,30 @@ public class WebSocketResultsOutputIT {
         assertThat(foundWaits).hasSize(2);
         assertThat(result.getRowCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("LimitExceededException");
+    }
+
+    @Test
+    public void shouldNotRetryPayloadTooLargeException(WireMockRuntimeInfo wmRuntimeInfo) {
+        // Given
+        stubFor(post(url).willReturn(aResponse()
+                .withStatus(413)
+                .withHeader("x-amzn-ErrorType", "PayloadTooLargeException")));
+
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
+        config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
+        config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
+
+        List<Row> rows = new ArrayList<>();
+        rows.add(new Row(Collections.singletonMap("id", "row1")));
+
+        // When
+        ResultsOutputInfo result = output().publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+
+        // Then
+        verify(1, postRequestedFor(url));
+        assertThat(foundWaits).isEmpty();
+        assertThat(result.getRowCount()).isZero();
+        assertThat(result.getError()).hasMessageContaining("PayloadTooLargeException");
     }
 
     @Test
