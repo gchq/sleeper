@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -98,7 +99,7 @@ public class CompactionRunnerTestBase {
         runTask(job, hadoopConf, null);
     }
 
-    protected void runTask(CompactionJob job, Configuration hadoopConf, Consumer<Long> progressCallback) throws Exception {
+    protected void runTask(CompactionJob job, Configuration hadoopConf, LongConsumer progressCallback) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
                 DataFusionAwsConfig.overrideEndpoint("dummy"), ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);

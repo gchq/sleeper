@@ -36,6 +36,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +74,10 @@ public abstract class QueryCommandLineClient {
 
     public void run() throws InterruptedException {
         TableProperties tableProperties = getTableProperties();
+        String sqlQuery = promptSQLQuery();
         init(tableProperties);
 
-        runQueries(tableProperties);
+        runQueries(tableProperties, sqlQuery);
     }
 
     protected abstract void init(TableProperties tableProperties);
@@ -90,7 +92,7 @@ public abstract class QueryCommandLineClient {
         return tablePropertiesProvider.getByName(tableName);
     }
 
-    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
+    protected void runQueries(TableProperties tableProperties, String sqlQuery) throws InterruptedException {
         String tableName = tableProperties.get(TABLE_NAME);
         Schema schema = tableProperties.getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -102,9 +104,9 @@ public abstract class QueryCommandLineClient {
             }
             Query query;
             if ("e".equalsIgnoreCase(type)) {
-                query = constructExactQuery(tableName, schema, rangeFactory);
+                query = constructExactQuery(tableName, schema, rangeFactory, sqlQuery);
             } else if ("r".equalsIgnoreCase(type)) {
-                query = constructRangeQuery(tableName, schema, rangeFactory);
+                query = constructRangeQuery(tableName, schema, rangeFactory, sqlQuery);
             } else {
                 continue;
             }
@@ -113,7 +115,7 @@ public abstract class QueryCommandLineClient {
         }
     }
 
-    private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory) {
+    private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory, String sqlQuery) {
         boolean minInclusive = promptBoolean("Is the minimum inclusive?");
         boolean maxInclusive = promptBoolean("Is the maximum inclusive?");
         List<Range> ranges = new ArrayList<>();
@@ -137,6 +139,10 @@ public abstract class QueryCommandLineClient {
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery(sqlQuery)
+                        .build())
                 .build();
     }
 
@@ -182,7 +188,7 @@ public abstract class QueryCommandLineClient {
         }
     }
 
-    protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
+    protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, String sqlQuery) {
         int i = 0;
         List<Range> ranges = new ArrayList<>();
         for (Field field : schema.getRowKeyFields()) {
@@ -199,7 +205,7 @@ public abstract class QueryCommandLineClient {
             }
             if (null == key) {
                 out.println("Failed to get valid value, restarting creation of exact query");
-                return constructExactQuery(tableName, schema, rangeFactory);
+                return constructExactQuery(tableName, schema, rangeFactory, sqlQuery);
             } else {
                 Range range = rangeFactory.createExactRange(field, parse(key, (PrimitiveType) field.getType()));
                 ranges.add(range);
@@ -211,6 +217,10 @@ public abstract class QueryCommandLineClient {
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery(sqlQuery)
+                        .build())
                 .build();
     }
 
@@ -242,6 +252,16 @@ public abstract class QueryCommandLineClient {
         out.println("The table has the schema " + tablePropertiesProvider.getByName(tableName).getSchema());
 
         return tableName;
+    }
+
+    private String promptSQLQuery() {
+        out.println("Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".");
+        String sqlQuery = in.promptLine("Enter SQL statement (blank for none): ");
+        if (sqlQuery.strip().isEmpty()) {
+            return null;
+        } else {
+            return sqlQuery;
+        }
     }
 
     protected InstanceProperties getInstanceProperties() {

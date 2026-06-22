@@ -101,7 +101,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
+    protected void runQueries(TableProperties tableProperties, String sqlQuery) throws InterruptedException {
         resultsPublisherConfig = new HashMap<>();
         while (true) {
             String type = in.promptLine("Send output to S3 results bucket (s) or SQS (q)?");
@@ -120,7 +120,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             }
             break;
         }
-        super.runQueries(tableProperties);
+        super.runQueries(tableProperties, sqlQuery);
     }
 
     public void submitQuery(Query query) {
