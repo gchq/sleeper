@@ -3,8 +3,15 @@ vulnerabilities:
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
 
-  # False positive for jackson-core, we're actually using a version with the fix (2.21.1)
-  - id: GHSA-72hv-8253-57qq
+  # Some of our dependencies are using shaded versions of Jackson which we're unable to manage or change.
+  # com.fasterxml.jackson.core:jackson-databind
+  - id: CVE-2026-54512
+  - id: CVE-2026-54513
+  - id: CVE-2026-54514
+  - id: CVE-2026-54515
+  - id: CVE-2026-54516
+  - id: CVE-2026-54517
+  - id: CVE-2026-54518
 
   # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go.
   # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
