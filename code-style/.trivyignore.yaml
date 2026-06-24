@@ -3,7 +3,9 @@ vulnerabilities:
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
 
-  # Some of our dependencies are using shaded versions of Jackson which we're unable to manage or change.
+  # The AWS SDK is using a shaded version of Jackson which we're unable to manage or change.
+  # At time of writing we're unable to upgrade the AWS SDK because of the following issue:
+  # https://github.com/gchq/sleeper/issues/7459
   # com.fasterxml.jackson.core:jackson-databind
   - id: CVE-2026-54512
   - id: CVE-2026-54513
