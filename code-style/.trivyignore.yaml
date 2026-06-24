@@ -27,6 +27,8 @@ vulnerabilities:
   - id: CVE-2026-42504
   - id: CVE-2026-42507
 
-  # The RIE also has a medium severity vulnerability in one of its dependencies which we're waiting for them to update.
-  # In Sleeper, the RIE is only used for testing.
+  # The RIE also has some vulnerabilities in its dependencies.
+  # github.com/go-chi/chi/v5
   - id: CVE-2025-69725
+  # golang.org/x/sys
+  - id: CVE-2026-39824
