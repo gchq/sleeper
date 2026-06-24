@@ -108,7 +108,17 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         this.getTime = getTime;
     }
 
-    public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
+    /**
+     * Runs a bulk import job. Note that in addition to {@link IOException}, Spark operations may throw
+     * {@link org.apache.spark.SparkException}, which extends {@link Exception} but is thrown unchecked at runtime
+     * because Spark is implemented in Scala, which does not enforce checked exceptions.
+     *
+     * @param job      the bulk import job to run
+     * @param jobRunId the ID of this run of the job
+     * @param taskId   the ID of the task running the job
+     * @throws Exception if the job fails for any reason, including Spark failures
+     */
+    public void run(BulkImportJob job, String jobRunId, String taskId) throws Exception {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
@@ -138,7 +148,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
 
                 commitSuccessfulJob(tableProperties, runIds, startTime, fileReferences);
             }
-        } catch (RuntimeException | IOException e) {
+        } catch (Exception e) {
             tracker.jobFailed(IngestJobFailedEvent.builder()
                     .jobRunIds(runIds)
                     .failureTime(getTime.get())
@@ -205,10 +215,19 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
 
     @FunctionalInterface
     public interface BulkImporter<C extends BulkImportContext<C>> {
-        List<FileReference> createFileReferences(C context) throws IOException;
+        List<FileReference> createFileReferences(C context) throws Exception;
     }
 
-    public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
+    public static void start(String[] args, BulkImportJobRunner runner) {
+        try {
+            startOrThrow(args, runner);
+        } catch (Exception e) {
+            LOGGER.error("Bulk import job driver failed, exiting with code 1", e);
+            System.exit(1);
+        }
+    }
+
+    private static void startOrThrow(String[] args, BulkImportJobRunner runner) throws Exception {
         if (args.length != 5) {
             throw new IllegalArgumentException("Expected 5 arguments:" +
                     " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <bulk import mode>");

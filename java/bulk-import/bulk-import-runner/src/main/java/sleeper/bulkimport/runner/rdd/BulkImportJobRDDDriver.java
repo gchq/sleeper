@@ -34,7 +34,7 @@ public class BulkImportJobRDDDriver {
     private BulkImportJobRDDDriver() {
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileReferences);
     }
 

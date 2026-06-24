@@ -92,6 +92,7 @@ jobs:
           TRIVY_SHOW_SUPPRESSED: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: v0.71.2
           image-ref: '${{ inputs.imageName }}:test'
           format: 'table'
           exit-code: '1'

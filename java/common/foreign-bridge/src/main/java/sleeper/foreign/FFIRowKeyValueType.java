@@ -19,7 +19,7 @@ import jnr.ffi.util.EnumMapper;
 
 /**
  * Specifies the contents of an FFIElement.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.

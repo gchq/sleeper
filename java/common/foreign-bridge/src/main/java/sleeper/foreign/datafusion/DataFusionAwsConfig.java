@@ -22,7 +22,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
- *
+ * <p>
  * All fields are nullable, however secretAccessKey and accessKeyId must either both be null or non-null.
  */
 public class DataFusionAwsConfig {

@@ -35,6 +35,7 @@ import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.foreign.datafusion.FFIParquetOptions;
+import sleeper.foreign.datafusion.extension.FFIExtension;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
@@ -238,6 +239,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         }
 
+        common.job_id.set(query.getQueryId());
         common.parquet_options.set(parquetOptions);
         common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
@@ -254,6 +256,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.setCommonConfig(common);
+        queryConfig.setExtensions(new FFIExtension[0]);
 
         // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
         // requested value fields, if it does, grab the value fields from the dataReadSchema, since this

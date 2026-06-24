@@ -26,7 +26,7 @@ import java.util.Objects;
 
 /**
  * The common DataFusion input data that will be populated from the Java side.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/ffi_common_config.rs. The order and
  * types of the fields must match exactly.
@@ -34,7 +34,7 @@ import java.util.Objects;
 @SuppressWarnings("checkstyle:membername")
 @SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFICommonConfig extends Struct {
-    /** Optional job ID. */
+    /** Job ID. */
     public final Struct.UTF8StringRef job_id = new Struct.UTF8StringRef();
     /** Optional AWS configuration. Set to NULL if not used. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);

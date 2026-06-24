@@ -74,7 +74,7 @@ public class JobsFinishedStatistics {
         if (numJobs < minimumJobs) {
             return false;
         }
-        if (numJobRuns > minimumJobs + maxRetries) {
+        if (numJobRuns > numJobs + maxRetries) {
             return false;
         }
         return isAllFinished(numJobs);
