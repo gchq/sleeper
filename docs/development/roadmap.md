@@ -7,10 +7,11 @@ The following improvements are actively being worked on:
 
 - https://github.com/gchq/sleeper/issues/7313 Bulk import reliability.
 - https://github.com/gchq/sleeper/issues/6420 Improve usability of example/template format.
-- https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
+- https://github.com/gchq/sleeper/issues/7374 SQL query filtering for queries and bulk export
 
 The following are likely to be worked on in the near future:
 
+- https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
 - https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 - https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
 - https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
