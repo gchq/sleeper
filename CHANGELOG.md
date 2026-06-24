@@ -7,7 +7,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.36.1
 
-### 22nd June, 2026
+### 24nd June, 2026
 
 This is primarily a bug fix release with some usability improvements. Note that some CDK context variables have been
 renamed for consistent capitalisation.
