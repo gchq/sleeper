@@ -191,6 +191,23 @@ public class SleeperInstanceConfigurationIT {
         }
 
         @Test
+        void shouldLoadFromConfigurationDirectoryWhenGivenNonStandardInstancePropertiesFilename() throws Exception {
+            // Given
+            Files.writeString(propertiesDir.resolve("custom-instance.properties"), "sleeper.id=test-instance");
+            writeTableFiles(propertiesDir, "test-table", "key");
+
+            // When
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(
+                    propertiesDir.resolve("custom-instance.properties"));
+
+            // Then
+            InstanceProperties expectedInstanceProperties = expectedInstanceProperties();
+            assertThat(instanceConfiguration)
+                    .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties,
+                            expectedTableProperties(expectedInstanceProperties, "test-table", "key")));
+        }
+
+        @Test
         void shouldLoadFromConfigurationDirectoryWithNoTables() throws Exception {
             // When
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(propertiesDir);
