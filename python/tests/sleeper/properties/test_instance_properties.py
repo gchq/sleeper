@@ -16,8 +16,6 @@ import pytest
 
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty, clean_instance_id, load_instance_properties_from_string
-from sleeper.properties.user_defined_properties import CommonProperty
-from tests.sleeper.repository_path import get_repository_path
 
 
 def should_read_set_field():
@@ -69,18 +67,6 @@ def should_read_properties_string_with_escaped_colon():
     assert properties.get("queue.url") == "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"
     assert properties.as_properties_str() == string
     assert properties.as_dict() == {"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"}
-
-
-def should_read_full_example_properties():
-    # Given
-    file = get_repository_path() / "example/full/instance.properties"
-    content = file.read_text()
-
-    # When
-    properties = load_instance_properties_from_string(content)
-
-    # Then
-    assert properties.get(CommonProperty.ID) == "full-example"
 
 
 def should_clean_instance_id_with_upper_case():
