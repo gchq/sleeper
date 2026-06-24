@@ -20,7 +20,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Objects;
@@ -232,22 +231,6 @@ class TablePropertyImpl implements TableProperty {
             TableProperty property = new TablePropertyImpl(this);
             addToIndex.accept(property);
             return property;
-        }
-    }
-
-    /**
-     * An index of all table property definitions.
-     */
-    static class Index {
-        private Index() {
-        }
-
-        static final SleeperPropertyIndex<TableProperty> INSTANCE = createInstance();
-
-        private static SleeperPropertyIndex<TableProperty> createInstance() {
-            SleeperPropertyIndex<TableProperty> index = new SleeperPropertyIndex<TableProperty>();
-            index.addAll(TableProperty.getAll());
-            return index;
         }
     }
 }

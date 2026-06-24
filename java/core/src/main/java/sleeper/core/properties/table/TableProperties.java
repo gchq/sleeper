@@ -139,7 +139,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     public SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
-        return TablePropertyImpl.Index.INSTANCE;
+        return TableProperty.getIndex();
     }
 
     @Override

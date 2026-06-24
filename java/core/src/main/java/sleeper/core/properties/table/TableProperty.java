@@ -123,6 +123,10 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
         return Index.INSTANCE.getAllInGroup(group);
     }
 
+    static SleeperPropertyIndex<TableProperty> getIndex() {
+        return Index.INSTANCE;
+    }
+
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -752,7 +756,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
         private Index() {
         }
 
-        static final SleeperPropertyIndex<TableProperty> INSTANCE = new SleeperPropertyIndex<>();
+        private static final SleeperPropertyIndex<TableProperty> INSTANCE = new SleeperPropertyIndex<>();
 
         private static TablePropertyImpl.Builder propertyBuilder(String propertyName) {
             return TablePropertyImpl.named(propertyName)

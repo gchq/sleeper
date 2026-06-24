@@ -150,6 +150,11 @@ class GeneratePropertiesTemplatesTest {
             assertThat(propertiesString)
                     .doesNotContain(SCHEMA.getPropertyName());
         }
+
+        @Test
+        void shouldWritePropertyNotIncludedInBasicExample() {
+            assertThat(propertiesString).contains("# sleeper.table.parquet.compression.codec=");
+        }
     }
 
     @Nested
@@ -181,6 +186,20 @@ class GeneratePropertiesTemplatesTest {
         void shouldNotIncludePropertyDefaultedFromNonMandatoryInstanceProperty() {
             assertThat(propertiesString)
                     .doesNotContain("sleeper.table.parquet.compression.codec");
+        }
+
+        @Test
+        void shouldWritePropertyIncludedInBasicExample() {
+            assertThat(propertiesString).contains("""
+                    # A unique name identifying this table.
+                    # (uncomment to set a value)
+                    # sleeper.table.name=
+                    """);
+        }
+
+        @Test
+        void shouldNotWritePropertyNotIncludedInBasicExample() {
+            assertThat(propertiesString).doesNotContain("sleeper.table.parquet.compression.codec");
         }
     }
 
