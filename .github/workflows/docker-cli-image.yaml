@@ -32,7 +32,7 @@ on:
 env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   TEMP_IMAGE: localhost:5000/sleeper-temp:current
-  TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
+  TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
   TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
