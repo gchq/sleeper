@@ -7,6 +7,29 @@ vulnerabilities:
   - id: CVE-2026-27145
   - id: CVE-2026-42504
   - id: CVE-2026-42507
+  # golang.org/x/crypto
+  - id: CVE-2026-39827
+  - id: CVE-2026-39828
+  - id: CVE-2026-39829
+  - id: CVE-2026-39830
+  - id: CVE-2026-39835
+  - id: CVE-2026-42508
+  - id: CVE-2026-46595
+  - id: CVE-2026-46597
+  - id: CVE-2026-39831
+  - id: CVE-2026-39832
+  - id: CVE-2026-39833
+  - id: CVE-2026-39834
+  - id: CVE-2026-46598
+  # golang.org/x/net
+  - id: CVE-2026-25680
+  - id: CVE-2026-25681
+  - id: CVE-2026-27136
+  - id: CVE-2026-39821
+  - id: CVE-2026-42502
+  - id: CVE-2026-42506
+  # golang.org/x/sys
+  - id: CVE-2026-39824
   # github.com/containerd/containerd/v2
   - id: CVE-2026-46680
   - id: CVE-2026-53488
