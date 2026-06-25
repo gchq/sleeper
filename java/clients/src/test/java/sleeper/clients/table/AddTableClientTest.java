@@ -17,7 +17,6 @@
 package sleeper.clients.table;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
@@ -57,7 +57,7 @@ public class AddTableClientTest {
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
     StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
     Map<String, InstanceProperties> instanceIdToProperties = new HashMap<>();
-    Map<Path, Schema> pathToSchema = new HashMap<>();
+    Map<Path, String> pathToString = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -65,11 +65,10 @@ public class AddTableClientTest {
     }
 
     @Nested
-    @DisplayName("Add table by name and schema")
-    class ByNameAndSchema {
+    class AddTable {
 
         @Test
-        void shouldAddTable() throws Exception {
+        void shouldAddTableByNameAndSchema() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key");
             saveSchema("./schema.json", schema);
@@ -245,12 +244,12 @@ public class AddTableClientTest {
 
     private void addTable(String... args) throws Exception {
         var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args));
-        TableProperties tableProperties = AddTableClient.createTablePropertiesWithLoaders(arguments, this::loadInstanceProperties, this::loadSchema);
+        TableProperties tableProperties = AddTableClient.createTablePropertiesWithLoaders(arguments, this::loadInstanceProperties, this::readFile);
         new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
     }
 
     private void saveSchema(String path, Schema schema) {
-        pathToSchema.put(Path.of(path), schema);
+        pathToString.put(Path.of(path), new SchemaSerDe().toJson(schema));
     }
 
     private String tableId(String tableName) {
@@ -262,7 +261,7 @@ public class AddTableClientTest {
                 .orElseThrow();
     }
 
-    private Schema loadSchema(Path path) {
-        return Optional.ofNullable(pathToSchema.get(path)).orElseThrow();
+    private String readFile(Path path) {
+        return Optional.ofNullable(pathToString.get(path)).orElseThrow();
     }
 }

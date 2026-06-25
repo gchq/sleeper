@@ -26,7 +26,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -36,6 +36,7 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
@@ -120,7 +121,7 @@ public class AddTableClient {
 
             TableProperties tableProperties = createTablePropertiesWithLoaders(args,
                     instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId()),
-                    Schema::load);
+                    Files::readString);
 
             InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
@@ -129,9 +130,9 @@ public class AddTableClient {
         }
     }
 
-    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader loadInstance, SchemaLoader loadSchema) throws IOException {
-        TableProperties tableProperties = createTableProperties(loadInstance.load(args.instanceId()), args);
-        tableProperties.setSchema(loadSchema.load(args.resolveSchemaFile()));
+    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) throws IOException {
+        TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
+        tableProperties.setSchema(new SchemaSerDe().fromJson(files.load(args.resolveSchemaFile())));
         return tableProperties;
     }
 
@@ -182,8 +183,7 @@ public class AddTableClient {
         InstanceProperties load(String instanceId);
     }
 
-    public interface SchemaLoader {
-
-        Schema load(Path path) throws IOException;
+    public interface FileReader {
+        String load(Path path) throws IOException;
     }
 }
