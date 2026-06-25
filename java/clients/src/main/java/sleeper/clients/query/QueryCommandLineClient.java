@@ -96,7 +96,7 @@ public abstract class QueryCommandLineClient {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         while (true) {
-            String type = in.promptLine("Exact (e) or range (r) query? ");
+            String type = in.promptLine("Exact (e) or range (r) query or (n)umbered range query? ");
             if ("".equals(type)) {
                 break;
             }
@@ -105,12 +105,71 @@ public abstract class QueryCommandLineClient {
                 query = constructExactQuery(tableName, schema, rangeFactory);
             } else if ("r".equalsIgnoreCase(type)) {
                 query = constructRangeQuery(tableName, schema, rangeFactory);
-            } else {
+            } else if ("n".equalsIgnoreCase(type)) {
+                query = constructLargeQuery(tableName, schema, rangeFactory);
+            }
+
+            else {
                 continue;
             }
 
             submitQuery(tablePropertiesProvider.getByName(tableName), query);
         }
+    }
+
+    private Query constructLargeQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
+        int count = Integer.parseInt(System.getenv().getOrDefault("RCOUNT", "50"));
+        System.err.printf("Using %d ranges%n", count);
+        List<String> queryPoints = generate("a", "z", 9, count);
+        List<Region> ranges = queryPoints.stream()
+                .map(s -> new Region(rangeFactory.createRange("key", s, true, s + "z", false))).toList();
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(queryIdSupplier.get())
+                .regions(ranges)
+                .build();
+    }
+
+    public static List<String> generate(
+            String minLex,
+            String maxLex,
+            int minLength,
+            int quantity) {
+        if (quantity < 1) {
+            throw new IllegalArgumentException("Quantity must be >= 1");
+        }
+
+        int base = maxLex.charAt(0) - minLex.charAt(0) + 1;
+        if (base < 2) {
+            throw new IllegalArgumentException("Invalid lexical range");
+        }
+
+        long maxValue = pow(base, minLength) - 1;
+        long step = quantity == 1 ? 0 : maxValue / (quantity - 1);
+
+        List<String> result = new ArrayList<>(quantity);
+        for (int i = 0; i < quantity; i++) {
+            long value = step * i;
+            result.add(toLexString(value, minLex.charAt(0), base, minLength));
+        }
+        return result;
+    }
+
+    private static String toLexString(long value, char minChar, int base, int length) {
+        char[] chars = new char[length];
+        for (int i = length - 1; i >= 0; i--) {
+            chars[i] = (char) (minChar + (value % base));
+            value /= base;
+        }
+        return new String(chars);
+    }
+
+    private static long pow(long base, int exp) {
+        long result = 1;
+        for (int i = 0; i < exp; i++) {
+            result *= base;
+        }
+        return result;
     }
 
     private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory) {
