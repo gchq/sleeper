@@ -21,6 +21,7 @@ import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
+import sleeper.cdk.stack.bulkimport.BulkImportEksAdminAccessStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
@@ -39,7 +40,6 @@ import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -47,14 +47,21 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class SleeperOptionalStacks {
 
+    private final Construct scope;
+    private final SleeperCoreStacks coreStacks;
     private final EksBulkImportStack eksBulkImportStack;
 
-    private SleeperOptionalStacks(EksBulkImportStack eksBulkImportStack) {
+    private SleeperOptionalStacks(Construct scope, SleeperCoreStacks coreStacks, EksBulkImportStack eksBulkImportStack) {
+        this.scope = scope;
+        this.coreStacks = coreStacks;
         this.eksBulkImportStack = eksBulkImportStack;
     }
 
-    public Optional<EksBulkImportStack> getEksBulkImportStack() {
-        return Optional.ofNullable(eksBulkImportStack);
+    public void finishAfterRolesCreated() {
+        if (eksBulkImportStack != null) {
+            new BulkImportEksAdminAccessStack(
+                    scope, "BulkImportEKSAdminAccess", eksBulkImportStack.getCluster(), coreStacks.getRoles().instanceAdmin());
+        }
     }
 
     public static SleeperOptionalStacks create(
@@ -196,7 +203,7 @@ public class SleeperOptionalStacks {
             new KeepLambdaWarmStack(scope, "KeepLambdaWarmExecution", props, coreStacks, queryQueueStack);
         }
 
-        return new SleeperOptionalStacks(eksBulkImportStack);
+        return new SleeperOptionalStacks(scope, coreStacks, eksBulkImportStack);
     }
 
 }
