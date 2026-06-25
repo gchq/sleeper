@@ -49,7 +49,7 @@ public class AddTableClient {
     private final StateStoreProvider stateStoreProvider;
 
     public AddTableClient(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
+            TableProperties tableProperties,
             TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = tablePropertiesStore;
@@ -118,18 +118,19 @@ public class AddTableClient {
                 StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
 
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId());
+            TableProperties tableProperties = createTablePropertiesWithLoaders(args,
+                    instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId()),
+                    Schema::load);
 
-            TableProperties tableProperties = createTablePropertiesWithSchema(instanceProperties, args, Schema::load);
-
+            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-            new AddTableClient(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+            new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
         }
     }
 
-    public static TableProperties createTablePropertiesWithSchema(InstanceProperties instanceProperties, Arguments args, SchemaLoader loadSchema) throws IOException {
-        TableProperties tableProperties = createTableProperties(instanceProperties, args);
+    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader loadInstance, SchemaLoader loadSchema) throws IOException {
+        TableProperties tableProperties = createTableProperties(loadInstance.load(args.instanceId()), args);
         tableProperties.setSchema(loadSchema.load(args.resolveSchemaFile()));
         return tableProperties;
     }
@@ -175,6 +176,10 @@ public class AddTableClient {
         public Path resolveSchemaFile() {
             return schemaFile != null ? schemaFile : configDir.resolve("schema.json");
         }
+    }
+
+    public interface InstancePropertiesLoader {
+        InstanceProperties load(String instanceId);
     }
 
     public interface SchemaLoader {

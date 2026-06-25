@@ -16,6 +16,7 @@
 
 package sleeper.clients.table;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,14 +48,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AddTableClientTest {
-    InstanceProperties instanceProperties = createTestInstanceProperties();
+    InstanceProperties instanceProperties = createTestInstancePropertiesWithId("my-instance");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
     StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+    Map<String, InstanceProperties> instanceIdToProperties = new HashMap<>();
     Map<Path, Schema> pathToSchema = new HashMap<>();
+
+    @BeforeEach
+    void setUp() {
+        instanceIdToProperties.put("my-instance", instanceProperties);
+    }
 
     @Nested
     @DisplayName("Add table by name and schema")
@@ -66,7 +75,7 @@ public class AddTableClientTest {
             saveSchema("./schema.json", schema);
 
             // When
-            addTable("instance-id", "--table-name", "my-table", "--schema", "./schema.json");
+            addTable("my-instance", "--table-name", "my-table", "--schema", "./schema.json");
 
             // Then
             TableProperties expected = new TableProperties(instanceProperties);
@@ -236,8 +245,8 @@ public class AddTableClientTest {
 
     private void addTable(String... args) throws Exception {
         var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args));
-        TableProperties tableProperties = AddTableClient.createTablePropertiesWithSchema(instanceProperties, arguments, pathToSchema::get);
-        new AddTableClient(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+        TableProperties tableProperties = AddTableClient.createTablePropertiesWithLoaders(arguments, this::loadInstanceProperties, this::loadSchema);
+        new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
     }
 
     private void saveSchema(String path, Schema schema) {
@@ -246,5 +255,14 @@ public class AddTableClientTest {
 
     private String tableId(String tableName) {
         return tableIndex.getTableByName("my-table").get().getTableUniqueId();
+    }
+
+    private InstanceProperties loadInstanceProperties(String instanceId) {
+        return Optional.ofNullable(instanceIdToProperties.get(instanceId))
+                .orElseThrow();
+    }
+
+    private Schema loadSchema(Path path) {
+        return Optional.ofNullable(pathToSchema.get(path)).orElseThrow();
     }
 }
