@@ -20,6 +20,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
+import sleeper.core.properties.model.EksClusterType;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
@@ -59,6 +60,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
@@ -238,6 +240,7 @@ public class SystemTestInstance {
     private static SleeperInstanceConfiguration createBulkImportOnEksPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setList(OPTIONAL_STACKS, List.of());
+        properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
     }
