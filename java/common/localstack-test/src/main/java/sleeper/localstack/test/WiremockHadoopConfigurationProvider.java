@@ -40,7 +40,7 @@ public class WiremockHadoopConfigurationProvider {
 
     public static void configureHadoop(Configuration configuration, WireMockRuntimeInfo runtimeInfo) {
         configuration.setClassLoader(WiremockHadoopConfigurationProvider.class.getClassLoader());
-        NewHadoopS3Provider.configureHadoop(configuration);
+        HadoopS3ClientFactory.configureHadoop(configuration);
         configuration.set("fs.s3a.endpoint", runtimeInfo.getHttpBaseUrl());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", WiremockAwsV2ClientHelper.WIREMOCK_ACCESS_KEY);

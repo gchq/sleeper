@@ -29,13 +29,13 @@ import java.io.IOException;
 import java.net.URI;
 
 //TODO Change to better name
-public class NewHadoopS3Provider extends Configured implements S3ClientFactory {
+public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
 
-    public NewHadoopS3Provider() {
+    public HadoopS3ClientFactory() {
     }
 
     public static void configureHadoop(Configuration conf) {
-        conf.set("fs.s3a.s3.client.factory.impl", NewHadoopS3Provider.class.getName());
+        conf.set("fs.s3a.s3.client.factory.impl", HadoopS3ClientFactory.class.getName());
     }
 
     @Override
