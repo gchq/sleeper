@@ -239,6 +239,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         }
 
+        common.job_id.set(query.getQueryId());
         common.parquet_options.set(parquetOptions);
         common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
