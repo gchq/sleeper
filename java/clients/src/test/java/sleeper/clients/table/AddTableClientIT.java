@@ -49,7 +49,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class AddTableIT extends LocalStackTestBase {
+public class AddTableClientIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
@@ -130,7 +130,7 @@ public class AddTableIT extends LocalStackTestBase {
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
-        new AddTableClient(instanceProperties, tableProperties,
+        new AddTableClient(tableProperties,
                 S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .run();
