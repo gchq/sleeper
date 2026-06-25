@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Function;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -121,7 +120,7 @@ public class AddTableClient {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId());
 
-            TableProperties tableProperties = createTableProperties(instanceProperties, args);
+            TableProperties tableProperties = createTablePropertiesWithSchema(instanceProperties, args, Schema::load);
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -129,9 +128,9 @@ public class AddTableClient {
         }
     }
 
-    public static TableProperties createTablePropertiesWithSchema(InstanceProperties instanceProperties, Arguments args, Function<Path, Schema> loadSchema) throws IOException {
+    public static TableProperties createTablePropertiesWithSchema(InstanceProperties instanceProperties, Arguments args, SchemaLoader loadSchema) throws IOException {
         TableProperties tableProperties = createTableProperties(instanceProperties, args);
-        tableProperties.setSchema(loadSchema.apply(args.resolveSchemaFile()));
+        tableProperties.setSchema(loadSchema.load(args.resolveSchemaFile()));
         return tableProperties;
     }
 
@@ -162,8 +161,7 @@ public class AddTableClient {
                         ? rawTableProperties.getProperty("sleeper.table.name")
                         : null;
                 if (resolvedName == null || resolvedName.isBlank()) {
-                    throw new CommandArgumentsException(
-                            "Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+                    throw new CommandArgumentsException("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
                 }
             }
             if (schemaFile == null && configDir == null) {
@@ -177,5 +175,10 @@ public class AddTableClient {
         public Path resolveSchemaFile() {
             return schemaFile != null ? schemaFile : configDir.resolve("schema.json");
         }
+    }
+
+    public interface SchemaLoader {
+
+        Schema load(Path path) throws IOException;
     }
 }
