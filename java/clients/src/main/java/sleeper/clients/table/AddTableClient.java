@@ -23,11 +23,13 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -36,6 +38,7 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -90,16 +93,16 @@ public class AddTableClient {
             .build();
 
     static Arguments parseArguments(String... rawArgs) {
-        return CommandArguments.parse(USAGE, rawArgs, AddTableClient::readArguments);
+        return readArguments(CommandArgumentReader.parse(USAGE, rawArgs), Files::readString);
     }
 
-    public static Arguments readArguments(CommandArguments arguments) {
+    public static Arguments readArguments(CommandArguments arguments, FileReader files) {
         Path tablePropertiesFile = arguments.getOptionalPath("table-properties");
         Path configDir = arguments.getOptionalPath("config-dir");
         Properties rawTableProperties = tablePropertiesFile != null
-                ? CommandArguments.loadPropertiesFile(tablePropertiesFile)
+                ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile))
                 : configDir != null
-                        ? CommandArguments.loadPropertiesFile(configDir.resolve("table.properties"))
+                        ? PropertiesUtils.loadProperties(files.readString(configDir.resolve("table.properties")))
                         : null;
         return new Arguments(
                 arguments.getString("instance-id"),
@@ -111,7 +114,7 @@ public class AddTableClient {
     }
 
     public static void main(String[] rawArgs) throws IOException {
-        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, AddTableClient::readArguments);
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, a -> readArguments(a, Files::readString));
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
@@ -130,13 +133,13 @@ public class AddTableClient {
         }
     }
 
-    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) throws IOException {
+    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
-        tableProperties.setSchema(new SchemaSerDe().fromJson(files.load(args.resolveSchemaFile())));
+        tableProperties.setSchema(new SchemaSerDe().fromJson(files.readString(args.resolveSchemaFile())));
         return tableProperties;
     }
 
-    public static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) throws IOException {
+    public static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) {
         TableProperties tableProperties = args.rawTableProperties() != null
                 ? new TableProperties(instanceProperties, args.rawTableProperties())
                 : new TableProperties(instanceProperties);
@@ -184,6 +187,14 @@ public class AddTableClient {
     }
 
     public interface FileReader {
-        String load(Path path) throws IOException;
+        String readStringChecked(Path path) throws IOException;
+
+        default String readString(Path path) {
+            try {
+                return readStringChecked(path);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 }

@@ -53,6 +53,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AddTableClientTest {
     InstanceProperties instanceProperties = createTestInstancePropertiesWithId("my-instance");
+    Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
     StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
@@ -62,6 +63,8 @@ public class AddTableClientTest {
     @BeforeEach
     void setUp() {
         instanceIdToProperties.put("my-instance", instanceProperties);
+        saveSchemaFile("./schema.json", schema);
+        saveFile("./table.properties", "sleeper.table.name=file-table\n");
     }
 
     @Nested
@@ -69,10 +72,6 @@ public class AddTableClientTest {
 
         @Test
         void shouldAddTableByNameAndSchema() throws Exception {
-            // Given
-            Schema schema = createSchemaWithKey("key");
-            saveSchema("./schema.json", schema);
-
             // When
             addTable("my-instance", "--table-name", "my-table", "--schema", "./schema.json");
 
@@ -83,6 +82,19 @@ public class AddTableClientTest {
             expected.set(TABLE_NAME, "my-table");
             assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
         }
+
+        @Test
+        void shouldAddTableByPropertiesAndSchema() throws Exception {
+            // When
+            addTable("my-instance", "--table-properties", "./table.properties", "--schema", "./schema.json");
+
+            // Then
+            TableProperties expected = new TableProperties(instanceProperties);
+            expected.setSchema(schema);
+            expected.set(TABLE_ID, tableId("file-table"));
+            expected.set(TABLE_NAME, "file-table");
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
+        }
     }
 
     @Nested
@@ -90,23 +102,6 @@ public class AddTableClientTest {
 
         @TempDir
         Path tempDir;
-
-        @Test
-        void shouldAcceptTableNameWithSchemaFile() {
-            Arguments args = AddTableClient.parseArguments("instance-id", "--table-name", "my-table", "--schema", "schema.json");
-
-            assertThat(args.tableName()).isEqualTo("my-table");
-        }
-
-        @Test
-        void shouldAcceptTablePropertiesFileAsTableNameSource() throws IOException {
-            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=file-table\n");
-
-            Arguments args = AddTableClient.parseArguments("instance-id", "--schema", "schema.json",
-                    "--table-properties", tableProps.toString());
-
-            assertThat(args.rawTableProperties().getProperty("sleeper.table.name")).isEqualTo("file-table");
-        }
 
         @Test
         void shouldAcceptConfigDirAsTableNameAndSchemaSource() throws IOException {
@@ -243,17 +238,23 @@ public class AddTableClientTest {
     }
 
     private void addTable(String... args) throws Exception {
-        var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args));
+        var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args), this::readFile);
         TableProperties tableProperties = AddTableClient.createTablePropertiesWithLoaders(arguments, this::loadInstanceProperties, this::readFile);
         new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
     }
 
-    private void saveSchema(String path, Schema schema) {
+    private void saveSchemaFile(String path, Schema schema) {
         pathToString.put(Path.of(path), new SchemaSerDe().toJson(schema));
     }
 
+    private void saveFile(String path, String content) {
+        pathToString.put(Path.of(path), content);
+    }
+
     private String tableId(String tableName) {
-        return tableIndex.getTableByName("my-table").get().getTableUniqueId();
+        return tableIndex.getTableByName(tableName)
+                .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
+                .getTableUniqueId();
     }
 
     private InstanceProperties loadInstanceProperties(String instanceId) {

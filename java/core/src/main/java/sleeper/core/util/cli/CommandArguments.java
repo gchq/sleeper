@@ -75,20 +75,6 @@ public class CommandArguments {
         }
     }
 
-    /**
-     * Reads command line arguments and detects arguments and options. Throws a {@link CommandArgumentsException} if
-     * validation fails. Intended for use in tests where {@link System#exit} is not acceptable.
-     *
-     * @param  <T>           the type to read the arguments into
-     * @param  usage         information about how arguments and options are specified
-     * @param  arguments     the arguments from the command line
-     * @param  readArguments the function to read the arguments
-     * @return               the result from the function
-     */
-    public static <T> T parse(CommandLineUsage usage, String[] arguments, Function<CommandArguments, T> readArguments) {
-        return readArguments.apply(CommandArgumentReader.parse(usage, arguments));
-    }
-
     public static Builder builder() {
         return new Builder();
     }
