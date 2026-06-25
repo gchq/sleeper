@@ -18,6 +18,8 @@ package sleeper.localstack.test;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.parquet.HadoopS3ClientFactory;
+
 public class WiremockHadoopConfigurationProvider {
 
     private WiremockHadoopConfigurationProvider() {
