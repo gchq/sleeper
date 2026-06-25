@@ -51,11 +51,23 @@ Either variable can be set independently. If both are unset, the builder images 
 
 ### `EXTRA_CARGO_CONFIG`
 
-Appends arbitrary TOML to the `cargo` config used for the current Rust build, without modifying the checked-in `rust/.cargo/config.toml`. The value must be valid TOML; multi-line values are supported via `\n` escapes.
+Appends arbitrary TOML to the Cargo configuration used for the current Rust build. The content is appended to the configuration from `rust/.cargo/config.toml` without modifying the checked‑in file.
 
 Use this to point `cargo` at an internal `crates.io` mirror, configure a private registry, set source replacement rules, or any other per-environment `cargo` setting that should not be committed.
 
-Example — replace the default `crates.io` source with an internal mirror:
+#### Example — replace the default `crates.io` source with an internal mirror
+
+Let's say we need to re-direct crates.io to an internal mirror at https://crates.internal.example.com/index. We might want the following in our config.toml:
+
+```toml
+[source.crates-io]
+replace-with = "internal-mirror"
+
+[source.internal-mirror]
+registry = "https://crates.internal.example.com/index"
+```
+
+Setting the `EXTRA_CARGO_CONFIG` environment variable as follows will append the configuration to the end of the Cargo configuration.
 
 ```bash
 export EXTRA_CARGO_CONFIG='[source.crates-io]\nreplace-with = "internal-mirror"\n\n[source.internal-mirror]\nregistry = "https://crates.internal.example.com/index"'
