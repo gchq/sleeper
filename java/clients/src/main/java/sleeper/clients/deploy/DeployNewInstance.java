@@ -118,7 +118,7 @@ public class DeployNewInstance {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTableClient(instanceProperties, tableProperties,
+            new AddTableClient(tableProperties,
                     S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .run();

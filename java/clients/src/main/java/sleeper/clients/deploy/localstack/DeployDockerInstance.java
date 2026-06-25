@@ -119,7 +119,7 @@ public class DeployDockerInstance {
 
         for (TableProperties tableProperties : tables) {
             try {
-                new AddTableClient(instanceProperties, tableProperties,
+                new AddTableClient(tableProperties,
                         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                         StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                         .run();
