@@ -18,6 +18,8 @@ package sleeper.localstack.test;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.localstack.LocalStackContainer;
 
+import sleeper.parquet.HadoopS3ClientFactory;
+
 public class LocalStackHadoopConfigurationProvider {
 
     private LocalStackHadoopConfigurationProvider() {

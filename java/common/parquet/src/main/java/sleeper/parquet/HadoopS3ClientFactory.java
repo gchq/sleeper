@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.localstack.test;
+package sleeper.parquet;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -28,7 +28,6 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import java.io.IOException;
 import java.net.URI;
 
-//TODO Change to better name
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
 
     public HadoopS3ClientFactory() {
