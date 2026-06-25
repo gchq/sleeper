@@ -16,6 +16,7 @@
 
 package sleeper.clients.table;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,19 +24,58 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.table.AddTableClient.Arguments;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AddTableClientTest {
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    InMemoryTableIndex tableIndex = new InMemoryTableIndex();
+    TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
+    StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+    Map<Path, Schema> pathToSchema = new HashMap<>();
+
+    @Nested
+    @DisplayName("Add table by name and schema")
+    class ByNameAndSchema {
+
+        @Test
+        void shouldAddTable() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key");
+            saveSchema("./schema.json", schema);
+
+            // When
+            addTable("instance-id", "--table-name", "my-table", "--schema", "./schema.json");
+
+            // Then
+            TableProperties expected = new TableProperties(instanceProperties);
+            expected.setSchema(schema);
+            expected.set(TABLE_ID, tableId("my-table"));
+            expected.set(TABLE_NAME, "my-table");
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
+        }
+    }
 
     @Nested
     class ArgumentsValidation {
@@ -149,7 +189,7 @@ public class AddTableClientTest {
         private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
         @Test
-        void shouldSetTableNameFromOption() {
+        void shouldSetTableNameFromOption() throws Exception {
             Arguments args = withTableNameAndSchema("test-table", "schema.json");
 
             TableProperties result = AddTableClient.createTableProperties(instanceProperties, args);
@@ -158,7 +198,7 @@ public class AddTableClientTest {
         }
 
         @Test
-        void shouldLoadTableNameFromPropertiesFile() {
+        void shouldLoadTableNameFromPropertiesFile() throws Exception {
             Arguments args = withTablePropertiesAndSchema(tablePropertiesWithName("file-table"), "schema.json");
 
             TableProperties result = AddTableClient.createTableProperties(instanceProperties, args);
@@ -167,7 +207,7 @@ public class AddTableClientTest {
         }
 
         @Test
-        void shouldOverrideTableNameInPropertiesFileWithOption() {
+        void shouldOverrideTableNameInPropertiesFileWithOption() throws Exception {
             Arguments args = withTableNameAndTablePropertiesAndSchema("override-table", tablePropertiesWithName("file-table"), "schema.json");
 
             TableProperties result = AddTableClient.createTableProperties(instanceProperties, args);
@@ -176,7 +216,7 @@ public class AddTableClientTest {
         }
 
         @Test
-        void shouldLoadTableNameFromConfigDir() {
+        void shouldLoadTableNameFromConfigDir() throws Exception {
             Arguments args = withConfigDir(tablePropertiesWithName("config-table"), "config");
 
             TableProperties result = AddTableClient.createTableProperties(instanceProperties, args);
@@ -185,12 +225,26 @@ public class AddTableClientTest {
         }
 
         @Test
-        void shouldOverrideTableNameInConfigDirWithOption() {
+        void shouldOverrideTableNameInConfigDirWithOption() throws Exception {
             Arguments args = withTableNameAndConfigDir("override-table", tablePropertiesWithName("config-table"), "config");
 
             TableProperties result = AddTableClient.createTableProperties(instanceProperties, args);
 
             assertThat(result.get(TABLE_NAME)).isEqualTo("override-table");
         }
+    }
+
+    private void addTable(String... args) throws Exception {
+        var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args));
+        TableProperties tableProperties = AddTableClient.createTablePropertiesWithSchema(instanceProperties, arguments, pathToSchema::get);
+        new AddTableClient(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+    }
+
+    private void saveSchema(String path, Schema schema) {
+        pathToSchema.put(Path.of(path), schema);
+    }
+
+    private String tableId(String tableName) {
+        return tableIndex.getTableByName("my-table").get().getTableUniqueId();
     }
 }

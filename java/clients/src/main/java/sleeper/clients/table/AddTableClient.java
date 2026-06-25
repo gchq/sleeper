@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Function;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -62,7 +63,7 @@ public class AddTableClient {
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 
-    static final CommandLineUsage USAGE = CommandLineUsage.builder()
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id"))
             .options(List.of(
                     CommandOption.longOption("table-name"),
@@ -92,7 +93,7 @@ public class AddTableClient {
         return CommandArguments.parse(USAGE, rawArgs, AddTableClient::readArguments);
     }
 
-    private static Arguments readArguments(CommandArguments arguments) {
+    public static Arguments readArguments(CommandArguments arguments) {
         Path tablePropertiesFile = arguments.getOptionalPath("table-properties");
         Path configDir = arguments.getOptionalPath("config-dir");
         Properties rawTableProperties = tablePropertiesFile != null
@@ -121,7 +122,6 @@ public class AddTableClient {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, args.instanceId());
 
             TableProperties tableProperties = createTableProperties(instanceProperties, args);
-            tableProperties.setSchema(Schema.load(args.resolveSchemaFile()));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -129,7 +129,13 @@ public class AddTableClient {
         }
     }
 
-    static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) {
+    public static TableProperties createTablePropertiesWithSchema(InstanceProperties instanceProperties, Arguments args, Function<Path, Schema> loadSchema) throws IOException {
+        TableProperties tableProperties = createTableProperties(instanceProperties, args);
+        tableProperties.setSchema(loadSchema.apply(args.resolveSchemaFile()));
+        return tableProperties;
+    }
+
+    public static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) throws IOException {
         TableProperties tableProperties = args.rawTableProperties() != null
                 ? new TableProperties(instanceProperties, args.rawTableProperties())
                 : new TableProperties(instanceProperties);
