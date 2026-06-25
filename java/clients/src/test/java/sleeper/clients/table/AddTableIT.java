@@ -130,7 +130,7 @@ public class AddTableIT extends LocalStackTestBase {
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
-        new AddTable(instanceProperties, tableProperties,
+        new AddTableClient(instanceProperties, tableProperties,
                 S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .run();

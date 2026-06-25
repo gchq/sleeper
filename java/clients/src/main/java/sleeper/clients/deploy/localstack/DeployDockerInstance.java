@@ -26,7 +26,7 @@ import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
 import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
 import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
 import sleeper.clients.deploy.localstack.stack.TableDockerStack;
-import sleeper.clients.table.AddTable;
+import sleeper.clients.table.AddTableClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -119,7 +119,7 @@ public class DeployDockerInstance {
 
         for (TableProperties tableProperties : tables) {
             try {
-                new AddTable(instanceProperties, tableProperties,
+                new AddTableClient(instanceProperties, tableProperties,
                         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                         StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                         .run();

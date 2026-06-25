@@ -43,12 +43,12 @@ import java.util.Properties;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-public class AddTable {
+public class AddTableClient {
     private final TableProperties tableProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
-    public AddTable(
+    public AddTableClient(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
         this.tableProperties = tableProperties;
@@ -89,7 +89,7 @@ public class AddTable {
             .build();
 
     static Arguments parseArguments(String... rawArgs) {
-        return CommandArguments.parse(USAGE, rawArgs, AddTable::readArguments);
+        return CommandArguments.parse(USAGE, rawArgs, AddTableClient::readArguments);
     }
 
     private static Arguments readArguments(CommandArguments arguments) {
@@ -110,7 +110,7 @@ public class AddTable {
     }
 
     public static void main(String[] rawArgs) throws IOException {
-        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, AddTable::readArguments);
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, AddTableClient::readArguments);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
@@ -125,7 +125,7 @@ public class AddTable {
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-            new AddTable(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+            new AddTableClient(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
         }
     }
 
@@ -153,7 +153,8 @@ public class AddTable {
             }
             if (tableName == null) {
                 String resolvedName = rawTableProperties != null
-                        ? rawTableProperties.getProperty("sleeper.table.name") : null;
+                        ? rawTableProperties.getProperty("sleeper.table.name")
+                        : null;
                 if (resolvedName == null || resolvedName.isBlank()) {
                     throw new CommandArgumentsException(
                             "Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");

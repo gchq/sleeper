@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.table.AddTable;
+import sleeper.clients.table.AddTableClient;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -53,7 +53,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
-            new AddTable(instanceProperties, properties,
+            new AddTableClient(instanceProperties, properties,
                     S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
                     StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB))
                     .run();
