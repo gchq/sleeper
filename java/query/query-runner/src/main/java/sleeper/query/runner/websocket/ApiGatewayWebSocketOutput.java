@@ -39,9 +39,11 @@ import java.util.Map;
 
 public class ApiGatewayWebSocketOutput {
 
-    private static final int DEFAULT_MAX_ATTEMPTS = 5;
-    private static final double DEFAULT_THROTTLING_BASE_DELAY_SECS = 0.1;
-    private static final double DEFAULT_THROTTLING_MAX_DELAY_SECS = 2.0;
+    // This uses the AWS SDK's defaults for the base & max delay for throttling retries,
+    // and sets a number of attempts to get a minimum wait time over 10 seconds.
+    private static final int DEFAULT_MAX_ATTEMPTS = 7;
+    private static final double DEFAULT_THROTTLING_BASE_DELAY_SECS = 0.5;
+    private static final double DEFAULT_THROTTLING_MAX_DELAY_SECS = 20.0;
 
     private final ApiGatewayManagementApiClient client;
     private final String connectionId;
