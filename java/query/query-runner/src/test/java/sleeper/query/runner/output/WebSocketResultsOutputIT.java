@@ -112,6 +112,8 @@ public class WebSocketResultsOutputIT {
                 .whenScenarioStateIs("retried")
                 .willReturn(aResponse().withStatus(200)));
 
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
+
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
 
@@ -151,6 +153,8 @@ public class WebSocketResultsOutputIT {
         stubFor(post(url).willReturn(aResponse()
                 .withStatus(413)
                 .withHeader("x-amzn-ErrorType", "PayloadTooLargeException")));
+
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
