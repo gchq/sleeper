@@ -38,8 +38,8 @@ There are several stacks that allow data to be imported using the bulk import pr
   no delay while a new cluster is created (this also means the cost of the servers during the cluster creation and
   bootstrapping process is amortised over multiple jobs). The downside is that if there are no jobs to perform then
   there is still a cost.
-- `EksBulkImportStack` - this uses Spark running on an EKS cluster to bulk import the data. Currently, the executors run
-  as Fargate tasks. Future work will allow them to run on EC2 instances. This stack is experimental.
+- `EksBulkImportStack` - this uses Spark running on an EKS cluster to bulk import the data. This can run either as
+  Fargate tasks, or with EKS Auto mode.
 
 These can all be deployed independently of each other. Each stack has its own queue from which it pulls jobs. The
 `sleeper.optional.stacks` instance property needs to include `EmrServerlessBulkImportStack`, `EmrBulkImportStack`,
@@ -468,16 +468,23 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 
 #### Bulk import on EKS
 
-It's important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
-with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned
-to your user, or users with administrator access. This may be in the form AWSReservedSSO_AdministratorAccess_abc123 if
-you log in with SSO, or OrganizationAccountAccessRole if you log in with an AWS Organisation.
+It's important to consider how you will be authorize with the Kubernetes API to administer the cluster. This will allow
+you to connect with `kubectl` and access Kubernetes resources in the AWS console. You can either assume the Sleeper
+instance admin role before you authenticate with the Kubernetes API, or you can configure your own role to be a cluster
+admin.
+
+To configure your own role, look in AWS IAM, and choose a role that gets assigned to your user, or users with
+administrator access. An admin access role may be in the form AWSReservedSSO_AdministratorAccess_abc123 if you log in
+with SSO, or OrganizationAccountAccessRole if you log in with an AWS Organisation.
 
 Any roles you want to give access to the cluster should be set in an instance property like this:
 
 ```properties
 sleeper.bulk.import.eks.cluster.admin.roles=AWSReservedSSO_AdministratorAccess_abc123,OrganizationAccountAccessRole
 ```
+
+You can run your EKS cluster on Fargate or Auto Mode, by setting the instance
+property `sleeper.bulk.import.eks.cluster.type` to "fargate" or "automode".
 
 You can submit a job in a similar way to the methods above, e.g.
 
