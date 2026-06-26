@@ -69,7 +69,9 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.CONNECTION_ID, "test-connection");
         config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
-        config.put(WebSocketOutput.MAX_ATTEMPTS, "1");
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "5");
+        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
+        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
     }
 
     @Test
@@ -110,10 +112,6 @@ public class WebSocketResultsOutputIT {
                 .whenScenarioStateIs("retried")
                 .willReturn(aResponse().withStatus(200)));
 
-        config.put(WebSocketOutput.MAX_ATTEMPTS, "5");
-        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
-        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
-
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
 
@@ -134,8 +132,6 @@ public class WebSocketResultsOutputIT {
                 .withHeader("x-amzn-ErrorType", "LimitExceededException")));
 
         config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
-        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
-        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -155,10 +151,6 @@ public class WebSocketResultsOutputIT {
         stubFor(post(url).willReturn(aResponse()
                 .withStatus(413)
                 .withHeader("x-amzn-ErrorType", "PayloadTooLargeException")));
-
-        config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
-        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
-        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
