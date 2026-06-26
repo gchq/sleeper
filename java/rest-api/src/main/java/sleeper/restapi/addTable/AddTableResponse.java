@@ -15,6 +15,8 @@
  */
 package sleeper.restapi.addTable;
 
+import java.util.Objects;
+
 /**
  * Decoded JSON body for the response back out from /sleeper/tables.
  */
@@ -27,13 +29,42 @@ public class AddTableResponse {
         tableName = builder.tableName;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Checks that the object created is valid and has all of the required fields.
+     *
+     * @return the validated object
+     */
+    public AddTableResponse validate() {
+        return AddTableResponse.builder()
+                .tableId(tableId)
+                .tableName(tableName)
+                .build();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        AddTableResponse that = (AddTableResponse) object;
+        return Objects.equals(tableId, that.tableId) && Objects.equals(tableName, that.tableName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, tableName);
+    }
+
     @Override
     public String toString() {
         return "tableId: " + tableId + ", tableName: " + tableName;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**

@@ -17,6 +17,7 @@ members = [
     "filter_udfs",
     "apps",
     "objectstore_ext",
+    "query_sql",
     "rust_sketch",
     "sleeper_core",
     "sleeper_df",

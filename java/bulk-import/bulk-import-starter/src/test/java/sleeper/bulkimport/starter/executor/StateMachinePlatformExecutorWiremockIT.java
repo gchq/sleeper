@@ -125,7 +125,7 @@ class StateMachinePlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldSetEphemeralStorageOnExecutorPodTemplate(WireMockRuntimeInfo runtimeInfo) {
+    void shouldSetJobIdAndEphemeralStorageOnExecutorPodTemplate(WireMockRuntimeInfo runtimeInfo) {
         // Given
         BulkImportJob job = jobForTable()
                 .id("test-job")
@@ -141,6 +141,9 @@ class StateMachinePlatformExecutorWiremockIT {
                 .inPath("$.executorPodTemplate").asString().satisfies(template -> {
                     assertThat(template).doesNotContain("placeholder");
                     JsonNode parsed = parseYaml(template);
+                    assertThatJson(parsed)
+                            .inPath("$.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution[0].labelSelector.matchExpressions[0].values[0]")
+                            .isEqualTo(job.getId());
                     assertThatJson(parsed)
                             .inPath("$.spec.containers[0].resources.requests['ephemeral-storage']")
                             .isEqualTo("85Gi");

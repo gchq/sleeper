@@ -28,7 +28,7 @@ use crate::{
         unalias::unalias_view_projection_columns,
         util::{
             add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
+            calculate_upload_size, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
@@ -362,12 +362,6 @@ impl<'a> SleeperOperations<'a> {
             // key fields appear in sort expression
             physical_plan = apply_full_sort_ordering(order, physical_plan)?;
         }
-
-        // Check physical plan is free of `SortExec` stages.
-        // Issue <https://github.com/gchq/sleeper/issues/5248>
-        if self.config.input_files_sorted() {
-            check_for_sort_exec(&physical_plan)?;
-        }
         Ok(physical_plan)
     }
 
@@ -409,7 +403,7 @@ impl<'a> SleeperOperations<'a> {
     ///
     /// # Errors
     /// The columns in the schema must match the row and sort key field names.
-    pub fn create_sort_expr_ordering(
+    pub fn create_physical_sort_expr_ordering(
         &self,
         frame: &DataFrame,
     ) -> Result<Option<LexOrdering>, DataFusionError> {

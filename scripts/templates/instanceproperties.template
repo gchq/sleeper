@@ -1166,6 +1166,16 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.is.native.libs.image=false
 
+# (EKS mode only) The ARN of a Lambda Layer providing the AWS CLI to use with the EKS kubectl
+# provider. If not set, the default AWS CLI layer included with the CDK will be used.
+# (uncomment to set a value)
+# sleeper.bulk.import.eks.awscli.layer.arn=
+
+# (EKS mode only) The type of EKS cluster to deploy for bulk import.
+# Valid values are: [fargate, automode]
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.cluster.type=FARGATE
+
 # (EKS mode only) The number of Spark executors. Used to set spark.executor.instances.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)

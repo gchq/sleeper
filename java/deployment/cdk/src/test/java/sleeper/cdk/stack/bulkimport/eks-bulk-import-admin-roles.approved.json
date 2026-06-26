@@ -1933,6 +1933,55 @@
             ]
           }
         },
+        "EksBulkImportClusterClusterAccessForadminroleone52B2ACA9": {
+          "Type": "AWS::EKS::AccessEntry",
+          "Properties": {
+            "PrincipalArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":iam::test-account:role/admin-role-one"
+                ]
+              ]
+            },
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "AccessPolicies": [
+              {
+                "AccessScope": {
+                  "Type": "cluster"
+                },
+                "PolicyArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
         "StateMachineRoleAccessEntry44D1B662": {
           "Type": "AWS::EKS::AccessEntry",
           "Properties": {
@@ -2529,6 +2578,55 @@
             "Roles": [
               {
                 "Ref": "EksBulkImportClusterfargateprofileEksBulkImportFargateProfilePodExecutionRole10F149FF"
+              }
+            ]
+          }
+        },
+        "EksBulkImportClusterClusterAccessForadminroletwo74ADC5C9": {
+          "Type": "AWS::EKS::AccessEntry",
+          "Properties": {
+            "PrincipalArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":iam::test-account:role/admin-role-two"
+                ]
+              ]
+            },
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "AccessPolicies": [
+              {
+                "AccessScope": {
+                  "Type": "cluster"
+                },
+                "PolicyArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "EksBulkImport"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
               }
             ]
           }
