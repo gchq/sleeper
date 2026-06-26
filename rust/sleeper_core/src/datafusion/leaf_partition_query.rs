@@ -21,7 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        util::{explain_plan, retrieve_object_metas},
+        util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
 };
 use datafusion::{
@@ -100,20 +100,26 @@ impl<'a> LeafPartitionQuery<'a> {
         let ops = SleeperOperations::new(&self.config.common);
         info!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
-        let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
+        let (sketcher, frame, _ctx) = self.build_query_dataframe(&ops).await?;
 
-        // Convert to physical plan
-        let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
+        // Ensure sort ordering is created before adding more stages to plan, as completer might add stages
+        // to plan which change schema, e.g. adding a data sink stage
+        let sort_ordering = ops.create_physical_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
 
         let frame = completer.complete_frame(frame)?;
-        let task_ctx = Arc::new(frame.task_ctx());
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
         }
-
+        let task_ctx = Arc::new(frame.task_ctx());
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
+
+        // Check physical plan is free of `SortExec` stages.
+        // Issue <https://github.com/gchq/sleeper/issues/5248>
+        if ops.config.input_files_sorted() {
+            check_for_sort_exec(&physical_plan)?;
+        }
 
         if self.config.explain_plans {
             debug!(
@@ -136,7 +142,6 @@ impl<'a> LeafPartitionQuery<'a> {
         {
             output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
-
         Ok(result)
     }
 
@@ -195,7 +200,7 @@ impl<'a> LeafPartitionQuery<'a> {
     async fn build_query_dataframe(
         &self,
         ops: &'a SleeperOperations<'a>,
-    ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
+    ) -> Result<(Option<Sketcher<'a>>, DataFrame, SessionContext), DataFusionError> {
         let object_metas =
             retrieve_object_metas(ops.config.input_files(), self.store_factory).await?;
         let sf = ops.apply_config(SessionConfig::new(), &object_metas)?;
@@ -213,7 +218,8 @@ impl<'a> LeafPartitionQuery<'a> {
         frame = ops.apply_general_sort(frame)?;
         frame = ops.apply_aggregations(frame)?;
         frame = self.maybe_project_columns(frame)?;
-        self.maybe_add_sketch_output(ops, frame)
+        let (sketcher, frame) = self.maybe_add_sketch_output(ops, frame)?;
+        Ok((sketcher, frame, ctx))
     }
 }
 
