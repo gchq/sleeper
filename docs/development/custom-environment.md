@@ -1,7 +1,7 @@
 Building Sleeper in a custom environment
 ========================================
 
-Sleeper's build and deployment scripts have a small set of hooks for users whose environments need to substitute the default build inputs. This page lists every such hook in one place: what it does, and a worked example.
+Sleeper's build and deployment scripts have a small set of configuration points for users whose environments need to substitute the default build inputs. This page lists every such point in one place: what it does, and a worked example.
 
 None of these are needed for a default build.
 
@@ -9,7 +9,7 @@ None of these are needed for a default build.
 
 ### `--override-base-image-dir` (on `setDeployConfig.sh` and `publishDocker.sh`)
 
-Overrides the directory used as the Docker build context for the Sleeper base image. By default the base image is built from `scripts/docker/base`. Pass a different directory containing your own `Dockerfile` to substitute a custom base image.
+Overrides the directory used as the Docker build context for the Sleeper base Docker image. This image is used as the base image for most of the other Docker images built during a Sleeper deployment. By default the base image is built from `scripts/docker/base`. Pass a different directory containing your own `Dockerfile` to substitute a custom base image.
 
 The override only applies to local builds — it cannot be combined with `--image-location repository`.
 
@@ -31,7 +31,9 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh`, with the builder images themselves produced by `rust/builders/buildAll.sh` (or `buildAllSccache.sh`). The hooks below affect either the building of those builder images or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process), with the builder images themselves produced by `rust/builders/buildAll.sh` (or `buildAllSccache.sh`). The configuration points below affect either the building of those builder images or how the Rust workload runs inside them.
+
+The variables below should be set via environment variables as shown.
 
 ### `RUSTUP_DIST_SERVER` and `RUSTUP_UPDATE_ROOT`
 
@@ -49,11 +51,23 @@ Either variable can be set independently. If both are unset, the builder images 
 
 ### `EXTRA_CARGO_CONFIG`
 
-Appends arbitrary TOML to the `cargo` config used for the current Rust build, without modifying the checked-in `rust/.cargo/config.toml`. The value must be valid TOML; multi-line values are supported via `\n` escapes.
+Appends arbitrary TOML to the Cargo configuration used for the current Rust build. The content is appended to the configuration from `rust/.cargo/config.toml` without modifying the checked‑in file.
 
 Use this to point `cargo` at an internal `crates.io` mirror, configure a private registry, set source replacement rules, or any other per-environment `cargo` setting that should not be committed.
 
-Example — replace the default `crates.io` source with an internal mirror:
+#### Example — replace the default `crates.io` source with an internal mirror
+
+Let's say we need to re-direct crates.io to an internal mirror at https://crates.internal.example.com/index. We might want the following in our config.toml:
+
+```toml
+[source.crates-io]
+replace-with = "internal-mirror"
+
+[source.internal-mirror]
+registry = "https://crates.internal.example.com/index"
+```
+
+Setting the `EXTRA_CARGO_CONFIG` environment variable as follows will append the configuration to the end of the Cargo configuration.
 
 ```bash
 export EXTRA_CARGO_CONFIG='[source.crates-io]\nreplace-with = "internal-mirror"\n\n[source.internal-mirror]\nregistry = "https://crates.internal.example.com/index"'
