@@ -136,7 +136,7 @@ cdk deploy --all -a "java -cp $SCRIPTS_DIR/jars/system-test-cdk-$VERSION.jar sle
     -c id=$INSTANCE_ID -c configurationDir="$CONFIGURATION_DIR" \
     -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true
 # Write some random data
-"$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID --table-name system-test --schema "$SCRIPTS_DIR/templates/schema.template"
+"$SCRIPTS_DIR/utility/addTable.sh" $INSTANCE_ID --table-name system-test --config-dir $CONFIGURATION_DIR
 java -cp "$SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar" \
     sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS $INSTANCE_ID system-test
 ```

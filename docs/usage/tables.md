@@ -66,18 +66,14 @@ file with `--schema` or as part of a configuration directory with `--config-dir`
 
 # Create a table using a configuration directory containing schema.json and table.properties (table name read from table.properties)
 ./scripts/utility/addTable.sh <instance-id> --config-dir <config-dir>
-
-# Use a config directory but override the table name
-./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir>
-
-# Use a config directory but override the schema file
-./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir> --schema <schema-file>
-
-# Use a config directory but override the table properties file
-./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --config-dir <config-dir> --table-properties <table-properties-file>
 ```
 
 Note: `--schema`, `--table-properties`, and `--config-dir` cannot all be specified at the same time.
+
+For more information please run:
+```bash
+./scripts/utility/addTable.sh --help
+```
 
 See [creating a schema](schema.md) for how to create a schema file.
 
