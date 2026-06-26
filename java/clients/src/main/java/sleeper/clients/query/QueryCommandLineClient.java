@@ -119,7 +119,7 @@ public abstract class QueryCommandLineClient {
 
     private Query constructLargeQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
         int count = Integer.parseInt(System.getenv().getOrDefault("RCOUNT", "50"));
-        System.err.printf("Using %d ranges%n", count);
+        System.out.printf("Using %d ranges%n", count);
         List<String> queryPoints = generate("a", "z", 9, count);
         List<Region> ranges = queryPoints.stream()
                 .map(s -> new Region(rangeFactory.createRange("key", s, true, s + "z", false))).toList();

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.exception.UncheckedException;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.ConcatenatingIterator;
+import sleeper.core.iterator.closeable.PrefetchingCloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -70,11 +71,12 @@ public class ParQueryExecutor {
                 try {
                     LeafPartitionQuery leafQuery;
                     while ((leafQuery = workQueue.poll()) != null) {
-                        System.err.printf("Thread %s pulled work item %s%n", Thread.currentThread().getName(), leafQuery.getLeafPartitionId());
+                        System.out.printf("Thread %s pulled work item %s%n", Thread.currentThread().getName(), leafQuery.getLeafPartitionId());
                         try {
                             CloseableIterator<Row> rowFeed = le.getRows(leafQuery);
-                            System.err.printf("Thread %s offering row iterator%n", Thread.currentThread().getName());
-                            outputQueue.put(rowFeed);
+                            System.out.printf("Thread %s offering row iterator%n", Thread.currentThread().getName());
+                            PrefetchingCloseableIterator<Row> prefetched = new PrefetchingCloseableIterator<>(rowFeed, 10);
+                            outputQueue.put(prefetched);
                         } catch (QueryException e) {
                             // could use a Result type here
                             throw new RuntimeException("Exception returning rows for leaf partition " + leafQuery, e);
@@ -86,13 +88,14 @@ public class ParQueryExecutor {
                 }
             });
         }
-
+        System.out.println("All threads started...");
         List<Supplier<CloseableIterator<Row>>> iterators = new ArrayList<>();
         for (int i = 0; i < leafPartitionCount; i++) {
             iterators.add(() -> {
                 try {
-                    System.err.printf("Thread %s receiving a row iterator%n", Thread.currentThread().getName());
+                    System.out.printf("Thread %s receiving a row iterator%n", Thread.currentThread().getName());
                     CloseableIterator<Row> rowIt = outputQueue.take();
+                    System.out.printf("Thread %s returning to client%n", Thread.currentThread().getName());
                     return rowIt;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

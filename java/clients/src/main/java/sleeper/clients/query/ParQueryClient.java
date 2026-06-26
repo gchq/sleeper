@@ -90,7 +90,8 @@ public class ParQueryClient extends QueryCommandLineClient {
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
 
-        int threadCount = Integer.getInteger("par.query.thread.count", 1);
+        int threadCount = Integer.parseInt(System.getenv().getOrDefault("TCOUNT", "1"));
+        System.out.println("Thread count " + threadCount);
         ExecutorService executorService = Executors.newFixedThreadPool(30);
         Configuration hadoopConf = TableHadoopConfigurationProvider.forClient(instanceProperties).getConfiguration(tableProperties);
 
@@ -98,7 +99,7 @@ public class ParQueryClient extends QueryCommandLineClient {
         for (int i = 0; i < threadCount; i++) {
             BufferAllocator allocator = new RootAllocator();
             FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
-            things.add(new LeafPartitionQueryExecutor(objectFactory, tableProperties, new LeafPartitionRowRetrieverImpl(executorService, hadoopConf, tableProperties)));
+            // things.add(new LeafPartitionQueryExecutor(objectFactory, tableProperties, new LeafPartitionRowRetrieverImpl(executorService, hadoopConf, tableProperties)));
             things.add(new LeafPartitionQueryExecutor(objectFactory, tableProperties, new DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context)));
         }
 
@@ -149,7 +150,7 @@ public class ParQueryClient extends QueryCommandLineClient {
                 FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
             String accountName = stsClient.getCallerIdentity().account();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-            new QueryClient(
+            new ParQueryClient(
                     instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
