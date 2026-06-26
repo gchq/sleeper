@@ -468,10 +468,9 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 
 #### Bulk import on EKS
 
-It's important to consider how you will be authorize with the Kubernetes API to administer the cluster. This will allow
-you to connect with `kubectl` and access Kubernetes resources in the AWS console. You can either assume the Sleeper
-instance admin role before you authenticate with the Kubernetes API, or you can configure your own role to be a cluster
-admin.
+It's important to consider how you will be will authorized to administer the cluster. This will allow you to connect
+with `kubectl` and access Kubernetes resources in the AWS console. You can either assume the Sleeper instance admin role
+before you authenticate with the Kubernetes API, or you can configure your own role to be a cluster admin.
 
 To configure your own role, look in AWS IAM, and choose a role that gets assigned to your user, or users with
 administrator access. An admin access role may be in the form AWSReservedSSO_AdministratorAccess_abc123 if you log in
