@@ -83,7 +83,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
 
                 TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
                 StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-                new AddTableClient(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+                new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
                 LOGGER.info("Added table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName);
             } catch (Exception e) {
                 throw new RuntimeException("Unable to create table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName, e);

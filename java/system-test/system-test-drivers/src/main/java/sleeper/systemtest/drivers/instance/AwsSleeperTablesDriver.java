@@ -53,7 +53,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
-            new AddTableClient(instanceProperties, properties,
+            new AddTableClient(properties,
                     S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
                     StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB))
                     .run();
