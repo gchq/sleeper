@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 public class ApiGatewayWebSocketOutput {
 
@@ -110,9 +111,15 @@ public class ApiGatewayWebSocketOutput {
     private static LegacyRetryStrategy retryStrategy(Map<String, String> config) {
         // Tuned for a slow-consuming WebSocket client. The API Gateway Management API throttles per-connection;
         // we use a longer throttling backoff than the SDK defaults so the client has time to drain its buffer.
-        double baseDelaySecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, DEFAULT_THROTTLING_BASE_DELAY_SECS);
-        double maxDelaySecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, DEFAULT_THROTTLING_MAX_DELAY_SECS);
-        int maxAttempts = WebSocketOutput.getIntOrDefault(config, WebSocketOutput.MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
+        double baseDelaySecs = Optional.ofNullable(config.get(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS))
+                .map(Double::parseDouble)
+                .orElse(DEFAULT_THROTTLING_BASE_DELAY_SECS);
+        double maxDelaySecs = Optional.ofNullable(config.get(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS))
+                .map(Double::parseDouble)
+                .orElse(DEFAULT_THROTTLING_MAX_DELAY_SECS);
+        int maxAttempts = Optional.ofNullable(config.get(WebSocketOutput.MAX_ATTEMPTS))
+                .map(Integer::parseInt)
+                .orElse(DEFAULT_MAX_ATTEMPTS);
         return LegacyRetryStrategy.builder()
                 .throttlingBackoffStrategy(BackoffStrategy.exponentialDelayHalfJitter(
                         Duration.ofMillis((long) (baseDelaySecs * 1000)),
