@@ -42,12 +42,14 @@ public class AddTableRoute implements Route {
     public static final Logger LOGGER = LoggerFactory.getLogger(AddTableRoute.class);
     private final InstanceProperties instanceProperties;
     private final AddTable addTable;
-    private final AddTableSerDe addTableSerDe;
+    private final AddTableRequestSerDe requestSerDe;
+    private final AddTableResponseSerDe responseSerDe;
 
     private AddTableRoute(Builder builder) {
         instanceProperties = requireNonNull(builder.instanceProperties);
         addTable = requireNonNull(builder.addTable);
-        addTableSerDe = new AddTableSerDe();
+        requestSerDe = new AddTableRequestSerDe();
+        responseSerDe = new AddTableResponseSerDe();
     }
 
     /**
@@ -60,7 +62,7 @@ public class AddTableRoute implements Route {
     public APIGatewayV2HTTPResponse handle(APIGatewayV2HTTPEvent event) {
         AddTableRequest request;
         try {
-            request = addTableSerDe.fromJson(Route.decodeBody(event));
+            request = requestSerDe.fromJson(Route.decodeBody(event));
         } catch (JsonSyntaxException e) {
             LOGGER.warn("Add table request body was not valid JSON", e);
             return Route.errorResponse(400, "invalid_request", "Request body is not valid JSON");
@@ -95,7 +97,7 @@ public class AddTableRoute implements Route {
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(201)
                 .withHeaders(Map.of("Content-Type", CONTENT_TYPE_JSON))
-                .withBody(addTableSerDe.toJson(response))
+                .withBody(responseSerDe.toJson(response))
                 .build();
     }
 
