@@ -42,6 +42,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -99,11 +100,18 @@ public class AddTableClient {
     public static Arguments readArguments(CommandArguments arguments, FileReader files) {
         Path tablePropertiesFile = arguments.getOptionalPath("table-properties");
         Path configDir = arguments.getOptionalPath("config-dir");
-        Properties rawTableProperties = tablePropertiesFile != null
-                ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile))
-                : configDir != null
-                        ? PropertiesUtils.loadProperties(files.readString(configDir.resolve("table.properties")))
-                        : null;
+
+        Properties rawTableProperties;
+        try {
+            rawTableProperties = tablePropertiesFile != null
+                    ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile))
+                    : configDir != null
+                            ? PropertiesUtils.loadProperties(files.readString(configDir.resolve("table.properties")))
+                            : null;
+        } catch (NoSuchElementException e) {
+            throw new CommandArgumentsException("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+        }
+
         return new Arguments(
                 arguments.getString("instance-id"),
                 arguments.getOptionalString("table-name").orElse(null),

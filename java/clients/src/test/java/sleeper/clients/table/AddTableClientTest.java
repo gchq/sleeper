@@ -19,7 +19,6 @@ package sleeper.clients.table;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.table.AddTableClient.Arguments;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -36,7 +35,6 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,70 +93,62 @@ public class AddTableClientTest {
             expected.set(TABLE_NAME, "file-table");
             assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
         }
+
+        @Test
+        void shouldAddTableByConfigDir() throws Exception {
+            //When
+            addTable("my-instance", "--config-dir", "./");
+
+            // Then
+            TableProperties expected = new TableProperties(instanceProperties);
+            expected.setSchema(schema);
+            expected.set(TABLE_ID, tableId("file-table"));
+            expected.set(TABLE_NAME, "file-table");
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
+        }
     }
 
     @Nested
     class ArgumentsValidation {
 
-        @TempDir
-        Path tempDir;
-
-        @Test
-        void shouldAcceptConfigDirAsTableNameAndSchemaSource() throws IOException {
-            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=config-table\n");
-
-            Arguments args = AddTableClient.parseArguments("instance-id", "--config-dir", tempDir.toString());
-
-            assertThat(args.configDir()).isEqualTo(tempDir);
-        }
-
         @Test
         void shouldRejectWhenNoTableNameSourceExists() {
-            assertThatThrownBy(() -> AddTableClient.parseArguments("instance-id", "--schema", "schema.json"))
+            //When/Then
+            assertThatThrownBy(() -> addTable("instance-id", "--schema", "schema.json"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
         }
 
         @Test
         void shouldRejectWhenTableNameNotSetInPropertiesFile() throws IOException {
-            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.other.property=value\n");
+            //Given
+            saveFile("other/table.properties", "sleeper.other.property=value\n");
 
-            assertThatThrownBy(() -> AddTableClient.parseArguments("instance-id", "--schema", "schema.json",
-                    "--table-properties", tableProps.toString()))
+            //When/Then
+            assertThatThrownBy(() -> addTable("instance-id", "--schema", "schema.json",
+                    "--table-properties", "other/table.properties"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
         }
 
         @Test
         void shouldRejectWhenNoSchemaSource() {
-            assertThatThrownBy(() -> AddTableClient.parseArguments("instance-id", "--table-name", "my-table"))
+            //When/Then
+            assertThatThrownBy(() -> addTable("instance-id", "--table-name", "my-table"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --schema or --config-dir must be provided");
         }
 
         @Test
         void shouldRejectWhenAllThreeFileSourcesSpecified() throws IOException {
-            Path tableProps = Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=my-table\n");
-
-            assertThatThrownBy(() -> AddTableClient.parseArguments("instance-id", "--table-name", "my-table",
-                    "--schema", "schema.json", "--table-properties", tableProps.toString(),
-                    "--config-dir", tempDir.toString()))
+            //When/Then
+            assertThatThrownBy(() -> addTable("instance-id", "--table-name", "my-table",
+                    "--schema", "schema.json", "--table-properties", "./table.properties",
+                    "--config-dir", "./"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot specify --schema, --table-properties, and --config-dir together");
         }
 
-        @Test
-        void shouldResolveSchemaFileFromSchemaOption() {
-            Arguments args = AddTableClient.parseArguments("instance-id", "--table-name", "my-table", "--schema", "schema.json");
-            assertThat(args.resolveSchemaFile()).isEqualTo(Path.of("schema.json"));
-        }
-
-        @Test
-        void shouldResolveSchemaFileFromConfigDir() throws IOException {
-            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=any-table\n");
-            Arguments args = AddTableClient.parseArguments("instance-id", "--config-dir", tempDir.toString());
-            assertThat(args.resolveSchemaFile()).isEqualTo(tempDir.resolve("schema.json"));
-        }
     }
 
     @Nested
