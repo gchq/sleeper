@@ -30,8 +30,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -320,7 +318,7 @@ class WebSocketQueryStatusReportDestinationIT {
         WebSocketQueryConfig(WireMockRuntimeInfo runtimeInfo) {
             String connectionId = "connection1";
             ApiGatewayManagementApiClient client = wiremockAwsV2Client(runtimeInfo, ApiGatewayManagementApiClient.builder());
-            ApiGatewayWebSocketOutput output = new ApiGatewayWebSocketOutput(client, connectionId, new ExponentialBackoffWithJitter(WaitRange.firstAndMaxWaitCeilingSecs(0, 0)), 1);
+            ApiGatewayWebSocketOutput output = new ApiGatewayWebSocketOutput(client, connectionId);
             this.listener = new WebSocketQueryStatusReportDestination(output);
             this.url = urlEqualTo("/@connections/" + connectionId);
             this.rangeFactory = new RangeFactory(SCHEMA);

@@ -18,7 +18,6 @@ package sleeper.query.runner.output;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.ThreadSleep;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -43,9 +42,9 @@ public class WebSocketResultsOutput implements ResultsOutput {
     private final ApiGatewayWebSocketOutput output;
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
 
-    public WebSocketResultsOutput(Schema schema, Map<String, String> config, ThreadSleep waiter) {
+    public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
         this.serDe = QueryWebSocketMessageSerDe.fromConfig(schema, config);
-        this.output = ApiGatewayWebSocketOutput.fromConfig(config, waiter);
+        this.output = ApiGatewayWebSocketOutput.fromConfig(config);
         this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(WebSocketOutput.ENDPOINT)));
         this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(WebSocketOutput.CONNECTION_ID)));
     }

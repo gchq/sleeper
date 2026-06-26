@@ -30,7 +30,6 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutputInfo;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,7 +46,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 
 @WireMockTest
 public class WebSocketResultsOutputIT {
@@ -61,7 +59,6 @@ public class WebSocketResultsOutputIT {
             .regions(List.of())
             .build();
 
-    private final List<Duration> foundWaits = new ArrayList<>();
     private final Map<String, String> config = new HashMap<>();
     private final UrlPattern url = urlEqualTo("/@connections/test-connection");
 
@@ -72,6 +69,7 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.CONNECTION_ID, "test-connection");
         config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
+        config.put(WebSocketOutput.MAX_ATTEMPTS, "1");
     }
 
     @Test
@@ -100,7 +98,8 @@ public class WebSocketResultsOutputIT {
 
     @Test
     public void shouldRetryWhenLimitExceededAndSucceed(WireMockRuntimeInfo wmRuntimeInfo) {
-        // Given
+        // Given - the SDK retries throttling responses with its configured backoff before
+        // letting them surface, so a transient LimitExceededException is handled transparently.
         stubFor(post(url).inScenario("retry")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(aResponse()
@@ -112,8 +111,8 @@ public class WebSocketResultsOutputIT {
                 .willReturn(aResponse().withStatus(200)));
 
         config.put(WebSocketOutput.MAX_ATTEMPTS, "5");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
+        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
+        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -123,20 +122,20 @@ public class WebSocketResultsOutputIT {
 
         // Then
         verify(2, postRequestedFor(url));
-        assertThat(foundWaits).hasSize(1);
         assertThat(result.getRowCount()).isEqualTo(1);
     }
 
     @Test
-    public void shouldGiveUpAfterMaxAttemptsOnPersistentLimitExceeded(WireMockRuntimeInfo wmRuntimeInfo) {
-        // Given
+    public void shouldSurfaceLimitExceededAfterSdkExhaustsRetries(WireMockRuntimeInfo wmRuntimeInfo) {
+        // Given - the SDK retry strategy makes the configured number of attempts before surfacing
+        // LimitExceededException (see ApiGatewayWebSocketOutput#retryStrategy).
         stubFor(post(url).willReturn(aResponse()
                 .withStatus(429)
                 .withHeader("x-amzn-ErrorType", "LimitExceededException")));
 
         config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
+        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
+        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -146,7 +145,6 @@ public class WebSocketResultsOutputIT {
 
         // Then
         verify(3, postRequestedFor(url));
-        assertThat(foundWaits).hasSize(2);
         assertThat(result.getRowCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("LimitExceededException");
     }
@@ -159,8 +157,8 @@ public class WebSocketResultsOutputIT {
                 .withHeader("x-amzn-ErrorType", "PayloadTooLargeException")));
 
         config.put(WebSocketOutput.MAX_ATTEMPTS, "3");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, "0.001");
-        config.put(WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, "0.01");
+        config.put(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, "0.001");
+        config.put(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, "0.01");
 
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(Collections.singletonMap("id", "row1")));
@@ -170,7 +168,6 @@ public class WebSocketResultsOutputIT {
 
         // Then
         verify(1, postRequestedFor(url));
-        assertThat(foundWaits).isEmpty();
         assertThat(result.getRowCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("PayloadTooLargeException");
     }
@@ -203,6 +200,6 @@ public class WebSocketResultsOutputIT {
     }
 
     private WebSocketResultsOutput output() {
-        return new WebSocketResultsOutput(schema, config, recordWaits(foundWaits));
+        return new WebSocketResultsOutput(schema, config);
     }
 }

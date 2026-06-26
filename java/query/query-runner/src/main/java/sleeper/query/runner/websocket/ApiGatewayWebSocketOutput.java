@@ -20,10 +20,9 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
-import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.core.retry.conditions.AndRetryCondition;
-import software.amazon.awssdk.core.retry.conditions.RetryCondition;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.retries.LegacyRetryStrategy;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
 import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClientBuilder;
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.ForbiddenException;
@@ -31,41 +30,29 @@ import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneExcepti
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.LimitExceededException;
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.PayloadTooLargeException;
 
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
-import sleeper.core.util.ThreadSleep;
 import sleeper.query.runner.output.WebSocketOutput;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 
 public class ApiGatewayWebSocketOutput {
 
     private static final int DEFAULT_MAX_ATTEMPTS = 5;
-    private static final double DEFAULT_FIRST_WAIT_CEILING_SECS = 0.1;
-    private static final double DEFAULT_MAX_WAIT_CEILING_SECS = 2.0;
+    private static final double DEFAULT_THROTTLING_BASE_DELAY_SECS = 0.1;
+    private static final double DEFAULT_THROTTLING_MAX_DELAY_SECS = 2.0;
 
     private final ApiGatewayManagementApiClient client;
     private final String connectionId;
-    private final ExponentialBackoffWithJitter backoff;
-    private final int maxAttempts;
     private boolean clientGone = false;
 
-    public ApiGatewayWebSocketOutput(
-            ApiGatewayManagementApiClient client, String connectionId,
-            ExponentialBackoffWithJitter backoff, int maxAttempts) {
+    public ApiGatewayWebSocketOutput(ApiGatewayManagementApiClient client, String connectionId) {
         this.client = client;
         this.connectionId = connectionId;
-        this.backoff = backoff;
-        this.maxAttempts = maxAttempts;
     }
 
     public static ApiGatewayWebSocketOutput fromConfig(Map<String, String> config) {
-        return fromConfig(config, Thread::sleep);
-    }
-
-    public static ApiGatewayWebSocketOutput fromConfig(Map<String, String> config, ThreadSleep waiter) {
         String region = config.get(WebSocketOutput.REGION);
         if (region == null) {
             region = System.getenv("AWS_REGION");
@@ -87,7 +74,9 @@ public class ApiGatewayWebSocketOutput {
         ApiGatewayManagementApiClientBuilder clientBuilder = ApiGatewayManagementApiClient.builder()
                 .region(Region.of(region))
                 .endpointOverride(URI.create(endpoint))
-                .overrideConfiguration(overrideNoRetriesForLimitExceeded());
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .retryStrategy(retryStrategy(config))
+                        .build());
 
         String accessKey = config.get(WebSocketOutput.ACCESS_KEY);
         String secretKey = config.get(WebSocketOutput.SECRET_KEY);
@@ -96,14 +85,7 @@ public class ApiGatewayWebSocketOutput {
                     AwsBasicCredentials.create(accessKey, secretKey)));
         }
 
-        double firstWaitCeilingSecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.LIMIT_EXCEEDED_FIRST_WAIT_CEILING_SECS, DEFAULT_FIRST_WAIT_CEILING_SECS);
-        double maxWaitCeilingSecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.LIMIT_EXCEEDED_MAX_WAIT_CEILING_SECS, DEFAULT_MAX_WAIT_CEILING_SECS);
-        int maxAttempts = WebSocketOutput.getIntOrDefault(config, WebSocketOutput.MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
-        ExponentialBackoffWithJitter backoff = new ExponentialBackoffWithJitter(
-                WaitRange.firstAndMaxWaitCeilingSecs(firstWaitCeilingSecs, maxWaitCeilingSecs),
-                Math::random, waiter);
-
-        return new ApiGatewayWebSocketOutput(clientBuilder.build(), connectionId, backoff, maxAttempts);
+        return new ApiGatewayWebSocketOutput(clientBuilder.build(), connectionId);
     }
 
     public void sendString(String message) throws IOException {
@@ -111,39 +93,29 @@ public class ApiGatewayWebSocketOutput {
             throw new IOException("Not sending message as websocket client " + connectionId + " has already disconnected!");
         }
 
-        LimitExceededException lastLimitExceeded = null;
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                backoff.waitBeforeAttempt(attempt);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException(e);
-            }
-            try {
-                client.postToConnection(request -> request
-                        .connectionId(connectionId)
-                        .data(SdkBytes.fromUtf8String(message)));
-                return;
-            } catch (GoneException e) {
-                clientGone = true;
-                throw new IOException(e);
-            } catch (LimitExceededException e) {
-                lastLimitExceeded = e;
-            } catch (PayloadTooLargeException | ForbiddenException e) {
-                throw new IOException(e);
-            }
+        try {
+            client.postToConnection(request -> request
+                    .connectionId(connectionId)
+                    .data(SdkBytes.fromUtf8String(message)));
+        } catch (GoneException e) {
+            clientGone = true;
+            throw new IOException(e);
+        } catch (LimitExceededException | PayloadTooLargeException | ForbiddenException e) {
+            throw new IOException(e);
         }
-        throw new IOException(lastLimitExceeded);
     }
 
-    @SuppressWarnings("deprecation") // RetryStrategy does not yet support disabling retries for a specific failure
-    private static ClientOverrideConfiguration overrideNoRetriesForLimitExceeded() {
-        return ClientOverrideConfiguration.builder()
-                .retryPolicy(RetryPolicy.defaultRetryPolicy().toBuilder()
-                        .retryCondition(AndRetryCondition.create(
-                                RetryCondition.defaultRetryCondition(),
-                                context -> !(context.exception() instanceof LimitExceededException)))
-                        .build())
+    private static LegacyRetryStrategy retryStrategy(Map<String, String> config) {
+        // Tuned for a slow-consuming WebSocket client. The API Gateway Management API throttles per-connection;
+        // we use a longer throttling backoff than the SDK defaults so the client has time to drain its buffer.
+        double baseDelaySecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS, DEFAULT_THROTTLING_BASE_DELAY_SECS);
+        double maxDelaySecs = WebSocketOutput.getDoubleOrDefault(config, WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS, DEFAULT_THROTTLING_MAX_DELAY_SECS);
+        int maxAttempts = WebSocketOutput.getIntOrDefault(config, WebSocketOutput.MAX_ATTEMPTS, DEFAULT_MAX_ATTEMPTS);
+        return LegacyRetryStrategy.builder()
+                .throttlingBackoffStrategy(BackoffStrategy.exponentialDelayHalfJitter(
+                        Duration.ofMillis((long) (baseDelaySecs * 1000)),
+                        Duration.ofMillis((long) (maxDelaySecs * 1000))))
+                .maxAttempts(maxAttempts)
                 .build();
     }
 
