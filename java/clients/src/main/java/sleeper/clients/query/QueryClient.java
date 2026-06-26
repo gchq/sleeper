@@ -17,6 +17,7 @@ package sleeper.clients.query;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -45,8 +46,8 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.ParQueryExecutor;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
-import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.datafusion.DataFusionQueryFunctions;
@@ -54,7 +55,9 @@ import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,7 +74,7 @@ public class QueryClient extends QueryCommandLineClient {
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
-    private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
+    private final Map<String, ParQueryExecutor> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -86,11 +89,21 @@ public class QueryClient extends QueryCommandLineClient {
     @Override
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
+
+        int threadCount = Integer.getInteger("par.query.thread.count", 1);
+        ExecutorService executorService = Executors.newFixedThreadPool(30);
+        Configuration hadoopConf = TableHadoopConfigurationProvider.forClient(instanceProperties).getConfiguration(tableProperties);
+
+        List<LeafPartitionQueryExecutor> things = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+            BufferAllocator allocator = new RootAllocator();
+            FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+            things.add(new LeafPartitionQueryExecutor(objectFactory, tableProperties, new LeafPartitionRowRetrieverImpl(executorService, hadoopConf, tableProperties)));
+            things.add(new LeafPartitionQueryExecutor(objectFactory, tableProperties, new DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context)));
+        }
+
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryExecutor executor = new QueryExecutor(
-                    QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
-                    new LeafPartitionQueryExecutor(objectFactory, tableProperties,
-                            rowRetrieverProvider.getRowRetriever(tableProperties)));
+            ParQueryExecutor executor = new ParQueryExecutor(QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)), things);
             cachedQueryExecutors.put(tableName, executor);
         }
     }

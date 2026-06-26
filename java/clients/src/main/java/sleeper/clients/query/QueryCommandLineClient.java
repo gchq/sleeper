@@ -51,7 +51,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public abstract class QueryCommandLineClient {
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final InstanceProperties instanceProperties;
+    protected final InstanceProperties instanceProperties;
     private final Supplier<String> queryIdSupplier;
     protected final ConsoleInput in;
     protected final ConsoleOutput out;
