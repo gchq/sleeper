@@ -175,21 +175,6 @@ public class CommandArguments {
     }
 
     /**
-     * Loads a properties file from the path given by an optional argument. Returns null if the argument was not set.
-     * Throws a {@link CommandArgumentsException} if the file cannot be read.
-     *
-     * @param  name the name of the argument
-     * @return      the loaded properties, or null if the argument was not set
-     */
-    public Properties loadOptionalProperties(String name) {
-        Path path = getOptionalPath(name);
-        if (path == null) {
-            return null;
-        }
-        return loadPropertiesFile(path);
-    }
-
-    /**
      * Loads a properties file from the given path. Throws a {@link CommandArgumentsException} if the file cannot be
      * read, so that the error is handled the same way as other argument validation failures.
      *
