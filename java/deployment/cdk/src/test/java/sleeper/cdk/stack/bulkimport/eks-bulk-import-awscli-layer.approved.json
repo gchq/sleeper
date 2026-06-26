@@ -878,16 +878,6 @@
             ]
           }
         },
-        "EksBulkImportClusterKubectlProviderAwsCliLayerD3B79AB8": {
-          "Type": "AWS::Lambda::LayerVersion",
-          "Properties": {
-            "Description": "/opt/awscli/aws",
-            "Content": {
-              "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "a72522445441e9b66c2f16956c54d4786af8c61c156b80c48a6e7c32fcc49023.zip"
-            }
-          }
-        },
         "EksBulkImportClusterRole0181E659": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -2207,9 +2197,7 @@
               "S3Key": "d1f0dc4bbd7f19a0c9d47ff23ed15d3972cdb7bd292c1c20c0f442d0021d9eb8.zip"
             },
             "Layers": [
-              {
-                "Ref": "EksBulkImportClusterKubectlProviderAwsCliLayerD3B79AB8"
-              },
+              "arn:aws:lambda:test-region:123456789012:layer:AWSCLI:1",
               {
                 "Ref": "KubectlLayer600207B5"
               }
