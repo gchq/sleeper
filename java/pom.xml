@@ -133,6 +133,14 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.26.0</log4j.version>
+        <!--
+        Spark and Hadoop disagree on the version of Curator to use.
+        -->
+        <curator.version>5.2.0</curator.version>
+        <!--
+        Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
+        -->
+        <dropwizard-metrics-4.version>4.2.19</dropwizard-metrics-4.version>
         <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
@@ -1163,6 +1171,46 @@
                 <version>${log4j.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-client</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${dropwizard-metrics-4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-jvm</artifactId>
+                <version>${dropwizard-metrics-4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-json</artifactId>
+                <version>${dropwizard-metrics-4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-graphite</artifactId>
+                <version>${dropwizard-metrics-4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-jmx</artifactId>
+                <version>${dropwizard-metrics-4.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.tomnelson</groupId>
                 <artifactId>jungrapht-visualization</artifactId>
                 <version>${jungrapht-visualization.version}</version>
@@ -1542,6 +1590,11 @@
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
             <!-- Cryptography -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -1809,7 +1862,6 @@
                 <executions>
                     <execution>
                         <id>enforcer-checks</id>
-                        <phase>install</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
