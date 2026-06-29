@@ -107,6 +107,10 @@ Curator (org.apache.curator:*:5.*)
 
 - Apache License, Version 2.0
 
+Dropwizard Metrics (io.dropwizard.metrics:*:4.*)
+
+- Apache License, Version 2.0
+
 Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
