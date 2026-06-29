@@ -50,20 +50,15 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.stack.tag.name=DeploymentStack
 
-# Overall policy of whether to keep the details of/an instance when it is destroyed. Covers both the
-# infrastructure of Sleeper and the logs.
-# (default value shown below, uncomment to set a value)
-# sleeper.retain.after.destroy=true
-
 # Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., when the
 # instance is destroyed. Overrides default value set within "sleeper.retain.after.destroy"
-# (default value shown below, uncomment to set a value)
-# sleeper.retain.after.destroy.infra=true
+# (uncomment to set a value)
+# sleeper.retain.after.destroy.infra=
 
 # Whether to keep the Sleeper log groups when the instance is destroyed. Overrides default value set
 # within "sleeper.retain.after.destroy"
-# (default value shown below, uncomment to set a value)
-# sleeper.retain.after.destroy.logs=true
+# (uncomment to set a value)
+# sleeper.retain.after.destroy.logs=
 
 # This property is used when applying an instance configuration and a table has been removed.
 # If this is true (default), removing the table from the configuration will just take the table
@@ -234,19 +229,15 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.statestore.provider.min.heap.target.amount=100M
 
-# .
-# (default value shown below, uncomment to set a value)
-# sleeper.default.statestore.pointintimerecovery=false
-
 # This specifies whether point in time recovery is enabled for the DynamoDB state store. This is set
 # on the DynamoDB tables.Overrides values set in "sleeper.default.statestore.pointintimerecovery"
-# (default value shown below, uncomment to set a value)
-# sleeper.statestore.dynamo.pointintimerecovery=false
+# (uncomment to set a value)
+# sleeper.statestore.dynamo.pointintimerecovery=
 
 # This specifies whether point in time recovery is enabled for the S3 state store. This is set on the
 # revision DynamoDB table. Overrides values set in "sleeper.default.statestore.pointintimerecovery"
-# (default value shown below, uncomment to set a value)
-# sleeper.statestore.s3.dynamo.pointintimerecovery=false
+# (uncomment to set a value)
+# sleeper.statestore.s3.dynamo.pointintimerecovery=
 
 # The number of tables to create transaction log snapshots for in a single invocation. This will be
 # the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
@@ -349,8 +340,8 @@
 
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables. Overrides values set in "sleeper.default.statestore.pointintimerecovery"
-# (default value shown below, uncomment to set a value)
-# sleeper.tables.index.dynamo.pointintimerecovery=false
+# (uncomment to set a value)
+# sleeper.tables.index.dynamo.pointintimerecovery=
 
 # This specifies whether queries and scans against the table index DynamoDB tables are strongly
 # consistent.
