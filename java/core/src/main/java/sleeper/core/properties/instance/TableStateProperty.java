@@ -101,13 +101,13 @@ public interface TableStateProperty {
             .build();
     UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.statestore.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the DynamoDB state store. " +
-                    "This is set on the DynamoDB tables.Overrides values set in \"sleeper.default.statestore.pointintimerecovery\"")
+                    "This is set on the DynamoDB tables.")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.statestore.s3.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the S3 state store. " +
-                    "This is set on the revision DynamoDB table. Overrides values set in \"sleeper.default.statestore.pointintimerecovery\"")
+                    "This is set on the revision DynamoDB table.")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
@@ -236,7 +236,7 @@ public interface TableStateProperty {
             .build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
-                    "This is set on the DynamoDB tables. Overrides values set in \"sleeper.default.statestore.pointintimerecovery\"")
+                    "This is set on the DynamoDB tables.")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
