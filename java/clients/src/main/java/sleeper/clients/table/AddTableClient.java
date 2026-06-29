@@ -112,10 +112,10 @@ public class AddTableClient {
         return new Arguments(
                 arguments.getString("instance-id"),
                 arguments.getOptionalString("table-name").orElse(null),
-                arguments.getOptionalPath("schema").get(),
+                arguments.getOptionalPath("schema").orElse(null),
                 rawTableProperties,
-                tablePropertiesFile.get(),
-                configDir.get());
+                tablePropertiesFile.orElse(null),
+                configDir.orElse(null));
     }
 
     public static void main(String[] rawArgs) throws IOException {
