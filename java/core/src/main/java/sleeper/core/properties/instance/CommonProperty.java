@@ -94,12 +94,14 @@ public interface CommonProperty {
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.infra")
             .description("Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed. Overrides default value set within \"sleeper.retain.after.destroy\"")
+            .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.after.destroy.logs")
             .description("Whether to keep the Sleeper log groups when the instance is destroyed. Overrides " +
                     "default value set within \"sleeper.retain.after.destroy\"")
+            .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
