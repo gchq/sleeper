@@ -133,6 +133,10 @@
         SLF4J, but we can't exclude them from EMR.
         -->
         <log4j.version>2.26.0</log4j.version>
+        <!--
+        Spark and Hadoop disagree on the version of Curator to use.
+        -->
+        <curator.version>5.2.0</curator.version>
         <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
@@ -1161,6 +1165,21 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-1.2-api</artifactId>
                 <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-client</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${curator.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.tomnelson</groupId>

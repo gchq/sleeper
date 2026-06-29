@@ -103,6 +103,10 @@ Log4J (org.apache.logging.log4j:log4j-*:2.*)
 
 - Apache License, Version 2.0
 
+Curator (org.apache.curator:*:5.*)
+
+- Apache License, Version 2.0
+
 Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
