@@ -291,7 +291,7 @@ JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:5.*)
 
 - Apache License, Version 2.0
 
-SLF4J (org.slf4j:slf4j-*:2.*)
+SLF4J (org.slf4j:*:2.*)
 
 - MIT License
 
