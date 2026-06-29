@@ -1809,7 +1809,6 @@
                 <executions>
                     <execution>
                         <id>enforcer-checks</id>
-                        <phase>install</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
