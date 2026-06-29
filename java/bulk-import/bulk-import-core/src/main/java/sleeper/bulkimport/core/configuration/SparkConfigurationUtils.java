@@ -213,6 +213,10 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         sparkConf.put("spark.kubernetes.executor.podTemplateFile", "/tmp/executor-template.yaml");
 
+        // Ensure pods aren't disrupted/evicted before they finish
+        sparkConf.put("spark.kubernetes.driver.annotation.karpenter.sh/do-not-disrupt", "true");
+        sparkConf.put("spark.kubernetes.executor.annotation.karpenter.sh/do-not-disrupt", "true");
+
         return sparkConf;
     }
 

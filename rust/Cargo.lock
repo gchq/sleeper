@@ -19,7 +19,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aggregator_udfs"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "datafusion",
  "mockall",
@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "apps"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "assert_cmd",
  "chrono",
@@ -2232,9 +2232,9 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "env_filter"
-version = "1.0.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32e90c2accc4b07a8456ea0debdc2e7587bdd890680d71173a15d4ae604f6eef"
+checksum = "900d271a03799a1ee8d1ca9b19893b48ca674a9284fefcfb85f05e74ed314217"
 dependencies = [
  "log",
  "regex",
@@ -2242,9 +2242,9 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.11.10"
+version = "0.11.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0621c04f2196ac3f488dd583365b9c09be011a4ab8b9f37248ffcc8f6198b56a"
+checksum = "de671bd27a75a797dc9ae289ba1e77276e75e2026408aab65185384e2d5cd3f6"
 dependencies = [
  "anstream",
  "anstyle",
@@ -2287,7 +2287,7 @@ checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
 
 [[package]]
 name = "filter_udfs"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "datafusion",
 ]
@@ -3183,9 +3183,9 @@ dependencies = [
 
 [[package]]
 name = "mockall"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f58d964098a5f9c6b63d0798e5372fd04708193510a7af313c22e9f29b7b620b"
+checksum = "1a6ceddfe3ce334925e96bf420fdb2dcee5bed6c632a168ece622676dadeaf8a"
 dependencies = [
  "cfg-if",
  "downcast",
@@ -3197,9 +3197,9 @@ dependencies = [
 
 [[package]]
 name = "mockall_derive"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca41ce716dda6a9be188b385aa78ee5260fc25cd3802cb2a8afdc6afbe6b6dbf"
+checksum = "9cfe16fbe8a314aeec0b861ac24e60b1e123e97634bab045475b9d6a18416fd8"
 dependencies = [
  "cfg-if",
  "proc-macro2",
@@ -3359,7 +3359,7 @@ dependencies = [
 
 [[package]]
 name = "objectstore_ext"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "async-trait",
  "aws-config",
@@ -3649,6 +3649,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "query_sql"
+version = "0.36.2-SNAPSHOT"
+dependencies = [
+ "datafusion",
+ "tokio",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.39.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3902,7 +3910,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",
@@ -4223,7 +4231,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "sleeper_core"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
  "arrow",
@@ -4242,6 +4250,7 @@ dependencies = [
  "num-format",
  "object_store",
  "objectstore_ext",
+ "query_sql",
  "regex",
  "rust_sketch",
  "tempfile",
@@ -4257,7 +4266,7 @@ dependencies = [
 
 [[package]]
 name = "sleeper_df"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "aws-types",
  "cbindgen",
@@ -4454,7 +4463,7 @@ dependencies = [
 
 [[package]]
 name = "test_util"
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 dependencies = [
  "bytes",
  "color-eyre",
@@ -4904,9 +4913,9 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.23.3"
+version = "1.23.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "144d6b123cef80b301b8f72a9e2ca4370ddec21950d0a103dd22c437006d2db7"
+checksum = "bf80a72845275afea99e7f2b434723d3bc7e38470fcd1c7ed39a599c73319a53"
 dependencies = [
  "getrandom 0.4.3",
  "js-sys",

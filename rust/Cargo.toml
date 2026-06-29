@@ -17,6 +17,7 @@ members = [
     "filter_udfs",
     "apps",
     "objectstore_ext",
+    "query_sql",
     "rust_sketch",
     "sleeper_core",
     "sleeper_df",
@@ -24,7 +25,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.36.1-SNAPSHOT"
+version = "0.36.2-SNAPSHOT"
 edition = "2024"
 rust-version = "1.93"
 publish = false
@@ -53,7 +54,7 @@ futures = { version = "0.3.32" }                    # Async processing
 human-panic = { version = "2.0.8" }                 # Readable panic messages
 libc = { version = "0.2.186" }                      # FFI type support
 log = { version = "0.4.32" }                        # Standard logging framework
-mockall = { version = "0.14.0" }                    # Mock trait library
+mockall = { version = "0.15.0" }                    # Mock trait library
 nohash = { version = "0.2.0" }                      # No-op hashing for integral types
 num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types
