@@ -29,7 +29,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -43,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Properties;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -93,32 +93,29 @@ public class AddTableClient {
                     "from the directory, but not both at the same time.")
             .build();
 
-    static Arguments parseArguments(String... rawArgs) {
-        return readArguments(CommandArgumentReader.parse(USAGE, rawArgs), Files::readString);
-    }
-
     public static Arguments readArguments(CommandArguments arguments, FileReader files) {
-        Path tablePropertiesFile = arguments.getOptionalPath("table-properties");
-        Path configDir = arguments.getOptionalPath("config-dir");
+        Optional<Path> tablePropertiesFile = arguments.getOptionalPath("table-properties");
+        Optional<Path> configDir = arguments.getOptionalPath("config-dir");
 
         Properties rawTableProperties;
         try {
-            rawTableProperties = tablePropertiesFile != null
-                    ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile))
-                    : configDir != null
-                            ? PropertiesUtils.loadProperties(files.readString(configDir.resolve("table.properties")))
+            rawTableProperties = tablePropertiesFile.isPresent()
+                    ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile.get()))
+                    : configDir.isPresent()
+                            ? PropertiesUtils.loadProperties(files.readString(configDir.get().resolve("table.properties")))
                             : null;
         } catch (NoSuchElementException e) {
-            throw new CommandArgumentsException("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
+            throw new CommandArgumentsException("Table name was not found. Provide --table-name, or set it in a " +
+                    "table.properties file in --table-properties or --config-dir.");
         }
 
         return new Arguments(
                 arguments.getString("instance-id"),
                 arguments.getOptionalString("table-name").orElse(null),
-                arguments.getOptionalPath("schema"),
+                arguments.getOptionalPath("schema").get(),
                 rawTableProperties,
-                tablePropertiesFile,
-                configDir);
+                tablePropertiesFile.get(),
+                configDir.get());
     }
 
     public static void main(String[] rawArgs) throws IOException {
@@ -143,7 +140,14 @@ public class AddTableClient {
 
     public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
-        tableProperties.setSchema(new SchemaSerDe().fromJson(files.readString(args.resolveSchemaFile())));
+
+        try {
+            tableProperties.setSchema(new SchemaSerDe().fromJson(files.readString(args.resolveSchemaFile())));
+        } catch (NoSuchElementException e) {
+            throw new CommandArgumentsException("No schema file was found inside the supplied config directory. " +
+                    "Provide a path to one using --schema or add one to the config directory specified by --config-dir.");
+        }
+
         return tableProperties;
     }
 

@@ -15,13 +15,10 @@
  */
 package sleeper.core.util.cli;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.function.Function;
 
 /**
@@ -170,25 +167,9 @@ public class CommandArguments {
      * @param  name the name of the argument
      * @return      the path, if the argument was set
      */
-    public Path getOptionalPath(String name) {
-        return getOptionalString(name).map(Path::of).orElse(null);
-    }
-
-    /**
-     * Loads a properties file from the given path. Throws a {@link CommandArgumentsException} if the file cannot be
-     * read, so that the error is handled the same way as other argument validation failures.
-     *
-     * @param  path the path to the properties file
-     * @return      the loaded properties
-     */
-    public static Properties loadPropertiesFile(Path path) {
-        try (var reader = Files.newBufferedReader(path)) {
-            Properties properties = new Properties();
-            properties.load(reader);
-            return properties;
-        } catch (IOException e) {
-            throw new CommandArgumentsException("Failed to read file: " + path, e);
-        }
+    public Optional<Path> getOptionalPath(String name) {
+        Optional<String> pathString = getOptionalString(name);
+        return pathString.isPresent() ? Optional.of(Path.of(pathString.get())) : Optional.empty();
     }
 
     private static void exitWithFailure(CommandLineUsage usage, RuntimeException e) {
