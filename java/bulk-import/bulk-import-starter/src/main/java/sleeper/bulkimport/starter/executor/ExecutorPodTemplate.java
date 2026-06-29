@@ -26,10 +26,11 @@ public class ExecutorPodTemplate {
     private ExecutorPodTemplate() {
     }
 
-    public static String forEphemeralStorageRequestAndLimit(String request, String limit) {
+    public static String forJobAndEphemeralStorageRequestAndLimit(String jobId, String request, String limit) {
         return loadTemplate()
                 .replace("ephemeral-storage-request-placeholder", request)
-                .replace("ephemeral-storage-limit-placeholder", limit);
+                .replace("ephemeral-storage-limit-placeholder", limit)
+                .replace("spark-app-selector-placeholder", jobId);
     }
 
     private static String loadTemplate() {
