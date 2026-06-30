@@ -42,7 +42,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         S3ClientBuilder builder = S3Client.builder()
                 .credentialsProvider(params.getCredentialSet())
                 .forcePathStyle(params.isPathStyleAccess());
-        String region = params.getRegion();
+        String region = "eu-west-2";//params.getRegion();
         if (region != null && !region.isEmpty()) {
             builder.region(Region.of(region));
         }
