@@ -23,7 +23,7 @@ use crate::{
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
 };
-use ::log::{error, warn};
+use ::log::error;
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
