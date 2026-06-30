@@ -187,7 +187,7 @@ public class AddTableClient {
             String filename;
             try {
                 filename = path.getFileName().toString();
-            } catch (NullPointerException e) {
+            } catch (NullPointerException ex) {
                 filename = "";
             }
 
