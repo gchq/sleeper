@@ -136,11 +136,11 @@
         <!--
         Spark and Hadoop disagree on the version of Curator to use.
         -->
-        <curator.version>5.2.0</curator.version>
+        <curator.version>5.9.0</curator.version>
         <!--
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
-        <dropwizard-metrics-4.version>4.2.19</dropwizard-metrics-4.version>
+        <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
         <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
@@ -173,7 +173,7 @@
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
-        <httpclient5.version>5.6.1</httpclient5.version>
+        <httpclient5.version>5.6.2</httpclient5.version>
         <httpcore5.version>5.4.3</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>4.2.1</jline.version>
@@ -196,7 +196,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
-        <google.http-client.version>2.1.0</google.http-client.version>
+        <google.http-client.version>2.1.1</google.http-client.version>
         <google.grpc.version>1.82.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.260.0</cdk.version>
@@ -220,7 +220,7 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.15.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.79.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.80.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -314,6 +314,12 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${spotbugs.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.junit</groupId>
+                        <artifactId>junit-bom</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -1645,6 +1651,11 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite</artifactId>
+                <version>${junit.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
             </dependency>
             <dependency>
