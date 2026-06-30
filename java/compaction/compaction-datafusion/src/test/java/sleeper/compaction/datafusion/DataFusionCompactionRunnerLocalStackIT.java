@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.localstack.LocalStackContainer;
@@ -85,23 +86,9 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        var t = new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                System.gc();
-                System.runFinalization();
-            }
-        });
-        t.setDaemon(true);
-        t.start();
     }
 
-    // @Disabled("Expensive long running test only used for manual debugging")
+    @Disabled("Expensive long running test only used for manual debugging")
     @Test
     void shouldRunManyCompactionsInSerialWithoutCrashing() throws Exception {
         // Given
@@ -131,9 +118,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 CompactionTaskTestHelper iterationHelper = new CompactionTaskTestHelper(
                         instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                         FixedStateStoreProvider.singleTable(tableProperties, iterationStateStore), jobTracker);
-                iterationHelper.runTask(runner, p -> {
-                    System.out.println("FOOO " + p);
-                }, List.of(job));
+                iterationHelper.runTask(runner, null, List.of(job));
             }
         }
     }
