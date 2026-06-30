@@ -166,9 +166,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFIFileResult compactionData = new FFIFileResult(runtime);
 
         // Perform compaction
-        ObjectReferenceManager<Object> ofm = runtime.newObjectReferenceManager();
+        ObjectReferenceManager<Object> objectRefManager = runtime.newObjectReferenceManager();
         DataFusionCompactionFunctions.ProgressCallback callbackWrapper = rows -> progressCallback.accept(rows);
-        Pointer key = ofm.add(callbackWrapper);
+        Pointer key = objectRefManager.add(callbackWrapper);
 
         try {
             int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper);
@@ -178,7 +178,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 throw new IOException("DataFusion compaction failed with return code " + result);
             }
         } finally {
-            ofm.remove(key);
+            objectRefManager.remove(key);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
