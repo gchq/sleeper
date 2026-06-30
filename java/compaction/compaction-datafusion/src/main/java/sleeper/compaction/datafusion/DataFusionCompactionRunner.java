@@ -164,12 +164,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, Consumer<Long> progressCallback) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
+
         // Perform compaction
-        ObjectReferenceManager ofm = runtime.newObjectReferenceManager();
-        DataFusionCompactionFunctions.ProgressCallback javaCallback = rows -> progressCallback.accept(rows);
-        Pointer key = ofm.add(javaCallback);
+        ObjectReferenceManager<Object> ofm = runtime.newObjectReferenceManager();
+        DataFusionCompactionFunctions.ProgressCallback callbackWrapper = rows -> progressCallback.accept(rows);
+        Pointer key = ofm.add(callbackWrapper);
+
         try {
-            int result = context.getFunctions().compact(context, compactionParams, compactionData, javaCallback);
+            int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);
