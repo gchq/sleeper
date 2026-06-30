@@ -65,18 +65,31 @@ java -cp scripts/jars/clients-*-utility.jar sleeper.clients.query.QueryResultsSQ
 
 This will print the results to standard out as they appear on the queue.
 
-## Using websockets to submit queries to be executed via lambda
+## Using WebSocket to submit queries to be executed via lambda
 
-If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using websockets.
-These queries will then be executed using lambda and the results returned directly to the websocket client.
-This can be done using:
+If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using
+WebSocket. This uses the Java class `QueryWebSocketClient`, which you can also use directly. These queries will then be
+executed in a lambda and the results returned directly through the WebSocket. This can be done using:
 
 ```bash
 INSTANCE_ID=myInstanceId
 ./scripts/utility/webSocketQuery.sh ${INSTANCE_ID}
 ```
 
-The results will be returned directly to the client.
+This will print the results to standard out. If you use `QueryWebSocketClient` directly you can set extra processing
+configuration on the query. This includes a `resultsPublisherConfig` map, which lets you set the following additional
+options:
+
+| Name                                  | Description                                                                                                   |
+|---------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| webSocketPublishMaxAttempts           | The maximum number of times the lambda will attempt to publish to the web socket before giving up.            |
+| webSocketThrottlingRetryBaseDelaySecs | The minimum time in seconds the lambda will wait before retrying publishing to the web socket when throttled. |
+| webSocketThrottlingRetryMaxDelaySecs  | The maximum time in seconds the lambda will wait before retrying publishing to the web socket when throttled. |
+
+The usual case where publishing to a web socket is throttled is when results are produced faster than either the client,
+or API Gateway, can consume them. These options let you adjust the AWS SDK retry settings for throttling, including
+exponential backoff with half jitter. By default, they're set to wait for at least 10 seconds for the data to be
+consumed. In general a web socket may not be appropriate for longer running queries.
 
 ## Send messages via SQS
 
