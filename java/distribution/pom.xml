@@ -96,6 +96,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>bulk-import-eks</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>cdk</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
@@ -217,6 +223,12 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>system-test-drivers</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>rest-api</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
         </dependency>

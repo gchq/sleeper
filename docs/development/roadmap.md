@@ -6,8 +6,8 @@ This section documents some of the improvements that we plan to make to Sleeper.
 The following improvements are actively being worked on:
 
 - https://github.com/gchq/sleeper/issues/7313 Bulk import reliability.
-- https://github.com/gchq/sleeper/issues/6420 Improve usability of example/template format.
-- https://github.com/gchq/sleeper/issues/7374 SQL query filtering for queries and bulk export
+- https://github.com/gchq/sleeper/issues/6420 Remove configuration templates in favour of examples.
+- https://github.com/gchq/sleeper/issues/7374 SQL query filtering for queries and bulk export.
 
 The following are likely to be worked on in the near future:
 
