@@ -184,11 +184,11 @@ public class AddTableClient {
         try {
             return reader.readString(path);
         } catch (IOException e) {
-            String filename;
-            try {
-                filename = path.getFileName().toString();
-            } catch (NullPointerException ex) {
-                filename = "";
+            String filename = "";
+            if (path != null) {
+                if (path.getFileName() != null) {
+                    filename = path.getFileName().toString();
+                }
             }
 
             String argString = filename.contains("schema") ? "--schema" : "--table-properties";
