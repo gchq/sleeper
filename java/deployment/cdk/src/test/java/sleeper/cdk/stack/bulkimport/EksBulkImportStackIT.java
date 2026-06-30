@@ -21,6 +21,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.testutil.SleeperStackTestBase;
+import sleeper.core.properties.model.EksClusterType;
+
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
+import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 public class EksBulkImportStackIT extends SleeperStackTestBase {
 
@@ -38,4 +43,54 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
         Approvals.verify(printer.toJson(stack), new Options()
                 .forFile().withName("eks-bulk-import", ".json"));
     }
+
+    @Test
+    void shouldGenerateCloudFormationTemplateForAutomodeCluster() {
+        // Given
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE);
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+        BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
+
+        // When
+        EksBulkImportStack stack = new EksBulkImportStack(
+                rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
+
+        // Then
+        Approvals.verify(printer.toJson(stack), new Options()
+                .forFile().withName("eks-bulk-import-automode", ".json"));
+    }
+
+    @Test
+    void shouldGenerateCloudFormationTemplateWithAdminRoles() {
+        // Given
+        instanceProperties.set(EKS_CLUSTER_ADMIN_ROLES, "admin-role-one,admin-role-two");
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+        BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
+
+        // When
+        EksBulkImportStack stack = new EksBulkImportStack(
+                rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
+
+        // Then
+        Approvals.verify(printer.toJson(stack), new Options()
+                .forFile().withName("eks-bulk-import-admin-roles", ".json"));
+    }
+
+    @Test
+    void shouldGenerateCloudFormationTemplateWithAwsCliLayer() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_EKS_AWSCLI_LAYER_ARN,
+                "arn:aws:lambda:test-region:123456789012:layer:AWSCLI:1");
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+        BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
+
+        // When
+        EksBulkImportStack stack = new EksBulkImportStack(
+                rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
+
+        // Then
+        Approvals.verify(printer.toJson(stack), new Options()
+                .forFile().withName("eks-bulk-import-awscli-layer", ".json"));
+    }
+
 }

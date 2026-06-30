@@ -16,6 +16,8 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jnr.ffi.ObjectReferenceManager;
+import jnr.ffi.Pointer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -163,12 +165,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-
-        int result = context.getFunctions().compact(context, compactionParams, compactionData, rows -> progressCallback.accept(rows));
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        ObjectReferenceManager ofm = runtime.newObjectReferenceManager();
+        DataFusionCompactionFunctions.ProgressCallback javaCallback = rows -> progressCallback.accept(rows);
+        Pointer key = ofm.add(javaCallback);
+        try {
+            int result = context.getFunctions().compact(context, compactionParams, compactionData, javaCallback);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
+        } finally {
+            ofm.remove(key);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
