@@ -136,6 +136,20 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         assertThat(supportsFiltersAndAggregations).isTrue();
     }
 
+    @Test
+    void shouldSupportSqlFiltering() {
+        // Given
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        // When
+        boolean supportsFiltersAndAggregations = rowRetriever.supportsSqlFiltering();
+
+        // Then
+        assertThat(supportsFiltersAndAggregations).isTrue();
+    }
+
     @Nested
     @DisplayName("Multi-threading")
     class MultiThreadStressTest {
