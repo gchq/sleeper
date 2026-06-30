@@ -136,7 +136,7 @@
         <!--
         Spark and Hadoop disagree on the version of Curator to use.
         -->
-        <curator.version>5.2.0</curator.version>
+        <curator.version>5.9.0</curator.version>
         <!--
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
