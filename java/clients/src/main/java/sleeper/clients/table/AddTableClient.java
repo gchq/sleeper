@@ -185,7 +185,7 @@ public class AddTableClient {
             return reader.readString(path);
         } catch (IOException e) {
             String filename = null;
-            if (path != null && path.getFileName() != null) {
+            if (path != null) {
                 Path filenamePath = path.getFileName();
                 if (filenamePath != null) {
                     filename = filenamePath.toString();
