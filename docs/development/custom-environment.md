@@ -70,7 +70,7 @@ registry = "https://crates.internal.example.com/index"
 Setting the `EXTRA_CARGO_CONFIG` environment variable as follows will append the configuration to the end of the Cargo configuration.
 
 ```bash
-export EXTRA_CARGO_CONFIG='[source.crates-io]\nreplace-with = "internal-mirror"\n\n[source.internal-mirror]\nregistry = "https://crates.internal.example.com/index"'
+export EXTRA_CARGO_CONFIG='[source.internal-mirror]\nregistry = "https://crates.internal.example.com/index"\n\n[source.crates-io]\nreplace-with = "internal-mirror"'
 ./rust/build-in-docker.sh x86_64
 ```
 
