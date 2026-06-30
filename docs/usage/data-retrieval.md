@@ -65,9 +65,9 @@ java -cp scripts/jars/clients-*-utility.jar sleeper.clients.query.QueryResultsSQ
 
 This will print the results to standard out as they appear on the queue.
 
-## Using WebSocket to submit queries to be executed via lambda
+## Using a WebSocket to submit queries to be executed via lambda
 
-If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using
+If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using a
 WebSocket. This uses the Java class `QueryWebSocketClient`, which you can also use directly. These queries will then be
 executed in a lambda and the results returned directly through the WebSocket. This can be done using:
 
