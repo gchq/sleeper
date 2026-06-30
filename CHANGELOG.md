@@ -9,7 +9,7 @@ available [here](docs/development/roadmap.md).
 
 ### 1st July, 2026
 
-This includes bulk import on EKS Auto Mode,
+This includes bulk import on EKS Auto Mode, and some improvements to usability and web socket queries.
 
 Bulk import:
 - Added an option to run bulk import on EKS Auto Mode, in `sleeper.bulk.import.eks.cluster.type`.
