@@ -92,7 +92,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.infra.after.destroy")
-            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
+            .description("Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
@@ -100,7 +100,7 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.logs.after.destroy")
-            .description("Whether to keep the sleeper log groups when the instance is destroyed.")
+            .description("Whether to keep the Sleeper log groups when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
