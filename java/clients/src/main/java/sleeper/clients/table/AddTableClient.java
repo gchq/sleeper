@@ -37,11 +37,9 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -98,16 +96,11 @@ public class AddTableClient {
         Optional<Path> configDir = arguments.getOptionalPath("config-dir");
 
         Properties rawTableProperties;
-        try {
-            rawTableProperties = tablePropertiesFile.isPresent()
-                    ? PropertiesUtils.loadProperties(files.readString(tablePropertiesFile.get()))
-                    : configDir.isPresent()
-                            ? PropertiesUtils.loadProperties(files.readString(configDir.get().resolve("table.properties")))
-                            : null;
-        } catch (NoSuchElementException e) {
-            throw new CommandArgumentsException("Table name was not found. Provide --table-name, or set it in a " +
-                    "table.properties file in --table-properties or --config-dir.");
-        }
+        rawTableProperties = tablePropertiesFile.isPresent()
+                ? PropertiesUtils.loadProperties(readFile(files, tablePropertiesFile.get()))
+                : configDir.isPresent()
+                        ? PropertiesUtils.loadProperties(readFile(files, configDir.get().resolve("table.properties")))
+                        : null;
 
         return new Arguments(
                 arguments.getString("instance-id"),
@@ -140,14 +133,7 @@ public class AddTableClient {
 
     public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
-
-        try {
-            tableProperties.setSchema(new SchemaSerDe().fromJson(files.readString(args.resolveSchemaFile())));
-        } catch (NoSuchElementException e) {
-            throw new CommandArgumentsException("No schema file was found inside the supplied config directory. " +
-                    "Provide a path to one using --schema or add one to the config directory specified by --config-dir.");
-        }
-
+        tableProperties.setSchema(new SchemaSerDe().fromJson(readFile(files, args.resolveSchemaFile())));
         return tableProperties;
     }
 
@@ -194,6 +180,17 @@ public class AddTableClient {
         }
     }
 
+    private static String readFile(FileReader reader, Path path) {
+        try {
+            return reader.readString(path);
+        } catch (IOException e) {
+            String filename = path.getFileName().toString();
+            String argString = filename.contains("schema") ? "--schema" : "--table-properties";
+            throw new CommandArgumentsException(String.format("No %s file was found at the supplied location. " +
+                    "Provide a path to one using %s or add one to the config directory specified by --config-dir.", filename, argString));
+        }
+    }
+
     public interface InstancePropertiesLoader {
         InstanceProperties load(String instanceId);
     }
@@ -201,12 +198,8 @@ public class AddTableClient {
     public interface FileReader {
         String readStringChecked(Path path) throws IOException;
 
-        default String readString(Path path) {
-            try {
-                return readStringChecked(path);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+        default String readString(Path path) throws IOException {
+            return readStringChecked(path);
         }
     }
 }

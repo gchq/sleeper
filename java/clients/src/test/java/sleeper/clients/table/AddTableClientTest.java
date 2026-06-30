@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -182,8 +183,8 @@ public class AddTableClientTest {
             //When/Then
             assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Table name was not found. Provide --table-name, or set it in a " +
-                            "table.properties file in --table-properties or --config-dir.");
+                    .hasMessage("No table.properties file was found at the supplied location. " +
+                            "Provide a path to one using --table-properties or add one to the config directory specified by --config-dir.");
         }
 
         @Test
@@ -194,7 +195,7 @@ public class AddTableClientTest {
             //When/Then
             assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("No schema file was found inside the supplied config directory. " +
+                    .hasMessage("No schema.json file was found at the supplied location. " +
                             "Provide a path to one using --schema or add one to the config directory specified by --config-dir.");
         }
 
@@ -235,7 +236,11 @@ public class AddTableClientTest {
                 .orElseThrow();
     }
 
-    private String readFile(Path path) {
-        return Optional.ofNullable(pathToString.get(path)).orElseThrow();
+    private String readFile(Path path) throws IOException {
+        try {
+            return Optional.ofNullable(pathToString.get(path)).orElseThrow();
+        } catch (NoSuchElementException e) {
+            throw new IOException();
+        }
     }
 }
