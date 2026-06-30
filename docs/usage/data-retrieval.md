@@ -68,7 +68,7 @@ This will print the results to standard out as they appear on the queue.
 ## Using a WebSocket to submit queries to be executed via lambda
 
 If you have the `WebSocketQueryStack` optional stack deployed, you can also submit queries to be executed using a
-WebSocket. This uses the Java class `QueryWebSocketClient`, which you can also use directly. These queries will then be
+WebSocket. This uses the Java class `QueryWebSocketClient`. These queries will then be
 executed in a lambda and the results returned directly through the WebSocket. This can be done using:
 
 ```bash
@@ -76,9 +76,15 @@ INSTANCE_ID=myInstanceId
 ./scripts/utility/webSocketQuery.sh ${INSTANCE_ID}
 ```
 
-This will print the results to standard out. If you use `QueryWebSocketClient` directly you can set extra processing
-configuration on the query. This includes a `resultsPublisherConfig` map, which lets you set the following additional
-options:
+This will print the results to standard out.
+
+You can also use `QueryWebSocketClient` directly, although there's an issue which will change the method signature
+on this class:
+
+[Receive queried rows through CloseableIterator as they come from web socket](https://github.com/gchq/sleeper/issues/6463)
+
+If you use `QueryWebSocketClient` directly you can set extra processing configuration on the query. This includes
+a `resultsPublisherConfig` map, which lets you set the following additional options:
 
 | Name                                  | Description                                                                                                   |
 |---------------------------------------|---------------------------------------------------------------------------------------------------------------|
