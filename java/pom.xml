@@ -140,7 +140,7 @@
         <!--
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
-        <dropwizard-metrics-4.version>4.2.19</dropwizard-metrics-4.version>
+        <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
         <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
