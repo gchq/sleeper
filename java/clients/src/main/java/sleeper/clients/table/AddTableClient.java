@@ -185,9 +185,10 @@ public class AddTableClient {
             return reader.readString(path);
         } catch (IOException e) {
             String filename = "";
-            if (path != null && path.getFileName() != null) {
+            if (path != null && path.getFileName() != null && path.getFileName().toString() != null) {
                 filename = path.getFileName().toString();
             }
+
             String argString = filename.contains("schema") ? "--schema" : "--table-properties";
             throw new CommandArgumentsException(String.format("No %s file was found at the supplied location. " +
                     "Provide a path to one using %s or add one to the config directory specified by --config-dir.", filename, argString));
