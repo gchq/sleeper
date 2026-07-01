@@ -15,7 +15,6 @@
  */
 package sleeper.core.util.cli;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -159,17 +158,6 @@ public class CommandArguments {
         } catch (NumberFormatException e) {
             throw new CommandArgumentsException("Expected integer for argument \"" + name + "\", found \"" + string + "\"", e);
         }
-    }
-
-    /**
-     * Retrieves the value of an optional path argument.
-     *
-     * @param  name the name of the argument
-     * @return      the path, if the argument was set
-     */
-    public Optional<Path> getOptionalPath(String name) {
-        Optional<String> pathString = getOptionalString(name);
-        return pathString.isPresent() ? Optional.of(Path.of(pathString.get())) : Optional.empty();
     }
 
     private static void exitWithFailure(CommandLineUsage usage, RuntimeException e) {
