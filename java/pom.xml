@@ -240,7 +240,7 @@
         <fabric8.version>6.7.2</fabric8.version>
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
-        <junit.platform.version>1.14.4</junit.platform.version>
+        <junit.platform.version>6.1.1</junit.platform.version>
         <mockito.version>5.23.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
