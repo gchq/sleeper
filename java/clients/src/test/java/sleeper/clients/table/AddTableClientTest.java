@@ -34,6 +34,7 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -182,9 +183,7 @@ public class AddTableClientTest {
 
             //When/Then
             assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("No table.properties file was found at the supplied location. " +
-                            "Provide a path to one using --table-properties or add one to the config directory specified by --config-dir.");
+                    .isInstanceOf(UncheckedIOException.class);
         }
 
         @Test
@@ -194,9 +193,7 @@ public class AddTableClientTest {
 
             //When/Then
             assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("No schema.json file was found at the supplied location. " +
-                            "Provide a path to one using --schema or add one to the config directory specified by --config-dir.");
+                    .isInstanceOf(UncheckedIOException.class);
         }
 
         @Test

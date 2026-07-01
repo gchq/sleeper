@@ -16,7 +16,6 @@
 
 package sleeper.clients.table;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,6 +37,7 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -181,15 +181,11 @@ public class AddTableClient {
         }
     }
 
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "FindBugs not accepting null checks as solution")
     private static String readFile(FileReader reader, Path path) {
         try {
             return reader.readStringChecked(path);
         } catch (IOException e) {
-            String filename = path.getFileName().toString();
-            String argString = filename.contains("schema") ? "--schema" : "--table-properties";
-            throw new CommandArgumentsException(String.format("No %s file was found at the supplied location. " +
-                    "Provide a path to one using %s or add one to the config directory specified by --config-dir.", filename, argString));
+            throw new UncheckedIOException(e);
         }
     }
 
