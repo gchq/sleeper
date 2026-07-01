@@ -67,11 +67,14 @@ public class AddTableRoute implements Route {
             LOGGER.warn("Add table request body was not valid JSON", e);
             return Route.errorResponse(400, "invalid_request", "Request body is not valid JSON");
         }
+
         if (request == null) {
             return Route.errorResponse(400, "invalid_request", "Request body is empty");
         }
+
         TableProperties tableProperties;
         List<Object> splitPoints;
+
         try {
             tableProperties = request.toTableProperties(instanceProperties);
             splitPoints = request.toSplitPoints(tableProperties);
@@ -80,6 +83,7 @@ public class AddTableRoute implements Route {
             LOGGER.warn("Add table request was invalid", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
+
         try {
             addTable.addTable(tableProperties, splitPoints);
         } catch (TableAlreadyExistsException e) {
@@ -90,10 +94,12 @@ public class AddTableRoute implements Route {
             LOGGER.warn("Add table request rejected: properties failed validation", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
+
         AddTableResponse response = AddTableResponse.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .build();
+
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(201)
                 .withHeaders(Map.of("Content-Type", CONTENT_TYPE_JSON))

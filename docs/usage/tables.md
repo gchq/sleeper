@@ -24,8 +24,10 @@ See more information on this in the [data processing document](data-processing.m
 
 ## Add/edit a table
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
-will consist of the following steps:
+Scripts can be used to add, rename and delete tables in a Sleeper instance. Work has begun on a REST API to interact
+with a Sleeper instance, currently only add table is supported. See '### Add table' below for more details.
+
+If using the scripts, creating a new table will consist of the following steps:
 
 1. Use the `addTable.sh` script to create the table.
 2. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
@@ -63,10 +65,16 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 `sendToIngestBatcher.sh`.
 
 ### Add table
+#### Using REST API
+To see guidance on deploying the optional REST API stack see [TODO](TODO).
 
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
+TODO Detail endpoint then link to API Gateway documentation
+
+#### Using scripts
+The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
+file with `--schema` or as part of a configuration directory with `--config-dir`. The table name can be supplied with
+`--table-name`, or read from the table properties file passed to `--table-properties` or `--config-dir`. If
+`--table-name` is provided alongside `--table-properties` or `--config-dir`, it overrides any name set in the file.
 
 ```bash
 cd scripts
