@@ -23,7 +23,7 @@ use crate::{
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
 };
-use ::log::{error, warn};
+use ::log::error;
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
@@ -80,9 +80,6 @@ pub extern "C" fn native_compact(
     callback: ProgressCallback,
 ) -> c_int {
     maybe_cfg_log();
-    if let Err(e) = color_eyre::install() {
-        warn!("Couldn't install color_eyre error handler {e}");
-    }
 
     // Null check the context pointer
     let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
@@ -185,9 +182,6 @@ pub extern "C" fn native_query_stream(
     query_results_ptr: *mut FFIQueryResults,
 ) -> c_int {
     maybe_cfg_log();
-    if let Err(e) = color_eyre::install() {
-        warn!("Couldn't install color_eyre error handler {e}");
-    }
 
     // Null check the context pointer
     let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
@@ -288,9 +282,6 @@ pub extern "C" fn native_query_file(
     output_ptr: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
-    if let Err(e) = color_eyre::install() {
-        warn!("Couldn't install color_eyre error handler {e}");
-    }
 
     // Null check the context pointer
     let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {

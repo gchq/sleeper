@@ -68,7 +68,6 @@ import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LE
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
-    private static final Object LOCK = new Object();
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
@@ -116,16 +115,15 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // result retrieval happening in parallel, once the query planning step has finished.
         int nativeCallResult;
         FFIQueryResults queryResults;
-        synchronized (LOCK) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
-            // Create NULL pointer which will be set by the FFI call upon return
-            queryResults = new FFIQueryResults(runtime);
+        // Create NULL pointer which will be set by the FFI call upon return
+        queryResults = new FFIQueryResults(runtime);
 
-            // Perform native query
-            nativeCallResult = functions.query_stream(context, params, queryResults);
-        }
+        // Perform native query
+        nativeCallResult = functions.query_stream(context, params, queryResults);
+
         // Check result
         if (nativeCallResult != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
@@ -162,16 +160,15 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // result retrieval happening in parallel, once the query planning step has finished.
         int nativeCallResult;
         FFIFileResult fileResults;
-        synchronized (LOCK) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
 
-            // Create NULL pointer which will be set by the FFI call upon return
-            fileResults = new FFIFileResult(runtime);
+        // Create NULL pointer which will be set by the FFI call upon return
+        fileResults = new FFIFileResult(runtime);
 
-            // Perform native query
-            nativeCallResult = functions.query_file(context, params, fileResults);
-        }
+        // Perform native query
+        nativeCallResult = functions.query_file(context, params, fileResults);
+
         // Check result
         if (nativeCallResult != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
