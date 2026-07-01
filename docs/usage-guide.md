@@ -74,8 +74,13 @@ skipped by the compaction strategy:
 
 The clients module can be used as a dependency for an application to interact with Sleeper. This is not currently
 published but is built with Maven. We have a class `SleeperClient` that can be used as an entrypoint for direct access
-to an instance of Sleeper. This requires permissions to interact with the underlying AWS resources. We have an open
-issue to introduce a REST API that may simplify this in the future (https://github.com/gchq/sleeper/issues/1786).
+to an instance of Sleeper. This requires permissions to interact with the underlying AWS resources.
+
+## REST API
+
+Sleeper has an optional REST API for interacting with a deployed instance over HTTPS. Only "add table" is available
+today; see the [REST API documentation](rest-api/README.md) for deployment, authentication, and endpoint details. The
+open issue tracking further endpoints is https://github.com/gchq/sleeper/issues/1786.
 
 ## Python API
 

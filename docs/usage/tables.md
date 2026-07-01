@@ -24,8 +24,8 @@ See more information on this in the [data processing document](data-processing.m
 
 ## Add/edit a table
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance. Work has begun on a REST API to interact
-with a Sleeper instance, currently only add table is supported. See '### Add table' below for more details.
+Scripts can be used to add, rename and delete tables in a Sleeper instance. Adding a table is also supported over the
+optional [REST API](../rest-api/README.md); more endpoints will follow.
 
 If using the scripts, creating a new table will consist of the following steps:
 
@@ -65,10 +65,12 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 `sendToIngestBatcher.sh`.
 
 ### Add table
-#### Using REST API
-To see guidance on deploying the optional REST API stack see [TODO](TODO).
+#### Using the REST API
 
-TODO Detail endpoint then link to API Gateway documentation
+The `POST /sleeper/tables` endpoint creates a table with a given schema and properties. See the
+[REST API overview](../rest-api/README.md) for how to enable the optional stack and authenticate,
+and the [add table endpoint documentation](../rest-api/add-table.md) for the request contract and a
+worked example.
 
 #### Using scripts
 The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
