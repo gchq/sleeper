@@ -240,7 +240,7 @@ public class AddTableClientTest {
         try {
             return Optional.ofNullable(pathToString.get(path)).orElseThrow();
         } catch (NoSuchElementException e) {
-            throw new IOException();
+            throw new IOException(e);
         }
     }
 }

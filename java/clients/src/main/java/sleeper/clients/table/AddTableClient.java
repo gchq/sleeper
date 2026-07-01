@@ -93,8 +93,8 @@ public class AddTableClient {
             .build();
 
     public static Arguments readArguments(CommandArguments arguments, FileReader files) {
-        Optional<Path> tablePropertiesFile = arguments.getOptionalPath("table-properties");
-        Optional<Path> configDir = arguments.getOptionalPath("config-dir");
+        Optional<Path> tablePropertiesFile = arguments.getOptionalString("table-properties").map(Path::of);
+        Optional<Path> configDir = arguments.getOptionalString("config-dir").map(Path::of);
 
         Properties rawTableProperties;
         rawTableProperties = tablePropertiesFile.isPresent()
@@ -106,7 +106,7 @@ public class AddTableClient {
         return new Arguments(
                 arguments.getString("instance-id"),
                 arguments.getOptionalString("table-name").orElse(null),
-                arguments.getOptionalPath("schema").orElse(null),
+                arguments.getOptionalString("schema").map(Path::of).orElse(null),
                 rawTableProperties,
                 tablePropertiesFile.orElse(null),
                 configDir.orElse(null));
@@ -138,7 +138,7 @@ public class AddTableClient {
         return tableProperties;
     }
 
-    public static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) {
+    private static TableProperties createTableProperties(InstanceProperties instanceProperties, Arguments args) {
         TableProperties tableProperties = args.rawTableProperties() != null
                 ? new TableProperties(instanceProperties, args.rawTableProperties())
                 : new TableProperties(instanceProperties);
@@ -184,7 +184,7 @@ public class AddTableClient {
     @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "FindBugs not accepting null checks as solution")
     private static String readFile(FileReader reader, Path path) {
         try {
-            return reader.readString(path);
+            return reader.readStringChecked(path);
         } catch (IOException e) {
             String filename = path.getFileName().toString();
             String argString = filename.contains("schema") ? "--schema" : "--table-properties";
@@ -199,9 +199,5 @@ public class AddTableClient {
 
     public interface FileReader {
         String readStringChecked(Path path) throws IOException;
-
-        default String readString(Path path) throws IOException {
-            return readStringChecked(path);
-        }
     }
 }
