@@ -25,6 +25,8 @@ import software.amazon.awssdk.awscore.util.AwsHostNameUtils;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.http.auth.spi.scheme.AuthScheme;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
@@ -42,7 +44,12 @@ import java.util.regex.Pattern;
 import static org.apache.hadoop.fs.s3a.Constants.AWS_SERVICE_IDENTIFIER_S3;
 import static org.apache.hadoop.fs.s3a.Constants.CENTRAL_ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.DEFAULT_SECURE_CONNECTIONS;
+import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_CLASS_NAME;
+import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_ENABLED;
+import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_ENABLED_DEFAULT;
 import static org.apache.hadoop.fs.s3a.Constants.SECURE_CONNECTIONS;
+import static org.apache.hadoop.fs.s3a.auth.SignerFactory.createHttpSigner;
+import static org.apache.hadoop.fs.s3a.impl.InternalConstants.AUTH_SCHEME_AWS_SIGV_4;
 
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
 
@@ -69,21 +76,18 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
                 .pathStyleAccessEnabled(parameters.isPathStyleAccess())
                 .build();
 
-        //final ClientOverrideConfiguration.Builder override = createClientOverrideConfiguration(parameters, conf);
+        final ClientOverrideConfiguration.Builder override = createClientOverrideConfiguration(parameters, conf);
 
         S3BaseClientBuilder s3BaseClientBuilder = builder
-                //.overrideConfiguration(override.build())
-                //.credentialsProvider(parameters.getCredentialSet())
-                //.disableS3ExpressSessionAuth(!parameters.isExpressCreateSession())
+                .overrideConfiguration(override.build())
+                .credentialsProvider(parameters.getCredentialSet())
+                .disableS3ExpressSessionAuth(!parameters.isExpressCreateSession())
                 .serviceConfiguration(serviceConfiguration);
 
-        /*
-         * if (conf.getBoolean(HTTP_SIGNER_ENABLED, HTTP_SIGNER_ENABLED_DEFAULT)) {
-         * final AuthScheme<AwsCredentialsIdentity> signer = createHttpSigner(conf, AUTH_SCHEME_AWS_SIGV_4,
-         * HTTP_SIGNER_CLASS_NAME);
-         * builder.putAuthScheme(signer);
-         * }
-         */
+        if (conf.getBoolean(HTTP_SIGNER_ENABLED, HTTP_SIGNER_ENABLED_DEFAULT)) {
+            final AuthScheme<AwsCredentialsIdentity> signer = createHttpSigner(conf, AUTH_SCHEME_AWS_SIGV_4, HTTP_SIGNER_CLASS_NAME);
+            builder.putAuthScheme(signer);
+        }
         return (BuilderT) s3BaseClientBuilder;
     }
 
