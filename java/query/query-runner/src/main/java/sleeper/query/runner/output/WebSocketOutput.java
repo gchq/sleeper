@@ -23,9 +23,9 @@ public class WebSocketOutput {
     public static final String ACCESS_KEY = "awsAccessKey";
     public static final String SECRET_KEY = "awsSecretKey";
     public static final String MAX_BATCH_SIZE = "maxBatchSize";
-    public static final String MAX_ATTEMPTS = "maxAttempts";
-    public static final String THROTTLING_RETRY_BASE_DELAY_SECS = "throttlingRetryBaseDelaySecs";
-    public static final String THROTTLING_RETRY_MAX_DELAY_SECS = "throttlingRetryMaxDelaySecs";
+    public static final String MAX_ATTEMPTS = "webSocketPublishMaxAttempts";
+    public static final String THROTTLING_RETRY_BASE_DELAY_SECS = "webSocketThrottlingRetryBaseDelaySecs";
+    public static final String THROTTLING_RETRY_MAX_DELAY_SECS = "webSocketThrottlingRetryMaxDelaySecs";
 
     private WebSocketOutput() {
     }

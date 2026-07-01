@@ -16,6 +16,8 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jnr.ffi.ObjectReferenceManager;
+import jnr.ffi.Pointer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -162,13 +164,21 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, Consumer<Long> progressCallback) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
-        // Perform compaction
 
-        int result = context.getFunctions().compact(context, compactionParams, compactionData, rows -> progressCallback.accept(rows));
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        // Perform compaction
+        ObjectReferenceManager<Object> objectRefManager = runtime.newObjectReferenceManager();
+        DataFusionCompactionFunctions.ProgressCallback callbackWrapper = rows -> progressCallback.accept(rows);
+        Pointer key = objectRefManager.add(callbackWrapper);
+
+        try {
+            int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
+        } finally {
+            objectRefManager.remove(key);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
