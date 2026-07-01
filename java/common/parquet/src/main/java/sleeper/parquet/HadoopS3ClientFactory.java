@@ -18,6 +18,7 @@ package sleeper.parquet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.s3a.S3ClientFactory;
+import software.amazon.awssdk.awscore.util.AwsHostNameUtils;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
@@ -27,8 +28,12 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
+
+    private static final Pattern VPC_ENDPOINT_PATTERN = Pattern.compile("^(?:.+\\.)?([a-z0-9-]+)\\.vpce\\.amazonaws\\.(?:com|com\\.cn)$");
 
     public HadoopS3ClientFactory() {
     }
@@ -42,15 +47,27 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         S3ClientBuilder builder = S3Client.builder()
                 .credentialsProvider(params.getCredentialSet())
                 .forcePathStyle(params.isPathStyleAccess());
-        String region = "eu-west-2";//params.getRegion();
+        String region = params.getRegion();
+        String endpoint = params.getEndpoint();
+
         if (region != null && !region.isEmpty()) {
             builder.region(Region.of(region));
+        } else {
+            builder.region(getRegionFromEndpoint(endpoint));
         }
-        String endpoint = params.getEndpoint();
+
         if (endpoint != null && !endpoint.isEmpty()) {
             builder.endpointOverride(URI.create(endpoint));
         }
         return builder.build();
+    }
+
+    private Region getRegionFromEndpoint(String endpoint) {
+        Matcher matcher = VPC_ENDPOINT_PATTERN.matcher(endpoint);
+        if (matcher.find()) {
+            return Region.of(matcher.group(1));
+        }
+        return AwsHostNameUtils.parseSigningRegion(endpoint, "s3").orElse(null);
     }
 
     @Override
