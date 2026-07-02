@@ -7,8 +7,14 @@ The Rust code includes unit tests and integration tests. We use the built-in tes
 
 The Python code includes unit tests and integration tests with Pytest.
 
-We also have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
+Our system tests are an acceptance test suite that includes end to end testing of the system, and tests for
+performance, scaling, throughput. See the [system tests guide](system-tests.md#acceptance-tests).
+
+We have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
+
+We have a separate article on [test design techniques](test-design.md) that we try to apply uniformly across the
+codebase. These should be followed as part of the test strategy.
 
 We'll establish definitions of the different types of test, and talk about when and how we use them.
 
@@ -32,29 +38,23 @@ We always prefer to provide test coverage with in-memory unit tests. We use inte
 test a behaviour with unit tests, or when faking or mocking I/O operations would either couple the tests too directly to
 the I/O technology, or would exclude all logic from the test.
 
-All code should be covered with unit tests or integration tests, with a few exceptions:
+All code should be covered with unit tests or integration tests, except for experimental features that were implemented
+without TDD. TDD is preferred in all cases, including for experimental features, and test coverage should be improved as
+soon as possible.
 
-- Deployment code in CDK, until we find a good way to test this
-- Experimental features that were implemented without TDD
-  - TDD is preferred in all cases
-  - Tests should be added as soon as possible
+We also write system tests for all features that are not experimental. This is our system test suite in JUnit. We keep
+the number of system tests per feature low, as these tests are relatively slow to run. They should verify that each
+feature is functional when deployed in AWS, and test properties such as performance and throughput. When we add a new
+feature, we add some simple coverage to verify it still works when deployed, at most one or two cases as a complement
+to more detailed unit testing. This should cover things like problems with permissions or networking configuration, that
+would only show up when deployed.
 
-We also write system tests for all features that are not experimental. We keep the number of system tests per feature
-low, as these tests are relatively slow to run. They should verify that each feature is functional when deployed in AWS,
-and test properties such as performance and throughput. When we add a new feature, we add one or two simple cases to
-this test suite, as a complement to more detailed unit testing.
+We consider performance testing when we want to provide guarantees about the scalability or performance of the system.
+We also use this to try to discover any differences in behaviour at scale, or bugs that only show up with a large amount
+of data or processes. This is included in our JUnit system test suite.
 
-### Design techniques
-
-We use tests to define the behaviour of the system, writing all tests in the style of behaviour driven development
-(BDD). The following article by Dan North defines this term, though not all examples match our style and conventions:
-https://dannorth.net/introducing-bdd/
-
-We try to use test driven development (TDD) whenever possible, but we do not require this of all contributors. We use
-the definitions of this found in the following resources:
-
-- Uncle Bob's Three Rules of TDD: http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd
-- Kent Beck's Canon TDD: https://tidyfirst.substack.com/p/canon-tdd
+We try to avoid needing manual testing. If any behaviour in the system breaks, we want to know about it from one of the
+tests described above. Manual testing should usually be purely exploratory.
 
 ### JUnit test classes
 
@@ -63,140 +63,19 @@ IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefi
 for integration tests.
 
 System tests should be in a class ending with ST, like CompactionPerformanceST, and must be tagged with the annotation
-`SystemTest`. This means they will only be run as part of a system test suite, or directly. See
+`SystemTest`. This means they will only be run as part of a system test suite, or directly. They may also be tagged
+with an annotation for which test suite they should run in, which will default to the quick test suite. See
 the [system tests guide](system-tests.md#acceptance-tests).
 
-### Style
+For assertions we use [AssertJ](https://assertj.github.io/doc/) instead of JUnit's built-in assertions. We also have
+some approval tests with [ApprovalTests.Java](https://github.com/approvals/ApprovalTests.Java).
 
-Our test names should be an English sentence starting with "should", that describes the behaviour we wish to assert.
-Most tests should be split into given/when/then sections, with comments separating each section. Those can sometimes be
-combined but we prefer to separate them explicitly for larger tests. We use AssertJ for assertions. Here are some
-example tests:
+### System test structure
 
-```java
-@Test
-void shouldReadIntegers() {
-    // Given
-    String input = "1,2,3";
+For system tests we use a three tier design of tests, domain specific language (DSL), and drivers. The tests interact
+with the system through the DSL, and the DSL interacts with the system through drivers. The drivers are the only part
+that knows how to interact with a deployment of the system.
 
-    // When
-    List<Number> numbers = NumberReader.read(input);
-
-    // Then
-    assertThat(numbers).containsExactly(1, 2, 3);
-}
-
-@Test
-void shouldFailIfInputContainsNonNumber() {
-    // Given
-    String input = "abc";
-
-    // When / Then
-    assertThatThrownBy(() -> NumberReader.read(input))
-        .isInstanceOf(IllegalArgumentException.class);
-}
-```
-
-### Test design
-
-We use test helper methods to make tests as readable as possible, and as close as possible to a set of English
-given/when/then statements.
-
-We avoid mocking wherever possible, and prefer to use test fakes. For an example of a test fake, say we have a data
-store backed by a database. Our database code can implement an interface, and a test fake can implement that interface
-as a class that's a wrapper around an in-memory collection, e.g. HashMap or ArrayList. Any queries against the database
-can also be implemented in-memory in the test fake.
-
-That lets us minimise the tests that need to run against the database. In Sleeper we do this with various data stores,
-usually DynamoDB and S3. We can test our DynamoDB and S3 code separately in integration tests against LocalStack, using
-Testcontainers.
-
-For a simpler example, when we want to send a message to an SQS queue, we would write an interface with a method to send
-the message. We can then implement that as a method reference to the `add` method on a `LinkedList`, and use that to
-test the logic.
-
-Below is an example of this based on real Sleeper code. We send requests to SQS to commit a transaction to update a
-Sleeper table. A compaction removes some files from a Sleeper table and replaces them with its output file. We combine
-the results of multiple compactions into one transaction, and send the transaction to an SQS queue to be committed to
-the state store.
-
-```java
-public class CompactionCommitBatcherTest {
-
-    private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
-
-    @Test
-    void shouldSendMultipleCompactionCommitsForSameTableAsOneTransaction() {
-        // Given two compaction jobs for the same table
-        TableProperties table = createTable("test-table");
-        CompactionJob job1 = jobFactory(table).createCompactionJobWithFilenames(
-                "job1", List.of("file1.parquet"), "root");
-        CompactionJob job2 = jobFactory(table).createCompactionJobWithFilenames(
-                "job2", List.of("file2.parquet"), "root");
-        ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
-        ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
-
-        // When we send them as a batch
-        batcher().sendBatch(List.of(
-                commitRequest("test-table", request1),
-                commitRequest("test-table", request2)));
-
-        // Then they are combined into one transaction
-        assertThat(queue).containsExactly(
-                StateStoreCommitRequest.create("test-table",
-                        new ReplaceFileReferencesTransaction(List.of(request1, request2))));
-    }
-
-    // Further cases are tested here...
-
-    private CompactionCommitBatcher batcher() {
-        // The method reference `queue::add` implements the interface StateStoreCommitRequestSender,
-        // which is also implemented by SqsFifoStateStoreCommitRequestSender in the tests shown below.
-        return new CompactionCommitBatcher(queue::add);
-    }
-
-}
-
-public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-
-    @BeforeEach
-    void setup() {
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
-        tableProperties.set(TABLE_ID, "test-table");
-    }
-
-    @Test
-    void shouldSendCommitToSqs() {
-        // Given
-        CompactionJob job = jobFactory(tableProperties).createCompactionJobWithFilenames(
-                "test-job", List.of("test.parquet"), "root");
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(
-            List.of(defaultReplaceFileReferencesRequest(job)));
-
-        // When
-        sender().send(StateStoreCommitRequest.create("test-table", transaction));
-
-        // Then
-        assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create("test-table", transaction));
-    }
-
-    // Note that it is not necessary to test different transaction types here as serialisation/deserialisation
-    // is tested separately in in-memory unit tests. The createSerDe method used below creates an object to serialise
-    // and deserialise to/from JSON, and it is tested elsewhere.
-
-    private StateStoreCommitRequestSender sender() {
-        return new SqsFifoStateStoreCommitRequestSender(instanceProperties, createSerDe(), sqsClient);
-    }
-
-    private List<StateStoreCommitRequest> receiveCommitRequests() {
-        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .map(createSerDe()::fromJson)
-                .toList();
-    }
-
-}
-```
+The drivers can be swapped out for an alternative implementation backed by in-memory test fakes or by a local
+alternative to AWS like LocalStack. That lets us work on the DSL or the drivers without needing to run against real
+instances of Sleeper.
