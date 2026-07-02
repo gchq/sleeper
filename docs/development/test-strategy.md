@@ -7,7 +7,8 @@ The Rust code includes unit tests and integration tests. We use the built-in tes
 
 The Python code includes unit tests and integration tests with Pytest.
 
-Our system tests include end to end testing of the system, as well as tests of performance, scaling, throughput.
+Our system tests are an acceptance test suite that includes end to end testing of the system, and tests for
+performance, scaling, throughput. See the [system tests guide](system-tests.md#acceptance-tests).
 
 We have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
