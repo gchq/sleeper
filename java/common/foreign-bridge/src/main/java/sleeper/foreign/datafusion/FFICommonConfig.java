@@ -79,6 +79,10 @@ public class FFICommonConfig extends Struct {
 
     public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
+        init(runtime, awsConfig);
+    }
+
+    public void init(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         if (awsConfig != null) {
             aws_config.set(awsConfig.toFfi(runtime));
         } else {
