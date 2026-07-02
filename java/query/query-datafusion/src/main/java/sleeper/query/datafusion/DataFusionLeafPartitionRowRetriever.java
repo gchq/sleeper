@@ -250,6 +250,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
         common.useMemory(someMemory);
+        common.init(runtime, awsConfig);
         FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
         parquetOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
