@@ -15,6 +15,10 @@
  */
 package sleeper.query.datafusion;
 
+import jnr.ffi.Memory;
+import jnr.ffi.ObjectReferenceManager;
+import jnr.ffi.Pointer;
+import jnr.ffi.Struct;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
@@ -129,7 +133,14 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         int nativeCallResult;
         FFIQueryResults queryResults;
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        ObjectReferenceManager<Object> orm = runtime.newObjectReferenceManager();
+
+        int size = Struct.size(FFICommonConfig.class, runtime);
+        System.err.println(size);
+        Pointer thisMemory = Memory.allocateDirect(runtime, size);
+        Pointer jpointer = orm.add(thisMemory);
+
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime, thisMemory);
 
         // Create NULL pointer which will be set by the FFI call upon return
         queryResults = new FFIQueryResults(runtime);
@@ -137,6 +148,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // Perform native query
         nativeCallResult = functions.query_stream(context, params, queryResults);
 
+        orm.remove(jpointer);
         // Check result
         if (nativeCallResult != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
@@ -178,7 +190,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         int nativeCallResult;
         FFIFileResult fileResults;
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
+
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime, null);
 
         // Create NULL pointer which will be set by the FFI call upon return
         fileResults = new FFIFileResult(runtime);
@@ -211,8 +224,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
-            jnr.ffi.Runtime runtime) {
-        return createFFIQueryData(query, null, dataReadSchema, tableProperties, awsConfig, runtime);
+            jnr.ffi.Runtime runtime, Pointer memory) {
+        return createFFIQueryData(query, null, dataReadSchema, tableProperties, awsConfig, runtime, memory);
     }
 
     /**
@@ -233,8 +246,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, String outputFile, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
-            jnr.ffi.Runtime runtime) {
+            jnr.ffi.Runtime runtime, Pointer someMemory) {
+
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
+        common.useMemory(someMemory);
         FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
         parquetOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
