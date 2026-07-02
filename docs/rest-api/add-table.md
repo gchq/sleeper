@@ -29,19 +29,23 @@ The body is JSON with three fields:
 
 ## Example
 
-Sign the request with SigV4. The example below uses [`awscurl`](https://github.com/okigan/awscurl),
-which reads credentials from your environment or profile in the same way as the AWS CLI:
+Sign the request with SigV4. The example below uses `curl`'s built-in `--aws-sigv4` flag
+(available in curl 7.75 and later, which is what the Sleeper Builder container ships with):
 
 ```bash
 INSTANCE_ID=my-instance
-REST_API_URL=$(aws s3 cp "s3://sleeper-${INSTANCE_ID}-config/config" - \
-  | grep '^sleeper.rest.api.url=' | cut -d= -f2-)
+ACCOUNT_ID=my-account-id
+REST_API_URL=$(aws s3 cp "s3://sleeper-${INSTANCE_ID}-config-${ACCOUNT_ID}/instance.properties" - | grep '^sleeper.rest.api.url=' | cut -d= -f2-)
 
-awscurl --service execute-api \
-  --region "$AWS_REGION"       \
-  -X POST                      \
-  -H 'Content-Type: application/json' \
-  -d @- "${REST_API_URL}/sleeper/tables" <<'JSON'
+# Load AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and (if using an instance role
+# or assumed role) AWS_SESSION_TOKEN into the environment.
+eval "$(aws configure export-credentials --format env)"
+
+curl --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
+     --user "${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}" \
+     -H "x-amz-security-token: ${AWS_SESSION_TOKEN}"        \
+     -H 'Content-Type: application/json'                    \
+     -X POST -d @- "${REST_API_URL}/sleeper/tables" <<'JSON'
 {
   "properties": {
     "sleeper.table.name": "my-table"
@@ -63,7 +67,20 @@ JSON
 ```
 
 The instance property lookup above shells out to the config bucket; if you already have the URL to
-hand, skip that step.
+hand, skip that step. The `x-amz-security-token` header is only required for temporary credentials
+(EC2 instance roles, `aws sts assume-role`, SSO); omit it if you are signing with a long-lived IAM
+user access key.
+
+### Using `awscurl` instead
+
+If you already have [`awscurl`](https://github.com/okigan/awscurl) installed, the same request is
+shorter — `awscurl` picks up all three credential values automatically:
+
+```bash
+awscurl --service execute-api --region "$AWS_REGION" \
+        -X POST -H 'Content-Type: application/json'  \
+        -d @request.json "${REST_API_URL}/sleeper/tables"
+```
 
 ## Responses
 

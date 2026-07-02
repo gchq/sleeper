@@ -66,10 +66,12 @@ The minimum policy statement is:
 
 Replace `<api-id>` with the id from the invoke URL (the subdomain part).
 
-Any AWS SDK will sign requests automatically once you provide credentials. For quick interactive
-use, [`awscurl`](https://github.com/okigan/awscurl) is a drop-in `curl`-like tool that reads
-credentials from your environment or profile and signs requests for you. Plain `curl` will not
-work — unsigned requests are rejected by the API Gateway IAM authorizer with a `403`.
+Any AWS SDK will sign requests automatically once you provide credentials. From the command line,
+`curl`'s built-in `--aws-sigv4` flag (curl 7.75+, shipped with the Sleeper Builder container)
+signs requests without any extra tooling; see [add-table.md](add-table.md#example) for a full
+example. [`awscurl`](https://github.com/okigan/awscurl) is a slightly shorter alternative that
+also picks up session tokens automatically. Unsigned requests are rejected by the API Gateway IAM
+authorizer with a `403`.
 
 ## OpenAPI spec
 
