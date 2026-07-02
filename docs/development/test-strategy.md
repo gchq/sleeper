@@ -71,3 +71,13 @@ the [system tests guide](system-tests.md#acceptance-tests).
 
 For assertions we use [AssertJ](https://assertj.github.io/doc/) instead of JUnit's built-in assertions. We also have
 some approval tests with [ApprovalTests.Java](https://github.com/approvals/ApprovalTests.Java).
+
+### System test structure
+
+For system tests we use a three tier design of tests, domain specific language (DSL), and drivers. The tests interact
+with the system through the DSL, and the DSL interacts with the system through drivers. The drivers are the only part
+that knows how to interact with a deployment of the system.
+
+The drivers can be swapped out for an alternative implementation backed by in-memory test fakes or by a local
+alternative to AWS like LocalStack. That lets us work on the DSL or the drivers without needing to run against real
+instances of Sleeper.
