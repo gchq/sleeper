@@ -99,7 +99,8 @@ tests, but we try to adjust the design and documentation to make this easier.
 All tests should be fully deterministic whenever possible. Behaviour that would otherwise be non-deterministic should
 be controlled for a test. For example, randomised data should be avoided, and dates and times should be fixed. When
 testing randomisation we can make the test deterministic by injecting a fixed seed for randomisation, and resetting to
-that seed for each test. Dates and times can be injected to a test with e.g. a Java `Supplier<Instant>`.
+that seed for each test. Dates and times can be injected in a test with e.g. a Java `Supplier<Instant>`, which can be
+implemented in production as `Instant::now`.
 
 ### Example tests
 
