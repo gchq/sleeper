@@ -94,6 +94,13 @@ tested directly, and some are tested implicitly by tests for another class. This
 coverage to be in the same module as the class. It can require some reasoning to find which classes are covered by which
 tests, but we try to adjust the design and documentation to make this easier.
 
+### Determinism
+
+All tests should be fully deterministic whenever possible. Behaviour that would otherwise be non-deterministic should
+be controlled for a test. For example, randomised data should be avoided, and dates and times should be fixed. When
+testing randomisation we can make the test deterministic by injecting a fixed seed for randomisation, and resetting to
+that seed for each test. Dates and times can be injected to a test with e.g. a Java `Supplier<Instant>`.
+
 ### Example tests
 
 Below is an example of this based on real Sleeper code. We send requests to SQS to commit a transaction to update a
