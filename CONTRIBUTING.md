@@ -14,8 +14,9 @@ Comment on an issue to let us know you're interested.
 To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/developer-guide.md) for
 help setting up a development environment.
 
-Also see our [coding conventions](development/conventions.md) and [test strategy](development/test-strategy.md). These
-describe conventions and testing approaches that we look for in pull requests.
+Also see our [coding conventions](docs/development/conventions.md), [test strategy](docs/development/test-strategy.md)
+and [test design](docs/development/test-design.md). These describe conventions and testing approaches that we look for
+in pull requests.
 
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
 for your change if there isn't one already.
