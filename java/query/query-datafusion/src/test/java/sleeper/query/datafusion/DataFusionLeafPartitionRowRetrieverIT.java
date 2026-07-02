@@ -142,8 +142,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 50;
-        public static final int QUERY_COUNT = 50;
+        public static final int TASK_COUNT = 150;
+        public static final int QUERY_COUNT = 1000;
 
         private List<Row> makeRows() {
             List<Row> rows = new ArrayList<>();
