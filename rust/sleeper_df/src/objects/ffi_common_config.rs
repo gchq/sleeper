@@ -91,6 +91,7 @@ impl FFICommonConfig {
         if self.job_id.is_null() {
             bail!("FFICommonConfig job_id is NULL");
         }
+        bail!("BORK");
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }
@@ -116,7 +117,6 @@ impl FFICommonConfig {
             &FFIParquetOptions::default()
         };
         parquet_options.check_for_nulls()?;
-
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();

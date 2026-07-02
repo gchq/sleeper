@@ -28,7 +28,7 @@ use ::log::error;
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
-use std::ffi::c_int;
+use std::{ffi::c_int, time::Duration};
 
 mod context;
 mod log;
@@ -182,12 +182,14 @@ pub extern "C" fn native_query_stream(
     query_results_ptr: *mut FFIQueryResults,
 ) -> c_int {
     maybe_cfg_log();
+    // eprintln!("fork");
+    std::thread::sleep(Duration::from_millis(100));
 
     // Null check the context pointer
-    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
-        error!("NULL context pointer");
-        return EFAULT;
-    };
+    // let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+    //     error!("NULL context pointer");
+    //     return EFAULT;
+    // };
 
     let Some(params) = (unsafe { input_ptr.as_ref() }) else {
         error!("input data pointer is NULL");
@@ -195,42 +197,44 @@ pub extern "C" fn native_query_stream(
     };
 
     // Null check the results object pointer
-    let Some(query_results) = (unsafe { query_results_ptr.as_mut() }) else {
-        eprintln!("query_results pointer is NULL");
-        return EFAULT;
-    };
+    // let Some(query_results) = (unsafe { query_results_ptr.as_mut() }) else {
+    //     eprintln!("query_results pointer is NULL");
+    //     return EFAULT;
+    // };
 
-    let details = match params.to_leaf_config(false) {
-        Ok(d) => d,
-        Err(e) => {
-            error!("Couldn't convert query input data {e}");
-            return EINVAL;
-        }
-    };
+    let details = params.to_leaf_config(false);
+    // let details = match params.to_leaf_config(false) {
+    //     Ok(d) => d,
+    //     Err(e) => {
+    //         error!("Couldn't convert query input data {e}");
+    //         return EINVAL;
+    //     }
+    // };
 
     // Run compaction
-    let result = context
-        .rt
-        .block_on(run_query(&details, &context.sleeper_context));
-    match result {
-        Ok(res) => {
-            let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
-                error!("Expected CompletedOutput::ArrowRecordBatch results from query");
-                return -1;
-            };
-            // Convert the DataFusion stream of data to an FFI compatible Arrow stream
-            let ffi_arrow_stream =
-                Box::new(stream_to_ffi_arrow_stream(batch_stream, context.rt.clone()));
-            // Leak pointer from Box. At this point Rust gives up ownership management of that object
-            let leaked_ptr = Box::into_raw(ffi_arrow_stream);
-            query_results.arrow_array_stream = leaked_ptr;
-            0
-        }
-        Err(e) => {
-            error!("query error {e}");
-            -1
-        }
-    }
+    // let result = context
+    //     .rt
+    //     .block_on(run_query(&details, &context.sleeper_context));
+    // match result {
+    //     Ok(res) => {
+    //         let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
+    //             error!("Expected CompletedOutput::ArrowRecordBatch results from query");
+    //             return -1;
+    //         };
+    //         // Convert the DataFusion stream of data to an FFI compatible Arrow stream
+    //         let ffi_arrow_stream =
+    //             Box::new(stream_to_ffi_arrow_stream(batch_stream, context.rt.clone()));
+    //         // Leak pointer from Box. At this point Rust gives up ownership management of that object
+    //         let leaked_ptr = Box::into_raw(ffi_arrow_stream);
+    //         query_results.arrow_array_stream = leaked_ptr;
+    //         0
+    //     }
+    //     Err(e) => {
+    //         error!("query error {e}");
+    //         -1
+    //     }
+    // }
+    0
 }
 
 /// Provides the C FFI interface to calling the [`run_query`] function.

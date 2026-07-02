@@ -71,7 +71,7 @@ public class LeafPartitionQueryExecutor {
      * @throws QueryException     if an exception occurred retrieving the rows from the query
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
-        LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
+        // LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
