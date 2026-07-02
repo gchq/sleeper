@@ -30,4 +30,8 @@ echo "Regenerating deployment images..."
 mvn exec:java -e -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
+echo "Regenerating REST API OpenAPI spec..."
+mvn exec:java -e -q -pl clients \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateOpenApiSpec" \
+  -Dexec.args="$PROJECT_ROOT"
 popd

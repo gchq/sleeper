@@ -18,6 +18,9 @@ package sleeper.restapi;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.google.gson.Gson;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Schema;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -28,7 +31,6 @@ import java.util.Map;
  * Handles a single REST API route. Implementations are mapped against a HTTP method and path by
  * {@link sleeper.restapi.RestApiLambda}.
  */
-@FunctionalInterface
 public interface Route {
 
     String CONTENT_TYPE_JSON = "application/json";
@@ -40,6 +42,38 @@ public interface Route {
      * @return       the response to return to API Gateway
      */
     APIGatewayV2HTTPResponse handle(APIGatewayV2HTTPEvent event);
+
+    /**
+     * The HTTP method this route responds to. Used to build the OpenAPI spec.
+     *
+     * @return the HTTP method
+     */
+    PathItem.HttpMethod openApiMethod();
+
+    /**
+     * The URL path this route responds to. Used to build the OpenAPI spec.
+     *
+     * @return the URL path
+     */
+    String openApiPath();
+
+    /**
+     * The OpenAPI operation describing this route's request and response contract. Used by the doc generator to build
+     * {@code docs/rest-api/openapi.yaml}.
+     *
+     * @return the operation
+     */
+    Operation openApiOperation();
+
+    /**
+     * Named schemas contributed to the OpenAPI spec by this route. Each entry becomes an entry under
+     * {@code components.schemas} in the generated spec.
+     *
+     * @return schemas by name, or an empty map if this route contributes none
+     */
+    default Map<String, Schema<?>> openApiSchemas() {
+        return Map.of();
+    }
 
     /**
      * Provides body element for use within method requested.
