@@ -50,7 +50,10 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
-            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3-transfer-manager</artifactId>
         </dependency>
         <!-- We use this to set the credentials provider in the Hadoop configuration. -->
         <dependency>

@@ -18,6 +18,8 @@ package sleeper.localstack.test;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.localstack.LocalStackContainer;
 
+import sleeper.parquet.HadoopS3ClientFactory;
+
 public class LocalStackHadoopConfigurationProvider {
 
     private LocalStackHadoopConfigurationProvider() {
@@ -40,6 +42,7 @@ public class LocalStackHadoopConfigurationProvider {
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
+        HadoopS3ClientFactory.configureHadoop(configuration);
         configuration.set("fs.s3a.endpoint", container.getEndpoint().toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());

@@ -22,6 +22,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.parquet.HadoopS3ClientFactory;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
@@ -36,6 +37,7 @@ public class HadoopConfigurationProvider {
 
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
+        HadoopS3ClientFactory.configureHadoop(conf);
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
@@ -89,6 +91,7 @@ public class HadoopConfigurationProvider {
 
     public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
+        HadoopS3ClientFactory.configureHadoop(conf);
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         conf.set("fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
         conf.set("fs.s3a.bucket.probe", "0");

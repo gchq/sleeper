@@ -18,6 +18,8 @@ package sleeper.localstack.test;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.parquet.HadoopS3ClientFactory;
+
 public class WiremockHadoopConfigurationProvider {
 
     private WiremockHadoopConfigurationProvider() {
@@ -40,6 +42,7 @@ public class WiremockHadoopConfigurationProvider {
 
     public static void configureHadoop(Configuration configuration, WireMockRuntimeInfo runtimeInfo) {
         configuration.setClassLoader(WiremockHadoopConfigurationProvider.class.getClassLoader());
+        HadoopS3ClientFactory.configureHadoop(configuration);
         configuration.set("fs.s3a.endpoint", runtimeInfo.getHttpBaseUrl());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", WiremockAwsV2ClientHelper.WIREMOCK_ACCESS_KEY);
