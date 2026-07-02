@@ -29,7 +29,7 @@ import sleeper.core.table.AddTable;
 import sleeper.restapi.addTable.AddTableRoute;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -72,7 +72,7 @@ public class RestApiLambda {
      * @return                    the routes keyed by {@code "METHOD /path"}
      */
     public static Map<String, Route> buildRoutes(InstanceProperties instanceProperties, AddTable addTable) {
-        Map<String, Route> routes = new HashMap<>();
+        Map<String, Route> routes = new LinkedHashMap<>();
         routes.put("POST /sleeper/tables", AddTableRoute.builder()
                 .instanceProperties(instanceProperties)
                 .addTable(addTable)

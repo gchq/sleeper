@@ -39,6 +39,7 @@ import sleeper.core.table.AddTable;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.restapi.Route;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,12 +133,12 @@ public class AddTableRoute implements Route {
 
     @Override
     public Operation openApiOperation() {
-        Map<String, Object> requestExample = Map.of(
-                "properties", Map.of("sleeper.table.name", "my-table"),
-                "schema", Map.of(
-                        "rowKeyFields", List.of(Map.of("name", "key", "type", "StringType")),
-                        "sortKeyFields", List.of(Map.of("name", "timestamp", "type", "LongType")),
-                        "valueFields", List.of(Map.of("name", "value", "type", "StringType"))),
+        Map<String, Object> requestExample = linkedMap(
+                "properties", linkedMap("sleeper.table.name", "my-table"),
+                "schema", linkedMap(
+                        "rowKeyFields", List.of(linkedMap("name", "key", "type", "StringType")),
+                        "sortKeyFields", List.of(linkedMap("name", "timestamp", "type", "LongType")),
+                        "valueFields", List.of(linkedMap("name", "value", "type", "StringType"))),
                 "splitPoints", List.of("m"));
         return new Operation()
                 .summary("Add a table")
@@ -153,22 +154,22 @@ public class AddTableRoute implements Route {
                         .addApiResponse("201", jsonResponse(
                                 "Table created.",
                                 "#/components/schemas/AddTableResponse",
-                                Map.of("tableId", "01HXYZABCDEFGHJKMNPQRSTVWX", "tableName", "my-table")))
+                                linkedMap("tableId", "01HXYZABCDEFGHJKMNPQRSTVWX", "tableName", "my-table")))
                         .addApiResponse("400", jsonResponse(
                                 "Request was rejected before the table was created. Triggered by a body that is not " +
                                         "valid JSON, an empty body, missing `properties` or `schema`, unparseable " +
                                         "split points, or property values that fail validation.",
                                 "#/components/schemas/Error",
-                                Map.of("error", "invalid_request", "message", "Request must include 'schema'")))
+                                linkedMap("error", "invalid_request", "message", "Request must include 'schema'")))
                         .addApiResponse("409", jsonResponse(
                                 "A table with the requested name already exists.",
                                 "#/components/schemas/Error",
-                                Map.of("error", "table_already_exists",
+                                linkedMap("error", "table_already_exists",
                                         "message", "Table with name 'my-table' already exists")))
                         .addApiResponse("500", jsonResponse(
                                 "The request failed unexpectedly. Consult the REST API Lambda log group.",
                                 "#/components/schemas/Error",
-                                Map.of("error", "internal_error", "message", "Failed to action event"))));
+                                linkedMap("error", "internal_error", "message", "Failed to action event"))));
     }
 
     @Override
@@ -178,7 +179,7 @@ public class AddTableRoute implements Route {
                 .description("Table properties as a flat map of string keys to string values. Keys are Sleeper " +
                         "table property names (see the table properties documentation). The `sleeper.table.name` " +
                         "property is required and determines the name of the new table.")
-                .example(Map.of("sleeper.table.name", "my-table"));
+                .example(linkedMap("sleeper.table.name", "my-table"));
 
         // Uses Schema<>() with setType("object") rather than ObjectSchema — the latter's setExample falls back to
         // toString() for Map values in swagger-models 2.2.x, which renders a Java map literal in the YAML instead of
@@ -188,9 +189,9 @@ public class AddTableRoute implements Route {
         schemaField.setDescription("The Sleeper schema for the new table, as JSON. Passed through to `SchemaSerDe` on the " +
                 "server, so any shape accepted by the schema template is accepted here. See the schema " +
                 "documentation at ../usage/schema.md for the shape and supported field types.");
-        schemaField.setExample(Map.of(
-                "rowKeyFields", List.of(Map.of("name", "key", "type", "StringType")),
-                "valueFields", List.of(Map.of("name", "value", "type", "StringType"))));
+        schemaField.setExample(linkedMap(
+                "rowKeyFields", List.of(linkedMap("name", "key", "type", "StringType")),
+                "valueFields", List.of(linkedMap("name", "value", "type", "StringType"))));
 
         Schema<?> splitPointsList = new ArraySchema()
                 .items(new StringSchema())
@@ -212,9 +213,22 @@ public class AddTableRoute implements Route {
                 .addProperty("tableName", new StringSchema()
                         .description("The name of the new table (echoed from the request)."));
 
-        return Map.of(
-                "AddTableRequest", addTableRequest,
-                "AddTableResponse", addTableResponse);
+        LinkedHashMap<String, Schema<?>> schemas = new LinkedHashMap<>();
+        schemas.put("AddTableRequest", addTableRequest);
+        schemas.put("AddTableResponse", addTableResponse);
+        return schemas;
+    }
+
+    /**
+     * Builds an insertion-ordered map from alternating key/value arguments. Used so the generated OpenAPI spec has
+     * stable field ordering across runs — {@link Map#of(Object, Object)} randomises iteration order per JVM.
+     */
+    private static LinkedHashMap<String, Object> linkedMap(Object... kvPairs) {
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < kvPairs.length; i += 2) {
+            map.put((String) kvPairs[i], kvPairs[i + 1]);
+        }
+        return map;
     }
 
     private static ApiResponse jsonResponse(String description, String schemaRef, Object example) {
