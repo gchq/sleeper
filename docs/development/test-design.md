@@ -21,6 +21,10 @@ Some developers are more used to thinking of integration or acceptance tests in 
 unit tests as well. This is important because when a test describes a user-focused scenario, it's less likely to need to
 change as the design of the implementation changes. This isn't universal, but it's important as a principle.
 
+Our test names should be an English sentence starting with "should", that describes the behaviour we wish to assert.
+Most tests should be split into given/when/then sections, with comments separating each section. Those can sometimes be
+combined but we prefer to separate them explicitly for larger tests.
+
 ### Test Driven Design (TDD)
 
 We try to use test driven development (TDD) whenever possible, but we do not require this of all contributors. We use
