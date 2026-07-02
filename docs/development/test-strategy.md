@@ -116,6 +116,22 @@ the definitions of this found in the following resources:
 - Robert C. Martin's Three Rules of TDD: http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd
 - Kent Beck's Canon TDD: https://tidyfirst.substack.com/p/canon-tdd
 
+#### Ports and adapters
+
+We use ports and adapters architecture as a framing for how to design our code for testability, how to choose
+entrypoints for our tests, and how to design test harnesses and swap between real implementations and test fakes.
+This was defined by Alistair Cockburn in the following article: https://alistair.cockburn.us/hexagonal-architecture
+
+We use this to define ports which we can use to interact with the core business logic of the system. Adapters are
+input/output code that interact with the application core through the ports. Tests can also interact with the system
+through the ports. Adapters can be swapped out for in-memory test fakes for tests that aren't about them, to keep the
+tests in-memory and fast. We can test adapters through the adapter, still invoking the real application code, and we
+have the option to swap out any other necessary adapters for test fakes.
+
+Note that the system contains some modules with "core" in the name, which are mostly core business logic, with no I/O
+dependencies except for logging, JSON serialisation/deserialisation, and basic utilities. These modules may include some
+file system adapter code whose only dependency is the standard library.
+
 #### Mocking and test fakes
 
 One technique that helps us to keep a user perspective for our unit tests is high quality in-memory test fakes. These
