@@ -35,20 +35,20 @@ paths:
             schema:
               $ref: "#/components/schemas/AddTableRequest"
             example:
-              splitPoints:
-              - m
-              schema:
-                rowKeyFields:
-                - type: StringType
-                  name: key
-                sortKeyFields:
-                - type: LongType
-                  name: timestamp
-                valueFields:
-                - type: StringType
-                  name: value
               properties:
                 sleeper.table.name: my-table
+              schema:
+                valueFields:
+                - name: value
+                  type: StringType
+                sortKeyFields:
+                - name: timestamp
+                  type: LongType
+                rowKeyFields:
+                - name: key
+                  type: StringType
+              splitPoints:
+              - m
         required: true
       responses:
         "201":
@@ -58,8 +58,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/AddTableResponse"
               example:
-                tableId: 01HXYZABCDEFGHJKMNPQRSTVWX
                 tableName: my-table
+                tableId: 01HXYZABCDEFGHJKMNPQRSTVWX
         "400":
           description: "Request was rejected before the table was created. Triggered\
             \ by a body that is not valid JSON, an empty body, missing `properties`\
@@ -70,8 +70,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
-                error: invalid_request
                 message: Request must include 'schema'
+                error: invalid_request
         "409":
           description: A table with the requested name already exists.
           content:
@@ -79,8 +79,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
-                error: table_already_exists
                 message: Table with name 'my-table' already exists
+                error: table_already_exists
         "500":
           description: The request failed unexpectedly. Consult the REST API Lambda
             log group.
@@ -89,8 +89,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
-                error: internal_error
                 message: Failed to action event
+                error: internal_error
 components:
   schemas:
     Error:
@@ -105,6 +105,18 @@ components:
         message:
           type: string
           description: A human-readable description of the failure. May be absent.
+    AddTableResponse:
+      required:
+      - tableId
+      - tableName
+      type: object
+      properties:
+        tableId:
+          type: string
+          description: The unique id assigned to the new table.
+        tableName:
+          type: string
+          description: The name of the new table (echoed from the request).
     AddTableRequest:
       required:
       - properties
@@ -128,12 +140,12 @@ components:
             \ template is accepted here. See the schema documentation at ../usage/schema.md\
             \ for the shape and supported field types."
           example:
-            rowKeyFields:
-            - type: StringType
-              name: key
             valueFields:
-            - type: StringType
-              name: value
+            - name: value
+              type: StringType
+            rowKeyFields:
+            - name: key
+              type: StringType
         splitPoints:
           type: array
           description: Optional pre-split points for the table's partition tree. Each
@@ -144,18 +156,6 @@ components:
           - m
           items:
             type: string
-    AddTableResponse:
-      required:
-      - tableId
-      - tableName
-      type: object
-      properties:
-        tableId:
-          type: string
-          description: The unique id assigned to the new table.
-        tableName:
-          type: string
-          description: The name of the new table (echoed from the request).
   securitySchemes:
     sigv4:
       type: apiKey
