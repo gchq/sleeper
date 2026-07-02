@@ -2183,7 +2183,7 @@
             "ClusterName": {
               "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8c037b5cd9b300deade7df3472a8c86134d72967c\":\"\"},\"name\":\"amazon-cloudwatch\"}}]"
+            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8c037b5cd9b300deade7df3472a8c86134d72967c\":\"\",\"pod-security.kubernetes.io/enforce\":\"privileged\"},\"name\":\"amazon-cloudwatch\"}}]"
           }
         },
         "EksBulkImportClusterSparkServiceAccountmanifestSparkServiceAccountServiceAccountResource97CC2A94": {
@@ -2481,7 +2481,7 @@
                       "Endpoint"
                     ]
                   },
-                  "\",\"Method\":\"DELETE\",\"Path.$\":\"States.Format(\u0027/api/v1/namespaces/sleeper-test-instance-bulk-import-eks/pods/{}\u0027, $.jobPodPrefix)\"},\"ResultPath\":\"$.deleteDriverPodOutput\"},\"DeleteJob\":{\"End\":true,\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:call\",\"Parameters\":{\"ClusterName\":\"",
+                  "\",\"Method\":\"DELETE\",\"Path.$\":\"States.Format(\u0027/api/v1/namespaces/sleeper-test-instance-bulk-import-eks/pods/{}\u0027, $.jobPodPrefix)\"},\"ResultPath\":\"$.deleteDriverPodOutput\",\"Catch\":[{\"ErrorEquals\":[\"EKS.404\"],\"ResultPath\":\"$.deleteDriverPodError\",\"Next\":\"DeleteJob\"}]},\"DeleteJob\":{\"End\":true,\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::eks:call\",\"Parameters\":{\"ClusterName\":\"",
                   {
                     "Ref": "EksBulkImportClusterCA73CFAF"
                   },

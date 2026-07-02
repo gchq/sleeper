@@ -341,7 +341,9 @@ public final class EksBulkImportStack extends NestedStack {
         KubernetesManifest loggingNamespace = cluster.addManifest("LoggingNamespace", Map.of(
                 "apiVersion", "v1",
                 "kind", "Namespace",
-                "metadata", Map.of("name", loggingNamespaceName)));
+                "metadata", Map.of(
+                        "name", loggingNamespaceName,
+                        "labels", Map.of("pod-security.kubernetes.io/enforce", "privileged"))));
 
         ServiceAccount fluentBitServiceAccount = cluster.addServiceAccount("FluentBitServiceAccount",
                 ServiceAccountOptions.builder()
