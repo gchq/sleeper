@@ -37,12 +37,9 @@ We always prefer to provide test coverage with in-memory unit tests. We use inte
 test a behaviour with unit tests, or when faking or mocking I/O operations would either couple the tests too directly to
 the I/O technology, or would exclude all logic from the test.
 
-All code should be covered with unit tests or integration tests, with a few exceptions:
-
-- Deployment code in CDK, until we find a good way to test this
-- Experimental features that were implemented without TDD
-  - TDD is preferred in all cases
-  - Test coverage should be improved as soon as possible
+All code should be covered with unit tests or integration tests, except for experimental features that were implemented
+without TDD. For experimental features, TDD is preferred in all cases, and test coverage should be improved as soon as
+possible.
 
 We also write system tests for all features that are not experimental. This is our system test suite in JUnit. We keep
 the number of system tests per feature low, as these tests are relatively slow to run. They should verify that each
