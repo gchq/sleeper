@@ -35,6 +35,7 @@ Sign the request with SigV4. The example below uses `curl`'s built-in `--aws-sig
 ```bash
 INSTANCE_ID=my-instance
 ACCOUNT_ID=my-account-id
+AWS_REGION=my-region
 REST_API_URL=$(aws s3 cp "s3://sleeper-${INSTANCE_ID}-config-${ACCOUNT_ID}/instance.properties" - | grep '^sleeper.rest.api.url=' | cut -d= -f2-)
 
 # Load AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and (if using an instance role

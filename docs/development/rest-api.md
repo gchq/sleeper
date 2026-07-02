@@ -29,18 +29,20 @@ prose page should focus on how a user invokes the endpoint end-to-end.
 The stack is deployed as an API Gateway v2 HTTP API, so use the `apigatewayv2` export command
 (not `apigateway`, which is for v1 REST APIs):
 
+The `--api-id` argument is the subdomain of the invoke URL, not the full URL. If
+`sleeper.rest.api.url` is `https://abcd1234.execute-api.eu-west-2.amazonaws.com`, then the id
+is `abcd1234`.
+
 ```bash
 API_ID=<the apiId from sleeper.rest.api.url>
 
-aws apigatewayv2 export-api    \
-    --api-id "$API_ID"         \
-    --specification OAS30      \
-    --output-type YAML         \
-    --include-extensions false \
+aws apigatewayv2 export-api \
+    --api-id "$API_ID"      \
+    --specification OAS30   \
+    --output-type YAML      \
     openapi.exported.yaml
 ```
 
-The `apiId` is the subdomain in the invoke URL (`https://<apiId>.execute-api.<region>.amazonaws.com`).
 See the [AWS docs on exporting an HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-export.html)
 for the full command reference.
 
