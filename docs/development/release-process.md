@@ -19,10 +19,10 @@ The following steps explain how to prepare and publish a release for Sleeper.
 
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
    design that has changed in this release. Whilst doing this, check that new/changed features work as documented.
-   In particular, if the REST API has changed in this release, verify that the committed OpenAPI spec at
-   [docs/rest-api/openapi.yaml](../rest-api/openapi.yaml) still matches the deployed HTTP API by following the
-   procedure in [docs/development/rest-api.md](rest-api.md#verifying-the-committed-spec). Update the spec if it has
-   drifted.
+   In particular, if the REST API has changed in this release, rerun
+   [scripts/dev/generateDocumentation.sh](../../scripts/dev/generateDocumentation.sh) and check that
+   [docs/rest-api/openapi.yaml](../rest-api/openapi.yaml) has no uncommitted diff — see
+   [docs/development/rest-api.md](rest-api.md#verifying-the-committed-spec) for how the spec is generated.
 
 3. Check for any work in the release that has only been partially implemented so far. Decide if those parts can either
    be temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to

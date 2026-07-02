@@ -6,51 +6,46 @@ Notes for developers changing the Sleeper REST API. For user-facing documentatio
 
 ## Where the spec lives
 
-The source of truth for the API's shape is [docs/rest-api/openapi.yaml](../rest-api/openapi.yaml).
-It is hand-authored and committed to the repo. Update it whenever an endpoint's method, path,
-request body, response body, or error contract changes.
+The API's shape is described by an OpenAPI 3.0 spec at
+[docs/rest-api/openapi.yaml](../rest-api/openapi.yaml). The committed file is **auto-generated**
+from the Java sources — do not hand-edit it. Its content comes from two places:
+
+- The `Route` interface at [Route.java](../../java/rest-api/src/main/java/sleeper/restapi/Route.java) —
+  each route declares its HTTP method, path, OpenAPI operation, and any component schemas it
+  contributes.
+- The generator at [GenerateOpenApiSpec.java](../../java/clients/src/main/java/sleeper/clients/deploy/documentation/GenerateOpenApiSpec.java)
+  walks the route registry from `RestApiLambda.buildRoutes` and assembles the spec with a
+  common header (info, servers, security scheme, shared `Error` schema).
 
 ## Adding a new endpoint
 
 When you introduce a new endpoint:
 
-1. Register the route in `RestApiLambda#registerRoutes` (in the `java/rest-api` module) so it
-   maps to a `Route` implementation.
-2. Add the path and operation to [openapi.yaml](../rest-api/openapi.yaml), together with any new
-   request or response schemas under `components.schemas`.
+1. Add the route implementation under [java/rest-api](../../java/rest-api/) and register it in
+   `RestApiLambda#buildRoutes` so it is dispatched at runtime.
+2. Implement `openApiMethod`, `openApiPath`, `openApiOperation`, and optionally `openApiSchemas`
+   on the new route class so the generator picks it up. The existing `AddTableRoute` is the
+   canonical example.
 3. Add a prose companion page under [docs/rest-api/](../rest-api/) with a worked example, and
    link it from the endpoints table in the [REST API README](../rest-api/README.md).
+4. Regenerate the spec (see below) and commit the updated `openapi.yaml` alongside the code
+   change.
 
-Prefer to keep the OpenAPI schemas as the primary description of request/response shapes; the
-prose page should focus on how a user invokes the endpoint end-to-end.
+## Regenerating the spec
 
-## Regenerating the spec from a deployed API
-
-The stack is deployed as an API Gateway v2 HTTP API, so use the `apigatewayv2` export command
-(not `apigateway`, which is for v1 REST APIs):
-
-The `--api-id` argument is the subdomain of the invoke URL, not the full URL. If
-`sleeper.rest.api.url` is `https://abcd1234.execute-api.eu-west-2.amazonaws.com`, then the id
-is `abcd1234`.
+Run [scripts/dev/generateDocumentation.sh](../../scripts/dev/generateDocumentation.sh); the
+final step invokes `GenerateOpenApiSpec` and overwrites
+[docs/rest-api/openapi.yaml](../rest-api/openapi.yaml). You can also invoke the generator alone
+from the `java/` directory:
 
 ```bash
-API_ID=<the apiId from sleeper.rest.api.url>
-
-aws apigatewayv2 export-api \
-    --api-id "$API_ID"      \
-    --specification OAS30   \
-    --output-type YAML      \
-    openapi.exported.yaml
+mvn exec:java -q -pl clients \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateOpenApiSpec" \
+  -Dexec.args="$(pwd)/.."
 ```
-
-See the [AWS docs on exporting an HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-export.html)
-for the full command reference.
 
 ## Verifying the committed spec
 
-Diff the exported file against [openapi.yaml](../rest-api/openapi.yaml). Focus on paths,
-operations, and schemas — the hand-written spec deliberately omits AWS-specific `x-amazon-apigateway-*`
-extensions and the API Gateway assigned `servers` URL, so those will differ.
-
-If you find drift, treat the deployed API as evidence and update either the code or the
-committed spec to bring them back into sync.
+CI's diff of the working tree after running the generator is the source of truth — if the
+regenerated `openapi.yaml` differs from the committed file, someone edited one without updating
+the other. Regenerate, commit, and re-review.
