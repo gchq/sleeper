@@ -7,6 +7,8 @@ The Rust code includes unit tests and integration tests. We use the built-in tes
 
 The Python code includes unit tests and integration tests with Pytest.
 
+Our system tests include end to end testing of the system, as well as tests of performance, scaling, throughput.
+
 We have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
 
@@ -42,10 +44,19 @@ All code should be covered with unit tests or integration tests, with a few exce
   - TDD is preferred in all cases
   - Test coverage should be improved as soon as possible
 
-We also write system tests for all features that are not experimental. We keep the number of system tests per feature
-low, as these tests are relatively slow to run. They should verify that each feature is functional when deployed in AWS,
-and test properties such as performance and throughput. When we add a new feature, we add one or two simple cases to
-this test suite, as a complement to more detailed unit testing.
+We also write system tests for all features that are not experimental. This is our system test suite in JUnit. We keep
+the number of system tests per feature low, as these tests are relatively slow to run. They should verify that each
+feature is functional when deployed in AWS, and test properties such as performance and throughput. When we add a new
+feature, we add some simple coverage to verify it still works when deployed, at most one or two cases as a complement
+to more detailed unit testing. This should cover things like problems with permissions or networking configuration, that
+would only show up when deployed.
+
+We consider performance testing when we want to provide guarantees about the scalability or performance of the system.
+We also use this to try to discover any differences in behaviour at scale, or bugs that only show up with a large amount
+of data or processes. This is included in our JUnit system test suite.
+
+We try to avoid needing manual testing. If any behaviour in the system breaks, we want to know about it from one of the
+tests described above. Manual testing should usually be purely exploratory.
 
 ### JUnit test classes
 
@@ -54,36 +65,9 @@ IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefi
 for integration tests.
 
 System tests should be in a class ending with ST, like CompactionPerformanceST, and must be tagged with the annotation
-`SystemTest`. This means they will only be run as part of a system test suite, or directly. See
+`SystemTest`. This means they will only be run as part of a system test suite, or directly. They may also be tagged
+with an annotation for which test suite they should run in, which will default to the quick test suite. See
 the [system tests guide](system-tests.md#acceptance-tests).
 
-### Style
-
-Our test names should be an English sentence starting with "should", that describes the behaviour we wish to assert.
-Most tests should be split into given/when/then sections, with comments separating each section. Those can sometimes be
-combined but we prefer to separate them explicitly for larger tests. We use AssertJ for assertions. Here are some
-example tests:
-
-```java
-@Test
-void shouldReadIntegers() {
-    // Given
-    String input = "1,2,3";
-
-    // When
-    List<Number> numbers = NumberReader.read(input);
-
-    // Then
-    assertThat(numbers).containsExactly(1, 2, 3);
-}
-
-@Test
-void shouldFailIfInputContainsNonNumber() {
-    // Given
-    String input = "abc";
-
-    // When / Then
-    assertThatThrownBy(() -> NumberReader.read(input))
-        .isInstanceOf(IllegalArgumentException.class);
-}
-```
+For assertions we use [AssertJ](https://assertj.github.io/doc/) instead of JUnit's built-in assertions. We also have
+some approval tests with [ApprovalTests.Java](https://github.com/approvals/ApprovalTests.Java).
