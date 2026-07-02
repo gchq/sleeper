@@ -91,7 +91,7 @@ impl FFICommonConfig {
         if self.job_id.is_null() {
             bail!("FFICommonConfig job_id is NULL");
         }
-        bail!("BORK");
+        bail!("stop");
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }

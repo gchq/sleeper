@@ -66,7 +66,7 @@ impl FFILeafPartitionQueryConfig {
         };
         eprintln!("r {:p}", self.common);
         let common = ffi_common.to_common_config(file_output_enabled)?;
-        bail!("BORK");
+        bail!("stop");
         let row_key_cols = ffi_common.row_key_cols()?;
 
         let Some(_) = (unsafe { self.query_regions.as_ref() }) else {
