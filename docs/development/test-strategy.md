@@ -38,8 +38,8 @@ test a behaviour with unit tests, or when faking or mocking I/O operations would
 the I/O technology, or would exclude all logic from the test.
 
 All code should be covered with unit tests or integration tests, except for experimental features that were implemented
-without TDD. For experimental features, TDD is preferred in all cases, and test coverage should be improved as soon as
-possible.
+without TDD. TDD is preferred in all cases, including for experimental features, and test coverage should be improved as
+soon as possible.
 
 We also write system tests for all features that are not experimental. This is our system test suite in JUnit. We keep
 the number of system tests per feature low, as these tests are relatively slow to run. They should verify that each
