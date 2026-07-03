@@ -42,6 +42,7 @@ import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
@@ -95,8 +96,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             }
         }
 
+        Reference.reachabilityFence(params);
+
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
+
         return result;
     }
 
@@ -179,6 +183,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             }
         } finally {
             objectRefManager.remove(key);
+            // Don't prematurely collect this object
+            Reference.reachabilityFence(compactionParams);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();

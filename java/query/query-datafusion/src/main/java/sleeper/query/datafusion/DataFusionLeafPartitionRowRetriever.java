@@ -42,6 +42,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -120,24 +121,29 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         // Create NULL pointer which will be set by the FFI call upon return
         queryResults = new FFIQueryResults(runtime);
+        try {
+            // Perform native query
+            nativeCallResult = functions.query_stream(context, params, queryResults);
 
-        // Perform native query
-        nativeCallResult = functions.query_stream(context, params, queryResults);
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
 
-        // Check result
-        if (nativeCallResult != 0) {
-            LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
-            throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            // A zeroed (NULL) results pointer is NEVER correct here
+            if (queryResults.arrowArrayStream.longValue() == 0) {
+                throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
+            }
+
+            // Convert pointer from Rust to Java FFI Arrow array stream.
+            // At this point Java assumes ownership of the stream and must release it when no longer needed.
+            return Data.importArrayStream(allocator, ArrowArrayStream.wrap(queryResults.arrowArrayStream.longValue()));
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(queryResults);
         }
-
-        // A zeroed (NULL) results pointer is NEVER correct here
-        if (queryResults.arrowArrayStream.longValue() == 0) {
-            throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
-        }
-
-        // Convert pointer from Rust to Java FFI Arrow array stream.
-        // At this point Java assumes ownership of the stream and must release it when no longer needed.
-        return Data.importArrayStream(allocator, ArrowArrayStream.wrap(queryResults.arrowArrayStream.longValue()));
     }
 
     /**
@@ -165,23 +171,28 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         // Create NULL pointer which will be set by the FFI call upon return
         fileResults = new FFIFileResult(runtime);
+        try {
+            // Perform native query
+            nativeCallResult = functions.query_file(context, params, fileResults);
 
-        // Perform native query
-        nativeCallResult = functions.query_file(context, params, fileResults);
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
 
-        // Check result
-        if (nativeCallResult != 0) {
-            LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
-            throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            long totalNumberOfRowsRead = fileResults.rows_read.get();
+            long rowsWritten = fileResults.rows_written.get();
+
+            LOGGER.info("Query to file job {}: Read {} rows and wrote {} rows",
+                    leafPartitionQuery.getQueryId(), totalNumberOfRowsRead, rowsWritten);
+
+            return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(fileResults);
         }
-
-        long totalNumberOfRowsRead = fileResults.rows_read.get();
-        long rowsWritten = fileResults.rows_written.get();
-
-        LOGGER.info("Query to file job {}: Read {} rows and wrote {} rows",
-                leafPartitionQuery.getQueryId(), totalNumberOfRowsRead, rowsWritten);
-
-        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     /**
