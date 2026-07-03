@@ -80,24 +80,24 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         Consumer<Long> progressCallback = request.getProgressCallback();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        try {
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
 
-        RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
-
-        if (result.getRowsWritten() < 1) {
-            Path outputPath = new Path(job.getOutputFile());
-            FileSystem fs = outputPath.getFileSystem(hadoopConf);
-            if (!fs.exists(outputPath)) {
-                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                        outputPath, tableProperties, hadoopConf)) {
-                    // Write an empty file. This should be temporary, as we expect DataFusion to add
-                    // support for this.
-                    // See the test should_merge_empty_files in compaction_test.rs
+            if (result.getRowsWritten() < 1) {
+                Path outputPath = new Path(job.getOutputFile());
+                FileSystem fs = outputPath.getFileSystem(hadoopConf);
+                if (!fs.exists(outputPath)) {
+                    try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                            outputPath, tableProperties, hadoopConf)) {
+                        // Write an empty file. This should be temporary, as we expect DataFusion to add
+                        // support for this.
+                        // See the test should_merge_empty_files in compaction_test.rs
+                    }
                 }
             }
+        } finally {
+            Reference.reachabilityFence(params);
         }
-
-        Reference.reachabilityFence(params);
-
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
 
