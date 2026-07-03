@@ -7,13 +7,7 @@ vulnerabilities:
   # At time of writing we're unable to upgrade the AWS SDK because of the following issue:
   # https://github.com/gchq/sleeper/issues/7459
   # com.fasterxml.jackson.core:jackson-databind
-  - id: CVE-2026-54512
-  - id: CVE-2026-54513
-  - id: CVE-2026-54514
   - id: CVE-2026-54515
-  - id: CVE-2026-54516
-  - id: CVE-2026-54517
-  - id: CVE-2026-54518
 
   # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go.
   # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
