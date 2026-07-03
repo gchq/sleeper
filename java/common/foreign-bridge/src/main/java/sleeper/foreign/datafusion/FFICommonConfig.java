@@ -37,7 +37,7 @@ public class FFICommonConfig extends Struct {
     /** Job ID. */
     public final Struct.UTF8StringRef job_id = new Struct.UTF8StringRef();
     /** Optional AWS configuration. Set to NULL if not used. */
-    private final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
+    public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Prevent GC. */
     private FFIAwsConfig javaAwsConfig;
     /** Length of input files array. */
@@ -67,7 +67,7 @@ public class FFICommonConfig extends Struct {
     /** Prevent GC. */
     private FFIBytes[] javaSortKeyCols;
     /** The Sleeper compaction region. */
-    private final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
+    public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
     /** Prevent GC. */
     private FFISleeperRegion javaRegion;
     /** Compaction aggregation configuration. This is optional. */
@@ -75,7 +75,7 @@ public class FFICommonConfig extends Struct {
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
     /** Parquet options for Sleeper. Set to NULL if defaults are suitable. */
-    private final Struct.StructRef<FFIParquetOptions> parquet_options = new Struct.StructRef<>(FFIParquetOptions.class);
+    public final Struct.StructRef<FFIParquetOptions> parquet_options = new Struct.StructRef<>(FFIParquetOptions.class);
     /** Prevent GC. */
     private FFIParquetOptions javaParquetOptions;
 
@@ -85,12 +85,7 @@ public class FFICommonConfig extends Struct {
 
     public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
-        if (awsConfig != null) {
-            aws_config.set(awsConfig.toFfi(runtime));
-        } else {
-            // Null will use default AWS credentials
-            aws_config.set(0);
-        }
+        setAwsConfig(awsConfig);
         // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero.
         output_file.set("");
@@ -117,9 +112,15 @@ public class FFICommonConfig extends Struct {
      *
      * @param awsConfig AWS configuration
      */
-    public void setAwsConfig(FFIAwsConfig awsConfig) {
-        this.aws_config.set(awsConfig);
-        this.javaAwsConfig = awsConfig;
+    public void setAwsConfig(DataFusionAwsConfig awsConfig) {
+        if (awsConfig != null) {
+            FFIAwsConfig ffiAwsConfig = awsConfig.toFfi(getRuntime());
+            this.aws_config.set(ffiAwsConfig);
+            this.javaAwsConfig = ffiAwsConfig;
+        } else {
+            this.aws_config.set(0);
+            this.javaAwsConfig = null;
+        }
     }
 
     /**

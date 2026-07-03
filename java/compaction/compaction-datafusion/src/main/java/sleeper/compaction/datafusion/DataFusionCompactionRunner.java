@@ -132,7 +132,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
         params.job_id.set(job.getId());
-        params.parquet_options.set(parquetOptions);
+        params.setParquetOptions(parquetOptions);
         params.setInputFiles(job.getInputFiles().toArray(String[]::new));
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
@@ -143,7 +143,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.setSortKeyCols(schema.getSortKeyFieldNames().toArray(String[]::new));
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
-        params.region.set(FFISleeperRegion.from(region, schema, runtime));
+        params.setRegion(FFISleeperRegion.from(region, schema, runtime));
         params.validate();
 
         return params;

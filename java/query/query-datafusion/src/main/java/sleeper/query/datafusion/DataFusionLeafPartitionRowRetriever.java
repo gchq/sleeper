@@ -15,9 +15,6 @@
  */
 package sleeper.query.datafusion;
 
-import jnr.ffi.ObjectReferenceManager;
-import jnr.ffi.Pointer;
-import jnr.ffi.Struct;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
@@ -25,6 +22,7 @@ import org.apache.arrow.vector.ipc.ArrowReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -44,7 +42,6 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -91,25 +88,11 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
-        getArrowReader(leafPartitionQuery, dataReadSchema, tableProperties);
-        return new CloseableIterator<Row>() {
-
-            @Override
-            public boolean hasNext() {
-                return false;
-            }
-
-            @Override
-            public Row next() {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'next'");
-            }
-
-            @Override
-            public void close() throws IOException {
-            }
-
-        };
+        try {
+            return new RowIteratorFromArrowReader(getArrowReader(leafPartitionQuery, dataReadSchema, tableProperties));
+        } catch (IOException e) {
+            throw new RowRetrievalException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -133,13 +116,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         int nativeCallResult;
         FFIQueryResults queryResults;
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        ObjectReferenceManager<Object> orm = runtime.newObjectReferenceManager();
-
-        int size = Struct.size(FFICommonConfig.class, runtime);
-        // Pointer thisMemory = Memory.allocateDirect(runtime, size);
-        // Pointer jpointer = orm.add(thisMemory);
-
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime, null);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
         // Create NULL pointer which will be set by the FFI call upon return
         queryResults = new FFIQueryResults(runtime);
@@ -147,17 +124,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // Perform native query
         nativeCallResult = functions.query_stream(context, params, queryResults);
 
-        // orm.remove(jpointer);
         // Check result
         if (nativeCallResult != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
             throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
-        }
-        Reference.reachabilityFence(queryResults);
-        Reference.reachabilityFence(params);
-        Reference.reachabilityFence(params.java_common);
-        if (4 < 5) {
-            return null;
         }
 
         // A zeroed (NULL) results pointer is NEVER correct here
@@ -191,8 +161,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         int nativeCallResult;
         FFIFileResult fileResults;
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime, null);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
 
         // Create NULL pointer which will be set by the FFI call upon return
         fileResults = new FFIFileResult(runtime);
@@ -225,8 +194,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
-            jnr.ffi.Runtime runtime, Pointer memory) {
-        return createFFIQueryData(query, null, dataReadSchema, tableProperties, awsConfig, runtime, memory);
+            jnr.ffi.Runtime runtime) {
+        return createFFIQueryData(query, null, dataReadSchema, tableProperties, awsConfig, runtime);
     }
 
     /**
@@ -247,11 +216,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, String outputFile, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
-            jnr.ffi.Runtime runtime, Pointer someMemory) {
-
+            jnr.ffi.Runtime runtime) {
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
-        // common.useMemory(someMemory);
-        common.init(runtime, awsConfig);
         FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
         parquetOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
@@ -287,7 +253,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.setCommonConfig(common);
-        // System.err.printf("j 0x%x%n", queryConfig.common.longValue());
         queryConfig.setExtensions(new FFIExtension[0]);
 
         // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
