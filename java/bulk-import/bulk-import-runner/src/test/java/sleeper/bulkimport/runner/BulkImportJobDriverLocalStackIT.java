@@ -1,0 +1,237 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.bulkimport.runner;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.ParquetWriter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.runner.common.HadoopSketchesStore;
+import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
+import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.RowComparator;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.parquet.row.ParquetRowReaderFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
+
+public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, getSchema());
+    private final SketchesStore sketchesStore = new HadoopSketchesStore(hadoopConf);
+    private final String taskId = "test-bulk-import-spark-cluster";
+    private final String jobRunId = "test-run";
+
+    @BeforeEach
+    public void setup() {
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        tablePropertiesStore().save(tableProperties);
+        update(stateStore()).initialise(tableProperties);
+        System.setProperty("spark.master", "local");
+        System.setProperty("spark.app.name", "bulk import");
+    }
+
+    @AfterEach
+    public void tearDown() {
+        System.clearProperty("spark.master");
+        System.clearProperty("spark.app.name");
+    }
+
+    @Test
+    @Disabled("TODO - configure Spark to point to LocalStack")
+    void shouldImportDataSinglePartition() throws Exception {
+        // Given
+        List<Row> rows = getRows();
+        writeRowsToFile(rows, pathInDataBucket("import/a.parquet"));
+        BulkImportJob job = jobForTable().id("my-job")
+                .files(List.of(pathInDataBucket("import/a.parquet")))
+                .build();
+
+        // When
+        runJob(job);
+
+        // Then
+        assertThat(stateStore().getFileReferences()).singleElement().satisfies(file -> {
+            assertThat(readRows(file)).isEqualTo(sorted(rows));
+            assertThat(SketchesDeciles.fromFile(tableProperties.getSchema(), file, sketchesStore))
+                    .isEqualTo(SketchesDeciles.builder()
+                            .field("key", deciles -> deciles
+                                    .min(0).max(99)
+                                    .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
+                                    .rank(0.4, 40).rank(0.5, 50).rank(0.6, 60)
+                                    .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
+                            .build());
+        });
+    }
+
+    private void runJob(BulkImportJob job) throws Exception {
+        jobTracker().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now()).jobRunId(jobRunId).build());
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore());
+        StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
+                instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
+        BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
+                BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, jobRunner().asImporter(),
+                tablePropertiesProvider, stateStoreProvider(), jobTracker(), commitSender, Instant::now, supplyNumberedIdsWithPrefix("P"));
+        driver.run(job, jobRunId, taskId);
+    }
+
+    private BulkImportJobRunner jobRunner() {
+        return BulkImportDataframeLocalSortDriver::createFileReferences;
+    }
+
+    private String pathInDataBucket(String path) {
+        return instanceProperties.get(DATA_BUCKET) + "/" + path;
+    }
+
+    private StateStore stateStore() {
+        return stateStoreFactory().getStateStore(tableProperties);
+    }
+
+    private StateStoreFactory stateStoreFactory() {
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
+    }
+
+    private StateStoreProvider stateStoreProvider() {
+        return new StateStoreProvider(instanceProperties, stateStoreFactory());
+    }
+
+    private TablePropertiesStore tablePropertiesStore() {
+        return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    }
+
+    private IngestJobTracker jobTracker() {
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    }
+
+    private void writeRowsToFile(List<Row> rows, String path) throws IllegalArgumentException, IOException {
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties.getSchema(), hadoopConf);
+        for (Row row : rows) {
+            writer.write(row);
+        }
+        writer.close();
+    }
+
+    private BulkImportJob.Builder jobForTable() {
+        return BulkImportJob.builder()
+                .tableName(tableProperties.get(TABLE_NAME));
+    }
+
+    private List<Row> sorted(List<Row> rows) {
+        List<Row> sorted = new ArrayList<>(rows);
+        sorted.sort(new RowComparator(tableProperties.getSchema()));
+        return sorted;
+    }
+
+    private List<Row> readRows(FileReference file) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(
+                new Path(file.getFilename()), tableProperties.getSchema()).withConf(hadoopConf).build()) {
+            List<Row> readRows = new ArrayList<>();
+            Row row = reader.read();
+            while (null != row) {
+                readRows.add(new Row(row));
+                row = reader.read();
+            }
+            return readRows;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading rows", e);
+        }
+    }
+
+    private static Schema getSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(
+                        new Field("value1", new StringType()),
+                        new Field("value2", new ListType(new IntType())),
+                        new Field("value3", new MapType(new StringType(), new LongType())))
+                .build();
+    }
+
+    private static List<Row> getRows() {
+        List<Row> rows = new ArrayList<>(200);
+        for (int i = 0; i < 100; i++) {
+            Row row = new Row();
+            row.put("key", i);
+            row.put("sort", (long) i);
+            row.put("value1", "" + i);
+            row.put("value2", List.of(1, 2, 3));
+            Map<String, Long> map = new HashMap<>();
+            map.put("A", 1L);
+            row.put("value3", map);
+            rows.add(row);
+            // Add row again but with the sort field set to a different value
+            Row row2 = new Row(row);
+            row2.put("sort", ((long) row.get("sort")) - 1L);
+            rows.add(row2);
+        }
+        Collections.shuffle(rows);
+        return rows;
+    }
+
+}
