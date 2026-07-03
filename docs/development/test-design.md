@@ -22,8 +22,9 @@ unit tests as well. This is important because when a test describes a user-focus
 change as the design of the implementation changes. This isn't universal, but it's important as a principle.
 
 Our test names should be an English sentence starting with "should", that describes the behaviour we wish to assert.
-Most tests should be split into given/when/then sections, with comments separating each section. Those can sometimes be
-combined but we prefer to separate them explicitly for larger tests.
+Most tests should be split into given/when/then sections, with comments separating each section. These comments should
+clarify which parts arrange, act and assert. Sometimes we use a combined "When/Then", but we usually prefer to separate
+them explicitly, particularly for larger tests.
 
 ### Test driven development (TDD)
 
