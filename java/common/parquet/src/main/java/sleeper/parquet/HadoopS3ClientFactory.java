@@ -51,11 +51,18 @@ import static org.apache.hadoop.fs.s3a.Constants.SECURE_CONNECTIONS;
 import static org.apache.hadoop.fs.s3a.auth.SignerFactory.createHttpSigner;
 import static org.apache.hadoop.fs.s3a.impl.InternalConstants.AUTH_SCHEME_AWS_SIGV_4;
 
+/**
+ * Implementation required of S3ClientFactory as AWS sdk has moved beyond the use of ApacheHttpClient which is
+ * required as part of the hadoop implementation.
+ *
+ */
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
 
     public HadoopS3ClientFactory() {
     }
 
+    // Method is required as source code for Hadoop requires property to be set to client factory which
+    // has a default empty constructor.
     public static void configureHadoop(Configuration conf) {
         conf.set("fs.s3a.s3.client.factory.impl", HadoopS3ClientFactory.class.getName());
     }
