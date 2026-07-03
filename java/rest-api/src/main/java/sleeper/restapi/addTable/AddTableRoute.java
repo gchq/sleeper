@@ -222,6 +222,9 @@ public class AddTableRoute implements Route {
     /**
      * Builds an insertion-ordered map from alternating key/value arguments. Used so the generated OpenAPI spec has
      * stable field ordering across runs — {@link Map#of(Object, Object)} randomises iteration order per JVM.
+     *
+     * @param  kvPairs alternating key/value pairs where keys must be {@link String} instances
+     * @return         a {@link LinkedHashMap} populated with the given pairs in the order supplied
      */
     private static LinkedHashMap<String, Object> linkedMap(Object... kvPairs) {
         LinkedHashMap<String, Object> map = new LinkedHashMap<>();
