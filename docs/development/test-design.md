@@ -6,7 +6,7 @@ have a shared purpose in common, to make it easy for us to change the production
 align the tests as closely as possible to a real scenario that a user would care about. That's not always a direct
 equivalence in practice, but we always look for ways to do that.
 
-### Behaviour Driven Design (BDD)
+### Behaviour driven development (BDD)
 
 We use tests to define the behaviour of the system, writing all tests in the style of behaviour driven development
 (BDD). The following article by Dan North defines this term, though not all examples match our style and conventions:
@@ -25,7 +25,7 @@ Our test names should be an English sentence starting with "should", that descri
 Most tests should be split into given/when/then sections, with comments separating each section. Those can sometimes be
 combined but we prefer to separate them explicitly for larger tests.
 
-### Test Driven Design (TDD)
+### Test driven development (TDD)
 
 We try to use test driven development (TDD) whenever possible, but we do not require this of all contributors. We use
 the definitions of this found in the following resources:
