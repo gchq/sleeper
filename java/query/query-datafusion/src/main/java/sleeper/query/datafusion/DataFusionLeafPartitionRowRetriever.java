@@ -237,7 +237,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         }
 
         common.job_id.set(query.getQueryId());
-        common.parquet_options.set(parquetOptions);
+        common.setParquetOptions(parquetOptions);
         common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
@@ -248,7 +248,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.setSortKeyCols(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new));
         common.aggregation_config.set(Optional.ofNullable(tableProperties.get(AGGREGATION_CONFIG)).orElse(""));
         common.filtering_config.set(Optional.ofNullable(tableProperties.get(FILTERING_CONFIG)).orElse(""));
-        common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
+        common.setRegion(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
