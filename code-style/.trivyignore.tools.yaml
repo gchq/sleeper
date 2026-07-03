@@ -24,7 +24,6 @@ vulnerabilities:
   - id: CVE-2026-39821
   - id: CVE-2026-42502
   - id: CVE-2026-42506
-
   # github.com/containerd/containerd/v2
   - id: CVE-2026-53488
   - id: CVE-2026-53489
@@ -35,4 +34,7 @@ vulnerabilities:
   - id: CVE-2026-34040
   - id: CVE-2026-33997
 
-
+  # Due to AWS SDK using a shaded version of Jackson, we are unable to update until below has been resolved:
+  # https://github.com/gchq/sleeper/issues/7459
+  # com.fasterxml.jackson.core:jackson-databind
+  - id: CVE-2026-54515
