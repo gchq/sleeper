@@ -64,9 +64,7 @@ impl FFILeafPartitionQueryConfig {
         let Some(ffi_common) = (unsafe { self.common.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig common is NULL");
         };
-        // eprintln!("r {:p}", self.common);
         let common = ffi_common.to_common_config(file_output_enabled)?;
-        bail!("stop");
         let row_key_cols = ffi_common.row_key_cols()?;
 
         let Some(_) = (unsafe { self.query_regions.as_ref() }) else {

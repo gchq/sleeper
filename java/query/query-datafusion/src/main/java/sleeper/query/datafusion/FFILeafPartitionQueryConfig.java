@@ -36,7 +36,7 @@ public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
     /** Prevents GC of pointee until this object is collected. */
-    public FFICommonConfig java_common;
+    private FFICommonConfig java_common;
     /** Length of query regions array. */
     public final Struct.size_t query_regions_len = new Struct.size_t();
     /** The array of query regions. */
