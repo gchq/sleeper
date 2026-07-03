@@ -175,8 +175,8 @@ class BulkImportJobDriverIT {
         // Then
         List<FileReference> fileReferences = stateStore().getFileReferences();
         assertThat(fileReferences).singleElement().satisfies(fileReference -> {
-            SketchesDeciles.fromFile(schema, fileReference, sketchesStore)
-                    .equals(SketchesDeciles.builder()
+            assertThat(SketchesDeciles.fromFile(schema, fileReference, sketchesStore))
+                    .isEqualTo(SketchesDeciles.builder()
                             .field("key", deciles -> deciles
                                     .min(0).max(99)
                                     .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
