@@ -45,9 +45,9 @@ through the ports. Adapters can be swapped out for in-memory test fakes for test
 tests in-memory and fast. We can test adapters through the adapter, still invoking the real application code, and we
 have the option to swap out any other necessary adapters for test fakes.
 
-Note that the system contains some modules with "core" in the name, which are mostly core business logic, with no I/O
-dependencies except for logging, JSON serialisation/deserialisation, and basic utilities. These modules may include some
-file system adapter code whose only dependency is the standard library.
+Note that the system contains some modules with "core" in the name, which are mostly core business logic. These have no
+I/O dependencies except for logging, JSON serialisation/deserialisation, and basic utilities. These modules may include
+some file system adapter code whose only dependency is the standard library.
 
 ### Mocking and test fakes
 
