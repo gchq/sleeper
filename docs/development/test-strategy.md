@@ -40,14 +40,16 @@ the I/O technology, or would exclude all logic from the test.
 
 All code should be covered with unit tests or integration tests, except for experimental features that were implemented
 without TDD. TDD is preferred in all cases, including for experimental features, and test coverage should be improved as
-soon as possible.
+soon as is practical.
 
-We also write system tests for all features that are not experimental. This is our system test suite in JUnit. We keep
-the number of system tests per feature low, as these tests are relatively slow to run. They should verify that each
-feature is functional when deployed in AWS, and test properties such as performance and throughput. When we add a new
-feature, we add some simple coverage to verify it still works when deployed, at most one or two cases as a complement
-to more detailed unit testing. This should cover things like problems with permissions or networking configuration, that
-would only show up when deployed.
+We write system tests for all features that are not experimental and that we consider stable. We can also use them
+pre-emptively during a process of stabilisation, to find problems and monitor stability. This is implemented in JUnit.
+We keep the number of system tests per feature low, as these tests are relatively slow to run. They should verify that
+each feature is functional when deployed in AWS, and test properties such as performance and throughput.
+
+When we add a new feature, we add some simple system test coverage to verify it still works when deployed. This is a
+complement to more detailed unit testing, at most one or two cases, or an adjustment to existing system tests. This
+should cover things like problems with permissions or networking configuration, that would only show up when deployed.
 
 We consider performance testing when we want to provide guarantees about the scalability or performance of the system.
 We also use this to try to discover any differences in behaviour at scale, or bugs that only show up with a large amount
