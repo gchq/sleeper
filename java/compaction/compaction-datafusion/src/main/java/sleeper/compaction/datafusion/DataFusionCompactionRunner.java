@@ -95,13 +95,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                     }
                 }
             }
+            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                    LocalDateTime.now());
+
+            return result;
         } finally {
             Reference.reachabilityFence(params);
         }
-        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                LocalDateTime.now());
-
-        return result;
     }
 
     /**
