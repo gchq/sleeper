@@ -34,8 +34,6 @@ import sleeper.bulkimport.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver;
 import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -43,6 +41,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Field;
@@ -56,20 +55,17 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -92,7 +88,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
@@ -110,7 +105,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestAccep
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.validatedIngestStartedStatus;
 
-class BulkImportJobDriverIT extends LocalStackTestBase {
+class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getStreamOfBulkImportJobRunners() {
         return Stream.of(
@@ -134,7 +129,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
-    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+    private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
+    private final List<StateStoreCommitRequest> sentCommits = new ArrayList<>();
     private String dataDir;
 
     @BeforeAll
@@ -156,12 +153,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         instanceProperties.set(BULK_IMPORT_BUCKET, createDir("bulk-import"));
         dataDir = instanceProperties.get(DATA_BUCKET);
 
-        createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
-        tablePropertiesStore().save(tableProperties);
+        tablePropertiesStore.save(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(tableProperties);
     }
 
@@ -368,7 +361,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                 .valueFields(new Field("value", new StringType(), true), new Field("value2", new ByteArrayType(), false))
                 .build());
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
-        tablePropertiesStore().save(tableProperties);
         update(stateStore()).initialise(tableProperties);
         Row rowWithValue = new Row();
         rowWithValue.put("key", 1);
@@ -399,7 +391,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
         tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 1);
-        tablePropertiesStore().save(tableProperties);
         List<Row> rows = getRows();
         writeRowsToFile(rows, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
@@ -454,10 +445,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<Row> sorted = new ArrayList<>(rows);
         sorted.sort(new RowComparator(tableProperties.getSchema()));
         return sorted;
-    }
-
-    private TablePropertiesStore tablePropertiesStore() {
-        return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     }
 
     private static Schema getSchema() {
@@ -558,13 +545,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     private void runJob(BulkImportJobRunner runner, BulkImportJob job) throws Exception {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
         BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
                 BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, runner.asImporter(),
-                tablePropertiesProvider, stateStoreProvider, tracker, commitSender, startAndEndTime(), supplyNumberedIdsWithPrefix("P"));
+                tablePropertiesProvider, stateStoreProvider, tracker, sentCommits::add, startAndEndTime(), supplyNumberedIdsWithPrefix("P"));
         driver.run(job, jobRunId, taskId);
     }
 
