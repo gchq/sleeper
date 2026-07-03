@@ -53,5 +53,7 @@ vulnerabilities:
   - id: CVE-2026-11525
   - id: CVE-2026-6733
 
+  # Due to AWS SDK using a shaded version of Jackson, we are unable to update until below has been resolved:
+  # https://github.com/gchq/sleeper/issues/7459
   # com.fasterxml.jackson.core:jackson-databind
   - id: CVE-2026-54515
