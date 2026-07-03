@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Spliterators;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -77,6 +78,10 @@ public class QueryExecutorTestBase {
 
     protected QueryExecutor executorAtTime(Instant time) throws Exception {
         return new QueryExecutor(plannerAtTime(time), leafQueryExecutor());
+    }
+
+    protected QueryExecutor parallelExecutor(ExecutorService executorService) throws Exception {
+        return new QueryExecutor(planner(), leafQueryExecutor(), executorService);
     }
 
     protected List<Row> getRows(Query query) throws Exception {

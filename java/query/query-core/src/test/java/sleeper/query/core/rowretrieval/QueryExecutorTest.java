@@ -15,6 +15,7 @@
  */
 package sleeper.query.core.rowretrieval;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +38,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -430,6 +433,72 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
             // Then
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", "B", "value", 7L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Run subqueries in parallel")
+    class RunSubqueriesInParallel {
+
+        private ExecutorService threadPool;
+
+        @BeforeEach
+        void setUp() {
+            threadPool = Executors.newFixedThreadPool(2);
+        }
+
+        @AfterEach
+        void tearDown() {
+            threadPool.shutdown();
+        }
+
+        @Test
+        void shouldReturnRowsFromSinglePartition() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(new Row(Map.of("key", 1L)));
+        }
+
+        @Test
+        void shouldReturnRowsFromMultiplePartitions() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildList());
+            addPartitionFile("left", "left.parquet", List.of(
+                    new Row(Map.of("key", 1L)),
+                    new Row(Map.of("key", 3L))));
+            addPartitionFile("right", "right.parquet", List.of(
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", 1L)),
+                    new Row(Map.of("key", 3L)),
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L)));
+        }
+
+        @Test
+        void shouldReturnNoRowsWhenNoKeyInQueryRange() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRange(100L, 200L));
+
+            // Then
+            assertThat(rows).isEmpty();
         }
     }
 

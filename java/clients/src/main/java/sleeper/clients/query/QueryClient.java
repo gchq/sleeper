@@ -71,16 +71,26 @@ public class QueryClient extends QueryCommandLineClient {
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
+    private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider,
             LeafPartitionRowRetrieverProvider rowRetrieverProvider) {
+        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, objectFactory, stateStoreProvider,
+                rowRetrieverProvider, null);
+    }
+
+    public QueryClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider,
+            LeafPartitionRowRetrieverProvider rowRetrieverProvider, ExecutorService executorService) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
         this.rowRetrieverProvider = rowRetrieverProvider;
+        this.executorService = executorService;
     }
 
     @Override
@@ -90,7 +100,8 @@ public class QueryClient extends QueryCommandLineClient {
             QueryExecutor executor = new QueryExecutor(
                     QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
                     new LeafPartitionQueryExecutor(objectFactory, tableProperties,
-                            rowRetrieverProvider.getRowRetriever(tableProperties)));
+                            rowRetrieverProvider.getRowRetriever(tableProperties)),
+                    executorService);
             cachedQueryExecutors.put(tableName, executor);
         }
     }
@@ -99,23 +110,22 @@ public class QueryClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
 
-        CloseableIterator<Row> rows;
         Instant startTime = Instant.now();
-        try {
-            rows = runQuery(query);
+        try (CloseableIterator<Row> rows = runQuery(query)) {
+            out.println("Returned Rows:");
+            long count = 0L;
+            while (rows.hasNext()) {
+                out.println(rows.next().toString(schema));
+                count++;
+            }
+            out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " rows");
         } catch (QueryException e) {
             out.println("Encountered an error while running query " + query.getQueryId());
             e.printStackTrace(out.printStream());
-            return;
+        } catch (java.io.IOException e) {
+            out.println("Encountered an error while closing iterator for query " + query.getQueryId());
+            e.printStackTrace(out.printStream());
         }
-        out.println("Returned Rows:");
-        long count = 0L;
-        while (rows.hasNext()) {
-            out.println(rows.next().toString(schema));
-            count++;
-        }
-
-        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " rows");
     }
 
     private CloseableIterator<Row> runQuery(Query query) throws QueryException {
@@ -128,7 +138,8 @@ public class QueryClient extends QueryCommandLineClient {
         }
         String instanceId = args[0];
 
-        ExecutorService executorService = Executors.newFixedThreadPool(30);
+        ExecutorService fileReadingExecutorService = Executors.newFixedThreadPool(30);
+        ExecutorService leafPartitionExecutorService = Executors.newFixedThreadPool(10);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 StsClient stsClient = buildAwsV2Client(StsClient.builder());
@@ -144,11 +155,13 @@ public class QueryClient extends QueryCommandLineClient {
                     new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
-                            new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
-                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context)))
+                            new LeafPartitionRowRetrieverImpl.Provider(fileReadingExecutorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
+                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context)),
+                    leafPartitionExecutorService)
                     .run();
         } finally {
-            executorService.shutdown();
+            fileReadingExecutorService.shutdown();
+            leafPartitionExecutorService.shutdown();
         }
     }
 }

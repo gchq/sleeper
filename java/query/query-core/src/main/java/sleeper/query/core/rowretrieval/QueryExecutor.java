@@ -26,20 +26,57 @@ import sleeper.query.core.model.QueryException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
  * cannot be used concurrently in multiple threads, due to how partitions are cached.
  */
 public class QueryExecutor {
+    private static final int DEFAULT_BUFFER_SIZE = 10000;
 
     private final QueryPlanner queryPlanner;
     private final LeafPartitionQueryExecutor leafQueryExecutor;
+    private final ExecutorService executorService;
+    private final int bufferSize;
 
     public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor) {
+        this(queryPlanner, leafQueryExecutor, null);
+    }
+
+    /**
+     * Creates an executor that runs leaf partition sub-queries in parallel using the provided thread pool. Background
+     * threads read rows from each partition and feed them into a shared queue; the returned iterator drains that queue.
+     * Parallelism is bounded by the thread pool size; excess sub-queries queue until a thread is free.
+     *
+     * @param queryPlanner      the planner that splits a query into leaf partition sub-queries
+     * @param leafQueryExecutor the executor that retrieves rows for a single leaf partition
+     * @param executorService   the thread pool used to run sub-queries concurrently, or null for sequential execution
+     */
+    public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService) {
+        this(queryPlanner, leafQueryExecutor, executorService, DEFAULT_BUFFER_SIZE);
+    }
+
+    /**
+     * Creates an executor that runs leaf partition sub-queries in parallel using the provided thread pool, with a
+     * configurable row buffer size. The buffer limits how far ahead producers can run relative to the consumer.
+     *
+     * @param queryPlanner      the planner that splits a query into leaf partition sub-queries
+     * @param leafQueryExecutor the executor that retrieves rows for a single leaf partition
+     * @param executorService   the thread pool used to run sub-queries concurrently, or null for sequential execution
+     * @param bufferSize        the maximum number of rows held in the shared queue at any one time
+     */
+    public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService, int bufferSize) {
         this.queryPlanner = queryPlanner;
         this.leafQueryExecutor = leafQueryExecutor;
+        this.executorService = executorService;
+        this.bufferSize = bufferSize;
     }
 
     /**
@@ -69,8 +106,61 @@ public class QueryExecutor {
      */
     public CloseableIterator<Row> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
+        if (executorService != null) {
+            return executeInParallel(leafPartitionQueries);
+        }
         List<Supplier<CloseableIterator<Row>>> iteratorSuppliers = createRowIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
+    }
+
+    private CloseableIterator<Row> executeInParallel(List<LeafPartitionQuery> leafPartitionQueries) {
+        BlockingQueue<ParallelQueryIterator.QueueItem> queue = new ArrayBlockingQueue<>(bufferSize);
+        AtomicBoolean closed = new AtomicBoolean(false);
+        List<Future<?>> futures = leafPartitionQueries.stream()
+                .map(leafPartitionQuery -> (Future<?>) executorService.submit(() -> {
+                    boolean sentTerminal = false;
+                    CloseableIterator<Row> rows = null;
+                    try {
+                        rows = leafQueryExecutor.getRows(leafPartitionQuery);
+                        while (rows.hasNext() && !closed.get()) {
+                            queue.put(ParallelQueryIterator.QueueItem.row(rows.next()));
+                        }
+                    } catch (QueryException | RuntimeException e) {
+                        putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.error(
+                                e instanceof RuntimeException re ? re
+                                        : new RuntimeException("Exception returning rows for leaf partition " + leafPartitionQuery, e)));
+                        sentTerminal = true;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        sentTerminal = true; // close() was called, DONE not needed
+                    } finally {
+                        if (rows != null) {
+                            try {
+                                rows.close();
+                            } catch (java.io.IOException ignored) {
+                            }
+                        }
+                        if (!sentTerminal) {
+                            putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.DONE);
+                        }
+                    }
+                }))
+                .collect(Collectors.toList());
+        return new ParallelQueryIterator(queue, futures, closed);
+    }
+
+    private static void putIfOpen(BlockingQueue<ParallelQueryIterator.QueueItem> queue,
+            AtomicBoolean closed, ParallelQueryIterator.QueueItem item) {
+        if (closed.get()) {
+            return;
+        }
+        try {
+            queue.put(item);
+        } catch (InterruptedException e) {
+            // queue.put is a blocking call which can throw an InterruptedException; re-set the interrupt flag on the
+            // thread so that the caller is aware.
+            Thread.currentThread().interrupt();
+        }
     }
 
     private List<Supplier<CloseableIterator<Row>>> createRowIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
