@@ -40,9 +40,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Generates the OpenAPI spec at {@code docs/rest-api/openapi.yaml} by walking the REST API's route registry and
- * asking each route to describe itself. The committed spec is the output of this main; do not hand-edit it — update
- * the route's {@code openApi*} methods and rerun {@code scripts/dev/generateDocumentation.sh}.
+ * Generates the OpenAPI spec by walking the REST API's route registry and asking each route to describe itself.
+ * The output is written to {@code docs/rest-api/openapi.yaml}. The committed spec is the output of this main;
+ * do not hand-edit it — update the route's {@code openApi*} methods and rerun
+ * {@code scripts/dev/generateDocumentation.sh}.
  */
 public class GenerateOpenApiSpec {
 
