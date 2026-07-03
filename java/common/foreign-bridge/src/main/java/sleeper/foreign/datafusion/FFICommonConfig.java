@@ -32,7 +32,7 @@ import java.util.Objects;
  * types of the fields must match exactly.
  */
 @SuppressWarnings("checkstyle:membername")
-@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
+@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "URF_UNREAD_FIELD"})
 public class FFICommonConfig extends Struct {
     /** Job ID. */
     public final Struct.UTF8StringRef job_id = new Struct.UTF8StringRef();
