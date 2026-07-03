@@ -20,7 +20,7 @@ use crate::objects::{
 };
 use color_eyre::eyre::bail;
 use datafusion::arrow::ffi_stream::FFI_ArrowArrayStream;
-use sleeper_core::{CommonConfig, LeafPartitionQueryConfig};
+use sleeper_core::LeafPartitionQueryConfig;
 use std::slice;
 
 /// Contains all information needed for a Sleeper leaf partition query from a foreign function.
