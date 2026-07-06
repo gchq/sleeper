@@ -114,11 +114,11 @@ class ParallelQueryIterator implements CloseableIterator<Row> {
             return new QueueItem(null, e);
         }
 
-        boolean isDone() {
+        public boolean isDone() {
             return this == DONE;
         }
 
-        boolean isError() {
+        public boolean isError() {
             return error != null;
         }
     }

@@ -500,6 +500,70 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
             // Then
             assertThat(rows).isEmpty();
         }
+
+        @Test
+        void shouldReturnNoRowsFromEmptyQuery() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRegions());
+
+            // Then
+            assertThat(rows).isEmpty();
+        }
+
+        @Test
+        void shouldReturnRowsFromMultiplePartitionsWhenSomeEmptyAndSomeNot() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .splitToNewChildren("L", "LL", "LR", 0L)
+                    .splitToNewChildren("R", "RL", "RR", 10L)
+                    .buildList());
+            addPartitionFile("LL", "file1.parquet", List.of(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", -9L))));
+            addPartitionFile("RL", "file2.parquet", List.of(
+                    new Row(Map.of("key", 6L)),
+                    new Row(Map.of("key", 7L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", -9L)),
+                    new Row(Map.of("key", 6L)),
+                    new Row(Map.of("key", 7L)));
+        }
+
+        @Test
+        void shouldReturnRowsFromMultipleQueryRangesAllInSamePartition() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildList());
+            addPartitionFile("left", "left.parquet", List.of(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", 3L))));
+            addPartitionFile("right", "right.parquet", List.of(
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L))));
+
+            // When
+            Region region1 = range(-11L, -9L);
+            Region region2 = range(8L, 10L);
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRegions(region1, region2));
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", 9L)));
+        }
     }
 
     @Nested
