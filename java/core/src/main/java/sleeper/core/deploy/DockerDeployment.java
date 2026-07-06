@@ -326,8 +326,8 @@ public class DockerDeployment {
          * Sets whether this is built from the default base image. If it is, the BASE_IMAGE build argument will be
          * passed during a build.
          *
-         * @param  baseImage true if this is built from the default base image
-         * @return           this builder
+         * @param  useDefaultBaseImage true if this is built from the default base image
+         * @return                     this builder
          */
         public Builder useDefaultBaseImage(boolean useDefaultBaseImage) {
             this.useDefaultBaseImage = useDefaultBaseImage;
