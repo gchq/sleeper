@@ -86,6 +86,7 @@ public class BulkImportSparkContext implements BulkImportContext<BulkImportSpark
      *
      * @param  instanceProperties the instance properties
      * @param  tableProperties    the table properties
+     * @param  conf               the Spark configuration
      * @param  partitions         all partitions in the Sleeper table partition tree
      * @param  filenames          the paths to the input Parquet files, excluding the file system
      * @return                    the context for the bulk import
