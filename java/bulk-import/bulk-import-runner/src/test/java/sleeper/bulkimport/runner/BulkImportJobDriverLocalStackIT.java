@@ -18,9 +18,8 @@ package sleeper.bulkimport.runner;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.jupiter.api.AfterEach;
+import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -50,6 +49,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.localstack.test.LocalStackHadoopConfigurationProvider;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -70,6 +70,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -82,9 +83,11 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
     private final SketchesStore sketchesStore = new HadoopSketchesStore(hadoopConf);
     private final String taskId = "test-bulk-import-spark-cluster";
     private final String jobRunId = "test-run";
+    private final SparkConf sparkConf = BulkImportSparkContext.createSparkConf();
 
     @BeforeEach
     public void setup() {
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
@@ -92,22 +95,18 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         tablePropertiesStore().save(tableProperties);
         update(stateStore()).initialise(tableProperties);
-        System.setProperty("spark.master", "local");
-        System.setProperty("spark.app.name", "bulk import");
-    }
-
-    @AfterEach
-    public void tearDown() {
-        System.clearProperty("spark.master");
-        System.clearProperty("spark.app.name");
+        sparkConf.set("spark.master", "local");
+        sparkConf.set("spark.app.name", "bulk import");
+        LocalStackHadoopConfigurationProvider.configureHadoop(
+                (property, value) -> sparkConf.set("spark.hadoop." + property, value),
+                localStackContainer);
     }
 
     @Test
-    @Disabled("TODO - configure Spark to point to LocalStack")
     void shouldImportDataSinglePartition() throws Exception {
         // Given
         List<Row> rows = getRows();
-        writeRowsToFile(rows, pathInDataBucket("import/a.parquet"));
+        writeRowsToFile(rows, s3aPathInDataBucket("import/a.parquet"));
         BulkImportJob job = jobForTable().id("my-job")
                 .files(List.of(pathInDataBucket("import/a.parquet")))
                 .build();
@@ -135,13 +134,17 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                 instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver<BulkImportSparkContext> driver = new BulkImportJobDriver<>(
-                BulkImportSparkContext.creator(instanceProperties), GenerateSketchesDriver::generatePartitionIdToSketches, jobRunner().asImporter(),
+                BulkImportSparkContext.creator(instanceProperties, sparkConf), GenerateSketchesDriver::generatePartitionIdToSketches, jobRunner().asImporter(),
                 tablePropertiesProvider, stateStoreProvider(), jobTracker(), commitSender, Instant::now, supplyNumberedIdsWithPrefix("P"));
         driver.run(job, jobRunId, taskId);
     }
 
     private BulkImportJobRunner jobRunner() {
         return BulkImportDataframeLocalSortDriver::createFileReferences;
+    }
+
+    private String s3aPathInDataBucket(String path) {
+        return "s3a://" + pathInDataBucket(path);
     }
 
     private String pathInDataBucket(String path) {
