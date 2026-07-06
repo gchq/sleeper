@@ -113,12 +113,13 @@ public class StackDockerImage {
         }
     }
 
-    public StackDockerImage createOverrideBaseImage(Path overrideDirectory) {
-        return builder()
-                .imageName(imageName + "-base")
-                .platforms(platforms)
-                .overrideDirectory(overrideDirectory)
-                .build();
+    public Optional<StackDockerImage> createOverrideBaseImage(DeployConfiguration deployConfig) {
+        return deployConfig.overrideBaseImageDirPathForImage(imageName)
+                .map(overrideDirectory -> builder()
+                        .imageName(imageName + "-base")
+                        .platforms(platforms)
+                        .overrideDirectory(overrideDirectory)
+                        .build());
     }
 
     public String getDirectoryName() {

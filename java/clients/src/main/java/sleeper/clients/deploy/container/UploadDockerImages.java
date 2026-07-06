@@ -155,9 +155,7 @@ public class UploadDockerImages {
     }
 
     private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
-        StackDockerImage overrideBaseImage = deployConfig.overrideBaseImageDirPathForImage(image.getImageName())
-                .map(image::createOverrideBaseImage)
-                .orElse(null);
+        StackDockerImage overrideBaseImage = image.createOverrideBaseImage(deployConfig).orElse(null);
         if (overrideBaseImage != null) {
             String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
             buildAndPushImage(overrideBaseTag, overrideBaseImage, Map.of());
