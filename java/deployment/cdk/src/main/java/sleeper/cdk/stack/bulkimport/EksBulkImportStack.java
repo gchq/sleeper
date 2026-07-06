@@ -411,14 +411,24 @@ public final class EksBulkImportStack extends NestedStack {
                                 "metadata", Map.of("labels", Map.of("name", "fluent-bit")),
                                 "spec", Map.of(
                                         "serviceAccountName", "fluent-bit",
+                                        "tolerations", List.of(Map.of(
+                                                "key", "eks.amazonaws.com/compute-type",
+                                                "operator", "Equal",
+                                                "value", "auto",
+                                                "effect", "NoSchedule")),
                                         "containers", List.of(Map.of(
                                                 "name", "fluent-bit",
                                                 "image", "public.ecr.aws/aws-observability/aws-for-fluent-bit:stable",
+                                                "resources", Map.of(
+                                                        "requests", Map.of("cpu", "50m", "memory", "64Mi"),
+                                                        "limits", Map.of("memory", "256Mi")),
                                                 "volumeMounts", List.of(
                                                         Map.of("name", "varlog", "mountPath", "/var/log"),
+                                                        Map.of("name", "fluentbitstate", "mountPath", "/var/fluent-bit/state"),
                                                         Map.of("name", "config", "mountPath", "/fluent-bit/etc/")))),
                                         "volumes", List.of(
                                                 Map.of("name", "varlog", "hostPath", Map.of("path", "/var/log")),
+                                                Map.of("name", "fluentbitstate", "emptyDir", Map.of()),
                                                 Map.of("name", "config", "configMap", Map.of("name", "fluent-bit-config"))))))));
         withDependencyOn(configMap, daemonSet);
         withDependencyOn(clusterRoleBinding, daemonSet);
