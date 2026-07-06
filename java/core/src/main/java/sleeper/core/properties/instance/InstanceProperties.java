@@ -21,6 +21,7 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -260,16 +261,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @return         the map of tag name to value
      */
     public static Map<String, String> csvTagsToMap(String csvTags) {
-        Map<String, String> tags = new HashMap<>();
-        if (null != csvTags && !csvTags.isEmpty()) {
-            String[] split = csvTags.split(",");
-            if (split.length % 2 == 0) { //Ensure matching number of keys and values
-                for (int i = 0; i < split.length; i += 2) {
-                    tags.put(split[i], split[i + 1]);
-                }
-            }
-        }
-        return tags;
+        return SleeperPropertyValueUtils.readCommaSeparatedStringToString(csvTags);
     }
 
     /**
