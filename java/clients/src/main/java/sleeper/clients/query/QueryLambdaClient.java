@@ -135,7 +135,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             };
         }
 
-        super.runQueries(tableProperties);
+        super.runQueries(tableProperties, sqlQuery);
     }
 
     public void submitQuery(Query query) {
