@@ -19,56 +19,55 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises an AddTable rest request or response to and from JSON.
+ * Serialises an AddTable request to and from JSON.
  */
-public class AddTableSerDe {
+public class AddTableRequestSerDe {
 
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public AddTableSerDe() {
+    public AddTableRequestSerDe() {
         GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
     /**
-     * Formats an AddTable response as a JSON string.
+     * Serialises an AddTable request to JSON.
      *
-     * @param  response the response
-     * @return          a JSON string representation of the response
+     * @param  request the request
+     * @return         a JSON representation of the request
      */
-    public String toJson(AddTableResponse response) {
-        return gson.toJson(response);
+    public String toJson(AddTableRequest request) {
+        return gson.toJson(request);
     }
 
     /**
-     * Formats an AddTable response as a JSON string with the option to pretty print.
+     * Serialises an AddTable request to JSON.
      *
-     * @param  response    the response
-     * @param  prettyPrint option to pretty print
-     * @return             a JSON string representation of the response
+     * @param  request     the request
+     * @param  prettyPrint true if the JSON should be formatted for readability
+     * @return             a JSON representation of the request
      */
-    public String toJson(AddTableResponse response, boolean prettyPrint) {
+    public String toJson(AddTableRequest request, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrint.toJson(response);
+            return gsonPrettyPrint.toJson(request);
         }
-        return toJson(response);
+        return toJson(request);
     }
 
     /**
-     * Parses a JSON string as an AddTable request.
+     * Deserialises a JSON string to an AddTable request.
      *
      * @param  json the JSON string
-     * @return      the parsed query
+     * @return      the parsed request
      */
     public AddTableRequest fromJson(String json) {
-        AddTableRequest query = gson.fromJson(json, AddTableRequest.class);
-        if (query != null) {
-            return query.validate();
+        AddTableRequest request = gson.fromJson(json, AddTableRequest.class);
+        if (request != null) {
+            return request.validate();
         } else {
             return null;
         }
     }
-
 }

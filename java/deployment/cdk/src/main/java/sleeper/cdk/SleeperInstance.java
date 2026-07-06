@@ -108,10 +108,11 @@ public class SleeperInstance {
      */
     public static SleeperInstance create(Stack stack, SleeperInstanceProps props) {
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(stack, props);
-        SleeperOptionalStacks.create(stack, props, coreStacks);
+        SleeperOptionalStacks optionalStacks = SleeperOptionalStacks.create(stack, props, coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         coreStacks.createRoles();
+        optionalStacks.finishAfterRolesCreated();
         // Only write properties after CDK-defined properties are set
         new PropertiesStack(stack, "Properties", props.getInstanceProperties(), props.getArtefacts(), coreStacks);
         return new SleeperInstance(props.getInstanceProperties(), coreStacks);

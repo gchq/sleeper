@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.table.AddTable;
+import sleeper.clients.table.AddTableClient;
 import sleeper.clients.table.TakeAllTablesOffline;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesUtils;
@@ -83,7 +83,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
 
                 TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
                 StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
-                new AddTable(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+                new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
                 LOGGER.info("Added table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName);
             } catch (Exception e) {
                 throw new RuntimeException("Unable to create table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName, e);

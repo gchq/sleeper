@@ -44,6 +44,7 @@ log = { workspace = true }
 num-format = { workspace = true }
 object_store = { workspace = true }
 objectstore_ext = { path = "../objectstore_ext" }
+query_sql = { path = "../query_sql" }
 regex = { workspace = true }
 rust_sketch = { path = "../rust_sketch" }
 tokio = { workspace = true, features = ["full"] }

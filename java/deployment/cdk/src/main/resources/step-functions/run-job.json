@@ -16,6 +16,11 @@
         "ttlSecondsAfterFinished": 600,
         "backoffLimit": 0,
         "template": {
+          "metadata": {
+            "annotations": {
+              "karpenter.sh/do-not-disrupt": "true"
+            }
+          },
           "spec": {
             "serviceAccountName": "spark-submit",
             "containers": [

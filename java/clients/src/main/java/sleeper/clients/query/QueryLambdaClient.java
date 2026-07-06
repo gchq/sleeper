@@ -40,6 +40,7 @@ import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -50,6 +51,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
  * execute the query.
  */
 public class QueryLambdaClient extends QueryCommandLineClient {
+    private static final String S3_PROMPT_RESPONSE = "s";
+    private static final String SQS_PROMPT_RESPONSE = "q";
+
     private final QuerySender querySender;
     private final QueryTrackerStore queryTracker;
     private Map<String, String> resultsPublisherConfig;
@@ -69,30 +73,32 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
-        out.println("Submitting query with id " + query.getQueryId());
+        String queryId = query.getQueryId();
+        out.println("Submitting query with id " + queryId);
+
         submitQuery(query);
-        long sleepTime = 1000L;
+
         try {
-            QueryState state;
+            QueryState state = QueryState.IN_PROGRESS;
             int count = 0;
-            while (true) {
+
+            do {
                 out.println("Polling query tracker");
-                TrackedQuery trackedQuery = queryTracker.getStatus(query.getQueryId());
+
+                TrackedQuery trackedQuery = queryTracker.getStatus(queryId);
                 if (trackedQuery != null) {
                     state = trackedQuery.getLastKnownState();
-                    if (!state.equals(QueryState.IN_PROGRESS)) {
-                        break;
-                    }
                 }
-                count++;
-                if (count > 20) {
-                    sleepTime = 5000L;
-                } else if (count > 10) {
-                    sleepTime = 2000L;
+
+                if (state.equals(QueryState.IN_PROGRESS)) {
+                    count++;
+
+                    long sleepTime = sleepTimeForPollCount(count);
+                    out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
+                    Thread.sleep(sleepTime);
                 }
-                out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
-                Thread.sleep(sleepTime);
-            }
+            } while (state.equals(QueryState.IN_PROGRESS));
+
             out.println("Finished query processing with final state of: " + state);
         } catch (QueryTrackerException | InterruptedException e) {
             out.println("Failed to get status");
@@ -103,28 +109,46 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     @Override
     protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         resultsPublisherConfig = new HashMap<>();
-        while (true) {
-            String type = in.promptLine("Send output to S3 results bucket (s) or SQS (q)?");
-            if ("".equals(type)) {
-                break;
-            }
-            if ("s".equalsIgnoreCase(type)) {
-                // Nothing to do - empty resultsPublisherConfig will cause the
-                // results to be published to S3.
-                out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
-            } else if ("q".equals(type)) {
-                resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
-                out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
-            } else {
-                continue;
-            }
-            break;
+        boolean chosen = false;
+
+        while (!chosen) {
+            String type = in.promptLine("Send output to S3 results bucket (s) or SQS (q)? [s]");
+
+            chosen = switch (type.toLowerCase(Locale.ROOT)) {
+                case "", S3_PROMPT_RESPONSE -> {
+                    out.println("Results will be published to S3 bucket "
+                            + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
+
+                    yield true;
+                }
+
+                case SQS_PROMPT_RESPONSE -> {
+                    out.println("Results will be published to SQS queue "
+                            + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
+
+                    resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
+
+                    yield true;
+                }
+
+                default -> false;
+            };
         }
+
         super.runQueries(tableProperties);
     }
 
     public void submitQuery(Query query) {
         querySender.sendQuery(query.withResultsPublisherConfig(resultsPublisherConfig));
+    }
+
+    private static long sleepTimeForPollCount(int count) {
+        if (count > 20) {
+            return 5000L;
+        } else if (count > 10) {
+            return 2000L;
+        }
+        return 1000L;
     }
 
     public static void main(String[] args) throws InterruptedException {
