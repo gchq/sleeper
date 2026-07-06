@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.FileReader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesUtils;
@@ -37,7 +38,6 @@ import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -98,9 +98,9 @@ public class AddTableClient {
 
         Properties rawTableProperties;
         rawTableProperties = tablePropertiesFile.isPresent()
-                ? PropertiesUtils.loadProperties(readFile(files, tablePropertiesFile.get()))
+                ? PropertiesUtils.loadProperties(FileReader.readFile(files, tablePropertiesFile.get()))
                 : configDir.isPresent()
-                        ? PropertiesUtils.loadProperties(readFile(files, configDir.get().resolve("table.properties")))
+                        ? PropertiesUtils.loadProperties(FileReader.readFile(files, configDir.get().resolve("table.properties")))
                         : null;
 
         return new Arguments(
@@ -132,9 +132,9 @@ public class AddTableClient {
         }
     }
 
-    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
+    public static TableProperties createTablePropertiesWithLoaders(Arguments args, FileReader.InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
-        tableProperties.setSchema(new SchemaSerDe().fromJson(readFile(files, args.resolveSchemaFile())));
+        tableProperties.setSchema(new SchemaSerDe().fromJson(FileReader.readFile(files, args.resolveSchemaFile())));
         return tableProperties;
     }
 
@@ -179,21 +179,5 @@ public class AddTableClient {
         public Path resolveSchemaFile() {
             return schemaFile != null ? schemaFile : configDir.resolve("schema.json");
         }
-    }
-
-    private static String readFile(FileReader reader, Path path) {
-        try {
-            return reader.readStringChecked(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public interface InstancePropertiesLoader {
-        InstanceProperties load(String instanceId);
-    }
-
-    public interface FileReader {
-        String readStringChecked(Path path) throws IOException;
     }
 }
