@@ -147,7 +147,7 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
                 .toList();
     }
 
-    public record FoundFile(List<Row> rows, SketchesDeciles sketches) {
+    private record FoundFile(List<Row> rows, SketchesDeciles sketches) {
     }
 
     private void runJob(BulkImportJob job) throws Exception {
