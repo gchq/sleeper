@@ -53,7 +53,6 @@ import static org.apache.hadoop.fs.s3a.impl.InternalConstants.AUTH_SCHEME_AWS_SI
 
 /**
  * Custom implementation of S3ClientFactory, as AWS SDK has moved beyond the use of ApacheHttpClient.
- * Required as part of the Hadoop integration.
  */
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
 
@@ -61,10 +60,8 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
     }
 
     public static void configureHadoop(Configuration conf) {
-        // Property is required to be set due to imcompatiblity between Hadoop and the lastest version of the
-        // AWS SDK with the HTTPClient.
-        // Source code for Hadoop requires property to be set to client factory which has a default empty
-        // constructor.
+        // Property is required to be set due to incompatibility between Hadoop and the latest version of the
+        // AWS SDK, as Hadoop uses a version of the class that is no longer present in the latest versions.
         conf.set("fs.s3a.s3.client.factory.impl", HadoopS3ClientFactory.class.getName());
     }
 
