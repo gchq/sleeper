@@ -62,7 +62,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
@@ -91,7 +91,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
@@ -126,7 +126,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                 buildLambdaImageCommand(expectedStatestoreTag, "./docker/lambda", expectedBaseTag),
                 pushImageCommand(expectedStatestoreTag),
                 buildLambdaImageCommand(expectedIngestTaskTag, "./docker/lambda", expectedBaseTag),
@@ -163,7 +163,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                 pushImageCommand(expectedTag));
     }
@@ -189,7 +189,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
@@ -221,7 +221,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand);
     }
 

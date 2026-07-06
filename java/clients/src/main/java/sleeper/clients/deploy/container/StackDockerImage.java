@@ -32,6 +32,7 @@ public class StackDockerImage {
     private final String directoryName;
     private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
+    private final boolean useDefaultBaseImage;
     private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
@@ -39,6 +40,7 @@ public class StackDockerImage {
         directoryName = builder.directoryName;
         platforms = builder.platforms;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        useDefaultBaseImage = builder.useDefaultBaseImage;
         lambdaJar = builder.lambdaJar;
     }
 
@@ -108,6 +110,10 @@ public class StackDockerImage {
         return createEmrServerlessPolicy;
     }
 
+    public boolean isUseDefaultBaseImage() {
+        return useDefaultBaseImage;
+    }
+
     public Optional<LambdaJar> getLambdaJar() {
         return Optional.ofNullable(lambdaJar);
     }
@@ -145,6 +151,7 @@ public class StackDockerImage {
         private String directoryName;
         private List<ContainerPlatform> platforms = List.of();
         private boolean createEmrServerlessPolicy;
+        private boolean useDefaultBaseImage = true;
         private LambdaJar lambdaJar;
 
         private Builder() {
@@ -194,6 +201,18 @@ public class StackDockerImage {
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        /**
+         * Sets whether this is built from the default base image. If it is, the BASE_IMAGE build argument will be
+         * passed during a build.
+         *
+         * @param  useDefaultBaseImage true if this is built from the default base image
+         * @return                     this builder
+         */
+        public Builder useDefaultBaseImage(boolean useDefaultBaseImage) {
+            this.useDefaultBaseImage = useDefaultBaseImage;
             return this;
         }
 
