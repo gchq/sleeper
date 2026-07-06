@@ -68,6 +68,10 @@ public class DockerImageCommandTestData {
                 command("docker", "login", "--username", "AWS", "--password-stdin", ecrHostname));
     }
 
+    public static CommandPipeline buildImageWithoutBaseCommand(String tag, String dockerDirectory) {
+        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+    }
+
     public static CommandPipeline buildImageCommand(String tag, String dockerDirectory, String baseTag) {
         return pipeline(command("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerDirectory));
     }

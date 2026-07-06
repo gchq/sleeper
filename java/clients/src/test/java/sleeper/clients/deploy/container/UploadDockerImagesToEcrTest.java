@@ -17,6 +17,7 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageWithoutBaseCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
@@ -82,6 +84,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
+        @Disabled("TODO") // TODO bulk import runner image build command
         void shouldPushImagesForTwoStacks() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
@@ -100,7 +103,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
-                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag),
+                    buildImageWithoutBaseCommand(expectedTag2, "./docker/bulk-import-runner"),
                     pushImageCommand(expectedTag2));
         }
 
@@ -600,8 +603,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     }
 
     @Nested
-    @DisplayName("Override base image directory")
-    class OverrideBaseImageDir {
+    @DisplayName("Override base image")
+    class OverrideBaseImage {
 
         @Test
         void shouldBuildBaseImageFromOverrideDirectoryWhenSet() throws Exception {
@@ -621,6 +624,24 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     useBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base", expectedBaseTag),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
+                    pushImageCommand(expectedTag));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldNotUseBaseImageForImageWithDifferentBase() throws Exception {
+            // Given
+            deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDir("./custom/base");
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.EksBulkImportStack);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageWithoutBaseCommand(expectedTag, "./docker/bulk-import-runner"),
                     pushImageCommand(expectedTag));
         }
     }

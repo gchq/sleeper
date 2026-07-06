@@ -50,6 +50,7 @@ public class DockerDeployment {
     public static final DockerDeployment EKS_BULK_IMPORT = builder()
             .deploymentName("bulk-import-runner")
             .optionalStack(OptionalStack.EksBulkImportStack)
+            .useDefaultBaseImage(false)
             .add();
     public static final DockerDeployment COMPACTION = builder()
             .deploymentName("compaction-job-execution")
@@ -77,6 +78,7 @@ public class DockerDeployment {
     private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
     private final boolean baseImage;
+    private final boolean useDefaultBaseImage;
 
     private DockerDeployment(Builder builder) {
         deploymentName = builder.deploymentName;
@@ -86,6 +88,7 @@ public class DockerDeployment {
         platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         baseImage = builder.baseImage;
+        useDefaultBaseImage = builder.useDefaultBaseImage;
     }
 
     public static Builder builder() {
@@ -141,6 +144,10 @@ public class DockerDeployment {
 
     public boolean isBaseImage() {
         return baseImage;
+    }
+
+    public boolean isUseDefaultBaseImage() {
+        return useDefaultBaseImage;
     }
 
     /**
@@ -234,6 +241,7 @@ public class DockerDeployment {
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
         private boolean baseImage;
+        private boolean useDefaultBaseImage = true;
 
         /**
          * Sets the name of this deployment. Used as part of Docker image names and ECR repository names.
@@ -311,6 +319,18 @@ public class DockerDeployment {
          */
         public Builder baseImage(boolean baseImage) {
             this.baseImage = baseImage;
+            return this;
+        }
+
+        /**
+         * Sets whether this is built from the default base image. If it is, the BASE_IMAGE build argument will be
+         * passed during a build.
+         *
+         * @param  baseImage true if this is built from the default base image
+         * @return           this builder
+         */
+        public Builder useDefaultBaseImage(boolean useDefaultBaseImage) {
+            this.useDefaultBaseImage = useDefaultBaseImage;
             return this;
         }
 

@@ -49,6 +49,7 @@ public class DockerImagesTestBase {
             DockerDeployment.builder()
                     .deploymentName("bulk-import-runner")
                     .optionalStack(OptionalStack.EksBulkImportStack)
+                    .useDefaultBaseImage(false)
                     .build(),
             DockerDeployment.builder()
                     .deploymentName("compaction")
