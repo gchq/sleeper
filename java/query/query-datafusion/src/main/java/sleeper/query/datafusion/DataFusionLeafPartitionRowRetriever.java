@@ -43,6 +43,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +72,6 @@ import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LE
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
-    private static final Object LOCK = new Object();
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
@@ -119,30 +119,34 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // result retrieval happening in parallel, once the query planning step has finished.
         int nativeCallResult;
         FFIQueryResults queryResults;
-        synchronized (LOCK) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
-            // Create NULL pointer which will be set by the FFI call upon return
-            queryResults = new FFIQueryResults(runtime);
-
+        // Create NULL pointer which will be set by the FFI call upon return
+        queryResults = new FFIQueryResults(runtime);
+        try {
             // Perform native query
             nativeCallResult = functions.query_stream(context, params, queryResults);
-        }
-        // Check result
-        if (nativeCallResult != 0) {
-            LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
-            throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
-        }
 
-        // A zeroed (NULL) results pointer is NEVER correct here
-        if (queryResults.arrowArrayStream.longValue() == 0) {
-            throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
-        }
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
 
-        // Convert pointer from Rust to Java FFI Arrow array stream.
-        // At this point Java assumes ownership of the stream and must release it when no longer needed.
-        return Data.importArrayStream(allocator, ArrowArrayStream.wrap(queryResults.arrowArrayStream.longValue()));
+            // A zeroed (NULL) results pointer is NEVER correct here
+            if (queryResults.arrowArrayStream.longValue() == 0) {
+                throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
+            }
+
+            // Convert pointer from Rust to Java FFI Arrow array stream.
+            // At this point Java assumes ownership of the stream and must release it when no longer needed.
+            return Data.importArrayStream(allocator, ArrowArrayStream.wrap(queryResults.arrowArrayStream.longValue()));
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(queryResults);
+        }
     }
 
     /**
@@ -165,29 +169,33 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // result retrieval happening in parallel, once the query planning step has finished.
         int nativeCallResult;
         FFIFileResult fileResults;
-        synchronized (LOCK) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
 
-            // Create NULL pointer which will be set by the FFI call upon return
-            fileResults = new FFIFileResult(runtime);
-
+        // Create NULL pointer which will be set by the FFI call upon return
+        fileResults = new FFIFileResult(runtime);
+        try {
             // Perform native query
             nativeCallResult = functions.query_file(context, params, fileResults);
+
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
+
+            long totalNumberOfRowsRead = fileResults.rows_read.get();
+            long rowsWritten = fileResults.rows_written.get();
+
+            LOGGER.info("Query to file job {}: Read {} rows and wrote {} rows",
+                    leafPartitionQuery.getQueryId(), totalNumberOfRowsRead, rowsWritten);
+
+            return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(fileResults);
         }
-        // Check result
-        if (nativeCallResult != 0) {
-            LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
-            throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
-        }
-
-        long totalNumberOfRowsRead = fileResults.rows_read.get();
-        long rowsWritten = fileResults.rows_written.get();
-
-        LOGGER.info("Query to file job {}: Read {} rows and wrote {} rows",
-                leafPartitionQuery.getQueryId(), totalNumberOfRowsRead, rowsWritten);
-
-        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     /**
@@ -251,7 +259,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         }
 
         common.job_id.set(query.getQueryId());
-        common.parquet_options.set(parquetOptions);
+        common.setParquetOptions(parquetOptions);
         common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
@@ -262,7 +270,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.setSortKeyCols(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new));
         common.aggregation_config.set(Optional.ofNullable(tableProperties.get(AGGREGATION_CONFIG)).orElse(""));
         common.filtering_config.set(Optional.ofNullable(tableProperties.get(FILTERING_CONFIG)).orElse(""));
-        common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
+        common.setRegion(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);

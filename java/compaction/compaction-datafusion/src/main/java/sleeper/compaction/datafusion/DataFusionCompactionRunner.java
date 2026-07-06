@@ -16,6 +16,8 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jnr.ffi.ObjectReferenceManager;
+import jnr.ffi.Pointer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -40,6 +42,7 @@ import sleeper.foreign.datafusion.FFIParquetOptions;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.time.LocalDateTime;
 import java.util.function.LongConsumer;
 
@@ -77,25 +80,28 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         LongConsumer progressCallback = request.getProgressCallback();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        try {
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
 
-        RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
-
-        if (result.getRowsWritten() < 1) {
-            Path outputPath = new Path(job.getOutputFile());
-            FileSystem fs = outputPath.getFileSystem(hadoopConf);
-            if (!fs.exists(outputPath)) {
-                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                        outputPath, tableProperties, hadoopConf)) {
-                    // Write an empty file. This should be temporary, as we expect DataFusion to add
-                    // support for this.
-                    // See the test should_merge_empty_files in compaction_test.rs
+            if (result.getRowsWritten() < 1) {
+                Path outputPath = new Path(job.getOutputFile());
+                FileSystem fs = outputPath.getFileSystem(hadoopConf);
+                if (!fs.exists(outputPath)) {
+                    try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                            outputPath, tableProperties, hadoopConf)) {
+                        // Write an empty file. This should be temporary, as we expect DataFusion to add
+                        // support for this.
+                        // See the test should_merge_empty_files in compaction_test.rs
+                    }
                 }
             }
-        }
+            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                    LocalDateTime.now());
 
-        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                LocalDateTime.now());
-        return result;
+            return result;
+        } finally {
+            Reference.reachabilityFence(params);
+        }
     }
 
     /**
@@ -130,7 +136,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
         FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
         params.job_id.set(job.getId());
-        params.parquet_options.set(parquetOptions);
+        params.setParquetOptions(parquetOptions);
         params.setInputFiles(job.getInputFiles().toArray(String[]::new));
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
@@ -141,7 +147,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.setSortKeyCols(schema.getSortKeyFieldNames().toArray(String[]::new));
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
-        params.region.set(FFISleeperRegion.from(region, schema, runtime));
+        params.setRegion(FFISleeperRegion.from(region, schema, runtime));
         params.validate();
 
         return params;
@@ -162,13 +168,23 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, LongConsumer progressCallback) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
-        // Perform compaction
 
-        int result = context.getFunctions().compact(context, compactionParams, compactionData, rows -> progressCallback.accept(rows));
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        // Perform compaction
+        ObjectReferenceManager<Object> objectRefManager = runtime.newObjectReferenceManager();
+        DataFusionCompactionFunctions.ProgressCallback callbackWrapper = rows -> progressCallback.accept(rows);
+        Pointer key = objectRefManager.add(callbackWrapper);
+
+        try {
+            int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
+        } finally {
+            objectRefManager.remove(key);
+            // Don't prematurely collect this object
+            Reference.reachabilityFence(compactionParams);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
