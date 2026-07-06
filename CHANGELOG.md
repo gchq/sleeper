@@ -7,7 +7,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.37.0
 
-### 1st July, 2026
+### 6th July, 2026
 
 This includes bulk import on EKS Auto Mode, and some improvements to usability and web socket queries.
 
@@ -23,6 +23,9 @@ Scripts:
 
 Configuration:
 - Made the example configuration files more representative of real usage.
+
+Bugfixes:
+- Resolved some segmentation faults that could occur during calls to DataFusion
 
 
 ## Version 0.36.1
