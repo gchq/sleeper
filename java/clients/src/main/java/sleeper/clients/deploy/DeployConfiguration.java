@@ -53,6 +53,14 @@ public record DeployConfiguration(
                 .map(Path::of);
     }
 
+    public DeployConfiguration withOverrideBaseImageDir(String overrideBaseImageDir) {
+        return new DeployConfiguration(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, overrideBaseImageDir, imageToOverrideBaseDir);
+    }
+
+    public DeployConfiguration withImageToOverrideBaseDir(Map<String, String> imageToOverrideBaseDir) {
+        return new DeployConfiguration(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, overrideBaseImageDir, imageToOverrideBaseDir);
+    }
+
     public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
         Path deployConfigFile = scriptsDirectory.resolve("templates").resolve("deployConfig.json");
         String deployConfigJson = Files.readString(deployConfigFile);
@@ -64,11 +72,7 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromLocalBuildWithOverrideBaseImageDir(String overrideBaseImageDir) {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, overrideBaseImageDir, null);
-    }
-
-    public static DeployConfiguration fromLocalBuildWithOverrideBaseImageDirPerImage(Map<String, String> imageToOverrideBaseDir) {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null, imageToOverrideBaseDir);
+        return fromLocalBuild().withOverrideBaseImageDir(overrideBaseImageDir);
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix) {

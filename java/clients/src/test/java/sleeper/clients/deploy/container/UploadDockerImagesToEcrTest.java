@@ -644,7 +644,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         @Test
         void shouldOverrideBaseForSingleImage() throws Exception {
             // Given
-            deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDirPerImage(Map.of("bulk-import-runner", "./custom/base"));
+            deployConfig = DeployConfiguration.fromLocalBuild().withImageToOverrideBaseDir(Map.of("bulk-import-runner", "./custom/base"));
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
             // When
