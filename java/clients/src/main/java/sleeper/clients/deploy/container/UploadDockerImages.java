@@ -154,7 +154,7 @@ public class UploadDockerImages {
         }
     }
 
-    private List<String> optionsWithBuildArgs(Map<String, String> buildArgs, String... options) {
+    private static List<String> optionsWithBuildArgs(Map<String, String> buildArgs, String... options) {
         return Stream.of(
                 buildArgs.entrySet().stream()
                         .flatMap(e -> Stream.of("--build-arg", e.getKey() + "=" + e.getValue())),
