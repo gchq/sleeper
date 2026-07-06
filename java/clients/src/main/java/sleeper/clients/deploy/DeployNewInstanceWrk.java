@@ -58,18 +58,16 @@ public class DeployNewInstanceWrk {
     private final SleeperInternalCdkApp cdkApp;
     private final boolean deployPaused;
 
-    private DeployNewInstanceWrk(Builder builder) {
-        deployInstance = builder.deployInstance;
-        accountName = builder.accountName;
-        s3Client = builder.s3Client;
-        dynamoClient = builder.dynamoClient;
-        deployInstanceConfiguration = builder.deployInstanceConfiguration;
-        cdkApp = builder.cdkApp;
-        deployPaused = builder.deployPaused;
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public DeployNewInstanceWrk(DeployInstance deployInstance, String accountName, S3Client s3Client,
+            DynamoDbClient dynamoClient, SleeperInstanceConfiguration deployInstanceConfiguration,
+            SleeperInternalCdkApp cdkApp, boolean deployPaused) {
+        this.deployInstance = deployInstance;
+        this.accountName = accountName;
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.deployInstanceConfiguration = deployInstanceConfiguration;
+        this.cdkApp = cdkApp;
+        this.deployPaused = deployPaused;
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
@@ -126,15 +124,8 @@ public class DeployNewInstanceWrk {
             config.getInstanceProperties().set(VPC_ID, args.vpcId());
             config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
-            builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .accountName(accountName)
-                    .s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .deployInstanceConfiguration(config)
-                    .deployPaused(deployPaused)
-                    .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .build().deploy();
+            new DeployNewInstanceWrk(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
+                    accountName, s3Client, dynamoClient, config, SleeperInternalCdkApp.STANDARD, deployPaused).deploy();
         }
     }
 
@@ -191,64 +182,6 @@ public class DeployNewInstanceWrk {
 
         public Path resolvePropertiesFile() {
             return propertiesFile != null ? propertiesFile : configDir.resolve("instance.properties");
-        }
-    }
-
-    public static final class Builder {
-        private DeployInstance deployInstance;
-        private String accountName;
-        private S3Client s3Client;
-        private DynamoDbClient dynamoClient;
-        private SleeperInstanceConfiguration deployInstanceConfiguration;
-        private SleeperInternalCdkApp cdkApp;
-        private boolean deployPaused;
-
-        private Builder() {
-        }
-
-        public Builder deployInstance(DeployInstance deployInstance) {
-            this.deployInstance = deployInstance;
-            return this;
-        }
-
-        public Builder accountName(String accountName) {
-            this.accountName = accountName;
-            return this;
-        }
-
-        public Builder s3Client(S3Client s3Client) {
-            this.s3Client = s3Client;
-            return this;
-        }
-
-        public Builder dynamoClient(DynamoDbClient dynamoClient) {
-            this.dynamoClient = dynamoClient;
-            return this;
-        }
-
-        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
-            this.deployInstanceConfiguration = deployInstanceConfiguration;
-            return this;
-        }
-
-        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
-            this.cdkApp = cdkApp;
-            return this;
-        }
-
-        public Builder deployPaused(boolean deployPaused) {
-            this.deployPaused = deployPaused;
-            return this;
-        }
-
-        public DeployNewInstanceWrk build() {
-            return new DeployNewInstanceWrk(this);
-        }
-
-        public void deployWithClients(S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, InterruptedException {
-            s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .build().deploy();
         }
     }
 }

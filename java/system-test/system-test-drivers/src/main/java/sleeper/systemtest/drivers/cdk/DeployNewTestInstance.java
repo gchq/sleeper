@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployInstance;
-import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.DeployNewInstanceWrk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
@@ -68,15 +68,9 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
-            DeployNewInstance.builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .accountName(accountName)
-                    .s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .deployInstanceConfiguration(config)
-                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
-                    .deployPaused(deployPaused)
-                    .build().deploy();
+            new DeployNewInstanceWrk(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
+                    accountName, s3Client, dynamoClient, config,
+                    SleeperInternalCdkApp.DEMONSTRATION, deployPaused).deploy();
         }
     }
 
