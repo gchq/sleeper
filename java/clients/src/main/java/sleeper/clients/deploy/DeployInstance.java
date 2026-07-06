@@ -45,7 +45,7 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
 
-public class DeployInstance {
+public class DeployInstance implements InstanceDeployer {
     public static final Logger LOGGER = LoggerFactory.getLogger(DeployInstance.class);
 
     private final SyncJars syncJars;

@@ -33,6 +33,8 @@ import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -50,10 +52,9 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
-    private final DeployInstance deployInstance;
-    private final String accountName;
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
+    private final InstanceDeployer deployInstance;
+    private final InstancePropertiesLoader propertiesLoader;
+    private final StoreFactory storeFactory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
     private final boolean ignoreTableFiles;
@@ -63,9 +64,22 @@ public class DeployNewInstance {
             DynamoDbClient dynamoClient, SleeperInstanceConfiguration deployInstanceConfiguration,
             SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
         this.deployInstance = deployInstance;
-        this.accountName = accountName;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+        this.deployInstanceConfiguration = deployInstanceConfiguration;
+        this.cdkApp = cdkApp;
+        this.ignoreTableFiles = ignoreTableFiles;
+        this.deployPaused = deployPaused;
+        propertiesLoader = null;
+        storeFactory = null;
+    }
+
+    public DeployNewInstance(InstanceDeployer deployInstance,
+            InstancePropertiesLoader instancePropertiesLoader,
+            StoreFactory storeFactory,
+            SleeperInstanceConfiguration deployInstanceConfiguration,
+            SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
+        this.deployInstance = deployInstance;
+        this.propertiesLoader = instancePropertiesLoader;
+        this.storeFactory = storeFactory;
         this.deployInstanceConfiguration = deployInstanceConfiguration;
         this.cdkApp = cdkApp;
         this.ignoreTableFiles = ignoreTableFiles;
@@ -74,7 +88,7 @@ public class DeployNewInstance {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .systemArguments(List.of("scriptsDirectory"))
-            .positionalArguments(List.of("scriptsDirectory", "instance-id", "vpcId", "subnetIds"))
+            .positionalArguments(List.of("scriptsDirectory", "instanceId", "vpcId", "subnetIds"))
             .options(List.of(
                     CommandOption.longOption("instance-properties"),
                     CommandOption.longOption("config-dir"),
@@ -104,7 +118,7 @@ public class DeployNewInstance {
     public static Arguments readArguments(CommandArguments arguments) {
         return new Arguments(
                 Path.of(arguments.getString("scriptsDirectory")),
-                arguments.getString("instance-id"),
+                arguments.getString("instanceId"),
                 arguments.getString("vpcId"),
                 arguments.getString("subnetIds"),
                 arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
@@ -134,8 +148,17 @@ public class DeployNewInstance {
             config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    accountName, s3Client, dynamoClient, config, SleeperInternalCdkApp.STANDARD,
-                    args.ignoreTableFiles(), deployPaused).deploy();
+                    instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId),
+                    new StoreFactory() {
+                        public TablePropertiesStore createTableStore(InstanceProperties p) {
+                            return S3TableProperties.createStore(p, s3Client, dynamoClient);
+                        }
+
+                        public StateStoreProvider createStateStore(InstanceProperties p) {
+                            return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
+                        }
+                    },
+                    config, SleeperInternalCdkApp.STANDARD, args.ignoreTableFiles(), deployPaused).deploy();
         }
     }
 
@@ -149,13 +172,13 @@ public class DeployNewInstance {
                 .build());
 
         if (!ignoreTableFiles) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
+            InstanceProperties instanceProperties = propertiesLoader.load(deployInstanceConfiguration.getInstanceId());
 
             for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
                 LOGGER.info("Adding table " + tableProperties.getStatus());
                 new AddTableClient(tableProperties,
-                        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
-                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                        storeFactory.createTableStore(instanceProperties),
+                        storeFactory.createStateStore(instanceProperties))
                         .run();
             }
         }
@@ -178,7 +201,7 @@ public class DeployNewInstance {
             }
 
             if (instanceId == null) {
-                throw new CommandArgumentsException("instance-id must not be null");
+                throw new CommandArgumentsException("instanceId must not be null");
             }
 
             if (vpcId == null) {
@@ -205,5 +228,16 @@ public class DeployNewInstance {
         public Path resolvePropertiesFile() {
             return propertiesFile != null ? propertiesFile : configDir.resolve("instance.properties");
         }
+    }
+
+    @FunctionalInterface
+    public interface InstancePropertiesLoader {
+        InstanceProperties load(String instanceId);
+    }
+
+    public interface StoreFactory {
+        TablePropertiesStore createTableStore(InstanceProperties instanceProperties);
+
+        StateStoreProvider createStateStore(InstanceProperties instanceProperties);
     }
 }

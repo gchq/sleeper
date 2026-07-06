@@ -25,9 +25,16 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -69,8 +76,17 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    accountName, s3Client, dynamoClient, config,
-                    SleeperInternalCdkApp.DEMONSTRATION, false, deployPaused).deploy();
+                    id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, id),
+                    new StoreFactory() {
+                        public TablePropertiesStore createTableStore(InstanceProperties p) {
+                            return S3TableProperties.createStore(p, s3Client, dynamoClient);
+                        }
+
+                        public StateStoreProvider createStateStore(InstanceProperties p) {
+                            return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
+                        }
+                    },
+                    config, SleeperInternalCdkApp.STANDARD, false, deployPaused).deploy();
         }
     }
 
