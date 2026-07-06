@@ -23,6 +23,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -119,9 +120,7 @@ public class QueryExecutor {
         List<Future<?>> futures = leafPartitionQueries.stream()
                 .map(leafPartitionQuery -> (Future<?>) executorService.submit(() -> {
                     boolean sentTerminal = false;
-                    CloseableIterator<Row> rows = null;
-                    try {
-                        rows = leafQueryExecutor.getRows(leafPartitionQuery);
+                    try (CloseableIterator<Row> rows = leafQueryExecutor.getRows(leafPartitionQuery)) {
                         while (rows.hasNext() && !closed.get()) {
                             queue.put(ParallelQueryIterator.QueueItem.row(rows.next()));
                         }
@@ -133,13 +132,9 @@ public class QueryExecutor {
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         sentTerminal = true; // close() was called, DONE not needed
+                    } catch (IOException ignored) {
+                        // thrown by close() - nothing meaningful to do with a close failure here
                     } finally {
-                        if (rows != null) {
-                            try {
-                                rows.close();
-                            } catch (java.io.IOException ignored) {
-                            }
-                        }
                         if (!sentTerminal) {
                             putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.DONE);
                         }
