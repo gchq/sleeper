@@ -8,7 +8,7 @@
   "rules": [
     {
       "apiGroups": [""],
-      "resources": [ "pods", "services", "configmaps"],
+      "resources": ["pods", "services", "configmaps"],
       "verbs": ["*"]
     }
   ]

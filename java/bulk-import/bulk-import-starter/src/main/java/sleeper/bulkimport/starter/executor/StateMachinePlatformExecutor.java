@@ -61,7 +61,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
-        input.put("executorPodTemplate", ExecutorPodTemplate.forEphemeralStorageRequestAndLimit(ephemeralStorage, ephemeralStorage));
+        input.put("executorPodTemplate", ExecutorPodTemplate.forJobAndEphemeralStorageRequestAndLimit(bulkImportJob.getId(), ephemeralStorage, ephemeralStorage));
         String inputJson = new Gson().toJson(input);
 
         stepFunctions.startExecution(request -> request
