@@ -56,17 +56,19 @@ public class DeployNewInstance {
     private final DynamoDbClient dynamoClient;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
+    private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
     public DeployNewInstance(DeployInstance deployInstance, String accountName, S3Client s3Client,
             DynamoDbClient dynamoClient, SleeperInstanceConfiguration deployInstanceConfiguration,
-            SleeperInternalCdkApp cdkApp, boolean deployPaused) {
+            SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
         this.deployInstance = deployInstance;
         this.accountName = accountName;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.deployInstanceConfiguration = deployInstanceConfiguration;
         this.cdkApp = cdkApp;
+        this.ignoreTableFiles = ignoreTableFiles;
         this.deployPaused = deployPaused;
     }
 
@@ -76,6 +78,7 @@ public class DeployNewInstance {
             .options(List.of(
                     CommandOption.longOption("instance-properties"),
                     CommandOption.longOption("config-dir"),
+                    CommandOption.longFlag("ignoreTableFiles"),
                     CommandOption.longFlag("paused")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
@@ -101,6 +104,7 @@ public class DeployNewInstance {
                 arguments.getString("subnetIds"),
                 arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
                 arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
+                arguments.isFlagSet("ignoreTableFiles"),
                 arguments.isFlagSet("paused"));
     }
 
@@ -125,7 +129,8 @@ public class DeployNewInstance {
             config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    accountName, s3Client, dynamoClient, config, SleeperInternalCdkApp.STANDARD, deployPaused).deploy();
+                    accountName, s3Client, dynamoClient, config, SleeperInternalCdkApp.STANDARD,
+                    args.ignoreTableFiles(), deployPaused).deploy();
         }
     }
 
@@ -138,13 +143,16 @@ public class DeployNewInstance {
                 .cdkApp(cdkApp)
                 .build());
 
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
-        for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
-            LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTableClient(tableProperties,
-                    S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
-                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
-                    .run();
+        if (!ignoreTableFiles) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
+
+            for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+                LOGGER.info("Adding table " + tableProperties.getStatus());
+                new AddTableClient(tableProperties,
+                        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
+                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                        .run();
+            }
         }
         LOGGER.info("Finished deployment of new instance");
     }
@@ -156,6 +164,7 @@ public class DeployNewInstance {
             String subnetIds,
             Path propertiesFile,
             Path configDir,
+            boolean ignoreTableFiles,
             boolean deployPaused) {
 
         public Arguments {
@@ -177,6 +186,14 @@ public class DeployNewInstance {
 
             if (propertiesFile == null && configDir == null) {
                 throw new CommandArgumentsException("Either --instance-properties or --config-dir must be provided");
+            }
+
+            if (configDir == null && ignoreTableFiles) {
+                throw new CommandArgumentsException("ignoreTableFiles flag is only checked when --config-dir is set.");
+            }
+
+            if (propertiesFile != null) {
+                ignoreTableFiles = true;
             }
         }
 

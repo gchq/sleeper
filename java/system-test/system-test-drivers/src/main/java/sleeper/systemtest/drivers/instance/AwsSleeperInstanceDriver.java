@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstance;
-import sleeper.clients.deploy.DeployNewInstanceWrk;
+import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -84,8 +84,8 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
         try {
-            new DeployNewInstanceWrk(deployInstance, parameters.getAccount(), s3, dynamoDB, deployConfig,
-                    SleeperInternalCdkApp.STANDARD, false).deploy();
+            new DeployNewInstance(deployInstance, parameters.getAccount(), s3, dynamoDB, deployConfig,
+                    SleeperInternalCdkApp.STANDARD, false, false).deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
