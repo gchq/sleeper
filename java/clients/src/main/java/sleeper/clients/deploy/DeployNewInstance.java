@@ -33,12 +33,16 @@ import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -54,31 +58,58 @@ public class DeployNewInstance {
     private final SleeperInternalCdkApp cdkApp;
     private final boolean deployPaused;
 
-    private DeployNewInstance(Builder builder) {
-        deployInstance = builder.deployInstance;
-        accountName = builder.accountName;
-        s3Client = builder.s3Client;
-        dynamoClient = builder.dynamoClient;
-        deployInstanceConfiguration = builder.deployInstanceConfiguration;
-        cdkApp = builder.cdkApp;
-        deployPaused = builder.deployPaused;
+    public DeployNewInstance(DeployInstance deployInstance, String accountName, S3Client s3Client,
+            DynamoDbClient dynamoClient, SleeperInstanceConfiguration deployInstanceConfiguration,
+            SleeperInternalCdkApp cdkApp, boolean deployPaused) {
+        this.deployInstance = deployInstance;
+        this.accountName = accountName;
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.deployInstanceConfiguration = deployInstanceConfiguration;
+        this.cdkApp = cdkApp;
+        this.deployPaused = deployPaused;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .systemArguments(List.of("scriptsDirectory"))
+            .positionalArguments(List.of("scriptsDirectory", "instance-id", "vpcId", "subnetIds"))
+            .options(List.of(
+                    CommandOption.longOption("instance-properties"),
+                    CommandOption.longOption("config-dir"),
+                    CommandOption.longFlag("paused")))
+            .helpSummary("" +
+                    "Deploys a new instance of Sleeper.\n" +
+                    "\n" +
+                    "--instance-properties <file>\n" +
+                    "Path to an instance properties file.\n" +
+                    "One of --instance-properties and --config-dir must be set but not both.\n" +
+                    "\n" +
+                    "--config-dir <dir>\n" +
+                    "Path to a directory containing an instance.properties file.\n" +
+                    "One of --instance-properties and --config-dir must be set but not both.\n" +
+                    "\n" +
+                    "--paused\n" +
+                    "If set, the instance will be deployed paused. Periodic background processes will not run until " +
+                    "the instance is manually resumed.")
+            .build();
+
+    public static Arguments readArguments(CommandArguments arguments) {
+        return new Arguments(
+                Path.of(arguments.getString("scriptsDirectory")),
+                arguments.getString("instance-id"),
+                arguments.getString("vpcId"),
+                arguments.getString("subnetIds"),
+                arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
+                arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
+                arguments.isFlagSet("paused"));
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 4 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> " +
-                    "<optional-instance-properties-file> <optional-deploy-paused-flag>");
-        }
-        Path scriptsDirectory = Path.of(args[0]);
-        String instanceId = args[1];
-        String vpcId = args[2];
-        String subnetIds = args[3];
-        Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
-        boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, a -> readArguments(a));
+
+        Path scriptsDirectory = Path.of(rawArgs[0]);
+        Path instancePropertiesFile = args.resolvePropertiesFile();
+        boolean deployPaused = args.deployPaused();
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
@@ -87,22 +118,14 @@ public class DeployNewInstance {
             Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                    instancePropertiesFile, scriptsDirectory.resolve("templates"));
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
 
-            config.getInstanceProperties().set(ID, instanceId);
-            config.getInstanceProperties().set(VPC_ID, vpcId);
-            config.getInstanceProperties().set(SUBNETS, subnetIds);
+            config.getInstanceProperties().set(ID, args.instanceId());
+            config.getInstanceProperties().set(VPC_ID, args.vpcId());
+            config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
-            builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .accountName(accountName)
-                    .s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .deployInstanceConfiguration(config)
-                    .deployPaused(deployPaused)
-                    .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .build().deploy();
+            new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
+                    accountName, s3Client, dynamoClient, config, SleeperInternalCdkApp.STANDARD, deployPaused).deploy();
         }
     }
 
@@ -126,61 +149,39 @@ public class DeployNewInstance {
         LOGGER.info("Finished deployment of new instance");
     }
 
-    public static final class Builder {
-        private DeployInstance deployInstance;
-        private String accountName;
-        private S3Client s3Client;
-        private DynamoDbClient dynamoClient;
-        private SleeperInstanceConfiguration deployInstanceConfiguration;
-        private SleeperInternalCdkApp cdkApp;
-        private boolean deployPaused;
+    public record Arguments(
+            Path scriptsDirectory,
+            String instanceId,
+            String vpcId,
+            String subnetIds,
+            Path propertiesFile,
+            Path configDir,
+            boolean deployPaused) {
 
-        private Builder() {
+        public Arguments {
+            if (scriptsDirectory == null) {
+                throw new CommandArgumentsException("scriptsDirectory must not be null");
+            }
+
+            if (instanceId == null) {
+                throw new CommandArgumentsException("instance-id must not be null");
+            }
+
+            if (vpcId == null) {
+                throw new CommandArgumentsException("vpcId must not be null");
+            }
+
+            if (subnetIds == null) {
+                throw new CommandArgumentsException("subnetIds must not be null");
+            }
+
+            if (propertiesFile == null && configDir == null) {
+                throw new CommandArgumentsException("Either --instance-properties or --config-dir must be provided");
+            }
         }
 
-        public Builder deployInstance(DeployInstance deployInstance) {
-            this.deployInstance = deployInstance;
-            return this;
-        }
-
-        public Builder accountName(String accountName) {
-            this.accountName = accountName;
-            return this;
-        }
-
-        public Builder s3Client(S3Client s3Client) {
-            this.s3Client = s3Client;
-            return this;
-        }
-
-        public Builder dynamoClient(DynamoDbClient dynamoClient) {
-            this.dynamoClient = dynamoClient;
-            return this;
-        }
-
-        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
-            this.deployInstanceConfiguration = deployInstanceConfiguration;
-            return this;
-        }
-
-        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
-            this.cdkApp = cdkApp;
-            return this;
-        }
-
-        public Builder deployPaused(boolean deployPaused) {
-            this.deployPaused = deployPaused;
-            return this;
-        }
-
-        public DeployNewInstance build() {
-            return new DeployNewInstance(this);
-        }
-
-        public void deployWithClients(S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, InterruptedException {
-            s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .build().deploy();
+        public Path resolvePropertiesFile() {
+            return propertiesFile != null ? propertiesFile : configDir.resolve("instance.properties");
         }
     }
 }
