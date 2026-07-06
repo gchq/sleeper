@@ -38,62 +38,56 @@ public class SetDeployConfiguration {
     private SetDeployConfiguration() {
     }
 
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .systemArguments(List.of("scripts directory"))
+            .options(List.of(
+                    CommandOption.longOption("image-location"),
+                    CommandOption.longOption("image-repository-prefix"),
+                    CommandOption.longOption("image-username"),
+                    CommandOption.longOption("override-base-image-dir"),
+                    CommandOption.longOption("override-base-image-dir-by-image")))
+            .helpSummary("" +
+                    "Sets the configuration to deploy Sleeper. Saves the configuration to the local file system.\n" +
+                    "\n" +
+                    "--image-location <location>\n" +
+                    "Sets the location of container images to deploy in an instance of Sleeper.\n" +
+                    "Available options: " + DockerImageLocation.describeOptions() + "\n" +
+                    "\n" +
+                    "--image-repository-prefix <prefix>\n" +
+                    "The shared prefix for container images in a remote registry to deploy in an instance of " +
+                    "Sleeper.\n" +
+                    "Implies \"--image-location repository\".\n" +
+                    "See the Sleeper documentation for the images that should be found under this prefix:\n" +
+                    "https://github.com/gchq/sleeper/blob/develop/docs/deployment/docker-images.md\n" +
+                    "\n" +
+                    "--image-username <username>\n" +
+                    "Sets the username to authenticate with the container image registry. If this is set, the " +
+                    "password will be read from stdin as a prompt. If this is not set, no authentication will be " +
+                    "sent when communicating with the registry. Important: the credentials will be stored in " +
+                    "plain text in the local file system.\n" +
+                    "\n" +
+                    "--override-base-image-dir <dir>\n" +
+                    "Advanced. Overrides the directory used as the Docker build context for the base image. " +
+                    "By default the base image is built from the \"base\" subdirectory of the scripts docker " +
+                    "directory. Set this only if you need to substitute a custom base Dockerfile. " +
+                    "Cannot be combined with \"--image-location repository\" — the override only applies to " +
+                    "local builds.\n" +
+                    "\n" +
+                    "--override-base-image-dir-by-image <image>,<dir>[,<image>,<dir>...]\n" +
+                    "This works similarly to \"--override-base-image-dir\", except that it sets the base for " +
+                    "individual images. The value must be a comma separated list, alternating between an image " +
+                    "name and the directory to be used as the Docker build context for its base image. This " +
+                    "usually should not be used when you want to use the same base for multiple images.")
+            .build();
+
     public static void main(String[] args) throws IOException {
-        writeConfigurationFile(ConsoleInput.stdIn(), args);
+        Arguments arguments = CommandArguments.parseAndValidateOrExit(USAGE, args,
+                commandArgs -> readArguments(ConsoleInput.stdIn(), commandArgs));
+        writeConfigurationFile(Files::writeString, arguments);
     }
 
-    public static void writeConfigurationFile(ConsoleInput input, String... args) throws IOException {
-        CommandLineUsage usage = CommandLineUsage.builder()
-                .systemArguments(List.of("scripts directory"))
-                .options(List.of(
-                        CommandOption.longOption("image-location"),
-                        CommandOption.longOption("image-repository-prefix"),
-                        CommandOption.longOption("image-username"),
-                        CommandOption.longOption("override-base-image-dir"),
-                        CommandOption.longOption("override-base-image-dir-by-image")))
-                .helpSummary("" +
-                        "Sets the configuration to deploy Sleeper. Saves the configuration to the local file system.\n" +
-                        "\n" +
-                        "--image-location <location>\n" +
-                        "Sets the location of container images to deploy in an instance of Sleeper.\n" +
-                        "Available options: " + DockerImageLocation.describeOptions() + "\n" +
-                        "\n" +
-                        "--image-repository-prefix <prefix>\n" +
-                        "The shared prefix for container images in a remote registry to deploy in an instance of " +
-                        "Sleeper.\n" +
-                        "Implies \"--image-location repository\".\n" +
-                        "See the Sleeper documentation for the images that should be found under this prefix:\n" +
-                        "https://github.com/gchq/sleeper/blob/develop/docs/deployment/docker-images.md\n" +
-                        "\n" +
-                        "--image-username <username>\n" +
-                        "Sets the username to authenticate with the container image registry. If this is set, the " +
-                        "password will be read from stdin as a prompt. If this is not set, no authentication will be " +
-                        "sent when communicating with the registry. Important: the credentials will be stored in " +
-                        "plain text in the local file system.\n" +
-                        "\n" +
-                        "--override-base-image-dir <dir>\n" +
-                        "Advanced. Overrides the directory used as the Docker build context for the base image. " +
-                        "By default the base image is built from the \"base\" subdirectory of the scripts docker " +
-                        "directory. Set this only if you need to substitute a custom base Dockerfile. " +
-                        "Cannot be combined with \"--image-location repository\" — the override only applies to " +
-                        "local builds.\n" +
-                        "\n" +
-                        "--override-base-image-dir-by-image <image>,<dir>[,<image>,<dir>...]\n" +
-                        "This works similarly to \"--override-base-image-dir\", except that it sets the base for " +
-                        "individual images. The value must be a comma separated list, alternating between an image " +
-                        "name and the directory to be used as the Docker build context for its base image. This " +
-                        "usually should not be used when you want to use the same base for multiple images.")
-                .build();
-        Arguments arguments = CommandArguments.parseAndValidateOrExit(usage, args, commandArgs -> new Arguments(
-                Path.of(commandArgs.getString("scripts directory")),
-                readConfiguration(input, commandArgs)));
-
-        Files.writeString(
-                arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
-                new DeployConfigurationSerDe().toJson(arguments.configuration()));
-    }
-
-    private static DeployConfiguration readConfiguration(ConsoleInput input, CommandArguments arguments) {
+    public static Arguments readArguments(ConsoleInput input, CommandArguments arguments) {
+        Path scriptsDir = Path.of(arguments.getString("scripts directory"));
         String imagePrefix = arguments.getOptionalString("image-repository-prefix").orElse(null);
         String imageUsername = arguments.getOptionalString("image-username").orElse(null);
         String overrideBaseImageDir = arguments.getOptionalString("override-base-image-dir").orElse(null);
@@ -114,7 +108,15 @@ public class SetDeployConfiguration {
                     "The override only applies to local builds.");
         }
         ContainerRegistryCredentials imageCredentials = imageCredentials(input, imageUsername);
-        return new DeployConfiguration(imageLocation, imagePrefix, imageCredentials, overrideBaseImageDir, imageToOverrideBaseDir);
+        return new Arguments(
+                scriptsDir,
+                new DeployConfiguration(imageLocation, imagePrefix, imageCredentials, overrideBaseImageDir, imageToOverrideBaseDir));
+    }
+
+    public static void writeConfigurationFile(FileWriter fileWriter, Arguments arguments) throws IOException {
+        fileWriter.writeString(
+                arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
+                new DeployConfigurationSerDe().toJson(arguments.configuration()));
     }
 
     private static ContainerRegistryCredentials imageCredentials(ConsoleInput input, String imageUsername) {
@@ -123,6 +125,10 @@ public class SetDeployConfiguration {
         }
         String password = input.promptPassword("Please enter the image registry password: ");
         return new ContainerRegistryCredentials(imageUsername, password);
+    }
+
+    public interface FileWriter {
+        void writeString(Path path, String string) throws IOException;
     }
 
     private record Arguments(Path scriptsDirectory, DeployConfiguration configuration) {
