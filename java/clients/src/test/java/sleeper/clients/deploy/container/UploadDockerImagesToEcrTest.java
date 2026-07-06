@@ -17,6 +17,7 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -639,6 +640,33 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag, "./docker/bulk-import-runner"),
                     pushImageCommand(expectedTag));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldSetBaseForSingleImage() throws Exception {
+            // Given
+            deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDirPerImage(Map.of("bulk-import-runner", "./custom/base"));
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack, OptionalStack.EksBulkImportStack));
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedBaseTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            String expectedBaseTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner-base:1.0.0";
+            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag1, "./docker/base"),
+                    buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag1),
+                    pushImageCommand(expectedTag1),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag2, "./custom/base"),
+                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag2),
+                    pushImageCommand(expectedTag2));
         }
     }
 

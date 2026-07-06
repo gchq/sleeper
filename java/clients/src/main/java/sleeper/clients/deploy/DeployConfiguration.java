@@ -21,6 +21,7 @@ import sleeper.container.images.ContainerRegistryCredentials;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,7 +29,8 @@ public record DeployConfiguration(
         DockerImageLocation dockerImageLocation,
         String dockerRepositoryPrefix,
         ContainerRegistryCredentials dockerCredentials,
-        String overrideBaseImageDir) {
+        String overrideBaseImageDir,
+        Map<String, String> imageToOverrideBaseDir) {
 
     public DeployConfiguration {
         Objects.requireNonNull(dockerImageLocation, "dockerImageLocation must not be null");
@@ -38,11 +40,19 @@ public record DeployConfiguration(
     }
 
     public DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix, ContainerRegistryCredentials dockerCredentials) {
-        this(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, null);
+        this(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, null, null);
     }
 
     public Optional<Path> overrideBaseImageDirPath() {
         return Optional.ofNullable(overrideBaseImageDir).map(Path::of);
+    }
+
+    public Map<String, String> imageToOverrideBaseDir() {
+        if (imageToOverrideBaseDir == null) {
+            return Map.of();
+        } else {
+            return imageToOverrideBaseDir;
+        }
     }
 
     public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
@@ -52,11 +62,15 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromLocalBuild() {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null);
+        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null, null);
     }
 
     public static DeployConfiguration fromLocalBuildWithOverrideBaseImageDir(String overrideBaseImageDir) {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, overrideBaseImageDir);
+        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, overrideBaseImageDir, null);
+    }
+
+    public static DeployConfiguration fromLocalBuildWithOverrideBaseImageDirPerImage(Map<String, String> imageToOverrideBaseDir) {
+        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null, imageToOverrideBaseDir);
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix) {
@@ -64,6 +78,6 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix, ContainerRegistryCredentials credentials) {
-        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix, credentials, null);
+        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix, credentials, null, null);
     }
 }

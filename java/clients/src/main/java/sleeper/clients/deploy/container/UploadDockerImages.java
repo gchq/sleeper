@@ -112,7 +112,7 @@ public class UploadDockerImages {
                 buildAndPushImage(baseTag, baseImage, Map.of());
             }
             for (StackDockerImage image : imagesToUpload) {
-                Map<String, String> buildArgs = image.isUseDefaultBaseImage() ? Map.of("BASE_IMAGE", baseTag) : Map.of();
+                Map<String, String> buildArgs = createBuildArgs(image, baseTag);
                 buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
@@ -151,6 +151,14 @@ public class UploadDockerImages {
                         dockerfileDirectory));
             }
             commandRunner.runOrThrow("docker", "push", tag);
+        }
+    }
+
+    private static Map<String, String> createBuildArgs(StackDockerImage image, String baseTag) {
+        if (image.isUseDefaultBaseImage()) {
+            return Map.of("BASE_IMAGE", baseTag);
+        } else {
+            return Map.of();
         }
     }
 
