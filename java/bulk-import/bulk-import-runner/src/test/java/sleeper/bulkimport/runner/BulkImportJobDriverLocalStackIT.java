@@ -28,6 +28,7 @@ import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSort
 import sleeper.bulkimport.runner.sketches.GenerateSketchesDriver;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -41,7 +42,6 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
@@ -71,6 +71,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -87,7 +88,8 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
 
     @BeforeEach
     public void setup() {
-        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 2);
+        tableProperties.setNumber(PARTITION_SPLIT_MIN_ROWS, 100);
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
@@ -103,7 +105,7 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldImportDataSinglePartition() throws Exception {
+    void shouldImportDataSplittingPartition() throws Exception {
         // Given
         List<Row> rows = getRows();
         writeRowsToFile(rows, s3aPathInDataBucket("import/a.parquet"));
@@ -115,17 +117,37 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
         runJob(job);
 
         // Then
-        assertThat(stateStore().getFileReferences()).singleElement().satisfies(file -> {
-            assertThat(readRows(file)).isEqualTo(sorted(rows));
-            assertThat(SketchesDeciles.fromFile(tableProperties.getSchema(), file, sketchesStore))
-                    .isEqualTo(SketchesDeciles.builder()
-                            .field("key", deciles -> deciles
-                                    .min(0).max(99)
-                                    .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
-                                    .rank(0.4, 40).rank(0.5, 50).rank(0.6, 60)
-                                    .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
-                            .build());
-        });
+        PartitionTree partitions = new PartitionTree(stateStore().getAllPartitions());
+        List<Row> expectedRows = sorted(rows);
+        assertThat(partitions.streamLeafPartitions()).hasSize(2);
+        assertThat(readFilesInTreeOrder(partitions)).containsExactly(
+                new FoundFile(expectedRows.subList(0, 100),
+                        SketchesDeciles.builder()
+                                .field("key", deciles -> deciles
+                                        .min(0).max(49)
+                                        .rank(0.1, 5).rank(0.2, 10).rank(0.3, 15)
+                                        .rank(0.4, 20).rank(0.5, 25).rank(0.6, 30)
+                                        .rank(0.7, 35).rank(0.8, 40).rank(0.9, 45))
+                                .build()),
+                new FoundFile(expectedRows.subList(100, 200),
+                        SketchesDeciles.builder()
+                                .field("key", deciles -> deciles
+                                        .min(50).max(99)
+                                        .rank(0.1, 55).rank(0.2, 60).rank(0.3, 65)
+                                        .rank(0.4, 70).rank(0.5, 75).rank(0.6, 80)
+                                        .rank(0.7, 85).rank(0.8, 90).rank(0.9, 95))
+                                .build()));
+    }
+
+    private List<FoundFile> readFilesInTreeOrder(PartitionTree partitions) {
+        Map<String, List<String>> partitionIdToFiles = stateStore().getPartitionToReferencedFilesMap();
+        return partitions.streamLeavesInTreeOrder()
+                .flatMap(partition -> partitionIdToFiles.get(partition.getId()).stream())
+                .map(filename -> new FoundFile(readRows(filename), SketchesDeciles.fromFile(tableProperties.getSchema(), filename, sketchesStore)))
+                .toList();
+    }
+
+    public record FoundFile(List<Row> rows, SketchesDeciles sketches) {
     }
 
     private void runJob(BulkImportJob job) throws Exception {
@@ -190,9 +212,9 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
         return sorted;
     }
 
-    private List<Row> readRows(FileReference file) {
+    private List<Row> readRows(String filename) {
         try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(
-                new Path(file.getFilename()), tableProperties.getSchema()).withConf(hadoopConf).build()) {
+                new Path(filename), tableProperties.getSchema()).withConf(hadoopConf).build()) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {

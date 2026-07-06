@@ -414,7 +414,7 @@ class BulkImportJobDriverIT {
         // Read files in order of their position in the partition tree.
         // If there's one file per partition, this should result in the rows being fully ordered in the resulting list.
         Map<String, List<FileReference>> partitionIdToFiles = files.stream().collect(groupingBy(FileReference::getPartitionId));
-        return partitions.streamLeafPartitions()
+        return partitions.streamLeavesInTreeOrder()
                 .map(Partition::getId)
                 .flatMap(partitionId -> Optional.ofNullable(partitionIdToFiles.get(partitionId)).orElse(List.of()).stream())
                 .flatMap(file -> readRows(file).stream())
