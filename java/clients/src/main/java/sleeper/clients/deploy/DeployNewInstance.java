@@ -91,6 +91,11 @@ public class DeployNewInstance {
                     "Path to a directory containing an instance.properties file.\n" +
                     "One of --instance-properties and --config-dir must be set but not both.\n" +
                     "\n" +
+                    "--ignoreTableFiles\n" +
+                    "If set, the instance will be deployed on it's own. Otherwise tables will be created based on " +
+                    "any relevent table.properties files found in the specified --config-dir. This flag cannot be used " +
+                    "without the --config-dir optional argument.\n" +
+                    "\n" +
                     "--paused\n" +
                     "If set, the instance will be deployed paused. Periodic background processes will not run until " +
                     "the instance is manually resumed.")
