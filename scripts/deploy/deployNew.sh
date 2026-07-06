@@ -16,12 +16,7 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-instance-properties-file> <optional-deploy-paused-flag>"
-  exit 1
-fi
-
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.DeployNewInstance "${SCRIPTS_DIR}" "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.DeployNewInstanceWrk "${SCRIPTS_DIR}" "$@"

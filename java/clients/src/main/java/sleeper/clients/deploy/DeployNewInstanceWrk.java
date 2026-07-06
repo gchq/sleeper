@@ -73,33 +73,37 @@ public class DeployNewInstanceWrk {
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
-            .positionalArguments(List.of("instance-id"))
-            .positionalArguments(List.of("vpc"))
-            .positionalArguments(List.of("subnets"))
+            .systemArguments(List.of("scriptsDirectory"))
+            .positionalArguments(List.of("scriptsDirectory", "instance-id", "vpcId", "subnetIds"))
             .options(List.of(
                     CommandOption.longOption("instance-properties"),
                     CommandOption.longOption("config-dir"),
-                    CommandOption.longFlag("deployPaused")))
+                    CommandOption.longFlag("paused")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
-                    "Positional Argumemts:\n" +
-                    "Instance ID, VPC, Subnets\n" +
-                    "Optional Arguments\n" +
+                    "\n" +
                     "--instance-properties <file>\n" +
-                    "Optional path to an instance properties file. If not set, default instance properties will be used.\n" +
+                    "Path to an instance properties file.\n" +
+                    "One of --instance-properties and --config-dir must be set but not both.\n" +
                     "\n" +
                     "--config-dir <dir>\n" +
-                    "Path to a directory containing instance.properties.")
+                    "Path to a directory containing an instance.properties file.\n" +
+                    "One of --instance-properties and --config-dir must be set but not both.\n" +
+                    "\n" +
+                    "--paused\n" +
+                    "If set, the instance will be deployed paused. Periodic background processes will not run until " +
+                    "the instance is manually resumed.")
             .build();
 
     public static Arguments readArguments(CommandArguments arguments) {
         return new Arguments(
+                Path.of(arguments.getString("scriptsDirectory")),
                 arguments.getString("instance-id"),
-                arguments.getString("vpc"),
-                arguments.getString("subnets"),
+                arguments.getString("vpcId"),
+                arguments.getString("subnetIds"),
                 arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
                 arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
-                arguments.isFlagSet("deployPaused"));
+                arguments.isFlagSet("paused"));
     }
 
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
@@ -155,6 +159,7 @@ public class DeployNewInstanceWrk {
     }
 
     public record Arguments(
+            Path scriptsDirectory,
             String instanceId,
             String vpcId,
             String subnetIds,
@@ -163,6 +168,10 @@ public class DeployNewInstanceWrk {
             boolean deployPaused) {
 
         public Arguments {
+            if (scriptsDirectory == null) {
+                throw new CommandArgumentsException("scriptsDirectory must not be null");
+            }
+
             if (instanceId == null) {
                 throw new CommandArgumentsException("instance-id must not be null");
             }
