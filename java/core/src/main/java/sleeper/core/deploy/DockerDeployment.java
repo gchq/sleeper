@@ -41,7 +41,7 @@ public class DockerDeployment {
     public static final DockerDeployment BASE = builder()
             .deploymentName("base")
             .multiplatform(true)
-            .baseImage(true)
+            .isDefaultBaseImage(true)
             .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
@@ -77,7 +77,7 @@ public class DockerDeployment {
     private final Collection<SleeperInternalCdkApp> cdkApps;
     private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
-    private final boolean baseImage;
+    private final boolean isDefaultBaseImage;
     private final boolean useDefaultBaseImage;
 
     private DockerDeployment(Builder builder) {
@@ -87,7 +87,7 @@ public class DockerDeployment {
         cdkApps = builder.cdkApps;
         platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
-        baseImage = builder.baseImage;
+        isDefaultBaseImage = builder.isDefaultBaseImage;
         useDefaultBaseImage = builder.useDefaultBaseImage;
     }
 
@@ -142,8 +142,8 @@ public class DockerDeployment {
         return cdkApps;
     }
 
-    public boolean isBaseImage() {
-        return baseImage;
+    public boolean isDefaultBaseImage() {
+        return isDefaultBaseImage;
     }
 
     public boolean isUseDefaultBaseImage() {
@@ -240,7 +240,7 @@ public class DockerDeployment {
         private Collection<SleeperInternalCdkApp> cdkApps;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
-        private boolean baseImage;
+        private boolean isDefaultBaseImage;
         private boolean useDefaultBaseImage = true;
 
         /**
@@ -312,13 +312,13 @@ public class DockerDeployment {
         }
 
         /**
-         * Sets whether this is the base image, and required to build all others.
+         * Sets whether this is the default base image, and required to build others by default.
          *
-         * @param  baseImage true if this is the base image
-         * @return           this builder
+         * @param  isDefaultBaseImage true if this is the base image
+         * @return                    this builder
          */
-        public Builder baseImage(boolean baseImage) {
-            this.baseImage = baseImage;
+        public Builder isDefaultBaseImage(boolean isDefaultBaseImage) {
+            this.isDefaultBaseImage = isDefaultBaseImage;
             return this;
         }
 

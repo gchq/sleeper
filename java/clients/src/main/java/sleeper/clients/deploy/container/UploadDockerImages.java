@@ -112,7 +112,7 @@ public class UploadDockerImages {
                 buildAndPushImage(baseTag, baseImage, Map.of());
             }
             for (StackDockerImage image : imagesToUpload) {
-                Map<String, String> buildArgs = createBuildArgs(image, baseTag);
+                Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag);
                 buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
@@ -123,7 +123,7 @@ public class UploadDockerImages {
     }
 
     private void buildAndPushImage(String tag, StackDockerImage image, Map<String, String> buildArgs) throws IOException, InterruptedException {
-        Path dockerfileDirectory = resolveBuildContext(image);
+        Path dockerfileDirectory = image.resolveBuildContext(baseDockerDirectory, deployConfig);
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
                     jarsDirectory.resolve(jar.getFilename(version)),
@@ -154,8 +154,15 @@ public class UploadDockerImages {
         }
     }
 
-    private static Map<String, String> createBuildArgs(StackDockerImage image, String baseTag) {
-        if (image.isUseDefaultBaseImage()) {
+    private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
+        StackDockerImage overrideBaseImage = deployConfig.overrideBaseImageDirPathForImage(image.getImageName())
+                .map(image::createOverrideBaseImage)
+                .orElse(null);
+        if (overrideBaseImage != null) {
+            String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
+            buildAndPushImage(overrideBaseTag, overrideBaseImage, Map.of());
+            return Map.of("BASE_IMAGE", overrideBaseTag);
+        } else if (image.isUseDefaultBaseImage()) {
             return Map.of("BASE_IMAGE", baseTag);
         } else {
             return Map.of();
@@ -177,14 +184,6 @@ public class UploadDockerImages {
                 options.stream(),
                 Stream.of(directory.toString()))
                 .flatMap(s -> s).toArray(String[]::new)));
-    }
-
-    public Path resolveBuildContext(StackDockerImage image) {
-        if (image.equals(baseImage)) {
-            return deployConfig.overrideBaseImageDirPath()
-                    .orElseGet(() -> baseDockerDirectory.resolve(image.getDirectoryName()));
-        }
-        return baseDockerDirectory.resolve(image.getDirectoryName());
     }
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {

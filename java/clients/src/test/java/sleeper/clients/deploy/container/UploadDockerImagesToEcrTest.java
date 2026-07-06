@@ -17,7 +17,6 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -643,11 +642,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        @Disabled("TODO")
-        void shouldSetBaseForSingleImage() throws Exception {
+        void shouldOverrideBaseForSingleImage() throws Exception {
             // Given
             deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDirPerImage(Map.of("bulk-import-runner", "./custom/base"));
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack, OptionalStack.EksBulkImportStack));
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -664,7 +662,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildAndPushMultiplatformImageCommand(expectedBaseTag1, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag1),
                     pushImageCommand(expectedTag1),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag2, "./custom/base"),
+                    buildImageCommand(expectedBaseTag2, "./custom/base"),
+                    pushImageCommand(expectedBaseTag2),
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag2),
                     pushImageCommand(expectedTag2));
         }

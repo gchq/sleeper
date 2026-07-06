@@ -47,12 +47,10 @@ public record DeployConfiguration(
         return Optional.ofNullable(overrideBaseImageDir).map(Path::of);
     }
 
-    public Map<String, String> imageToOverrideBaseDir() {
-        if (imageToOverrideBaseDir == null) {
-            return Map.of();
-        } else {
-            return imageToOverrideBaseDir;
-        }
+    public Optional<Path> overrideBaseImageDirPathForImage(String image) {
+        return Optional.ofNullable(imageToOverrideBaseDir)
+                .map(map -> map.get(image))
+                .map(Path::of);
     }
 
     public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
