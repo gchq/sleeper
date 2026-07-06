@@ -99,17 +99,21 @@ public class UploadDockerImages {
             return;
         }
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
+        boolean anyUseBaseImage = imagesToUpload.stream().anyMatch(StackDockerImage::isUseDefaultBaseImage);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder) {
+                && createMultiplatformBuilder && anyUseBaseImage) {
             useBuildXBuilder(commandRunner);
         }
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
             String baseTag = buildTag(repositoryPrefix, baseImage);
-            buildAndPushImage(baseTag, baseImage, Map.of());
+            if (anyUseBaseImage) {
+                buildAndPushImage(baseTag, baseImage, Map.of());
+            }
             for (StackDockerImage image : imagesToUpload) {
-                buildAndPushImage(buildTag(repositoryPrefix, image), image, Map.of("BASE_IMAGE", baseTag));
+                Map<String, String> buildArgs = image.isUseDefaultBaseImage() ? Map.of("BASE_IMAGE", baseTag) : Map.of();
+                buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
             for (StackDockerImage image : imagesToUpload) {

@@ -57,6 +57,7 @@ public class StackDockerImage {
                 .directoryName(deployment.getDeploymentName())
                 .platforms(deployment.getPlatforms())
                 .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
+                .useDefaultBaseImage(deployment.isUseDefaultBaseImage())
                 .build();
     }
 

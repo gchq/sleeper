@@ -17,7 +17,6 @@
 package sleeper.clients.deploy.container;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        @Disabled("TODO") // TODO bulk import runner image build command
         void shouldPushImagesForTwoStacks() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
@@ -99,7 +97,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base", expectedBaseTag),
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
@@ -627,7 +625,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        @Disabled("TODO")
         void shouldNotUseBaseImageForImageWithDifferentBase() throws Exception {
             // Given
             deployConfig = DeployConfiguration.fromLocalBuildWithOverrideBaseImageDir("./custom/base");
