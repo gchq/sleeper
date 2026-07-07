@@ -359,10 +359,6 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
     Ok(())
 }
 
-#[cfg_attr(
-    windows,
-    ignore = "DataFusion writes an empty output file on Windows; Java handles empty output creation"
-)]
 #[test(tokio::test)]
 async fn should_merge_empty_files() -> Result<(), Error> {
     // Given
@@ -390,15 +386,10 @@ async fn should_merge_empty_files() -> Result<(), Error> {
 
     // Then
     let output_path = local_path(&output)?;
-    assert!(!output_path.try_exists()?);
-    // IMPORTANT note that this is different to the behaviour asserted in Java, in DataFusionCompactionRunnerIT.
-    // We couldn't work out how to make DataFusion output an empty file, so we added Java code to do that as an extra
-    // step. That was mainly to simplify the requirements of a state store implementation, so that we don't need to
-    // support a compaction that has no output file.
-    // We expect this to only be temporary, as we hope that DataFusion will support outputting an empty file in the
-    // following issue:
-    // https://github.com/apache/datafusion/issues/16240
-    // When DataFusion adds support for that, we can update this test and remove the extra behaviour from Java as well.
+    assert!(output_path.try_exists()?);
+    // This assertion must check the native filesystem path. The previous check used the file:// URL string directly,
+    // which did not refer to the real output path. DataFusion currently materialises a zero-row Parquet file for empty
+    // compaction output.
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
     assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
