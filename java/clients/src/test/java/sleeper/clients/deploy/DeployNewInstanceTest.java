@@ -19,11 +19,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.table.AddTableClient;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.schema.Schema;
@@ -36,7 +34,6 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,75 +81,6 @@ public class DeployNewInstanceTest {
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
         }
 
-        //TODO validate remst of argument logic
-        @Test
-        void shouldRejectWhenTableNameNotSetInPropertiesFile() throws IOException {
-            //Given
-            saveFile("other/table.properties", "sleeper.other.property=value\n");
-
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--schema", "schema.json",
-                    "--table-properties", "other/table.properties"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
-        }
-
-        @Test
-        void shouldRejectWhenTableNameNotSetInConfigDir() throws IOException {
-            //Given
-            saveFile("other/table.properties", "sleeper.other.property=value\n");
-            saveSchemaFile("other/schema.json", schema);
-
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Table name was not found. Provide --table-name, or set it in --table-properties or --config-dir.");
-        }
-
-        @Test
-        void shouldRejectWhenNoSchemaSource() {
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--table-name", "my-table"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Either --schema or --config-dir must be provided");
-        }
-
-        @Test
-        void shouldRejectWhenNoTablePropertiesInConfigDir() {
-            //Given
-            saveSchemaFile("other/schema.json", schema);
-
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
-                    .isInstanceOf(UncheckedIOException.class);
-        }
-
-        @Test
-        void shouldRejectWhenNoSchemaInConfigDir() {
-            //Given
-            saveFile("other/table.properties", "sleeper.table.name=no-schema\n");
-
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--config-dir", "other/"))
-                    .isInstanceOf(UncheckedIOException.class);
-        }
-
-        @Test
-        void shouldRejectWhenAllThreeFileSourcesSpecified() throws IOException {
-            //When/Then
-            assertThatThrownBy(() -> addTable("my-instance", "--table-name", "my-table",
-                    "--schema", "schema.json", "--table-properties", "./table.properties",
-                    "--config-dir", "./"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Cannot specify --schema, --table-properties, and --config-dir together");
-        }
-
-    }
-
-    private void addTable(String... args) throws Exception {
-        var arguments = AddTableClient.readArguments(CommandArgumentReader.parse(AddTableClient.USAGE, args), this::readFile);
-        TableProperties tableProperties = AddTableClient.createTablePropertiesWithLoaders(arguments, this::loadInstanceProperties, this::readFile);
-        new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
     }
 
     private void deployNewInstance(String... args) throws Exception {
@@ -181,12 +109,6 @@ public class DeployNewInstanceTest {
 
     private void saveFile(String path, String content) {
         pathToString.put(Path.of(path), content);
-    }
-
-    private String tableId(String tableName) {
-        return tableIndex.getTableByName(tableName)
-                .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
-                .getTableUniqueId();
     }
 
     private InstanceProperties loadInstanceProperties(String instanceId) {

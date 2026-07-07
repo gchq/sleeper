@@ -29,14 +29,10 @@ import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.statestore.StateStoreProvider;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -91,15 +87,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             new DeployNewInstance(deployInstance,
                     id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3, parameters.getAccount(), id),
-                    new StoreFactory() {
-                        public TablePropertiesStore createTableStore(InstanceProperties p) {
-                            return S3TableProperties.createStore(p, s3, dynamoDB);
-                        }
-
-                        public StateStoreProvider createStateStore(InstanceProperties p) {
-                            return StateStoreFactory.createProvider(p, s3, dynamoDB);
-                        }
-                    },
+                    StoreFactory.withAwsClients(s3, dynamoDB),
                     deployConfig, SleeperInternalCdkApp.STANDARD, false, false).deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

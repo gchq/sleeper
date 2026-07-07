@@ -149,15 +149,7 @@ public class DeployNewInstance {
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
                     instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId),
-                    new StoreFactory() {
-                        public TablePropertiesStore createTableStore(InstanceProperties p) {
-                            return S3TableProperties.createStore(p, s3Client, dynamoClient);
-                        }
-
-                        public StateStoreProvider createStateStore(InstanceProperties p) {
-                            return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
-                        }
-                    },
+                    StoreFactory.withAwsClients(s3Client, dynamoClient),
                     config, SleeperInternalCdkApp.STANDARD, args.ignoreTableFiles(), deployPaused).deploy();
         }
     }
@@ -239,5 +231,17 @@ public class DeployNewInstance {
         TablePropertiesStore createTableStore(InstanceProperties instanceProperties);
 
         StateStoreProvider createStateStore(InstanceProperties instanceProperties);
+
+        static StoreFactory withAwsClients(S3Client s3Client, DynamoDbClient dynamoClient) {
+            return new StoreFactory() {
+                public TablePropertiesStore createTableStore(InstanceProperties p) {
+                    return S3TableProperties.createStore(p, s3Client, dynamoClient);
+                }
+
+                public StateStoreProvider createStateStore(InstanceProperties p) {
+                    return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
+                }
+            };
+        }
     }
 }
