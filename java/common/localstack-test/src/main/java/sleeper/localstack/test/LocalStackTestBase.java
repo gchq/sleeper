@@ -23,6 +23,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
@@ -62,6 +63,7 @@ public abstract class LocalStackTestBase {
     protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
     protected final CloudWatchClient cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
     protected final AwsCredentialsProvider credentialsProvider = SleeperLocalStackClients.CREDENTIALS_PROVIDER;
+    protected final EcrClient ecrClient = SleeperLocalStackClients.ECR_CLIENT;
 
     public static void createBucket(String bucketName) {
         S3_CLIENT.createBucket(builder -> builder.bucket(bucketName));

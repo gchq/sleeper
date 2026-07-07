@@ -106,13 +106,16 @@ public class DeployNewInstance {
     public static SleeperInstanceConfiguration loadConfiguration(Arguments args, FileReader files) {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
                 PropertiesUtils.loadProperties(FileReader.readFile(files, args.resolvePropertiesFile())));
-        if (args.configDir() == null) {
+
+        if (args.ignoreTableFiles()) {
             return SleeperInstanceConfiguration.withNoTables(instanceProperties);
         }
+
         TableProperties tableProperties = new TableProperties(instanceProperties,
                 PropertiesUtils.loadProperties(FileReader.readFile(files, args.configDir().resolve("table.properties"))));
         tableProperties.setSchema(new SchemaSerDe().fromJson(
                 FileReader.readFile(files, args.configDir().resolve("schema.json"))));
+
         return new SleeperInstanceConfiguration(instanceProperties, List.of(tableProperties));
     }
 
