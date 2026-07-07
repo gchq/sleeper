@@ -188,28 +188,12 @@ public class DeployNewInstance {
             boolean deployPaused) {
 
         public Arguments {
-            if (scriptsDirectory == null) {
-                throw new CommandArgumentsException("scriptsDirectory must not be null");
-            }
-
-            if (instanceId == null) {
-                throw new CommandArgumentsException("instanceId must not be null");
-            }
-
-            if (vpcId == null) {
-                throw new CommandArgumentsException("vpcId must not be null");
-            }
-
-            if (subnetIds == null) {
-                throw new CommandArgumentsException("subnetIds must not be null");
-            }
-
             if (propertiesFile == null && configDir == null) {
                 throw new CommandArgumentsException("Either --instance-properties or --config-dir must be provided");
             }
 
-            if (configDir == null && ignoreTableFiles) {
-                throw new CommandArgumentsException("ignoreTableFiles flag is only checked when --config-dir is set.");
+            if (propertiesFile != null && configDir != null) {
+                throw new CommandArgumentsException("Cannot use both --instance-properties and --config-dir");
             }
 
             if (propertiesFile != null) {

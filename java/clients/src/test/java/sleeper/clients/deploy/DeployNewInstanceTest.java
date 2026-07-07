@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -79,6 +80,28 @@ public class DeployNewInstanceTest {
             assertThatThrownBy(() -> deployNewInstance("scriptsDir", "my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
+        }
+
+        @Test
+        void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
+            //When/Then
+            assertThatThrownBy(() -> deployNewInstance("scriptsDir", "my-instance", "my-vpc", "my-subnets", "--instance-properties", "someFile", "--config-dir", "someDir"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Cannot use both --instance-properties and --config-dir");
+        }
+
+        @Test
+        void shouldSetIgnoreTableFilesTrueWhenInstancePropertiesUsed() {
+            var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
+                    "scriptsDir", "my-instance", "my-vpc", "my-subnets", "--instance-properties", "someFile"));
+            assertThat(arguments.ignoreTableFiles()).isTrue();
+        }
+
+        @Test
+        void shouldResolvePropertiesFileWhenConfigDirUsed() {
+            var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
+                    "scriptsDir", "my-instance", "my-vpc", "my-subnets", "--config-dir", "someDir"));
+            assertThat(arguments.resolvePropertiesFile()).isEqualTo(Path.of("someDir/instance.properties"));
         }
 
     }
