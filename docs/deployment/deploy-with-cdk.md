@@ -162,8 +162,7 @@ cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION
 There are a number of context variables common to `SleeperCdkApp` or `SleeperDemonstrationCdkApp`, for deploying a
 Sleeper instance. `SleeperArtefactsCdkApp` has its own separate set of context variables.
 
-When deploying a Sleeper instance, you need to point to your instance configuration with one of these two context
-variables:
+When deploying a Sleeper instance, point to your instance configuration with one of two context variables:
 
 * `-c propertiesFile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
   `tags.properties` are read; table properties are not loaded.
