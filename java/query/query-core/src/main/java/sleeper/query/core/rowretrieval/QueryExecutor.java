@@ -109,7 +109,12 @@ public class QueryExecutor {
         List<LeafPartitionQuery> leafPartitionQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
         if (executorService != null) {
             return executeInParallel(leafPartitionQueries);
+        } else {
+            return executeSerially(leafPartitionQueries);
         }
+    }
+
+    private CloseableIterator<Row> executeSerially(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Row>>> iteratorSuppliers = createRowIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
