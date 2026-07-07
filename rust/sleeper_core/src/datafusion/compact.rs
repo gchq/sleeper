@@ -136,8 +136,7 @@ async fn delete_empty_output(
         .await
         .map_err(|e| DataFusionError::External(e.into()))?;
     match store.delete(&store_path).await {
-        Ok(()) => Ok(()),
-        Err(ObjectStoreError::NotFound { .. }) => Ok(()),
+        Ok(()) | Err(ObjectStoreError::NotFound { .. }) => Ok(()),
         Err(e) => Err(e.into()),
     }
 }
