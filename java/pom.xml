@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.36.2-SNAPSHOT</version>
+    <version>0.37.1-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -132,15 +132,15 @@
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
         -->
-        <log4j.version>2.26.0</log4j.version>
+        <log4j.version>2.26.1</log4j.version>
         <!--
         Spark and Hadoop disagree on the version of Curator to use.
         -->
-        <curator.version>5.2.0</curator.version>
+        <curator.version>5.9.0</curator.version>
         <!--
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
-        <dropwizard-metrics-4.version>4.2.19</dropwizard-metrics-4.version>
+        <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
         <aws-java-sdk-v2.version>2.45.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
@@ -173,10 +173,10 @@
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
-        <httpclient5.version>5.6.1</httpclient5.version>
+        <httpclient5.version>5.6.2</httpclient5.version>
         <httpcore5.version>5.4.3</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.2.1</jline.version>
+        <jline.version>4.3.1</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-11</zstd-jni.version>
@@ -196,13 +196,13 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
-        <google.http-client.version>2.1.0</google.http-client.version>
+        <google.http-client.version>2.1.1</google.http-client.version>
         <google.grpc.version>1.82.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.260.0</cdk.version>
+        <cdk.version>2.261.0</cdk.version>
         <constructs.version>10.6.0</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
-        <jsii.version>1.137.0</jsii.version>
+        <jsii.version>1.138.0</jsii.version>
         <gson.version>2.14.0</gson.version>
         <slf4j.version>2.0.18</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
@@ -220,7 +220,7 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.15.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.79.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.80.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -244,7 +244,7 @@
         <mockito.version>5.23.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <handlebars.version>4.5.2</handlebars.version>
+        <handlebars.version>4.5.3</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
@@ -314,6 +314,12 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${spotbugs.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.junit</groupId>
+                        <artifactId>junit-bom</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -1645,6 +1651,11 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite</artifactId>
+                <version>${junit.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
             </dependency>
             <dependency>
