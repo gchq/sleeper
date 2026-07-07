@@ -359,6 +359,10 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg_attr(
+    windows,
+    ignore = "DataFusion writes an empty output file on Windows; Java handles empty output creation"
+)]
 #[test(tokio::test)]
 async fn should_merge_empty_files() -> Result<(), Error> {
     // Given
