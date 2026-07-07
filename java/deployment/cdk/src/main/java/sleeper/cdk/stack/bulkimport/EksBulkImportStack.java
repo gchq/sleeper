@@ -334,7 +334,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     @SuppressWarnings("unchecked")
     private void addFluentBitLoggingForAutoMode(Cluster cluster, ILogGroup logGroup) {
-        // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html
+        // Based on guide at https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html
         // FluentBit runs as a DaemonSet on EC2 nodes managed by EKS auto mode
         String loggingNamespaceName = "amazon-cloudwatch";
 
