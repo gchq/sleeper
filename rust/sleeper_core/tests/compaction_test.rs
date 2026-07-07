@@ -385,9 +385,9 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
-    let output_path = local_path(&output)?;
-    assert!(output_path.try_exists()?);
-    assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());
+    let output_rows = read_file_of_ints(&output, "key")?;
+    let expected_rows: Vec<i32> = vec![];
+    assert_eq!(output_rows, expected_rows);
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
     assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
