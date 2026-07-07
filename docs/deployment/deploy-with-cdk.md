@@ -159,7 +159,11 @@ cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION
 
 #### CDK context variables
 
-When deploying via the CDK, choose one of two context variables to point at your configuration:
+There are a number of context variables common to `SleeperCdkApp` or `SleeperDemonstrationCdkApp`, for deploying a
+Sleeper instance. `SleeperArtefactsCdkApp` has its own separate set of context variables.
+
+When deploying a Sleeper instance, you need to point to your instance configuration with one of these two context
+variables:
 
 * `-c propertiesFile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
   `tags.properties` are read; table properties are not loaded.
@@ -168,3 +172,14 @@ When deploying via the CDK, choose one of two context variables to point at your
    [instant configuration documentation](./instance-configuration.md#configuration-folder-structure).
 
 Set exactly one of these; setting both, or neither, is an error.
+
+These other context variables will be defaulted or read from the configuration if they are not present:
+
+* `-c id=<id>` - the instance ID, which can also be set in the configuration property `sleeper.id`
+* `-c artefactsId=<id>` - the ID of the artefacts deployment to use, can also be set in `sleeper.artefacts.deployment`
+* `-c vpc=<id>` - the VPC ID to deploy into, can also be set in `sleeper.vpc`
+* `-c subnets=<id>` - a comma separated list of subnet IDs to deploy into, can also be set in `sleeper.subnets`
+* `-c validate=<true/false>` - whether to validate instance & table properties before deployment, should usually be true
+* `-c newInstance=<true/false>` - whether to validate that the instance does not yet exist, defaults to false
+* `-c skipVersionCheck=<true/false>` - whether to skip checking the version of Sleeper you're deploying matches any version set in the instance properties, defaults to false
+* `-c deployPaused=<true/false>` - whether to disable scheduled background processes to pause the Sleeper instance, defaults to false
