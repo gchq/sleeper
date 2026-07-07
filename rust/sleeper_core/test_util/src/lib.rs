@@ -58,7 +58,7 @@ pub fn file(dir: &TempDir, name: &str) -> Url {
     Url::from_file_path(dir.path().join(name)).unwrap()
 }
 
-fn local_path(url: &Url) -> Result<PathBuf, Error> {
+pub fn local_path(url: &Url) -> Result<PathBuf, Error> {
     url.to_file_path()
         .map_err(|()| eyre!("Expected file URL, got {url}"))
 }

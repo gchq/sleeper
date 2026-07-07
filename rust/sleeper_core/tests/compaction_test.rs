@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use color_eyre::eyre::{Error, eyre};
+use color_eyre::eyre::Error;
 use datafusion::arrow::datatypes::{DataType, Field, Schema};
 use sleeper_core::{
     CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion,
@@ -385,9 +385,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
 
     // Then
-    let output_path = output
-        .to_file_path()
-        .map_err(|()| eyre!("Expected file URL, got {output}"))?;
+    let output_path = local_path(&output)?;
     assert!(!output_path.try_exists()?);
     // IMPORTANT note that this is different to the behaviour asserted in Java, in DataFusionCompactionRunnerIT.
     // We couldn't work out how to make DataFusion output an empty file, so we added Java code to do that as an extra
