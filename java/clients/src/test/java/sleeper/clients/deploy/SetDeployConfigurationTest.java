@@ -89,11 +89,37 @@ public class SetDeployConfigurationTest {
         void shouldOverrideBaseForSpecificImage() {
             // When
             setDeployConfig("--image-location", "LOCAL_BUILD",
-                    "--override-base-image-dir-by-image", "bulk-import-runner,./custom/spark-base");
+                    "--override-base-image-dir-by-image", "bulk-import-runner=./custom/spark-base");
 
             // Then
             assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild()
                     .withImageToOverrideBaseDir(Map.of("bulk-import-runner", "./custom/spark-base")));
+        }
+
+        @Test
+        void shouldOverrideBaseForTwoImages() {
+            // When
+            setDeployConfig("--image-location", "LOCAL_BUILD",
+                    "--override-base-image-dir-by-image", "bulk-import-runner=./custom/spark-base,other=./custom/other-base");
+
+            // Then
+            assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild()
+                    .withImageToOverrideBaseDir(Map.of(
+                            "bulk-import-runner", "./custom/spark-base",
+                            "other", "./custom/other-base")));
+        }
+
+        @Test
+        void shouldAllowSpacesInImageOverrides() {
+            // When
+            setDeployConfig("--image-location", "LOCAL_BUILD",
+                    "--override-base-image-dir-by-image", " bulk-import-runner = ./custom/spark-base , other = ./custom/other-base ");
+
+            // Then
+            assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild()
+                    .withImageToOverrideBaseDir(Map.of(
+                            "bulk-import-runner", "./custom/spark-base",
+                            "other", "./custom/other-base")));
         }
     }
 
@@ -133,9 +159,19 @@ public class SetDeployConfigurationTest {
             // When / Then
             assertThatThrownBy(() -> setDeployConfig(
                     "--image-repository-prefix", "ghcr.io/gchq",
-                    "--override-base-image-dir-by-image", "bulk-import-runner,./custom/spark-base"))
+                    "--override-base-image-dir-by-image", "bulk-import-runner=./custom/spark-base"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Can only override base images in local builds.");
+        }
+
+        @Test
+        void shouldRefuseInvalidImageOverrides() {
+            // When / Then
+            assertThatThrownBy(() -> setDeployConfig(
+                    "--image-location", "LOCAL_BUILD",
+                    "--override-base-image-dir-by-image", "bulk-import-runner,./custom/spark-base"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Invalid base image override assignment, use the form <image>=<override-dir>,<other-image>=<other-dir>. Found: bulk-import-runner,./custom/spark-base");
         }
 
         @Test

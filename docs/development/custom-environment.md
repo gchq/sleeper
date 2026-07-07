@@ -29,7 +29,7 @@ Here's an example:
 ./scripts/deploy/setDeployConfig.sh \
     --image-location localBuild \
     --override-base-image-dir /path/to/my/base \
-    --override-base-image-dir-by-image bulk-import-runner,/path/to/other/base
+    --override-base-image-dir-by-image bulk-import-runner=/path/to/other/base
 ```
 
 See [publishing artefacts](publishing.md) for the full publish flow.

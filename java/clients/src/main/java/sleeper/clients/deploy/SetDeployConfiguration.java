@@ -18,7 +18,6 @@ package sleeper.clients.deploy;
 import sleeper.clients.deploy.container.DockerImageLocation;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.container.images.ContainerRegistryCredentials;
-import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -29,6 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * A command line tool to set the deployment configuration for Sleeper. Saves the configuration to the local file
@@ -74,11 +76,10 @@ public class SetDeployConfiguration {
                     "Cannot be combined with \"--image-location repository\" — the override only applies to " +
                     "local builds.\n" +
                     "\n" +
-                    "--override-base-image-dir-by-image <image>,<dir>[,<image>,<dir>...]\n" +
+                    "--override-base-image-dir-by-image <image>=<dir>[,<image>=<dir>...]\n" +
                     "This works similarly to \"--override-base-image-dir\", except that it sets the base for " +
-                    "individual images. The value must be a comma separated list, alternating between an image " +
-                    "name and the directory to be used as the Docker build context for its base image. This " +
-                    "usually should not be used when you want to use the same base for multiple images.")
+                    "individual images. This usually should not be used when you want to use the same base for " +
+                    "multiple images.")
             .build();
 
     public static void main(String[] args) throws IOException {
@@ -93,7 +94,7 @@ public class SetDeployConfiguration {
         String imageUsername = arguments.getOptionalString("image-username").orElse(null);
         String overrideBaseImageDir = arguments.getOptionalString("override-base-image-dir").orElse(null);
         Map<String, String> imageToOverrideBaseDir = arguments.getOptionalString("override-base-image-dir-by-image")
-                .map(SleeperPropertyValueUtils::readCommaSeparatedStringToString)
+                .map(overrides -> readImageToOverrideBaseDir(overrides))
                 .orElse(null);
         DockerImageLocation imageLocation = arguments.getOptionalString("image-location")
                 .map(DockerImageLocation::parseOrNull)
@@ -114,6 +115,18 @@ public class SetDeployConfiguration {
         fileWriter.writeString(
                 arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
                 new DeployConfigurationSerDe().toJson(arguments.configuration()));
+    }
+
+    private static Map<String, String> readImageToOverrideBaseDir(String input) {
+        return Stream.of(input.split(","))
+                .map(part -> {
+                    String[] split = part.split("=");
+                    if (split.length != 2) {
+                        throw new IllegalArgumentException("Invalid base image override assignment, use the form <image>=<override-dir>,<other-image>=<other-dir>. Found: " + input);
+                    }
+                    return split;
+                })
+                .collect(toMap(part -> part[0].trim(), part -> part[1].trim()));
     }
 
     private static ContainerRegistryCredentials imageCredentials(ConsoleInput input, String imageUsername) {
