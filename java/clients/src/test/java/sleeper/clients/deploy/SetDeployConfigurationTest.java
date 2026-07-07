@@ -36,7 +36,7 @@ public class SetDeployConfigurationTest {
     private final Map<String, String> pathToFileContent = new HashMap<>();
 
     @Test
-    void shouldWriteLocalBuildConfig() throws Exception {
+    void shouldConfigureToBuildImagesLocally() throws Exception {
         // When
         setDeployConfig("--image-location", "LOCAL_BUILD");
 
