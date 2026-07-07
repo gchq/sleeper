@@ -35,7 +35,18 @@ public record DeployConfiguration(
     public DeployConfiguration {
         Objects.requireNonNull(dockerImageLocation, "dockerImageLocation must not be null");
         if (dockerImageLocation == DockerImageLocation.REPOSITORY) {
-            Objects.requireNonNull(dockerRepositoryPrefix, "dockerRepositoryPrefix must not be null");
+            Objects.requireNonNull(dockerRepositoryPrefix, "Docker repository prefix is required when retrieving images from a repository.");
+            if (overrideBaseImageDir != null || (imageToOverrideBaseDir != null && !imageToOverrideBaseDir.isEmpty())) {
+                throw new IllegalArgumentException("Can only override base images in local builds.");
+            }
+        }
+        if (dockerImageLocation == DockerImageLocation.LOCAL_BUILD) {
+            if (dockerRepositoryPrefix != null) {
+                throw new IllegalArgumentException("Can only set Docker repository prefix when retrieving images from a repository.");
+            }
+            if (dockerCredentials != null) {
+                throw new IllegalArgumentException("Can only set Docker credentials when retrieving images from a repository.");
+            }
         }
     }
 

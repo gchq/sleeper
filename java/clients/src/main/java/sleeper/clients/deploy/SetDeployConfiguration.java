@@ -20,6 +20,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
@@ -100,13 +101,9 @@ public class SetDeployConfiguration {
                     if (imagePrefix != null) {
                         return DockerImageLocation.REPOSITORY;
                     } else {
-                        throw new IllegalArgumentException("Container image location was not set, use --help for more information.");
+                        throw new CommandArgumentsException("Container image location was not set, use --help for more information.");
                     }
                 });
-        if (overrideBaseImageDir != null && imageLocation == DockerImageLocation.REPOSITORY) {
-            throw new IllegalArgumentException("--override-base-image-dir cannot be combined with --image-location repository. " +
-                    "The override only applies to local builds.");
-        }
         ContainerRegistryCredentials imageCredentials = imageCredentials(input, imageUsername);
         return new Arguments(
                 scriptsDir,
