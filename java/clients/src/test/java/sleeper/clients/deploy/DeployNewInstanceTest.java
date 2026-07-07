@@ -19,9 +19,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.deploy.SleeperInstanceConfiguration;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.schema.Schema;
@@ -42,6 +43,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
@@ -50,25 +53,71 @@ public class DeployNewInstanceTest {
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
-    StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
-    Map<String, InstanceProperties> instanceIdToProperties = new HashMap<>();
+    StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties,
+            new InMemoryTransactionLogsPerTable());
     Map<Path, String> pathToString = new HashMap<>();
+    DeployInstanceRequest lastDeployRequest;
 
     @BeforeEach
     void setUp() {
-        instanceIdToProperties.put("my-instance", instanceProperties);
-        saveSchemaFile("./schema.json", schema);
-        saveFile("./table.properties", "sleeper.table.name=file-table\n");
+        saveFile("./instance.properties", instanceProperties);
+        saveFile("./configDir/instance.properties", instanceProperties);
+        saveFile("./configDir/table.properties", "sleeper.table.name=file-table\n");
+        saveSchemaFile("./configDir/schema.json", schema);
     }
 
-    //TODO test deploy method
+    @Nested
+    class DeployNew {
+
+        @Test
+        void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--instance-properties",
+                    "./instance.properties");
+
+            assertThat(tableIndex.streamAllTables()).isEmpty();
+            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
+            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+        }
+
+        @Test
+        void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir");
+
+            TableProperties expected = new TableProperties(instanceProperties);
+            expected.setSchema(schema);
+            expected.set(TABLE_ID, tableId("file-table"));
+            expected.set(TABLE_NAME, "file-table");
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
+            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
+            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+        }
+
+        @Test
+        void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir",
+                    "--ignoreTableFiles");
+
+            assertThat(tableIndex.streamAllTables()).isEmpty();
+            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
+            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+        }
+
+        @Test
+        void shouldDeployNewInstancePaused() throws Exception {
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir",
+                    "--paused");
+
+            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNewPaused());
+            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+        }
+    }
 
     @Nested
     class ArgumentsValidation {
 
         @Test
         void shouldRejectWhenNotEnoughPositionalArguments() {
-            //When/Then
+            // When/Then
             assertThatThrownBy(() -> deployNewInstance())
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 4 positional arguments, found 0");
@@ -76,7 +125,7 @@ public class DeployNewInstanceTest {
 
         @Test
         void shouldRejectWhenNeitherInstancePropertiesOrConfigDirSet() {
-            //When/Then
+            // When/Then
             assertThatThrownBy(() -> deployNewInstance("scriptsDir", "my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
@@ -84,8 +133,9 @@ public class DeployNewInstanceTest {
 
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
-            //When/Then
-            assertThatThrownBy(() -> deployNewInstance("scriptsDir", "my-instance", "my-vpc", "my-subnets", "--instance-properties", "someFile", "--config-dir", "someDir"))
+            // When/Then
+            assertThatThrownBy(() -> deployNewInstance("scriptsDir", "my-instance", "my-vpc", "my-subnets",
+                    "--instance-properties", "someFile", "--config-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot use both --instance-properties and --config-dir");
         }
@@ -108,11 +158,9 @@ public class DeployNewInstanceTest {
 
     private void deployNewInstance(String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
-        SleeperInstanceConfiguration config = SleeperInstanceConfiguration.withNoTables(instanceProperties);
+        var config = DeployNewInstance.loadConfiguration(arguments, this::readFile);
         new DeployNewInstance(
-                request -> {
-                },           // no-op stub — no real CDK/S3/ECR
-                this::loadInstanceProperties,
+                request -> lastDeployRequest = request,
                 new DeployNewInstance.StoreFactory() {
                     public TablePropertiesStore createTableStore(InstanceProperties p) {
                         return tablePropertiesStore;
@@ -126,6 +174,12 @@ public class DeployNewInstanceTest {
                 arguments.ignoreTableFiles(), arguments.deployPaused()).deploy();
     }
 
+    private String tableId(String tableName) {
+        return tableIndex.getTableByName(tableName)
+                .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
+                .getTableUniqueId();
+    }
+
     private void saveSchemaFile(String path, Schema schema) {
         pathToString.put(Path.of(path), new SchemaSerDe().toJson(schema));
     }
@@ -134,9 +188,8 @@ public class DeployNewInstanceTest {
         pathToString.put(Path.of(path), content);
     }
 
-    private InstanceProperties loadInstanceProperties(String instanceId) {
-        return Optional.ofNullable(instanceIdToProperties.get(instanceId))
-                .orElseThrow();
+    private void saveFile(String path, InstanceProperties content) {
+        pathToString.put(Path.of(path), content.saveAsString());
     }
 
     private String readFile(Path path) throws IOException {

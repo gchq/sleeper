@@ -86,7 +86,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
         try {
             new DeployNewInstance(deployInstance,
-                    id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3, parameters.getAccount(), id),
                     StoreFactory.withAwsClients(s3, dynamoDB),
                     deployConfig, SleeperInternalCdkApp.STANDARD, false, false).deploy();
         } catch (InterruptedException e) {

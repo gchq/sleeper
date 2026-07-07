@@ -26,14 +26,16 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.AddTableClient;
+import sleeper.clients.util.FileReader;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -42,6 +44,7 @@ import sleeper.core.util.cli.CommandOption;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -53,32 +56,17 @@ public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
     private final InstanceDeployer deployInstance;
-    private final InstancePropertiesLoader propertiesLoader;
     private final StoreFactory storeFactory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
     private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
-    public DeployNewInstance(DeployInstance deployInstance, String accountName, S3Client s3Client,
-            DynamoDbClient dynamoClient, SleeperInstanceConfiguration deployInstanceConfiguration,
-            SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
-        this.deployInstance = deployInstance;
-        this.deployInstanceConfiguration = deployInstanceConfiguration;
-        this.cdkApp = cdkApp;
-        this.ignoreTableFiles = ignoreTableFiles;
-        this.deployPaused = deployPaused;
-        propertiesLoader = null;
-        storeFactory = null;
-    }
-
     public DeployNewInstance(InstanceDeployer deployInstance,
-            InstancePropertiesLoader instancePropertiesLoader,
             StoreFactory storeFactory,
             SleeperInstanceConfiguration deployInstanceConfiguration,
             SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
         this.deployInstance = deployInstance;
-        this.propertiesLoader = instancePropertiesLoader;
         this.storeFactory = storeFactory;
         this.deployInstanceConfiguration = deployInstanceConfiguration;
         this.cdkApp = cdkApp;
@@ -115,6 +103,19 @@ public class DeployNewInstance {
                     "the instance is manually resumed.")
             .build();
 
+    public static SleeperInstanceConfiguration loadConfiguration(Arguments args, FileReader files) {
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
+                PropertiesUtils.loadProperties(FileReader.readFile(files, args.resolvePropertiesFile())));
+        if (args.configDir() == null) {
+            return SleeperInstanceConfiguration.withNoTables(instanceProperties);
+        }
+        TableProperties tableProperties = new TableProperties(instanceProperties,
+                PropertiesUtils.loadProperties(FileReader.readFile(files, args.configDir().resolve("table.properties"))));
+        tableProperties.setSchema(new SchemaSerDe().fromJson(
+                FileReader.readFile(files, args.configDir().resolve("schema.json"))));
+        return new SleeperInstanceConfiguration(instanceProperties, List.of(tableProperties));
+    }
+
     public static Arguments readArguments(CommandArguments arguments) {
         return new Arguments(
                 Path.of(arguments.getString("scriptsDirectory")),
@@ -131,7 +132,6 @@ public class DeployNewInstance {
         Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, a -> readArguments(a));
 
         Path scriptsDirectory = Path.of(rawArgs[0]);
-        Path instancePropertiesFile = args.resolvePropertiesFile();
         boolean deployPaused = args.deployPaused();
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
@@ -141,14 +141,13 @@ public class DeployNewInstance {
             Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
+            SleeperInstanceConfiguration config = loadConfiguration(args, Files::readString);
 
             config.getInstanceProperties().set(ID, args.instanceId());
             config.getInstanceProperties().set(VPC_ID, args.vpcId());
             config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId),
                     StoreFactory.withAwsClients(s3Client, dynamoClient),
                     config, SleeperInternalCdkApp.STANDARD, args.ignoreTableFiles(), deployPaused).deploy();
         }
@@ -164,7 +163,7 @@ public class DeployNewInstance {
                 .build());
 
         if (!ignoreTableFiles) {
-            InstanceProperties instanceProperties = propertiesLoader.load(deployInstanceConfiguration.getInstanceId());
+            InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
 
             for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
                 LOGGER.info("Adding table " + tableProperties.getStatus());
