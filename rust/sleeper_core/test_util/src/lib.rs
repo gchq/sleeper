@@ -58,6 +58,10 @@ pub fn file(dir: &TempDir, name: &str) -> Url {
     Url::from_file_path(dir.path().join(name)).unwrap()
 }
 
+/// Converts a file URL to a local filesystem path.
+///
+/// # Errors
+/// Returns an error if the URL cannot be represented as a local path.
 pub fn local_path(url: &Url) -> Result<PathBuf, Error> {
     url.to_file_path()
         .map_err(|()| eyre!("Expected file URL, got {url}"))
