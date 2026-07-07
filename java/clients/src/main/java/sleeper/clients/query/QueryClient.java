@@ -15,8 +15,6 @@
  */
 package sleeper.clients.query;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -38,7 +36,6 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
@@ -48,8 +45,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
+import sleeper.query.datafusion.PerCallDataFusionRowRetrieverProvider;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
@@ -142,9 +138,7 @@ public class QueryClient extends QueryCommandLineClient {
         ExecutorService leafPartitionExecutorService = Executors.newFixedThreadPool(10);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                StsClient stsClient = buildAwsV2Client(StsClient.builder());
-                BufferAllocator allocator = new RootAllocator();
-                FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
             String accountName = stsClient.getCallerIdentity().account();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
             new QueryClient(
@@ -156,7 +150,7 @@ public class QueryClient extends QueryCommandLineClient {
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
                             new LeafPartitionRowRetrieverImpl.Provider(fileReadingExecutorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
-                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context)),
+                            new PerCallDataFusionRowRetrieverProvider(DataFusionAwsConfig.getDefault(instanceProperties))),
                     leafPartitionExecutorService)
                     .run();
         } finally {
