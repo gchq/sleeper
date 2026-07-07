@@ -38,8 +38,9 @@ use datafusion::{
     physical_plan::{ExecutionPlan, displayable, filter::FilterExec},
 };
 use log::{debug, info};
+use object_store::{Error as ObjectStoreError, ObjectStoreExt};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::sync::Arc;
+use std::{io::ErrorKind, sync::Arc};
 
 /// Contains compaction results.
 ///
@@ -101,11 +102,44 @@ pub async fn compact(
     .await?;
 
     // Write the frame out and collect stats
+    if stats.rows_written == 0 {
+        delete_empty_output(store_factory, output_file).await?;
+    }
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
 
     // Dump input file metrics to logging console
     stats.log_metrics();
     Ok(CompactionResult::from(&stats))
+}
+
+async fn delete_empty_output(
+    store_factory: &ObjectStoreFactory,
+    output_file: &url::Url,
+) -> Result<(), DataFusionError> {
+    if output_file.scheme() == "file" {
+        let path = output_file.to_file_path().map_err(|()| {
+            DataFusionError::External(Box::new(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                format!("Expected file URL, got {output_file}"),
+            )))
+        })?;
+        return match std::fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(DataFusionError::External(Box::new(e))),
+        };
+    }
+
+    let store_path = object_store::path::Path::from(output_file.path());
+    let store = store_factory
+        .get_object_store(output_file)
+        .await
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    match store.delete(&store_path).await {
+        Ok(()) => Ok(()),
+        Err(ObjectStoreError::NotFound { .. }) => Ok(()),
+        Err(e) => Err(e.into()),
+    }
 }
 
 /// Creates the [`DataFrame`] for a compaction.
