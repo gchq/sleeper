@@ -22,6 +22,8 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArguments;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +38,7 @@ public class SetDeployConfigurationTest {
     private final Map<String, String> pathToFileContent = new HashMap<>();
 
     @Test
-    void shouldConfigureToBuildImagesLocally() throws Exception {
+    void shouldConfigureToBuildImagesLocally() {
         // When
         setDeployConfig("--image-location", "LOCAL_BUILD");
 
@@ -44,19 +46,32 @@ public class SetDeployConfigurationTest {
         assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild());
     }
 
+    @Test
+    void shouldConfigureToRetrieveRemoteImages() {
+        // When
+        setDeployConfig("--image-repository-prefix", "ghcr.io/gchq");
+
+        // Then
+        assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromDockerRepository("ghcr.io/gchq"));
+    }
+
     private DeployConfiguration getDeployConfig() {
         String json = pathToFileContent.get("./scripts/templates/deployConfig.json");
         return new DeployConfigurationSerDe().fromJson(json);
     }
 
-    private void setDeployConfig(String... args) throws Exception {
+    private void setDeployConfig(String... args) {
         List<String> allArgs = new ArrayList<>();
         allArgs.add("./scripts");
         allArgs.addAll(List.of(args));
         CommandArguments arguments = CommandArgumentReader.parse(SetDeployConfiguration.USAGE, allArgs.toArray(String[]::new));
-        SetDeployConfiguration.writeConfigurationFile(
-                (path, string) -> pathToFileContent.put(path.toString(), string),
-                SetDeployConfiguration.readArguments(in.consoleIn(), arguments));
+        try {
+            SetDeployConfiguration.writeConfigurationFile(
+                    (path, string) -> pathToFileContent.put(path.toString(), string),
+                    SetDeployConfiguration.readArguments(in.consoleIn(), arguments));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }
