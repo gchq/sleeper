@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * its partition and feeds them into a shared bounded queue; this iterator drains from that queue. Whichever partition
  * produces rows fastest is consumed first — a slow partition does not block rows from faster ones. The queue provides
  * backpressure: producers block when it is full until the consumer catches up.
+ *
+ * This class is not thread-safe; do not use without external synchronisation.
  */
 class ParallelQueryIterator implements CloseableIterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ParallelQueryIterator.class);

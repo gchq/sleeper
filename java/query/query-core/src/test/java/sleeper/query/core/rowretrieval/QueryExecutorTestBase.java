@@ -77,15 +77,15 @@ public class QueryExecutorTestBase {
     }
 
     protected QueryExecutor executorAtTime(Instant time) throws Exception {
-        return new QueryExecutor(plannerAtTime(time), leafQueryExecutor());
+        return QueryExecutor.makeSerialExecutor(plannerAtTime(time), leafQueryExecutor());
     }
 
     protected QueryExecutor parallelExecutor(ExecutorService executorService) throws Exception {
-        return new QueryExecutor(planner(), leafQueryExecutor(), executorService);
+        return QueryExecutor.makeParallelExecutor(planner(), leafQueryExecutor(), executorService);
     }
 
     protected List<Row> getRows(Query query) throws Exception {
-        return getRows(new QueryExecutor(planner(), leafQueryExecutor()), query);
+        return getRows(QueryExecutor.makeSerialExecutor(planner(), leafQueryExecutor()), query);
     }
 
     protected List<Row> getRows(QueryExecutor executor, Query query) {

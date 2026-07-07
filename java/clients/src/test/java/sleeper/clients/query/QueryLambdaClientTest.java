@@ -171,7 +171,7 @@ public class QueryLambdaClientTest {
     }
 
     private QueryExecutor queryExecutor(TableProperties tableProperties) {
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                         new InMemoryLeafPartitionRowRetriever(rowStore)));

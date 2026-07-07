@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +39,12 @@ import java.util.stream.Collectors;
 /**
  * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
  * cannot be used concurrently in multiple threads, due to how partitions are cached.
+ * <p>
+ * An executor can run either serially or in parallel - use either {@link #makeSerialExecutor} or
+ * {@link #makeParallelExecutor} to construct the executor. If a query spans multiple leaf partitions then it is
+ * split up into multiple subqueries, each of which are executed independently. In serial execution mode, each subquery
+ * is executed sequentially. In parallel execution mode, multiple subqueries will be executed in parallel, placing
+ * their results into a shared queue that the client consumes from.
  */
 public class QueryExecutor {
     private static final int DEFAULT_BUFFER_SIZE = 10000;
@@ -47,8 +54,22 @@ public class QueryExecutor {
     private final ExecutorService executorService;
     private final int bufferSize;
 
-    public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor) {
-        this(queryPlanner, leafQueryExecutor, null);
+    private QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService, int bufferSize) {
+        this.queryPlanner = queryPlanner;
+        this.leafQueryExecutor = leafQueryExecutor;
+        this.executorService = executorService;
+        this.bufferSize = bufferSize;
+    }
+
+    /**
+     * Creates an executor that runs leaf partition sub-queries one at a time on the calling thread.
+     *
+     * @param  queryPlanner      the planner that splits a query into leaf partition sub-queries
+     * @param  leafQueryExecutor the executor that retrieves rows for a single leaf partition
+     * @return                   the executor
+     */
+    public static QueryExecutor makeSerialExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor) {
+        return new QueryExecutor(queryPlanner, leafQueryExecutor, null, DEFAULT_BUFFER_SIZE);
     }
 
     /**
@@ -56,28 +77,28 @@ public class QueryExecutor {
      * threads read rows from each partition and feed them into a shared queue; the returned iterator drains that queue.
      * Parallelism is bounded by the thread pool size; excess sub-queries queue until a thread is free.
      *
-     * @param queryPlanner      the planner that splits a query into leaf partition sub-queries
-     * @param leafQueryExecutor the executor that retrieves rows for a single leaf partition
-     * @param executorService   the thread pool used to run sub-queries concurrently, or null for sequential execution
+     * @param  queryPlanner      the planner that splits a query into leaf partition sub-queries
+     * @param  leafQueryExecutor the executor that retrieves rows for a single leaf partition
+     * @param  executorService   the thread pool used to run sub-queries concurrently
+     * @return                   the executor
      */
-    public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService) {
-        this(queryPlanner, leafQueryExecutor, executorService, DEFAULT_BUFFER_SIZE);
+    public static QueryExecutor makeParallelExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService) {
+        return makeParallelExecutor(queryPlanner, leafQueryExecutor, executorService, DEFAULT_BUFFER_SIZE);
     }
 
     /**
      * Creates an executor that runs leaf partition sub-queries in parallel using the provided thread pool, with a
      * configurable row buffer size. The buffer limits how far ahead producers can run relative to the consumer.
      *
-     * @param queryPlanner      the planner that splits a query into leaf partition sub-queries
-     * @param leafQueryExecutor the executor that retrieves rows for a single leaf partition
-     * @param executorService   the thread pool used to run sub-queries concurrently, or null for sequential execution
-     * @param bufferSize        the maximum number of rows held in the shared queue at any one time
+     * @param  queryPlanner      the planner that splits a query into leaf partition sub-queries
+     * @param  leafQueryExecutor the executor that retrieves rows for a single leaf partition
+     * @param  executorService   the thread pool used to run sub-queries concurrently
+     * @param  bufferSize        the maximum number of rows held in the shared queue at any one time
+     * @return                   the executor
      */
-    public QueryExecutor(QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService, int bufferSize) {
-        this.queryPlanner = queryPlanner;
-        this.leafQueryExecutor = leafQueryExecutor;
-        this.executorService = executorService;
-        this.bufferSize = bufferSize;
+    public static QueryExecutor makeParallelExecutor(
+            QueryPlanner queryPlanner, LeafPartitionQueryExecutor leafQueryExecutor, ExecutorService executorService, int bufferSize) {
+        return new QueryExecutor(queryPlanner, leafQueryExecutor, Objects.requireNonNull(executorService, "executorService"), bufferSize);
     }
 
     /**

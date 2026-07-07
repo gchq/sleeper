@@ -178,7 +178,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             QueryProcessingConfig.none());
 
                     LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-                    QueryExecutor queryExec = new QueryExecutor(
+                    QueryExecutor queryExec = QueryExecutor.makeSerialExecutor(
                             QueryPlanner.initialiseNow(tableProperties, stateStore),
                             new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
 
@@ -250,12 +250,12 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
             ExecutorService executorService = Executors.newFixedThreadPool(5);
             try {
-                QueryExecutor queryExec = new QueryExecutor(
+                QueryExecutor queryExec = QueryExecutor.makeParallelExecutor(
                         QueryPlanner.initialiseNow(tableProperties, stateStore),
                         new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever),
                         executorService);
                 Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
-                        "key", 0L, true, (long) LEAF_COUNT, true)), QueryProcessingConfig.none());
+                        "key", -1000L, true, 1000L, true)), QueryProcessingConfig.none());
 
                 // When / Then - run many times, each fanning out to all the leaf partitions in parallel
                 for (int i = 0; i < QUERY_COUNT; i++) {
@@ -1493,7 +1493,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 // DataFusion spends time trying to auth with AWS unless you override it
                 DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

@@ -61,6 +61,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 /**
  * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
  * threads, due to how query executors and state store objects are cached. This may be changed in a future version.
+ *
+ * If an ExecutorService is provided then the QueryExecutor used to run queries will, if possible, parallelise
+ * subqueries across multiple threads.
  */
 public class QueryClient extends QueryCommandLineClient {
 
@@ -93,11 +96,12 @@ public class QueryClient extends QueryCommandLineClient {
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryExecutor executor = new QueryExecutor(
-                    QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
-                    new LeafPartitionQueryExecutor(objectFactory, tableProperties,
-                            rowRetrieverProvider.getRowRetriever(tableProperties)),
-                    executorService);
+            QueryPlanner queryPlanner = QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties));
+            LeafPartitionQueryExecutor leafQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties,
+                    rowRetrieverProvider.getRowRetriever(tableProperties));
+            QueryExecutor executor = executorService == null
+                    ? QueryExecutor.makeSerialExecutor(queryPlanner, leafQueryExecutor)
+                    : QueryExecutor.makeParallelExecutor(queryPlanner, leafQueryExecutor, executorService);
             cachedQueryExecutors.put(tableName, executor);
         }
     }
@@ -134,6 +138,8 @@ public class QueryClient extends QueryCommandLineClient {
         }
         String instanceId = args[0];
 
+        // Two ExecutorServices are needed - one for the underlying Java row retriever and one for
+        // the outer parallelisation of subqueries.
         ExecutorService fileReadingExecutorService = Executors.newFixedThreadPool(30);
         ExecutorService leafPartitionExecutorService = Executors.newFixedThreadPool(10);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
