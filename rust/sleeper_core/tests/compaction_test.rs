@@ -387,9 +387,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     // Then
     let output_path = local_path(&output)?;
     assert!(output_path.try_exists()?);
-    // This assertion must check the native filesystem path. The previous check used the file:// URL string directly,
-    // which did not refer to the real output path. DataFusion currently materialises a zero-row Parquet file for empty
-    // compaction output.
+    assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
     assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
