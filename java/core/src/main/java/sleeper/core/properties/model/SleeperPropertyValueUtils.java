@@ -21,9 +21,7 @@ import org.apache.commons.lang3.EnumUtils;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.schema.Schema;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoublePredicate;
@@ -447,26 +445,6 @@ public class SleeperPropertyValueUtils {
                     .map(String::trim)
                     .toList();
         }
-    }
-
-    /**
-     * Converts CSV values into a map from string to string. Entries appear in the CSV list in order, alternating
-     * between key and value.
-     *
-     * @param  input the comma separated values
-     * @return       the map from string to string
-     */
-    public static Map<String, String> readCommaSeparatedStringToString(String input) {
-        Map<String, String> map = new HashMap<>();
-        if (null != input && !input.isEmpty()) {
-            String[] split = input.split(",");
-            if (split.length % 2 == 0) { //Ensure matching number of keys and values
-                for (int i = 0; i < split.length; i += 2) {
-                    map.put(split[i], split[i + 1]);
-                }
-            }
-        }
-        return map;
     }
 
 }
