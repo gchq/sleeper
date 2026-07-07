@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
+import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArguments;
 
@@ -53,6 +54,38 @@ public class SetDeployConfigurationTest {
 
         // Then
         assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromDockerRepository("ghcr.io/gchq"));
+    }
+
+    @Test
+    void shouldConfigureCredentialsToRetrieveRemoteImages() {
+        // When
+        in.enterNextPrompt("my-password");
+        setDeployConfig("--image-repository-prefix", "ghcr.io/gchq", "--image-username", "my-user");
+
+        // Then
+        assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromDockerRepository(
+                "ghcr.io/gchq", new ContainerRegistryCredentials("my-user", "my-password")));
+    }
+
+    @Test
+    void shouldOverrideBaseImage() {
+        // When
+        setDeployConfig("--image-location", "LOCAL_BUILD", "--override-base-image-dir", "./custom/base");
+
+        // Then
+        assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild()
+                .withOverrideBaseImageDir("./custom/base"));
+    }
+
+    @Test
+    void shouldOverrideBaseForSpecificImage() {
+        // When
+        setDeployConfig("--image-location", "LOCAL_BUILD",
+                "--override-base-image-dir-by-image", "bulk-import-runner,./custom/spark-base");
+
+        // Then
+        assertThat(getDeployConfig()).isEqualTo(DeployConfiguration.fromLocalBuild()
+                .withImageToOverrideBaseDir(Map.of("bulk-import-runner", "./custom/spark-base")));
     }
 
     private DeployConfiguration getDeployConfig() {
