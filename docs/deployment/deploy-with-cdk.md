@@ -159,7 +159,7 @@ cdk destroy --all -c id=$INSTANCE_ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION
 
 #### CDK context variables
 
-There are a number of context variables common to `SleeperCdkApp` or `SleeperDemonstrationCdkApp`, for deploying a
+There are a number of context variables common to `SleeperCdkApp` and `SleeperDemonstrationCdkApp`, for deploying a
 Sleeper instance. `SleeperArtefactsCdkApp` has its own separate set of context variables.
 
 When deploying a Sleeper instance, point to your instance configuration with one of two context variables:
