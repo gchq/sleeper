@@ -260,16 +260,16 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @return         the map of tag name to value
      */
     public static Map<String, String> csvTagsToMap(String csvTags) {
-        Map<String, String> map = new HashMap<>();
+        Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
             String[] split = csvTags.split(",");
             if (split.length % 2 == 0) { //Ensure matching number of keys and values
                 for (int i = 0; i < split.length; i += 2) {
-                    map.put(split[i], split[i + 1]);
+                    tags.put(split[i], split[i + 1]);
                 }
             }
         }
-        return map;
+        return tags;
     }
 
     /**
