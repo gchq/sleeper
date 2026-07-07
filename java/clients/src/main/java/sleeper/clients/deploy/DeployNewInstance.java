@@ -106,17 +106,25 @@ public class DeployNewInstance {
     public static SleeperInstanceConfiguration loadConfiguration(Arguments args, FileReader files) {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
                 PropertiesUtils.loadProperties(FileReader.readFile(files, args.resolvePropertiesFile())));
-
         if (args.ignoreTableFiles()) {
             return SleeperInstanceConfiguration.withNoTables(instanceProperties);
         }
 
+        //TODO, this is wrong and doesn't load the table properties correctly
         TableProperties tableProperties = new TableProperties(instanceProperties,
                 PropertiesUtils.loadProperties(FileReader.readFile(files, args.configDir().resolve("table.properties"))));
         tableProperties.setSchema(new SchemaSerDe().fromJson(
                 FileReader.readFile(files, args.configDir().resolve("schema.json"))));
 
         return new SleeperInstanceConfiguration(instanceProperties, List.of(tableProperties));
+    }
+
+    public static SleeperInstanceConfiguration loadConfiguration2(Arguments args, FileReader files) {
+        if (args.ignoreTableFiles()) {
+            return SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
+        }
+
+        return SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
     }
 
     public static Arguments readArguments(CommandArguments arguments) {

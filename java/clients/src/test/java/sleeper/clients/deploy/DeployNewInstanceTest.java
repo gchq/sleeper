@@ -18,6 +18,7 @@ package sleeper.clients.deploy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -35,12 +36,15 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static java.nio.file.Files.createDirectory;
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -58,12 +62,19 @@ public class DeployNewInstanceTest {
     Map<Path, String> pathToString = new HashMap<>();
     DeployInstanceRequest lastDeployRequest;
 
+    @TempDir
+    private Path tempDir;
+
     @BeforeEach
-    void setUp() {
-        saveFile("./instance.properties", instanceProperties);
-        saveFile("./configDir/instance.properties", instanceProperties);
-        saveFile("./configDir/table.properties", "sleeper.table.name=file-table\n");
-        saveSchemaFile("./configDir/schema.json", schema);
+    void setUp() throws IOException {
+        createTempDirectory(tempDir, null);
+        Files.writeString(tempDir.resolve("instance.properties"), instanceProperties.saveAsString());
+        Path tables = tempDir.resolve("tables");
+        Path table1 = tables.resolve("table1");
+        createDirectory(tables);
+        createDirectory(table1);
+        Files.writeString(table1.resolve("table.properties"), "sleeper.table.name=file-table\n");
+        Files.writeString(table1.resolve("schema.json"), new SchemaSerDe().toJson(schema));
     }
 
     @Nested
@@ -72,7 +83,7 @@ public class DeployNewInstanceTest {
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
             deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--instance-properties",
-                    "./instance.properties");
+                    tempDir.resolve("./instance.properties").toString());
 
             assertThat(tableIndex.streamAllTables()).isEmpty();
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
@@ -158,7 +169,7 @@ public class DeployNewInstanceTest {
 
     private void deployNewInstance(String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
-        var config = DeployNewInstance.loadConfiguration(arguments, this::readFile);
+        var config = DeployNewInstance.loadConfiguration(arguments, Files::readString);
         new DeployNewInstance(
                 request -> lastDeployRequest = request,
                 new DeployNewInstance.StoreFactory() {
@@ -178,18 +189,6 @@ public class DeployNewInstanceTest {
         return tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
                 .getTableUniqueId();
-    }
-
-    private void saveSchemaFile(String path, Schema schema) {
-        pathToString.put(Path.of(path), new SchemaSerDe().toJson(schema));
-    }
-
-    private void saveFile(String path, String content) {
-        pathToString.put(Path.of(path), content);
-    }
-
-    private void saveFile(String path, InstanceProperties content) {
-        pathToString.put(Path.of(path), content.saveAsString());
     }
 
     private String readFile(Path path) throws IOException {
