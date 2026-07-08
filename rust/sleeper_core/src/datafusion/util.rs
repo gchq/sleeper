@@ -135,28 +135,23 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 ///
 /// # Returns
 /// `Some(LexOrdering)` if a sort stage is found, `None` if no sort stage is present in the plan.
-///
-/// # Errors
-/// If tree traversal fails.
-pub fn find_topmost_sort_ordering(
-    plan: &Arc<dyn ExecutionPlan>,
-) -> Result<Option<LexOrdering>, DataFusionError> {
+pub fn find_topmost_sort_ordering(plan: &Arc<dyn ExecutionPlan>) -> Option<LexOrdering> {
     // Check if root is a sort stage
     if let Some(sort) = plan.as_any().downcast_ref::<SortExec>() {
-        return Ok(Some(sort.expr().clone()));
+        return Some(sort.expr().clone());
     }
     if let Some(sort_merge) = plan.as_any().downcast_ref::<SortPreservingMergeExec>() {
-        return Ok(Some(sort_merge.expr().clone()));
+        return Some(sort_merge.expr().clone());
     }
 
     // Recursively check children
     for child in plan.children() {
-        if let Ok(Some(ordering)) = find_topmost_sort_ordering(child) {
-            return Ok(Some(ordering));
+        if let Some(ordering) = find_topmost_sort_ordering(child) {
+            return Some(ordering);
         }
     }
 
-    Ok(None)
+    None
 }
 
 /// Takes the urls in `input_paths` list and `output_path`
@@ -257,7 +252,7 @@ pub fn remove_coalesce_physical_stage(
                     let input = coalesce.input().clone();
                     // Find the correct sort ordering (if any) by traversing down the physical plan
                     let sort_ordering =
-                        find_topmost_sort_ordering(&input)?.unwrap_or(ordering.clone());
+                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
                     // Swap it out for a SortPreservingMergeExec
                     let replacement = SortPreservingMergeExec::new(sort_ordering, input);
                     // Stop searching down the query plan after making one replacement
@@ -298,7 +293,7 @@ pub fn apply_full_sort_ordering(
                     let input = sort_preserve.input().clone();
                     // Find the correct sort ordering (if any) by traversing down the physical plan
                     let sort_ordering =
-                        find_topmost_sort_ordering(&input)?.unwrap_or(ordering.clone());
+                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
                     // Swap for a sort merging stage with complete sort order
                     let replacement = SortPreservingMergeExec::new(sort_ordering, input)
                         .with_fetch(sort_preserve.fetch());
@@ -727,7 +722,7 @@ mod tests {
     }
 
     #[test]
-    fn should_find_sort_exec_at_root() -> Result<(), Error> {
+    fn should_find_sort_exec_at_root() {
         // Given
         use datafusion::physical_plan::sorts::sort::SortExec;
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
@@ -739,15 +734,14 @@ mod tests {
             Arc::new(SortExec::new(ordering.clone(), memory_exec));
 
         // When
-        let result = find_topmost_sort_ordering(&sort_exec)?;
+        let result = find_topmost_sort_ordering(&sort_exec);
 
         // Then
         assert_eq!(result, Some(ordering));
-        Ok(())
     }
 
     #[test]
-    fn should_find_sort_preserving_merge_exec_at_root() -> Result<(), Error> {
+    fn should_find_sort_preserving_merge_exec_at_root() {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
         let input_batch = RecordBatch::new_empty(schema.clone());
@@ -758,15 +752,14 @@ mod tests {
             Arc::new(SortPreservingMergeExec::new(ordering.clone(), memory_exec));
 
         // When
-        let result = find_topmost_sort_ordering(&sort_merge_exec)?;
+        let result = find_topmost_sort_ordering(&sort_merge_exec);
 
         // Then
         assert_eq!(result, Some(ordering));
-        Ok(())
     }
 
     #[test]
-    fn should_find_sort_exec_one_level_deep() -> Result<(), Error> {
+    fn should_find_sort_exec_one_level_deep() {
         // Given
         use datafusion::physical_plan::sorts::sort::SortExec;
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
@@ -778,15 +771,14 @@ mod tests {
         let coalesce: Arc<dyn ExecutionPlan> = Arc::new(CoalescePartitionsExec::new(sort_exec));
 
         // When
-        let result = find_topmost_sort_ordering(&coalesce)?;
+        let result = find_topmost_sort_ordering(&coalesce);
 
         // Then
         assert_eq!(result, Some(ordering));
-        Ok(())
     }
 
     #[test]
-    fn should_find_topmost_sort_stage_when_multiple_exist() -> Result<(), Error> {
+    fn should_find_topmost_sort_stage_when_multiple_exist() {
         // Given
         use datafusion::physical_plan::sorts::sort::SortExec;
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
@@ -802,15 +794,14 @@ mod tests {
             Arc::new(SortExec::new(ordering_outer.clone(), sort_inner));
 
         // When
-        let result = find_topmost_sort_ordering(&sort_outer)?;
+        let result = find_topmost_sort_ordering(&sort_outer);
 
         // Then - should find the outermost sort ordering
         assert_eq!(result, Some(ordering_outer));
-        Ok(())
     }
 
     #[test]
-    fn should_return_none_when_no_sort_stage_exists() -> Result<(), Error> {
+    fn should_return_none_when_no_sort_stage_exists() {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
         let input_batch = RecordBatch::new_empty(schema.clone());
@@ -818,15 +809,14 @@ mod tests {
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
 
         // When
-        let result = find_topmost_sort_ordering(&memory_exec)?;
+        let result = find_topmost_sort_ordering(&memory_exec);
 
         // Then
         assert_eq!(result, None);
-        Ok(())
     }
 
     #[test]
-    fn should_find_sort_preserving_merge_before_sort_exec() -> Result<(), Error> {
+    fn should_find_sort_preserving_merge_before_sort_exec() {
         // Given
         use datafusion::physical_plan::sorts::sort::SortExec;
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
@@ -844,15 +834,14 @@ mod tests {
         ));
 
         // When
-        let result = find_topmost_sort_ordering(&sort_merge)?;
+        let result = find_topmost_sort_ordering(&sort_merge);
 
         // Then - should find the topmost sort preserving merge, not the sort exec below
         assert_eq!(result, Some(ordering_merge));
-        Ok(())
     }
 
     #[test]
-    fn should_find_sort_stage_deep_in_plan() -> Result<(), Error> {
+    fn should_find_sort_stage_deep_in_plan() {
         // Given
         use datafusion::physical_plan::sorts::sort::SortExec;
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
@@ -867,10 +856,9 @@ mod tests {
         let coalesce2: Arc<dyn ExecutionPlan> = Arc::new(CoalescePartitionsExec::new(coalesce1));
 
         // When
-        let result = find_topmost_sort_ordering(&coalesce2)?;
+        let result = find_topmost_sort_ordering(&coalesce2);
 
         // Then
         assert_eq!(result, Some(ordering));
-        Ok(())
     }
 }

@@ -113,7 +113,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let mut frame = completer.complete_frame(frame)?;
 
         if let Some(query) = &self.config.sql_query {
-            frame = add_sql_stage(&query, ops.create_sort_order(), frame, &ctx).await?;
+            frame = add_sql_stage(query, ops.create_sort_order(), frame, &ctx).await?;
         }
 
         if self.config.explain_plans {

@@ -79,7 +79,7 @@ mod tests {
         FFIExtension {
             variant: FFIExtensionVariant::SQL,
             data: crate::objects::extensions::FFIExtensionData {
-                sql: sql_ext as *const FFISQLExtension,
+                sql: std::ptr::from_ref::<FFISQLExtension>(sql_ext),
             },
         }
     }
@@ -123,7 +123,8 @@ mod tests {
         // Then - should return the first one
         assert!(result.is_some());
         let sql_ext = result.unwrap();
-        assert_eq!(sql_ext as *const _, unsafe { extensions[0].data.sql });
+        assert_eq!(std::ptr::from_ref(sql_ext), unsafe {
+            extensions[0].data.sql
+        });
     }
 }
-

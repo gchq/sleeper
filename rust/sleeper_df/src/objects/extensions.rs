@@ -170,7 +170,7 @@ mod tests {
         FFIExtension {
             variant: FFIExtensionVariant::SQL,
             data: FFIExtensionData {
-                sql: sql_ext as *const FFISQLExtension,
+                sql: std::ptr::from_ref::<FFISQLExtension>(sql_ext),
             },
         }
     }
@@ -255,8 +255,8 @@ mod tests {
     #[test]
     pub fn should_fail_on_invalid_utf8_sql_query() {
         // Given - create invalid UTF-8 sequence
-        let invalid_bytes = vec![0x80u8, 0x81u8, 0x82u8, 0x00u8];
-        let ext = create_sql_extension(invalid_bytes.as_ptr() as *const c_char);
+        let invalid_bytes = [0x80u8, 0x81u8, 0x82u8, 0x00u8];
+        let ext = create_sql_extension(invalid_bytes.as_ptr().cast::<c_char>());
 
         // When
         let result = ext.check_non_null_data();
@@ -351,6 +351,6 @@ mod tests {
         );
 
         // Then - references should point to the original array
-        assert_eq!(result[0] as *const _, extensions.as_ptr());
+        assert_eq!(std::ptr::from_ref(result[0]), extensions.as_ptr());
     }
 }

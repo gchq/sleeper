@@ -17,8 +17,8 @@ use color_eyre::eyre::{Error, bail};
 use datafusion::arrow::datatypes::{DataType, Field, Schema};
 use sleeper_core::{
     CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperRegion, run_query, sleeper_context::SleeperContext,
-    filter_aggregation_config::aggregate::Aggregate,
+    SleeperParquetOptions, SleeperRegion, filter_aggregation_config::aggregate::Aggregate,
+    run_query, sleeper_context::SleeperContext,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -670,14 +670,8 @@ async fn should_apply_sql_query_after_sleeper_aggregate() -> Result<(), Error> {
         Field::new("value", DataType::Int32, false),
     ]));
 
-    let data_1 = batch_of_int_fields(
-        schema.clone(),
-        [vec![1, 1], vec![10, 11], vec![100, 200]],
-    )?;
-    let data_2 = batch_of_int_fields(
-        schema.clone(),
-        [vec![1, 1], vec![12, 13], vec![300, 400]],
-    )?;
+    let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 1], vec![10, 11], vec![100, 200]])?;
+    let data_2 = batch_of_int_fields(schema.clone(), [vec![1, 1], vec![12, 13], vec![300, 400]])?;
 
     write_file(&file_1, &data_1)?;
     write_file(&file_2, &data_2)?;

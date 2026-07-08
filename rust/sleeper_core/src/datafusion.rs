@@ -381,7 +381,7 @@ impl<'a> SleeperOperations<'a> {
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
                 // Find the correct sort ordering (if any) by traversing down the physical plan
                 let sort_ordering =
-                    find_topmost_sort_ordering(&physical_plan)?.unwrap_or(ordering.clone());
+                    find_topmost_sort_ordering(&physical_plan).unwrap_or(ordering.clone());
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
                 if output_partition_count(&physical_plan) > 1 {
                     Arc::new(SortPreservingMergeExec::new(sort_ordering, physical_plan))
