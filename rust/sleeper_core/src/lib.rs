@@ -91,7 +91,8 @@ pub async fn run_compaction(
     sleeper_context: &Arc<SleeperContext>,
     progress_callback: Option<ProgressCallback>,
 ) -> Result<CompactionResult> {
-    let store_factory = config.create_object_store_factory(sleeper_context).await;
+    let sdk_config = sleeper_context.resolve_sdk_config().await.clone();
+    let store_factory = config.create_object_store_factory(sdk_config);
     let token = CancellationToken::new();
     let mut handle = None;
 
@@ -190,10 +191,8 @@ pub async fn run_query(
     config: &LeafPartitionQueryConfig<'_>,
     sleeper_context: &SleeperContext,
 ) -> Result<CompletedOutput> {
-    let store_factory = config
-        .common
-        .create_object_store_factory(sleeper_context)
-        .await;
+    let sdk_config = sleeper_context.resolve_sdk_config().await.clone();
+    let store_factory = config.common.create_object_store_factory(sdk_config);
     let rt = sleeper_context.retrieve_runtime_env()?;
 
     LeafPartitionQuery::new(config, &store_factory, rt)
