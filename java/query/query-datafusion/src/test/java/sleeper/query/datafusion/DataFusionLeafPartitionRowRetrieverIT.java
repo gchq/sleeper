@@ -1147,6 +1147,179 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     @Nested
+    @DisplayName("SQL query filtering")
+    class SqlQueryFiltering {
+        List<Row> rows = IntStream.rangeClosed(1, 10)
+                .mapToObj(i -> new Row(Map.of("key", (long) i, "value1", (long) i * 10, "value2", (long) i * 100)))
+                .toList();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(rows);
+        }
+
+        @Test
+        void shouldFilterResultsWithSqlWhereClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 4 AND key < 9;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlLimitClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results LIMIT 5;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).hasSize(5);
+        }
+
+        @Test
+        void shouldApplySqlOrderByDescClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results ORDER BY key DESC;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = IntStream.rangeClosed(1, 10).boxed()
+                    .sorted(java.util.Collections.reverseOrder())
+                    .map(i -> new Row(Map.of("key", (long) i, "value1", (long) i * 10, "value2", (long) i * 100)))
+                    .toList();
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlOrderByDescWithLimit() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results ORDER BY key DESC LIMIT 3;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)),
+                    new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)),
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlQueryAfterSleeperAggregation() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value2)");
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 5;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)),
+                    new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)),
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldCombineSqlWhereAndPartitionRange() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 2L, true, 9L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 3 AND key < 8;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 4L, "value1", 40L, "value2", 400L)),
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldReturnEmptyResultsWhenSqlFilterMatchesNoRows() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 100;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("Return sorted data")
     class ReturnSortedData {
 
