@@ -1249,31 +1249,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(expected);
         }
 
-        @Test
-        void shouldApplySqlQueryAfterSleeperAggregation() throws Exception {
-            // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value2)");
-            Query query = Query.builder()
-                    .tableName("myTable")
-                    .queryId("id")
-                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
-                    .processingConfig(QueryProcessingConfig.builder()
-                            .sqlQuery("SELECT * FROM query_results WHERE key > 5;")
-                            .build())
-                    .build();
-
-            // When
-            List<Row> results = execute(query);
-
-            // Then
-            List<Row> expected = List.of(
-                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
-                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
-                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)),
-                    new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)),
-                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)));
-            assertThat(results).containsExactlyElementsOf(expected);
-        }
 
         @Test
         void shouldCombineSqlWhereAndPartitionRange() throws Exception {
@@ -1316,6 +1291,68 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
             // Then
             assertThat(results).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("SQL query with aggregation")
+    class SqlQueryWithAggregation {
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value1),sum(value2)");
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            List<Row> aggregationRows = List.of(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 1L, "value1", 20L, "value2", 200L)),
+                    new Row(Map.of("key", 1L, "value1", 30L, "value2", 300L)),
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 5L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)),
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)));
+            ingestData(aggregationRows);
+        }
+
+        @Test
+        void shouldApplySqlFilterAfterAggregation() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 1;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 5L, "value1", 110L, "value2", 1100L)),
+                    new Row(Map.of("key", 10L, "value1", 200L, "value2", 2000L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlLimitAfterAggregation() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results LIMIT 2;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).hasSize(2);
         }
     }
 
