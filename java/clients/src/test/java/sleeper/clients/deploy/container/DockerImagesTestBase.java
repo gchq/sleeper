@@ -34,7 +34,7 @@ public class DockerImagesTestBase {
     private static final DockerDeployment BASE = DockerDeployment.builder()
             .deploymentName("base")
             .multiplatform(true)
-            .baseImage(true)
+            .isDefaultBaseImage(true)
             .build();
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             BASE,
@@ -49,6 +49,7 @@ public class DockerImagesTestBase {
             DockerDeployment.builder()
                     .deploymentName("bulk-import-runner")
                     .optionalStack(OptionalStack.EksBulkImportStack)
+                    .useDefaultBaseImage(false)
                     .build(),
             DockerDeployment.builder()
                     .deploymentName("compaction")

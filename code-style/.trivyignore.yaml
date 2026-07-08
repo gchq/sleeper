@@ -15,7 +15,7 @@ vulnerabilities:
   - id: CVE-2026-54517
   - id: CVE-2026-54518
 
-  # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go.
+  # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go
   # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
   # interface emulator is only used for testing.
   - id: CVE-2026-32280
@@ -35,9 +35,12 @@ vulnerabilities:
   - id: CVE-2026-27145
   - id: CVE-2026-42504
   - id: CVE-2026-42507
+  - id: CVE-2026-39822
+  - id: CVE-2026-42505
 
   # The RIE also has some vulnerabilities in its dependencies.
   # github.com/go-chi/chi/v5
   - id: CVE-2025-69725
   # golang.org/x/sys
   - id: CVE-2026-39824
+

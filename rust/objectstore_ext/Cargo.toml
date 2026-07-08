@@ -38,6 +38,7 @@ log = { workspace = true }
 num-format = { workspace = true }
 object_store = { workspace = true, features = ["aws"] }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
