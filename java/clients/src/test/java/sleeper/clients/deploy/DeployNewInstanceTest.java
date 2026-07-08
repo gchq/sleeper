@@ -40,8 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createTempDirectory;
@@ -61,6 +59,7 @@ public class DeployNewInstanceTest {
             new InMemoryTransactionLogsPerTable());
     Map<Path, String> pathToString = new HashMap<>();
     DeployInstanceRequest lastDeployRequest;
+    String configDir;
 
     @TempDir
     private Path tempDir;
@@ -75,6 +74,7 @@ public class DeployNewInstanceTest {
         createDirectory(table1);
         Files.writeString(table1.resolve("table.properties"), "sleeper.table.name=file-table\n");
         Files.writeString(table1.resolve("schema.json"), new SchemaSerDe().toJson(schema));
+        configDir = tempDir.toString();
     }
 
     @Nested
@@ -85,41 +85,47 @@ public class DeployNewInstanceTest {
             deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--instance-properties",
                     tempDir.resolve("./instance.properties").toString());
 
-            assertThat(tableIndex.streamAllTables()).isEmpty();
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+            assertThat(tableIndex.streamAllTables()).isEmpty();
         }
 
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir");
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir",
+                    configDir);
 
+            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
+            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
             TableProperties expected = new TableProperties(instanceProperties);
             expected.setSchema(schema);
             expected.set(TABLE_ID, tableId("file-table"));
             expected.set(TABLE_NAME, "file-table");
             assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
-            assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
-            assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
         }
 
         @Test
         void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir",
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--ignoreTableFiles");
 
-            assertThat(tableIndex.streamAllTables()).isEmpty();
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+            assertThat(tableIndex.streamAllTables()).isEmpty();
         }
 
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", "./configDir",
+            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--paused");
 
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNewPaused());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+            TableProperties expected = new TableProperties(instanceProperties);
+            expected.setSchema(schema);
+            expected.set(TABLE_ID, tableId("file-table"));
+            expected.set(TABLE_NAME, "file-table");
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
         }
     }
 
@@ -169,7 +175,7 @@ public class DeployNewInstanceTest {
 
     private void deployNewInstance(String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
-        var config = DeployNewInstance.loadConfiguration(arguments, Files::readString);
+        var config = DeployNewInstance.loadConfiguration(arguments);
         new DeployNewInstance(
                 request -> lastDeployRequest = request,
                 new DeployNewInstance.StoreFactory() {
@@ -189,13 +195,5 @@ public class DeployNewInstanceTest {
         return tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
                 .getTableUniqueId();
-    }
-
-    private String readFile(Path path) throws IOException {
-        try {
-            return Optional.ofNullable(pathToString.get(path)).orElseThrow();
-        } catch (NoSuchElementException e) {
-            throw new IOException(e);
-        }
     }
 }

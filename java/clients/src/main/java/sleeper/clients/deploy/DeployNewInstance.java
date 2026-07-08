@@ -26,16 +26,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.AddTableClient;
-import sleeper.clients.util.FileReader;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
-import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -44,7 +41,6 @@ import sleeper.core.util.cli.CommandOption;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -103,23 +99,7 @@ public class DeployNewInstance {
                     "the instance is manually resumed.")
             .build();
 
-    public static SleeperInstanceConfiguration loadConfiguration(Arguments args, FileReader files) {
-        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(
-                PropertiesUtils.loadProperties(FileReader.readFile(files, args.resolvePropertiesFile())));
-        if (args.ignoreTableFiles()) {
-            return SleeperInstanceConfiguration.withNoTables(instanceProperties);
-        }
-
-        //TODO, this is wrong and doesn't load the table properties correctly
-        TableProperties tableProperties = new TableProperties(instanceProperties,
-                PropertiesUtils.loadProperties(FileReader.readFile(files, args.configDir().resolve("table.properties"))));
-        tableProperties.setSchema(new SchemaSerDe().fromJson(
-                FileReader.readFile(files, args.configDir().resolve("schema.json"))));
-
-        return new SleeperInstanceConfiguration(instanceProperties, List.of(tableProperties));
-    }
-
-    public static SleeperInstanceConfiguration loadConfiguration2(Arguments args, FileReader files) {
+    public static SleeperInstanceConfiguration loadConfiguration(Arguments args) {
         if (args.ignoreTableFiles()) {
             return SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
         }
@@ -152,7 +132,7 @@ public class DeployNewInstance {
             Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
-            SleeperInstanceConfiguration config = loadConfiguration(args, Files::readString);
+            SleeperInstanceConfiguration config = loadConfiguration(args);
 
             config.getInstanceProperties().set(ID, args.instanceId());
             config.getInstanceProperties().set(VPC_ID, args.vpcId());
