@@ -59,6 +59,11 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
     public HadoopS3ClientFactory() {
     }
 
+    /**
+     * Confinguring Hadoop property to reflect use of this class.
+     *
+     * @param conf Hadoop configuration to set property within
+     */
     public static void configureHadoop(Configuration conf) {
         // Property is required to be set due to incompatibility between Hadoop and the latest version of the
         // AWS SDK, as Hadoop uses a version of the class that is no longer present in the latest versions.
