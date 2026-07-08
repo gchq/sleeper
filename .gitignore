@@ -34,4 +34,5 @@ input.json
 *.env
 rust/sleeper_df/include/sleeper_df.h
 rust/.cargo-home-mirror/
-/certs/
+certs/*
+!certs/README.md
