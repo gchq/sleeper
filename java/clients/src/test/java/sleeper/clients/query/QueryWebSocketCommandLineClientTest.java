@@ -63,13 +63,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 1L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -94,13 +96,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-subquery", 1L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -131,13 +135,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("subquery-3", 1L)));
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
+            in.enterNextPrompts("", RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_RANGE_QUERY +
                             "Submitting query with ID: test-query-id\n" +
@@ -163,13 +169,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 2L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -196,13 +204,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     error(new Exception("Exception that will not terminate connection")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -224,13 +234,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Exception caused connection to terminate"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -251,13 +263,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(errorMessage("test-query-id", "Failure message")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -278,13 +292,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(unknownMessage("test-query-id")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -305,13 +321,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -332,13 +350,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"message\":\"error\"}"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -359,13 +379,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"queryId\":\"test-query-id\"}"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
@@ -386,13 +408,15 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Network error"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
+                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
+                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +

@@ -97,7 +97,7 @@ public class QueryLambdaClientTest {
         ingestData(tableProperties, rows);
 
         // When
-        in.enterNextPrompts(
+        in.enterNextPrompts("",
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,

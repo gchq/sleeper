@@ -91,7 +91,7 @@ public class QueryClientTest {
             createTable("test-table", schema);
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient();
 
             // Then
@@ -117,7 +117,7 @@ public class QueryClientTest {
             ingestData(tableProperties, List.of(row));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient();
 
             // Then
@@ -145,7 +145,7 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION,
+            in.enterNextPrompts("", RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "3", "6",
                     EXIT_OPTION);
@@ -177,7 +177,7 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION,
+            in.enterNextPrompts("", RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "", "",
                     EXIT_OPTION);
@@ -216,7 +216,7 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION,
+            in.enterNextPrompts("", RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "1", "5",
                     YES_OPTION,
@@ -248,7 +248,7 @@ public class QueryClientTest {
             createTable("test-table", schema);
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION,
+            in.enterNextPrompts("", RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "abc",
                     "123", "456",
@@ -277,7 +277,7 @@ public class QueryClientTest {
             createTable("test-table-2", schema);
 
             // When
-            in.enterNextPrompts("test-table-2",
+            in.enterNextPrompts("test-table-2", "",
                     RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "123", "456",
