@@ -184,5 +184,5 @@ These other context variables will be defaulted or read from the configuration i
 * `-c deployPaused=<true/false>` - whether to disable scheduled background processes to pause the Sleeper instance, defaults to false
 
 For `SleeperArtefactsCdkApp`, `-c id=<id>` will set the artefacts deployment ID. You can also
-set `-c deploy=<all/jars/images>` for which of the artefacts repositories you want to create. This defaults to `all`,
+set `-c deploy=<all/jars/images>` to choose which repositories you want to create. This defaults to `all`,
 and should be left as the default when deploying a Sleeper instance against the artefacts.
