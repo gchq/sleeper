@@ -16,6 +16,7 @@
 package sleeper.bulkimport.runner;
 
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.spark.SparkConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +57,7 @@ public abstract class SparkTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+    private final SparkConf sparkConf = BulkImportSparkContext.createSparkConf();
     private TableProperties lastTable;
     @TempDir
     public Path tempDir;
@@ -125,7 +127,7 @@ public abstract class SparkTestBase {
     protected BulkImportSparkContext createBulkImportContext(TableProperties tableProperties, List<String> filenames) {
         List<Partition> partitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
         return BulkImportSparkContext.create(
-                instanceProperties, tableProperties, partitions, filenames);
+                instanceProperties, tableProperties, sparkConf, partitions, filenames);
     }
 
     protected String writeRowsToFile(List<Row> rows) {

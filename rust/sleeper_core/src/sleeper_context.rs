@@ -15,6 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use aws_config::SdkConfig;
 #[cfg(doc)]
 use datafusion::execution::object_store::ObjectStoreRegistry;
 use datafusion::{
@@ -23,6 +24,7 @@ use datafusion::{
     execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
     physical_plan::{ExecutionPlan, metrics::MetricsSet},
 };
+use objectstore_ext::s3::SdkConfigCache;
 use std::sync::{Arc, Mutex, Weak};
 
 /// A thread-safe class containing internal `DataFusion` context that needs to be
@@ -33,6 +35,10 @@ pub struct SleeperContext {
     inner: Mutex<RuntimeEnv>,
     // Weak pointers to currently executing compactions
     compaction_filter_stages: Mutex<HashMap<String, Weak<dyn ExecutionPlan>>>,
+    // Cached, lazily resolved default AWS SDK configuration, shared across all
+    // uses of this context so the credentials provider chain is only ever loaded
+    // once.
+    sdk_config_cache: SdkConfigCache,
 }
 
 /// The maximum size of `DataFusion`'s file metadata cache.
@@ -59,6 +65,13 @@ impl SleeperContext {
                 .with_metadata_cache_limit(METADATA_CACHE_SIZE)
                 .build()?,
         ))
+    }
+
+    /// Retrieves the resolved default AWS SDK configuration for this context, loading it
+    /// from the default credentials provider chain the first time it's needed and caching
+    /// it for the lifetime of this context.
+    pub async fn resolve_sdk_config(&self) -> &SdkConfig {
+        self.sdk_config_cache.get().await
     }
 
     /// Retrieves number of compaction rows read for given compaction job.

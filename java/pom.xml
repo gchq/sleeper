@@ -189,7 +189,7 @@
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.5</zookeeper.version>
-        <jackson.version>2.22.0</jackson.version>
+        <jackson.version>2.22.1</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
@@ -250,7 +250,7 @@
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.12.0</xmlunit.version>
-        <jsonunit.version>5.1.2</jsonunit.version>
+        <jsonunit.version>6.0.1</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />

@@ -40,18 +40,27 @@ public class LocalStackHadoopConfigurationProvider {
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
+        configureHadoop(configuration::set, container);
+    }
+
+    public static void configureHadoop(ConfigureHadoop configuration, LocalStackContainer container) {
         configuration.set("fs.s3a.endpoint", container.getEndpoint().toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());
         configuration.set("fs.s3a.secret.key", container.getSecretKey());
-        configuration.setInt("fs.s3a.connection.maximum", 25);
-        configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
+        configuration.set("fs.s3a.connection.maximum", "25");
+        configuration.set("fs.s3a.connection.ssl.enabled", "false");
         // The following settings may be useful if the connection to the localstack S3 instance hangs.
         // These settings attempt to force connection issues to generate errors early.
         // The settings do help but errors may still take many minutes to appear.
         // configuration.set("fs.s3a.connection.timeout", "1000");
         // configuration.set("fs.s3a.connection.establish.timeout", "1");
         // configuration.set("fs.s3a.attempts.maximum", "1");
+    }
+
+    public interface ConfigureHadoop {
+
+        void set(String property, String value);
     }
 
 }
