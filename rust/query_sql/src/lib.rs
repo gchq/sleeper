@@ -50,7 +50,6 @@ pub async fn add_sql_stage(
         .await
         .map_err(|e| DataFusionError::Plan(format!("User SQL query failed: {e}")))?;
     inject_sort_stage(frame, expr)
-    // Ok(frame)
 }
 
 #[cfg(test)]
