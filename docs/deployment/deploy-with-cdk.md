@@ -177,7 +177,7 @@ These other context variables will be defaulted or read from the configuration i
 * `-c id=<id>` - the instance ID, which can also be set in the configuration property `sleeper.id`
 * `-c artefactsId=<id>` - the ID of the artefacts deployment to use, can also be set in `sleeper.artefacts.deployment`
 * `-c vpc=<id>` - the VPC ID to deploy into, can also be set in `sleeper.vpc`
-* `-c subnets=<id>` - a comma separated list of subnet IDs to deploy into, can also be set in `sleeper.subnets`
+* `-c subnets=<id>` - a comma separated list of at least one subnet ID to deploy into, can also be set in `sleeper.subnets`
 * `-c validate=<true/false>` - whether to validate instance & table properties before deployment, should usually be true
 * `-c newInstance=<true/false>` - whether to validate that the instance does not yet exist, defaults to false
 * `-c skipVersionCheck=<true/false>` - whether to skip checking the version of Sleeper you're deploying matches any version set in the instance properties, defaults to false
