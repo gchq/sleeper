@@ -17,6 +17,7 @@ use crate::{
     datafusion::{OutputType, SleeperRegion},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
+use aws_config::SdkConfig;
 use color_eyre::eyre::{Result, bail};
 use objectstore_ext::s3::{AwsConfig, ObjectStoreFactory};
 use std::fmt::{Display, Formatter};
@@ -68,8 +69,12 @@ impl CommonConfig<'_> {
         self.sorting_columns_iter().collect::<Vec<_>>()
     }
 
-    pub(crate) fn create_object_store_factory(&self) -> ObjectStoreFactory {
-        ObjectStoreFactory::new(self.aws_config.clone(), self.use_readahead_store)
+    pub(crate) fn create_object_store_factory(&self, sdk_config: SdkConfig) -> ObjectStoreFactory {
+        ObjectStoreFactory::new(
+            self.aws_config.clone(),
+            self.use_readahead_store,
+            sdk_config,
+        )
     }
 
     pub(crate) fn output(&self) -> &OutputType {

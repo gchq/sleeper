@@ -21,6 +21,7 @@ import sleeper.container.images.ContainerRegistryCredentials;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,21 +29,50 @@ public record DeployConfiguration(
         DockerImageLocation dockerImageLocation,
         String dockerRepositoryPrefix,
         ContainerRegistryCredentials dockerCredentials,
-        String overrideBaseImageDir) {
+        String overrideBaseImageDir,
+        Map<String, String> imageToOverrideBaseDir) {
 
     public DeployConfiguration {
         Objects.requireNonNull(dockerImageLocation, "dockerImageLocation must not be null");
         if (dockerImageLocation == DockerImageLocation.REPOSITORY) {
-            Objects.requireNonNull(dockerRepositoryPrefix, "dockerRepositoryPrefix must not be null");
+            Objects.requireNonNull(dockerRepositoryPrefix, "Docker repository prefix is required when retrieving images from a repository.");
+            if (overrideBaseImageDir != null) {
+                throw new IllegalArgumentException("Can only override base images in local builds.");
+            }
+            if (imageToOverrideBaseDir != null && !imageToOverrideBaseDir.isEmpty()) {
+                throw new IllegalArgumentException("Can only override base images in local builds.");
+            }
+        }
+        if (dockerImageLocation == DockerImageLocation.LOCAL_BUILD) {
+            if (dockerRepositoryPrefix != null) {
+                throw new IllegalArgumentException("Can only set Docker repository prefix when retrieving images from a repository.");
+            }
+            if (dockerCredentials != null) {
+                throw new IllegalArgumentException("Can only set Docker credentials when retrieving images from a repository.");
+            }
         }
     }
 
     public DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix, ContainerRegistryCredentials dockerCredentials) {
-        this(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, null);
+        this(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, null, null);
     }
 
     public Optional<Path> overrideBaseImageDirPath() {
         return Optional.ofNullable(overrideBaseImageDir).map(Path::of);
+    }
+
+    public Optional<Path> overrideBaseImageDirPathForImage(String image) {
+        return Optional.ofNullable(imageToOverrideBaseDir)
+                .map(map -> map.get(image))
+                .map(Path::of);
+    }
+
+    public DeployConfiguration withOverrideBaseImageDir(String overrideBaseImageDir) {
+        return new DeployConfiguration(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, overrideBaseImageDir, imageToOverrideBaseDir);
+    }
+
+    public DeployConfiguration withImageToOverrideBaseDir(Map<String, String> imageToOverrideBaseDir) {
+        return new DeployConfiguration(dockerImageLocation, dockerRepositoryPrefix, dockerCredentials, overrideBaseImageDir, imageToOverrideBaseDir);
     }
 
     public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
@@ -52,11 +82,11 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromLocalBuild() {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null);
+        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, null, null);
     }
 
     public static DeployConfiguration fromLocalBuildWithOverrideBaseImageDir(String overrideBaseImageDir) {
-        return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null, null, overrideBaseImageDir);
+        return fromLocalBuild().withOverrideBaseImageDir(overrideBaseImageDir);
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix) {
@@ -64,6 +94,6 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromDockerRepository(String prefix, ContainerRegistryCredentials credentials) {
-        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix, credentials, null);
+        return new DeployConfiguration(DockerImageLocation.REPOSITORY, prefix, credentials, null, null);
     }
 }
