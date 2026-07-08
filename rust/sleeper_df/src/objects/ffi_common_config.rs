@@ -116,7 +116,6 @@ impl FFICommonConfig {
             &FFIParquetOptions::default()
         };
         parquet_options.check_for_nulls()?;
-
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();

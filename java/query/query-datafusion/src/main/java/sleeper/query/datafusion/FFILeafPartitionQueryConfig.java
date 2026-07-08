@@ -36,13 +36,13 @@ public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
     /** Prevents GC of pointee until this object is collected. */
-    private FFICommonConfig java_common;
+    private FFICommonConfig javaCommon;
     /** Length of query regions array. */
     public final Struct.size_t query_regions_len = new Struct.size_t();
     /** The array of query regions. */
     public final Struct.StructRef<FFISleeperRegion> query_regions = new StructRef<>(FFISleeperRegion.class);
     /** Prevents GC of pointee until this object is collected. */
-    private FFISleeperRegion[] java_query_regions;
+    private FFISleeperRegion[] javaQueryRegions;
     /** Specifies if there are any requested value fields. */
     public final Struct.Boolean requested_value_fields_set = new Struct.Boolean();
     /** Length of requested value fields array. */
@@ -50,16 +50,15 @@ public class FFILeafPartitionQueryConfig extends Struct {
     /** Requested value columns. */
     public final Struct.StructRef<FFIBytes> requested_value_fields = new Struct.StructRef<>(FFIBytes.class);
     /** Prevents GC of pointee until this object is collected. */
-    private FFIBytes[] java_requested_value_fields;
+    private FFIBytes[] javaRequestedValueFields;
     /** Specifies if logical and physical DataFusion query plans should be written to a log output. */
     public final Struct.Boolean explain_plans = new Struct.Boolean();
-
     /** Length of extension array. */
     public final Struct.size_t extensions_len = new Struct.size_t();
     /** Array of optional extensions. */
     public final Struct.StructRef<FFIExtension> extensions = new Struct.StructRef<>(FFIExtension.class);
     /** Prevents GC of pointee until this object is collected. */
-    private FFIExtension[] java_extensions;
+    private FFIExtension[] javaExtensions;
 
     public FFILeafPartitionQueryConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -72,7 +71,7 @@ public class FFILeafPartitionQueryConfig extends Struct {
      */
     public void setCommonConfig(FFICommonConfig config) {
         common.set(config);
-        java_common = config;
+        javaCommon = config;
     }
 
     /**
@@ -83,7 +82,7 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public void setQueryRegions(FFISleeperRegion[] regions) {
         query_regions_len.set(regions.length);
         query_regions.set(regions);
-        java_query_regions = regions;
+        javaQueryRegions = regions;
     }
 
     /**
@@ -94,7 +93,7 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public void setRequestedValueFields(FFIBytes[] requestedValueFields) {
         requested_value_fields_len.set(requestedValueFields.length);
         requested_value_fields.set(requestedValueFields);
-        java_requested_value_fields = requestedValueFields;
+        javaRequestedValueFields = requestedValueFields;
         requested_value_fields_set.set(true);
     }
 
@@ -106,6 +105,6 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public void setExtensions(FFIExtension[] extensionArray) {
         extensions_len.set(extensionArray.length);
         extensions.set(extensionArray);
-        java_extensions = extensionArray;
+        javaExtensions = extensionArray;
     }
 }

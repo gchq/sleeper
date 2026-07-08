@@ -5,6 +5,29 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.37.0
+
+### 6th July, 2026
+
+This includes bulk import on EKS Auto Mode, and some improvements to usability and web socket queries.
+
+Bulk import:
+- Added an option to run bulk import on EKS Auto Mode, in `sleeper.bulk.import.eks.cluster.type`.
+
+Query:
+- Increased default retries when throttled publishing results to a web socket.
+- Added query processing options for retries publishing results to a web socket.
+
+Scripts:
+- Script to add a table now takes options for configuration instead of using templates.
+
+Configuration:
+- Made the example configuration files more representative of real usage.
+
+Bugfixes:
+- Resolved some segmentation faults that could occur during calls to DataFusion
+
+
 ## Version 0.36.1
 
 ### 24th June, 2026

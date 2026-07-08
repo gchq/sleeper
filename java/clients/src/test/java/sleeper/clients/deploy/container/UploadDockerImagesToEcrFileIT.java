@@ -77,7 +77,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                 dockerLoginToEcrCommand(),
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base", expectedBaseTag),
+                buildAndPushMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base"),
                 buildLambdaImageCommand(expectedTag1, lambdaImageDir.toString(), expectedBaseTag),
                 pushImageCommand(expectedTag1),
                 buildLambdaImageCommand(expectedTag2, lambdaImageDir.toString(), expectedBaseTag),
