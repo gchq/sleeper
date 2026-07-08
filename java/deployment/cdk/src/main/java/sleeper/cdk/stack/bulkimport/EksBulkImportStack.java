@@ -89,6 +89,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_API_ALLOWED_SECURITY_GROUPS;
@@ -173,7 +174,9 @@ public final class EksBulkImportStack extends NestedStack {
                     .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
                     .build();
 
-            addFluentBitLoggingForAutoMode(bulkImportCluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+            if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
+                addFluentBitLoggingForAutoMode(bulkImportCluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+            }
 
         } else if (bulkImportClusterType == EksClusterType.FARGATE) {
             bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
