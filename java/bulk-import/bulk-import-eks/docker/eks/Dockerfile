@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/spark:3.5.6-scala2.12-java17-ubuntu
+ARG BASE_IMAGE=apache/spark:3.5.6-scala2.12-java17-ubuntu
+FROM ${BASE_IMAGE}
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root
