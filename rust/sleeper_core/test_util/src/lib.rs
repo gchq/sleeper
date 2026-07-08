@@ -35,7 +35,7 @@ use datafusion::{
 };
 use futures::StreamExt;
 use object_store::ObjectStoreExt;
-use objectstore_ext::s3::ObjectStoreFactory;
+use objectstore_ext::s3::{ObjectStoreFactory, SdkConfigCache};
 use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
 use std::{collections::HashMap, fs::File, sync::Arc};
@@ -133,7 +133,8 @@ async fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let factory = ObjectStoreFactory::new(None, true);
+    let sdk_config = SdkConfigCache::default().get().await.clone();
+    let factory = ObjectStoreFactory::new(None, true, sdk_config);
     deserialise_sketches_with_factory(&factory, path, key_types).await
 }
 
