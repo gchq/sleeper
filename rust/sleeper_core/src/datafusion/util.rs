@@ -136,22 +136,21 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 /// # Returns
 /// `Some(LexOrdering)` if a sort stage is found, `None` if no sort stage is present in the plan.
 pub fn find_topmost_sort_ordering(plan: &Arc<dyn ExecutionPlan>) -> Option<LexOrdering> {
-    // Check if root is a sort stage
-    if let Some(sort) = plan.as_any().downcast_ref::<SortExec>() {
-        return Some(sort.expr().clone());
-    }
-    if let Some(sort_merge) = plan.as_any().downcast_ref::<SortPreservingMergeExec>() {
-        return Some(sort_merge.expr().clone());
-    }
-
-    // Recursively check children
-    for child in plan.children() {
-        if let Some(ordering) = find_topmost_sort_ordering(child) {
-            return Some(ordering);
+    let mut result = None;
+    let _ = plan.clone().transform_down(|node| {
+        if result.is_none() {
+            if let Some(sort) = node.as_any().downcast_ref::<SortExec>() {
+                result = Some(sort.expr().clone());
+                return Ok(Transformed::new(node, false, TreeNodeRecursion::Stop));
+            }
+            if let Some(sort_merge) = node.as_any().downcast_ref::<SortPreservingMergeExec>() {
+                result = Some(sort_merge.expr().clone());
+                return Ok(Transformed::new(node, false, TreeNodeRecursion::Stop));
+            }
         }
-    }
-
-    None
+        Ok(Transformed::new(node, false, TreeNodeRecursion::Continue))
+    });
+    result
 }
 
 /// Takes the urls in `input_paths` list and `output_path`
