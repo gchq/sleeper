@@ -255,6 +255,7 @@ pub fn remove_coalesce_physical_stage(
                 if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
                 {
                     let input = coalesce.input().clone();
+                    // Find the correct sort ordering (if any) by traversing down the physical plan
                     let sort_ordering =
                         find_topmost_sort_ordering(&input)?.unwrap_or(ordering.clone());
                     // Swap it out for a SortPreservingMergeExec
@@ -272,9 +273,10 @@ pub fn remove_coalesce_physical_stage(
 /// Applies a complete sort ordering to all [`SortPreservingMergeExec`] nodes in a physical plan.
 ///
 /// This function traverses the given physical plan and, for every `SortPreservingMergeExec` node found,
-/// updates it with the provided full sort ordering. All other nodes are left unchanged. This can be used
-/// to ensure that sort-preserving merge operations throughout the plan are executed with a consistent and
-/// comprehensive ordering, which is sometimes necessary when downstream consumers depend on a global ordering.
+/// updates it with the top-most sort ordering found in the plan, or the one provided if none can be found in the plan.
+/// All other nodes are left unchanged. This can be used to ensure that sort-preserving merge operations throughout the
+/// plan are executed with a consistent and comprehensive ordering, which is sometimes necessary when downstream
+/// consumers depend on a global ordering.
 ///
 /// # Returns
 /// A new physical plan with updated sort ordering on all `SortPreservingMergeExec` nodes, or an error if
@@ -294,6 +296,7 @@ pub fn apply_full_sort_ordering(
                     plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
                 {
                     let input = sort_preserve.input().clone();
+                    // Find the correct sort ordering (if any) by traversing down the physical plan
                     let sort_ordering =
                         find_topmost_sort_ordering(&input)?.unwrap_or(ordering.clone());
                     // Swap for a sort merging stage with complete sort order

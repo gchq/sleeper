@@ -379,6 +379,7 @@ impl<'a> SleeperOperations<'a> {
             if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
                 // Remove aliased column names to make things look correct for Java
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
+                // Find the correct sort ordering (if any) by traversing down the physical plan
                 let sort_ordering =
                     find_topmost_sort_ordering(&physical_plan)?.unwrap_or(ordering.clone());
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
