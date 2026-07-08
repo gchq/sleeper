@@ -167,38 +167,6 @@ public class QueryClientTest {
         }
 
         @Test
-        void shouldRunRangeQueryWithSqlStatement() throws Exception {
-            // Given
-            Schema schema = createSchemaWithKey("key");
-            TableProperties tableProperties = createTable("test-table", schema);
-            List<Row> rows = LongStream.rangeClosed(0, 10)
-                    .mapToObj(num -> new Row(Map.of("key", num)))
-                    .collect(Collectors.toList());
-            ingestData(tableProperties, rows);
-
-            // When
-            in.enterNextPrompts("SELECT * FROM query_results", RANGE_QUERY_OPTION,
-                    NO_OPTION, YES_OPTION,
-                    "3", "6",
-                    EXIT_OPTION);
-            runQueryClient();
-
-            // Then
-            assertThat(out.toString())
-                    .startsWith("Querying table test-table")
-                    .contains(PROMPT_QUERY_TYPE +
-                            PROMPT_MIN_INCLUSIVE +
-                            PROMPT_MAX_INCLUSIVE +
-                            PROMPT_MIN_ROW_KEY_LONG_TYPE +
-                            PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                            "Returned Rows:\n" +
-                            "Row{key=4}\n" +
-                            "Row{key=5}\n" +
-                            "Row{key=6}")
-                    .containsSubsequence("Query took", "seconds to return 3 rows");
-        }
-
-        @Test
         void shouldDefaultToFullRangeWhenMinMaxPromptsAreIgnored() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key");

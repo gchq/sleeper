@@ -75,7 +75,6 @@ public class LeafPartitionQueryExecutor {
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
-
         if (leafPartitionQuery.getSqlQuery() != null && !retriever.supportsSqlFiltering()) {
             throw new QueryException("Query contains SQL query filter which is not supported by data engine: " + tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class));
         }
