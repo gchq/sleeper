@@ -334,7 +334,7 @@ public class SparkConfigurationUtils {
     }
 
     /**
-     * Mirroring of the Hadoop configuration that is set within {@link HadoopConfigurationProvider} to ensure
+     * Basic Hadoop configuration setting. Mirroring those set within {@link HadoopConfigurationProvider} to ensure
      * consistency across the application.
      *
      * @param  conf               the map configuration used for spark
