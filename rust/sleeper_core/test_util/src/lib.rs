@@ -35,10 +35,10 @@ use datafusion::{
 };
 use futures::StreamExt;
 use object_store::ObjectStoreExt;
-use objectstore_ext::s3::ObjectStoreFactory;
+use objectstore_ext::s3::{ObjectStoreFactory, SdkConfigCache};
 use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
-use std::{collections::HashMap, fs::File, sync::Arc};
+use std::{collections::HashMap, fs::File, path::PathBuf, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
 
@@ -58,6 +58,15 @@ pub fn file(dir: &TempDir, name: &str) -> Url {
     Url::from_file_path(dir.path().join(name)).unwrap()
 }
 
+/// Converts a file URL to a local filesystem path.
+///
+/// # Errors
+/// Returns an error if the URL cannot be represented as a local path.
+pub fn local_path(url: &Url) -> Result<PathBuf, Error> {
+    url.to_file_path()
+        .map_err(|()| eyre!("Expected file URL, got {url}"))
+}
+
 pub fn col_names<const N: usize>(names: [&str; N]) -> Vec<String> {
     names.into_iter().map(String::from).collect()
 }
@@ -71,7 +80,7 @@ pub fn write_file_of_ints(path: &Url, field_name: &str, data: Vec<i32>) -> Resul
 
 #[allow(clippy::missing_errors_doc)]
 pub fn write_file(path: &Url, batch: &RecordBatch) -> Result<(), Error> {
-    let file = File::create_new(path.path())?;
+    let file = File::create_new(local_path(path)?)?;
     let mut writer = ArrowWriter::try_new(file, batch.schema(), Some(writer_props()))?;
     writer.write(batch)?;
     writer.close()?;
@@ -102,7 +111,7 @@ pub fn batch_of_int_fields<const N: usize>(
 
 #[allow(clippy::missing_errors_doc)]
 pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
-    let file = File::open(path.path())?;
+    let file = File::open(local_path(path)?)?;
     let mut data: Vec<i32> = Vec::new();
     let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
     check_non_null_field(field_name, &DataType::Int32, metadata.schema().as_ref())?;
@@ -133,7 +142,8 @@ async fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let factory = ObjectStoreFactory::new(None, true);
+    let sdk_config = SdkConfigCache::default().get().await.clone();
+    let factory = ObjectStoreFactory::new(None, true, sdk_config);
     deserialise_sketches_with_factory(&factory, path, key_types).await
 }
 
@@ -190,7 +200,7 @@ pub fn read_file_of_int_fields<const N: usize>(
     path: &Url,
     field_names: [&str; N],
 ) -> Result<Vec<[i32; N]>, Error> {
-    let file = File::open(path.path())?;
+    let file = File::open(local_path(path)?)?;
     let mut data: Vec<[i32; N]> = Vec::new();
     let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
     for field_name in field_names {
@@ -289,5 +299,21 @@ pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
         lower_inclusive: true,
         upper: PartitionBound::Int32(max),
         upper_inclusive: false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn should_convert_file_url_to_local_path() -> Result<(), Error> {
+        let dir = tempdir()?;
+        let expected = dir.path().join("file.parquet");
+        let url = Url::from_file_path(&expected).unwrap();
+
+        assert_eq!(local_path(&url)?, expected);
+        Ok(())
     }
 }
