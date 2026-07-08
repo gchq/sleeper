@@ -36,12 +36,14 @@ public class LocalStackHadoopConfigurationProvider {
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
         Configuration configuration = new Configuration();
+        HadoopS3ClientFactory.configureHadoop(configuration);
         configureHadoop(configuration, container);
         return configuration;
     }
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
+        HadoopS3ClientFactory.configureHadoop(configuration);
         configureHadoop(configuration::set, container);
     }
 
