@@ -28,9 +28,8 @@ public class UploadDockerImagesToRepository {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 4) {
-            System.out.println("Usage: <scripts-dir> <repository-prefix-path> " +
-                    "<optional-create-buildx-builder-true-or-false> <optional-override-base-image-dir>");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: <scripts-dir> <repository-prefix-path> <optional-create-buildx-builder-true-or-false>");
             System.exit(1);
             return;
         }
@@ -38,9 +37,11 @@ public class UploadDockerImagesToRepository {
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
         boolean createMultiplatformBuilder = optionalArgument(args, 2).map(Boolean::parseBoolean).orElse(true);
-        DeployConfiguration deployConfig = optionalArgument(args, 3)
-                .map(DeployConfiguration::fromLocalBuildWithOverrideBaseImageDir)
-                .orElseGet(DeployConfiguration::fromLocalBuild);
+        DeployConfiguration deployConfig = DeployConfiguration.fromScriptsDirectory(scriptsDirectory);
+
+        if (deployConfig.dockerImageLocation() != DockerImageLocation.LOCAL_BUILD) {
+            throw new IllegalArgumentException("Currently not configured to build Docker images locally. Please set your deploy configuration first.");
+        }
 
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
