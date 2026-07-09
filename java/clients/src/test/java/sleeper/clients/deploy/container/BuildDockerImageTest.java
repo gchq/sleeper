@@ -32,7 +32,10 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 
 public class BuildDockerImageTest extends DockerImagesTestBase {
     protected final Map<String, String> files = new HashMap<>();
@@ -45,6 +48,28 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         // Then
         assertThat(commandsThatRan).containsExactly(
                 buildImageCommand("test", "./scripts/docker/ingest"));
+    }
+
+    @Test
+    void shouldBuildMultiplatformImage() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "compaction", "test", "--multiplatform");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildAndLoadMultiplatformImageCommand("test", "./scripts/docker/compaction"));
+    }
+
+    @Test
+    void shouldBuildMultiplatformImageWithSinglePlatform() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "compaction", "test");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand("test", "./scripts/docker/compaction"));
     }
 
     @Test
