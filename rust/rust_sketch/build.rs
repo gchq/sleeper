@@ -36,16 +36,22 @@ fn main() {
             .expect("Invalid UTF-8 string")
     );
 
-    cxx_build::bridges(vec!["src/quantiles.rs"])
+    let mut build = cxx_build::bridges(vec!["src/quantiles.rs"]);
+    build
         .warnings_into_errors(true)
         .extra_warnings(true)
-        .flag_if_supported("-std=c++17")
+        .std("c++17")
         .flag_if_supported("-Wno-maybe-uninitialized")
         .includes(vec![
             path.join("common/include"),
             path.join("quantiles/include"),
-        ])
-        .compile("rust_sketch");
+        ]);
+
+    if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        build.flag_if_supported("/EHsc");
+    }
+
+    build.compile("rust_sketch");
 }
 
 /// Retrieve version for Apache `DataSketches` library.
