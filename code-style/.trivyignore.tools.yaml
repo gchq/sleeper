@@ -3,6 +3,9 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
+  # Golang stdlib
+  - id: CVE-2026-39822
+  - id: CVE-2026-42505
   # golang.org/x/crypto
   - id: CVE-2026-39827
   - id: CVE-2026-39828
