@@ -343,7 +343,6 @@ public class SparkConfigurationUtils {
      */
     private static Map<String, String> setBasicHadoopConfig(TreeMap<String, String> conf, InstanceProperties instanceProperties) {
         conf.put("spark.hadoop.fs.s3a.endpoint.region", instanceProperties.get(REGION));
-        conf.put("spark.hadoop.fs.s3a.readahead.range", instanceProperties.get(REGION)); //tableProperties.get(S3A_READAHEAD_RANGE)
         conf.put("spark.hadoop.fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
         conf.put("spark.hadoop.fs.s3a.bucket.probe", "0");
         conf.put("spark.hadoop.fs.s3a.fast.upload", "true");
