@@ -26,6 +26,7 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -43,37 +44,43 @@ public class BuildDockerImage {
     private BuildDockerImage() {
     }
 
-    public static void main(String[] rawArgs) throws IOException, InterruptedException {
-        CommandLineUsage usage = CommandLineUsage.builder()
-                .positionalArguments(List.of("scripts directory", "image name", "tag"))
-                .systemArguments(List.of("scripts directory"))
-                .options(List.of(
-                        CommandOption.longFlag("lambda"),
-                        CommandOption.longFlag("multiplatform"),
-                        CommandOption.longFlag("default-base-image")))
-                .helpSummary("Available Docker deployment image names: " +
-                        DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
-                        "Available lambda image names: " +
-                        LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
-                        "The --lambda flag specifies that the image is one of the lambda options. The --multiplatform " +
-                        "flag specifies to build a multiplatform image if it's configured to be built that way. By " +
-                        "default an image is only built for the default platform. If you pass " +
-                        "--default-base-image <image>, it will be set in the BASE_IMAGE build argument, but only if " +
-                        "the image uses the default base image. Other arguments will be passed through to Docker as " +
-                        "options when specified at the end.")
-                .passThroughExtraArguments(true)
-                .build();
-        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("scripts directory", "image name", "tag"))
+            .systemArguments(List.of("scripts directory"))
+            .options(List.of(
+                    CommandOption.longFlag("lambda"),
+                    CommandOption.longFlag("multiplatform"),
+                    CommandOption.longFlag("default-base-image")))
+            .helpSummary("Available Docker deployment image names: " +
+                    DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
+                    "Available lambda image names: " +
+                    LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
+                    "The --lambda flag specifies that the image is one of the lambda options. The --multiplatform " +
+                    "flag specifies to build a multiplatform image if it's configured to be built that way. By " +
+                    "default an image is only built for the default platform. If you pass " +
+                    "--default-base-image <image>, it will be set in the BASE_IMAGE build argument, but only if " +
+                    "the image uses the default base image. Other arguments will be passed through to Docker as " +
+                    "options when specified at the end.")
+            .passThroughExtraArguments(true)
+            .build();
+
+    public static Arguments readArguments(CommandArguments arguments) {
+        return new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getString("image name"),
                 arguments.getString("tag"),
                 arguments.isFlagSet("lambda"),
                 arguments.isFlagSet("multiplatform"),
                 arguments.getOptionalString("default-base-image").orElse(null),
-                arguments.getPassthroughArguments()));
-        DockerImageConfiguration configuration = DockerImageConfiguration.getDefault();
-        CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
+                arguments.getPassthroughArguments());
+    }
 
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, arguments -> readArguments(arguments));
+        build(DockerImageConfiguration.getDefault(), CommandUtils::runCommandInheritIO, Files::copy, args);
+    }
+
+    public static void build(DockerImageConfiguration configuration, CommandPipelineRunner commandRunner, FileCopier fileCopier, Arguments args) throws IOException, InterruptedException {
         Path dockerfileDirectory;
         List<ContainerPlatform> platforms = List.of();
         boolean useDefaultBaseImage = true;
@@ -82,7 +89,7 @@ public class BuildDockerImage {
             LambdaJar jar = configuration.getLambdaJarByImageName(args.imageName()).orElseThrow();
             Path copyFrom = args.jarsDir().resolve(jar.getFilename(SleeperVersion.getVersion()));
             Path copyTo = dockerfileDirectory.resolve("lambda.jar");
-            Files.copy(copyFrom, copyTo, StandardCopyOption.REPLACE_EXISTING);
+            fileCopier.copy(copyFrom, copyTo, StandardCopyOption.REPLACE_EXISTING);
         } else {
             DockerDeployment deployment = configuration.getDockerDeploymentByName(args.imageName()).orElseThrow();
             dockerfileDirectory = args.dockerDir().resolve(deployment.getDeploymentName());
@@ -104,6 +111,11 @@ public class BuildDockerImage {
         dockerCommand.addAll(args.dockerOptions());
         dockerCommand.add(dockerfileDirectory.toString());
         commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
+    }
+
+    public interface FileCopier {
+
+        void copy(Path from, Path to, CopyOption... options) throws IOException;
     }
 
     private record Arguments(Path scriptsDir, String imageName, String tag, boolean isLambda, boolean isMultiplatform, String defaultBaseImage, List<String> dockerOptions) {
