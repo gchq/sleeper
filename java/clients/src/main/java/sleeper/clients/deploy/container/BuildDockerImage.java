@@ -50,7 +50,7 @@ public class BuildDockerImage {
             .options(List.of(
                     CommandOption.longFlag("lambda"),
                     CommandOption.longFlag("multiplatform"),
-                    CommandOption.longFlag("default-base-image")))
+                    CommandOption.longOption("default-base-image")))
             .helpSummary("Available Docker deployment image names: " +
                     DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
                     "Available lambda image names: " +
@@ -98,17 +98,21 @@ public class BuildDockerImage {
         }
 
         List<String> dockerCommand = new ArrayList<>();
+        List<String> dockerOptions = new ArrayList<>();
+        if (useDefaultBaseImage) {
+            args.defaultBaseImageOpt().ifPresent(image -> dockerOptions.addAll(List.of("--build-arg", "BASE_IMAGE=" + image)));
+        }
         if (args.isMultiplatform() && !platforms.isEmpty()) {
             UploadDockerImages.useBuildXBuilder(commandRunner);
             String platformList = ContainerPlatform.buildPlatformListArgument(platforms);
-            dockerCommand.addAll(List.of("docker", "buildx", "build", "--platform", platformList, "-t", args.tag(), "--load"));
+            dockerOptions.addAll(List.of("--platform", platformList, "--load"));
+            dockerCommand.addAll(List.of("docker", "buildx", "build"));
         } else {
-            dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+            dockerCommand.addAll(List.of("docker", "build"));
         }
-        if (useDefaultBaseImage) {
-            args.defaultBaseImageOpt().ifPresent(image -> dockerCommand.addAll(List.of("--build-arg", "BASE_IMAGE=" + image)));
-        }
-        dockerCommand.addAll(args.dockerOptions());
+        dockerOptions.addAll(List.of("-t", args.tag()));
+        dockerOptions.addAll(args.dockerOptions());
+        dockerCommand.addAll(dockerOptions);
         dockerCommand.add(dockerfileDirectory.toString());
         commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
     }

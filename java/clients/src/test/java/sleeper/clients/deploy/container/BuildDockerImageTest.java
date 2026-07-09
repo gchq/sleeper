@@ -88,6 +88,26 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
                 "./scripts/docker/lambda/lambda.jar", "jar-content"));
     }
 
+    @Test
+    void shouldSetDefaultBaseImage() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "ingest", "test", "--default-base-image", "base:test");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand("test", "./scripts/docker/ingest", "base:test"));
+    }
+
+    @Test
+    void shouldNotApplyDefaultBaseImageWhenNotUsed() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "bulk-import-runner", "test", "--default-base-image", "base:test");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand("test", "./scripts/docker/bulk-import-runner"));
+    }
+
     private void buildImage(DockerImageConfiguration config, String... args) {
         String[] allArgs = Stream.concat(Stream.of("./scripts"), Stream.of(args)).toArray(String[]::new);
         var arguments = BuildDockerImage.readArguments(CommandArgumentReader.parse(BuildDockerImage.USAGE, allArgs));

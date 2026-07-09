@@ -106,17 +106,17 @@ public class DockerImageCommandTestData {
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {
         return pipeline(command("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--push", dockerDirectory));
+                "--push", "-t", tag, dockerDirectory));
     }
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--push", dockerDirectory));
+                "--push", "-t", tag, dockerDirectory));
     }
 
     public static CommandPipeline buildAndLoadMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--load", dockerDirectory));
+                "--load", "-t", tag, dockerDirectory));
     }
 
 }
