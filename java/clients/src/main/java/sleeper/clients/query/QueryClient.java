@@ -49,6 +49,7 @@ import sleeper.query.datafusion.PerCallDataFusionRowRetrieverProvider;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,7 +123,7 @@ public class QueryClient extends QueryCommandLineClient {
         } catch (QueryException e) {
             out.println("Encountered an error while running query " + query.getQueryId());
             e.printStackTrace(out.printStream());
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             out.println("Encountered an error while closing iterator for query " + query.getQueryId());
             e.printStackTrace(out.printStream());
         }
