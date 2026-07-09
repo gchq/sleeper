@@ -36,6 +36,8 @@ import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildA
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class BuildDockerImageTest extends DockerImagesTestBase {
     protected final Map<String, String> files = new HashMap<>();
@@ -106,6 +108,16 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         // Then
         assertThat(commandsThatRan).containsExactly(
                 buildImageCommand("test", "./scripts/docker/bulk-import-runner"));
+    }
+
+    @Test
+    void shouldPassThroughOptionToDocker() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "ingest", "test", "--no-cache");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                pipeline(command("docker", "build", "-t", "test", "--no-cache", "./scripts/docker/ingest")));
     }
 
     private void buildImage(DockerImageConfiguration config, String... args) {
