@@ -46,6 +46,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
 
+    // One initial attempt, plus up to two retries in case of failures.
     private static final int MAX_QUERY_ATTEMPTS = 3;
 
     private final InstanceProperties instanceProperties;
@@ -73,6 +74,14 @@ public class QueryStateStoreCommitterLogs {
                 .getLogsInPeriod(startTime, endTime);
     }
 
+    /**
+     * Retrieves a single page of logs, retrying failed queries.
+     *
+     * @param  startTime the start of the period to query
+     * @param  endTime   the end of the period to query
+     * @param  limit     the maximum number of log entries to retrieve
+     * @return           the log entries in the page
+     */
     private List<StateStoreCommitterLogEntry> getSinglePageInPeriodWithLimit(Instant startTime, Instant endTime, int limit) {
         for (int attempt = 1; attempt <= MAX_QUERY_ATTEMPTS; attempt++) {
             try {
@@ -90,6 +99,14 @@ public class QueryStateStoreCommitterLogs {
         throw new IllegalStateException("Logs query failed but no exception was thrown");
     }
 
+    /**
+     * Retrieves a single page of logs with one query attempt.
+     *
+     * @param  startTime the start of the period to query
+     * @param  endTime   the end of the period to query
+     * @param  limit     the maximum number of log entries to retrieve
+     * @return           the log entries in the page
+     */
     private List<StateStoreCommitterLogEntry> getSinglePageInPeriodWithLimitOnce(Instant startTime, Instant endTime, int limit) {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         String queryId = cloudWatch.startQuery(builder -> builder
