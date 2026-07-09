@@ -46,6 +46,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
 
+    private static final int MAX_QUERY_ATTEMPTS = 3;
+
     private final InstanceProperties instanceProperties;
     private final CloudWatchLogsClient cloudWatch;
 
@@ -72,6 +74,23 @@ public class QueryStateStoreCommitterLogs {
     }
 
     private List<StateStoreCommitterLogEntry> getSinglePageInPeriodWithLimit(Instant startTime, Instant endTime, int limit) {
+        for (int attempt = 1; attempt <= MAX_QUERY_ATTEMPTS; attempt++) {
+            try {
+                return getSinglePageInPeriodWithLimitOnce(startTime, endTime, limit);
+            } catch (RuntimeException e) {
+                if (Thread.currentThread().isInterrupted() || attempt == MAX_QUERY_ATTEMPTS) {
+                    throw e;
+                }
+
+                LOGGER.warn("Logs query failed on attempt {} of {}; retrying",
+                        attempt, MAX_QUERY_ATTEMPTS, e);
+            }
+        }
+
+        throw new IllegalStateException("Logs query failed but no exception was thrown");
+    }
+
+    private List<StateStoreCommitterLogEntry> getSinglePageInPeriodWithLimitOnce(Instant startTime, Instant endTime, int limit) {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         String queryId = cloudWatch.startQuery(builder -> builder
                 .logGroupName(logGroupName)
