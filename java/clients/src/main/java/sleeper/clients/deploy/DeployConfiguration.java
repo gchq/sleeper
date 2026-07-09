@@ -20,6 +20,7 @@ import sleeper.container.images.ContainerRegistryCredentials;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
@@ -76,9 +77,17 @@ public record DeployConfiguration(
     }
 
     public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
-        Path deployConfigFile = scriptsDirectory.resolve("templates").resolve("deployConfig.json");
-        String deployConfigJson = Files.readString(deployConfigFile);
-        return new DeployConfigurationSerDe().fromJson(deployConfigJson);
+        Path deployConfigFile = configFileInScriptsDirectory(scriptsDirectory);
+        try {
+            String deployConfigJson = Files.readString(deployConfigFile);
+            return new DeployConfigurationSerDe().fromJson(deployConfigJson);
+        } catch (NoSuchFileException e) {
+            return DeployConfiguration.fromLocalBuild();
+        }
+    }
+
+    public static Path configFileInScriptsDirectory(Path scriptsDirectory) {
+        return scriptsDirectory.resolve("templates").resolve("deployConfig.json");
     }
 
     public static DeployConfiguration fromLocalBuild() {
