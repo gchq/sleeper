@@ -113,7 +113,7 @@ public class SetDeployConfiguration {
 
     public static void writeConfigurationFile(FileWriter fileWriter, Arguments arguments) throws IOException {
         fileWriter.writeString(
-                arguments.scriptsDirectory().resolve("templates").resolve("deployConfig.json"),
+                DeployConfiguration.configFileInScriptsDirectory(arguments.scriptsDirectory()),
                 new DeployConfigurationSerDe().toJson(arguments.configuration()));
     }
 
