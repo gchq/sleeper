@@ -134,7 +134,7 @@ public class UploadDockerImages {
             String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
             commandRunner.runOrThrow(dockerBuild(
                     List.of("docker", "buildx", "build"),
-                    optionsWithBuildArgs(buildArgs, "--platform", platformList, "-t", tag, "--push"),
+                    optionsWithBuildArgs(buildArgs, "--platform", platformList, "--push", "-t", tag),
                     dockerfileDirectory));
         } else {
             if (image.getLambdaJar().isPresent()) {
