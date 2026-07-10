@@ -37,6 +37,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.parquet.HadoopS3ClientFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -126,6 +127,7 @@ public class BulkImportSparkContext implements BulkImportContext<BulkImportSpark
         SparkConf sparkConf = new SparkConf();
         sparkConf.set("spark.serializer", KryoSerializer.class.getName());
         sparkConf.set("spark.kryo.registrator", JdkImmutableListRegistrator.class.getName());
+        sparkConf.set("spark.hadoop.fs.s3a.s3.client.factory.impl", HadoopS3ClientFactory.class.getName());
         sparkConf.registerKryoClasses(new Class[]{Partition.class});
         return sparkConf;
     }
