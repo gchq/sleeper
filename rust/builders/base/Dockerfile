@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rust:1.93-bookworm
+FROM rust:1.96-bookworm
 
 # Copy certs/ if it exists, skip silently if not. The glob pattern cert[s]/ matches "certs/" when
 # present but matches nothing (instead of failing) when absent — Docker's COPY fails on missing
