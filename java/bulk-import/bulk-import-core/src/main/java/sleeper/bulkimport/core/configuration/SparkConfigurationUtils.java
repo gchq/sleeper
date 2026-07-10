@@ -313,7 +313,15 @@ public class SparkConfigurationUtils {
     }
 
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
-        Map<String, String> sparkConf = setBasicHadoopConfig(new TreeMap<>(), instanceProperties);
+        Map<String, String> sparkConf = new TreeMap<>();
+
+        // Basic Hadoop configuration setting. Mirroring those set within HadoopConfigurationProvider to ensure
+        // consistency across the application.
+        sparkConf.put("spark.hadoop.fs.s3a.endpoint.region", instanceProperties.get(REGION));
+        sparkConf.put("spark.hadoop.fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
+        sparkConf.put("spark.hadoop.fs.s3a.bucket.probe", "0");
+        sparkConf.put("spark.hadoop.fs.s3a.fast.upload", "true");
+
         // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
@@ -331,22 +339,5 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.hadoop.fs.s3a.create.performance", "true");
 
         return sparkConf;
-    }
-
-    /**
-     * Basic Hadoop configuration setting. Mirroring those set within {@link HadoopConfigurationProvider} to ensure
-     * consistency across the application.
-     *
-     * @param  conf               the map configuration used for spark
-     * @param  instanceProperties the properties to use
-     * @return                    the original tree map with details set
-     */
-    private static Map<String, String> setBasicHadoopConfig(TreeMap<String, String> conf, InstanceProperties instanceProperties) {
-        conf.put("spark.hadoop.fs.s3a.endpoint.region", instanceProperties.get(REGION));
-        conf.put("spark.hadoop.fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
-        conf.put("spark.hadoop.fs.s3a.bucket.probe", "0");
-        conf.put("spark.hadoop.fs.s3a.fast.upload", "true");
-
-        return conf;
     }
 }
