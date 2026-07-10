@@ -87,11 +87,14 @@ public class DeployInstance implements InstanceDeployer {
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
-        Path configurationDirectory = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withConfigurationDirectory(configurationDirectory));
+        if (request.getPropertiesFile() != null) {
+            invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(request.getPropertiesFile()));
+        } else {
+            invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withConfigurationDirectory(request.getConfigDir()));
+        }
     }
 
     public interface WriteLocalProperties {

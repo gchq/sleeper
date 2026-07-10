@@ -40,7 +40,10 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.statestore.StateStoreFactory;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -55,6 +58,8 @@ public class DeployNewInstance {
     private final StoreFactory storeFactory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
+    private final Path propertiesFile;
+    private final Path configDir;
     private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
@@ -66,6 +71,22 @@ public class DeployNewInstance {
         this.storeFactory = storeFactory;
         this.deployInstanceConfiguration = deployInstanceConfiguration;
         this.cdkApp = cdkApp;
+        this.propertiesFile = null;
+        this.configDir = null;
+        this.ignoreTableFiles = ignoreTableFiles;
+        this.deployPaused = deployPaused;
+    }
+
+    public DeployNewInstance(InstanceDeployer deployInstance,
+            StoreFactory storeFactory,
+            SleeperInstanceConfiguration deployInstanceConfiguration,
+            SleeperInternalCdkApp cdkApp, Path propertiesFile, Path configDir, boolean ignoreTableFiles, boolean deployPaused) {
+        this.deployInstance = deployInstance;
+        this.storeFactory = storeFactory;
+        this.deployInstanceConfiguration = deployInstanceConfiguration;
+        this.cdkApp = cdkApp;
+        this.propertiesFile = propertiesFile;
+        this.configDir = configDir;
         this.ignoreTableFiles = ignoreTableFiles;
         this.deployPaused = deployPaused;
     }
@@ -99,12 +120,24 @@ public class DeployNewInstance {
                     "the instance is manually resumed.")
             .build();
 
-    public static SleeperInstanceConfiguration loadConfiguration(Arguments args) {
+    public static SleeperInstanceConfiguration loadAndUpdateConfiguration(Arguments args) throws IOException {
+        SleeperInstanceConfiguration config;
         if (args.ignoreTableFiles()) {
-            return SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
+            config = SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
+        } else {
+            config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
         }
 
-        return SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
+        config.getInstanceProperties().set(ID, args.instanceId());
+        config.getInstanceProperties().set(VPC_ID, args.vpcId());
+        config.getInstanceProperties().set(SUBNETS, args.subnetIds());
+
+        try (BufferedWriter writer = Files.newBufferedWriter(args.resolvePropertiesFile())) {
+            InstanceProperties.createPrettyPrinter(new PrintWriter(writer))
+                    .print(config.getInstanceProperties());
+        }
+
+        return config;
     }
 
     public static Arguments readArguments(CommandArguments arguments) {
@@ -132,15 +165,11 @@ public class DeployNewInstance {
             Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
-            SleeperInstanceConfiguration config = loadConfiguration(args);
-
-            config.getInstanceProperties().set(ID, args.instanceId());
-            config.getInstanceProperties().set(VPC_ID, args.vpcId());
-            config.getInstanceProperties().set(SUBNETS, args.subnetIds());
+            SleeperInstanceConfiguration config = loadAndUpdateConfiguration(args);
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
                     StoreFactory.withAwsClients(s3Client, dynamoClient),
-                    config, SleeperInternalCdkApp.STANDARD, args.ignoreTableFiles(), deployPaused).deploy();
+                    config, SleeperInternalCdkApp.STANDARD, args.propertiesFile(), args.configDir(), args.ignoreTableFiles(), deployPaused).deploy();
         }
     }
 
@@ -151,6 +180,8 @@ public class DeployNewInstance {
                 .instanceConfig(deployInstanceConfiguration)
                 .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
                 .cdkApp(cdkApp)
+                .propertiesFile(propertiesFile)
+                .configDir(configDir)
                 .build());
 
         if (!ignoreTableFiles) {

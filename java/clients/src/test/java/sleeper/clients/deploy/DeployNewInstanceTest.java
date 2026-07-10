@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
@@ -45,6 +46,9 @@ import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
@@ -59,6 +63,7 @@ public class DeployNewInstanceTest {
             new InMemoryTransactionLogsPerTable());
     Map<Path, String> pathToString = new HashMap<>();
     DeployInstanceRequest lastDeployRequest;
+    Path instancePropertiesFile;
     String configDir;
 
     @TempDir
@@ -67,7 +72,8 @@ public class DeployNewInstanceTest {
     @BeforeEach
     void setUp() throws IOException {
         createTempDirectory(tempDir, null);
-        Files.writeString(tempDir.resolve("instance.properties"), instanceProperties.saveAsString());
+        instancePropertiesFile = tempDir.resolve("instance.properties");
+        Files.writeString(instancePropertiesFile, instanceProperties.saveAsString());
         Path tables = tempDir.resolve("tables");
         Path table1 = tables.resolve("table1");
         createDirectory(tables);
@@ -82,21 +88,47 @@ public class DeployNewInstanceTest {
 
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--instance-properties",
-                    tempDir.resolve("./instance.properties").toString());
+            //When
+            deployNewInstance("scriptsDir", "someInstance", "someVpc", "someSubnets", "--instance-properties",
+                    instancePropertiesFile.toString());
 
+            //Then
+            //Verify Instance Properties file updates
+            instanceProperties.set(ID, "someInstance");
+            instanceProperties.set(VPC_ID, "someVpc");
+            instanceProperties.set(SUBNETS, "someSubnets");
+            assertThat(instanceProperties)
+                    .isEqualTo(SleeperInstanceConfiguration.fromLocalConfiguration(
+                            instancePropertiesFile).getInstanceProperties());
+
+            //Verify CDK Command
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+
+            //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
         }
 
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir",
+            //When
+            deployNewInstance("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir",
                     configDir);
 
+            //Then
+            //Verify Instance Properties file updates
+            instanceProperties.set(ID, "someInstance");
+            instanceProperties.set(VPC_ID, "someVpc");
+            instanceProperties.set(SUBNETS, "someSubnets");
+            assertThat(instanceProperties)
+                    .isEqualTo(SleeperInstanceConfiguration.fromLocalConfiguration(
+                            instancePropertiesFile).getInstanceProperties());
+
+            //Verify CDK Command
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+
+            //Verify Table properties store saved
             TableProperties expected = new TableProperties(instanceProperties);
             expected.setSchema(schema);
             expected.set(TABLE_ID, tableId("file-table"));
@@ -106,21 +138,47 @@ public class DeployNewInstanceTest {
 
         @Test
         void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", configDir,
+            //When
+            deployNewInstance("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--ignoreTableFiles");
 
+            //Then
+            //Verify Instance Properties file updates
+            instanceProperties.set(ID, "someInstance");
+            instanceProperties.set(VPC_ID, "someVpc");
+            instanceProperties.set(SUBNETS, "someSubnets");
+            assertThat(instanceProperties)
+                    .isEqualTo(SleeperInstanceConfiguration.fromLocalConfiguration(
+                            instancePropertiesFile).getInstanceProperties());
+
+            //Verify CDK Command
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNew());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+
+            //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
         }
 
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
-            deployNewInstance("scriptsDir", "my-instance", "someVpc", "someSubnets", "--config-dir", configDir,
+            //When
+            deployNewInstance("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--paused");
 
+            //Then
+            //Verify Instance Properties file updates
+            instanceProperties.set(ID, "someInstance");
+            instanceProperties.set(VPC_ID, "someVpc");
+            instanceProperties.set(SUBNETS, "someSubnets");
+            assertThat(instanceProperties)
+                    .isEqualTo(SleeperInstanceConfiguration.fromLocalConfiguration(
+                            instancePropertiesFile).getInstanceProperties());
+
+            //Verify CDK Command
             assertThat(lastDeployRequest.getCdkCommand()).isEqualTo(CdkCommand.deployNewPaused());
             assertThat(lastDeployRequest.getCdkApp()).isEqualTo(SleeperInternalCdkApp.STANDARD);
+
+            //Verify Table properties store saved
             TableProperties expected = new TableProperties(instanceProperties);
             expected.setSchema(schema);
             expected.set(TABLE_ID, tableId("file-table"));
@@ -175,7 +233,7 @@ public class DeployNewInstanceTest {
 
     private void deployNewInstance(String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
-        var config = DeployNewInstance.loadConfiguration(arguments);
+        var config = DeployNewInstance.loadAndUpdateConfiguration(arguments);
         new DeployNewInstance(
                 request -> lastDeployRequest = request,
                 new DeployNewInstance.StoreFactory() {
@@ -187,7 +245,7 @@ public class DeployNewInstanceTest {
                         return stateStoreProvider;
                     }
                 },
-                config, SleeperInternalCdkApp.STANDARD,
+                config, SleeperInternalCdkApp.STANDARD, instancePropertiesFile, tempDir,
                 arguments.ignoreTableFiles(), arguments.deployPaused()).deploy();
     }
 
