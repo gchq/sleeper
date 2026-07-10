@@ -346,8 +346,7 @@ public class SparkConfigurationUtils {
         conf.put("spark.hadoop.fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
         conf.put("spark.hadoop.fs.s3a.bucket.probe", "0");
         conf.put("spark.hadoop.fs.s3a.fast.upload", "true");
-        conf.put("spark.hadoop.fs.s3a.endpoint", instanceProperties.get(REGION));
-        conf.put("spark.hadoop.fs.s3a.path.style.access", "true");
+
         return conf;
     }
 }
