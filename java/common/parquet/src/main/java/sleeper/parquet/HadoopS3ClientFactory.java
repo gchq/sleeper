@@ -60,7 +60,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
     }
 
     /**
-     * Confinguring Hadoop property to reflect use of this class.
+     * Configuring Hadoop property to use this class.
      *
      * @param conf Hadoop configuration to set property within
      */
@@ -170,7 +170,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         return Region.EU_WEST_2;
     }
 
-    protected ClientOverrideConfiguration.Builder createClientOverrideConfiguration(
+    private ClientOverrideConfiguration.Builder createClientOverrideConfiguration(
             S3ClientCreationParameters parameters, Configuration conf) throws IOException {
         final ClientOverrideConfiguration.Builder clientOverrideConfigBuilder = AWSClientConfig.createClientConfigBuilder(conf, AWS_SERVICE_IDENTIFIER_S3);
 
