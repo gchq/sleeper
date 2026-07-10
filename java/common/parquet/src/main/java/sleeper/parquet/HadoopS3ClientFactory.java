@@ -66,7 +66,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
      */
     public static void configureHadoop(Configuration conf) {
         // Property is required to be set due to incompatibility between Hadoop and the latest version of the
-        // AWS SDK. This is due to the removal of the ApacheHTTPClient with the SDK.
+        // AWS SDK. This is due to the removal of the ApacheHttpClient from the SDK.
         // This overrides the client factory set to allow us to circumvent the issue.
         conf.set("fs.s3a.s3.client.factory.impl", HadoopS3ClientFactory.class.getName());
     }
