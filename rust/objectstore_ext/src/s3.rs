@@ -82,21 +82,19 @@ impl AwsConfig {
     /// provider is used.
     ///
     /// If a region is not specified, then the region is read from the default provider.
-    async fn to_builder(&self) -> color_eyre::Result<AmazonS3Builder> {
-        let config = sdk_credentials().await;
-
+    async fn to_builder(&self, config: &SdkConfig) -> color_eyre::Result<AmazonS3Builder> {
         let creds = match &self.secrets {
             Some(secrets) => Credentials::from_keys(
                 secrets.access_key_id.clone(),
                 secrets.secret_access_key.clone(),
                 secrets.session_token.clone(),
             ),
-            None => create_creds_from_config(&config).await?,
+            None => create_creds_from_config(config).await?,
         };
 
         let region = match &self.region {
             Some(region) => Region::new(region.clone()),
-            None => create_region_from_config(&config)?,
+            None => create_region_from_config(config)?,
         };
 
         Ok(builder_from_creds(&creds, &region, self.endpoint.as_ref()))
@@ -125,9 +123,21 @@ fn builder_from_creds(
     }
 }
 
-/// Load AWS configuration from the default providers.
-async fn sdk_credentials() -> SdkConfig {
-    aws_config::defaults(BehaviorVersion::latest()).load().await
+/// Caches a resolved [`SdkConfig`] so the default AWS credentials provider chain is only
+/// ever loaded once, rather than on every call. Loading it once and reusing it lets the
+/// AWS SDK's own credential caching and refresh-before-expiry logic deal with expiring
+/// credentials.
+#[derive(Debug, Default)]
+pub struct SdkConfigCache(tokio::sync::OnceCell<SdkConfig>);
+
+impl SdkConfigCache {
+    /// Return the cached [`SdkConfig`], loading it from the default AWS providers the
+    /// first time this is called.
+    pub async fn get(&self) -> &SdkConfig {
+        self.0
+            .get_or_init(|| async { aws_config::defaults(BehaviorVersion::latest()).load().await })
+            .await
+    }
 }
 
 /// Extract AWS credentials from an SDK configuration.
@@ -187,15 +197,17 @@ pub struct ObjectStoreFactory {
     s3_config: Option<AwsConfig>,
     store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
     use_readahead: bool,
+    sdk_config: SdkConfig,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(s3_config: Option<AwsConfig>, use_readahead: bool) -> Self {
+    pub fn new(s3_config: Option<AwsConfig>, use_readahead: bool, sdk_config: SdkConfig) -> Self {
         Self {
             s3_config,
             store_map: RefCell::new(HashMap::new()),
             use_readahead,
+            sdk_config,
         }
     }
 
@@ -310,7 +322,7 @@ impl ObjectStoreFactory {
             Some(config) => config,
             None => &AwsConfig::default(),
         };
-        cfg.to_builder().await
+        cfg.to_builder(&self.sdk_config).await
     }
 
     fn wrap_s3_store(

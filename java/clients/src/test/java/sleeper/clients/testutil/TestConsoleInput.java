@@ -15,6 +15,8 @@
  */
 package sleeper.clients.testutil;
 
+import org.mockito.invocation.InvocationOnMock;
+
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 
@@ -32,23 +34,30 @@ public class TestConsoleInput {
     public static final String CONFIRM_PROMPT = "";
 
     public final ConsoleInput mock = mock(ConsoleInput.class);
+    private final ConsoleOutput out;
     private final Queue<String> nextPrompts = new LinkedList<>();
 
     public TestConsoleInput(ConsoleOutput out) {
-        when(mock.promptLine(any())).thenAnswer(invocation -> {
-            String prompt = invocation.getArgument(0);
-            out.println(prompt);
-            if (nextPrompts.isEmpty()) {
-                throw new IllegalStateException("User was prompted when all specified prompts were exhausted, prompt was: " + prompt);
-            }
-            return nextPrompts.poll();
-        });
-        doAnswer(invocation -> {
-            if (!CONFIRM_PROMPT.equals(nextPrompts.poll())) {
-                throw new IllegalStateException("User was prompted to continue with no confirmation specified, remaining specified prompts: " + nextPrompts);
-            }
-            return null;
-        }).when(mock).waitForLine();
+        this.out = out;
+        when(mock.promptLine(any())).thenAnswer(this::invokePrompt);
+        when(mock.promptPassword(any())).thenAnswer(this::invokePrompt);
+        doAnswer(this::invokeWaitForLine).when(mock).waitForLine();
+    }
+
+    private String invokePrompt(InvocationOnMock invocation) {
+        String prompt = invocation.getArgument(0);
+        out.println(prompt);
+        if (nextPrompts.isEmpty()) {
+            throw new IllegalStateException("User was prompted when all specified prompts were exhausted, prompt was: " + prompt);
+        }
+        return nextPrompts.poll();
+    }
+
+    private Void invokeWaitForLine(InvocationOnMock invocation) {
+        if (!CONFIRM_PROMPT.equals(nextPrompts.poll())) {
+            throw new IllegalStateException("User was prompted to continue with no confirmation specified, remaining specified prompts: " + nextPrompts);
+        }
+        return null;
     }
 
     public ConsoleInput consoleIn() {
