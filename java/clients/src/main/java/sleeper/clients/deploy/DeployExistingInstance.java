@@ -138,6 +138,7 @@ public class DeployExistingInstance {
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
                 .cdkApp(getCdkApp())
+                .configDir(configDir)
                 .build());
 
         LOGGER.info("Finished deployment of existing instance");
