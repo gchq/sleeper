@@ -16,6 +16,9 @@
 
 package sleeper.core.properties.table;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
@@ -34,6 +37,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
  * A store to load and save table properties via the table index of the Sleeper instance.
  */
 public class TablePropertiesStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesStore.class);
 
     private static final TableIdGenerator ID_GENERATOR = new TableIdGenerator();
 
@@ -141,6 +145,7 @@ public class TablePropertiesStore {
      */
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        LOGGER.info("Table name: " + tableName);
         tableIndex.getTableByName(tableName).ifPresent(tableId -> {
             throw new TableAlreadyExistsException(tableId);
         });
