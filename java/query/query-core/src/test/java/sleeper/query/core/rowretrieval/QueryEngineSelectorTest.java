@@ -24,7 +24,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.type.LongType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
+import static sleeper.core.properties.table.TableProperty.QUERY_DATA_ENGINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -40,7 +40,7 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetDataFusionEngine() {
         // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
+        tableProperties.setEnum(QUERY_DATA_ENGINE, DataEngine.DATAFUSION);
 
         // When / Then
         assertThat(createRowRetriever()).isSameAs(dataFusionRowRetriever);
@@ -49,7 +49,7 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetDataFusionEngineExperimental() {
         // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
+        tableProperties.setEnum(QUERY_DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
 
         // When / Then
         assertThat(createRowRetriever()).isSameAs(dataFusionRowRetriever);
@@ -58,7 +58,7 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetJavaEngine() {
         // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
+        tableProperties.setEnum(QUERY_DATA_ENGINE, DataEngine.JAVA);
 
         // When / Then
         assertThat(createRowRetriever()).isSameAs(javaRowRetriever);
