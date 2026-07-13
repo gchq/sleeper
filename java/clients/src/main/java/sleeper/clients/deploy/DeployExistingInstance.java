@@ -26,11 +26,13 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.cli.CommandArguments;
@@ -38,6 +40,8 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,6 +57,7 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final boolean deployPaused;
     private final SleeperInternalCdkApp forceCdkApp;
+    private final Path configDir;
 
     private DeployExistingInstance(Builder builder) {
         deployInstance = builder.deployInstance;
@@ -60,6 +65,7 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         deployPaused = builder.deployPaused;
         forceCdkApp = builder.forceCdkApp;
+        configDir = builder.configDir;
     }
 
     public static Builder builder() {
@@ -107,6 +113,7 @@ public class DeployExistingInstance {
                     .deployPaused(args.deployPaused())
                     .forceCdkApp(args.forceCdkApp())
                     .loadPropertiesFromS3(accountName, s3Client, dynamoClient)
+                    .configDir(args.scriptsDirectory().resolve("generated"))
                     .build().update();
         }
     }
@@ -115,6 +122,18 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
+        SleeperInstanceConfiguration deployConfig = SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build();
+
+        try {
+            Files.createDirectories(configDir);
+            ClientUtils.clearDirectory(configDir);
+            SaveLocalProperties.saveToDirectory(configDir,
+                    deployConfig.getInstanceProperties(),
+                    deployConfig.getTableProperties().stream());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
@@ -143,6 +162,7 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private boolean deployPaused;
         private SleeperInternalCdkApp forceCdkApp;
+        private Path configDir;
 
         private Builder() {
         }
@@ -178,6 +198,11 @@ public class DeployExistingInstance {
 
         public Builder forceCdkApp(SleeperInternalCdkApp forceCdkApp) {
             this.forceCdkApp = forceCdkApp;
+            return this;
+        }
+
+        public Builder configDir(Path configDir) {
+            this.configDir = configDir;
             return this;
         }
 
