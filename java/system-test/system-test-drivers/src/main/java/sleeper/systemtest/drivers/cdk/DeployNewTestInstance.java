@@ -49,7 +49,7 @@ public class DeployNewTestInstance {
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-        Path propertiesFile = Path.of(args[1]);
+        Path configurationPath = Path.of(args[1]);
         String instanceId = args[2];
         String vpcId = args[3];
         String subnetIds = args[4];
@@ -65,13 +65,13 @@ public class DeployNewTestInstance {
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
+                    configurationPath, templates(scriptsDirectory, splitPointsFileForTemplate));
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
                     StoreFactory.withAwsClients(s3Client, dynamoClient),
-                    config, SleeperInternalCdkApp.STANDARD, false, deployPaused).deploy();
+                    config, SleeperInternalCdkApp.STANDARD, null, configurationPath, false, deployPaused).deploy();
         }
     }
 

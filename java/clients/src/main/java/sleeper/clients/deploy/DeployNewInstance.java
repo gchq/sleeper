@@ -66,20 +66,6 @@ public class DeployNewInstance {
     public DeployNewInstance(InstanceDeployer deployInstance,
             StoreFactory storeFactory,
             SleeperInstanceConfiguration deployInstanceConfiguration,
-            SleeperInternalCdkApp cdkApp, boolean ignoreTableFiles, boolean deployPaused) {
-        this.deployInstance = deployInstance;
-        this.storeFactory = storeFactory;
-        this.deployInstanceConfiguration = deployInstanceConfiguration;
-        this.cdkApp = cdkApp;
-        this.propertiesFile = null;
-        this.configDir = null;
-        this.ignoreTableFiles = ignoreTableFiles;
-        this.deployPaused = deployPaused;
-    }
-
-    public DeployNewInstance(InstanceDeployer deployInstance,
-            StoreFactory storeFactory,
-            SleeperInstanceConfiguration deployInstanceConfiguration,
             SleeperInternalCdkApp cdkApp, Path propertiesFile, Path configDir, boolean ignoreTableFiles, boolean deployPaused) {
         this.deployInstance = deployInstance;
         this.storeFactory = storeFactory;

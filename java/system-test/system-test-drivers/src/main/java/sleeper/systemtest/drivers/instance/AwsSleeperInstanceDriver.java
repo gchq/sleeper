@@ -31,6 +31,7 @@ import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -39,6 +40,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -84,10 +86,20 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(ID, instanceId);
         deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
+
+        Path configDir = parameters.getScriptsDirectory().resolve("example");
+        try {
+            SaveLocalProperties.saveToDirectory(configDir,
+                    deployConfig.getInstanceProperties(),
+                    deployConfig.getTableProperties().stream());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
         try {
             new DeployNewInstance(deployInstance,
                     StoreFactory.withAwsClients(s3, dynamoDB),
-                    deployConfig, SleeperInternalCdkApp.STANDARD, false, false).deploy();
+                    deployConfig, SleeperInternalCdkApp.STANDARD, null, configDir, false, false).deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
