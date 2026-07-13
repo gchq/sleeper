@@ -8,5 +8,12 @@
     "Method": "DELETE",
     "Path.$": "States.Format('/api/v1/namespaces/namespace-placeholder/pods/{}', $.jobPodPrefix)"
   },
-  "ResultPath": "$.deleteDriverPodOutput"
+  "ResultPath": "$.deleteDriverPodOutput",
+  "Catch": [
+    {
+      "ErrorEquals": ["EKS.404"],
+      "ResultPath": "$.deleteDriverPodError",
+      "Next": "DeleteJob"
+    }
+  ]
 }
