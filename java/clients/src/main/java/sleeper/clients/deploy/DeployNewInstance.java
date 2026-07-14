@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.AddTableClient;
 import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -47,7 +48,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -155,7 +155,7 @@ public class DeployNewInstance {
             SleeperInstanceConfiguration config = loadAndUpdateConfiguration(args);
 
             new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    StoreFactory.withAwsClients(s3Client, dynamoClient),
+                    StoreFactory.withAwsClients(s3Client, dynamoClient, accountName),
                     config, SleeperInternalCdkApp.STANDARD, args.propertiesFile(), args.configDir(), args.ignoreTableFiles(), deployPaused).deploy();
         }
     }
@@ -172,17 +172,15 @@ public class DeployNewInstance {
                 .build());
 
         if (!ignoreTableFiles) {
-            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-                InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
-                TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+            InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+            storeFactory.reloadInstanceProperties(instanceProperties);
 
-                for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
-                    LOGGER.info("Adding table " + tableProperties.getStatus());
-                    new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
-
-                }
+            for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+                LOGGER.info("Adding table " + tableProperties.getStatus());
+                new AddTableClient(tableProperties,
+                        storeFactory.createTableStore(instanceProperties),
+                        storeFactory.createStateStore(instanceProperties))
+                        .run();
             }
         }
         LOGGER.info("Finished deployment of new instance");
@@ -227,7 +225,9 @@ public class DeployNewInstance {
 
         StateStoreProvider createStateStore(InstanceProperties instanceProperties);
 
-        static StoreFactory withAwsClients(S3Client s3Client, DynamoDbClient dynamoClient) {
+        void reloadInstanceProperties(InstanceProperties instanceProperties);
+
+        static StoreFactory withAwsClients(S3Client s3Client, DynamoDbClient dynamoClient, String accountName) {
             return new StoreFactory() {
                 public TablePropertiesStore createTableStore(InstanceProperties p) {
                     return S3TableProperties.createStore(p, s3Client, dynamoClient);
@@ -235,6 +235,10 @@ public class DeployNewInstance {
 
                 public StateStoreProvider createStateStore(InstanceProperties p) {
                     return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
+                }
+
+                public void reloadInstanceProperties(InstanceProperties p) {
+                    S3InstanceProperties.reloadGivenAccountAndInstanceId(s3Client, p, accountName, p.get(ID));
                 }
             };
         }

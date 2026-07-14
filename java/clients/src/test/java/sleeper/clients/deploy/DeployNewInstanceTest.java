@@ -244,6 +244,9 @@ public class DeployNewInstanceTest {
                     public StateStoreProvider createStateStore(InstanceProperties p) {
                         return stateStoreProvider;
                     }
+
+                    public void reloadInstanceProperties(InstanceProperties p) {
+                    }
                 },
                 config, SleeperInternalCdkApp.STANDARD, instancePropertiesFile, tempDir,
                 arguments.ignoreTableFiles(), arguments.deployPaused()).deploy();
