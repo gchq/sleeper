@@ -21,7 +21,7 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn install -Pquick,skipShade -q -pl clients -am -DskipRust
+mvn install -Pquick,skipShade -q -pl clients,rest-api -am -DskipRust -U
 echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \
@@ -31,7 +31,7 @@ mvn exec:java -e -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
 echo "Regenerating REST API OpenAPI spec..."
-mvn exec:java -e -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateOpenApiSpec" \
+mvn exec:java -e -q -pl rest-api \
+  -Dexec.mainClass="sleeper.restapi.GenerateOpenApiSpec" \
   -Dexec.args="$PROJECT_ROOT"
 popd
