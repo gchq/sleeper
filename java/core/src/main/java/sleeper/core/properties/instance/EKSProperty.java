@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.EksClusterType;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -58,6 +59,15 @@ public interface EKSProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
             .defaultValue(EksClusterType.FARGATE.toString())
             .validationPredicate(EksClusterType::isValid)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED = Index.propertyBuilder("sleeper.bulk.import.eks.automode.fluentbit.logging.enabled")
+            .description("(EKS auto mode only) Whether to deploy a FluentBit DaemonSet to collect container logs " +
+                    "from EKS auto mode nodes and send them to CloudWatch Logs. Disable this if you manage log " +
+                    "collection separately or need to avoid the aws-for-fluent-bit image dependency.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();

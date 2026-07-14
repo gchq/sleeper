@@ -5,6 +5,25 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+
+## Version 0.37.1
+
+### 13th July, 2026
+
+This includes a deployment flexibility improvement for Docker images, upgrades to dependencies and a minor bug fix.
+
+Build:
+- A separate base Dockerfile can now be set for specific Docker images with `setDeployConfig.sh`.
+- Updated to use Rust 1.96.
+
+Documentation:
+- Documented context variables used by Sleeper's CDK apps.
+- Documented overriding CA certificates.
+
+Bugfixes:
+- Queries in DataFusion sometimes failed because of a separate credential provider per query.
+
+
 ## Version 0.37.0
 
 ### 6th July, 2026
