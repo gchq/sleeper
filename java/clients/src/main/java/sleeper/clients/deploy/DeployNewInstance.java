@@ -33,6 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -175,6 +176,7 @@ public class DeployNewInstance {
 
             for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
                 LOGGER.info("Adding table " + tableProperties.getStatus());
+                LOGGER.info("Table name: " + tableProperties.get(TableProperty.TABLE_NAME));
                 new AddTableClient(tableProperties,
                         storeFactory.createTableStore(instanceProperties),
                         storeFactory.createStateStore(instanceProperties))
