@@ -142,7 +142,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 50;
+        public static final int TASK_COUNT = 60;
         public static final int QUERY_COUNT = 50;
 
         private List<Row> makeRows() {
@@ -178,7 +178,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             QueryProcessingConfig.none());
 
                     LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-                    QueryExecutor queryExec = new QueryExecutor(
+                    QueryExecutor queryExec = QueryExecutor.makeSerialExecutor(
                             QueryPlanner.initialiseNow(tableProperties, stateStore),
                             new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
 
@@ -202,6 +202,72 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             // Then - all tasks should complete normally
             assertThat(es.awaitTermination(2, TimeUnit.MINUTES)).isTrue();
             assertThat(results).extracting(Future::get).allMatch(e -> e == null);
+        }
+    }
+
+    @Nested
+    @DisplayName("Multi-threading via PerCallDataFusionRowRetrieverProvider")
+    class PerCallProviderMultiThreadStressTest {
+        public static final int QUERY_COUNT = 50;
+
+        private PartitionTree buildPartitionTree(Schema schema) {
+            PartitionsBuilder builder = new PartitionsBuilder(schema).rootFirst("root");
+            builder.splitToNewChildren("root", "L", "R", 0L);
+            builder.splitToNewChildren("L", "LL", "LR", -10L);
+            builder.splitToNewChildren("R", "RL", "RR", 10L);
+            builder.splitToNewChildren("LL", "LLL", "LLR", -20L);
+            builder.splitToNewChildren("LR", "LRL", "LRR", -5L);
+            builder.splitToNewChildren("RL", "RLL", "RLR", 5L);
+            builder.splitToNewChildren("RR", "RRL", "RRR", 20L);
+            return builder.buildTree();
+        }
+
+        private List<Row> makeRows() {
+            List<Row> rows = new ArrayList<>();
+            for (int i = -100; i < 100; i++) {
+                rows.add(new Row(Map.of("key", (long) i, "value1", (long) i * 10L, "value2", (long) i * 100L)));
+            }
+            return rows;
+        }
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(buildPartitionTree(tableProperties.getSchema()));
+            ingestData(makeRows());
+        }
+
+        /**
+         * Tests that we can sucessfully execute tasks in parallel without segmentation faults when using
+         * the PerCallDataFusionRowRetrieverProvider. */
+        @Test
+        void shouldExecuteManyQueriesRunningInParallel() throws Exception {
+            // Given
+            List<Row> expected = makeRows();
+            PerCallDataFusionRowRetrieverProvider rowRetrieverProvider = new PerCallDataFusionRowRetrieverProvider(
+                    // DataFusion spends time trying to auth with AWS unless you override it
+                    DataFusionAwsConfig.overrideEndpoint("dummy"));
+            LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+            ExecutorService executorService = Executors.newFixedThreadPool(5);
+            try {
+                QueryExecutor queryExec = QueryExecutor.makeParallelExecutor(
+                        QueryPlanner.initialiseNow(tableProperties, stateStore),
+                        new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever),
+                        executorService);
+                Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
+                        "key", -1000L, true, 1000L, true)), QueryProcessingConfig.none());
+
+                // When / Then - run many times, each fanning out to all the leaf partitions in parallel
+                for (int i = 0; i < QUERY_COUNT; i++) {
+                    List<Row> results = new ArrayList<>();
+                    try (CloseableIterator<Row> rows = queryExec.execute(query)) {
+                        rows.forEachRemaining(results::add);
+                    }
+                    assertThat(results).hasSameElementsAs(expected);
+                }
+            } finally {
+                executorService.shutdown();
+            }
         }
     }
 
@@ -1427,7 +1493,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 // DataFusion spends time trying to auth with AWS unless you override it
                 DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

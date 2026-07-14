@@ -77,7 +77,7 @@ jobs:
       - name: Build base image
         run: ./scripts/dev/buildDockerImage.sh base ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --push
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }}
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --default-base-image ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --load
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker

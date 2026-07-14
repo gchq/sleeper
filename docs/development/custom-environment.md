@@ -7,24 +7,29 @@ None of these are needed for a default build.
 
 ## Container images
 
-### `--override-base-image-dir` (on `setDeployConfig.sh` and `publishDocker.sh`)
+### `--override-base-image-dir`, `--override-base-image-dir-by-image` (on `setDeployConfig.sh`)
 
-Overrides the directory used as the Docker build context for the Sleeper base Docker image. This image is used as the base image for most of the other Docker images built during a Sleeper deployment. By default the base image is built from `scripts/docker/base`. Pass a different directory containing your own `Dockerfile` to substitute a custom base image.
+You can override the directory used as the Docker build context for the Sleeper base Docker image. This image is used as
+the base image for most of the other Docker images built during a Sleeper deployment. By default the base image is built
+from `scripts/docker/base`. Pass a different directory containing your own `Dockerfile` to substitute a custom base
+image.
 
-The override only applies to local builds — it cannot be combined with `--image-location repository`.
+You can also add a separate base Docker image for a specific image, referenced by the deployment name or image name
+documented in [Docker images deployed in Sleeper](../deployment/docker-images.md).
 
-Example — `setDeployConfig.sh` (persists the override in `scripts/templates/deployConfig.json`, so it is picked up by `deployNew.sh` and `deployExisting.sh`):
+Either of these options will apply when you run `scripts/deploy/deployNew.sh`, `scripts/deploy/deployExisting.sh`,
+`scripts/deploy/uploadArtefacts.sh`, or `scripts/dev/publishDocker.sh`, as the configuration is persisted in
+`scripts/templates/deployConfig.json`.
+
+This override only applies to local builds — it cannot be combined with `--image-location repository` or `--image-repository-prefix`.
+
+Here's an example:
 
 ```bash
 ./scripts/deploy/setDeployConfig.sh \
     --image-location localBuild \
-    --override-base-image-dir /path/to/my/base
-```
-
-Example — `publishDocker.sh` (override at publish time only; saved config is not consulted):
-
-```bash
-./scripts/dev/publishDocker.sh my.registry.com/path true /path/to/my/base
+    --override-base-image-dir /path/to/my/base \
+    --override-base-image-dir-by-image bulk-import-runner=/path/to/other/base
 ```
 
 See [publishing artefacts](publishing.md) for the full publish flow.

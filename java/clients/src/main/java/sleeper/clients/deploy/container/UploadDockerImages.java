@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.container.images.ContainerImageTransferManager;
@@ -37,9 +38,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
@@ -94,17 +99,21 @@ public class UploadDockerImages {
             return;
         }
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
+        boolean anyUseBaseImage = imagesToUpload.stream().anyMatch(StackDockerImage::isUseDefaultBaseImage);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder) {
+                && createMultiplatformBuilder && anyUseBaseImage) {
             useBuildXBuilder(commandRunner);
         }
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
             String baseTag = buildTag(repositoryPrefix, baseImage);
-            buildAndPushImage(baseTag, baseImage, baseTag);
+            if (anyUseBaseImage) {
+                buildAndPushImage(baseTag, baseImage, Map.of());
+            }
             for (StackDockerImage image : imagesToUpload) {
-                buildAndPushImage(buildTag(repositoryPrefix, image), image, baseTag);
+                Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag);
+                buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
             for (StackDockerImage image : imagesToUpload) {
@@ -113,8 +122,8 @@ public class UploadDockerImages {
         }
     }
 
-    private void buildAndPushImage(String tag, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
-        Path dockerfileDirectory = resolveBuildContext(image);
+    private void buildAndPushImage(String tag, StackDockerImage image, Map<String, String> buildArgs) throws IOException, InterruptedException {
+        Path dockerfileDirectory = image.resolveBuildContext(baseDockerDirectory, deployConfig);
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
                     jarsDirectory.resolve(jar.getFilename(version)),
@@ -123,25 +132,56 @@ public class UploadDockerImages {
 
         if (image.isMultiplatform()) {
             String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
-            commandRunner.runOrThrow("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", platformList, "-t", tag, "--push", dockerfileDirectory.toString());
+            commandRunner.runOrThrow(dockerBuild(
+                    List.of("docker", "buildx", "build"),
+                    optionsWithBuildArgs(buildArgs, "--platform", platformList, "--push", "-t", tag),
+                    dockerfileDirectory));
         } else {
             if (image.getLambdaJar().isPresent()) {
                 // At time of writing AWS Lambda does not support images with provenance enabled.
                 // See https://docs.aws.amazon.com/lambda/latest/dg/java-image.html
-                commandRunner.runOrThrow("docker", "build", "--provenance=false", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow(dockerBuild(
+                        List.of("docker", "build"),
+                        optionsWithBuildArgs(buildArgs, "--provenance=false", "-t", tag),
+                        dockerfileDirectory));
             } else {
-                commandRunner.runOrThrow("docker", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "-t", tag, dockerfileDirectory.toString());
+                commandRunner.runOrThrow(dockerBuild(
+                        List.of("docker", "build"),
+                        optionsWithBuildArgs(buildArgs, "-t", tag),
+                        dockerfileDirectory));
             }
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }
 
-    public Path resolveBuildContext(StackDockerImage image) {
-        if (image.equals(baseImage)) {
-            return deployConfig.overrideBaseImageDirPath()
-                    .orElseGet(() -> baseDockerDirectory.resolve(image.getDirectoryName()));
+    private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
+        StackDockerImage overrideBaseImage = image.createOverrideBaseImage(deployConfig).orElse(null);
+        if (overrideBaseImage != null) {
+            String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
+            buildAndPushImage(overrideBaseTag, overrideBaseImage, Map.of());
+            return Map.of("BASE_IMAGE", overrideBaseTag);
+        } else if (image.isUseDefaultBaseImage()) {
+            return Map.of("BASE_IMAGE", baseTag);
+        } else {
+            return Map.of();
         }
-        return baseDockerDirectory.resolve(image.getDirectoryName());
+    }
+
+    private static List<String> optionsWithBuildArgs(Map<String, String> buildArgs, String... options) {
+        return Stream.of(
+                buildArgs.entrySet().stream()
+                        .flatMap(e -> Stream.of("--build-arg", e.getKey() + "=" + e.getValue())),
+                Stream.of(options))
+                .flatMap(s -> s)
+                .toList();
+    }
+
+    private static CommandPipeline dockerBuild(List<String> dockerCommand, List<String> options, Path directory) {
+        return pipeline(command(Stream.of(
+                dockerCommand.stream(),
+                options.stream(),
+                Stream.of(directory.toString()))
+                .flatMap(s -> s).toArray(String[]::new)));
     }
 
     private void pullAndPushImage(String tag, StackDockerImage image) throws IOException, InterruptedException {

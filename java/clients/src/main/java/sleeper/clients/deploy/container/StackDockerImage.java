@@ -16,10 +16,12 @@
 
 package sleeper.clients.deploy.container;
 
+import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.core.deploy.ContainerPlatform;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,15 +32,21 @@ import java.util.Optional;
 public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
+    private final Path overrideDirectory;
     private final List<ContainerPlatform> platforms;
     private final boolean createEmrServerlessPolicy;
+    private final boolean isDefaultBaseImage;
+    private final boolean useDefaultBaseImage;
     private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
+        overrideDirectory = builder.overrideDirectory;
         platforms = builder.platforms;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        isDefaultBaseImage = builder.isDefaultBaseImage;
+        useDefaultBaseImage = builder.useDefaultBaseImage;
         lambdaJar = builder.lambdaJar;
     }
 
@@ -55,6 +63,8 @@ public class StackDockerImage {
                 .directoryName(deployment.getDeploymentName())
                 .platforms(deployment.getPlatforms())
                 .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
+                .isDefaultBaseImage(deployment.isDefaultBaseImage())
+                .useDefaultBaseImage(deployment.isUseDefaultBaseImage())
                 .build();
     }
 
@@ -92,6 +102,26 @@ public class StackDockerImage {
         return imageName;
     }
 
+    public Path resolveBuildContext(Path baseDockerDirectory, DeployConfiguration deployConfig) {
+        if (overrideDirectory != null) {
+            return overrideDirectory;
+        } else if (isDefaultBaseImage) {
+            return deployConfig.overrideBaseImageDirPath()
+                    .orElseGet(() -> baseDockerDirectory.resolve(directoryName));
+        } else {
+            return baseDockerDirectory.resolve(directoryName);
+        }
+    }
+
+    public Optional<StackDockerImage> createOverrideBaseImage(DeployConfiguration deployConfig) {
+        return deployConfig.overrideBaseImageDirPathForImage(imageName)
+                .map(overrideDirectory -> builder()
+                        .imageName(imageName + "-base")
+                        .platforms(platforms)
+                        .overrideDirectory(overrideDirectory)
+                        .build());
+    }
+
     public String getDirectoryName() {
         return directoryName;
     }
@@ -106,6 +136,10 @@ public class StackDockerImage {
 
     public boolean isCreateEmrServerlessPolicy() {
         return createEmrServerlessPolicy;
+    }
+
+    public boolean isUseDefaultBaseImage() {
+        return useDefaultBaseImage;
     }
 
     public Optional<LambdaJar> getLambdaJar() {
@@ -143,8 +177,11 @@ public class StackDockerImage {
     public static final class Builder {
         private String imageName;
         private String directoryName;
+        private Path overrideDirectory;
         private List<ContainerPlatform> platforms = List.of();
         private boolean createEmrServerlessPolicy;
+        private boolean isDefaultBaseImage;
+        private boolean useDefaultBaseImage = true;
         private LambdaJar lambdaJar;
 
         private Builder() {
@@ -163,14 +200,26 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets the name of the directory the Docker image will be held in. During a build of Sleeper a directory will
-         * be created with this name that contains the Dockerfile and any other files needed to build the image.
+         * Sets the name of the directory that contains the Dockerfile. This will be found underneath the standard
+         * directory for Sleeper's build output.
          *
          * @param  directoryName the directory name
          * @return               this builder
          */
         public Builder directoryName(String directoryName) {
             this.directoryName = directoryName;
+            return this;
+        }
+
+        /**
+         * Overrides the local directory that contains the Dockerfile. This should only be used when it is not part of
+         * Sleeper's standard build output.
+         *
+         * @param  overrideDirectory the path to the build directory
+         * @return                   this builder
+         */
+        public Builder overrideDirectory(Path overrideDirectory) {
+            this.overrideDirectory = overrideDirectory;
             return this;
         }
 
@@ -194,6 +243,29 @@ public class StackDockerImage {
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        /**
+         * Sets whether this is the default base image, and required to build others by default.
+         *
+         * @param  isDefaultBaseImage true if this is the base image
+         * @return                    this builder
+         */
+        public Builder isDefaultBaseImage(boolean isDefaultBaseImage) {
+            this.isDefaultBaseImage = isDefaultBaseImage;
+            return this;
+        }
+
+        /**
+         * Sets whether this is built from the default base image. If it is, the BASE_IMAGE build argument will be
+         * passed during a build.
+         *
+         * @param  useDefaultBaseImage true if this is built from the default base image
+         * @return                     this builder
+         */
+        public Builder useDefaultBaseImage(boolean useDefaultBaseImage) {
+            this.useDefaultBaseImage = useDefaultBaseImage;
             return this;
         }
 

@@ -49,26 +49,26 @@ public class FFISleeperRegion extends Struct {
     /** Region partition region minimums. May not contain "Empty" elements. */
     final Struct.StructRef<FFIRowKeyValue> mins = new Struct.StructRef<>(FFIRowKeyValue.class);
     /** Prevent GC. */
-    private FFIRowKeyValue[] java_mins;
+    private FFIRowKeyValue[] javaMins;
     /** Region partition region maximums. May contain "Empty" elements. */
     final Struct.StructRef<FFIRowKeyValue> maxs = new Struct.StructRef<>(FFIRowKeyValue.class);
     /** Prevent GC. */
-    private FFIRowKeyValue[] java_maxs;
+    private FFIRowKeyValue[] javaMaxs;
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     final Struct.Pointer mins_inclusive = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    private jnr.ffi.Pointer java_mins_inclusive;
+    private jnr.ffi.Pointer javaMinsInclusive;
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     final Struct.Pointer maxs_inclusive = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    private jnr.ffi.Pointer java_maxs_inclusive;
+    private jnr.ffi.Pointer javaMaxsInclusive;
     /**
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
     final Struct.Pointer dimension_indexes = new Struct.Pointer();
     /** Pointer to allocated native memory. Prevents GC of memory until this object is collected. */
-    private jnr.ffi.Pointer java_dimension_indexes;
+    private jnr.ffi.Pointer javaDimensionIndexes;
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -117,14 +117,14 @@ public class FFISleeperRegion extends Struct {
                 .map(o -> new FFIRowKeyValue(runtime, o))
                 .toArray(FFIRowKeyValue[]::new);
         partitionRegion.mins.set(minArray);
-        partitionRegion.java_mins = minArray;
+        partitionRegion.javaMins = minArray;
 
         // Convert maximums to FFIElement objects
         FFIRowKeyValue[] maxArray = maxs.stream()
                 .map(o -> new FFIRowKeyValue(runtime, o))
                 .toArray(FFIRowKeyValue[]::new);
         partitionRegion.maxs.set(maxArray);
-        partitionRegion.java_maxs = maxArray;
+        partitionRegion.javaMaxs = maxArray;
 
         jnr.ffi.Pointer nativeMinsInclusive = runtime.getMemoryManager().allocateDirect(allLength);
         for (int i = 0; i < minsInclusive.size(); i++) {
@@ -132,7 +132,7 @@ public class FFISleeperRegion extends Struct {
             nativeMinsInclusive.putByte(i, inclusive ? (byte) 1 : (byte) 0);
         }
         partitionRegion.mins_inclusive.set(nativeMinsInclusive);
-        partitionRegion.java_mins_inclusive = nativeMinsInclusive;
+        partitionRegion.javaMinsInclusive = nativeMinsInclusive;
 
         jnr.ffi.Pointer nativeMaxsInclusive = runtime.getMemoryManager().allocateDirect(allLength);
         for (int i = 0; i < maxsInclusive.size(); i++) {
@@ -140,7 +140,7 @@ public class FFISleeperRegion extends Struct {
             nativeMaxsInclusive.putByte(i, inclusive ? (byte) 1 : (byte) 0);
         }
         partitionRegion.maxs_inclusive.set(nativeMaxsInclusive);
-        partitionRegion.java_maxs_inclusive = nativeMaxsInclusive;
+        partitionRegion.javaMaxsInclusive = nativeMaxsInclusive;
 
         int sizetBytes = runtime.findType(TypeAlias.size_t).size();
         jnr.ffi.Pointer nativeDimensionIndexes = runtime.getMemoryManager().allocate(
@@ -150,7 +150,7 @@ public class FFISleeperRegion extends Struct {
             writeCSize_t(sizetBytes, nativeDimensionIndexes, i, dimensionIndex);
         }
         partitionRegion.dimension_indexes.set(nativeDimensionIndexes);
-        partitionRegion.java_dimension_indexes = nativeDimensionIndexes;
+        partitionRegion.javaDimensionIndexes = nativeDimensionIndexes;
 
         return partitionRegion;
     }
@@ -215,12 +215,12 @@ public class FFISleeperRegion extends Struct {
         List<Range> ranges = new ArrayList<>(allLength);
         int sizetBytes = runtime.findType(TypeAlias.size_t).size();
         for (int i = 0; i < allLength; i++) {
-            int dimensionIndex = readCSize_t(sizetBytes, java_dimension_indexes, i);
+            int dimensionIndex = readCSize_t(sizetBytes, javaDimensionIndexes, i);
             Field field = rowKeys.get(dimensionIndex);
-            Object min = java_mins[i].get();
-            boolean minInclusive = java_mins_inclusive.getByte(i) != 0;
-            boolean maxInclusive = java_maxs_inclusive.getByte(i) != 0;
-            Object max = java_maxs[i].get();
+            Object min = javaMins[i].get();
+            boolean minInclusive = javaMinsInclusive.getByte(i) != 0;
+            boolean maxInclusive = javaMaxsInclusive.getByte(i) != 0;
+            Object max = javaMaxs[i].get();
             ranges.add(rangeFactory.createRange(field, min, minInclusive, max, maxInclusive));
         }
         return new Region(ranges);

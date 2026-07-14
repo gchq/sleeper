@@ -137,8 +137,8 @@ Sleeper.
 
 ### Testing
 
-See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
-testing tools used in the project.
+See the [test strategy](development/test-strategy.md) and [test design](development/test-design.md) for how and when to
+write tests, as well as information on the testing tools used in the project.
 
 ### IDE setup
 

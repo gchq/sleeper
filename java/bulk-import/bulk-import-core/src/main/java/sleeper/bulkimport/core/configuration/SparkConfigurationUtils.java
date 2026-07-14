@@ -28,7 +28,9 @@ import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SP
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
@@ -312,6 +314,7 @@ public class SparkConfigurationUtils {
 
     private static Map<String, String> getBaseSparkConfiguration(InstanceProperties instanceProperties) {
         Map<String, String> sparkConf = new TreeMap<>();
+
         // The following value is not mentioned in the blog linked at the top of this class, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
@@ -322,6 +325,12 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.speculation.quantile", instanceProperties.get(BULK_IMPORT_SPARK_SPECULATION_QUANTILE));
 
         // spark.hadoop properties (not referenced in the blog linked at the top of this class)
+        // Basic Hadoop configuration setting. Mirroring those set within HadoopConfigurationProvider to ensure
+        // consistency across the application.
+        sparkConf.put("spark.hadoop.fs.s3a.endpoint.region", instanceProperties.get(REGION));
+        sparkConf.put("spark.hadoop.fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
+        sparkConf.put("spark.hadoop.fs.s3a.bucket.probe", "0");
+        sparkConf.put("spark.hadoop.fs.s3a.fast.upload", "true");
         sparkConf.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
 
         // Disable file/directory existence probes on file creation
