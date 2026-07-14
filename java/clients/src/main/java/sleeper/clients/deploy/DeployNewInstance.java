@@ -33,7 +33,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -48,6 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -172,15 +172,17 @@ public class DeployNewInstance {
                 .build());
 
         if (!ignoreTableFiles) {
-            InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+                InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+                TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
 
-            for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
-                LOGGER.info("Adding table " + tableProperties.getStatus());
-                LOGGER.info("Table name: " + tableProperties.get(TableProperty.TABLE_NAME));
-                new AddTableClient(tableProperties,
-                        storeFactory.createTableStore(instanceProperties),
-                        storeFactory.createStateStore(instanceProperties))
-                        .run();
+                for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+                    LOGGER.info("Adding table " + tableProperties.getStatus());
+                    new AddTableClient(tableProperties, tablePropertiesStore, stateStoreProvider).run();
+
+                }
             }
         }
         LOGGER.info("Finished deployment of new instance");
