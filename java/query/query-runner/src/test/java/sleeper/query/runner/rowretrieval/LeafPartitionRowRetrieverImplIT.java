@@ -1069,7 +1069,7 @@ public class LeafPartitionRowRetrieverImplIT {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new LeafPartitionRowRetrieverImpl.Provider(
                 executorService, TableHadoopConfigurationProvider.fixed(new Configuration()));
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }
