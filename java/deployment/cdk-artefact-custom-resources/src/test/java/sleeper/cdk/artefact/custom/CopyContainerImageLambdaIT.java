@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefact;
+package sleeper.cdk.artefact.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent.CloudFormationCustomResourceEventBuilder;
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.cdk.artefact.testutil.FakeLambdaContext;
+import sleeper.cdk.artefact.custom.testutil.FakeLambdaContext;
 import sleeper.core.deploy.ContainerPlatform;
 
 import java.util.HashMap;

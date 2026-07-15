@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefact.testutil;
+package sleeper.cdk.artefact.custom.testutil;
 
-import com.amazonaws.services.lambda.runtime.Client;
-import com.amazonaws.services.lambda.runtime.ClientContext;
+import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 
-import java.util.Map;
-
-public class FakeClientContext implements ClientContext {
+public class FakeCognitoIdentity implements CognitoIdentity {
 
     @Override
-    public Client getClient() {
-        return new FakeClient();
+    public String getIdentityId() {
+        return "test-identity-id";
     }
 
     @Override
-    public Map<String, String> getCustom() {
-        return Map.of();
-    }
-
-    @Override
-    public Map<String, String> getEnvironment() {
-        return Map.of();
+    public String getIdentityPoolId() {
+        return "test-identity-pool-id";
     }
 
 }
