@@ -13,20 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefact.testutil;
+package sleeper.cdk.artefact.custom.testutil;
 
-import com.amazonaws.services.lambda.runtime.CognitoIdentity;
+import com.amazonaws.services.lambda.runtime.Client;
 
-public class FakeCognitoIdentity implements CognitoIdentity {
+public class FakeClient implements Client {
 
     @Override
-    public String getIdentityId() {
-        return "test-identity-id";
+    public String getInstallationId() {
+        return "test-installation-id";
     }
 
     @Override
-    public String getIdentityPoolId() {
-        return "test-identity-pool-id";
+    public String getAppTitle() {
+        return "test-app-title";
+    }
+
+    @Override
+    public String getAppVersionName() {
+        return "test-app-version";
+    }
+
+    @Override
+    public String getAppVersionCode() {
+        return "test-app-version-code";
+    }
+
+    @Override
+    public String getAppPackageName() {
+        return "test-app-package-name";
     }
 
 }

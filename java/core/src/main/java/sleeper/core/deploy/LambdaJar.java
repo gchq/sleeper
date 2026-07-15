@@ -92,7 +92,7 @@ public class LambdaJar {
             .artifactId("query-lambda")
             .alwaysDockerDeploy(true).add();
     public static final LambdaJar ARTEFACT_RESOURCES = builder().filenameFormat("cdk-artefact-custom-resources-%s.jar")
-            .imageName("custom-artefact-resources-lambda")
+            .imageName("artefact-custom-resources-lambda")
             .artifactId("cdk-artefact-custom-resources").add();
     public static final LambdaJar CUSTOM_RESOURCES = builder().filenameFormat("cdk-custom-resources-%s.jar")
             .imageName("custom-resources-lambda")

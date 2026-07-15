@@ -13,35 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.artefact.testutil;
+package sleeper.cdk.artefact.custom.testutil;
 
 import com.amazonaws.services.lambda.runtime.Client;
+import com.amazonaws.services.lambda.runtime.ClientContext;
 
-public class FakeClient implements Client {
+import java.util.Map;
+
+public class FakeClientContext implements ClientContext {
 
     @Override
-    public String getInstallationId() {
-        return "test-installation-id";
+    public Client getClient() {
+        return new FakeClient();
     }
 
     @Override
-    public String getAppTitle() {
-        return "test-app-title";
+    public Map<String, String> getCustom() {
+        return Map.of();
     }
 
     @Override
-    public String getAppVersionName() {
-        return "test-app-version";
-    }
-
-    @Override
-    public String getAppVersionCode() {
-        return "test-app-version-code";
-    }
-
-    @Override
-    public String getAppPackageName() {
-        return "test-app-package-name";
+    public Map<String, String> getEnvironment() {
+        return Map.of();
     }
 
 }
