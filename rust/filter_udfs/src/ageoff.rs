@@ -271,12 +271,18 @@ mod tests {
     }
 
     #[test]
-    fn try_from_should_work_on_large_timestamp() {
+    fn try_from_should_work_on_large_representable_timestamp() -> Result<(), DataFusionError> {
+        // This is large enough to exercise millisecond timestamps beyond 32-bit
+        // ranges while staying representable on Windows.
+        const LARGE_REPRESENTABLE_MILLIS: i64 = 10_000_000_000_000;
+
         // When
-        let result = AgeOff::try_from(i64::MAX);
+        let filter =
+            AgeOff::try_from_relative_to(LARGE_REPRESENTABLE_MILLIS, SystemTime::UNIX_EPOCH)?;
 
         // Then
-        assert!(result.is_ok());
+        assert_eq!(filter.threshold, -LARGE_REPRESENTABLE_MILLIS);
+        Ok(())
     }
 
     #[test]
