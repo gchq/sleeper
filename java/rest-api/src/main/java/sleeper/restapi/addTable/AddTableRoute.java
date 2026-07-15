@@ -176,7 +176,7 @@ public class AddTableRoute implements Route {
     public Map<String, Schema<?>> openApiSchemas() {
         Schema<?> propertiesMap = new MapSchema()
                 .additionalProperties(new StringSchema())
-                .description("Table TEST properties as a flat map of string keys to string values. Keys are Sleeper " +
+                .description("Table properties as a flat map of string keys to string values. Keys are Sleeper " +
                         "table property names (see the table properties documentation). The `sleeper.table.name` " +
                         "property is required and determines the name of the new table.")
                 .example(linkedMap("sleeper.table.name", "my-table"));

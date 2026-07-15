@@ -72,7 +72,7 @@ jobs:
             -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then
-            echo "Found files changed by properties template generation."
+            echo "Found files changed by documentation generation."
             echo "Please run scripts/dev/generateDocumentation.sh and commit."
             git status --verbose --verbose
             exit 1

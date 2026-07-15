@@ -107,8 +107,8 @@ That leaves the following stacks as optional:
   time
 * `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
 * `BulkExportStack` - to export a whole table as parquet files
-* `RestApiStack` - for a [REST API](../rest-api/README.md) to interact with the instance over HTTPS. Currently in develop;
-  only the add-table endpoint is available.
+* `RestApiStack` - for a [REST API](../rest-api/README.md) to interact with the instance over HTTPS. Currently only the
+  add table endpoint is available.
 
 The following stacks are optional and experimental:
 
