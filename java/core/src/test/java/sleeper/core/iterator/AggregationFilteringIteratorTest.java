@@ -52,11 +52,6 @@ public class AggregationFilteringIteratorTest {
                     .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("value", new LongType()))
                     .build());
-    TableProperties tablePropertiesNullableValueField = createTestTableProperties(instanceProperties,
-            Schema.builder()
-                    .rowKeyFields(new Field("key", new StringType()))
-                    .valueFields(new Field("value", new LongType(), true))
-                    .build());
 
     @Nested
     @DisplayName("Apply filters")
@@ -83,7 +78,11 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"ageoff", "AGEOFF", "ageOff"})
         public void shouldApplyAgeOffFilterFromPropertiesAndNullValuesShouldBeExcluded(String ageOff) throws Exception {
             // Given
-            tablePropertiesNullableValueField.set(FILTERING_CONFIG, ageOff + "(value,1000)");
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType(), true))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, ageOff + "(value,1000)");
 
             Row row1 = new Row(Map.of("key", "test", "value", 10L));
             Row row2 = new Row(Map.of("key", "test2", "value", 9999999999999999L));
@@ -93,7 +92,7 @@ public class AggregationFilteringIteratorTest {
             List<Row> rows = List.of(row1, row2, row3);
 
             // When
-            List<Row> filtered = applyIterator(rows, tablePropertiesNullableValueField);
+            List<Row> filtered = applyIterator(rows, tableProperties);
 
             // Then
             assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
