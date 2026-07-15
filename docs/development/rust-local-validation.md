@@ -3,6 +3,16 @@ Rust local validation
 
 The Rust workspace is under `rust/`.
 
+The workspace uses the Rust toolchain version declared in `rust/Cargo.toml`. Before running the validation commands,
+ensure your local toolchain matches the version declared there.
+
+You can verify the active toolchain with:
+
+```bash
+rustc --version
+cargo --version
+```
+
 The Rust workspace can be developed locally on Linux, WSL or macOS, or in the repository development container. These
 environments use the same Rust toolchain workflow.
 
