@@ -234,7 +234,7 @@
         <jnr.ffi.version>2.3.0</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
-        <jib.version>0.28.1</jib.version>
+        <jib.version>0.28.2</jib.version>
         <asm.version>9.10.1</asm.version>
         <!-- We match the version of Fabric8 used by Spark -->
         <fabric8.version>6.7.2</fabric8.version>
