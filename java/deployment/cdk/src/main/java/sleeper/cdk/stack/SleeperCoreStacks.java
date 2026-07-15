@@ -214,7 +214,7 @@ public class SleeperCoreStacks {
         configBucketStack.grantRead(grantee);
         configBucketStack.grantWrite(grantee);
         tableIndexStack.grantReadWrite(grantee);
-        stateStoreStacks.grantReadWriteAllFilesAndPartitions(grantee);
+        stateStoreStacks.grantReadWritePartitions(grantee);
     }
 
     public void grantReadTableDataBucket(IGrantable grantee) {
