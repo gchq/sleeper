@@ -43,7 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
+import static sleeper.core.deploy.LambdaJar.ARTEFACT_RESOURCES;
 import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
 import static sleeper.core.properties.model.SleeperInternalCdkApp.SYSTEM_TEST_INFRA;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
@@ -112,7 +112,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId()));
         syncJars.sync(SyncJarsRequest.builder()
                 .deploymentId(parameters.getArtefactsDeploymentId())
-                .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
+                .uploadFilter(jar -> LambdaJar.isFileJar(jar, ARTEFACT_RESOURCES))
                 .build());
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
