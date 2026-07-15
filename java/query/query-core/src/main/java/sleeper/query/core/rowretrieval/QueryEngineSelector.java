@@ -18,7 +18,7 @@ package sleeper.query.core.rowretrieval;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 
-import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
+import static sleeper.core.properties.table.TableProperty.QUERY_DATA_ENGINE;
 
 /**
  * Selects a query engine based on the data engine chosen for a table.
@@ -46,7 +46,7 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
 
     @Override
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
-        DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
+        DataEngine engine = tableProperties.getEnumValue(QUERY_DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION_EXPERIMENTAL:
             case DATAFUSION:
