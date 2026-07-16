@@ -21,7 +21,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.stream.Stream;
 public class AddTableRequest {
 
     private Map<String, String> properties;
-    private JsonElement schema;
+    private Schema schema;
     private List<JsonElement> splitPoints;
 
     private AddTableRequest(Builder builder) {
@@ -60,7 +59,7 @@ public class AddTableRequest {
         propertiesObject.putAll(properties);
 
         TableProperties tableProperties = new TableProperties(instanceProperties, propertiesObject);
-        tableProperties.setSchema(new SchemaSerDe().fromJson(schema.toString()));
+        tableProperties.setSchema(schema);
         return tableProperties;
     }
 
@@ -109,7 +108,7 @@ public class AddTableRequest {
     public static final class Builder {
 
         private Map<String, String> properties;
-        private JsonElement schema;
+        private Schema schema;
         private List<JsonElement> splitPoints;
 
         private Builder() {
@@ -132,7 +131,7 @@ public class AddTableRequest {
          * @param  schema the schema
          * @return        the builder for chaining
          */
-        public Builder schema(JsonElement schema) {
+        public Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }

@@ -18,6 +18,8 @@ package sleeper.restapi.addTable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import sleeper.core.schema.SchemaSerDe;
+
 /**
  * Serialises an AddTable request to and from JSON.
  */
@@ -27,7 +29,7 @@ public class AddTableRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public AddTableRequestSerDe() {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = SchemaSerDe.registerTypeAdapters(new GsonBuilder());
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
