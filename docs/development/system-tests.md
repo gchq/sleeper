@@ -99,7 +99,7 @@ When adding a new Slow or Expensive System test add either the Slow1-n or Expens
 ### Current Slow and Expensive test suites
 The current system tests running in each suite can be seen in [system-test-suites](system-test-suites.md).
 
-When adding new slow or expensive system tests ensure this documentation is updated.
+When adding new slow or expensive system tests, run `scripts/dev/generateDocumentation.sh` to ensure documentation is updated.
 
 ### Running tests
 
