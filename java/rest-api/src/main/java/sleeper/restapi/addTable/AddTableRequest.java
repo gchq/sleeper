@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -37,8 +38,8 @@ public class AddTableRequest {
     private List<JsonElement> splitPoints;
 
     private AddTableRequest(Builder builder) {
-        properties = builder.properties;
-        schema = builder.schema;
+        properties = Objects.requireNonNull(builder.properties, "Request must include 'properties'");
+        schema = Objects.requireNonNull(builder.schema, "Request must include 'schema'");
         splitPoints = builder.splitPoints;
     }
 
@@ -49,12 +50,6 @@ public class AddTableRequest {
      * @return                    the table properties (not yet validated)
      */
     public TableProperties toTableProperties(InstanceProperties instanceProperties) {
-        if (properties == null) {
-            throw new IllegalArgumentException("Request must include 'properties'");
-        }
-        if (schema == null) {
-            throw new IllegalArgumentException("Request must include 'schema'");
-        }
         Properties propertiesObject = new Properties();
         propertiesObject.putAll(properties);
 

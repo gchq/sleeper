@@ -65,11 +65,6 @@ public class AddTableRequestSerDe {
      * @return      the parsed request
      */
     public AddTableRequest fromJson(String json) {
-        AddTableRequest request = gson.fromJson(json, AddTableRequest.class);
-        if (request != null) {
-            return request.validate();
-        } else {
-            return null;
-        }
+        return gson.fromJson(json, AddTableRequest.class).validate();
     }
 }

@@ -120,24 +120,30 @@ class AddTableRequestSerDeTest {
 
         @Test
         void shouldRejectMissingProperties() {
-            AddTableRequest request = serDe.fromJson("""
+            String json = """
                     {"schema": {}}
-                    """);
+                    """;
 
-            assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
-                    .isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> jsonToTableProperties(json))
+                    .isInstanceOf(NullPointerException.class)
                     .hasMessage("Request must include 'properties'");
         }
 
         @Test
         void shouldRejectMissingSchema() {
-            AddTableRequest request = serDe.fromJson("""
+            String json = """
                     {"properties": {}}
-                    """);
+                    """;
 
-            assertThatThrownBy(() -> request.toTableProperties(instanceProperties))
-                    .isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> jsonToTableProperties(json))
+                    .isInstanceOf(NullPointerException.class)
                     .hasMessage("Request must include 'schema'");
+        }
+
+        @Test
+        void shouldRejectNull() {
+            assertThatThrownBy(() -> serDe.fromJson("null"))
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 
@@ -190,5 +196,9 @@ class AddTableRequestSerDeTest {
 
     private static String schemaJson(Schema schema) {
         return new SchemaSerDe().toJson(schema);
+    }
+
+    private TableProperties jsonToTableProperties(String json) {
+        return serDe.fromJson(json).toTableProperties(instanceProperties);
     }
 }
