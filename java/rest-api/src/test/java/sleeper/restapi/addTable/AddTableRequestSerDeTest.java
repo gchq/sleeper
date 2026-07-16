@@ -142,7 +142,7 @@ class AddTableRequestSerDeTest {
 
         @Test
         void shouldRejectNull() {
-            assertThatThrownBy(() -> serDe.fromJson("null"))
+            assertThatThrownBy(() -> jsonToTableProperties("null"))
                     .isInstanceOf(NullPointerException.class);
         }
     }
