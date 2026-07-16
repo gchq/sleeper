@@ -27,6 +27,9 @@ vulnerabilities:
   - id: CVE-2026-39821
   - id: CVE-2026-42502
   - id: CVE-2026-42506
+  - id: CVE-2026-46600
+  # golang.org/x/text
+  - id: CVE-2026-56852
   # github.com/containerd/containerd/v2
   - id: CVE-2026-53488
   - id: CVE-2026-53489
