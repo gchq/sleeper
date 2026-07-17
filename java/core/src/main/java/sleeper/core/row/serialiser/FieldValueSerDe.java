@@ -51,6 +51,7 @@ public class FieldValueSerDe {
      * @param  fieldValue the value
      * @return            the element
      */
+    @SuppressWarnings("unchecked")
     public static JsonElement toJsonElement(Field field, Object fieldValue) {
         if (fieldValue == null) {
             return JsonNull.INSTANCE;
