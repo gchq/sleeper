@@ -78,10 +78,6 @@ public final class StateStoreStacks {
         grantAccess(readWritePartitions(), grantee);
     }
 
-    public void grantReadFilesWritePartitions(IGrantable grantee) {
-        grantAccess(readFileReferencesReadWritePartitions(), grantee);
-    }
-
     public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
         transactionLog.grantAccess(grants, grantee);
     }
