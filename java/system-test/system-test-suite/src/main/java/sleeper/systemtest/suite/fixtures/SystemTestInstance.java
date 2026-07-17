@@ -103,7 +103,8 @@ public class SystemTestInstance {
             .disableSchedules(Set.of(COMPACTION_TASK_CREATION))
             .build();
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS_FARGATE = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksFargateConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS_AUTO = usingSystemTestDefaults("bi-eka", SystemTestInstance::createBulkImportOnEksAutoConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE_EKS = usingSystemTestDefaults("eksprf", SystemTestInstance::createBulkImportOnEksPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
@@ -230,10 +231,19 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static SleeperInstanceConfiguration createBulkImportOnEksConfiguration() {
+    private static SleeperInstanceConfiguration createBulkImportOnEksFargateConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
-        setSystemTestTags(properties, "bulkImportOnEks", "Sleeper Maven system test bulk import on EKS");
+        properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE.toString());
+        setSystemTestTags(properties, "bulkImportOnEksFargate", "Sleeper Maven system test bulk import on EKS w/Fargate");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static SleeperInstanceConfiguration createBulkImportOnEksAutoConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        setSystemTestTags(properties, "bulkImportOnEksAuto", "Sleeper Maven system test bulk import on EKS Auto Mode");
         return createInstanceConfiguration(properties);
     }
 

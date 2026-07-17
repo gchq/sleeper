@@ -36,45 +36,31 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_MIN_ROWS;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS_FARGATE;
 
 @SystemTest
 @Slow2
 // Slow because it needs to do two CDK deployments, one to add the EKS cluster and one to remove it.
 // Each CDK deployment takes around 20 minutes.
 // If we left the EKS cluster around, there would be extra costs as the control pane is persistent.
-public class EksBulkImportST {
+public class EksFargateBulkImportST {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, AfterTestReports reporting, SystemTestParameters parameters) {
-        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
-            return;
-        }
-        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_EKS);
+        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_EKS_FARGATE);
         sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 
     @AfterEach
     void tearDown(SleeperDsl sleeper, SystemTestParameters parameters) {
-        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
-            return;
-        }
         sleeper.disableOptionalStack(OptionalStack.EksBulkImportStack);
     }
 
     @Test
     void shouldPreSplitPartitionTreeAndBulkImport(SleeperDsl sleeper, SystemTestParameters parameters) {
-        // This is intended to ignore this test when running in an environment where log retention must not be set.
-        // This is because we're currently unable to prevent an EKS cluster deployment from creating log groups with log
-        // retention set. See the following issue:
-        // https://github.com/gchq/sleeper/issues/3451 (Logs retention policy is not applied to all EKS cluster resources)
-        if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
-            return;
-        }
         // Given
         sleeper.updateTableProperties(Map.of(
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
