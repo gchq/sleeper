@@ -75,7 +75,8 @@ public class BulkImportExecutor {
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
+            String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunId + ".json";
+            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, key);
             LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
             platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                     .instanceProperties(instanceProperties)
@@ -125,6 +126,6 @@ public class BulkImportExecutor {
     @FunctionalInterface
     public interface WriteJobToBucket {
 
-        void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID);
+        void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String objectKey);
     }
 }

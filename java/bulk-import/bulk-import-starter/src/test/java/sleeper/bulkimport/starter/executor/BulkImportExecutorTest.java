@@ -66,7 +66,7 @@ class BulkImportExecutorTest {
     private final String tableId = tableProperties.get(TABLE_ID);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<BulkImportJob> jobsInBucket = new ArrayList<>();
-    private final List<String> jobRunIdsOfJobsInBucket = new ArrayList<>();
+    private final List<String> keysInBucket = new ArrayList<>();
     private final List<BulkImportJob> jobsRun = new ArrayList<>();
     private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
 
@@ -179,7 +179,7 @@ class BulkImportExecutorTest {
 
         // Then
         assertThat(jobsInBucket).containsExactly(importJob);
-        assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
+        assertThat(keysInBucket).containsExactly("bulk_import/my-job-job-run-id.json");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(tracker.getAllJobs(tableId))
@@ -202,7 +202,7 @@ class BulkImportExecutorTest {
 
         // Then
         assertThat(jobsInBucket).containsExactly(importJob);
-        assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
+        assertThat(keysInBucket).containsExactly("bulk_import/my-job-job-run-id.json");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
         assertThat(tracker.getAllJobs(tableId))
@@ -337,9 +337,9 @@ class BulkImportExecutorTest {
 
     private class RecordWriteJobToBucket implements WriteJobToBucket {
         @Override
-        public void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID) {
+        public void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String objectKey) {
             jobsInBucket.add(bulkImportJob);
-            jobRunIdsOfJobsInBucket.add(jobRunID);
+            keysInBucket.add(objectKey);
         }
     }
 

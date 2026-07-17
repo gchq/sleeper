@@ -43,7 +43,7 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
     @Test
     void shouldLoadBulkImportJobFromS3() {
         // Given
-        String jobRunId = "load-run";
+        String objectKey = "folder/test.json";
         String jobId = "load-job-id";
 
         BulkImportJob bulkImportJob = BulkImportJob.builder()
@@ -53,10 +53,10 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
                 .build();
 
         BulkImportJobWriterToS3 bulkImportJobWriterToS3 = new BulkImportJobWriterToS3(instanceProperties, s3Client);
-        bulkImportJobWriterToS3.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
+        bulkImportJobWriterToS3.writeJobToBulkImportBucket(bulkImportJob, objectKey);
 
         // When / Then
-        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client))
+        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, objectKey, s3Client))
                 .isEqualTo(bulkImportJob);
         // And the file is deleted after it is loaded
         assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();

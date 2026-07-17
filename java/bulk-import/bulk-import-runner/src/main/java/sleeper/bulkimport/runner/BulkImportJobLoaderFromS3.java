@@ -36,16 +36,15 @@ public class BulkImportJobLoaderFromS3 {
 
     }
 
-    public static BulkImportJob loadJob(InstanceProperties instanceProperties, String jobId, String jobRunId, S3Client s3Client) {
+    public static BulkImportJob loadJob(InstanceProperties instanceProperties, String objectKey, S3Client s3Client) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
-        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
+        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", objectKey, bulkImportBucket);
         String jsonJob = s3Client.getObjectAsBytes(GetObjectRequest.builder()
                 .bucket(bulkImportBucket)
-                .key(jsonJobKey)
+                .key(objectKey)
                 .build()).asUtf8String();
         try {
             return new BulkImportJobSerDe().fromJson(jsonJob);
@@ -55,7 +54,7 @@ public class BulkImportJobLoaderFromS3 {
         } finally {
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bulkImportBucket)
-                    .key(jsonJobKey)
+                    .key(objectKey)
                     .build());
         }
     }

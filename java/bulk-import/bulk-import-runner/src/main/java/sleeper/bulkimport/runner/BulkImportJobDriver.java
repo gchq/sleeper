@@ -113,9 +113,9 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
      * {@link org.apache.spark.SparkException}, which extends {@link Exception} but is thrown unchecked at runtime
      * because Spark is implemented in Scala, which does not enforce checked exceptions.
      *
-     * @param job      the bulk import job to run
-     * @param jobRunId the ID of this run of the job
-     * @param taskId   the ID of the task running the job
+     * @param  job       the bulk import job to run
+     * @param  jobRunId  the ID of this run of the job
+     * @param  taskId    the ID of the task running the job
      * @throws Exception if the job fails for any reason, including Spark failures
      */
     public void run(BulkImportJob job, String jobRunId, String taskId) throws Exception {
@@ -261,7 +261,8 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 throw e;
             }
 
-            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client);
+            String key = "bulk_import/" + jobId + "-" + jobRunId + ".json";
+            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, key, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
