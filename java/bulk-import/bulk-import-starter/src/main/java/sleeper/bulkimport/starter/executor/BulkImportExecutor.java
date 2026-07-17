@@ -75,12 +75,12 @@ public class BulkImportExecutor {
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-            String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunId + ".json";
-            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, key);
+            String jobFileObjectKey = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunId + ".json";
+            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobFileObjectKey);
             LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
             platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                     .instanceProperties(instanceProperties)
-                    .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
+                    .bulkImportJob(bulkImportJob).jobRunId(jobRunId).jobFileObjectKey(jobFileObjectKey)
                     .build());
             LOGGER.info("Successfully submitted job");
         } catch (RuntimeException e) {

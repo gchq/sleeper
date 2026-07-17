@@ -236,7 +236,8 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
-        String bulkImportMode = args[4];
+        String jobFileObjectKey = args[4];
+        String bulkImportMode = args[5];
 
         LOGGER.info("Starting bulk import job driver");
         LOGGER.info("Config bucket: {}", configBucket);
@@ -261,8 +262,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 throw e;
             }
 
-            String key = "bulk_import/" + jobId + "-" + jobRunId + ".json";
-            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, key, s3Client);
+            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobFileObjectKey, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
