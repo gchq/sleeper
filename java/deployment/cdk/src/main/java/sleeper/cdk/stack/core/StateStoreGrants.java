@@ -31,10 +31,6 @@ public class StateStoreGrants {
         return builder().partitions(Access.READ).build();
     }
 
-    public static StateStoreGrants readFilesWritePartitions() {
-        return builder().partitions(Access.READ_WRITE).fileReferences(Access.READ).build();
-    }
-
     public static StateStoreGrants readWritePartitions() {
         return builder().partitions(Access.READ_WRITE).build();
     }
