@@ -36,8 +36,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Serialises and deserialises values of Sleeper fields to and from JSON.
+ */
 public class FieldValueSerDe {
 
+    private FieldValueSerDe() {
+    }
+
+    /**
+     * Converts a value to a JsonElement.
+     *
+     * @param  field      the field
+     * @param  fieldValue the value
+     * @return            the element
+     */
     public static JsonElement toJsonElement(Field field, Object fieldValue) {
         if (fieldValue == null) {
             return JsonNull.INSTANCE;
@@ -60,6 +73,13 @@ public class FieldValueSerDe {
         }
     }
 
+    /**
+     * Reads a JsonElement as a value of a field.
+     *
+     * @param  field   the field
+     * @param  element the element
+     * @return         the field value
+     */
     public static Object fromJsonElement(Field field, JsonElement element) {
         if (element == null || element.isJsonNull()) {
             return null;
