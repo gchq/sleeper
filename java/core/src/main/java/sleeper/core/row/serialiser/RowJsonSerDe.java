@@ -97,7 +97,7 @@ public class RowJsonSerDe {
             JsonObject json = new JsonObject();
             for (Field field : schema.getAllFields()) {
                 Object value = row.get(field.getName());
-                json.add(field.getName(), FieldValueSerDe.toJsonElement(field, value));
+                json.add(field.getName(), FieldValueJsonSerDe.toJsonElement(field, value));
             }
             return json;
         }
@@ -110,7 +110,7 @@ public class RowJsonSerDe {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             Row row = new Row();
             for (Field field : schema.getAllFields()) {
-                Object value = FieldValueSerDe.fromJsonElement(field, jsonObject.get(field.getName()));
+                Object value = FieldValueJsonSerDe.fromJsonElement(field, jsonObject.get(field.getName()));
                 if (value == null && !field.isNullable()) {
                     continue;
                 }

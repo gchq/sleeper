@@ -16,13 +16,14 @@
 package sleeper.restapi.addTable;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.key.Key;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.row.KeyComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.ByteArrayType;
@@ -30,7 +31,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Base64;
 import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -76,53 +76,6 @@ class AddTableRequestSerDeTest {
             assertThat(tableProperties).isEqualTo(expectedTableProperties);
             assertThat(request.toSplitPoints(tableProperties)).isEmpty();
         }
-
-        @Test
-        void shouldConvertIntSplitPoints() {
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
-
-            AddTableRequest request = serDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
-                    """);
-
-            assertThat(request.toSplitPoints(tableProperties)).containsExactly(1, 2, 3);
-        }
-
-        @Test
-        void shouldConvertLongSplitPoints() {
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new LongType()));
-
-            AddTableRequest request = serDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["10", "20"]}
-                    """);
-
-            assertThat(request.toSplitPoints(tableProperties)).containsExactly(10L, 20L);
-        }
-
-        @Test
-        void shouldConvertStringSplitPoints() {
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new StringType()));
-
-            AddTableRequest request = serDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["a", "m", "z"]}
-                    """);
-
-            assertThat(request.toSplitPoints(tableProperties)).containsExactly("a", "m", "z");
-        }
-
-        @Test
-        void shouldConvertByteArraySplitPoints() {
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new ByteArrayType()));
-            String encoded = Base64.getEncoder().encodeToString(new byte[]{1, 2, 3});
-
-            AddTableRequest request = serDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["%s"]}
-                    """.formatted(encoded));
-
-            assertThat(request.toSplitPoints(tableProperties))
-                    .singleElement()
-                    .isEqualTo(new byte[]{1, 2, 3});
-        }
     }
 
     @Nested
@@ -132,8 +85,8 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldRejectMissingProperties() {
             String json = """
-                    {"schema": {}}
-                    """;
+                    {"schema": %s}
+                    """.formatted(schemaJson(tableProperties.getSchema()));
 
             assertThatThrownBy(() -> jsonToTableProperties(json))
                     .isInstanceOf(NullPointerException.class)
@@ -162,7 +115,7 @@ class AddTableRequestSerDeTest {
     @DisplayName("Serialise add table requests")
     class SerialiseRequests {
         @Test
-        void shouldRoundTripRequestWithPropertiesAndSchema() {
+        void shouldSerialisePropertiesAndSchema() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
             AddTableRequest request = createAddTableRequest();
@@ -193,32 +146,66 @@ class AddTableRequestSerDeTest {
     @DisplayName("Serialise split points")
     class SerialiseSplitPoints {
 
-        @Disabled("TODO")
         @Test
         void shouldSerDeStringSplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
             splitPoints = List.of("g", "s");
-            AddTableRequest request = createAddTableRequest();
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(request));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
 
             // Then
-            assertThat(found.toSplitPoints(tableProperties)).isEqualTo(splitPoints);
+            assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
+        }
+
+        @Test
+        void shouldSerDeIntSplitPoints() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
+            splitPoints = List.of(1, 2, 3);
+
+            // When
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+
+            // Then
+            assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
+        }
+
+        @Test
+        void shouldSerDeLongSplitPoints() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
+            splitPoints = List.of(1L, 2L, 3L);
+
+            // When
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+
+            // Then
+            assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
+        }
+
+        @Test
+        void shouldSerDeByteArraySplitPoints() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new ByteArrayType()));
+            splitPoints = List.of(new byte[]{1, 2, 3}, new byte[]{4, 5, 6});
+
+            // When
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+
+            // Then
+            assertThat(Key.create(found.getSplitPoints()))
+                    .usingComparator(new KeyComparator(new ByteArrayType()))
+                    .isEqualTo(Key.create(splitPoints));
         }
     }
 
     private AddTableRequest createAddTableRequest() {
         return AddTableRequest.builder()
                 .tableProperties(tableProperties)
+                .splitPoints(splitPoints)
                 .build();
-    }
-
-    private TableProperties tablePropertiesWithSchema(Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        return tableProperties;
     }
 
     private static String schemaJson(Schema schema) {

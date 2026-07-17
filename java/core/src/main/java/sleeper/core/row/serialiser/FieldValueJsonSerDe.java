@@ -39,9 +39,9 @@ import java.util.Map;
 /**
  * Serialises and deserialises values of Sleeper fields to and from JSON.
  */
-public class FieldValueSerDe {
+public class FieldValueJsonSerDe {
 
-    private FieldValueSerDe() {
+    private FieldValueJsonSerDe() {
     }
 
     /**

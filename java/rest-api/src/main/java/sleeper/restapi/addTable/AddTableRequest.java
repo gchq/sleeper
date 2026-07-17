@@ -15,10 +15,7 @@
  */
 package sleeper.restapi.addTable;
 
-import com.google.gson.JsonElement;
-
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
@@ -26,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 /**
  * Decoded JSON body for POST request to /sleeper/tables.
@@ -35,7 +31,7 @@ public class AddTableRequest {
 
     private Map<String, String> properties;
     private Schema schema;
-    private List<JsonElement> splitPoints;
+    private List<Object> splitPoints;
 
     private AddTableRequest(Builder builder) {
         properties = Objects.requireNonNull(builder.properties, "Request must include 'properties'");
@@ -45,6 +41,18 @@ public class AddTableRequest {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
+    public List<Object> getSplitPoints() {
+        return splitPoints;
     }
 
     /**
@@ -72,16 +80,9 @@ public class AddTableRequest {
     public List<Object> toSplitPoints(TableProperties tableProperties) {
         if (splitPoints == null || splitPoints.isEmpty()) {
             return List.of();
+        } else {
+            return splitPoints;
         }
-        Schema schema = tableProperties.getSchema();
-        if (schema.getRowKeyTypes().size() != 1) {
-            throw new IllegalArgumentException(
-                    "Split points are only supported for tables with a single row key field");
-        }
-        Stream<String> joined = splitPoints.stream()
-                .map(JsonElement::getAsString);
-
-        return ReadSplitPoints.fromLines(joined, schema, false);
     }
 
     /**
@@ -104,7 +105,7 @@ public class AddTableRequest {
 
         private Map<String, String> properties;
         private Schema schema;
-        private List<JsonElement> splitPoints;
+        private List<Object> splitPoints;
 
         private Builder() {
         }
@@ -148,7 +149,7 @@ public class AddTableRequest {
          * @param  splitPoints list of split points
          * @return             the builder for chaining
          */
-        public Builder splitPoints(List<JsonElement> splitPoints) {
+        public Builder splitPoints(List<Object> splitPoints) {
             this.splitPoints = splitPoints;
             return this;
         }
