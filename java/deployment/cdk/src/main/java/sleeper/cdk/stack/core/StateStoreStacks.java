@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import static sleeper.cdk.stack.core.StateStoreGrants.readAllFilesAndPartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readFileReferencesAndPartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readFileReferencesReadWritePartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readFilesWritePartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readPartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readPartitionsReadWriteFileReferences;
 import static sleeper.cdk.stack.core.StateStoreGrants.readWriteAllFilesAndPartitions;
@@ -42,7 +43,8 @@ public final class StateStoreStacks {
         transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
         grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
         transactionLog.grantClearSnapshots(policiesStack.getClearInstancePolicyForGrants());
-        grantAccess(readWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
+        // Need to check whether any files are present before a user replaces a table's partitions
+        grantReadFilesWritePartitions(policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantReadFileReferencesAndPartitions(IGrantable grantee) {
@@ -75,6 +77,10 @@ public final class StateStoreStacks {
 
     public void grantReadWritePartitions(IGrantable grantee) {
         grantAccess(readWritePartitions(), grantee);
+    }
+
+    public void grantReadFilesWritePartitions(IGrantable grantee) {
+        grantAccess(readFilesWritePartitions(), grantee);
     }
 
     public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
