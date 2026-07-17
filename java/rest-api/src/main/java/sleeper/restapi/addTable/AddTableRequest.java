@@ -43,6 +43,10 @@ public class AddTableRequest {
         splitPoints = builder.splitPoints;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * Builds the tableProperties described by this request.
      *
@@ -93,10 +97,6 @@ public class AddTableRequest {
                 .build();
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     /**
      * Builder to create an AddTable request.
      */
@@ -107,6 +107,17 @@ public class AddTableRequest {
         private List<JsonElement> splitPoints;
 
         private Builder() {
+        }
+
+        /**
+         * Sets the table properties, including the schema.
+         *
+         * @param  tableProperties the properties
+         * @return                 the builder for chaining
+         */
+        public Builder tableProperties(TableProperties tableProperties) {
+            return properties(tableProperties.toMapExcludingSchema())
+                    .schema(tableProperties.getSchema());
         }
 
         /**

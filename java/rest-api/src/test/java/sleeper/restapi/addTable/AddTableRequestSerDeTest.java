@@ -15,6 +15,7 @@
  */
 package sleeper.restapi.addTable;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,17 +30,26 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Base64;
+import java.util.List;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class AddTableRequestSerDeTest {
 
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final TableProperties tableProperties = new TableProperties(instanceProperties);
     private final AddTableRequestSerDe serDe = new AddTableRequestSerDe();
+    private List<Object> splitPoints = List.of();
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.set(TABLE_NAME, "my-table");
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+    }
 
     @Nested
     @DisplayName("Deserialise add table requests")
@@ -153,39 +163,48 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldRoundTripRequestWithPropertiesAndSchema() {
             // Given
-            Schema schema = createSchemaWithKey("key", new StringType());
-            AddTableRequest request = serDe.fromJson("""
-                    {
-                      "properties": {"sleeper.table.name": "my-table"},
-                      "schema": %s
-                    }
-                    """.formatted(schemaJson(schema)));
+            tableProperties.set(TABLE_NAME, "my-table");
+            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+            AddTableRequest request = createAddTableRequest();
 
             // When
             AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
 
             // Then
-            TableProperties tableProperties = deserialisedRequest.toTableProperties(instanceProperties);
-            TableProperties expectedTableProperties = new TableProperties(instanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "my-table");
-            expectedTableProperties.setSchema(schema);
-            assertThat(tableProperties).isEqualTo(expectedTableProperties);
+            assertThat(deserialisedRequest.toTableProperties(instanceProperties)).isEqualTo(tableProperties);
         }
 
         @Test
-        void shouldRoundTripRequestWithSplitPoints() {
+        void shouldExcludeSchemaFromPropertiesField() {
             // Given
-            AddTableRequest request = serDe.fromJson("""
-                    {"properties": {}, "schema": {}, "splitPoints": ["1", "2", "3"]}
-                    """);
+            tableProperties.set(TABLE_NAME, "my-table");
+            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+            AddTableRequest request = createAddTableRequest();
 
             // When
-            AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
+            String json = serDe.toJson(request);
 
             // Then
-            TableProperties tableProperties = tablePropertiesWithSchema(createSchemaWithKey("key", new IntType()));
-            assertThat(deserialisedRequest.toSplitPoints(tableProperties)).containsExactly(1, 2, 3);
+            assertThatJson(json).inPath("$.properties")
+                    .isEqualTo("{\"sleeper.table.name\":\"my-table\"}");
         }
+    }
+
+    @Nested
+    @DisplayName("Serialise split points")
+    class SerialiseSplitPoints {
+
+        @Test // TODO
+        void shouldSerDeStringSplitPoints() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+        }
+    }
+
+    private AddTableRequest createAddTableRequest() {
+        return AddTableRequest.builder()
+                .tableProperties(tableProperties)
+                .build();
     }
 
     private TableProperties tablePropertiesWithSchema(Schema schema) {
