@@ -15,6 +15,8 @@
  */
 package sleeper.restapi.addTable;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,14 +55,43 @@ class AddTableRequestSerDeTest {
     }
 
     @Nested
-    @DisplayName("Deserialise add table requests")
-    class DeserialiseRequests {
+    @DisplayName("Serialise add table requests")
+    class SerialiseRequests {
         @Test
-        void shouldBuildTablePropertiesAndApplySchema() {
+        void shouldSerDePropertiesWithSchema() {
+            // When
+            AddTableRequest request = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+
+            // Then
+            assertThat(request.getProperties()).isEqualTo(tableProperties);
+            assertThat(request.getSplitPoints()).isEmpty();
+        }
+
+        @Test
+        void shouldExcludeSchemaFromPropertiesJsonField() {
+            // When
+            String json = serDe.toJson(createAddTableRequest());
+
+            // Then
+            assertThatJson(json).inPath("$.properties")
+                    .isEqualTo("{\"sleeper.table.name\":\"my-table\"}");
+        }
+
+        @Test
+        void shouldSerialiseInExpectedJsonFormat() {
+            Approvals.verify(
+                    serDe.toJson(createAddTableRequest(), true),
+                    new Options().forFile().withName("example", ".json"));
+        }
+
+        @Test
+        void shouldDeserialiseWithNoSplitPoints() {
             // Given
             String json = """
                     {
-                      "properties": {"sleeper.table.name": "my-table"},
+                      "properties": {
+                        "sleeper.table.name": "my-table"
+                      },
                       "schema": %s
                     }
                     """.formatted(schemaJson(tableProperties.getSchema()));
@@ -104,37 +135,6 @@ class AddTableRequestSerDeTest {
         void shouldRejectNull() {
             assertThatThrownBy(() -> jsonToTableProperties("null"))
                     .isInstanceOf(NullPointerException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Serialise add table requests")
-    class SerialiseRequests {
-        @Test
-        void shouldSerialisePropertiesAndSchema() {
-            // Given
-            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
-            AddTableRequest request = createAddTableRequest();
-
-            // When
-            AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
-
-            // Then
-            assertThat(deserialisedRequest.getProperties()).isEqualTo(tableProperties);
-        }
-
-        @Test
-        void shouldExcludeSchemaFromPropertiesField() {
-            // Given
-            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
-            AddTableRequest request = createAddTableRequest();
-
-            // When
-            String json = serDe.toJson(request);
-
-            // Then
-            assertThatJson(json).inPath("$.properties")
-                    .isEqualTo("{\"sleeper.table.name\":\"my-table\"}");
         }
     }
 
