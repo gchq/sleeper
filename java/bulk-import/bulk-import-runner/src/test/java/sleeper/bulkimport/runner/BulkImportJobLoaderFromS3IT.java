@@ -44,10 +44,9 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
     void shouldLoadBulkImportJobFromS3() {
         // Given
         String objectKey = "folder/test.json";
-        String jobId = "load-job-id";
 
         BulkImportJob bulkImportJob = BulkImportJob.builder()
-                .id(jobId)
+                .id("load-job-id")
                 .tableId("test-table-id")
                 .files(List.of("/load-job.parquet"))
                 .build();
