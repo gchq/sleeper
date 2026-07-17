@@ -56,6 +56,12 @@ public class SchemaSerDe {
                 .create();
     }
 
+    /**
+     * Registers type adapters to allow GSON to parse Schema objects.
+     *
+     * @param  builder the GSON builder
+     * @return         the updated builder
+     */
     public static GsonBuilder registerTypeAdapters(GsonBuilder builder) {
         return builder.registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
