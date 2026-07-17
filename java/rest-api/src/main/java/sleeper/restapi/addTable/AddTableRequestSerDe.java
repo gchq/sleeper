@@ -27,6 +27,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.serialiser.FieldValueJsonSerDe;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -34,7 +36,7 @@ import sleeper.core.schema.SchemaSerDe;
 
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 
 /**
  * Serialises a request to add a Sleeper table to and from JSON.
@@ -44,10 +46,10 @@ public class AddTableRequestSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public AddTableRequestSerDe() {
+    public AddTableRequestSerDe(InstanceProperties instanceProperties) {
         GsonBuilder builder = SchemaSerDe.registerTypeAdapters(new GsonBuilder())
                 .registerTypeAdapter(AddTableRequest.class, new AddTableRequestSerialiser())
-                .registerTypeAdapter(AddTableRequest.class, new AddTableRequestDeserialiser());
+                .registerTypeAdapter(AddTableRequest.class, new AddTableRequestDeserialiser(instanceProperties));
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
@@ -94,9 +96,10 @@ public class AddTableRequestSerDe {
         @Override
         public JsonElement serialize(AddTableRequest src, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject object = new JsonObject();
-            object.add("properties", context.serialize(src.getProperties()));
-            object.add("schema", context.serialize(src.getSchema()));
-            Field rowKey = src.getSchema().getRowKeyFields().get(0);
+            TableProperties properties = src.getProperties();
+            object.add("properties", context.serialize(properties.toMapExcludingSchema()));
+            object.add("schema", context.serialize(properties.getSchema()));
+            Field rowKey = properties.getSchema().getRowKeyFields().get(0);
             JsonArray splitPoints = new JsonArray();
             src.getSplitPoints().stream()
                     .map(value -> FieldValueJsonSerDe.toJsonElement(rowKey, value))
@@ -111,28 +114,45 @@ public class AddTableRequestSerDe {
      */
     private static class AddTableRequestDeserialiser implements JsonDeserializer<AddTableRequest> {
 
+        private final InstanceProperties instanceProperties;
+
+        public AddTableRequestDeserialiser(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+        }
+
         @Override
         public AddTableRequest deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
             JsonObject object = jsonElement.getAsJsonObject();
-            Map<String, String> properties = context.deserialize(object.get("properties"),
-                    new TypeToken<Map<String, String>>() {
-                    }.getType());
-            Schema schema = context.deserialize(object.get("schema"), Schema.class);
+            TableProperties tableProperties = readTableProperties(instanceProperties, object, context);
             return AddTableRequest.builder()
-                    .properties(properties).schema(schema)
-                    .splitPoints(readSplitPoints(schema, object, context))
+                    .properties(tableProperties)
+                    .splitPoints(readSplitPoints(tableProperties, object, context))
                     .build();
         }
     }
 
-    private static List<Object> readSplitPoints(Schema schema, JsonObject object, JsonDeserializationContext context) throws JsonParseException {
+    private static TableProperties readTableProperties(InstanceProperties instanceProperties, JsonObject object, JsonDeserializationContext context) {
+        Properties properties = context.deserialize(object.get("properties"), Properties.class);
+        Schema schema = context.deserialize(object.get("schema"), Schema.class);
+        if (properties == null) {
+            return null;
+        }
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    private static List<Object> readSplitPoints(TableProperties tableProperties, JsonObject object, JsonDeserializationContext context) throws JsonParseException {
+        if (tableProperties == null) {
+            return null;
+        }
         List<JsonElement> splitPointElements = context.deserialize(object.get("splitPoints"),
                 new TypeToken<List<JsonElement>>() {
                 }.getType());
         if (splitPointElements == null) {
             return null;
         }
-        Field rowKey = schema.getRowKeyFields().get(0);
+        Field rowKey = tableProperties.getSchema().getRowKeyFields().get(0);
         return splitPointElements.stream()
                 .map(element -> FieldValueJsonSerDe.fromJsonElement(rowKey, element))
                 .toList();

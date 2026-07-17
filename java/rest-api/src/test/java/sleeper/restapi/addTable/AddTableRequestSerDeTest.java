@@ -43,7 +43,7 @@ class AddTableRequestSerDeTest {
 
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final TableProperties tableProperties = new TableProperties(instanceProperties);
-    private final AddTableRequestSerDe serDe = new AddTableRequestSerDe();
+    private final AddTableRequestSerDe serDe = new AddTableRequestSerDe(instanceProperties);
     private List<Object> splitPoints = List.of();
 
     @BeforeEach
@@ -58,23 +58,19 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldBuildTablePropertiesAndApplySchema() {
             // Given
-            Schema schema = createSchemaWithKey("key", new StringType());
-            AddTableRequest request = serDe.fromJson("""
+            String json = """
                     {
                       "properties": {"sleeper.table.name": "my-table"},
                       "schema": %s
                     }
-                    """.formatted(schemaJson(schema)));
+                    """.formatted(schemaJson(tableProperties.getSchema()));
 
             // When
-            TableProperties tableProperties = request.toTableProperties(instanceProperties);
+            AddTableRequest request = serDe.fromJson(json);
 
             // Then
-            TableProperties expectedTableProperties = new TableProperties(instanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "my-table");
-            expectedTableProperties.setSchema(schema);
-            assertThat(tableProperties).isEqualTo(expectedTableProperties);
-            assertThat(request.toSplitPoints(tableProperties)).isEmpty();
+            assertThat(request.getProperties()).isEqualTo(tableProperties);
+            assertThat(request.getSplitPoints()).isEmpty();
         }
     }
 
@@ -124,7 +120,7 @@ class AddTableRequestSerDeTest {
             AddTableRequest deserialisedRequest = serDe.fromJson(serDe.toJson(request));
 
             // Then
-            assertThat(deserialisedRequest.toTableProperties(instanceProperties)).isEqualTo(tableProperties);
+            assertThat(deserialisedRequest.getProperties()).isEqualTo(tableProperties);
         }
 
         @Test
@@ -215,7 +211,7 @@ class AddTableRequestSerDeTest {
 
     private AddTableRequest createAddTableRequest() {
         return AddTableRequest.builder()
-                .tableProperties(tableProperties)
+                .properties(tableProperties)
                 .splitPoints(splitPoints)
                 .build();
     }
@@ -225,6 +221,6 @@ class AddTableRequestSerDeTest {
     }
 
     private TableProperties jsonToTableProperties(String json) {
-        return serDe.fromJson(json).toTableProperties(instanceProperties);
+        return serDe.fromJson(json).getProperties();
     }
 }
