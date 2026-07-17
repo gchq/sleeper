@@ -156,7 +156,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         }
     }
 
-    static Region getS3RegionFromEndpoint(final String endpoint,
+    private static Region getS3RegionFromEndpoint(final String endpoint,
             final boolean endpointEndsWithCentral) {
         Pattern endpointPattern = Pattern.compile("^(?:.+\\.)?([a-z0-9-]+)\\.vpce\\.amazonaws\\.(?:com|com\\.cn)$");
 
