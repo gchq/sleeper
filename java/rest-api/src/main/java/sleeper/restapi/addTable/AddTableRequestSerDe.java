@@ -116,7 +116,7 @@ public class AddTableRequestSerDe {
 
         private final InstanceProperties instanceProperties;
 
-        public AddTableRequestDeserialiser(InstanceProperties instanceProperties) {
+        AddTableRequestDeserialiser(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
         }
 
