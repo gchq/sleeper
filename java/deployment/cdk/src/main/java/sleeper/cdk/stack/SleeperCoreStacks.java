@@ -210,7 +210,7 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void grandReadAndWriteTablesConfig(IGrantable grantee) {
+    public void grantReadAndWriteTablesConfig(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         configBucketStack.grantWrite(grantee);
         tableIndexStack.grantReadWrite(grantee);
