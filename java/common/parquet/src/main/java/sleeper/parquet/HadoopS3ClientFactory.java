@@ -78,7 +78,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
     }
 
     @SuppressWarnings("unchecked")
-    private <BuilderT extends S3BaseClientBuilder<BuilderT, ClientT>, ClientT> BuilderT configureClientBuilder(
+    private static <BuilderT extends S3BaseClientBuilder<BuilderT, ClientT>, ClientT> BuilderT configureClientBuilder(
             BuilderT builder, S3ClientCreationParameters parameters, Configuration conf, String bucket) throws IOException {
 
         configureEndpointAndRegion(builder, parameters, conf);
@@ -102,7 +102,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         return (BuilderT) s3BaseClientBuilder;
     }
 
-    private <BuilderT extends S3BaseClientBuilder<BuilderT, ClientT>, ClientT> void configureEndpointAndRegion(
+    private static <BuilderT extends S3BaseClientBuilder<BuilderT, ClientT>, ClientT> void configureEndpointAndRegion(
             BuilderT builder, S3ClientCreationParameters parameters, Configuration conf) {
         final String endpointStr = parameters.getEndpoint();
         final URI endpoint = getS3Endpoint(endpointStr, conf);
@@ -170,7 +170,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         return Region.EU_WEST_2;
     }
 
-    private ClientOverrideConfiguration.Builder createClientOverrideConfiguration(
+    private static ClientOverrideConfiguration.Builder createClientOverrideConfiguration(
             S3ClientCreationParameters parameters, Configuration conf) throws IOException {
         final ClientOverrideConfiguration.Builder clientOverrideConfigBuilder = AWSClientConfig.createClientConfigBuilder(conf, AWS_SERVICE_IDENTIFIER_S3);
 
