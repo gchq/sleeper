@@ -199,6 +199,18 @@ class AddTableRequestSerDeTest {
                     .usingComparator(new KeyComparator(new ByteArrayType()))
                     .isEqualTo(Key.create(splitPoints));
         }
+
+        @Test
+        void shouldSerDeUnsetSplitPoints() {
+            // Given
+            splitPoints = null;
+
+            // When
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+
+            // Then
+            assertThat(found.getSplitPoints()).isEmpty();
+        }
     }
 
     private AddTableRequest createAddTableRequest() {

@@ -74,7 +74,7 @@ public class AddTableRoute implements Route {
         List<Object> splitPoints;
         try {
             tableProperties = request.toTableProperties(instanceProperties);
-            splitPoints = request.toSplitPoints(tableProperties);
+            splitPoints = request.getSplitPoints();
         } catch (RuntimeException e) {
             // SchemaSerDe / split-point parsing surface invalid input as runtime exceptions.
             LOGGER.warn("Add table request was invalid", e);

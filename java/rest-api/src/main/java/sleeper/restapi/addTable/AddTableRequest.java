@@ -52,7 +52,11 @@ public class AddTableRequest {
     }
 
     public List<Object> getSplitPoints() {
-        return splitPoints;
+        if (splitPoints == null) {
+            return List.of();
+        } else {
+            return splitPoints;
+        }
     }
 
     /**
@@ -68,21 +72,6 @@ public class AddTableRequest {
         TableProperties tableProperties = new TableProperties(instanceProperties, propertiesObject);
         tableProperties.setSchema(schema);
         return tableProperties;
-    }
-
-    /**
-     * Converts the JSON split points to the typed values expected by the partition tree, using the row key type from
-     * the table's schema.
-     *
-     * @param  tableProperties the table properties (must have schema set)
-     * @return                 the typed split points, or an empty list if none were supplied
-     */
-    public List<Object> toSplitPoints(TableProperties tableProperties) {
-        if (splitPoints == null || splitPoints.isEmpty()) {
-            return List.of();
-        } else {
-            return splitPoints;
-        }
     }
 
     /**
