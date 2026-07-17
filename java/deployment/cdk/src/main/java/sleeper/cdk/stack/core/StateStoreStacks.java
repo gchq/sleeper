@@ -36,14 +36,14 @@ public final class StateStoreStacks {
             TransactionLogStateStoreStack transactionLog,
             ManagedPoliciesStack policiesStack) {
         this.transactionLog = transactionLog;
-        grantReadPartitionsReadWriteFileReferences(policiesStack.getDirectIngestPolicyForGrants());
-        grantReadFileReferencesAndPartitions(policiesStack.getQueryPolicyForGrants());
+        grantAccess(readPartitionsReadWriteFileReferences(), policiesStack.getDirectIngestPolicyForGrants());
+        grantAccess(readFileReferencesAndPartitions(), policiesStack.getQueryPolicyForGrants());
         grantAccess(readAllFilesAndPartitions(), policiesStack.getReportingPolicyForGrants());
         transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
-        grantReadWriteAllFilesAndPartitions(policiesStack.getClearInstancePolicyForGrants());
+        grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
         transactionLog.grantClearSnapshots(policiesStack.getClearInstancePolicyForGrants());
         // Need to check whether any files are present before a user replaces a table's partitions
-        grantReadFileReferencesReadWritePartitions(policiesStack.getEditTablesPolicyForGrants());
+        grantAccess(readFileReferencesReadWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantReadFileReferencesAndPartitions(IGrantable grantee) {
