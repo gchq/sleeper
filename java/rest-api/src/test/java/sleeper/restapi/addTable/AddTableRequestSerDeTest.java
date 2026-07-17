@@ -16,6 +16,7 @@
 package sleeper.restapi.addTable;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -163,7 +164,6 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldRoundTripRequestWithPropertiesAndSchema() {
             // Given
-            tableProperties.set(TABLE_NAME, "my-table");
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
             AddTableRequest request = createAddTableRequest();
 
@@ -177,7 +177,6 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldExcludeSchemaFromPropertiesField() {
             // Given
-            tableProperties.set(TABLE_NAME, "my-table");
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
             AddTableRequest request = createAddTableRequest();
 
@@ -194,10 +193,19 @@ class AddTableRequestSerDeTest {
     @DisplayName("Serialise split points")
     class SerialiseSplitPoints {
 
-        @Test // TODO
+        @Disabled("TODO")
+        @Test
         void shouldSerDeStringSplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+            splitPoints = List.of("g", "s");
+            AddTableRequest request = createAddTableRequest();
+
+            // When
+            AddTableRequest found = serDe.fromJson(serDe.toJson(request));
+
+            // Then
+            assertThat(found.toSplitPoints(tableProperties)).isEqualTo(splitPoints);
         }
     }
 

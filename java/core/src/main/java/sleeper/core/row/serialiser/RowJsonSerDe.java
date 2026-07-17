@@ -24,6 +24,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
@@ -130,38 +131,32 @@ public class RowJsonSerDe {
     }
 
     private static void addFieldToJsonObject(Field field, Object fieldValue, JsonObject json) {
-        if (field.getType() instanceof IntType) {
-            json.addProperty(field.getName(), (Integer) fieldValue);
+        json.add(field.getName(), toJsonElement(field, fieldValue));
+    }
+
+    public static JsonElement toJsonElement(Field field, Object fieldValue) {
+        if (fieldValue == null) {
+            return JsonNull.INSTANCE;
+        } else if (field.getType() instanceof IntType) {
+            return new JsonPrimitive((Integer) fieldValue);
         } else if (field.getType() instanceof LongType) {
-            json.addProperty(field.getName(), (Long) fieldValue);
+            return new JsonPrimitive((Long) fieldValue);
         } else if (field.getType() instanceof StringType) {
-            json.addProperty(field.getName(), (String) fieldValue);
+            return new JsonPrimitive((String) fieldValue);
         } else if (field.getType() instanceof ByteArrayType) {
             byte[] bytes = (byte[]) fieldValue;
-            if (null != bytes) {
-                String base64encodedBytes = Base64.getEncoder().encodeToString(bytes);
-                json.addProperty(field.getName(), base64encodedBytes);
-            } else {
-                json.addProperty(field.getName(), (String) null);
-            }
+            String base64encodedBytes = Base64.getEncoder().encodeToString(bytes);
+            return new JsonPrimitive(base64encodedBytes);
         } else if (field.getType() instanceof ListType) {
-            if (fieldValue == null) {
-                json.add(field.getName(), JsonNull.INSTANCE);
-            } else {
-                addListToJsonObject(field, (List<Object>) fieldValue, json);
-            }
+            return listToJsonElement(field, (List<Object>) fieldValue);
         } else if (field.getType() instanceof MapType) {
-            if (fieldValue == null) {
-                json.add(field.getName(), JsonNull.INSTANCE);
-            } else {
-                addMapToJsonObject(field, (Map<Object, Object>) fieldValue, json);
-            }
+            return mapToJsonElement(field, (Map<Object, Object>) fieldValue);
         } else {
             throw new IllegalArgumentException("Unknown type " + field.getType());
         }
     }
 
-    private static void addListToJsonObject(Field field, List<Object> fieldValue, JsonObject json) {
+    private static JsonElement listToJsonElement(Field field, List<Object> fieldValue) {
         PrimitiveType elementType = ((ListType) field.getType()).getElementType();
         JsonArray array = new JsonArray();
         if (elementType instanceof IntType) {
@@ -187,10 +182,10 @@ public class RowJsonSerDe {
         } else {
             throw new IllegalArgumentException("Unknown type " + field.getType());
         }
-        json.add(field.getName(), array);
+        return array;
     }
 
-    private static void addMapToJsonObject(Field field, Map<Object, Object> fieldValue, JsonObject json) {
+    private static JsonElement mapToJsonElement(Field field, Map<Object, Object> fieldValue) {
         PrimitiveType keyType = ((MapType) field.getType()).getKeyType();
         PrimitiveType valueType = ((MapType) field.getType()).getValueType();
 
@@ -213,7 +208,7 @@ public class RowJsonSerDe {
                 throw new IllegalArgumentException("Unknown type " + field.getType());
             }
         }
-        json.add(field.getName(), map);
+        return map;
     }
 
     private static void getFieldFromJsonObject(Field field, JsonObject json, Row row) {

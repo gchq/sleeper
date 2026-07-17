@@ -17,8 +17,19 @@ package sleeper.restapi.addTable;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 
+import sleeper.core.properties.local.ReadSplitPoints;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Serialises an AddTable request to and from JSON.
@@ -66,5 +77,27 @@ public class AddTableRequestSerDe {
      */
     public AddTableRequest fromJson(String json) {
         return gson.fromJson(json, AddTableRequest.class).validate();
+    }
+
+    /**
+     * A GSON plugin to deserialise a field. Treats a missing "nullable" property as false.
+     */
+    private static class AddTableRequestDeserialiser implements JsonDeserializer<AddTableRequest> {
+
+        @Override
+        public AddTableRequest deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
+            JsonObject object = jsonElement.getAsJsonObject();
+            Map<String, String> properties = context.deserialize(object.get("properties"),
+                    new TypeToken<Map<String, String>>() {
+                    }.getType());
+            Schema schema = context.deserialize(object.get("schema"), Schema.class);
+            List<JsonElement> splitPointElements = context.deserialize(object.get("splitPoints"),
+                    new TypeToken<List<JsonElement>>() {
+                    }.getType());
+            List<Object> splitPoints = ReadSplitPoints.fromLines(
+                    splitPointElements.stream().map(JsonElement::getAsString),
+                    schema, false);
+            return AddTableRequest.builder().properties(properties).schema(schema).splitPoints(splitPointElements).build();
+        }
     }
 }
