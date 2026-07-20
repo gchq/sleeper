@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.util.FileReader;
+import sleeper.clients.util.InstancePropertiesLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesUtils;
@@ -132,7 +133,7 @@ public class AddTableClient {
         }
     }
 
-    public static TableProperties createTablePropertiesWithLoaders(Arguments args, FileReader.InstancePropertiesLoader instance, FileReader files) {
+    public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
         tableProperties.setSchema(new SchemaSerDe().fromJson(FileReader.readFile(files, args.resolveSchemaFile())));
         return tableProperties;

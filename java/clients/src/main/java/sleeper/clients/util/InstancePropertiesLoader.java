@@ -15,18 +15,8 @@
  */
 package sleeper.clients.util;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
+import sleeper.core.properties.instance.InstanceProperties;
 
-public interface FileReader {
-    String readStringChecked(Path path) throws IOException;
-
-    static String readFile(FileReader reader, Path path) {
-        try {
-            return reader.readStringChecked(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+public interface InstancePropertiesLoader {
+    InstanceProperties load(String instanceId);
 }
