@@ -207,7 +207,9 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     /**
-     * Returns true since DataFusion query path supports native SQL.
+     * {@inheritDoc}
+     *
+     * @return true since DataFusion query path supports native SQL.
      */
     @Override
     public boolean supportsSqlFiltering() {

@@ -82,6 +82,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static java.util.Collections.reverseOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -253,7 +254,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
         /**
          * Tests that we can sucessfully execute tasks in parallel without segmentation faults when using
-         * the PerCallDataFusionRowRetrieverProvider. */
+         * the PerCallDataFusionRowRetrieverProvider.
+         */
         @Test
         void shouldExecuteManyQueriesRunningInParallel() throws Exception {
             // Given
@@ -1242,12 +1244,11 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             List<Row> results = execute(query);
 
             // Then
-            List<Row> expected = List.of(
+            assertThat(results).containsExactlyElementsOf(List.of(
                     new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
                     new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
                     new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
-                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)));
-            assertThat(results).containsExactlyElementsOf(expected);
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L))));
         }
 
         @Test
@@ -1262,11 +1263,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             .build())
                     .build();
 
-            // When
-            List<Row> results = execute(query);
-
-            // Then
-            assertThat(results).hasSize(5);
+            // When / Then
+            assertThat(execute(query)).hasSize(5);
         }
 
         @Test
@@ -1286,7 +1284,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
             // Then
             List<Row> expected = IntStream.rangeClosed(1, 10).boxed()
-                    .sorted(java.util.Collections.reverseOrder())
+                    .sorted(reverseOrder())
                     .map(i -> new Row(Map.of("key", (long) i, "value1", (long) i * 10, "value2", (long) i * 100)))
                     .toList();
             assertThat(results).containsExactlyElementsOf(expected);
@@ -1308,13 +1306,11 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             List<Row> results = execute(query);
 
             // Then
-            List<Row> expected = List.of(
+            assertThat(results).containsExactlyElementsOf(List.of(
                     new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)),
                     new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)),
-                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L)));
-            assertThat(results).containsExactlyElementsOf(expected);
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L))));
         }
-
 
         @Test
         void shouldCombineSqlWhereAndPartitionRange() throws Exception {

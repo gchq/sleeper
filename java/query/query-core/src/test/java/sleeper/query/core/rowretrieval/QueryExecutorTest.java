@@ -70,7 +70,8 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
                             .build())
                     .build()))
                     .cause()
-                    .isInstanceOf(QueryException.class).hasMessage("Query contains SQL query filter which is not supported by data engine: JAVA");
+                    .isInstanceOf(QueryException.class)
+                    .hasMessage("Query contains SQL query filter which is not supported by data engine: JAVA");
         }
     }
 
