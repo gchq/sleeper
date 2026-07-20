@@ -22,6 +22,7 @@ import org.apache.hadoop.fs.s3a.S3ClientFactory;
 import org.apache.hadoop.fs.s3a.impl.AWSClientConfig;
 import org.apache.hadoop.fs.s3a.statistics.impl.AwsStatisticsCollector;
 import software.amazon.awssdk.awscore.util.AwsHostNameUtils;
+import software.amazon.awssdk.core.checksums.ResponseChecksumValidation;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
@@ -44,17 +45,25 @@ import java.util.regex.Pattern;
 import static org.apache.hadoop.fs.s3a.Constants.AWS_SERVICE_IDENTIFIER_S3;
 import static org.apache.hadoop.fs.s3a.Constants.CENTRAL_ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.DEFAULT_SECURE_CONNECTIONS;
+import static org.apache.hadoop.fs.s3a.Constants.FIPS_ENDPOINT;
 import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_CLASS_NAME;
 import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_ENABLED;
 import static org.apache.hadoop.fs.s3a.Constants.HTTP_SIGNER_ENABLED_DEFAULT;
 import static org.apache.hadoop.fs.s3a.Constants.SECURE_CONNECTIONS;
 import static org.apache.hadoop.fs.s3a.auth.SignerFactory.createHttpSigner;
+import static org.apache.hadoop.fs.s3a.impl.AWSHeaders.REQUESTER_PAYS_HEADER;
 import static org.apache.hadoop.fs.s3a.impl.InternalConstants.AUTH_SCHEME_AWS_SIGV_4;
+import static org.apache.hadoop.util.Preconditions.checkArgument;
 
 /**
  * Custom implementation of S3ClientFactory, as AWS SDK has moved beyond the use of ApacheHttpClient.
  */
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
+
+    public static final String ERROR_ENDPOINT_WITH_FIPS = "Non central endpoint cannot be set when " + FIPS_ENDPOINT + " is true";
+
+    private static final String REQUESTER_PAYS_HEADER_VALUE = "requester";
+
     private static Region defaultRegion = Region.US_EAST_2;
 
     public HadoopS3ClientFactory() {
@@ -104,6 +113,12 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
 
         configureEndpointAndRegion(builder, parameters, conf);
 
+        final ResponseChecksumValidation checksumValidation;
+        checksumValidation = parameters.isChecksumValidationEnabled()
+                ? ResponseChecksumValidation.WHEN_SUPPORTED
+                : ResponseChecksumValidation.WHEN_REQUIRED;
+        builder.responseChecksumValidation(checksumValidation);
+
         S3Configuration serviceConfiguration = S3Configuration.builder()
                 .pathStyleAccessEnabled(parameters.isPathStyleAccess())
                 .build();
@@ -135,8 +150,12 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
             region = Region.of(configuredRegion);
         }
 
+        builder.fipsEnabled(parameters.isFipsEnabled());
+
         if (endpoint != null) {
             boolean endpointEndsWithCentral = endpointStr.endsWith(CENTRAL_ENDPOINT);
+            checkArgument(!parameters.isFipsEnabled() || endpointEndsWithCentral, "%s : %s",
+                    ERROR_ENDPOINT_WITH_FIPS, endpoint);
             if (region == null) {
                 region = getS3RegionFromEndpoint(endpointStr,
                         endpointEndsWithCentral);
@@ -196,6 +215,10 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         final ClientOverrideConfiguration.Builder clientOverrideConfigBuilder = AWSClientConfig.createClientConfigBuilder(conf, AWS_SERVICE_IDENTIFIER_S3);
 
         parameters.getHeaders().forEach((h, v) -> clientOverrideConfigBuilder.putHeader(h, v));
+
+        if (parameters.isRequesterPays()) {
+            clientOverrideConfigBuilder.putHeader(REQUESTER_PAYS_HEADER, REQUESTER_PAYS_HEADER_VALUE);
+        }
 
         if (!StringUtils.isEmpty(parameters.getUserAgentSuffix())) {
             clientOverrideConfigBuilder.putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX,
