@@ -144,7 +144,6 @@ public class DeployNewInstance {
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
         Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, a -> readArguments(a));
 
-        Path scriptsDirectory = Path.of(rawArgs[0]);
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
@@ -156,7 +155,7 @@ public class DeployNewInstance {
             SleeperInstanceConfiguration config = loadAndUpdateConfiguration(args);
 
             DeployNewInstance.builder()
-                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
+                    .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, partitionMetadata, s3Client, ecrClient))
                     .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
                     .deployInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
