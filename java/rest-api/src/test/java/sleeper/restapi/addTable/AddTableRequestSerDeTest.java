@@ -46,7 +46,6 @@ class AddTableRequestSerDeTest {
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final TableProperties tableProperties = new TableProperties(instanceProperties);
     private final AddTableRequestSerDe serDe = new AddTableRequestSerDe(instanceProperties);
-    private List<Object> splitPoints = List.of();
 
     @BeforeEach
     void setUp() {
@@ -146,10 +145,10 @@ class AddTableRequestSerDeTest {
         void shouldSerDeStringSplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
-            splitPoints = List.of("g", "s");
+            List<Object> splitPoints = List.of("g", "s");
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequestWithSplitPoints(splitPoints)));
 
             // Then
             assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
@@ -159,10 +158,10 @@ class AddTableRequestSerDeTest {
         void shouldSerDeIntSplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new IntType()));
-            splitPoints = List.of(1, 2, 3);
+            List<Object> splitPoints = List.of(1, 2, 3);
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequestWithSplitPoints(splitPoints)));
 
             // Then
             assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
@@ -172,10 +171,10 @@ class AddTableRequestSerDeTest {
         void shouldSerDeLongSplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
-            splitPoints = List.of(1L, 2L, 3L);
+            List<Object> splitPoints = List.of(1L, 2L, 3L);
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequestWithSplitPoints(splitPoints)));
 
             // Then
             assertThat(found.getSplitPoints()).isEqualTo(splitPoints);
@@ -185,10 +184,10 @@ class AddTableRequestSerDeTest {
         void shouldSerDeByteArraySplitPoints() {
             // Given
             tableProperties.setSchema(createSchemaWithKey("key", new ByteArrayType()));
-            splitPoints = List.of(new byte[]{1, 2, 3}, new byte[]{4, 5, 6});
+            List<Object> splitPoints = List.of(new byte[]{1, 2, 3}, new byte[]{4, 5, 6});
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequestWithSplitPoints(splitPoints)));
 
             // Then
             assertThat(Key.create(found.getSplitPoints()))
@@ -199,10 +198,10 @@ class AddTableRequestSerDeTest {
         @Test
         void shouldSerDeUnsetSplitPoints() {
             // Given
-            splitPoints = null;
+            AddTableRequest request = createAddTableRequestWithSplitPoints(null);
 
             // When
-            AddTableRequest found = serDe.fromJson(serDe.toJson(createAddTableRequest()));
+            AddTableRequest found = serDe.fromJson(serDe.toJson(request));
 
             // Then
             assertThat(found.getSplitPoints()).isEmpty();
@@ -210,6 +209,10 @@ class AddTableRequestSerDeTest {
     }
 
     private AddTableRequest createAddTableRequest() {
+        return createAddTableRequestWithSplitPoints(List.of());
+    }
+
+    private AddTableRequest createAddTableRequestWithSplitPoints(List<Object> splitPoints) {
         return AddTableRequest.builder()
                 .properties(tableProperties)
                 .splitPoints(splitPoints)
