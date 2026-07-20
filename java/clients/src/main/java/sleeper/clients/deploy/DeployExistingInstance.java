@@ -119,9 +119,7 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
-        SleeperInstanceConfiguration deployConfig = SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build();
-
-        SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig);
+        SaveLocalProperties.createDirectoryAndSaveProperties(configDir, properties, tablePropertiesList.stream());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())

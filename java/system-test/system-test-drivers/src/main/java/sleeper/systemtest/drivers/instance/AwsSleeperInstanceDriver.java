@@ -92,7 +92,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
         Path configDir = parameters.getScriptsDirectory().resolve("example");
         try {
-            SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig);
+            SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig.getInstanceProperties(), deployConfig.getTableProperties().stream());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
