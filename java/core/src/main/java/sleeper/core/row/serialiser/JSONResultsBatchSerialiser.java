@@ -30,7 +30,6 @@ import sleeper.core.row.ResultsBatch;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +42,8 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
     private final Gson gsonPrettyPrinting;
 
     public JSONResultsBatchSerialiser() {
-        GsonBuilder gsonBuilder = new GsonBuilder()
+        GsonBuilder gsonBuilder = SchemaSerDe.registerTypeAdapters(new GsonBuilder())
                 .registerTypeAdapter(ResultsBatch.class, new ResultsBatchSerDe())
-                .registerTypeAdapter(Type.class, new SchemaSerDe.AbstractTypeJsonSerializer())
-                .registerTypeAdapter(Type.class, new SchemaSerDe.AbstractTypeJsonDeserializer())
                 .serializeNulls();
         this.gson = gsonBuilder
                 .create();
