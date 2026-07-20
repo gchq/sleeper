@@ -13241,6 +13241,11 @@
                   "ExpirationInDays": 30,
                   "Prefix": "logs/",
                   "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "applications/",
+                  "Status": "Enabled"
                 }
               ]
             }
