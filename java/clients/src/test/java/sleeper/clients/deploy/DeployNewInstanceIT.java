@@ -15,7 +15,6 @@
  */
 package sleeper.clients.deploy;
 
-import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,9 +40,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createTempDirectory;
@@ -89,13 +90,10 @@ public class DeployNewInstanceIT {
     @Nested
     class DeployNew {
 
-        protected static final RecursiveComparisonConfiguration IGNORE_ID = RecursiveComparisonConfiguration.builder()
-                .withIgnoredFields("instanceConfig.tableProperties").build();
-
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
             //When
-            deployNewInstanceByPropertiesFile("scriptsDir", "someInstance", "someVpc", "someSubnets", "--instance-properties",
+            deployNewInstanceByPropertiesFile("someInstance", "someVpc", "someSubnets", "--instance-properties",
                     instancePropertiesFile.toString());
 
             //Then
@@ -125,7 +123,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             //When
-            deployNewInstanceByConfigDir("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir",
+            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir",
                     configDir);
 
             //Then
@@ -154,7 +152,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
             //When
-            deployNewInstanceByConfigDir("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--ignoreTableFiles");
 
             //Then
@@ -178,7 +176,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
             //When
-            deployNewInstanceByConfigDir("scriptsDir", "someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--paused");
 
             //Then
@@ -223,13 +221,13 @@ public class DeployNewInstanceIT {
             // When/Then
             assertThatThrownBy(() -> deployNewInstanceByPropertiesFile())
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 4 positional arguments, found 0");
+                    .hasMessage("Expected 4 positional arguments, found 1");
         }
 
         @Test
         void shouldRejectWhenNeitherInstancePropertiesOrConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("scriptsDir", "my-instance", "my-vpc", "my-subnets"))
+            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
         }
@@ -237,7 +235,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("scriptsDir", "my-instance", "my-vpc", "my-subnets",
+            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("my-instance", "my-vpc", "my-subnets",
                     "--instance-properties", "someFile", "--config-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot use both --instance-properties and --config-dir");
@@ -260,32 +258,21 @@ public class DeployNewInstanceIT {
     }
 
     private void deployNewInstanceByPropertiesFile(String... args) throws Exception {
-        var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
-        var config = DeployNewInstance.loadAndUpdateConfiguration(arguments);
-        new DeployNewInstance(
-                request -> deployRequests.add(request),
-                new DeployNewInstance.StoreFactory() {
-                    public TablePropertiesStore createTableStore(InstanceProperties p) {
-                        return tablePropertiesStore;
-                    }
-
-                    public StateStoreProvider createStateStore(InstanceProperties p) {
-                        return stateStoreProvider;
-                    }
-
-                    public void reloadInstanceProperties(InstanceProperties p) {
-                    }
-                },
-                config, SleeperInternalCdkApp.STANDARD, instancePropertiesFile, null,
-                arguments.ignoreTableFiles(), arguments.deployPaused()).deploy();
+        deployNewInstance(true, args);
     }
 
     private void deployNewInstanceByConfigDir(String... args) throws Exception {
-        var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE, args));
+        deployNewInstance(false, args);
+    }
+
+    private void deployNewInstance(boolean isByPropFile, String... args) throws Exception {
+        var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
+                Stream.concat(Stream.of("scriptsDir"), Arrays.stream(args)).toArray(String[]::new)));
         var config = DeployNewInstance.loadAndUpdateConfiguration(arguments);
-        new DeployNewInstance(
-                request -> deployRequests.add(request),
-                new DeployNewInstance.StoreFactory() {
+
+        DeployNewInstance.Builder builder = DeployNewInstance.builder()
+                .deployInstance(request -> deployRequests.add(request))
+                .storeFactory(new DeployNewInstance.StoreFactory() {
                     public TablePropertiesStore createTableStore(InstanceProperties p) {
                         return tablePropertiesStore;
                     }
@@ -296,9 +283,19 @@ public class DeployNewInstanceIT {
 
                     public void reloadInstanceProperties(InstanceProperties p) {
                     }
-                },
-                config, SleeperInternalCdkApp.STANDARD, null, tempDir,
-                arguments.ignoreTableFiles(), arguments.deployPaused()).deploy();
+                })
+                .deployInstanceConfiguration(config)
+                .cdkApp(SleeperInternalCdkApp.STANDARD)
+                .ignoreTableFiles(arguments.ignoreTableFiles())
+                .deployPaused(arguments.deployPaused());
+
+        if (isByPropFile) {
+            builder.propertiesFile(instancePropertiesFile);
+        } else {
+            builder.configDir(tempDir);
+        }
+
+        builder.build().deploy();
     }
 
     private String tableId(String tableName) {

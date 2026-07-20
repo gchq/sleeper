@@ -98,9 +98,13 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         }
 
         try {
-            new DeployNewInstance(deployInstance,
-                    StoreFactory.withAwsClients(s3, dynamoDB, sts.getCallerIdentity().account()),
-                    deployConfig, SleeperInternalCdkApp.STANDARD, null, configDir, false, false).deploy();
+            DeployNewInstance.builder()
+                    .deployInstance(deployInstance)
+                    .storeFactory(StoreFactory.withAwsClients(s3, dynamoDB, sts.getCallerIdentity().account()))
+                    .deployInstanceConfiguration(deployConfig)
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .configDir(configDir)
+                    .build().deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

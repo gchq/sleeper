@@ -69,9 +69,15 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
-            new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    StoreFactory.withAwsClients(s3Client, dynamoClient, accountName),
-                    config, SleeperInternalCdkApp.STANDARD, null, configurationPath, false, deployPaused).deploy();
+
+            DeployNewInstance.builder()
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
+                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
+                    .deployInstanceConfiguration(config)
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .configDir(configurationPath)
+                    .deployPaused(deployPaused)
+                    .build().deploy();
         }
     }
 

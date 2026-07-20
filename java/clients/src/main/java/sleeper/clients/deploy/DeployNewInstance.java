@@ -47,6 +47,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -64,18 +65,19 @@ public class DeployNewInstance {
     private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
-    public DeployNewInstance(InstanceDeployer deployInstance,
-            StoreFactory storeFactory,
-            SleeperInstanceConfiguration deployInstanceConfiguration,
-            SleeperInternalCdkApp cdkApp, Path propertiesFile, Path configDir, boolean ignoreTableFiles, boolean deployPaused) {
-        this.deployInstance = deployInstance;
-        this.storeFactory = storeFactory;
-        this.deployInstanceConfiguration = deployInstanceConfiguration;
-        this.cdkApp = cdkApp;
-        this.propertiesFile = propertiesFile;
-        this.configDir = configDir;
-        this.ignoreTableFiles = ignoreTableFiles;
-        this.deployPaused = deployPaused;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public DeployNewInstance(Builder builder) {
+        this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
+        this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
+        this.deployInstanceConfiguration = Objects.requireNonNull(builder.deployInstanceConfiguration, "deployInstanceConfiguration must not be null");
+        this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
+        this.propertiesFile = builder.propertiesFile;
+        this.configDir = builder.configDir;
+        this.ignoreTableFiles = builder.ignoreTableFiles;
+        this.deployPaused = builder.deployPaused;
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
@@ -143,7 +145,6 @@ public class DeployNewInstance {
         Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, a -> readArguments(a));
 
         Path scriptsDirectory = Path.of(rawArgs[0]);
-        boolean deployPaused = args.deployPaused();
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
@@ -154,9 +155,16 @@ public class DeployNewInstance {
 
             SleeperInstanceConfiguration config = loadAndUpdateConfiguration(args);
 
-            new DeployNewInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient),
-                    StoreFactory.withAwsClients(s3Client, dynamoClient, accountName),
-                    config, SleeperInternalCdkApp.STANDARD, args.propertiesFile(), args.configDir(), args.ignoreTableFiles(), deployPaused).deploy();
+            DeployNewInstance.builder()
+                    .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
+                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
+                    .deployInstanceConfiguration(config)
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .propertiesFile(args.propertiesFile())
+                    .configDir(args.configDir())
+                    .ignoreTableFiles(args.ignoreTableFiles())
+                    .deployPaused(args.deployPaused())
+                    .build().deploy();
         }
     }
 
@@ -212,6 +220,65 @@ public class DeployNewInstance {
 
         public Path resolvePropertiesFile() {
             return propertiesFile != null ? propertiesFile : configDir.resolve("instance.properties");
+        }
+    }
+
+    public static final class Builder {
+        private InstanceDeployer deployInstance;
+        private StoreFactory storeFactory;
+        private SleeperInstanceConfiguration deployInstanceConfiguration;
+        private SleeperInternalCdkApp cdkApp;
+        private Path propertiesFile;
+        private Path configDir;
+        private boolean ignoreTableFiles = false;
+        private boolean deployPaused = false;
+
+        private Builder() {
+
+        }
+
+        public Builder deployInstance(InstanceDeployer deployInstance) {
+            this.deployInstance = deployInstance;
+            return this;
+        }
+
+        public Builder storeFactory(StoreFactory storeFactory) {
+            this.storeFactory = storeFactory;
+            return this;
+        }
+
+        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
+            this.deployInstanceConfiguration = deployInstanceConfiguration;
+            return this;
+        }
+
+        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
+            this.cdkApp = cdkApp;
+            return this;
+        }
+
+        public Builder propertiesFile(Path propertiesFile) {
+            this.propertiesFile = propertiesFile;
+            return this;
+        }
+
+        public Builder configDir(Path configDir) {
+            this.configDir = configDir;
+            return this;
+        }
+
+        public Builder ignoreTableFiles(boolean ignoreTableFiles) {
+            this.ignoreTableFiles = ignoreTableFiles;
+            return this;
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
+            return this;
+        }
+
+        public DeployNewInstance build() {
+            return new DeployNewInstance(this);
         }
     }
 
