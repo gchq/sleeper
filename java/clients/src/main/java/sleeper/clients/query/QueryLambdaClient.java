@@ -107,7 +107,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void runQueries(TableProperties tableProperties, String sqlQuery) throws InterruptedException {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         resultsPublisherConfig = new HashMap<>();
         boolean chosen = false;
 
@@ -135,7 +135,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             };
         }
 
-        super.runQueries(tableProperties, sqlQuery);
+        super.runQueries(tableProperties);
     }
 
     public void submitQuery(Query query) {

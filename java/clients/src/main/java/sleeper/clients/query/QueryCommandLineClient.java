@@ -74,10 +74,9 @@ public abstract class QueryCommandLineClient {
 
     public void run() throws InterruptedException {
         TableProperties tableProperties = getTableProperties();
-        String sqlQuery = promptSQLQuery();
         init(tableProperties);
 
-        runQueries(tableProperties, sqlQuery);
+        runQueries(tableProperties);
     }
 
     protected abstract void init(TableProperties tableProperties);
@@ -92,7 +91,7 @@ public abstract class QueryCommandLineClient {
         return tablePropertiesProvider.getByName(tableName);
     }
 
-    protected void runQueries(TableProperties tableProperties, String sqlQuery) throws InterruptedException {
+    protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         String tableName = tableProperties.get(TABLE_NAME);
         Schema schema = tableProperties.getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -104,9 +103,9 @@ public abstract class QueryCommandLineClient {
             }
             Query query;
             if ("e".equalsIgnoreCase(type)) {
-                query = constructExactQuery(tableName, schema, rangeFactory, sqlQuery);
+                query = constructExactQuery(tableName, schema, rangeFactory);
             } else if ("r".equalsIgnoreCase(type)) {
-                query = constructRangeQuery(tableName, schema, rangeFactory, sqlQuery);
+                query = constructRangeQuery(tableName, schema, rangeFactory);
             } else {
                 continue;
             }
@@ -115,7 +114,7 @@ public abstract class QueryCommandLineClient {
         }
     }
 
-    private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory, String sqlQuery) {
+    private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory) {
         boolean minInclusive = promptBoolean("Is the minimum inclusive?");
         boolean maxInclusive = promptBoolean("Is the maximum inclusive?");
         List<Range> ranges = new ArrayList<>();
@@ -134,6 +133,8 @@ public abstract class QueryCommandLineClient {
         }
 
         Region region = new Region(ranges);
+
+        String sqlQuery = promptSQLQuery();
 
         return Query.builder()
                 .tableName(tableName)
@@ -188,7 +189,7 @@ public abstract class QueryCommandLineClient {
         }
     }
 
-    protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory, String sqlQuery) {
+    protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
         int i = 0;
         List<Range> ranges = new ArrayList<>();
         for (Field field : schema.getRowKeyFields()) {
@@ -205,7 +206,7 @@ public abstract class QueryCommandLineClient {
             }
             if (null == key) {
                 out.println("Failed to get valid value, restarting creation of exact query");
-                return constructExactQuery(tableName, schema, rangeFactory, sqlQuery);
+                return constructExactQuery(tableName, schema, rangeFactory);
             } else {
                 Range range = rangeFactory.createExactRange(field, parse(key, (PrimitiveType) field.getType()));
                 ranges.add(range);
@@ -213,6 +214,9 @@ public abstract class QueryCommandLineClient {
             i++;
         }
         Region region = new Region(ranges);
+
+        String sqlQuery = promptSQLQuery();
+
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())

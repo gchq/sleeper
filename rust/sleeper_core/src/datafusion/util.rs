@@ -267,7 +267,7 @@ pub fn remove_coalesce_physical_stage(
 /// Applies a complete sort ordering to all [`SortPreservingMergeExec`] nodes in a physical plan.
 ///
 /// This function traverses the given physical plan and, for every `SortPreservingMergeExec` node found,
-/// updates it with the top-most sort ordering found in the plan, or the one provided if none can be found in the plan.
+/// updates it with the topmost sort ordering found in the plan, or the one provided if none can be found in the plan.
 /// All other nodes are left unchanged. This can be used to ensure that sort-preserving merge operations throughout the
 /// plan are executed with a consistent and comprehensive ordering, which is sometimes necessary when downstream
 /// consumers depend on a global ordering.

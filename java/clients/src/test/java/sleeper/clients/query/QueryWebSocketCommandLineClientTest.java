@@ -38,6 +38,7 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
 
@@ -70,10 +71,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -103,10 +103,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -142,10 +141,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_RANGE_QUERY +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow1) + "\n" +
@@ -176,10 +174,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -211,10 +208,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -241,10 +237,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -270,10 +265,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries: Failure message\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -299,10 +293,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\": \"test-query-id\",\"message\": \"unknown\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -328,10 +321,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -357,10 +349,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"message\":\"error\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -386,10 +377,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\":\"test-query-id\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -415,10 +405,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(out.toString())
                     .isEqualTo("Querying table test-table\n" +
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
-                            "Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".\n" +
-                            "Enter SQL statement (blank for none): \n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
                             "Query took 1 second to return 0 rows\n" +
