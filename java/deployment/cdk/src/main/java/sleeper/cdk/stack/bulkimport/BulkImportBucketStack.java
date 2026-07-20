@@ -57,6 +57,10 @@ public class BulkImportBucketStack extends NestedStack {
                         LifecycleRule.builder()
                                 .prefix("logs/")
                                 .expiration(Duration.days(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                                .build(),
+                        LifecycleRule.builder()
+                                .prefix("applications/")
+                                .expiration(Duration.days(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                                 .build()))
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
