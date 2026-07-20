@@ -67,6 +67,7 @@ class HadoopS3ClientFactoryTest {
                 .contains(URI.create("https://s3.example.com:8080"));
     }
 
+    // Intention is to demonstrate that HadoopS3ClientFactory applies configuration to ClientOverrideConfiguration.
     @Test
     void shouldApplyRequestTimeoutFromConfiguration() throws Exception {
         // Given

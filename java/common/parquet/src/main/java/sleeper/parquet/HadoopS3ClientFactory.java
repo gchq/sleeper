@@ -77,6 +77,26 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
                 .build();
     }
 
+    @Override
+    public S3AsyncClient createS3AsyncClient(final URI uri, final S3ClientCreationParameters parameters) throws IOException {
+        MultipartConfiguration multipartConfiguration = MultipartConfiguration.builder()
+                .minimumPartSizeInBytes(parameters.getMinimumPartSize())
+                .thresholdInBytes(parameters.getMultiPartThreshold())
+                .build();
+
+        return configureClientBuilder(S3AsyncClient.builder(), parameters, getConf(), uri.getHost())
+                .multipartConfiguration(multipartConfiguration)
+                .multipartEnabled(parameters.isMultipartCopy())
+                .build();
+    }
+
+    @Override
+    public S3TransferManager createS3TransferManager(S3AsyncClient s3AsyncClient) {
+        return S3TransferManager.builder()
+                .s3Client(s3AsyncClient)
+                .build();
+    }
+
     @SuppressWarnings("unchecked")
     private static <BuilderT extends S3BaseClientBuilder<BuilderT, ClientT>, ClientT> BuilderT configureClientBuilder(
             BuilderT builder, S3ClientCreationParameters parameters, Configuration conf, String bucket) throws IOException {
@@ -193,25 +213,5 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
         }
 
         return clientOverrideConfigBuilder;
-    }
-
-    @Override
-    public S3AsyncClient createS3AsyncClient(final URI uri, final S3ClientCreationParameters parameters) throws IOException {
-        MultipartConfiguration multipartConfiguration = MultipartConfiguration.builder()
-                .minimumPartSizeInBytes(parameters.getMinimumPartSize())
-                .thresholdInBytes(parameters.getMultiPartThreshold())
-                .build();
-
-        return configureClientBuilder(S3AsyncClient.builder(), parameters, getConf(), uri.getHost())
-                .multipartConfiguration(multipartConfiguration)
-                .multipartEnabled(parameters.isMultipartCopy())
-                .build();
-    }
-
-    @Override
-    public S3TransferManager createS3TransferManager(S3AsyncClient s3AsyncClient) {
-        return S3TransferManager.builder()
-                .s3Client(s3AsyncClient)
-                .build();
     }
 }
