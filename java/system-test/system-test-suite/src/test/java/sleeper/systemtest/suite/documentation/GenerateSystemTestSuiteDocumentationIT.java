@@ -120,7 +120,7 @@ class GenerateSystemTestSuiteDocumentationIT {
     private static Stream<Arguments> parallelSystemTests() {
         return Stream.of(
                 Arguments.of("Slow1", "AutoStopEcsTaskST"),
-                Arguments.of("Slow2", "EksBulkImportST"),
+                Arguments.of("Slow2", "EksAutoBulkImportST"),
                 Arguments.of("Slow3", "MultipleTablesST"),
                 Arguments.of("Expensive1", "CompactionDataFusionPerformanceST"),
                 Arguments.of("Expensive2", "CompactionPerformanceST"),
