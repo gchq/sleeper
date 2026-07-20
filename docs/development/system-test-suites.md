@@ -13,8 +13,8 @@ it takes to complete the nightly system tests.
 | OptionalFeaturesDisabledST |
 | RedeployOptionalStacksST   |
 
-| Expensive1                        | Expensive2                 | Expensive3            |
-|-----------------------------------|----------------------------|-----------------------|
-| CompactionDataFusionPerformanceST | CompactionPerformanceST    | IngestPerformanceST   |
-| CompactionVeryLargeST             | EksBulkImportPerformanceST | ParallelCompactionsST |
-|                                   | EmrBulkImportPerformanceST |
+| Expensive1                        | Expensive2                 | Expensive3              |
+|-----------------------------------|----------------------------|-------------------------|
+| CompactionDataFusionPerformanceST | EksBulkImportPerformanceST | CompactionPerformanceST |
+| CompactionVeryLargeST             | EmrBulkImportPerformanceST | ParallelCompactionsST   |
+|                                   | IngestPerformanceST        |
