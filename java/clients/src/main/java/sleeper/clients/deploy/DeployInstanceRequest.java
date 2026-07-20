@@ -27,8 +27,8 @@ public class DeployInstanceRequest {
     private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
     private final SleeperInternalCdkApp cdkApp;
-    private Path propertiesFile;
-    private Path configDir;
+    private final Path propertiesFile;
+    private final Path configDir;
 
     private DeployInstanceRequest(Builder builder) {
         instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
@@ -36,6 +36,9 @@ public class DeployInstanceRequest {
         cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
         propertiesFile = builder.propertiesFile;
         configDir = builder.configDir;
+        if (propertiesFile == null && configDir == null) {
+            throw new NullPointerException("One of propertiesFile and configDir must not be null");
+        }
     }
 
     public static Builder builder() {

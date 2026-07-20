@@ -40,7 +40,6 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -124,15 +123,11 @@ public class DeployExistingInstance {
     public void update() throws IOException, InterruptedException {
         SleeperInstanceConfiguration deployConfig = SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build();
 
-        try {
-            Files.createDirectories(configDir);
-            ClientUtils.clearDirectory(configDir);
-            SaveLocalProperties.saveToDirectory(configDir,
-                    deployConfig.getInstanceProperties(),
-                    deployConfig.getTableProperties().stream());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        Files.createDirectories(configDir);
+        ClientUtils.clearDirectory(configDir);
+        SaveLocalProperties.saveToDirectory(configDir,
+                deployConfig.getInstanceProperties(),
+                deployConfig.getTableProperties().stream());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
