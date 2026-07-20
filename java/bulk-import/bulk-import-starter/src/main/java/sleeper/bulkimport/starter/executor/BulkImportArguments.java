@@ -68,18 +68,17 @@ public class BulkImportArguments {
                 Stream.of("spark-submit", "--deploy-mode", "cluster"),
                 sparkSubmitParameters(baseSparkConfig),
                 Stream.of(jarLocation),
-                streamEntryPointArguments(taskId, bulkImportMode))
+                Stream.of(entryPointArguments(taskId, bulkImportMode)))
                 .flatMap(partialArgs -> partialArgs)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     public String[] entryPointArgumentsForServerless() {
-        return streamEntryPointArguments(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME) + "-EMRS", "EMR")
-                .toArray(String[]::new);
+        return entryPointArguments(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME) + "-EMRS", "EMR");
     }
 
-    private Stream<String> streamEntryPointArguments(String taskId, String bulkImportMode) {
-        return Stream.of(instanceProperties.get(CONFIG_BUCKET), bulkImportJob.getId(), taskId, jobRunId, jobFileObjectKey, bulkImportMode);
+    private String[] entryPointArguments(String taskId, String bulkImportMode) {
+        return new String[]{instanceProperties.get(CONFIG_BUCKET), bulkImportJob.getId(), taskId, jobRunId, jobFileObjectKey, bulkImportMode};
     }
 
     public String sparkSubmitParametersForServerless() {
