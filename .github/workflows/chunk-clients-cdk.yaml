@@ -14,6 +14,7 @@ on:
       - 'java/analytics-integration/pom.xml'
       - 'java/analytics-integration/spark/**'
       - 'java/deployment/cdk/**'
+      - 'java/deployment/cdk-artefact-custom-resources/**'
       - 'java/deployment/cdk-custom-resources/**'
       - 'java/deployment/cdk-environment/**'
       - 'java/deployment/build-uptime-lambda/**'

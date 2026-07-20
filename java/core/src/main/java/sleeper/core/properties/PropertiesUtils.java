@@ -29,9 +29,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * Utilities to read and write properties configuration files.
@@ -106,18 +104,5 @@ public class PropertiesUtils {
                 writer, new DisabledListDelimiterHandler());
         propertiesWriter.setGlobalSeparator("=");
         return propertiesWriter;
-    }
-
-    /**
-     * Converts a properties object to a map from property name to value.
-     *
-     * @param  properties the properties
-     * @return            the map
-     */
-    public static Map<String, String> toMap(Properties properties) {
-        return properties.stringPropertyNames().stream()
-                .collect(Collectors.toUnmodifiableMap(
-                        propertyName -> propertyName,
-                        properties::getProperty));
     }
 }
