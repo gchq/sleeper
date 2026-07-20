@@ -121,7 +121,7 @@ public class AddTableRequestSerDe {
         }
 
         @Override
-        public AddTableRequest deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
+        public AddTableRequest deserialize(JsonElement jsonElement, Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
             JsonObject object = jsonElement.getAsJsonObject();
             TableProperties tableProperties = readTableProperties(instanceProperties, object, context);
             return AddTableRequest.builder()
