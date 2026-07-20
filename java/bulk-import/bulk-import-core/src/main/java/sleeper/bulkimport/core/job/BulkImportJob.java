@@ -30,7 +30,7 @@ public class BulkImportJob {
     /**
      * The prefix for files holding a bulk import job in the bulk import bucket.
      */
-    public static String FILES_BUCKET_PREFIX = "bulk_import/";
+    public static final String FILES_BUCKET_PREFIX = "bulk_import/";
 
     private final String id;
     private final String tableName;
