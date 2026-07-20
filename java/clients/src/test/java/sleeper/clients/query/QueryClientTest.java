@@ -63,6 +63,7 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -91,7 +92,7 @@ public class QueryClientTest {
             createTable("test-table", schema);
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient();
 
             // Then
@@ -99,6 +100,7 @@ public class QueryClientTest {
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:")
                     .containsSubsequence("Query took", "seconds to return 0 rows");
         }
@@ -117,7 +119,7 @@ public class QueryClientTest {
             ingestData(tableProperties, List.of(row));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient();
 
             // Then
@@ -125,6 +127,7 @@ public class QueryClientTest {
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n" +
                             "Row{key=123, value=abc}")
                     .containsSubsequence("Query took", "seconds to return 1 row");
@@ -145,9 +148,9 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts("", RANGE_QUERY_OPTION,
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
-                    "3", "6",
+                    "3", "6", "",
                     EXIT_OPTION);
             runQueryClient();
 
@@ -159,6 +162,7 @@ public class QueryClientTest {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n" +
                             "Row{key=4}\n" +
                             "Row{key=5}\n" +
@@ -177,9 +181,9 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts("", RANGE_QUERY_OPTION,
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
-                    "", "",
+                    "", "", "",
                     EXIT_OPTION);
             runQueryClient();
 
@@ -191,6 +195,7 @@ public class QueryClientTest {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n" +
                             "Row{key=0}\n" +
                             "Row{key=1}\n" +
@@ -216,11 +221,11 @@ public class QueryClientTest {
             ingestData(tableProperties, rows);
 
             // When
-            in.enterNextPrompts("", RANGE_QUERY_OPTION,
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "1", "5",
                     YES_OPTION,
-                    "102", "104",
+                    "102", "104", "",
                     EXIT_OPTION);
             runQueryClient();
 
@@ -235,6 +240,7 @@ public class QueryClientTest {
                             "Enter a value for row key field key2 of type = LongType{}? (y/n) \n" +
                             "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
                             "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n" +
                             "Row{key1=3, key2=103, value=test-3}\n" +
                             "Row{key1=4, key2=104, value=test-4}")
@@ -248,10 +254,10 @@ public class QueryClientTest {
             createTable("test-table", schema);
 
             // When
-            in.enterNextPrompts("", RANGE_QUERY_OPTION,
+            in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "abc",
-                    "123", "456",
+                    "123", "456", "",
                     EXIT_OPTION);
             runQueryClient();
 
@@ -265,6 +271,7 @@ public class QueryClientTest {
                             "Failed to convert provided key \"abc\" to type LongType{}\n" +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n")
                     .containsSubsequence("Query took", "seconds to return 0 rows");
         }
@@ -277,10 +284,10 @@ public class QueryClientTest {
             createTable("test-table-2", schema);
 
             // When
-            in.enterNextPrompts("test-table-2", "",
+            in.enterNextPrompts("test-table-2",
                     RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
-                    "123", "456",
+                    "123", "456", "",
                     EXIT_OPTION);
             runQueryClient();
 
@@ -295,6 +302,7 @@ public class QueryClientTest {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Returned Rows:\n")
                     .containsSubsequence("Query took", "seconds to return 0 rows");
         }

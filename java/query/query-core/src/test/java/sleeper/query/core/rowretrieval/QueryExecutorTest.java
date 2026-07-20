@@ -71,7 +71,9 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
                     .build()))
                     .cause()
                     .isInstanceOf(QueryException.class)
-                    .hasMessage("Query contains SQL query filter which is not supported by data engine: JAVA");
+                    .hasMessage("Query contains SQL query filter which is not supported by query results retriever: " +
+                            "sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever. " +
+                            "You may need to select a different query engine in the table properties for this table.");
         }
     }
 

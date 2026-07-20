@@ -64,7 +64,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 1L)));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -96,7 +96,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-subquery", 1L)));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -134,7 +134,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("subquery-3", 1L)));
 
             // When
-            in.enterNextPrompts("", RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
+            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -167,7 +167,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 2L)));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -201,7 +201,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     error(new Exception("Exception that will not terminate connection")));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -230,7 +230,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Exception caused connection to terminate"));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -258,7 +258,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(errorMessage("test-query-id", "Failure message")));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -286,7 +286,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(unknownMessage("test-query-id")));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -314,7 +314,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{"));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -342,7 +342,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"message\":\"error\"}"));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -370,7 +370,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"queryId\":\"test-query-id\"}"));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -398,7 +398,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Network error"));
 
             // When
-            in.enterNextPrompts("", EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
