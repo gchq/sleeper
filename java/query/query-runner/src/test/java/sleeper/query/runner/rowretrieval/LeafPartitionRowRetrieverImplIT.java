@@ -1048,10 +1048,16 @@ public class LeafPartitionRowRetrieverImplIT {
     }
 
     @Test
-    public void shouldNotSupportSQLFiltering() {
+    public void shouldNotSupportSQLFiltering() throws Exception {
         // Given
         tableProperties.setSchema(getLongKeySchema());
         update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        Row row = new Row(Map.of(
+                "key", 1L,
+                "value1", 10L,
+                "value2", 100L));
+        ingestData(List.of(row));
+
         Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
@@ -1066,6 +1072,7 @@ public class LeafPartitionRowRetrieverImplIT {
         assertThatThrownBy(() -> {
             execute(query);
         })
+                .cause()
                 .isInstanceOf(QueryException.class)
                 .hasMessage("Query contains SQL query filter which is not supported by query results retriever: " +
                         "sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl. " +
