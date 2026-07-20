@@ -17,6 +17,7 @@ package sleeper.restapi.addTable;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,17 +27,26 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableStatus;
 import sleeper.restapi.RestApiTestBase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AddTableRouteTest extends RestApiTestBase {
     private final Schema schema = createSchemaWithKey("key", new StringType());
+    private final TableProperties tableProperties = new TableProperties(instanceProperties);
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(schema);
+    }
 
     @Nested
     @DisplayName("Valid request tests")
@@ -44,40 +54,26 @@ public class AddTableRouteTest extends RestApiTestBase {
         @Test
         void shouldAddTable() {
             // When
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                    {
-                      "properties": {"sleeper.table.name": "my-table"},
-                      "schema": %s
-                    }
-                    """.formatted(schemaJson(schema))));
+            tableProperties.set(TABLE_NAME, "my-table");
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent());
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(201);
             assertThat(response.getBody()).contains("\"tableName\":\"my-table\"");
-
-            assertThat(tablePropertiesStore.streamAllTableStatuses())
-                    .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
+            assertThat(tablePropertiesStore.streamAllTables())
+                    .containsExactly(withTableIdFromStore(tableProperties));
         }
 
         @Test
         void shouldAddTableWithSplitPoints() throws StateStoreException {
             // When
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                    {
-                      "properties": {"sleeper.table.name": "my-table"},
-                      "schema": %s,
-                      "splitPoints": ["a", "m", "z"]
-                    }
-                    """.formatted(schemaJson(schema))));
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEventWithSplitPoints(List.of("a", "m", "z")));
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(201);
-
-            assertThat(tablePropertiesStore.streamAllTableStatuses())
-                    .flatExtracting(TableStatus::getTableName).containsExactly("my-table");
-
-            TableProperties tableProperties = tablePropertiesStore.loadByName("my-table");
-            assertThat(stateStoreProvider.getStateStore(tableProperties).getLeafPartitions())
+            TableProperties expectedProperties = withTableIdFromStore(tableProperties);
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedProperties);
+            assertThat(stateStoreProvider.getStateStore(expectedProperties).getLeafPartitions())
                     .extracting(partition -> partition.getRegion().getRange("key").getMin())
                     .containsExactlyInAnyOrder("", "a", "m", "z");
         }
@@ -86,10 +82,8 @@ public class AddTableRouteTest extends RestApiTestBase {
     @Test
     void shouldDecodeBase64EncodedBody() {
         // Given
-        String body = """
-                {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                """.formatted(schemaJson(schema));
-        String encoded = Base64.getEncoder().encodeToString(body.getBytes(StandardCharsets.UTF_8));
+        tableProperties.set(TABLE_NAME, "my-table");
+        String encoded = Base64.getEncoder().encodeToString(addTableBody().getBytes(StandardCharsets.UTF_8));
 
         APIGatewayV2HTTPEvent event = event("POST", "/sleeper/tables", encoded);
         event.setIsBase64Encoded(true);
@@ -136,10 +130,11 @@ public class AddTableRouteTest extends RestApiTestBase {
 
         @Test
         void shouldReturnResponseWhenAddTableRejectsProperties() {
+            // Given
+            tableProperties.unset(TABLE_NAME);
+
             // When
-            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent("""
-                    {"properties": {"sleeper.table.dancemode": "flamenco"}, "schema": %s}
-                    """.formatted(schemaJson(schema))));
+            APIGatewayV2HTTPResponse response = lambda.handleEvent(addTableEvent());
 
             // Then
             assertThat(response.getStatusCode()).isEqualTo(400);
@@ -149,10 +144,7 @@ public class AddTableRouteTest extends RestApiTestBase {
         @Test
         void shouldReturn409WhenTableAlreadyExists() {
             // Given
-            APIGatewayV2HTTPEvent event = addTableEvent("""
-                    {"properties": {"sleeper.table.name": "my-table"}, "schema": %s}
-                    """.formatted(schemaJson(schema)));
-
+            APIGatewayV2HTTPEvent event = addTableEvent();
             lambda.handleEvent(event);
 
             // When
@@ -166,6 +158,27 @@ public class AddTableRouteTest extends RestApiTestBase {
 
     private static String schemaJson(Schema schema) {
         return new SchemaSerDe().toJson(schema);
+    }
+
+    private APIGatewayV2HTTPEvent addTableEvent() {
+        return addTableEvent(addTableBody());
+    }
+
+    private APIGatewayV2HTTPEvent addTableEventWithSplitPoints(List<Object> splitPoints) {
+        AddTableRequest request = AddTableRequest.builder().properties(tableProperties).splitPoints(splitPoints).build();
+        return addTableEvent(new AddTableRequestSerDe(instanceProperties).toJson(request));
+    }
+
+    private String addTableBody() {
+        AddTableRequest request = AddTableRequest.builder().properties(tableProperties).build();
+        return new AddTableRequestSerDe(instanceProperties).toJson(request);
+    }
+
+    private TableProperties withTableIdFromStore(TableProperties tableProperties) {
+        String tableId = tablePropertiesStore.loadByName(tableProperties.get(TABLE_NAME)).get(TABLE_ID);
+        TableProperties newProperties = TableProperties.copyOf(tableProperties);
+        newProperties.set(TABLE_ID, tableId);
+        return newProperties;
     }
 
     private APIGatewayV2HTTPEvent addTableEvent(String body) {
