@@ -6,11 +6,11 @@ it takes to complete the nightly system tests.
 
 | Slow1                      | Slow2                              | Slow3                           |
 |----------------------------|------------------------------------|---------------------------------|
-| AutoDeleteS3ObjectsST      | CompactionOnEC2ST                  | MultipleTablesST                |
-| AutoStopEcsTaskST          | ECSStateStoreCommitterST           | StateStoreCommitterThroughputST |
-| CompactionCreationST       | ECSStateStoreCommitterThroughputST |
-| EmrPersistentBulkImportST  | EksAutoBulkImportST                |
-| OptionalFeaturesDisabledST | EksFargateBulkImportST             |
+| AutoDeleteS3ObjectsST      | CompactionOnEC2ST                  | EksAutoBulkImportST             |
+| AutoStopEcsTaskST          | ECSStateStoreCommitterST           | MultipleTablesST                |
+| CompactionCreationST       | ECSStateStoreCommitterThroughputST | StateStoreCommitterThroughputST |
+| EmrPersistentBulkImportST  | EksFargateBulkImportST             |
+| OptionalFeaturesDisabledST |
 | RedeployOptionalStacksST   |
 
 | Expensive1                        | Expensive2                 | Expensive3            |
