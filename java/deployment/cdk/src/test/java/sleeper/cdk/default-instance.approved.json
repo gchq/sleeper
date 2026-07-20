@@ -13201,6 +13201,20 @@
                   }
                 }
               ]
+            },
+            "LifecycleConfiguration": {
+              "Rules": [
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "bulk_import/",
+                  "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "logs/",
+                  "Status": "Enabled"
+                }
+              ]
             }
           }
         },
