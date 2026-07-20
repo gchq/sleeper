@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.37.1-SNAPSHOT</version>
+        <version>0.37.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -103,6 +103,12 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>cdk</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>cdk-artefact-custom-resources</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
         </dependency>

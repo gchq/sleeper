@@ -49,24 +49,25 @@ Docker image for each lambda jar.
 * Always Docker deploy - This means that that lambda will always be deployed with Docker, usually because the jar is too
   large to deploy directly.
 
-| Filename                                            | Image Name                        | Always Docker deploy |
-|-----------------------------------------------------|-----------------------------------|----------------------|
-| athena-`<version-number>`.jar                       | athena-lambda                     | true                 |
-| bulk-import-starter-`<version-number>`.jar          | bulk-import-starter-lambda        | false                |
-| bulk-export-planner-`<version-number>`.jar          | bulk-export-planner               | false                |
-| bulk-export-task-creator-`<version-number>`.jar     | bulk-export-task-creator          | false                |
-| ingest-taskrunner-`<version-number>`.jar            | ingest-task-creator-lambda        | false                |
-| ingest-batcher-submitter-`<version-number>`.jar     | ingest-batcher-submitter-lambda   | false                |
-| ingest-batcher-job-creator-`<version-number>`.jar   | ingest-batcher-job-creator-lambda | false                |
-| lambda-garbagecollector-`<version-number>`.jar      | garbage-collector-lambda          | false                |
-| lambda-jobSpecCreationLambda-`<version-number>`.jar | compaction-job-creator-lambda     | false                |
-| runningjobs-`<version-number>`.jar                  | compaction-task-creator-lambda    | false                |
-| lambda-splitter-`<version-number>`.jar              | partition-splitter-lambda         | false                |
-| query-`<version-number>`.jar                        | query-lambda                      | true                 |
-| cdk-custom-resources-`<version-number>`.jar         | custom-resources-lambda           | false                |
-| metrics-`<version-number>`.jar                      | metrics-lambda                    | false                |
-| statestore-lambda-`<version-number>`.jar            | statestore-lambda                 | false                |
-| rest-api-`<version-number>`.jar                     | rest-api-lambda                   | false                |
+| Filename                                             | Image Name                        | Always Docker deploy |
+|------------------------------------------------------|-----------------------------------|----------------------|
+| athena-`<version-number>`.jar                        | athena-lambda                     | true                 |
+| bulk-import-starter-`<version-number>`.jar           | bulk-import-starter-lambda        | false                |
+| bulk-export-planner-`<version-number>`.jar           | bulk-export-planner               | false                |
+| bulk-export-task-creator-`<version-number>`.jar      | bulk-export-task-creator          | false                |
+| ingest-taskrunner-`<version-number>`.jar             | ingest-task-creator-lambda        | false                |
+| ingest-batcher-submitter-`<version-number>`.jar      | ingest-batcher-submitter-lambda   | false                |
+| ingest-batcher-job-creator-`<version-number>`.jar    | ingest-batcher-job-creator-lambda | false                |
+| lambda-garbagecollector-`<version-number>`.jar       | garbage-collector-lambda          | false                |
+| lambda-jobSpecCreationLambda-`<version-number>`.jar  | compaction-job-creator-lambda     | false                |
+| runningjobs-`<version-number>`.jar                   | compaction-task-creator-lambda    | false                |
+| lambda-splitter-`<version-number>`.jar               | partition-splitter-lambda         | false                |
+| query-`<version-number>`.jar                         | query-lambda                      | true                 |
+| cdk-artefact-custom-resources-`<version-number>`.jar | artefact-custom-resources-lambda  | false                |
+| cdk-custom-resources-`<version-number>`.jar          | custom-resources-lambda           | false                |
+| metrics-`<version-number>`.jar                       | metrics-lambda                    | false                |
+| statestore-lambda-`<version-number>`.jar             | statestore-lambda                 | false                |
+| rest-api-`<version-number>`.jar                      | rest-api-lambda                   | false                |
 
 
 ## Building and pushing

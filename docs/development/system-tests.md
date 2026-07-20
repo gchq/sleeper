@@ -99,7 +99,7 @@ When adding a new Slow or Expensive System test add either the Slow1-n or Expens
 ### Current Slow and Expensive test suites
 The current system tests running in each suite can be seen in [system-test-suites](system-test-suites.md).
 
-When adding new slow or expensive system tests ensure this documentation is updated.
+When adding new slow or expensive system tests, run `scripts/dev/generateDocumentation.sh` to ensure documentation is updated.
 
 ### Running tests
 
@@ -262,3 +262,4 @@ results for each test will be at {NIGHTLY_TEST_BUCKET}/{DATE_OF_TEST}/{SUITE_NAM
 | 0.36.0         | 14/06/2026 | 188,225         | 3,475,731             | 175,062         |                 | 4,581,912       |
 | 0.36.1         | 22/06/2026 | 211,266         | 3,504,890             | 160,144         |                 | 4,272,644       |
 | 0.37.0         | 03/07/2026 | 207,597         | 3,477,588             | 168,637         |                 | 4,102,182       |
+| 0.37.1         | 10/07/2026 | 206,910         | 3,574,328             | 173,570         |                 | 4,745,570       |

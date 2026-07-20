@@ -15,23 +15,16 @@
  */
 package sleeper.clients.api.aws;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
-
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
-import sleeper.clients.util.UncheckedAutoCloseables;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
+import sleeper.query.datafusion.PerCallDataFusionRowRetrieverProvider;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -71,17 +64,12 @@ public interface SleeperClientQueryProvider {
     static SleeperClientQueryProvider withThreadPoolForEachClient(InstanceProperties instanceProperties, int threadPoolSize) {
         return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            BufferAllocator allocator = new RootAllocator();
-            FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
+            PerCallDataFusionRowRetrieverProvider dataFusionProvider = new PerCallDataFusionRowRetrieverProvider(DataFusionAwsConfig.getDefault(instanceProperties));
 
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context);
             return ShutdownWrapper.shutdown(
                     QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
-                    new UncheckedAutoCloseables(List.of(
-                            allocator::close,
-                            context::close,
-                            executorService::shutdown)));
+                    (Runnable) executorService::shutdown);
         };
     }
 
@@ -100,29 +88,23 @@ public interface SleeperClientQueryProvider {
      * A query provider backed by a single thread pool.
      */
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
-        private final InstanceProperties instanceProperties;
         private final ExecutorService executorService;
-        private final BufferAllocator allocator = new RootAllocator();
-        private final FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
+        private final PerCallDataFusionRowRetrieverProvider dataFusionProvider;
 
         private PersistentThreadPool(InstanceProperties instanceProperties, ExecutorService executorService) {
-            this.instanceProperties = instanceProperties;
             this.executorService = executorService;
+            this.dataFusionProvider = new PerCallDataFusionRowRetrieverProvider(DataFusionAwsConfig.getDefault(instanceProperties));
         }
 
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, context);
             return ShutdownWrapper.noShutdown(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider));
         }
 
         @Override
         public void close() {
-            try (allocator; context) {
-            } finally {
-                executorService.shutdown();
-            }
+            executorService.shutdown();
         }
     }
 }
