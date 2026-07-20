@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -38,6 +37,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.FilesUtil;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -305,7 +305,7 @@ public class AdminClientPropertiesStore {
         @Override
         public void saveLocalProperties(InstanceProperties instanceProperties, Stream<TableProperties> tablePropertiesStream) throws IOException {
             Files.createDirectories(localDirectory);
-            ClientUtils.clearDirectory(localDirectory);
+            FilesUtil.clearDirectory(localDirectory);
             SaveLocalProperties.saveToDirectory(localDirectory, instanceProperties, tablePropertiesStream);
         }
 

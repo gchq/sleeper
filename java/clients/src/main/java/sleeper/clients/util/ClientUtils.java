@@ -18,12 +18,7 @@ package sleeper.clients.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
@@ -57,15 +52,6 @@ public class ClientUtils {
             return Math.round((double) rows / G_COUNT) + "G (" + countWithCommas(rows) + ")";
         } else {
             return countWithCommas(Math.round((double) rows / T_COUNT)) + "T (" + countWithCommas(rows) + ")";
-        }
-    }
-
-    public static void clearDirectory(Path tempDir) throws IOException {
-        try (Stream<Path> paths = Files.walk(tempDir)) {
-            Stream<Path> nestedPaths = paths.skip(1).sorted(Comparator.reverseOrder());
-            for (Path path : (Iterable<Path>) nestedPaths::iterator) {
-                Files.delete(path);
-            }
         }
     }
 }

@@ -29,7 +29,6 @@ import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
-import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,7 +41,6 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -94,11 +92,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
         Path configDir = parameters.getScriptsDirectory().resolve("example");
         try {
-            Files.createDirectories(configDir);
-            ClientUtils.clearDirectory(configDir);
-            SaveLocalProperties.saveToDirectory(configDir,
-                    deployConfig.getInstanceProperties(),
-                    deployConfig.getTableProperties().stream());
+            SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

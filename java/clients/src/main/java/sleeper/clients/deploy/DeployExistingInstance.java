@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -40,7 +39,6 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -123,11 +121,7 @@ public class DeployExistingInstance {
     public void update() throws IOException, InterruptedException {
         SleeperInstanceConfiguration deployConfig = SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build();
 
-        Files.createDirectories(configDir);
-        ClientUtils.clearDirectory(configDir);
-        SaveLocalProperties.saveToDirectory(configDir,
-                deployConfig.getInstanceProperties(),
-                deployConfig.getTableProperties().stream());
+        SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig);
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
