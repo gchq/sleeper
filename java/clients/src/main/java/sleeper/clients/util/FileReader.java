@@ -22,9 +22,9 @@ import java.nio.file.Path;
 public interface FileReader {
     String readStringChecked(Path path) throws IOException;
 
-    static String readFile(FileReader reader, Path path) {
+    default String readFile(Path path) {
         try {
-            return reader.readStringChecked(path);
+            return readStringChecked(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

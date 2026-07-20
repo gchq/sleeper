@@ -99,9 +99,9 @@ public class AddTableClient {
 
         Properties rawTableProperties;
         rawTableProperties = tablePropertiesFile.isPresent()
-                ? PropertiesUtils.loadProperties(FileReader.readFile(files, tablePropertiesFile.get()))
+                ? PropertiesUtils.loadProperties(files.readFile(tablePropertiesFile.get()))
                 : configDir.isPresent()
-                        ? PropertiesUtils.loadProperties(FileReader.readFile(files, configDir.get().resolve("table.properties")))
+                        ? PropertiesUtils.loadProperties(files.readFile(configDir.get().resolve("table.properties")))
                         : null;
 
         return new Arguments(
@@ -135,7 +135,7 @@ public class AddTableClient {
 
     public static TableProperties createTablePropertiesWithLoaders(Arguments args, InstancePropertiesLoader instance, FileReader files) {
         TableProperties tableProperties = createTableProperties(instance.load(args.instanceId()), args);
-        tableProperties.setSchema(new SchemaSerDe().fromJson(FileReader.readFile(files, args.resolveSchemaFile())));
+        tableProperties.setSchema(new SchemaSerDe().fromJson(files.readFile(args.resolveSchemaFile())));
         return tableProperties;
     }
 
