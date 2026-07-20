@@ -30,8 +30,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 public class BulkImportJobWriterToS3 implements BulkImportExecutor.WriteJobToBucket {
     public static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobWriterToS3.class);
 
-    protected final InstanceProperties instanceProperties;
-    protected final S3Client s3Client;
+    private final InstanceProperties instanceProperties;
+    private final S3Client s3Client;
 
     public BulkImportJobWriterToS3(InstanceProperties instanceProperties, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
