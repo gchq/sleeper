@@ -132,13 +132,16 @@ public class AddTableRequestSerDe {
     }
 
     private static TableProperties readTableProperties(InstanceProperties instanceProperties, JsonObject object, JsonDeserializationContext context) {
+
         Properties properties = context.deserialize(object.get("properties"), Properties.class);
-        Schema schema = context.deserialize(object.get("schema"), Schema.class);
         if (properties == null) {
             return null;
         }
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+
+        Schema schema = context.deserialize(object.get("schema"), Schema.class);
         tableProperties.setSchema(schema);
+
         return tableProperties;
     }
 
