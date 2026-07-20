@@ -137,10 +137,12 @@ public class BulkImportArguments {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof BulkImportArguments))
+        }
+        if (!(obj instanceof BulkImportArguments)) {
             return false;
+        }
         BulkImportArguments other = (BulkImportArguments) obj;
         return Objects.equals(instanceProperties, other.instanceProperties) && Objects.equals(bulkImportJob, other.bulkImportJob) && Objects.equals(jobFileObjectKey, other.jobFileObjectKey)
                 && Objects.equals(jobRunId, other.jobRunId);
