@@ -55,7 +55,7 @@ import static org.apache.hadoop.fs.s3a.impl.InternalConstants.AUTH_SCHEME_AWS_SI
  * Custom implementation of S3ClientFactory, as AWS SDK has moved beyond the use of ApacheHttpClient.
  */
 public class HadoopS3ClientFactory extends Configured implements S3ClientFactory {
-    private static Region defaultRegion = Region.EU_WEST_2;
+    private static Region defaultRegion = Region.US_EAST_2;
 
     public HadoopS3ClientFactory() {
     }
