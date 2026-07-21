@@ -298,6 +298,12 @@ public class ECSBulkExportTaskRunner {
             }
         }
 
+        /**
+         * Creates a query leaf partition object based on the given bulk export leaf partition.
+         *
+         * @param  query bulk export query to convert
+         * @return       leaf partition query
+         */
         public static LeafPartitionQuery getLeafPartitionQuery(BulkExportLeafPartitionQuery query) {
             return LeafPartitionQuery.builder()
                     .files(query.getFiles())
