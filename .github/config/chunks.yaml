@@ -7,6 +7,7 @@ chunks:
       - analytics-integration/spark
       - deployment/cdk
       - deployment/cdk-custom-resources
+      - deployment/cdk-artefact-custom-resources
       - deployment/cdk-environment
       - deployment/build-uptime-lambda
       - deployment/container-images
