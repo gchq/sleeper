@@ -249,6 +249,10 @@ public class ECSBulkExportTaskRunner {
 
         @Override
         public RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile, TableProperties tableProperties) throws IOException, IteratorCreationException, ObjectFactoryException {
+            if (query.getSqlQuery() != null) {
+                throw new UnsupportedOperationException("Java bulk exporter doesn't support SQL query filtering, but a SQL query filter was provided.");
+            }
+
             ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(awsConfig,
                     objectFactory, hadoopConf, new NoSketchesStore());
@@ -292,7 +296,10 @@ public class ECSBulkExportTaskRunner {
                     .regions(query.getRegions())
                     .subQueryId(query.getSubExportId())
                     .tableId(query.getTableId())
-                    .processingConfig(QueryProcessingConfig.none())
+                    .processingConfig(QueryProcessingConfig
+                            .builder()
+                            .sqlQuery(query.getSqlQuery())
+                            .build())
                     .build();
             LOGGER.debug("Query details: {}", leafPartitionQuery);
 
