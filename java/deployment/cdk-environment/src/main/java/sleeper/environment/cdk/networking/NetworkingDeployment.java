@@ -18,6 +18,8 @@ package sleeper.environment.cdk.networking;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpointAwsService;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InterfaceVpcEndpoint;
+import software.amazon.awscdk.services.ec2.InterfaceVpcEndpointAwsService;
 import software.amazon.awscdk.services.ec2.IpAddresses;
 import software.amazon.awscdk.services.ec2.SubnetConfiguration;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
@@ -69,6 +71,19 @@ public class NetworkingDeployment {
                 .service(GatewayVpcEndpointAwsService.DYNAMODB)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
+                .build();
+
+        InterfaceVpcEndpoint.Builder.create(scope, "EcrApiEndpoint").vpc(vpc)
+                .service(InterfaceVpcEndpointAwsService.ECR)
+                .subnets(SubnetSelection.builder()
+                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
+                .build();
+
+        InterfaceVpcEndpoint.Builder.create(scope, "EcrDockerEndpoint").vpc(vpc)
+                .service(InterfaceVpcEndpointAwsService.ECR_DOCKER)
+                .subnets(SubnetSelection.builder()
+                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS)
+                        .build())
                 .build();
     }
 
