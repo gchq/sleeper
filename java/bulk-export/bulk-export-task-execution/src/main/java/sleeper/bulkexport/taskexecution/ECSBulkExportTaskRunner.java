@@ -288,7 +288,18 @@ public class ECSBulkExportTaskRunner {
         @Override
         public RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile, TableProperties tableProperties) throws RowRetrievalException {
             Schema schema = tableProperties.getSchema();
-            LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
+            LeafPartitionQuery leafPartitionQuery = getLeafPartitionQuery(query);
+            LOGGER.debug("Query details: {}", leafPartitionQuery);
+
+            try (BufferAllocator allocator = new RootAllocator();
+                    FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
+                DataFusionLeafPartitionRowRetriever dataFusion = new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
+                return dataFusion.queryToFile(leafPartitionQuery, outputFile, schema, tableProperties);
+            }
+        }
+
+        public static LeafPartitionQuery getLeafPartitionQuery(BulkExportLeafPartitionQuery query) {
+            return LeafPartitionQuery.builder()
                     .files(query.getFiles())
                     .leafPartitionId(query.getLeafPartitionId())
                     .partitionRegion(query.getPartitionRegion())
@@ -301,13 +312,6 @@ public class ECSBulkExportTaskRunner {
                             .sqlQuery(query.getSqlQuery())
                             .build())
                     .build();
-            LOGGER.debug("Query details: {}", leafPartitionQuery);
-
-            try (BufferAllocator allocator = new RootAllocator();
-                    FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
-                DataFusionLeafPartitionRowRetriever dataFusion = new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
-                return dataFusion.queryToFile(leafPartitionQuery, outputFile, schema, tableProperties);
-            }
         }
     }
 }
