@@ -264,10 +264,10 @@ export `<instance-id>-QueryLambdaRoleArn`) permission to write to the above S3 b
 
 ### SQL Query Filtering (Experimental)
 
-You can include an optional SQL query to filter or transform the results of your query. This capability is **experimental**
-and currently only supported with the **DataFusion query engine**.
+SQL query filtering is also supported when submitting queries via SQS. See the [SQL Query Filtering](#sql-query-filtering-experimental)
+section under "Running queries directly using the Java client" for details, prerequisites, and example SQL queries.
 
-Add the `processingConfig` field with the `sqlQuery` property to apply SQL filtering:
+To apply SQL filtering to an SQS query, add the `processingConfig` field with the `sqlQuery` property:
 
 ```JSON
 {
@@ -289,38 +289,6 @@ Add the `processingConfig` field with the `sqlQuery` property to apply SQL filte
     "sqlQuery": "SELECT * FROM query_results WHERE value > 100"
   }
 }
-```
-
-The SQL query is executed on the query results using the source table name `query_results`. This allows you to:
-- Filter rows based on column values
-- Select specific columns
-- Perform transformations on the data
-- Aggregate results
-
-#### Prerequisites for SQL Query Filtering
-
-1. **DataFusion Query Engine**: The table must be configured to use DataFusion:
-   ```properties
-   sleeper.table.query.data.engine=datafusion
-   ```
-
-2. **Source Table Name**: Regardless of the actual Sleeper table name, the SQL source table is always named `query_results`.
-
-#### Example SQL Queries
-
-Filter rows by value:
-```sql
-SELECT * FROM query_results WHERE timestamp > 1234567890000
-```
-
-Select specific columns:
-```sql
-SELECT id, name, timestamp FROM query_results
-```
-
-Aggregate data:
-```sql
-SELECT id, COUNT(*) as count FROM query_results GROUP BY id
 ```
 
 ## Keep Lambda Warm Optional Stack
