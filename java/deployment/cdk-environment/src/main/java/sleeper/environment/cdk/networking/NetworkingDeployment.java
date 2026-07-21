@@ -34,14 +34,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
+import static sleeper.environment.cdk.config.AppParameters.DEPLOY_ECR_ENDPOINTS;
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
 public class NetworkingDeployment {
 
     private final IVpc vpc;
+    private final boolean deployEcrEndpoints;
 
     public NetworkingDeployment(Construct scope) {
         AppContext context = AppContext.of(scope);
+        deployEcrEndpoints = context.get(DEPLOY_ECR_ENDPOINTS);
         Optional<String> vpcId = context.get(VPC_ID);
         if (vpcId.isPresent()) {
             vpc = Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId.get()).build());
@@ -73,18 +76,19 @@ public class NetworkingDeployment {
                         .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
                 .build();
 
-        InterfaceVpcEndpoint.Builder.create(scope, "EcrApiEndpoint").vpc(vpc)
-                .service(InterfaceVpcEndpointAwsService.ECR)
-                .subnets(SubnetSelection.builder()
-                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
-                .build();
+        if (deployEcrEndpoints) {
+            InterfaceVpcEndpoint.Builder.create(scope, "EcrApiEndpoint").vpc(vpc)
+                    .service(InterfaceVpcEndpointAwsService.ECR)
+                    .subnets(SubnetSelection.builder()
+                            .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
+                    .build();
 
-        InterfaceVpcEndpoint.Builder.create(scope, "EcrDockerEndpoint").vpc(vpc)
-                .service(InterfaceVpcEndpointAwsService.ECR_DOCKER)
-                .subnets(SubnetSelection.builder()
-                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS)
-                        .build())
-                .build();
+            InterfaceVpcEndpoint.Builder.create(scope, "EcrDockerEndpoint").vpc(vpc)
+                    .service(InterfaceVpcEndpointAwsService.ECR_DOCKER)
+                    .subnets(SubnetSelection.builder()
+                            .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
+                    .build();
+        }
     }
 
     public IVpc getVpc() {
