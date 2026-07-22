@@ -159,7 +159,7 @@ public class DeployNewInstance {
                     .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
                     .deployInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .propertiesFile(args.propertiesFile())
+                    .propertiesFile(args.resolvePropertiesFile())
                     .configDir(args.configDir())
                     .ignoreTableFiles(args.ignoreTableFiles())
                     .deployPaused(args.deployPaused())
@@ -170,12 +170,17 @@ public class DeployNewInstance {
     public void deploy() throws IOException, InterruptedException {
         deployInstanceConfiguration.validate();
 
+        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
+        if (ignoreTableFiles) {
+            cdkCommand = cdkCommand.withPropertiesFile(propertiesFile);
+        } else {
+            cdkCommand = cdkCommand.withConfigurationDirectory(configDir);
+        }
+
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(deployInstanceConfiguration)
-                .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
+                .cdkCommand(cdkCommand)
                 .cdkApp(cdkApp)
-                .propertiesFile(propertiesFile)
-                .configDir(configDir)
                 .build());
 
         if (!ignoreTableFiles) {

@@ -120,12 +120,11 @@ public class DeployExistingInstance {
 
     public void update() throws IOException, InterruptedException {
         SaveLocalProperties.createDirectoryAndSaveProperties(configDir, properties, tablePropertiesList.stream());
-
+        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting();
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
-                .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
+                .cdkCommand(cdkCommand.withConfigurationDirectory(configDir))
                 .cdkApp(getCdkApp())
-                .configDir(configDir)
                 .build());
 
         LOGGER.info("Finished deployment of existing instance");

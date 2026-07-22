@@ -84,10 +84,6 @@ public class DeployInstance implements InstanceDeployer {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        if (request.getPropertiesFile() != null) {
-            invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withPropertiesFile(request.getPropertiesFile()));
-        } else {
-            invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withConfigurationDirectory(request.getConfigDir()));
-        }
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand());
     }
 }

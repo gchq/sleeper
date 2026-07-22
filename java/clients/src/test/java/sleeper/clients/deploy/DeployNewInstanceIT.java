@@ -93,7 +93,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
             //When
-            deployNewInstanceByPropertiesFile("someInstance", "someVpc", "someSubnets", "--instance-properties",
+            deployNewInstanceWithoutTables("someInstance", "someVpc", "someSubnets", "--instance-properties",
                     instancePropertiesFile.toString());
 
             //Then
@@ -108,13 +108,7 @@ public class DeployNewInstanceIT {
             assertThat(deployRequests.size()).isEqualTo(1);
             DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
             assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(DeployInstanceRequest.builder()
-                            .instanceConfig(config)
-                            .cdkCommand(CdkCommand.deployNew())
-                            .cdkApp(SleeperInternalCdkApp.STANDARD)
-                            .propertiesFile(instancePropertiesFile)
-                            .configDir(null)
-                            .build());
+                    .isEqualTo(buildExpectedCDKCommandWithPropertyFile(config, false));
 
             //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
@@ -123,7 +117,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             //When
-            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir",
+            deployNewInstanceWithTables("someInstance", "someVpc", "someSubnets", "--config-dir",
                     configDir);
 
             //Then
@@ -152,7 +146,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
             //When
-            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceWithoutTables("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--ignoreTableFiles");
 
             //Then
@@ -167,7 +161,7 @@ public class DeployNewInstanceIT {
             assertThat(deployRequests.size()).isEqualTo(1);
             DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
             assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(buildExpectedCDKCommandWithConfigDir(config, false));
+                    .isEqualTo(buildExpectedCDKCommandWithPropertyFile(config, false));
 
             //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
@@ -176,7 +170,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
             //When
-            deployNewInstanceByConfigDir("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceWithTables("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
                     "--paused");
 
             //Then
@@ -202,13 +196,21 @@ public class DeployNewInstanceIT {
             assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
         }
 
-        private DeployInstanceRequest buildExpectedCDKCommandWithConfigDir(SleeperInstanceConfiguration config, boolean deployPaused) {
+        private DeployInstanceRequest buildExpectedCDKCommandWithPropertyFile(SleeperInstanceConfiguration config, boolean deployPaused) {
+            CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
             return DeployInstanceRequest.builder()
                     .instanceConfig(config)
-                    .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
+                    .cdkCommand(cdkCommand.withPropertiesFile(instancePropertiesFile))
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .propertiesFile(null)
-                    .configDir(tempDir)
+                    .build();
+        }
+
+        private DeployInstanceRequest buildExpectedCDKCommandWithConfigDir(SleeperInstanceConfiguration config, boolean deployPaused) {
+            CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
+            return DeployInstanceRequest.builder()
+                    .instanceConfig(config)
+                    .cdkCommand(cdkCommand.withConfigurationDirectory(tempDir))
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .build();
         }
     }
@@ -219,7 +221,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenNotEnoughPositionalArguments() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile())
+            assertThatThrownBy(() -> deployNewInstanceWithoutTables())
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 4 positional arguments, found 1");
         }
@@ -227,7 +229,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenNeitherInstancePropertiesOrConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("my-instance", "my-vpc", "my-subnets"))
+            assertThatThrownBy(() -> deployNewInstanceWithoutTables("my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
         }
@@ -235,7 +237,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceByPropertiesFile("my-instance", "my-vpc", "my-subnets",
+            assertThatThrownBy(() -> deployNewInstanceWithoutTables("my-instance", "my-vpc", "my-subnets",
                     "--instance-properties", "someFile", "--config-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot use both --instance-properties and --config-dir");
@@ -257,15 +259,15 @@ public class DeployNewInstanceIT {
 
     }
 
-    private void deployNewInstanceByPropertiesFile(String... args) throws Exception {
+    private void deployNewInstanceWithoutTables(String... args) throws Exception {
         deployNewInstance(true, args);
     }
 
-    private void deployNewInstanceByConfigDir(String... args) throws Exception {
+    private void deployNewInstanceWithTables(String... args) throws Exception {
         deployNewInstance(false, args);
     }
 
-    private void deployNewInstance(boolean isByPropFile, String... args) throws Exception {
+    private void deployNewInstance(boolean isWithTables, String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
                 Stream.concat(Stream.of("scriptsDir"), Arrays.stream(args)).toArray(String[]::new)));
         var config = DeployNewInstance.loadAndUpdateConfiguration(arguments);
@@ -289,7 +291,7 @@ public class DeployNewInstanceIT {
                 .ignoreTableFiles(arguments.ignoreTableFiles())
                 .deployPaused(arguments.deployPaused());
 
-        if (isByPropFile) {
+        if (isWithTables) {
             builder.propertiesFile(instancePropertiesFile);
         } else {
             builder.configDir(tempDir);

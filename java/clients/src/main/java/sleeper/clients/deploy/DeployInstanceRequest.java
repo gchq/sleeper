@@ -19,7 +19,6 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
 public class DeployInstanceRequest {
@@ -27,18 +26,11 @@ public class DeployInstanceRequest {
     private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
     private final SleeperInternalCdkApp cdkApp;
-    private final Path propertiesFile;
-    private final Path configDir;
 
     private DeployInstanceRequest(Builder builder) {
         instanceConfig = Objects.requireNonNull(builder.instanceConfig, "instanceConfig must not be null");
         cdkCommand = Objects.requireNonNull(builder.cdkCommand, "cdkCommand must not be null");
         cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
-        propertiesFile = builder.propertiesFile;
-        configDir = builder.configDir;
-        if (propertiesFile == null && configDir == null) {
-            throw new NullPointerException("One of propertiesFile and configDir must not be null");
-        }
     }
 
     public static Builder builder() {
@@ -57,20 +49,10 @@ public class DeployInstanceRequest {
         return cdkCommand;
     }
 
-    public Path getPropertiesFile() {
-        return propertiesFile;
-    }
-
-    public Path getConfigDir() {
-        return configDir;
-    }
-
     public static class Builder {
         private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
         private SleeperInternalCdkApp cdkApp;
-        private Path propertiesFile;
-        private Path configDir;
 
         public Builder instanceConfig(SleeperInstanceConfiguration instanceConfig) {
             this.instanceConfig = instanceConfig;
@@ -84,16 +66,6 @@ public class DeployInstanceRequest {
 
         public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
             this.cdkApp = cdkApp;
-            return this;
-        }
-
-        public Builder propertiesFile(Path propertiesFile) {
-            this.propertiesFile = propertiesFile;
-            return this;
-        }
-
-        public Builder configDir(Path configDir) {
-            this.configDir = configDir;
             return this;
         }
 
