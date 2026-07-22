@@ -333,7 +333,7 @@ class SleeperClient:
                     def __init__(self):
                         self.num_rows: int = 0
 
-                    def write(self, rows: List[Dict]):
+                    def write(self, rows: list[dict]):
                         for row in rows:
                             parquet_file.write_record(row)
 
@@ -447,7 +447,7 @@ def _receive_messages(
     deserialiser: ParquetDeserialiser,
     query_id: str,
     timeout: int = DEFAULT_MAX_WAIT_TIME,
-) -> List:
+) -> list:
     """
     Polls the DynamoDB query tracker until the query is completed, then reads the results from S3.
 
