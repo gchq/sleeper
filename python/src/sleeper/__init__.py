@@ -1,5 +1,6 @@
 """Python client for Sleeper."""
 
-from .client import SleeperClient
+from sleeper.client import SleeperClient
 
-__all__ = ["SleeperClient"]
+
+__all__ = ("SleeperClient",)

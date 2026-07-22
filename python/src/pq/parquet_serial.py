@@ -117,7 +117,7 @@ class ParquetSerialiser:
         """
         Empty the data buffer for new rows being written.
         """
-        self._buffer: dict = dict()
+        self._buffer = dict()
         self._row_count: int = 0
         self._total_memory: int = 0
         self._mem_sample_duration: int = self._get_next_mem_sample_duration()
