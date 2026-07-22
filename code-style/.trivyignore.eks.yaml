@@ -61,6 +61,8 @@ vulnerabilities:
   # (hadoop-client-runtime-3.4.1.jar)
   - id: GHSA-2r2c-cx56-8933
   - id: GHSA-47qp-hqvx-6r3f
+  - id: CVE-2026-56740
+  - id: CVE-2026-56741
   # org.eclipse.jetty:jetty-http
   # (bulk-import-runner.jar)
   # (hadoop-client-runtime-3.4.1.jar)
@@ -75,3 +77,10 @@ vulnerabilities:
   # org.apache.commons:commons-configuration2
   # (hadoop-client-runtime-3.4.1.jar)
   - id: CVE-2026-45205
+
+  # com.fasterxml.jackson.core:jackson-databind
+  - id: CVE-2026-59888
+  - id: CVE-2026-59889
+  - id: GHSA-mhm7-754m-9p8w
+  # com.fasterxml.jackson.core:jackson-core
+  - id: GHSA-r7wm-3cxj-wff9
