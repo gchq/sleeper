@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.12'
           cache: 'pip'
       - name: Python build
-        run: pip install --editable .
+        run: pip install --editable ".[dev]"
         working-directory: ./python
       - name: Ruff check
         run: ruff check
