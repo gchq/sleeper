@@ -55,11 +55,11 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
-    InstanceProperties instanceProperties = createTestInstancePropertiesWithId("my-instance");
+    InstanceProperties instanceProperties = generateInstancePropertiesForFile();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
@@ -302,5 +302,13 @@ public class DeployNewInstanceIT {
         return tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> new RuntimeException("Found tables: " + tableIndex.streamAllTables().toList()))
                 .getTableUniqueId();
+    }
+
+    private static InstanceProperties generateInstancePropertiesForFile() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.unset(ID);
+        instanceProperties.unset(VPC_ID);
+        instanceProperties.unset(SUBNETS);
+        return instanceProperties;
     }
 }
