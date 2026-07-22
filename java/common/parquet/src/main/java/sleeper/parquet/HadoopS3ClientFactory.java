@@ -29,6 +29,7 @@ import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.http.auth.spi.scheme.AuthScheme;
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.retries.StandardRetryStrategy;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -236,6 +237,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
                     new AwsStatisticsCollector(parameters.getMetrics()));
         }
 
+        clientOverrideConfigBuilder.retryStrategy(StandardRetryStrategy.builder().build());
         return clientOverrideConfigBuilder;
     }
 }
