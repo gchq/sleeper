@@ -9,12 +9,12 @@ description = "Python client for Sleeper"
 requires-python = ">=3.10"
 
 dependencies = [
-    "pyarrow",
-    "boto3",
-    "s3fs",
-    "boto3-stubs[essential]",
-    "websockets",
-    "jproperties",
+    "pyarrow>=25.0.0",
+    "boto3>=1.43.53",
+    "s3fs>=0.4.2",
+    "boto3-stubs[essential]>=1.43.53",
+    "websockets>=16.1.1",
+    "jproperties>=2.1.2",
 ]
 
 classifiers = [
@@ -31,11 +31,11 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff",
-    "pytest",
-    "pytest-mock",
-    "pytest-asyncio",
-    "testcontainers[localstack]",
+    "ruff>=0.15.22",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+    "pytest-asyncio>=1.4.0",
+    "testcontainers[localstack]>=4.14.2",
 ]
 
 [tool.setuptools]
