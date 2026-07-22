@@ -25,6 +25,7 @@ vulnerabilities:
   - id: CVE-2025-52999
   - id: CVE-2025-49128
   - id: GHSA-72hv-8253-57qq
+  - id: GHSA-r7wm-3cxj-wff9
   # com.fasterxml.jackson.core:jackson-databind
   # (hadoop-client-runtime-3.4.1.jar, parquet-jackson-1.17.1.jar)
   - id: CVE-2026-54512
@@ -39,6 +40,9 @@ vulnerabilities:
   - id: CVE-2026-54516
   - id: CVE-2026-54517
   - id: CVE-2026-54518
+  - id: CVE-2026-59888
+  - id: CVE-2026-59889
+  - id: GHSA-mhm7-754m-9p8w
   # com.google.guava:guava
   # (spark-network-common_2.12-3.5.6.jar)
   - id: CVE-2018-10237
@@ -77,10 +81,3 @@ vulnerabilities:
   # org.apache.commons:commons-configuration2
   # (hadoop-client-runtime-3.4.1.jar)
   - id: CVE-2026-45205
-
-  # com.fasterxml.jackson.core:jackson-databind
-  - id: CVE-2026-59888
-  - id: CVE-2026-59889
-  - id: GHSA-mhm7-754m-9p8w
-  # com.fasterxml.jackson.core:jackson-core
-  - id: GHSA-r7wm-3cxj-wff9
