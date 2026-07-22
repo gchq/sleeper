@@ -247,6 +247,13 @@
         </file>
         <file>
             <source>
+                ${project.basedir}/../deployment/cdk-artefact-custom-resources/target/cdk-artefact-custom-resources-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars</outputDirectory>
+            <destName>cdk-artefact-custom-resources-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
                 ${project.basedir}/../deployment/cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>

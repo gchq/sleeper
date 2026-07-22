@@ -108,6 +108,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>cdk-artefact-custom-resources</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>cdk-custom-resources</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
