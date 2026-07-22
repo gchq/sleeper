@@ -13,7 +13,7 @@
 #  limitations under the License.
 import json
 import random
-from typing import BinaryIO, Dict, List
+from typing import BinaryIO
 from collections.abc import Mapping
 
 import pyarrow as pa

@@ -17,7 +17,6 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Dict, List
 
 import boto3
 import s3fs
