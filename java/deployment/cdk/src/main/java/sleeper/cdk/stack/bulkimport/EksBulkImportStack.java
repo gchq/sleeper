@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.eks_v2.AccessPolicy;
 import software.amazon.awscdk.services.eks_v2.AccessPolicyNameOptions;
 import software.amazon.awscdk.services.eks_v2.AccessScopeType;
 import software.amazon.awscdk.services.eks_v2.Cluster;
+import software.amazon.awscdk.services.eks_v2.ComputeConfig;
 import software.amazon.awscdk.services.eks_v2.FargateCluster;
 import software.amazon.awscdk.services.eks_v2.FargateProfile;
 import software.amazon.awscdk.services.eks_v2.FargateProfileOptions;
@@ -82,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
@@ -89,8 +91,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL;
 import static sleeper.core.properties.instance.EKSProperty.EKS_API_ALLOWED_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
@@ -171,7 +176,10 @@ public final class EksBulkImportStack extends NestedStack {
                     .kubectlProviderOptions(kubectlProviderOptions.build())
                     .vpc(coreStacks.getVpc())
                     .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                    .compute(ComputeConfig.builder().nodePools(List.of("system")).build())
                     .build();
+
+            addNodepoolManifest(bulkImportCluster, instanceProperties);
 
         } else if (bulkImportClusterType == EksClusterType.FARGATE) {
             bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
@@ -203,6 +211,9 @@ public final class EksBulkImportStack extends NestedStack {
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
+
+        KubernetesManifest resourceQuota = addResourceQuotaManifest(bulkImportCluster, instanceProperties, uniqueBulkImportId);
+        withDependencyOn(namespace, resourceQuota);
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -321,6 +332,7 @@ public final class EksBulkImportStack extends NestedStack {
         }
 
         StateMachine stateMachine = StateMachine.Builder.create(this, "EksBulkImportStateMachine")
+                .stateMachineName(cluster.getClusterName())
                 .definitionBody(DefinitionBody.fromChainable(definition))
                 .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
@@ -371,6 +383,25 @@ public final class EksBulkImportStack extends NestedStack {
     @SuppressWarnings("unchecked")
     private KubernetesManifest createNamespace(Cluster cluster, String namespaceName) {
         return cluster.addManifest("EksBulkImportNamespace", parseJson("/k8s/namespace.json", namespaceReplacement(namespaceName)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private KubernetesManifest addNodepoolManifest(Cluster cluster, InstanceProperties instanceProperties) {
+        String instanceTypesJson = instanceProperties.getList(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES).stream()
+                .map(type -> "\"" + type + "\"")
+                .collect(Collectors.joining(","));
+        return cluster.addManifest("nodepool", parseJson("/k8s/nodepool.json", replacements(Map.of(
+                "\"instance-type-placeholder\"", instanceTypesJson,
+                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT)
+        ))));
+    }
+
+    @SuppressWarnings("unchecked")
+    private KubernetesManifest addResourceQuotaManifest(Cluster cluster, InstanceProperties instanceProperties, String namespace) {
+        return cluster.addManifest("resource-quota", parseJson("/k8s/resource-quota.json", replacements(Map.of(
+                "namespace-placeholder", namespace,
+                "job-limit", instanceProperties.get(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL)
+        ))));
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {

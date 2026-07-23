@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.EksClusterType;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -58,6 +59,30 @@ public interface EKSProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
             .defaultValue(EksClusterType.FARGATE.toString())
             .validationPredicate(EksClusterType::isValid)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
+            .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
+                    "that the Karpenter NodePool is allowed to launch for Spark pods.")
+            .defaultValue("m7g.xlarge,m7g.2xlarge,m7g.4xlarge,m7g.8xlarge,m7g.12xlarge,m7g.16xlarge,m7gd.xlarge,m7gd.2xlarge,m7gd.4xlarge,m7gd.8xlarge,m7gd.12xlarge,m7gd.16xlarge,m7i.xlarge,m7i.2xlarge,m7i.4xlarge,m7i.8xlarge,m7i.12xlarge,m7i.16xlarge,m6id.xlarge,m6id.2xlarge,m6id.4xlarge,m6id.8xlarge,m6id.12xlarge,m6id.16xlarge")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
+            .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
+                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0. ")
+            .defaultValue("164")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.eks.job.concurrency.level")
+            .description("(EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the " +
+                    "bulk import namespace. Enforced by a ResourceQuota on count/jobs.batch.")
+            .defaultValue("2")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
