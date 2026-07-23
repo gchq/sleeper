@@ -148,11 +148,11 @@ public class LambdaHandler {
             .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
             .core().add();
     public static final LambdaHandler COPY_CONTAINER = builder()
-            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .jar(LambdaJar.ARTEFACT_RESOURCES)
             .handler("sleeper.cdk.custom.CopyContainerImageLambda::handleRequest")
             .core().add();
     public static final LambdaHandler COPY_JAR = builder()
-            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .jar(LambdaJar.ARTEFACT_RESOURCES)
             .handler("sleeper.cdk.custom.CopyJarLambda::handleRequest")
             .core().add();
     public static final LambdaHandler METRICS_TRIGGER = builder()

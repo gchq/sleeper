@@ -86,6 +86,15 @@ public interface EKSProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED = Index.propertyBuilder("sleeper.bulk.import.eks.automode.fluentbit.logging.enabled")
+            .description("(EKS auto mode only) Whether to deploy a FluentBit DaemonSet to collect container logs " +
+                    "from EKS auto mode nodes and send them to CloudWatch Logs. Disable this if you manage log " +
+                    "collection separately or need to avoid the aws-for-fluent-bit image dependency.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.instances")
             .description("(EKS mode only) The number of Spark executors. Used to set spark.executor.instances.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")

@@ -91,6 +91,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
@@ -180,6 +181,9 @@ public final class EksBulkImportStack extends NestedStack {
                     .build();
 
             addNodepoolManifest(bulkImportCluster, instanceProperties);
+            if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
+                addFluentBitLoggingForAutoMode(bulkImportCluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+            }
 
         } else if (bulkImportClusterType == EksClusterType.FARGATE) {
             bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
@@ -340,6 +344,109 @@ public final class EksBulkImportStack extends NestedStack {
         coreStacks.grantReadIngestJobLookup(stateMachine);
 
         return stateMachine;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addFluentBitLoggingForAutoMode(Cluster cluster, ILogGroup logGroup) {
+        // Based on guide at https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html
+        // FluentBit runs as a DaemonSet on EC2 nodes managed by EKS auto mode
+        String loggingNamespaceName = "amazon-cloudwatch";
+
+        KubernetesManifest loggingNamespace = cluster.addManifest("LoggingNamespace", Map.of(
+                "apiVersion", "v1",
+                "kind", "Namespace",
+                "metadata", Map.of(
+                        "name", loggingNamespaceName,
+                        "labels", Map.of("pod-security.kubernetes.io/enforce", "privileged"))));
+
+        ServiceAccount fluentBitServiceAccount = cluster.addServiceAccount("FluentBitServiceAccount",
+                ServiceAccountOptions.builder()
+                        .namespace(loggingNamespaceName)
+                        .name("fluent-bit")
+                        .build());
+        fluentBitServiceAccount.getNode().addDependency(loggingNamespace);
+
+        fluentBitServiceAccount.getRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of(
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:DescribeLogStreams",
+                        "logs:PutLogEvents",
+                        "logs:PutRetentionPolicy"))
+                .resources(List.of("*"))
+                .build());
+
+        KubernetesManifest clusterRole = cluster.addManifest("FluentBitClusterRole", Map.of(
+                "apiVersion", "rbac.authorization.k8s.io/v1",
+                "kind", "ClusterRole",
+                "metadata", Map.of("name", "fluent-bit"),
+                "rules", List.of(Map.of(
+                        "apiGroups", List.of(""),
+                        "resources", List.of("pods", "namespaces", "nodes"),
+                        "verbs", List.of("get", "list", "watch")))));
+
+        KubernetesManifest clusterRoleBinding = cluster.addManifest("FluentBitClusterRoleBinding", Map.of(
+                "apiVersion", "rbac.authorization.k8s.io/v1",
+                "kind", "ClusterRoleBinding",
+                "metadata", Map.of("name", "fluent-bit"),
+                "roleRef", Map.of(
+                        "apiGroup", "rbac.authorization.k8s.io",
+                        "kind", "ClusterRole",
+                        "name", "fluent-bit"),
+                "subjects", List.of(Map.of(
+                        "kind", "ServiceAccount",
+                        "name", "fluent-bit",
+                        "namespace", loggingNamespaceName))));
+        withDependencyOn(clusterRole, clusterRoleBinding);
+
+        Function<String, String> outputReplacements = replacements(Map.of(
+                "region-placeholder", cluster.getStack().getRegion(),
+                "log-group-placeholder", logGroup.getLogGroupName()));
+        KubernetesManifest configMap = cluster.addManifest("LoggingConfig", Map.of(
+                "apiVersion", "v1",
+                "kind", "ConfigMap",
+                "metadata", Map.of("name", "fluent-bit-config", "namespace", loggingNamespaceName),
+                "data", Map.of(
+                        "fluent-bit.conf", loadResource("/fluentbit/fluent-bit-main.conf"),
+                        "input.conf", loadResource("/fluentbit/input.conf"),
+                        "filters.conf", loadResource("/fluentbit/filters.conf"),
+                        "output.conf", outputReplacements.apply(loadResource("/fluentbit/output.conf")),
+                        "parsers.conf", loadResource("/fluentbit/parsers.conf"))));
+        withDependencyOn(loggingNamespace, configMap);
+
+        KubernetesManifest daemonSet = cluster.addManifest("FluentBitDaemonSet", Map.of(
+                "apiVersion", "apps/v1",
+                "kind", "DaemonSet",
+                "metadata", Map.of("name", "fluent-bit", "namespace", loggingNamespaceName),
+                "spec", Map.of(
+                        "selector", Map.of("matchLabels", Map.of("name", "fluent-bit")),
+                        "template", Map.of(
+                                "metadata", Map.of("labels", Map.of("name", "fluent-bit")),
+                                "spec", Map.of(
+                                        "serviceAccountName", "fluent-bit",
+                                        "tolerations", List.of(Map.of(
+                                                "key", "eks.amazonaws.com/compute-type",
+                                                "operator", "Equal",
+                                                "value", "auto",
+                                                "effect", "NoSchedule")),
+                                        "containers", List.of(Map.of(
+                                                "name", "fluent-bit",
+                                                "image", "public.ecr.aws/aws-observability/aws-for-fluent-bit:stable",
+                                                "resources", Map.of(
+                                                        "requests", Map.of("cpu", "50m", "memory", "64Mi"),
+                                                        "limits", Map.of("memory", "256Mi")),
+                                                "volumeMounts", List.of(
+                                                        Map.of("name", "varlog", "mountPath", "/var/log"),
+                                                        Map.of("name", "fluentbitstate", "mountPath", "/var/fluent-bit/state"),
+                                                        Map.of("name", "config", "mountPath", "/fluent-bit/etc/")))),
+                                        "volumes", List.of(
+                                                Map.of("name", "varlog", "hostPath", Map.of("path", "/var/log")),
+                                                Map.of("name", "fluentbitstate", "emptyDir", Map.of()),
+                                                Map.of("name", "config", "configMap", Map.of("name", "fluent-bit-config"))))))));
+        withDependencyOn(configMap, daemonSet);
+        withDependencyOn(clusterRoleBinding, daemonSet);
+        daemonSet.getNode().addDependency(fluentBitServiceAccount);
     }
 
     @SuppressWarnings("unchecked")

@@ -23,6 +23,7 @@ import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.testutil.SleeperStackTestBase;
 import sleeper.core.properties.model.EksClusterType;
 
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
@@ -58,6 +59,23 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
                 .forFile().withName("eks-bulk-import-automode", ".json"));
+    }
+
+    @Test
+    void shouldGenerateCloudFormationTemplateForAutomodeClusterWithLoggingDisabled() {
+        // Given
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE);
+        instanceProperties.set(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED, "false");
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+        BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
+
+        // When
+        EksBulkImportStack stack = new EksBulkImportStack(
+                rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
+
+        // Then
+        Approvals.verify(printer.toJson(stack), new Options()
+                .forFile().withName("eks-bulk-import-automode-logging-disabled", ".json"));
     }
 
     @Test

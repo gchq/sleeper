@@ -64,7 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -195,7 +195,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         runTask(job, null);
     }
 
-    private void runTask(CompactionJob job, Consumer<Long> progressCallback) throws Exception {
+    private void runTask(CompactionJob job, LongConsumer progressCallback) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
             compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));

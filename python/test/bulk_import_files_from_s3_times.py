@@ -15,7 +15,7 @@
 import argparse
 import uuid
 
-from sleeper.client import SleeperClient
+from sleeper import SleeperClient
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest files from S3 to Sleeper")

@@ -82,6 +82,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static java.util.Collections.reverseOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -136,6 +137,20 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         assertThat(supportsFiltersAndAggregations).isTrue();
     }
 
+    @Test
+    void shouldSupportSqlFiltering() {
+        // Given
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        // When
+        boolean supportsFiltersAndAggregations = rowRetriever.supportsSqlFiltering();
+
+        // Then
+        assertThat(supportsFiltersAndAggregations).isTrue();
+    }
+
     @Nested
     @DisplayName("Multi-threading")
     class MultiThreadStressTest {
@@ -178,7 +193,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             QueryProcessingConfig.none());
 
                     LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-                    QueryExecutor queryExec = new QueryExecutor(
+                    QueryExecutor queryExec = QueryExecutor.makeSerialExecutor(
                             QueryPlanner.initialiseNow(tableProperties, stateStore),
                             new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
 
@@ -202,6 +217,73 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             // Then - all tasks should complete normally
             assertThat(es.awaitTermination(2, TimeUnit.MINUTES)).isTrue();
             assertThat(results).extracting(Future::get).allMatch(e -> e == null);
+        }
+    }
+
+    @Nested
+    @DisplayName("Multi-threading via PerCallDataFusionRowRetrieverProvider")
+    class PerCallProviderMultiThreadStressTest {
+        public static final int QUERY_COUNT = 50;
+
+        private PartitionTree buildPartitionTree(Schema schema) {
+            PartitionsBuilder builder = new PartitionsBuilder(schema).rootFirst("root");
+            builder.splitToNewChildren("root", "L", "R", 0L);
+            builder.splitToNewChildren("L", "LL", "LR", -10L);
+            builder.splitToNewChildren("R", "RL", "RR", 10L);
+            builder.splitToNewChildren("LL", "LLL", "LLR", -20L);
+            builder.splitToNewChildren("LR", "LRL", "LRR", -5L);
+            builder.splitToNewChildren("RL", "RLL", "RLR", 5L);
+            builder.splitToNewChildren("RR", "RRL", "RRR", 20L);
+            return builder.buildTree();
+        }
+
+        private List<Row> makeRows() {
+            List<Row> rows = new ArrayList<>();
+            for (int i = -100; i < 100; i++) {
+                rows.add(new Row(Map.of("key", (long) i, "value1", (long) i * 10L, "value2", (long) i * 100L)));
+            }
+            return rows;
+        }
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(buildPartitionTree(tableProperties.getSchema()));
+            ingestData(makeRows());
+        }
+
+        /**
+         * Tests that we can sucessfully execute tasks in parallel without segmentation faults when using
+         * the PerCallDataFusionRowRetrieverProvider.
+         */
+        @Test
+        void shouldExecuteManyQueriesRunningInParallel() throws Exception {
+            // Given
+            List<Row> expected = makeRows();
+            PerCallDataFusionRowRetrieverProvider rowRetrieverProvider = new PerCallDataFusionRowRetrieverProvider(
+                    // DataFusion spends time trying to auth with AWS unless you override it
+                    DataFusionAwsConfig.overrideEndpoint("dummy"));
+            LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+            ExecutorService executorService = Executors.newFixedThreadPool(5);
+            try {
+                QueryExecutor queryExec = QueryExecutor.makeParallelExecutor(
+                        QueryPlanner.initialiseNow(tableProperties, stateStore),
+                        new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever),
+                        executorService);
+                Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
+                        "key", -1000L, true, 1000L, true)), QueryProcessingConfig.none());
+
+                // When / Then - run many times, each fanning out to all the leaf partitions in parallel
+                for (int i = 0; i < QUERY_COUNT; i++) {
+                    List<Row> results = new ArrayList<>();
+                    try (CloseableIterator<Row> rows = queryExec.execute(query)) {
+                        rows.forEachRemaining(results::add);
+                    }
+                    assertThat(results).hasSameElementsAs(expected);
+                }
+            } finally {
+                executorService.shutdown();
+            }
         }
     }
 
@@ -1133,6 +1215,210 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     @Nested
+    @DisplayName("SQL query filtering")
+    class SqlQueryFiltering {
+        List<Row> rows = IntStream.rangeClosed(1, 10)
+                .mapToObj(i -> new Row(Map.of("key", (long) i, "value1", (long) i * 10, "value2", (long) i * 100)))
+                .toList();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(rows);
+        }
+
+        @Test
+        void shouldFilterResultsWithSqlWhereClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 4 AND key < 9;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(List.of(
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)),
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L))));
+        }
+
+        @Test
+        void shouldApplySqlLimitClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results LIMIT 5;")
+                            .build())
+                    .build();
+
+            // When / Then
+            assertThat(execute(query)).hasSize(5);
+        }
+
+        @Test
+        void shouldApplySqlOrderByDescClause() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results ORDER BY key DESC;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = IntStream.rangeClosed(1, 10).boxed()
+                    .sorted(reverseOrder())
+                    .map(i -> new Row(Map.of("key", (long) i, "value1", (long) i * 10, "value2", (long) i * 100)))
+                    .toList();
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlOrderByDescWithLimit() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results ORDER BY key DESC LIMIT 3;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(List.of(
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)),
+                    new Row(Map.of("key", 9L, "value1", 90L, "value2", 900L)),
+                    new Row(Map.of("key", 8L, "value1", 80L, "value2", 800L))));
+        }
+
+        @Test
+        void shouldCombineSqlWhereAndPartitionRange() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 2L, true, 9L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 3 AND key < 8;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 4L, "value1", 40L, "value2", 400L)),
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 6L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 7L, "value1", 70L, "value2", 700L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldReturnEmptyResultsWhenSqlFilterMatchesNoRows() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 100;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("SQL query with aggregation")
+    class SqlQueryWithAggregation {
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value1),sum(value2)");
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            List<Row> aggregationRows = List.of(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 1L, "value1", 20L, "value2", 200L)),
+                    new Row(Map.of("key", 1L, "value1", 30L, "value2", 300L)),
+                    new Row(Map.of("key", 5L, "value1", 50L, "value2", 500L)),
+                    new Row(Map.of("key", 5L, "value1", 60L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)),
+                    new Row(Map.of("key", 10L, "value1", 100L, "value2", 1000L)));
+            ingestData(aggregationRows);
+        }
+
+        @Test
+        void shouldApplySqlFilterAfterAggregation() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results WHERE key > 1;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 5L, "value1", 110L, "value2", 1100L)),
+                    new Row(Map.of("key", 10L, "value1", 200L, "value2", 2000L)));
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldApplySqlLimitAfterAggregation() throws Exception {
+            // Given
+            Query query = Query.builder()
+                    .tableName("myTable")
+                    .queryId("id")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 1L, true, 10L, true))))
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .sqlQuery("SELECT * FROM query_results LIMIT 2;")
+                            .build())
+                    .build();
+
+            // When
+            List<Row> results = execute(query);
+
+            // Then
+            assertThat(results).hasSize(2);
+        }
+    }
+
+    @Nested
     @DisplayName("Return sorted data")
     class ReturnSortedData {
 
@@ -1427,7 +1713,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 // DataFusion spends time trying to auth with AWS unless you override it
                 DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, CONTEXT);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

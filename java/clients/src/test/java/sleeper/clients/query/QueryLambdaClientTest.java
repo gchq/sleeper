@@ -65,6 +65,7 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.SEND_TO_S3_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
@@ -101,7 +102,7 @@ public class QueryLambdaClientTest {
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6",
+                "3", "6", "",
                 EXIT_OPTION);
         runQueryClient();
 
@@ -113,6 +114,7 @@ public class QueryLambdaClientTest {
                         PROMPT_MAX_INCLUSIVE +
                         PROMPT_MIN_ROW_KEY_LONG_TYPE +
                         PROMPT_MAX_ROW_KEY_LONG_TYPE +
+                        PROMPT_SQL_FILTER +
                         "Submitting query with id")
                 .contains("Polling query tracker\n" +
                         "Finished query processing with final state of: COMPLETED");
@@ -171,7 +173,7 @@ public class QueryLambdaClientTest {
     }
 
     private QueryExecutor queryExecutor(TableProperties tableProperties) {
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties,
                         new InMemoryLeafPartitionRowRetriever(rowStore)));

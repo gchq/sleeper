@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.37.1</version>
+        <version>0.37.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,5 +32,6 @@
         <module>cdk-environment</module>
         <module>build-uptime-lambda</module>
         <module>container-images</module>
+        <module>cdk-artefact-custom-resources</module>
     </modules>
 </project>
