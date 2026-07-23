@@ -42,7 +42,6 @@ import sleeper.restapi.Route;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -61,8 +60,8 @@ public class AddTableRoute implements Route {
     private AddTableRoute(Builder builder) {
         // Fields may be null when this route is instantiated by the OpenAPI doc generator, which only invokes the
         // openApi* methods below. handle() will fail with an NPE if the route is dispatched a request without them.
-        instanceProperties = Objects.requireNonNull(builder.instanceProperties);
-        addTable = Objects.requireNonNull(builder.addTable);
+        instanceProperties = builder.instanceProperties;
+        addTable = builder.addTable;
         requestSerDe = new AddTableRequestSerDe(instanceProperties);
         responseSerDe = new AddTableResponseSerDe();
     }
