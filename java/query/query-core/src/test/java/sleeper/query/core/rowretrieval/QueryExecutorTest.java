@@ -34,6 +34,7 @@ import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.model.QueryProcessingConfig;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,6 +53,29 @@ import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest extends QueryExecutorTestBase {
+
+    @Nested
+    @DisplayName("Query SQL check")
+    class QueryWithSQL {
+        @Test
+        void shouldFailWhenSqlQueryPresent() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
+
+            // When - Then
+            assertThatThrownBy(() -> getRows(queryAllRowsBuilder().processingConfig(
+                    QueryProcessingConfig
+                            .builder()
+                            .sqlQuery("SELECT * FROM query_results")
+                            .build())
+                    .build()))
+                    .cause()
+                    .isInstanceOf(QueryException.class)
+                    .hasMessage("Query contains SQL query filter which is not supported by query results retriever: " +
+                            "sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever. " +
+                            "You may need to select a different query engine in the table properties for this table.");
+        }
+    }
 
     @Nested
     @DisplayName("Query rows")

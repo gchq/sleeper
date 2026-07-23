@@ -19,7 +19,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 /**
  * A bundle of the inputs required to execute a compaction.
@@ -31,13 +31,13 @@ import java.util.function.Consumer;
  */
 public class CompactionRequest {
 
-    private static final Consumer<Long> NO_OP_PROGRESS_CALLBACK = rows -> {
+    private static final LongConsumer NO_OP_PROGRESS_CALLBACK = rows -> {
     };
 
     private final CompactionJob job;
     private final TableProperties tableProperties;
     private final Region region;
-    private final Consumer<Long> progressCallback;
+    private final LongConsumer progressCallback;
 
     private CompactionRequest(Builder builder) {
         this.job = Objects.requireNonNull(builder.job, "job must not be null");
@@ -62,7 +62,7 @@ public class CompactionRequest {
         return region;
     }
 
-    public Consumer<Long> getProgressCallback() {
+    public LongConsumer getProgressCallback() {
         return progressCallback;
     }
 
@@ -70,7 +70,7 @@ public class CompactionRequest {
         private CompactionJob job;
         private TableProperties tableProperties;
         private Region region;
-        private Consumer<Long> progressCallback;
+        private LongConsumer progressCallback;
 
         private Builder() {
         }
@@ -101,7 +101,7 @@ public class CompactionRequest {
          * @param  progressCallback the callback, or null to use a no-op
          * @return                  this builder
          */
-        public Builder progressCallback(Consumer<Long> progressCallback) {
+        public Builder progressCallback(LongConsumer progressCallback) {
             this.progressCallback = progressCallback;
             return this;
         }
