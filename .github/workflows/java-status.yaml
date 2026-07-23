@@ -8,6 +8,8 @@ on:
       # Check generated files are not edited directly
       - 'examples/**'
       - 'scripts/templates/**'
+      - 'docs/deployment/docker-images.md'
+      - 'docs/development/system-test-suites.md'
       - 'docs/usage/properties/**'
   push:
     branches:
@@ -60,7 +62,8 @@ jobs:
         working-directory: ./java
         run: |
           PROJECT_ROOT=$(cd .. && pwd)
-          mvn install -Pquick,skipShade -q -e -pl clients -am -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+          mvn install -Pquick,skipShade -q -e -pl clients,system-test/system-test-suite -am -DskipRust \
+            -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
             -Dexec.mainClass=sleeper.clients.deploy.documentation.GeneratePropertiesTemplates \
             -Dexec.args="$PROJECT_ROOT"
@@ -70,9 +73,13 @@ jobs:
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl rest-api \
             -Dexec.mainClass=sleeper.restapi.GenerateOpenApiSpec \
             -Dexec.args="$PROJECT_ROOT"
+          mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl system-test/system-test-suite \
+            -Dexec.classpathScope=test \
+            -Dexec.mainClass=sleeper.systemtest.suite.documentation.GenerateSystemTestSuiteDocumentation \
+            -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then
-            echo "Found files changed by documentation generation."
+            echo "Found generated files or documentation that are out of date."
             echo "Please run scripts/dev/generateDocumentation.sh and commit."
             git status --verbose --verbose
             exit 1

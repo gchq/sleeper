@@ -214,7 +214,8 @@ public class SleeperCoreStacks {
         configBucketStack.grantRead(grantee);
         configBucketStack.grantWrite(grantee);
         tableIndexStack.grantReadWrite(grantee);
-        stateStoreStacks.grantReadWritePartitions(grantee);
+        // Need to check whether any files are present before a user replaces a table's partitions
+        stateStoreStacks.grantReadFileReferencesReadWritePartitions(grantee);
     }
 
     public void grantReadTableDataBucket(IGrantable grantee) {

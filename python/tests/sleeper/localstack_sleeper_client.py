@@ -12,10 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from sleeper.client import SleeperClient
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
-from sleeper.properties.user_defined_properties import CommonProperty
+from sleeper import SleeperClient
+from sleeper.properties import CommonCdkProperty, InstanceProperties, CommonProperty
 from tests.sleeper.localstack import LocalStack
 
 

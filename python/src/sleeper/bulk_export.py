@@ -17,8 +17,8 @@ import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
 
-from sleeper.properties.cdk_defined_properties import QueryCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import QueryCdkProperty
+from sleeper.properties import InstanceProperties
 
 
 class BulkExportQuery:

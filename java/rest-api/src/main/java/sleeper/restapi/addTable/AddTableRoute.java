@@ -42,6 +42,7 @@ import sleeper.restapi.Route;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -60,9 +61,9 @@ public class AddTableRoute implements Route {
     private AddTableRoute(Builder builder) {
         // Fields may be null when this route is instantiated by the OpenAPI doc generator, which only invokes the
         // openApi* methods below. handle() will fail with an NPE if the route is dispatched a request without them.
-        instanceProperties = builder.instanceProperties;
-        addTable = builder.addTable;
-        requestSerDe = new AddTableRequestSerDe();
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties);
+        addTable = Objects.requireNonNull(builder.addTable);
+        requestSerDe = new AddTableRequestSerDe(instanceProperties);
         responseSerDe = new AddTableResponseSerDe();
     }
 
@@ -80,23 +81,17 @@ public class AddTableRoute implements Route {
         } catch (JsonSyntaxException e) {
             LOGGER.warn("Add table request body was not valid JSON", e);
             return Route.errorResponse(400, "invalid_request", "Request body is not valid JSON");
+        } catch (RuntimeException e) {
+            LOGGER.warn("Add table request was invalid", e);
+            return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
 
         if (request == null) {
             return Route.errorResponse(400, "invalid_request", "Request body is empty");
         }
 
-        TableProperties tableProperties;
-        List<Object> splitPoints;
-
-        try {
-            tableProperties = request.toTableProperties(instanceProperties);
-            splitPoints = request.toSplitPoints(tableProperties);
-        } catch (RuntimeException e) {
-            // SchemaSerDe / split-point parsing surface invalid input as runtime exceptions.
-            LOGGER.warn("Add table request was invalid", e);
-            return Route.errorResponse(400, "invalid_request", e.getMessage());
-        }
+        TableProperties tableProperties = request.getProperties();
+        List<Object> splitPoints = request.getSplitPoints();
 
         try {
             addTable.addTable(tableProperties, splitPoints);
