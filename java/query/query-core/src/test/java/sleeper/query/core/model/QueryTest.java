@@ -83,22 +83,14 @@ public class QueryTest {
                         .build())
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        boolean test3 = query1.equals(query4);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
-        int hashCode4 = query4.hashCode();
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
+        assertThat(query1).isNotEqualTo(query4);
 
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(test3).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
-        assertThat(hashCode4).isNotEqualTo(hashCode1);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query4.hashCode());
     }
 
     @Test
@@ -126,18 +118,54 @@ public class QueryTest {
                 .regions(List.of(region))
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
 
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
+    }
+
+    @Test
+    public void testEqualsAndHashcodeWithSqlQuery() {
+        // Given
+        Field field = new Field("key", new LongType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range = rangeFactory.createRange(field, 1L, true, 10L, true);
+        Region region = new Region(range);
+        String tableName = UUID.randomUUID().toString();
+        Query query1 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results")
+                        .build())
+                .queryId("A")
+                .regions(List.of(region))
+                .build();
+        Query query2 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results")
+                        .build())
+                .queryId("A")
+                .regions(List.of(region))
+                .build();
+        Query query3 = Query.builder()
+                .tableName(tableName)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery("SELECT * FROM query_results LIMIT 1")
+                        .build())
+                .queryId("B")
+                .regions(List.of(region))
+                .build();
+
+        // When / Then
+        assertThat(query1).isEqualTo(query2).isNotEqualTo(query3);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode()).isNotEqualTo(query3.hashCode());
     }
 
     @Test
@@ -167,18 +195,12 @@ public class QueryTest {
                 .regions(List.of(region1))
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
 
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
     }
 
     @Test
@@ -208,18 +230,12 @@ public class QueryTest {
                 .regions(List.of(region2))
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
 
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
     }
 
     @Test

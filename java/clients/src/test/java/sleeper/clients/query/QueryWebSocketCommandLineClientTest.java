@@ -38,6 +38,7 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
 
@@ -63,7 +64,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 1L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -72,6 +73,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -94,7 +96,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-subquery", 1L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -103,6 +105,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -131,7 +134,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("subquery-3", 1L)));
 
             // When
-            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
+            in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -140,6 +143,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_RANGE_QUERY +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow1) + "\n" +
@@ -163,7 +167,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(completedQuery("test-query-id", 2L)));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -172,6 +176,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
@@ -196,7 +201,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     error(new Exception("Exception that will not terminate connection")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -205,6 +210,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -224,7 +230,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Exception caused connection to terminate"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -233,6 +239,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -251,7 +258,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(errorMessage("test-query-id", "Failure message")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -260,6 +267,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries: Failure message\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -278,7 +286,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message(unknownMessage("test-query-id")));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -287,6 +295,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\": \"test-query-id\",\"message\": \"unknown\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -305,7 +314,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -314,6 +323,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -332,7 +342,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"message\":\"error\"}"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -341,6 +351,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"message\":\"error\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -359,7 +370,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     message("{\"queryId\":\"test-query-id\"}"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -368,6 +379,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\":\"test-query-id\"}\n" +
                             "Query took 1 second to return 0 rows\n" +
@@ -386,7 +398,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                     close("Network error"));
 
             // When
-            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
+            in.enterNextPrompts(EXACT_QUERY_OPTION, "123", "", EXIT_OPTION);
             runQueryClient("test-query-id");
 
             // Then
@@ -395,6 +407,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "The table has the schema " + tableProperties.getSchema().toString() + "\n" +
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
+                            PROMPT_SQL_FILTER +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
                             "Query took 1 second to return 0 rows\n" +
