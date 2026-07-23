@@ -14,7 +14,7 @@
 import random
 import string
 
-from sleeper.client import SleeperClient
+from sleeper import SleeperClient
 
 """
 This example shows how to write data to Sleeper via writing in batches. Data will not

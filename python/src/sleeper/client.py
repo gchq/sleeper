@@ -26,14 +26,13 @@ from mypy_boto3_s3 import S3Client, S3ServiceResource
 from mypy_boto3_sqs import SQSServiceResource
 from pyarrow.parquet import ParquetFile
 
-from pq.parquet_deserial import ParquetDeserialiser
-from pq.parquet_serial import ParquetSerialiser
+from pq import ParquetDeserialiser
+from pq import ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
-from sleeper.properties.config_bucket import load_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import InstanceProperties, CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, load_instance_properties
+from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.query import Query, Region
 from sleeper.web_socket_query import WebSocketQueryProcessor
 
