@@ -16,6 +16,7 @@
   "requestedValueFields": [
     "integer"
   ],
+  "sqlQuery": "SELECT key,sum(value) FROM query_results LIMIT 1",
   "queryTimeIteratorClassName": "TestIterator",
   "queryTimeIteratorConfig": "config",
   "resultsPublisherConfig": {

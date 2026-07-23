@@ -32,8 +32,8 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
 import static sleeper.core.testutils.JitterTestHelper.noJitter;
@@ -82,11 +82,11 @@ public class CompactionTaskTestHelper {
         };
     }
 
-    public void runTask(CompactionRunner compactionRunner, Consumer<Long> progressCallback, List<CompactionJob> jobs) throws IOException {
+    public void runTask(CompactionRunner compactionRunner, LongConsumer progressCallback, List<CompactionJob> jobs) throws IOException {
         runTask(compactionRunner, progressCallback, receiveJobsFromQueue(new LinkedList<>(jobs)));
     }
 
-    public void runTask(CompactionRunner compactionRunner, Consumer<Long> progressCallback, MessageReceiver messageReceiver) throws IOException {
+    public void runTask(CompactionRunner compactionRunner, LongConsumer progressCallback, MessageReceiver messageReceiver) throws IOException {
         new CompactionTask(
                 instanceProperties, tablePropertiesProvider, PropertiesReloader.neverReload(),
                 stateStoreProvider, messageReceiver, stateStoreWaitForFiles(), jobCommitter(),
