@@ -14,6 +14,11 @@ vulnerabilities:
   - id: CVE-2026-54516
   - id: CVE-2026-54517
   - id: CVE-2026-54518
+  - id: CVE-2026-59888
+  - id: CVE-2026-59889
+  - id: GHSA-mhm7-754m-9p8w
+  # com.fasterxml.jackson.core:jackson-core
+  - id: GHSA-r7wm-3cxj-wff9
 
   # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go
   # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
