@@ -72,7 +72,7 @@ public interface EKSProperty {
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
             .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
-                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0. ")
+                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.")
             .defaultValue("164")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
