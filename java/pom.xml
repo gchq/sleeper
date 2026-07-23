@@ -197,7 +197,7 @@
         <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
-        <google.grpc.version>1.82.2</google.grpc.version>
+        <google.grpc.version>1.83.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.262.0</cdk.version>
         <constructs.version>10.7.1</constructs.version>
@@ -272,7 +272,7 @@
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
         <assembly.plugin.version>3.8.0</assembly.plugin.version>
-        <jar.plugin.version>3.5.0</jar.plugin.version>
+        <jar.plugin.version>3.5.1</jar.plugin.version>
         <compiler.plugin.version>3.15.0</compiler.plugin.version>
         <enforcer.plugin.version>3.6.3</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
