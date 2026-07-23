@@ -74,7 +74,7 @@ class WebSocketQueryProcessor:
         Returns:
             bytes: The derived signing key.
         """
-        k_date = hmac.new(f"AWS4{key}".encode("utf-8"), date_stamp.encode("utf-8"), hashlib.sha256).digest()
+        k_date = hmac.new(f"AWS4{key}".encode(), date_stamp.encode("utf-8"), hashlib.sha256).digest()
         k_region = hmac.new(k_date, region_name.encode("utf-8"), hashlib.sha256).digest()
         k_service = hmac.new(k_region, service_name.encode("utf-8"), hashlib.sha256).digest()
         k_signing = hmac.new(k_service, b"aws4_request", hashlib.sha256).digest()
@@ -101,7 +101,7 @@ class WebSocketQueryProcessor:
         )
 
         # Get current timestamp
-        t = datetime.datetime.now(datetime.timezone.utc)
+        t = datetime.datetime.now(datetime.UTC)
         amz_date = t.strftime("%Y%m%dT%H%M%SZ")
         date_stamp = t.strftime("%Y%m%d")
 
@@ -165,7 +165,7 @@ class WebSocketQueryProcessor:
                 logger.info("Waiting for results")
                 try:
                     response = await asyncio.wait_for(websocket.recv(), timeout=30)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.error("Timeout occurred while waiting for response.")
                     break
                 except websocket.exception.ConnectClosedError:
