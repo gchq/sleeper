@@ -41,10 +41,7 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -109,7 +106,7 @@ public class DeployNewInstance {
                     "the instance is manually resumed.")
             .build();
 
-    public static SleeperInstanceConfiguration loadAndUpdateConfiguration(Arguments args) throws IOException {
+    public static SleeperInstanceConfiguration loadConfiguration(Arguments args) throws IOException {
         SleeperInstanceConfiguration config;
         if (args.ignoreTableFiles()) {
             config = SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
@@ -120,11 +117,6 @@ public class DeployNewInstance {
         config.getInstanceProperties().set(ID, args.instanceId());
         config.getInstanceProperties().set(VPC_ID, args.vpcId());
         config.getInstanceProperties().set(SUBNETS, args.subnetIds());
-
-        try (BufferedWriter writer = Files.newBufferedWriter(args.resolvePropertiesFile())) {
-            InstanceProperties.createPrettyPrinter(new PrintWriter(writer))
-                    .print(config.getInstanceProperties());
-        }
 
         return config;
     }
@@ -152,7 +144,7 @@ public class DeployNewInstance {
             Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
-            SleeperInstanceConfiguration config = loadAndUpdateConfiguration(args);
+            SleeperInstanceConfiguration config = loadConfiguration(args);
 
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, partitionMetadata, s3Client, ecrClient))
@@ -171,6 +163,10 @@ public class DeployNewInstance {
         deployInstanceConfiguration.validate();
 
         CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
+
+        InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+        cdkCommand = cdkCommand.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
+
         if (ignoreTableFiles) {
             cdkCommand = cdkCommand.withPropertiesFile(propertiesFile);
         } else {
@@ -184,7 +180,6 @@ public class DeployNewInstance {
                 .build());
 
         if (!ignoreTableFiles) {
-            InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
             storeFactory.reloadInstanceProperties(instanceProperties);
 
             for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {

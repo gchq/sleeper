@@ -67,6 +67,10 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         return builder().command(command).configurationDirectory(configurationDirectory).arguments(arguments).build();
     }
 
+    public CdkCommand withNetworkConfiguration(String instanceId, String vpcId, String subnets) {
+        return builder().command(command).arguments(arguments).instanceId(instanceId).vpcId(vpcId).subnets(subnets).build();
+    }
+
     public static final class Builder {
         private List<String> command;
         private List<String> arguments = new ArrayList<>();
@@ -91,6 +95,18 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         public Builder arguments(List<String> arguments) {
             this.arguments.addAll(arguments);
             return this;
+        }
+
+        public Builder instanceId(String id) {
+            return context("id", id);
+        }
+
+        public Builder vpcId(String vpcId) {
+            return context("vpc", vpcId);
+        }
+
+        public Builder subnets(String subnets) {
+            return context("subnets", subnets);
         }
 
         public Builder propertiesFile(Path propertiesFile) {

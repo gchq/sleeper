@@ -69,6 +69,9 @@ public class DeployNewInstanceIT {
     List<DeployInstanceRequest> deployRequests = new ArrayList<>();
     Path instancePropertiesFile;
     String configDir;
+    String instanceId = "someInstance";
+    String vpcId = "someVpc";
+    String subnets = "someSubnet1,someSubnet2";
 
     @TempDir
     private Path tempDir;
@@ -93,16 +96,12 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
             //When
-            deployNewInstanceWithoutTables("someInstance", "someVpc", "someSubnets", "--instance-properties",
+            deployNewInstanceWithoutTables(instanceId, vpcId, subnets, "--instance-properties",
                     instancePropertiesFile.toString());
 
             //Then
-            //Verify Instance Properties file updates
-            instanceProperties.set(ID, "someInstance");
-            instanceProperties.set(VPC_ID, "someVpc");
-            instanceProperties.set(SUBNETS, "someSubnets");
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
-            assertThat(config.getInstanceProperties()).isEqualTo(instanceProperties);
+            updatePropertyFiles(config);
 
             //Verify CDK Command
             assertThat(deployRequests.size()).isEqualTo(1);
@@ -117,17 +116,13 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             //When
-            deployNewInstanceWithTables("someInstance", "someVpc", "someSubnets", "--config-dir",
+            deployNewInstanceWithTables(instanceId, vpcId, subnets, "--config-dir",
                     configDir);
 
             //Then
-            //Verify Instance Properties file updates
-            instanceProperties.set(ID, "someInstance");
-            instanceProperties.set(VPC_ID, "someVpc");
-            instanceProperties.set(SUBNETS, "someSubnets");
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(tempDir);
+            updatePropertyFiles(config);
             config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
-            assertThat(config.getInstanceProperties()).isEqualTo(instanceProperties);
 
             //Verify CDK Command
             assertThat(deployRequests.size()).isEqualTo(1);
@@ -146,16 +141,12 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
             //When
-            deployNewInstanceWithoutTables("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceWithoutTables(instanceId, vpcId, subnets, "--config-dir", configDir,
                     "--ignoreTableFiles");
 
             //Then
-            //Verify Instance Properties file updates
-            instanceProperties.set(ID, "someInstance");
-            instanceProperties.set(VPC_ID, "someVpc");
-            instanceProperties.set(SUBNETS, "someSubnets");
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
-            assertThat(config.getInstanceProperties()).isEqualTo(instanceProperties);
+            updatePropertyFiles(config);
 
             //Verify CDK Command
             assertThat(deployRequests.size()).isEqualTo(1);
@@ -170,17 +161,13 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
             //When
-            deployNewInstanceWithTables("someInstance", "someVpc", "someSubnets", "--config-dir", configDir,
+            deployNewInstanceWithTables(instanceId, vpcId, subnets, "--config-dir", configDir,
                     "--paused");
 
             //Then
-            //Verify Instance Properties file updates
-            instanceProperties.set(ID, "someInstance");
-            instanceProperties.set(VPC_ID, "someVpc");
-            instanceProperties.set(SUBNETS, "someSubnets");
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(instancePropertiesFile);
+            updatePropertyFiles(config);
             config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
-            assertThat(config.getInstanceProperties()).isEqualTo(instanceProperties);
 
             //Verify CDK Command
             assertThat(deployRequests.size()).isEqualTo(1);
@@ -196,11 +183,21 @@ public class DeployNewInstanceIT {
             assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
         }
 
+        private void updatePropertyFiles(SleeperInstanceConfiguration config) {
+            instanceProperties.set(ID, instanceId);
+            instanceProperties.set(VPC_ID, vpcId);
+            instanceProperties.set(SUBNETS, subnets);
+            config.getInstanceProperties().set(ID, instanceId);
+            config.getInstanceProperties().set(VPC_ID, vpcId);
+            config.getInstanceProperties().set(SUBNETS, subnets);
+        }
+
         private DeployInstanceRequest buildExpectedCDKCommandWithPropertyFile(SleeperInstanceConfiguration config, boolean deployPaused) {
             CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
             return DeployInstanceRequest.builder()
                     .instanceConfig(config)
-                    .cdkCommand(cdkCommand.withPropertiesFile(instancePropertiesFile))
+                    .cdkCommand(cdkCommand.withPropertiesFile(instancePropertiesFile)
+                            .withNetworkConfiguration(instanceId, vpcId, subnets))
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .build();
         }
@@ -209,7 +206,8 @@ public class DeployNewInstanceIT {
             CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
             return DeployInstanceRequest.builder()
                     .instanceConfig(config)
-                    .cdkCommand(cdkCommand.withConfigurationDirectory(tempDir))
+                    .cdkCommand(cdkCommand.withConfigurationDirectory(tempDir)
+                            .withNetworkConfiguration(instanceId, vpcId, subnets))
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .build();
         }
@@ -270,7 +268,7 @@ public class DeployNewInstanceIT {
     private void deployNewInstance(boolean isWithTables, String... args) throws Exception {
         var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
                 Stream.concat(Stream.of("scriptsDir"), Arrays.stream(args)).toArray(String[]::new)));
-        var config = DeployNewInstance.loadAndUpdateConfiguration(arguments);
+        var config = DeployNewInstance.loadConfiguration(arguments);
 
         DeployNewInstance.Builder builder = DeployNewInstance.builder()
                 .deployInstance(request -> deployRequests.add(request))
