@@ -24,7 +24,7 @@ from mypy_boto3_sqs.service_resource import Queue
 from pyarrow.parquet import ParquetFile
 from testcontainers.localstack import LocalStackContainer
 
-from pq.parquet_deserial import ParquetDeserialiser
+from pq import ParquetDeserialiser
 
 
 class LocalStack:

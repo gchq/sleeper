@@ -18,8 +18,8 @@ import asyncio
 import json
 import logging
 
-from pq.parquet_serial import ParquetSerialiser
-from sleeper.client import SleeperClient
+from pq import ParquetSerialiser
+from sleeper import SleeperClient
 
 
 async def run():

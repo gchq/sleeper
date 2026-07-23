@@ -25,8 +25,8 @@ from enum import Enum
 import boto3
 import websockets
 
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, QueryCdkProperty
+from sleeper.properties import InstanceProperties
 from sleeper.query import Query
 
 logger = logging.getLogger(__name__)
