@@ -49,3 +49,8 @@ vulnerabilities:
   # golang.org/x/sys
   - id: CVE-2026-39824
 
+  #  org.eclipse.jetty:jetty-security
+  - id: CVE-2026-10050
+  #  org.eclipse.jetty:jetty-server
+  - id: CVE-2026-6790
+

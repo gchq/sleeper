@@ -6,6 +6,8 @@ vulnerabilities:
   # Golang stdlib
   - id: CVE-2026-39822
   - id: CVE-2026-42505
+  # google.golang.org/grpc
+  - id: GHSA-hrxh-6v49-42gf
   # golang.org/x/crypto
   - id: CVE-2026-39827
   - id: CVE-2026-39828
