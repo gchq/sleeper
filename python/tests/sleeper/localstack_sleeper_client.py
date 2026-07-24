@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from sleeper import SleeperClient
-from sleeper.properties import CommonCdkProperty, InstanceProperties, CommonProperty
+from sleeper.properties import CommonCdkProperty, CommonProperty, InstanceProperties
 from tests.sleeper.localstack import LocalStack
 
 

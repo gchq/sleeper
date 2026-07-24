@@ -25,8 +25,7 @@ from enum import Enum
 import boto3
 import websockets
 
-from sleeper.properties import CommonCdkProperty, QueryCdkProperty
-from sleeper.properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty
 from sleeper.query import Query
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class MessageType(Enum):
 
 
 class WebSocketQueryProcessor:
-    def __init__(self, instance_properties: InstanceProperties = None, endpoint: str = None, region: str = None):
+    def __init__(self, instance_properties: InstanceProperties = None, endpoint: str | None = None, region: str | None = None):
         # Validate input
         if (instance_properties is None and (endpoint is None or region is None)) or (instance_properties is not None and (endpoint is not None or region is not None)):
             raise ValueError("Either 'instance_properties' must be provided, or both 'endpoint' and 'region' must be provided.")
