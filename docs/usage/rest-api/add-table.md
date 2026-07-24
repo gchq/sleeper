@@ -21,7 +21,7 @@ The body is JSON with three fields:
 | Field         | Type                          | Required | Description                                                                                                                                                                                              |
 | ------------- | ----------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `properties`  | object of string → string     | Yes      | Sleeper [table properties](../property-master.md). Must include `sleeper.table.name`; other properties fall back to instance defaults.                                                             |
-| `schema`      | object                        | Yes      | The [Sleeper schema](../schema.md) for the new table. Any shape accepted by `SchemaSerDe` is accepted here.                                                                                        |
+| `schema`      | object                        | Yes      | The [Sleeper schema](../schema.md) for the new table.                                                                                |
 | `splitPoints` | array of strings              | No       | Pre-split points for the table's partition tree, as string values of the row key column. Only supported for tables with a single row key field; sending them for a multi-row-key table returns `400`.   |
 
 ## Example
@@ -64,7 +64,7 @@ curl --aws-sigv4 "aws:amz:${AWS_REGION}:execute-api" \
 JSON
 ```
 
-The instance property lookup above shells out to the config bucket; if you already have the URL to
+The instance property lookup above retrieves the URL from the instance config bucket; if you already have the URL to
 hand, skip that step. The `x-amz-security-token` header is only required for temporary credentials
 (EC2 instance roles, `aws sts assume-role`, SSO); omit it if you are signing with a long-lived IAM
 user access key.
