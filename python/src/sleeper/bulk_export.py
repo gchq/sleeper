@@ -21,7 +21,7 @@ from sleeper.properties import InstanceProperties, QueryCdkProperty
 
 
 class BulkExportQuery:
-    def __init__(self, export_id: str | None = None, table_name: str | None = None, table_id: str | None = None):
+    def __init__(self, export_id: str | None = None, table_name: str | None = None, table_id: str | None = None, sql_query: str | None = None):
         if export_id is None:
             export_id = str(uuid.uuid4())
         if table_name is None and table_id is None:

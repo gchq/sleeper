@@ -65,18 +65,10 @@ def should_generate_export_id():
 
 def should_include_sql_query_in_json():
     # Given
-    query = BulkExportQuery(
-        export_id="test-export",
-        table_name="test-table",
-        sql_query="SELECT * FROM table WHERE id > 100"
-    )
+    query = BulkExportQuery(export_id="test-export", table_name="test-table", sql_query="SELECT * FROM table WHERE id > 100")
 
     # When / Then
-    assert {
-        "exportId": "test-export",
-        "tableName": "test-table",
-        "sqlQuery": "SELECT * FROM table WHERE id > 100"
-    } == json.loads(query.to_json())
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableName": "test-table", "sqlQuery": "SELECT * FROM table WHERE id > 100"}
 
 
 def should_omit_sql_query_when_not_provided():
@@ -91,18 +83,10 @@ def should_omit_sql_query_when_not_provided():
 
 def should_include_sql_query_with_table_id():
     # Given
-    query = BulkExportQuery(
-        export_id="test-export",
-        table_id="test-table-id",
-        sql_query="SELECT * FROM table"
-    )
+    query = BulkExportQuery(export_id="test-export", table_id="test-table-id", sql_query="SELECT * FROM table")
 
     # When / Then
-    assert {
-        "exportId": "test-export",
-        "tableId": "test-table-id",
-        "sqlQuery": "SELECT * FROM table"
-    } == json.loads(query.to_json())
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableId": "test-table-id", "sqlQuery": "SELECT * FROM table"}
 
 
 @pytest.fixture
