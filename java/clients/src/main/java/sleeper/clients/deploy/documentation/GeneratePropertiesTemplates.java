@@ -38,12 +38,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.model.OptionalStack.BULK_IMPORT_STACKS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 
@@ -168,12 +175,22 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeInstancePropertiesTemplateLight(Writer out) {
         InstanceProperties instanceProperties = new InstanceProperties();
+        // Emr Serverless properties
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
+
+        // EKS properties
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
+
+        instanceProperties.set(OPTIONAL_STACKS, BULK_IMPORT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.getPropertiesIndex().getUserDefined().stream().toList();
 
