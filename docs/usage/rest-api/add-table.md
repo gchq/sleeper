@@ -5,8 +5,7 @@ Add table
 
 Creates a new table in a deployed Sleeper instance. Equivalent to running the
 [`addTable.sh` script](../tables.md#using-scripts), but callable over HTTPS from any AWS-authenticated
-client. The formal request/response contract is defined in [openapi.yaml](openapi.yaml); this page
-is a worked example.
+client.
 
 ## Prerequisites
 
@@ -132,4 +131,3 @@ The request failed unexpectedly inside the lambda. Consult the REST API lambda l
 
 - [Tables documentation](../tables.md) - full context on creating and managing tables.
 - [`addTable.sh` script](../tables.md#using-scripts) - the local-shell alternative.
-- [OpenAPI spec](openapi.yaml) - the machine-readable contract.

@@ -29,6 +29,7 @@ import sleeper.core.table.AddTable;
 import sleeper.restapi.addTable.AddTableRoute;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public class RestApiLambda {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(RestApiLambda.class);
 
-    private final Map<String, Route> routes;
+    private final Map<String, Route> routes = new HashMap<>();
 
     public RestApiLambda() {
         String configBucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -53,31 +54,21 @@ public class RestApiLambda {
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoClient = DynamoDbClient.create();
         InstanceProperties properties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        routes = buildRoutes(properties, new AddTable(
+        registerRoutes(properties, new AddTable(
                 S3TableProperties.createStore(properties, s3Client, dynamoClient),
                 StateStoreFactory.createProvider(properties, s3Client, dynamoClient)));
     }
 
     public RestApiLambda(InstanceProperties instanceProperties, AddTable addTable) {
-        routes = buildRoutes(instanceProperties, addTable);
+        registerRoutes(instanceProperties, addTable);
     }
 
-    /**
-     * Builds the route registry that dispatches API Gateway requests. Both the runtime Lambda constructor and the
-     * OpenAPI doc generator call this so that the set of routes is defined in exactly one place; the generator passes
-     * null dependencies because it only invokes the {@code openApi*} methods on the returned routes.
-     *
-     * @param  instanceProperties the instance properties (nullable when building routes only to describe them)
-     * @param  addTable           the add-table operation (nullable when building routes only to describe them)
-     * @return                    the routes keyed by {@code "METHOD /path"}
-     */
-    public static Map<String, Route> buildRoutes(InstanceProperties instanceProperties, AddTable addTable) {
+    private void registerRoutes(InstanceProperties instanceProperties, AddTable addTable) {
         Map<String, Route> routes = new LinkedHashMap<>();
         routes.put("POST /sleeper/tables", AddTableRoute.builder()
                 .instanceProperties(instanceProperties)
                 .addTable(addTable)
                 .build());
-        return routes;
     }
 
     /**

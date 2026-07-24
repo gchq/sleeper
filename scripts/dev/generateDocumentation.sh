@@ -33,11 +33,6 @@ mvn exec:java -e -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
 
-echo "Regenerating REST API OpenAPI spec..."
-mvn exec:java -e -q -pl rest-api \
-  -Dexec.mainClass="sleeper.restapi.GenerateOpenApiSpec" \
-  -Dexec.args="$PROJECT_ROOT"
-
 echo "Regenerating system test suite documentation..."
 mvn exec:java -e -q -pl system-test/system-test-suite \
   -Dexec.classpathScope="test" \

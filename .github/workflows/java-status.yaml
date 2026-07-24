@@ -70,9 +70,6 @@ jobs:
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
             -Dexec.mainClass=sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation \
             -Dexec.args="$PROJECT_ROOT"
-          mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl rest-api \
-            -Dexec.mainClass=sleeper.restapi.GenerateOpenApiSpec \
-            -Dexec.args="$PROJECT_ROOT"
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl system-test/system-test-suite \
             -Dexec.classpathScope=test \
             -Dexec.mainClass=sleeper.systemtest.suite.documentation.GenerateSystemTestSuiteDocumentation \
