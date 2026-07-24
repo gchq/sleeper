@@ -16,8 +16,8 @@ import argparse
 
 from pyarrow.parquet import ParquetFile
 
-from pq.parquet_deserial import ParquetDeserialiser
-from sleeper.client import SleeperClient
+from pq import ParquetDeserialiser
+from sleeper import SleeperClient
 
 
 def read_files(filename: str):
