@@ -11,11 +11,11 @@ from sleeper.properties.instance_properties import InstanceProperties, InstanceP
 from sleeper.properties.user_defined_properties import CommonProperty
 
 __all__ = (
-    "InstanceProperties",
-    "CommonProperty",
     "CommonCdkProperty",
-    "InstanceProperty",
+    "CommonProperty",
     "IngestCdkProperty",
+    "InstanceProperties",
+    "InstanceProperty",
     "QueryCdkProperty",
     "load_instance_properties",
     "load_instance_properties_from_bucket",
