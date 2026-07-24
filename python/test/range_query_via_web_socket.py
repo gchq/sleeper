@@ -35,7 +35,7 @@ async def run():
 
     file_path = args.outdir + "/" + args.queryid + ".parquet"
     logger.debug(f"Saving resulst to disk at {file_path}")
-    with open(file_path, "wb") as file:
+    with open(file_path, "wb") as file:  # noqa: ASYNC230
         writer = ParquetSerialiser(file)
         for row in rows:
             writer.write_record(row)

@@ -57,7 +57,7 @@ class SleeperClient:
         self,
         instance_id,
         use_threads=False,
-        account_name: str = None,
+        account_name: str | None = None,
         s3_client: S3Client = None,
         s3_resource: S3ServiceResource = None,
         s3_fs: s3fs.S3FileSystem = None,
@@ -106,7 +106,7 @@ class SleeperClient:
         job = IngestJob(job_id=job_id, table_name=table_name, files=[databucket_file])
         IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
 
-    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
+    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str | None = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name. This is
         done by posting a message containing the list of files to the ingest queue. These
