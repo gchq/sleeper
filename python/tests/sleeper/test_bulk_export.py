@@ -17,11 +17,9 @@ import json
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
 
+from sleeper import SleeperClient
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
-from sleeper.client import SleeperClient
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
-from sleeper.properties.config_bucket import save_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -35,7 +33,7 @@ def should_send_bulk_export_query(sender: BulkExportSender, queue: Queue):
     sender.send(query)
 
     # Then
-    assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"exportId": "test-export", "tableName": "test-table"}]
 
 
 def should_send_bulk_export_query_with_client(sleeper_client: SleeperClient, queue: Queue):
@@ -46,7 +44,7 @@ def should_send_bulk_export_query_with_client(sleeper_client: SleeperClient, que
     sleeper_client.bulk_export(query)
 
     # Then
-    assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"exportId": "test-export", "tableName": "test-table"}]
 
 
 def should_create_bulk_export_by_table_id():
@@ -54,7 +52,7 @@ def should_create_bulk_export_by_table_id():
     query = BulkExportQuery(export_id="test-export", table_id="test-table")
 
     # When / Then
-    assert {"exportId": "test-export", "tableId": "test-table"} == json.loads(query.to_json())
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableId": "test-table"}
 
 
 def should_generate_export_id():
@@ -91,4 +89,4 @@ def queue() -> Queue:
 
 def receive_messages(queue: Queue):
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]

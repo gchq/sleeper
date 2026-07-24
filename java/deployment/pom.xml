@@ -32,5 +32,6 @@
         <module>cdk-environment</module>
         <module>build-uptime-lambda</module>
         <module>container-images</module>
+        <module>cdk-artefact-custom-resources</module>
     </modules>
 </project>

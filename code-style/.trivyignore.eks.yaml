@@ -25,6 +25,7 @@ vulnerabilities:
   - id: CVE-2025-52999
   - id: CVE-2025-49128
   - id: GHSA-72hv-8253-57qq
+  - id: GHSA-r7wm-3cxj-wff9
   # com.fasterxml.jackson.core:jackson-databind
   # (hadoop-client-runtime-3.4.1.jar, parquet-jackson-1.17.1.jar)
   - id: CVE-2026-54512
@@ -39,6 +40,9 @@ vulnerabilities:
   - id: CVE-2026-54516
   - id: CVE-2026-54517
   - id: CVE-2026-54518
+  - id: CVE-2026-59888
+  - id: CVE-2026-59889
+  - id: GHSA-mhm7-754m-9p8w
   # com.google.guava:guava
   # (spark-network-common_2.12-3.5.6.jar)
   - id: CVE-2018-10237
@@ -61,6 +65,8 @@ vulnerabilities:
   # (hadoop-client-runtime-3.4.1.jar)
   - id: GHSA-2r2c-cx56-8933
   - id: GHSA-47qp-hqvx-6r3f
+  - id: CVE-2026-56740
+  - id: CVE-2026-56741
   # org.eclipse.jetty:jetty-http
   # (bulk-import-runner.jar)
   # (hadoop-client-runtime-3.4.1.jar)
@@ -72,6 +78,12 @@ vulnerabilities:
   # org.eclipse.jetty:jetty-server
   # (spark-core_2.12-3.5.6.jar)
   - id: CVE-2024-13009
+  # (bulk-import-runner.jar)
+  - id: CVE-2026-6790
+  # org.eclipse.jetty:jetty-security
+  # (bulk-import-runner.jar)
+  # (spark-core_2.12-3.5.6.jar)
+  - id: CVE-2026-10050
   # org.apache.commons:commons-configuration2
   # (hadoop-client-runtime-3.4.1.jar)
   - id: CVE-2026-45205

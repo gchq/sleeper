@@ -24,7 +24,7 @@ from mypy_boto3_sqs.service_resource import Queue
 from pyarrow.parquet import ParquetFile
 from testcontainers.localstack import LocalStackContainer
 
-from pq.parquet_deserial import ParquetDeserialiser
+from pq import ParquetDeserialiser
 
 
 class LocalStack:
@@ -111,8 +111,7 @@ class LocalStack:
     @classmethod
     def read_parquet_file(cls, path) -> list[dict]:
         results = []
-        with cls.s3fs().open(path, "rb") as f:
-            with ParquetFile(f) as po:
-                for row in ParquetDeserialiser(use_threads=False).read(po):
-                    results.append(row)
+        with cls.s3fs().open(path, "rb") as f, ParquetFile(f) as po:
+            for row in ParquetDeserialiser(use_threads=False).read(po):
+                results.append(row)
         return results

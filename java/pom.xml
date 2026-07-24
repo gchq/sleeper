@@ -119,15 +119,15 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.17.0</okio.version>
+        <okio.version>3.18.0</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
         -->
-        <roaringbitmap.version>1.6.15</roaringbitmap.version>
+        <roaringbitmap.version>1.6.16</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.38</logback.version>
+        <logback.version>1.6.0</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
@@ -155,7 +155,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.48.0</aws-crt.version>
+        <aws-crt.version>0.48.1</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -196,11 +196,11 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.6.0-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
-        <google.http-client.version>2.1.1</google.http-client.version>
-        <google.grpc.version>1.82.2</google.grpc.version>
+        <google.http-client.version>2.2.0</google.http-client.version>
+        <google.grpc.version>1.83.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.261.0</cdk.version>
-        <constructs.version>10.7.0</constructs.version>
+        <cdk.version>2.262.0</cdk.version>
+        <constructs.version>10.7.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.139.0</jsii.version>
         <gson.version>2.14.0</gson.version>
@@ -220,7 +220,7 @@
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
         <netty.version>4.2.16.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.80.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.81.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -272,7 +272,7 @@
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
         <assembly.plugin.version>3.8.0</assembly.plugin.version>
-        <jar.plugin.version>3.5.0</jar.plugin.version>
+        <jar.plugin.version>3.5.1</jar.plugin.version>
         <compiler.plugin.version>3.15.0</compiler.plugin.version>
         <enforcer.plugin.version>3.6.3</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
