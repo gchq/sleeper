@@ -12,7 +12,7 @@ dependencies = [
     "pyarrow>=25.0.0",
     "boto3>=1.43.53",
     "s3fs>=0.4.2",
-    "boto3-stubs[essential]>=1.43.53",
+    "boto3-stubs[essential]>=1.43.55",
     "websockets>=16.1.1",
     "jproperties>=2.1.2",
 ]
