@@ -52,6 +52,12 @@ import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FIL
  */
 public class GeneratePropertiesTemplates {
 
+    private static final String LIGHT_MODE_EXPLANATION = "#                                                                               #\n" +
+            "#                           --- LIGHT MODE ---                                  #\n" +
+            "#                    Properties set below are designed for an                   #\n" +
+            "#                  instance aimed towards reducing running costs                #\n" +
+            "#################################################################################";
+
     private GeneratePropertiesTemplates() {
     }
 
@@ -82,9 +88,9 @@ public class GeneratePropertiesTemplates {
 
         Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
         writeFile(scriptsTemplateDir.resolve("instanceproperties.template"),
-                GeneratePropertiesTemplates::writeInstancePropertiesTemplate);
+                GeneratePropertiesTemplates::writeInstancePropertiesTemplateBasic);
         writeFile(scriptsTemplateDir.resolve("tableproperties.template"),
-                GeneratePropertiesTemplates::writeTablePropertiesTemplate);
+                GeneratePropertiesTemplates::writeTablePropertiesTemplateBasic);
 
         Path lightTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates/light"));
         writeFile(lightTemplateDir.resolve("instanceproperties.template"),
@@ -142,24 +148,24 @@ public class GeneratePropertiesTemplates {
     }
 
     /**
-     * Writes the instance properties template file to the given writer.
+     * Writes the basic instance properties template file to the given writer.
+     * All properties set to default and commented out.
      *
      * @param out the writer
      */
-    public static void writeInstancePropertiesTemplate(Writer out) {
+    public static void writeInstancePropertiesTemplateBasic(Writer out) {
         InstanceProperties properties = new InstanceProperties();
         List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
-
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
-        writer.println("#################################################################################");
-        writer.println();
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertiesByIsSet, InstancePropertyGroup.getAll(), writer)
-                .print(properties);
+        writeInstancePropertiesTemplate(out, properties, propertiesByIsSet, null);
     }
 
+    /**
+     * Writes the light variant of the instance properties template file to the given writer.
+     * Various properties set for desired EMR settings with the remainder of the properties set to default value and
+     * commented out.
+     *
+     * @param out the writer
+     */
     public static void writeInstancePropertiesTemplateLight(Writer out) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
@@ -171,54 +177,59 @@ public class GeneratePropertiesTemplates {
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.getPropertiesIndex().getUserDefined().stream().toList();
 
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                      SLEEPER INSTANCE PROPERTIES - LIGHT                      #");
-        writer.println("#                                                                               #");
-        writer.println("#                    Properties set below are designed for an                   #");
-        writer.println("#                  instance aimed towards reducing running costs                #");
-        writer.println("#################################################################################");
-        writer.println();
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertiesByIsSet, InstancePropertyGroup.getAll(), writer)
-                .print(instanceProperties);
+        writeInstancePropertiesTemplate(out, instanceProperties, propertiesByIsSet, LIGHT_MODE_EXPLANATION);
     }
 
     /**
-     * Writes the table properties template file to the given writer.
+     * Writes the basic table properties template file to the given writer.
      *
      * @param out the writer
      */
-    public static void writeTablePropertiesTemplate(Writer out) {
-        TableProperties properties = new TableProperties(new InstanceProperties());
-
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
-        writer.println("#################################################################################");
-        writer.println();
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                TableProperty.getAll(), TablePropertyGroup.getAll(), writer)
-                .print(properties);
+    public static void writeTablePropertiesTemplateBasic(Writer out) {
+        writeTablePropertiesTemplate(out, new TableProperties(new InstanceProperties()), null);
     }
 
+    /**
+     * Writes the light table properties template file to the given writer.
+     * Various properties set for desired EMR settings with the remainder of the properties set to default value and
+     * commented out.
+     *
+     * @param out the writer
+     */
     public static void writeTablePropertiesTemplateLight(Writer out) {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
         tableProperties.set(INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
 
+        writeTablePropertiesTemplate(out, tableProperties, LIGHT_MODE_EXPLANATION);
+    }
+
+    private static void writeInstancePropertiesTemplate(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String explanation) {
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
-        writer.println("#                       SLEEPER TABLE PROPERTIES - LIGHT                        #");
-        writer.println("#                                                                               #");
-        writer.println("#                    Properties set below are designed for an                   #");
-        writer.println("#                  instance aimed towards reducing running costs                #");
+        writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
         writer.println("#################################################################################");
+        if (explanation != null) {
+            writer.println(explanation);
+        }
+        writer.println();
+        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                propertiesSet, InstancePropertyGroup.getAll(), writer)
+                .print(properties);
+    }
 
+    private static void writeTablePropertiesTemplate(Writer out, TableProperties properties, String explanation) {
+        PrintWriter writer = new PrintWriter(out);
+        writer.println("#################################################################################");
+        writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
+        writer.println("#################################################################################");
+        if (explanation != null) {
+            writer.println(explanation);
+        }
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
                 TableProperty.getAll(), TablePropertyGroup.getAll(), writer)
-                .print(tableProperties);
+                .print(properties);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
