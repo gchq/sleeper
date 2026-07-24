@@ -28,6 +28,7 @@ import java.util.Map;
  * Handles a single REST API route. Implementations are mapped against a HTTP method and path by
  * {@link sleeper.restapi.RestApiLambda}.
  */
+@FunctionalInterface
 public interface Route {
 
     String CONTENT_TYPE_JSON = "application/json";
