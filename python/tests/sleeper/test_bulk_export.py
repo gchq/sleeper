@@ -17,9 +17,9 @@ import json
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
 
-from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper import SleeperClient
-from sleeper.properties import InstanceProperties, CommonCdkProperty, QueryCdkProperty, save_instance_properties
+from sleeper.bulk_export import BulkExportQuery, BulkExportSender
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -89,4 +89,4 @@ def queue() -> Queue:
 
 def receive_messages(queue: Queue):
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]
