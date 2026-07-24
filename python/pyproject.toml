@@ -1,6 +1,51 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "sleeper"
+version = "0.37.2.dev1"
+description = "Python client for Sleeper"
+requires-python = ">=3.10"
+
+dependencies = [
+    "pyarrow>=25.0.0",
+    "boto3>=1.43.53",
+    "s3fs>=0.4.2",
+    "boto3-stubs[essential]>=1.43.53",
+    "websockets>=16.1.1",
+    "jproperties>=2.1.2",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.15.22",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+    "pytest-asyncio>=1.4.0",
+    "testcontainers[localstack]>=4.14.2",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sleeper = ["py.typed"]
 
 [tool.pytest.ini_options]
 addopts = [
