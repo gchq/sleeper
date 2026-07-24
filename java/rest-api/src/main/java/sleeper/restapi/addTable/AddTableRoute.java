@@ -71,10 +71,6 @@ public class AddTableRoute implements Route {
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
 
-        if (request == null) {
-            return Route.errorResponse(400, "invalid_request", "Request body is empty");
-        }
-
         TableProperties tableProperties = request.getProperties();
         List<Object> splitPoints = request.getSplitPoints();
 
