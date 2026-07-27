@@ -304,7 +304,10 @@ public final class EksBulkImportStack extends NestedStack {
         if (jobLookupTableName.isPresent()) {
             Map<String, Object> checkJobStatusState = parseJson(
                     "/step-functions/check-job-status.json",
-                    replacement("table-name-placeholder", jobLookupTableName.get()));
+                    replacements(Map.of(
+                        "partition-placeholder", instanceProperties.get(PARTITION),
+                        "table-name-placeholder", jobLookupTableName.get()
+                    )));
 
             definition = runSparkJob
                     .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
