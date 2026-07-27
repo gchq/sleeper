@@ -29,7 +29,7 @@ Documentation:
 - Documented local build validation in Rust for developers.
 
 Python
-- Updated to the support multilpe support version of python ahead of work on the API
+- Updated to the support multiple support version of python ahead of work on the API
 
 Bugfixes:
 - REST API now has the correct permissions to add a Sleeper table.
