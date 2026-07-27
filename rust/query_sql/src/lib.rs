@@ -25,7 +25,7 @@ use datafusion::{
 };
 pub use sql_sort_fix::inject_sort_stage;
 
-/// Applies an optional user-provided SQL query to the `DataFrame`.
+/// Applies a user-provided SQL query to the `DataFrame`.
 ///
 /// The `DataFrame` is exposed as `my_table` for the SQL to reference.
 /// Only SELECT queries are permitted.
@@ -33,12 +33,11 @@ pub use sql_sort_fix::inject_sort_stage;
 /// # Errors
 /// Returns an error if the SQL query is invalid or uses disallowed statements.
 pub async fn add_sql_stage(
-    sql: Option<&str>,
+    sql: &str,
     expr: Vec<SortExpr>,
     frame: DataFrame,
     ctx: &SessionContext,
 ) -> Result<DataFrame, DataFusionError> {
-    let Some(sql) = sql else { return Ok(frame) };
     ctx.register_table("query_results", frame.into_view())?;
     let frame = ctx
         .sql_with_options(
@@ -61,7 +60,7 @@ mod tests {
             array::{ArrayRef, Int32Array, Int64Array, RecordBatch, StringArray},
             datatypes::{DataType, Field, Schema},
         },
-        logical_expr::{LogicalPlan, col},
+        logical_expr::col,
     };
     use std::sync::Arc;
 
@@ -93,42 +92,6 @@ mod tests {
         vec![col("a").sort(true, true), col("b").sort(false, false)]
     }
 
-    fn logical_plans_equal(plan1: &LogicalPlan, plan2: &LogicalPlan) -> bool {
-        if std::mem::discriminant(plan1) != std::mem::discriminant(plan2) {
-            return false;
-        }
-        if plan1.inputs().len() != plan2.inputs().len() {
-            return false;
-        }
-        if plan1.schema() != plan2.schema() {
-            return false;
-        }
-        plan1
-            .inputs()
-            .iter()
-            .zip(plan2.inputs().iter())
-            .all(|(i1, i2)| logical_plans_equal(i1, i2))
-    }
-
-    #[tokio::test]
-    async fn should_return_unchanged_dataframe_when_sql_is_none() {
-        // Given
-        let ctx = create_test_context();
-        let frame = create_test_dataframe(&ctx);
-        let sort_exprs = create_sort_exprs_single();
-        let (_, original_plan) = frame.clone().into_parts();
-
-        // When
-        let result = add_sql_stage(None, sort_exprs, frame, &ctx).await.unwrap();
-
-        // Then
-        let (_, result_plan) = result.into_parts();
-        assert!(
-            logical_plans_equal(&original_plan, &result_plan),
-            "Logical plans should be identical when SQL is None"
-        );
-    }
-
     #[tokio::test]
     async fn should_execute_simple_select_query_with_empty_sort_expr() {
         // Given
@@ -137,7 +100,7 @@ mod tests {
         let sort_exprs: Vec<SortExpr> = vec![];
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage("SELECT * FROM query_results", sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -155,7 +118,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_single();
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage("SELECT * FROM query_results", sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -173,7 +136,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_multiple();
 
         // When
-        let result = add_sql_stage(Some("SELECT * FROM query_results"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage("SELECT * FROM query_results", sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -192,7 +155,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT * FROM query_results WHERE a > 2"),
+            "SELECT * FROM query_results WHERE a > 2",
             sort_exprs,
             frame,
             &ctx,
@@ -221,7 +184,7 @@ mod tests {
         let sort_exprs = create_sort_exprs_single();
 
         // When
-        let result = add_sql_stage(Some("SELECT a FROM query_results"), sort_exprs, frame, &ctx)
+        let result = add_sql_stage("SELECT a FROM query_results", sort_exprs, frame, &ctx)
             .await
             .unwrap();
 
@@ -253,7 +216,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT category, SUM(value) as total FROM query_results GROUP BY category"),
+            "SELECT category, SUM(value) as total FROM query_results GROUP BY category",
             sort_exprs,
             frame,
             &ctx,
@@ -301,7 +264,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT * FROM query_results ORDER BY a DESC"),
+            "SELECT * FROM query_results ORDER BY a DESC",
             sort_exprs,
             frame,
             &ctx,
@@ -331,13 +294,8 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result = add_sql_stage(
-            Some("THIS IS NOT VALID SQL AT ALL!!!"),
-            sort_exprs,
-            frame,
-            &ctx,
-        )
-        .await;
+        let result =
+            add_sql_stage("THIS IS NOT VALID SQL AT ALL!!!", sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -353,13 +311,8 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result = add_sql_stage(
-            Some("CREATE TABLE new_table (id INT)"),
-            sort_exprs,
-            frame,
-            &ctx,
-        )
-        .await;
+        let result =
+            add_sql_stage("CREATE TABLE new_table (id INT)", sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -375,7 +328,7 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result = add_sql_stage(Some("DROP TABLE query_results"), sort_exprs, frame, &ctx).await;
+        let result = add_sql_stage("DROP TABLE query_results", sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -392,7 +345,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("ALTER TABLE query_results ADD COLUMN c INT"),
+            "ALTER TABLE query_results ADD COLUMN c INT",
             sort_exprs,
             frame,
             &ctx,
@@ -414,7 +367,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("INSERT INTO query_results VALUES (5, 'test')"),
+            "INSERT INTO query_results VALUES (5, 'test')",
             sort_exprs,
             frame,
             &ctx,
@@ -435,13 +388,8 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result = add_sql_stage(
-            Some("UPDATE query_results SET a = 10"),
-            sort_exprs,
-            frame,
-            &ctx,
-        )
-        .await;
+        let result =
+            add_sql_stage("UPDATE query_results SET a = 10", sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -458,7 +406,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("DELETE FROM query_results WHERE a = 1"),
+            "DELETE FROM query_results WHERE a = 1",
             sort_exprs,
             frame,
             &ctx,
@@ -479,8 +427,7 @@ mod tests {
         let sort_exprs = vec![];
 
         // When
-        let result =
-            add_sql_stage(Some("SELECT * FROM wrong_table"), sort_exprs, frame, &ctx).await;
+        let result = add_sql_stage("SELECT * FROM wrong_table", sort_exprs, frame, &ctx).await;
 
         // Then
         assert!(result.is_err());
@@ -497,7 +444,7 @@ mod tests {
 
         // When
         let result = add_sql_stage(
-            Some("SELECT nonexistent_column FROM query_results"),
+            "SELECT nonexistent_column FROM query_results",
             sort_exprs,
             frame,
             &ctx,

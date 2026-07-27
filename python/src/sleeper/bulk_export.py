@@ -17,12 +17,11 @@ import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
 
-from sleeper.properties.cdk_defined_properties import QueryCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import InstanceProperties, QueryCdkProperty
 
 
 class BulkExportQuery:
-    def __init__(self, export_id: str = None, table_name: str = None, table_id: str = None):
+    def __init__(self, export_id: str | None = None, table_name: str | None = None, table_id: str | None = None, sql_query: str | None = None):
         if export_id is None:
             export_id = str(uuid.uuid4())
         if table_name is None and table_id is None:
@@ -32,6 +31,7 @@ class BulkExportQuery:
         self.export_id = export_id
         self.table_name = table_name
         self.table_id = table_id
+        self.sql_query = sql_query
 
     def to_json(self) -> str:
         obj = {"exportId": self.export_id}
@@ -39,6 +39,8 @@ class BulkExportQuery:
             obj["tableName"] = self.table_name
         if self.table_id is not None:
             obj["tableId"] = self.table_id
+        if self.sql_query is not None:
+            obj["sqlQuery"] = self.sql_query
         return json.dumps(obj)
 
 

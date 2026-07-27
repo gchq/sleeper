@@ -104,7 +104,7 @@ public class DirectQueryDriver implements QueryDriver {
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore,
             PartitionTree partitionTree) {
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

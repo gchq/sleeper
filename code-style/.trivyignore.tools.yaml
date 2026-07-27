@@ -6,6 +6,8 @@ vulnerabilities:
   # Golang stdlib
   - id: CVE-2026-39822
   - id: CVE-2026-42505
+  # google.golang.org/grpc
+  - id: GHSA-hrxh-6v49-42gf
   # golang.org/x/crypto
   - id: CVE-2026-39827
   - id: CVE-2026-39828
@@ -27,6 +29,9 @@ vulnerabilities:
   - id: CVE-2026-39821
   - id: CVE-2026-42502
   - id: CVE-2026-42506
+  - id: CVE-2026-46600
+  # golang.org/x/text
+  - id: CVE-2026-56852
   # github.com/containerd/containerd/v2
   - id: CVE-2026-53488
   - id: CVE-2026-53489
@@ -41,3 +46,8 @@ vulnerabilities:
   # https://github.com/gchq/sleeper/issues/7459
   # com.fasterxml.jackson.core:jackson-databind
   - id: CVE-2026-54515
+
+  # AWS SDK supports supports up to version 24.x of node.js. Therefore are unable to update for issue below
+  # until support is provided.
+  - id: CVE-2026-14257
+  - id: GHSA-r292-9mhp-454m

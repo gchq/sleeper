@@ -17,11 +17,9 @@ import json
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
 
+from sleeper import SleeperClient
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
-from sleeper.client import SleeperClient
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
-from sleeper.properties.config_bucket import save_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -35,7 +33,7 @@ def should_send_bulk_export_query(sender: BulkExportSender, queue: Queue):
     sender.send(query)
 
     # Then
-    assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"exportId": "test-export", "tableName": "test-table"}]
 
 
 def should_send_bulk_export_query_with_client(sleeper_client: SleeperClient, queue: Queue):
@@ -46,7 +44,7 @@ def should_send_bulk_export_query_with_client(sleeper_client: SleeperClient, que
     sleeper_client.bulk_export(query)
 
     # Then
-    assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"exportId": "test-export", "tableName": "test-table"}]
 
 
 def should_create_bulk_export_by_table_id():
@@ -54,7 +52,7 @@ def should_create_bulk_export_by_table_id():
     query = BulkExportQuery(export_id="test-export", table_id="test-table")
 
     # When / Then
-    assert {"exportId": "test-export", "tableId": "test-table"} == json.loads(query.to_json())
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableId": "test-table"}
 
 
 def should_generate_export_id():
@@ -63,6 +61,32 @@ def should_generate_export_id():
 
     # Then
     assert len(query.export_id) == 36
+
+
+def should_include_sql_query_in_json():
+    # Given
+    query = BulkExportQuery(export_id="test-export", table_name="test-table", sql_query="SELECT * FROM table WHERE id > 100")
+
+    # When / Then
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableName": "test-table", "sqlQuery": "SELECT * FROM table WHERE id > 100"}
+
+
+def should_omit_sql_query_when_not_provided():
+    # Given
+    query = BulkExportQuery(export_id="test-export", table_name="test-table")
+
+    # When / Then
+    parsed = json.loads(query.to_json())
+    assert "sqlQuery" not in parsed
+    assert parsed == {"exportId": "test-export", "tableName": "test-table"}
+
+
+def should_include_sql_query_with_table_id():
+    # Given
+    query = BulkExportQuery(export_id="test-export", table_id="test-table-id", sql_query="SELECT * FROM table")
+
+    # When / Then
+    assert json.loads(query.to_json()) == {"exportId": "test-export", "tableId": "test-table-id", "sqlQuery": "SELECT * FROM table"}
 
 
 @pytest.fixture
@@ -91,4 +115,4 @@ def queue() -> Queue:
 
 def receive_messages(queue: Queue):
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]

@@ -15,12 +15,14 @@
  */
 package sleeper.query.core.rowretrieval;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -32,11 +34,14 @@ import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.model.QueryProcessingConfig;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +53,29 @@ import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest extends QueryExecutorTestBase {
+
+    @Nested
+    @DisplayName("Query SQL check")
+    class QueryWithSQL {
+        @Test
+        void shouldFailWhenSqlQueryPresent() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
+
+            // When - Then
+            assertThatThrownBy(() -> getRows(queryAllRowsBuilder().processingConfig(
+                    QueryProcessingConfig
+                            .builder()
+                            .sqlQuery("SELECT * FROM query_results")
+                            .build())
+                    .build()))
+                    .cause()
+                    .isInstanceOf(QueryException.class)
+                    .hasMessage("Query contains SQL query filter which is not supported by query results retriever: " +
+                            "sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever. " +
+                            "You may need to select a different query engine in the table properties for this table.");
+        }
+    }
 
     @Nested
     @DisplayName("Query rows")
@@ -430,6 +458,136 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
             // Then
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", "B", "value", 7L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Run subqueries in parallel")
+    class RunSubqueriesInParallel {
+
+        private ExecutorService threadPool;
+
+        @BeforeEach
+        void setUp() {
+            threadPool = Executors.newFixedThreadPool(2);
+        }
+
+        @AfterEach
+        void tearDown() {
+            threadPool.shutdown();
+        }
+
+        @Test
+        void shouldReturnRowsFromSinglePartition() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(new Row(Map.of("key", 1L)));
+        }
+
+        @Test
+        void shouldReturnRowsFromMultiplePartitions() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildList());
+            addPartitionFile("left", "left.parquet", List.of(
+                    new Row(Map.of("key", 1L)),
+                    new Row(Map.of("key", 3L))));
+            addPartitionFile("right", "right.parquet", List.of(
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", 1L)),
+                    new Row(Map.of("key", 3L)),
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L)));
+        }
+
+        @Test
+        void shouldReturnNoRowsWhenNoKeyInQueryRange() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRange(100L, 200L));
+
+            // Then
+            assertThat(rows).isEmpty();
+        }
+
+        @Test
+        void shouldReturnNoRowsFromEmptyQuery() throws Exception {
+            // Given
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 1L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRegions());
+
+            // Then
+            assertThat(rows).isEmpty();
+        }
+
+        @Test
+        void shouldReturnRowsFromMultiplePartitionsWhenSomeEmptyAndSomeNot() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 5L)
+                    .splitToNewChildren("L", "LL", "LR", 0L)
+                    .splitToNewChildren("R", "RL", "RR", 10L)
+                    .buildList());
+            addPartitionFile("LL", "file1.parquet", List.of(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", -9L))));
+            addPartitionFile("RL", "file2.parquet", List.of(
+                    new Row(Map.of("key", 6L)),
+                    new Row(Map.of("key", 7L))));
+
+            // When
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", -9L)),
+                    new Row(Map.of("key", 6L)),
+                    new Row(Map.of("key", 7L)));
+        }
+
+        @Test
+        void shouldReturnRowsFromMultipleQueryRangesAllInSamePartition() throws Exception {
+            // Given
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildList());
+            addPartitionFile("left", "left.parquet", List.of(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", 3L))));
+            addPartitionFile("right", "right.parquet", List.of(
+                    new Row(Map.of("key", 7L)),
+                    new Row(Map.of("key", 9L))));
+
+            // When
+            Region region1 = range(-11L, -9L);
+            Region region2 = range(8L, 10L);
+            List<Row> rows = getRows(parallelExecutor(threadPool), queryRegions(region1, region2));
+
+            // Then
+            assertThat(rows).containsExactlyInAnyOrder(
+                    new Row(Map.of("key", -10L)),
+                    new Row(Map.of("key", 9L)));
         }
     }
 

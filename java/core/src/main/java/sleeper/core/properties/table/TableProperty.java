@@ -166,6 +166,16 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "set to fail after an upgrade. Please use the \"datafusion\" option instead.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
+    TableProperty QUERY_DATA_ENGINE = Index.propertyBuilder("sleeper.table.query.data.engine")
+            .defaultProperty(DATA_ENGINE)
+            .description("Select which data engine to use for table queries. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class) + "\n" +
+                    "The options \"datafusion\" and \"datafusion_experimental\" currently have identical behaviour, " +
+                    "as the DataFusion data engine no longer has any experimental components. We may remove the " +
+                    "\"datafusion_experimental\" option in a future release, which will cause instances with that " +
+                    "set to fail after an upgrade. Please use the \"datafusion\" option instead.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to apply to this table. Defaults to nothing. " +
                     "This will be applied both during queries and during compaction, and will apply the results to " +

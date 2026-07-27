@@ -17,11 +17,9 @@ import json
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
 
-from sleeper.client import SleeperClient
+from sleeper import SleeperClient
 from sleeper.ingest import IngestJob, IngestJobSender
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty
-from sleeper.properties.config_bucket import save_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -35,7 +33,7 @@ def should_send_ingest_job(queue: Queue, sender: IngestJobSender):
     sender.send(job)
 
     # Then
-    assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}]
 
 
 def should_send_ingest_job_with_client(queue: Queue, sleeper_client: SleeperClient):
@@ -43,7 +41,7 @@ def should_send_ingest_job_with_client(queue: Queue, sleeper_client: SleeperClie
     sleeper_client.ingest_parquet_files_from_s3("test-table", ["file-1.parquet"], "test-job")
 
     # Then
-    assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}]
 
 
 def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
@@ -59,7 +57,7 @@ def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperCli
     file = single(job.pop("files"))
     assert LocalStack.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
-    assert {"tableName": "my_table"} == job
+    assert job == {"tableName": "my_table"}
 
 
 def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
@@ -76,7 +74,7 @@ def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient
     file = single(job.pop("files"))
     assert LocalStack.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
-    assert {"tableName": "my_table"} == job
+    assert job == {"tableName": "my_table"}
 
 
 def should_create_job_by_table_id():
@@ -84,7 +82,7 @@ def should_create_job_by_table_id():
     job = IngestJob(job_id="test-job", table_id="test-table", files=["file-1.parquet"])
 
     # Then
-    assert {"id": "test-job", "tableId": "test-table", "files": ["file-1.parquet"]} == json.loads(job.to_json())
+    assert json.loads(job.to_json()) == {"id": "test-job", "tableId": "test-table", "files": ["file-1.parquet"]}
 
 
 def should_generate_job_id():
@@ -121,7 +119,7 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 
 def receive_messages(queue: Queue) -> list[dict]:
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]
 
 
 def receive_message(queue: Queue) -> dict:

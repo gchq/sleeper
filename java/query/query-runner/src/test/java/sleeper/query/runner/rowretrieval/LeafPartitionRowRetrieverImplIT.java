@@ -48,6 +48,7 @@ import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
@@ -70,6 +71,7 @@ import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
@@ -1045,6 +1047,38 @@ public class LeafPartitionRowRetrieverImplIT {
                 .containsExactly(new Row(Map.of("key", 1L, "securityLabel", "secret", "value", 10L)));
     }
 
+    @Test
+    public void shouldNotSupportSQLFiltering() throws Exception {
+        // Given
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        Row row = new Row(Map.of(
+                "key", 1L,
+                "value1", 10L,
+                "value2", 100L));
+        ingestData(List.of(row));
+
+        Query query = Query.builder()
+                .tableName("unused")
+                .queryId("abc")
+                .regions(List.of(new Region(rangeFactory()
+                        .createExactRange("key", 1L))))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .sqlQuery("SELECT * FROM query_results;")
+                        .build())
+                .build();
+
+        // Then / When
+        assertThatThrownBy(() -> {
+            execute(query);
+        })
+                .cause()
+                .isInstanceOf(QueryException.class)
+                .hasMessage("Query contains SQL query filter which is not supported by query results retriever: " +
+                        "sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl. " +
+                        "You may need to select a different query engine in the table properties for this table.");
+    }
+
     private RangeFactory rangeFactory() {
         return new RangeFactory(tableProperties.getSchema());
     }
@@ -1069,7 +1103,7 @@ public class LeafPartitionRowRetrieverImplIT {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new LeafPartitionRowRetrieverImpl.Provider(
                 executorService, TableHadoopConfigurationProvider.fixed(new Configuration()));
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        return new QueryExecutor(
+        return QueryExecutor.makeSerialExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

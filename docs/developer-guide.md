@@ -140,6 +140,8 @@ Sleeper.
 See the [test strategy](development/test-strategy.md) and [test design](development/test-design.md) for how and when to
 write tests, as well as information on the testing tools used in the project.
 
+For local Rust contributor checks, see the [Rust local validation guide](development/rust-local-validation.md).
+
 ### IDE setup
 
 Configuration is available for various development environments.

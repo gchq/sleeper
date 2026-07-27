@@ -18,7 +18,6 @@ package sleeper.restapi;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext.Http;
-import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -40,12 +39,7 @@ public class RestApiTestBase {
 
     public final AddTable addTable = new AddTable(tablePropertiesStore, stateStoreProvider);
 
-    public RestApiLambda lambda;
-
-    @BeforeEach
-    void setUp() {
-        lambda = new RestApiLambda(instanceProperties, addTable);
-    }
+    public RestApiLambda lambda = new RestApiLambda(instanceProperties, addTable);
 
     /**
      * Generates event behaviour for testing across REST Api actions.

@@ -63,6 +63,26 @@ public class BulkExportQuerySerDeTest {
     }
 
     @Test
+    public void shouldSerDeBulkExportQueryWithTableIdAndSqlQuery() {
+        // Given
+        BulkExportQuery bulkExportQuery = BulkExportQuery.builder()
+                .tableId("t1")
+                .exportId("e1")
+                .sqlQuery("SELECT * FROM query_results;")
+                .build();
+
+        // When
+        String json = querySerDe.toJson(bulkExportQuery);
+
+        BulkExportQuery deserialisedQuery = querySerDe.fromJson(json);
+
+        // Then
+        String expectedJson = "{\"exportId\":\"e1\",\"tableId\":\"t1\",\"sqlQuery\":\"SELECT * FROM query_results;\"}";
+        assertThat(bulkExportQuery).isEqualTo(deserialisedQuery);
+        assertThat(json).isEqualTo(expectedJson);
+    }
+
+    @Test
     public void shouldThrowExceptionWithNullTableNameAndTableId() {
         // When / Then
         assertThatThrownBy(() -> querySerDe.toJson(BulkExportQuery.builder()

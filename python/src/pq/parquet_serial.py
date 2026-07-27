@@ -13,7 +13,8 @@
 #  limitations under the License.
 import json
 import random
-from typing import BinaryIO, Dict, List, Mapping
+from collections.abc import Mapping
+from typing import BinaryIO
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -33,7 +34,7 @@ def _create_writer(stream: BinaryIO, record: Mapping[str, str]) -> pq.ParquetWri
     """
     # We create a simple table from the first given row to infer the Parquet schema
     # Wrap values in singleton list
-    list_value_dict: Dict[str, List[str]] = {k: [v] for k, v in record.items()}
+    list_value_dict: dict[str, list[str]] = {k: [v] for k, v in record.items()}
     table: pa.Table = pa.Table.from_pydict(list_value_dict)
 
     # Inferred schema in table above will have every column set to nullable (optional)
@@ -51,7 +52,7 @@ def _create_writer(stream: BinaryIO, record: Mapping[str, str]) -> pq.ParquetWri
     return writer
 
 
-def _non_nullable(fields: List[pa.Field], deep: bool = True) -> List[pa.Field]:
+def _non_nullable(fields: list[pa.Field], deep: bool = True) -> list[pa.Field]:
     """
     Converts a list of Arrow Fields into non-nullable (i.e. required, not optional)
     fields. This function will recurse down into nested types (List, Struct) if
@@ -116,7 +117,7 @@ class ParquetSerialiser:
         """
         Empty the data buffer for new rows being written.
         """
-        self._buffer: Dict = dict()
+        self._buffer = {}
         self._row_count: int = 0
         self._total_memory: int = 0
         self._mem_sample_duration: int = self._get_next_mem_sample_duration()
@@ -126,11 +127,9 @@ class ParquetSerialiser:
         """
         Flushes the current data buffer of rows as a row group to the parquet file.
         """
-        if self._writer is not None:
-            # If we have a writer and some rows then flush
-            if self._row_count > 0:
-                self._writer.write_table(pa.Table.from_pydict(self._buffer, schema=self._writer.schema))
-                self._clear_table()
+        if self._writer is not None and self._row_count > 0:
+            self._writer.write_table(pa.Table.from_pydict(self._buffer, schema=self._writer.schema))
+            self._clear_table()
 
     def _write_row(self, record: Mapping[str, str]) -> None:
         """
@@ -139,7 +138,7 @@ class ParquetSerialiser:
         :param record: the record to write
         """
         for k, v in record.items():
-            self._buffer.setdefault(k, list()).append(v)
+            self._buffer.setdefault(k, []).append(v)
 
         self._row_count += 1
 

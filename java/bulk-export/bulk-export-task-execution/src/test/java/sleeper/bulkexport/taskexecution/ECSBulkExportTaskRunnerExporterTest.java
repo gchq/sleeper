@@ -30,6 +30,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.query.core.model.LeafPartitionQuery;
 
 import java.util.List;
 
@@ -97,5 +98,27 @@ public class ECSBulkExportTaskRunnerExporterTest {
                 tableProperties,
                 new JavaCompactionExporter(instanceProperties, null, null, awsConfig),
                 new DataFusionQueryExporter(awsConfig));
+    }
+
+    @Test
+    void shouldSetSqlQueryInLeafPartitionQuery() {
+        // Given
+        BulkExportLeafPartitionQuery bulkExportLeafQuery = BulkExportLeafPartitionQuery
+                .builder()
+                .exportId(query.getExportId())
+                .files(query.getFiles())
+                .leafPartitionId(query.getLeafPartitionId())
+                .partitionRegion(query.getPartitionRegion())
+                .regions(query.getRegions())
+                .subExportId(query.getSubExportId())
+                .tableId(query.getTableId())
+                .sqlQuery("SELECT * from query_results LIMIT 1;")
+                .build();
+
+        // When
+        LeafPartitionQuery leafQuery = DataFusionQueryExporter.getLeafPartitionQuery(bulkExportLeafQuery);
+
+        // Then
+        assertThat(leafQuery.getSqlQuery()).isEqualTo(bulkExportLeafQuery.getSqlQuery());
     }
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>deployment</artifactId>
-        <version>0.37.1</version>
+        <version>0.37.2</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
@@ -40,11 +40,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>container-images</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -87,10 +82,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>cloudwatchevents</artifactId>
         </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ecr</artifactId>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -114,11 +105,6 @@
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

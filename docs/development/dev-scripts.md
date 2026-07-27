@@ -64,9 +64,9 @@ Rust.
 
 #### `generateDocumentation.sh`
 
-This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
-changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
-grouping, etc.
+This will regenerate the examples and templates for Sleeper configuration properties files, Docker image
+documentation, and system test suite documentation. Use this if you've made changes to Sleeper configuration
+properties, Docker images, or the slow and expensive system test suite annotations.
 
 #### `publishDocker.sh`
 

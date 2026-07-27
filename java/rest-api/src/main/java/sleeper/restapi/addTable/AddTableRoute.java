@@ -48,7 +48,7 @@ public class AddTableRoute implements Route {
     private AddTableRoute(Builder builder) {
         instanceProperties = requireNonNull(builder.instanceProperties);
         addTable = requireNonNull(builder.addTable);
-        requestSerDe = new AddTableRequestSerDe();
+        requestSerDe = new AddTableRequestSerDe(instanceProperties);
         responseSerDe = new AddTableResponseSerDe();
     }
 
@@ -66,20 +66,12 @@ public class AddTableRoute implements Route {
         } catch (JsonSyntaxException e) {
             LOGGER.warn("Add table request body was not valid JSON", e);
             return Route.errorResponse(400, "invalid_request", "Request body is not valid JSON");
-        }
-        if (request == null) {
-            return Route.errorResponse(400, "invalid_request", "Request body is empty");
-        }
-        TableProperties tableProperties;
-        List<Object> splitPoints;
-        try {
-            tableProperties = request.toTableProperties(instanceProperties);
-            splitPoints = request.toSplitPoints(tableProperties);
         } catch (RuntimeException e) {
-            // SchemaSerDe / split-point parsing surface invalid input as runtime exceptions.
             LOGGER.warn("Add table request was invalid", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
+        TableProperties tableProperties = request.getProperties();
+        List<Object> splitPoints = request.getSplitPoints();
         try {
             addTable.addTable(tableProperties, splitPoints);
         } catch (TableAlreadyExistsException e) {
