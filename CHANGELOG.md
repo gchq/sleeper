@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.37.2
 
-### 22nd July, 2026
+### 27th July, 2026
 
 This includes improvements to bulk import and queries.
 
@@ -19,14 +19,21 @@ Bulk import:
 Query:
 - Added an option to parallelise queries when running locally with QueryExecutor.
 
+Bulk Export:
+- Added support for SQL query filtering.
+
 Configuration:
 - Added `sleeper.table.query.data.engine` to set a different data engine for query than for compaction.
 
 Documentation:
 - Documented local build validation in Rust for developers.
 
+Python
+- Updated to the support multilpe support version of python ahead of work on the API
+
 Bugfixes:
 - REST API now has the correct permissions to add a Sleeper table.
+- EKS state machine no longer fails when run in a region with a non-standard partition
 
 
 ## Version 0.37.1
