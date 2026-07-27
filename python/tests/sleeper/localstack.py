@@ -22,7 +22,7 @@ from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs import SQSServiceResource
 from mypy_boto3_sqs.service_resource import Queue
 from pyarrow.parquet import ParquetFile
-from testcontainers.localstack import LocalStackContainer
+from testcontainers.community.localstack import LocalStackContainer
 
 from pq import ParquetDeserialiser
 

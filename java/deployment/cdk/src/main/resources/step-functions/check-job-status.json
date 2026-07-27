@@ -1,6 +1,6 @@
 {
   "Type": "Task",
-  "Resource": "arn:aws:states:::aws-sdk:dynamodb:getItem",
+  "Resource": "arn:partition-placeholder:states:::aws-sdk:dynamodb:getItem",
   "Parameters": {
     "TableName": "table-name-placeholder",
     "Key": {
