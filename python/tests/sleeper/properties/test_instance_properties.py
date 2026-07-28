@@ -14,8 +14,9 @@
 
 import pytest
 
+from sleeper.properties import InstanceProperties, InstanceProperty, load_instance_properties_from_string
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
-from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty, clean_instance_id, load_instance_properties_from_string
+from sleeper.properties.instance_properties import clean_instance_id
 
 
 def should_read_set_field():

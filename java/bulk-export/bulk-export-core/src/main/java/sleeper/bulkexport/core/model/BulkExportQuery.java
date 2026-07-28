@@ -28,6 +28,7 @@ public class BulkExportQuery {
     private final String exportId;
     private final String tableId;
     private final String tableName;
+    private final String sqlQuery;
 
     private BulkExportQuery(Builder builder) {
         exportId = builder.exportId != null ? builder.exportId : UUID.randomUUID().toString();
@@ -42,6 +43,7 @@ public class BulkExportQuery {
         } else {
             tableId = builder.tableId;
             tableName = builder.tableName;
+            sqlQuery = builder.sqlQuery;
         }
     }
 
@@ -55,6 +57,7 @@ public class BulkExportQuery {
                 .tableId(tableId)
                 .tableName(tableName)
                 .exportId(exportId)
+                .sqlQuery(sqlQuery)
                 .build();
     }
 
@@ -72,6 +75,10 @@ public class BulkExportQuery {
 
     public String getExportId() {
         return exportId;
+    }
+
+    public String getSqlQuery() {
+        return sqlQuery;
     }
 
     /**
@@ -99,12 +106,13 @@ public class BulkExportQuery {
         BulkExportQuery that = (BulkExportQuery) object;
         return Objects.equals(tableId, that.tableId)
                 && Objects.equals(tableName, that.tableName)
-                && Objects.equals(exportId, that.exportId);
+                && Objects.equals(exportId, that.exportId)
+                && Objects.equals(sqlQuery, that.sqlQuery);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, tableName, exportId);
+        return Objects.hash(tableId, tableName, exportId, sqlQuery);
     }
 
     @Override
@@ -113,6 +121,7 @@ public class BulkExportQuery {
                 "tableId='" + tableId + '\'' +
                 ", tableName='" + tableName + '\'' +
                 ", exportId='" + exportId + '\'' +
+                ", sqlQuery='" + sqlQuery + '\'' +
                 '}';
     }
 
@@ -123,6 +132,7 @@ public class BulkExportQuery {
         private String tableId;
         private String tableName;
         private String exportId;
+        private String sqlQuery;
 
         private Builder() {
         }
@@ -157,6 +167,17 @@ public class BulkExportQuery {
          */
         public Builder exportId(String exportId) {
             this.exportId = exportId;
+            return this;
+        }
+
+        /**
+         * Sets the optional SQL query of the export job.
+         *
+         * @param  sqlQuery the SQL query of the export job
+         * @return          the builder for chaining
+         */
+        public Builder sqlQuery(String sqlQuery) {
+            this.sqlQuery = sqlQuery;
             return this;
         }
 
