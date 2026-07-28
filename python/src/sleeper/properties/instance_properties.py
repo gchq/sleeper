@@ -4,7 +4,7 @@ from jproperties import Properties
 
 
 class InstanceProperties:
-    def __init__(self, properties: dict = None):
+    def __init__(self, properties: dict | None = None):
         if properties is None:
             properties = {}
         self._properties = properties

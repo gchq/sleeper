@@ -42,6 +42,7 @@ class QueryJson {
     private final String type;
     private final List<JsonElement> regions;
     private final List<String> requestedValueFields;
+    private final String sqlQuery;
     private final String queryTimeIteratorClassName;
     private final String queryTimeIteratorConfig;
     private final Map<String, String> resultsPublisherConfig;
@@ -58,6 +59,7 @@ class QueryJson {
         type = builder.type;
         regions = builder.regions;
         requestedValueFields = builder.requestedValueFields;
+        sqlQuery = builder.sqlQuery;
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
         queryTimeIteratorConfig = builder.queryTimeIteratorConfig;
         resultsPublisherConfig = builder.resultsPublisherConfig;
@@ -131,6 +133,7 @@ class QueryJson {
                 .resultsPublisherConfig(Objects.requireNonNullElseGet(resultsPublisherConfig, Map::of))
                 .statusReportDestinations(Objects.requireNonNullElseGet(statusReportDestinations, List::of))
                 .requestedValueFields(requestedValueFields)
+                .sqlQuery(sqlQuery)
                 .build();
     }
 
@@ -215,6 +218,7 @@ class QueryJson {
         private String type;
         private List<JsonElement> regions;
         private List<String> requestedValueFields;
+        private String sqlQuery;
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
         private Map<String, String> resultsPublisherConfig;
@@ -257,11 +261,17 @@ class QueryJson {
                     .queryTimeIteratorClassName(processingConfig.getQueryTimeIteratorClassName())
                     .queryTimeIteratorConfig(processingConfig.getQueryTimeIteratorConfig())
                     .resultsPublisherConfig(processingConfig.getResultsPublisherConfig())
-                    .statusReportDestinations(processingConfig.getStatusReportDestinations());
+                    .statusReportDestinations(processingConfig.getStatusReportDestinations())
+                    .sqlQuery(processingConfig.getSqlQuery());
         }
 
         public Builder requestedValueFields(List<String> requestedValueFields) {
             this.requestedValueFields = requestedValueFields;
+            return this;
+        }
+
+        public Builder sqlQuery(String sqlQuery) {
+            this.sqlQuery = sqlQuery;
             return this;
         }
 

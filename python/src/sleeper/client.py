@@ -17,7 +17,6 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Dict, List
 
 import boto3
 import s3fs
@@ -27,14 +26,12 @@ from mypy_boto3_s3 import S3Client, S3ServiceResource
 from mypy_boto3_sqs import SQSServiceResource
 from pyarrow.parquet import ParquetFile
 
-from pq.parquet_deserial import ParquetDeserialiser
-from pq.parquet_serial import ParquetSerialiser
+from pq import ParquetDeserialiser, ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
-from sleeper.properties.config_bucket import load_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, load_instance_properties
+from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.query import Query, Region
 from sleeper.web_socket_query import WebSocketQueryProcessor
 
@@ -60,7 +57,7 @@ class SleeperClient:
         self,
         instance_id,
         use_threads=False,
-        account_name: str = None,
+        account_name: str | None = None,
         s3_client: S3Client = None,
         s3_resource: S3ServiceResource = None,
         s3_fs: s3fs.S3FileSystem = None,
@@ -89,7 +86,7 @@ class SleeperClient:
         self._dynamo_resource = dynamo_resource
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
-    def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str = None):
+    def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str | None = None):
         """
         Perform a write of the given rows to Sleeper.
         These are treated as a single block of rows to write. Each
@@ -109,7 +106,7 @@ class SleeperClient:
         job = IngestJob(job_id=job_id, table_name=table_name, files=[databucket_file])
         IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
 
-    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
+    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str | None = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name. This is
         done by posting a message containing the list of files to the ingest queue. These
@@ -128,10 +125,10 @@ class SleeperClient:
         self,
         table_name: str,
         files: list,
-        id: str = None,
+        id: str | None = None,
         platform: str = "EMRServerless",
-        platform_spec: dict = None,
-        class_name: str = None,
+        platform_spec: dict | None = None,
+        class_name: str | None = None,
     ):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
@@ -218,7 +215,7 @@ class SleeperClient:
         query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
         return await self.query_by_web_socket(query)
 
-    def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are equal to one of a given list. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
@@ -245,7 +242,7 @@ class SleeperClient:
 
         return self.query_by_sqs(Query(query_id, table_name, regions))
 
-    def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
@@ -303,7 +300,7 @@ class SleeperClient:
         return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     @contextmanager
-    def create_batch_writer(self, table_name: str, job_id: str = None):
+    def create_batch_writer(self, table_name: str, job_id: str | None = None):
         """
         Creates an object for writing large batches of events to Sleeper.
         Designed to be used within a context manager ('with' statement).
@@ -333,7 +330,7 @@ class SleeperClient:
                     def __init__(self):
                         self.num_rows: int = 0
 
-                    def write(self, rows: List[Dict]):
+                    def write(self, rows: list[dict]):
                         for row in rows:
                             parquet_file.write_record(row)
 
@@ -447,7 +444,7 @@ def _receive_messages(
     deserialiser: ParquetDeserialiser,
     query_id: str,
     timeout: int = DEFAULT_MAX_WAIT_TIME,
-) -> List:
+) -> list:
     """
     Polls the DynamoDB query tracker until the query is completed, then reads the results from S3.
 
@@ -498,17 +495,16 @@ def _receive_messages(
             results = []
             for file in results_files:
                 logger.debug(f"Opening file {results_bucket_name}/{file}")
-                with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f:
-                    with ParquetFile(f) as po:
-                        for row in deserialiser.read(po):
-                            results.append(row)
+                with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f, ParquetFile(f) as po:
+                    for row in deserialiser.read(po):
+                        results.append(row)
 
             logger.debug("Query has finished")
             return results
     raise RuntimeError("No results received from Sleeper within specified timeout.")
 
 
-def _make_ingest_object_key(id: str = None) -> str:
+def _make_ingest_object_key(id: str | None = None) -> str:
     if id is None:
         id = str(uuid.uuid4())
     return f"for_ingest/{id}.parquet"

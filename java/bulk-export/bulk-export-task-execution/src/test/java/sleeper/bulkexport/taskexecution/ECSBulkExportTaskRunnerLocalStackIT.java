@@ -129,6 +129,26 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldThrowExceptionWhenSqlQueryGivenToJavaExporter() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
+        BulkExportLeafPartitionQuery query1 = createQueryWithIdsAndFiles("e-1", "se-1", file)
+                .sqlQuery("SELECT * FROM query_results;")
+                .build();
+        send(query1);
+
+        // When / Then
+        assertThatThrownBy(() -> {
+            runTask();
+        })
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage("Java bulk exporter doesn't support SQL query filtering, but a SQL query filter was provided.");
+    }
+
+    @Test
     public void shouldRunOneBulkExportSubQueryViaDataFusion() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);

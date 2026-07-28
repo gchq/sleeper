@@ -17,12 +17,11 @@ import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
 
-from sleeper.properties.cdk_defined_properties import IngestCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import IngestCdkProperty, InstanceProperties
 
 
 class IngestJob:
-    def __init__(self, job_id: str = None, table_name: str = None, table_id: str = None, files: list[str] = None):
+    def __init__(self, job_id: str | None = None, table_name: str | None = None, table_id: str | None = None, files: list[str] | None = None):
         if job_id is None:
             job_id = str(uuid.uuid4())
         if table_name is None and table_id is None:
