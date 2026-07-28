@@ -19,7 +19,7 @@ from mypy_boto3_sqs.service_resource import Queue
 from pytest_mock import MockerFixture
 
 from sleeper import SleeperClient
-from sleeper.properties import CommonCdkProperty, QueryCdkProperty, save_instance_properties, InstanceProperties
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from sleeper.query import Query, Range, Region
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
@@ -144,7 +144,7 @@ async def should_send_exact_query_with_client_via_web_socket(sleeper_client: Sle
 
     # Then
     expected_query = Query(table_name=table_name, query_id=query_id, regions=[Region(row_key_field_to_range={"key": Range.exact_value("my_key")})])
-    assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
+    assert [call.args[1].to_dict() for call in mock_process.call_args_list] == [expected_query.to_dict()]
 
 
 @pytest.mark.asyncio
@@ -163,7 +163,7 @@ async def should_send_range_query_with_client_via_web_socket(sleeper_client: Sle
     # Then
     expected_region = Region(row_key_field_to_range={"key": Range(min="a", max="z", min_inclusive=True, max_inclusive=True)})
     expected_query = Query(table_name=table_name, query_id=query_id, regions=[expected_region])
-    assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
+    assert [call.args[1].to_dict() for call in mock_process.call_args_list] == [expected_query.to_dict()]
 
 
 @pytest.fixture
@@ -189,4 +189,4 @@ def query_queue_resource() -> Queue:
 
 def receive_messages(queue_resource: Queue):
     messages = queue_resource.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]
