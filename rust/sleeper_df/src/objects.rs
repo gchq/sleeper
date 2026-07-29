@@ -47,10 +47,15 @@ pub struct FFIFileResult {
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub enum FFIRowKeyValueType {
+    /// 32-bit signed integer row key type.
     Int32 = 1,
+    /// 64-bit signed integer row key type.
     Int64 = 2,
+    /// String row key type.
     String = 3,
+    /// Byte array row key type.
     ByteArray = 4,
+    /// Unbounded row key type.
     Empty = 5,
 }
 
@@ -95,9 +100,13 @@ impl Display for FFIRowKeyValueType {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub union FFIRowKeyValueData {
+    /// 32-bit signed integer value.
     int32: i32,
+    /// 64-bit signed integer value.
     int64: i64,
+    /// String value as [`FFIBytes`].
     string: *const FFIBytes,
+    /// Byte array value as [`FFIBytes`].
     bytes: *const FFIBytes,
 }
 
@@ -145,7 +154,9 @@ impl TryFrom<&FFIRowKeyValue> for PartitionBound<'_> {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFIBytes {
+    /// Length of the byte array.
     pub length: usize,
+    /// Pointer to the byte array data. May be NULL if and only if length is zero.
     pub buffer: *const c_uchar,
 }
 

@@ -27,6 +27,7 @@ use std::{collections::HashMap, fmt::Display, mem::discriminant, slice};
 #[derive(Debug, Copy, Clone)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum FFIExtensionVariant {
+    /// SQL query extension for filtering during execution.
     SQL = 1,
 }
 
@@ -79,6 +80,7 @@ impl Display for FFIExtensionVariant {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub union FFIExtensionData {
+    /// SQL query extension data.
     pub sql: *const FFISQLExtension,
 }
 
@@ -116,6 +118,8 @@ impl FFIExtension {
 }
 
 /// Get all instances of a given extension type from an array.
+///
+/// If `extensions_len` is 0, then `extensions` may be NULL.
 pub fn find_extensions_type<'a>(
     variant: FFIExtensionVariant,
     extensions: *const FFIExtension,
@@ -133,6 +137,7 @@ pub fn find_extensions_type<'a>(
 
 /// Checks the extension array and ensures all extensions are permitted.
 ///
+/// If `extensions_len` is 0, then `extensions` may be NULL.
 /// # Errors
 /// Error will occur if any extension is type is contained more than its permitted maximum.
 pub fn validate_extensions(
@@ -320,11 +325,7 @@ mod tests {
         let null_ptr: *const FFIExtension = std::ptr::null();
 
         // When
-        let result = find_extensions_type(
-            FFIExtensionVariant::SQL,
-            null_ptr,
-            0,
-        );
+        let result = find_extensions_type(FFIExtensionVariant::SQL, null_ptr, 0);
 
         // Then - should find nothing without panicking
         assert!(result.is_empty());
