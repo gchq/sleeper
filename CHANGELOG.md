@@ -6,6 +6,16 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.37.3
+
+### 29th July 2026
+
+This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
+
+Minor fixes:
+    - Change python to use trixie over bookworm
+    - New VPC endpoint interfaces for ECR
+
 ## Version 0.37.2
 
 ### 27th July, 2026
