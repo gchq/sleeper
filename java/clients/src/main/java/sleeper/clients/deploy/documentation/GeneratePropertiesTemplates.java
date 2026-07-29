@@ -199,7 +199,7 @@ public class GeneratePropertiesTemplates {
 
         instanceProperties.set(OPTIONAL_STACKS, BULK_IMPORT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
 
-        List<InstanceProperty> propertiesByIsSet = instanceProperties.getPropertiesIndex().getUserDefined().stream().toList();
+        List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
 
         writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_MODE_EXPLANATION);
     }
