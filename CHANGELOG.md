@@ -12,9 +12,9 @@ available [here](docs/development/roadmap.md).
 
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
-Minor fixes:
-    - Change python to use trixie over bookworm
-    - New VPC endpoint interfaces for ECR
+General issues:
+    - Change RUST builder to use TRIXIE over BOOKWORM
+    - New VPC endpoint interfaces for ECR for enviroment deployment
 
 ## Version 0.37.2
 
