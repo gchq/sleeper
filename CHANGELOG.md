@@ -14,7 +14,7 @@ This release includes fixes to the alignment of build numbers caused by previous
 
 General issues:
     - Change Rust builder to use Trixie over Bookworm
-    - New VPC endpoint interfaces for ECR for environment deployment
+    - New VPC interface endpoints for ECR for environment deployment
 
 ## Version 0.37.2
 
