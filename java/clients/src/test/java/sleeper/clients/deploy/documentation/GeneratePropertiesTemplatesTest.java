@@ -60,9 +60,9 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.model.OptionalStack.BULK_IMPORT_STACKS;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
 class GeneratePropertiesTemplatesTest {
@@ -245,9 +245,9 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
-    @DisplayName("Generate light instance properties template")
-    class GenerateLightInstancePropertiesTemplate {
-        private final String propertiesString = loadFileAsString("scripts/templates/light/instanceproperties.template");
+    @DisplayName("Generate light instance properties example")
+    class GenerateLightInstancePropertiesExample {
+        private final String propertiesString = loadFileAsString("scripts/example/light/instance.properties");
 
         @Test
         void shouldGenerateLightInstanceProperties() {
@@ -266,6 +266,10 @@ class GeneratePropertiesTemplatesTest {
             givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
+
+            // Default table values
+            givenProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
+            givenProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
 
             givenProperties.set(OPTIONAL_STACKS, BULK_IMPORT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
 
@@ -303,17 +307,14 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
-    @DisplayName("Generate light table properties template")
-    class GenerateLightTablePropertiesTemplate {
-        private final String propertiesString = loadFileAsString("scripts/templates/light/tableproperties.template");
+    @DisplayName("Generate light table properties example")
+    class GenerateLightTablePropertiesExample {
+        private final String propertiesString = loadFileAsString("scripts/examples/light/table.properties");
 
         @Test
-        void shouldGenerateEmptyTablePropertiesWhenLoadedFromTemplate() {
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
             // Given
             TableProperties givenProperties = new TableProperties(new InstanceProperties());
-            givenProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
-            givenProperties.set(INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
-
             // When
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
 

@@ -50,9 +50,9 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.model.OptionalStack.BULK_IMPORT_STACKS;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 
 /**
  * Generates template files to be filled in when deploying an instance of Sleeper, or creating tables.
@@ -93,17 +93,17 @@ public class GeneratePropertiesTemplates {
         writeFile(basicExampleDir.resolve("table.properties"),
                 GeneratePropertiesTemplates::writeExampleBasicTableProperties);
 
+        Path lightTemplateDir = Files.createDirectories(repositoryRoot.resolve("example/light"));
+        writeFile(lightTemplateDir.resolve("instance.properties"),
+                GeneratePropertiesTemplates::writeExampleLightInstanceProperties);
+        writeFile(lightTemplateDir.resolve("table.properties"),
+                GeneratePropertiesTemplates::writeExampleLightTableProperties);
+
         Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
         writeFile(scriptsTemplateDir.resolve("instanceproperties.template"),
-                GeneratePropertiesTemplates::writeInstancePropertiesTemplateBasic);
+                GeneratePropertiesTemplates::writeInstancePropertiesTemplate);
         writeFile(scriptsTemplateDir.resolve("tableproperties.template"),
-                GeneratePropertiesTemplates::writeTablePropertiesTemplateBasic);
-
-        Path lightTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates/light"));
-        writeFile(lightTemplateDir.resolve("instanceproperties.template"),
-                GeneratePropertiesTemplates::writeInstancePropertiesTemplateLight);
-        writeFile(lightTemplateDir.resolve("tableproperties.template"),
-                GeneratePropertiesTemplates::writeTablePropertiesTemplateLight);
+                GeneratePropertiesTemplates::writeTablePropertiesTemplate);
     }
 
     private static void createDocumentation(Path path) throws Exception {
@@ -160,10 +160,11 @@ public class GeneratePropertiesTemplates {
      *
      * @param out the writer
      */
-    public static void writeInstancePropertiesTemplateBasic(Writer out) {
+    @SuppressWarnings("null")
+    public static void writeInstancePropertiesTemplate(Writer out) {
         InstanceProperties properties = new InstanceProperties();
         List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
-        writeInstancePropertiesTemplate(out, properties, propertiesByIsSet, null);
+        writeInstancePropertiesWithHeader(out, properties, propertiesByIsSet, null);
     }
 
     /**
@@ -173,7 +174,7 @@ public class GeneratePropertiesTemplates {
      *
      * @param out the writer
      */
-    public static void writeInstancePropertiesTemplateLight(Writer out) {
+    public static void writeExampleLightInstanceProperties(Writer out) {
         InstanceProperties instanceProperties = new InstanceProperties();
         // Emr Serverless properties
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
@@ -190,11 +191,15 @@ public class GeneratePropertiesTemplates {
         instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
         instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
 
+        // Default table values
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
+        instanceProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
+
         instanceProperties.set(OPTIONAL_STACKS, BULK_IMPORT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.getPropertiesIndex().getUserDefined().stream().toList();
 
-        writeInstancePropertiesTemplate(out, instanceProperties, propertiesByIsSet, LIGHT_MODE_EXPLANATION);
+        writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_MODE_EXPLANATION);
     }
 
     /**
@@ -202,8 +207,8 @@ public class GeneratePropertiesTemplates {
      *
      * @param out the writer
      */
-    public static void writeTablePropertiesTemplateBasic(Writer out) {
-        writeTablePropertiesTemplate(out, new TableProperties(new InstanceProperties()), null);
+    public static void writeTablePropertiesTemplate(Writer out) {
+        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), null);
     }
 
     /**
@@ -213,15 +218,11 @@ public class GeneratePropertiesTemplates {
      *
      * @param out the writer
      */
-    public static void writeTablePropertiesTemplateLight(Writer out) {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
-        tableProperties.set(INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
-
-        writeTablePropertiesTemplate(out, tableProperties, LIGHT_MODE_EXPLANATION);
+    public static void writeExampleLightTableProperties(Writer out) {
+        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), LIGHT_MODE_EXPLANATION);
     }
 
-    private static void writeInstancePropertiesTemplate(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String explanation) {
+    private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String explanation) {
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
         writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
@@ -235,7 +236,7 @@ public class GeneratePropertiesTemplates {
                 .print(properties);
     }
 
-    private static void writeTablePropertiesTemplate(Writer out, TableProperties properties, String explanation) {
+    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, String explanation) {
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
         writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
