@@ -264,10 +264,10 @@ class GeneratePropertiesTemplatesTest {
             // EKS properties
             givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "60Gi");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
             givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
-            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "20Gi");
 
             // Default table values
             givenProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
