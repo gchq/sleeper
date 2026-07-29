@@ -13,8 +13,8 @@ available [here](docs/development/roadmap.md).
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
 General issues:
-    - Change RUST builder to use TRIXIE over BOOKWORM
-    - New VPC endpoint interfaces for ECR for enviroment deployment
+    - Change Rust builder to use Trixie over Bookworm
+    - New VPC endpoint interfaces for ECR for environment deployment
 
 ## Version 0.37.2
 
