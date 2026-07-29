@@ -248,7 +248,7 @@ class GeneratePropertiesTemplatesTest {
     @Nested
     @DisplayName("Generate light instance properties example")
     class GenerateLightInstancePropertiesExample {
-        private final String propertiesString = loadFileAsString("scripts/example/light/instance.properties");
+        private final String propertiesString = loadFileAsString("example/light/instance.properties");
 
         @Test
         void shouldGenerateLightInstanceProperties() {
@@ -311,7 +311,7 @@ class GeneratePropertiesTemplatesTest {
     @Nested
     @DisplayName("Generate light table properties example")
     class GenerateLightTablePropertiesExample {
-        private final String propertiesString = loadFileAsString("scripts/examples/light/table.properties");
+        private final String propertiesString = loadFileAsString("example/light/table.properties");
 
         @Test
         void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
