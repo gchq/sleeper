@@ -249,6 +249,10 @@ public class ECSBulkExportTaskRunner {
 
         @Override
         public RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile, TableProperties tableProperties) throws IOException, IteratorCreationException, ObjectFactoryException {
+            if (query.getSqlQuery() != null) {
+                throw new UnsupportedOperationException("Java bulk exporter doesn't support SQL query filtering, but a SQL query filter was provided.");
+            }
+
             ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(awsConfig,
                     objectFactory, hadoopConf, new NoSketchesStore());
@@ -284,16 +288,7 @@ public class ECSBulkExportTaskRunner {
         @Override
         public RowsProcessed export(BulkExportLeafPartitionQuery query, String outputFile, TableProperties tableProperties) throws RowRetrievalException {
             Schema schema = tableProperties.getSchema();
-            LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
-                    .files(query.getFiles())
-                    .leafPartitionId(query.getLeafPartitionId())
-                    .partitionRegion(query.getPartitionRegion())
-                    .queryId(query.getExportId())
-                    .regions(query.getRegions())
-                    .subQueryId(query.getSubExportId())
-                    .tableId(query.getTableId())
-                    .processingConfig(QueryProcessingConfig.none())
-                    .build();
+            LeafPartitionQuery leafPartitionQuery = getLeafPartitionQuery(query);
             LOGGER.debug("Query details: {}", leafPartitionQuery);
 
             try (BufferAllocator allocator = new RootAllocator();
@@ -301,6 +296,28 @@ public class ECSBulkExportTaskRunner {
                 DataFusionLeafPartitionRowRetriever dataFusion = new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
                 return dataFusion.queryToFile(leafPartitionQuery, outputFile, schema, tableProperties);
             }
+        }
+
+        /**
+         * Creates a query leaf partition object based on the given bulk export leaf partition.
+         *
+         * @param  query bulk export query to convert
+         * @return       leaf partition query
+         */
+        public static LeafPartitionQuery getLeafPartitionQuery(BulkExportLeafPartitionQuery query) {
+            return LeafPartitionQuery.builder()
+                    .files(query.getFiles())
+                    .leafPartitionId(query.getLeafPartitionId())
+                    .partitionRegion(query.getPartitionRegion())
+                    .queryId(query.getExportId())
+                    .regions(query.getRegions())
+                    .subQueryId(query.getSubExportId())
+                    .tableId(query.getTableId())
+                    .processingConfig(QueryProcessingConfig
+                            .builder()
+                            .sqlQuery(query.getSqlQuery())
+                            .build())
+                    .build();
         }
     }
 }
