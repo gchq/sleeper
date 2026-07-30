@@ -221,8 +221,8 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
-    @DisplayName("Generate basic instance properties template")
-    class GenerateBasicInstancePropertiesTemplate {
+    @DisplayName("Generate instance properties template")
+    class GenerateInstancePropertiesTemplate {
         private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
 
         @Test
@@ -284,8 +284,8 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
-    @DisplayName("Generate basic table properties template")
-    class GenerateBasicTablePropertiesTemplate {
+    @DisplayName("Generate table properties template")
+    class GenerateTablePropertiesTemplate {
         private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
 
         @Test
