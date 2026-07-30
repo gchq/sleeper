@@ -266,31 +266,28 @@ pub fn remove_coalesce_physical_stage(
     physical_plan: Arc<dyn ExecutionPlan>,
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
-        // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
-            Ok(
-                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
-                {
-                    let input = coalesce.input().clone();
-                    // Find the correct sort ordering (if any) by traversing down the physical plan
-                    let top_most_sort_ordering =
-                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
-                    // Only use sort stage if a sort order remains after removing columns no longer present in schema
-                    if let Some(ordering) = remove_non_schema_columns_from_ordering(
-                        &top_most_sort_ordering,
-                        &input.schema(),
-                    ) {
-                        // Swap it out for a SortPreservingMergeExec
-                        let replacement = SortPreservingMergeExec::new(ordering, input);
-                        // Stop searching down the query plan after making one replacement
-                        Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
-                    } else {
-                        Transformed::no(plan_node)
-                    }
-                } else {
-                    Transformed::no(plan_node)
-                },
-            )
+            let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
+                else {
+                    return Ok(Transformed::no(plan_node));
+                };
+
+            let input = coalesce.input().clone();
+            let ordering_from_input =
+                find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
+
+            let Some(valid_ordering) = remove_non_schema_columns_from_ordering(
+                &ordering_from_input,
+                &input.schema(),
+            ) else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            Ok(Transformed::new(
+                Arc::new(SortPreservingMergeExec::new(valid_ordering, input)),
+                true,
+                TreeNodeRecursion::Stop,
+            ))
         })
         .map(|v| v.data)
 }
@@ -314,33 +311,32 @@ pub fn apply_full_sort_ordering(
     physical_plan: Arc<dyn ExecutionPlan>,
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
-        // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
-            Ok(
-                if let Some(sort_preserve) =
-                    plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
-                {
-                    let input = sort_preserve.input().clone();
-                    let schema = input.schema();
-                    // Find the correct sort ordering (if any) by traversing down the physical plan
-                    let top_most_sort_ordering =
-                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
-                    // Only use sort stage if a sort order remains after removing columns no longer present in schema
-                    if let Some(ordering) =
-                        remove_non_schema_columns_from_ordering(&top_most_sort_ordering, &schema)
-                    {
-                        // Swap for a sort merging stage with complete sort order
-                        let replacement = SortPreservingMergeExec::new(ordering, input)
-                            .with_fetch(sort_preserve.fetch());
-                        // Keep searching down the query plan after making one replacement
-                        Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Continue)
-                    } else {
-                        Transformed::no(plan_node)
-                    }
-                } else {
-                    Transformed::no(plan_node)
-                },
-            )
+            let Some(sort_preserve) =
+                plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
+                else {
+                    return Ok(Transformed::no(plan_node));
+                };
+
+            let input = sort_preserve.input().clone();
+            let ordering_from_input =
+                find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
+
+            let Some(valid_ordering) = remove_non_schema_columns_from_ordering(
+                &ordering_from_input,
+                &input.schema(),
+            ) else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            Ok(Transformed::new(
+                Arc::new(
+                    SortPreservingMergeExec::new(valid_ordering, input)
+                        .with_fetch(sort_preserve.fetch()),
+                ),
+                true,
+                TreeNodeRecursion::Continue,
+            ))
         })
         .map(|v| v.data)
 }
