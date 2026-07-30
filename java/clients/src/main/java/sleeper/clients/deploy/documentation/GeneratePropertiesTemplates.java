@@ -211,7 +211,7 @@ public class GeneratePropertiesTemplates {
      * @param out the writer
      */
     public static void writeTablePropertiesTemplate(Writer out) {
-        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), null);
+        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), null);
     }
 
     /**
@@ -222,11 +222,10 @@ public class GeneratePropertiesTemplates {
      * @param out the writer
      */
     public static void writeExampleLightTableProperties(Writer out) {
-        /*
-         * properties.getPropertiesIndex().getUserDefined().stream()
-         * .filter(property -> property.isIncludedInBasicTemplate());
-         */
-        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), LIGHT_MODE_EXPLANATION);
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        List<TableProperty> propertiesSet = tableProperties.getPropertiesIndex().getUserDefined().stream()
+                .filter(property -> property.isIncludedInBasicTemplate()).toList();
+        writeTablePropertiesWithHeader(out, tableProperties, propertiesSet, LIGHT_MODE_EXPLANATION);
     }
 
     private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String explanation) {
@@ -243,7 +242,7 @@ public class GeneratePropertiesTemplates {
                 .print(properties);
     }
 
-    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, String explanation) {
+    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, List<TableProperty> propertiesSet, String explanation) {
         PrintWriter writer = new PrintWriter(out);
         writer.println("#################################################################################");
         writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
@@ -253,7 +252,7 @@ public class GeneratePropertiesTemplates {
         }
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                TableProperty.getAll(), TablePropertyGroup.getAll(), writer)
+                propertiesSet, TablePropertyGroup.getAll(), writer)
                 .print(properties);
     }
 
