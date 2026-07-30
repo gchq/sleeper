@@ -728,7 +728,10 @@ async fn should_apply_sql_query_count_with_sort_column() -> Result<(), Error> {
         Field::new("value", DataType::Int32, false),
     ]));
 
-    let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]])?;
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]],
+    )?;
     let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 4], vec![105, 115], vec![20, 40]])?;
 
     write_file(&file_1, &data_1)?;
@@ -783,7 +786,10 @@ async fn should_apply_sql_query_select_key_with_sort_column() -> Result<(), Erro
         Field::new("value", DataType::Int32, false),
     ]));
 
-    let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]])?;
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]],
+    )?;
     let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 4], vec![105, 115], vec![20, 40]])?;
 
     write_file(&file_1, &data_1)?;

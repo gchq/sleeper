@@ -267,19 +267,17 @@ pub fn remove_coalesce_physical_stage(
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
         .transform_down(|plan_node| {
-            let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
-                else {
-                    return Ok(Transformed::no(plan_node));
-                };
+            let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>() else {
+                return Ok(Transformed::no(plan_node));
+            };
 
             let input = coalesce.input().clone();
             let ordering_from_input =
                 find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
 
-            let Some(valid_ordering) = remove_non_schema_columns_from_ordering(
-                &ordering_from_input,
-                &input.schema(),
-            ) else {
+            let Some(valid_ordering) =
+                remove_non_schema_columns_from_ordering(&ordering_from_input, &input.schema())
+            else {
                 return Ok(Transformed::no(plan_node));
             };
 
@@ -312,20 +310,18 @@ pub fn apply_full_sort_ordering(
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
         .transform_down(|plan_node| {
-            let Some(sort_preserve) =
-                plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
-                else {
-                    return Ok(Transformed::no(plan_node));
-                };
+            let Some(sort_preserve) = plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
+            else {
+                return Ok(Transformed::no(plan_node));
+            };
 
             let input = sort_preserve.input().clone();
             let ordering_from_input =
                 find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
 
-            let Some(valid_ordering) = remove_non_schema_columns_from_ordering(
-                &ordering_from_input,
-                &input.schema(),
-            ) else {
+            let Some(valid_ordering) =
+                remove_non_schema_columns_from_ordering(&ordering_from_input, &input.schema())
+            else {
                 return Ok(Transformed::no(plan_node));
             };
 
