@@ -63,7 +63,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
-import static sleeper.core.properties.model.OptionalStack.BULK_IMPORT_STACKS;
+import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
 class GeneratePropertiesTemplatesTest {
@@ -273,7 +273,11 @@ class GeneratePropertiesTemplatesTest {
             givenProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
             givenProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
 
-            givenProperties.set(OPTIONAL_STACKS, BULK_IMPORT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
+            // Stack
+            StringBuilder stackStr = new StringBuilder();
+            stackStr.append(DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
+            stackStr.append(" # Above setting will apply to any bulk import stacks enabled here. ");
+            givenProperties.set(OPTIONAL_STACKS, stackStr.toString());
 
             // When
             InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
