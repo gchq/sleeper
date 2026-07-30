@@ -198,10 +198,7 @@ public class GeneratePropertiesTemplates {
         instanceProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
 
         // Stack
-        StringBuilder stackStr = new StringBuilder();
-        stackStr.append(DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
-        stackStr.append(" # Above setting will apply to any bulk import stacks enabled here. ");
-        instanceProperties.set(OPTIONAL_STACKS, stackStr.toString());
+        instanceProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
 
