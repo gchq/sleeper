@@ -26,6 +26,8 @@ import software.amazon.awssdk.core.checksums.ResponseChecksumValidation;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.core.internal.http.loader.DefaultSdkAsyncHttpClientBuilder;
+import software.amazon.awssdk.core.internal.http.loader.DefaultSdkHttpClientBuilder;
 import software.amazon.awssdk.http.auth.spi.scheme.AuthScheme;
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
 import software.amazon.awssdk.regions.Region;
@@ -85,6 +87,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
     @Override
     public S3Client createS3Client(URI uri, S3ClientCreationParameters params) throws IOException {
         return configureClientBuilder(S3Client.builder(), params, getConf(), uri.getHost())
+                .httpClientBuilder(new DefaultSdkHttpClientBuilder())
                 .build();
     }
 
@@ -96,6 +99,7 @@ public class HadoopS3ClientFactory extends Configured implements S3ClientFactory
                 .build();
 
         return configureClientBuilder(S3AsyncClient.builder(), parameters, getConf(), uri.getHost())
+                .httpClientBuilder(new DefaultSdkAsyncHttpClientBuilder())
                 .multipartConfiguration(multipartConfiguration)
                 .multipartEnabled(parameters.isMultipartCopy())
                 .build();
