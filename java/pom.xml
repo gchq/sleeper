@@ -395,6 +395,16 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
+                <artifactId>apache5-client</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>netty-nio-client</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>s3-transfer-manager</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>

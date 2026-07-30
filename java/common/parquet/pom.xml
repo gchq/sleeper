@@ -49,6 +49,14 @@
         <!-- We exclude the AWS SDK as a dependency of hadoop-aws because it uses the bundle, so add just S3 back in. -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache5-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
         </dependency>
         <dependency>
