@@ -41,6 +41,20 @@ def should_build_range_query():
     }
 
 
+def should_build_query_with_sql():
+    # When
+    query = Query(query_id="my-query", table_name="my-table", regions=[Region.exact_value("key", "value")], sql_query="SELECT * FROM query_results")
+
+    # Then
+    assert query.to_dict() == {
+        "queryId": "my-query",
+        "regions": [{"key": {"min": "value", "minInclusive": True, "max": "value", "maxInclusive": True}, "stringsBase64Encoded": False}],
+        "tableName": "my-table",
+        "type": "Query",
+        "sqlQuery": "SELECT * FROM query_results",
+    }
+
+
 def should_read_exact_region_from_dict():
     # When
     region = Region.from_field_to_exact_value({"number": 123, "string": "abc"})
@@ -100,30 +114,3 @@ def should_list_regions_from_field_to_exact_values():
             "stringsBase64Encoded": False,
         },
     ]
-
-
-def should_build_query_with_sql():
-    # When
-    query = Query(query_id="my-query", table_name="my-table", regions=[Region.exact_value("key", "value")], sql_query="SELECT * FROM query_results")
-
-    # Then
-    assert query.to_dict() == {
-        "queryId": "my-query",
-        "regions": [{"key": {"min": "value", "minInclusive": True, "max": "value", "maxInclusive": True}, "stringsBase64Encoded": False}],
-        "tableName": "my-table",
-        "type": "Query",
-        "sqlQuery": "SELECT * FROM query_results",
-    }
-
-
-def should_build_query_without_sql():
-    # When
-    query = Query(query_id="my-query", table_name="my-table", regions=[Region.exact_value("key", "value")])
-
-    # Then
-    assert query.to_dict() == {
-        "queryId": "my-query",
-        "regions": [{"key": {"min": "value", "minInclusive": True, "max": "value", "maxInclusive": True}, "stringsBase64Encoded": False}],
-        "tableName": "my-table",
-        "type": "Query",
-    }
