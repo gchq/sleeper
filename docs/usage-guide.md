@@ -79,7 +79,9 @@ to an instance of Sleeper. This requires permissions to interact with the underl
 ## REST API
 
 Sleeper has an optional REST API for interacting with a deployed instance over HTTPS. Only "add table" is available
-currently. The open issue tracking further endpoints is https://github.com/gchq/sleeper/issues/1786.
+currently.
+The open issue tracking further endpoints is https://github.com/gchq/sleeper/issues/1786.
+See the [REST API overview](usage/rest-api/rest-api-overview.md) for more details.
 
 ## Python API
 
