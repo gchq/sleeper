@@ -324,35 +324,6 @@ will be pushed down to S3 and mean that you scan less data and incur a smaller f
 We provide support for all Sleeper data types apart from the map type. This is just because Athena has not yet added
 support for maps. When Athena does add this support, we will be able to add support for it.
 
-### The iterator applying connector
-
-Sleeper deploys the iterator applying connector by default:
-
-```sql
-SELECT *
-FROM "MyInstanceIteratorApplyingSleeperConnector"."MyInstance"."myTable"
-```
-
-The iterator applying connector performs a query time compaction so that each Sleeper leaf partition is processed by a
-single Athena handler. The handler receives the data in sorted order and applies any iterators.
-
-#### Improving query performance with the iterator applying connector
-
-If you want to use the Sleeper iterators, it means we have to read a whole Sleeper partition in one Athena handler. If
-you've got multiple files in a leaf partition, that means reading all the files in one lambda, rather than federating
-out the reads to multiple handlers.
-
-#### Changing the handlers
-
-To alter the handlers that are deployed with your instance, you can change the `sleeper.athena.handler.classes` instance
-property:
-
-```properties
-sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
-```
-
-When you add or remove a handler, an Athena data catalogue will be deployed for you.
-
 ## Use SQL with Trino
 
 See the [Trino plugin documentation](trino.md) for how to interact with Sleeper via Trino. This functionality is
