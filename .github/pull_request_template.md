@@ -11,6 +11,8 @@ Make sure you have checked _all_ steps below.
 
 - [ ] My PR adds the following tests based on [our test strategy](https://github.com/gchq/sleeper/blob/develop/docs/development/test-strategy.md) __OR__ does not need testing for this extremely good reason:
     - MyUnitTest
+- [ ] I have performed the following manual testing __OR__ my PR does not need manual testing for this extremely good reason:
+    - MyManualTest
 
 ### Documentation
 
