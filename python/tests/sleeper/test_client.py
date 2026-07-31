@@ -19,9 +19,10 @@ return *something* (it isn't consulted again until other methods are
 called), that function is monkeypatched out entirely so the tests can
 focus purely on region/account propagation.
 """
+
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -54,8 +55,7 @@ def _stub_instance_properties(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     monkeypatch.setattr(
         f"{SLEEPER_CLIENT_MODULE}.load_instance_properties",
-        lambda s3_resource, account_name, instance_id: MagicMock(
-            name="InstanceProperties"),
+        lambda s3_resource, account_name, instance_id: MagicMock(name="InstanceProperties"),
     )
 
 
@@ -101,8 +101,7 @@ def should_configure_s3_client_with_region_specific_dns_suffix(
     """
     _, expected_dns_suffix = region_and_dns_suffix
     endpoint_url = sleeper_client._s3_client.meta.endpoint_url
-    assert endpoint_url.endswith(
-        expected_dns_suffix), f"Expected endpoint {endpoint_url!r} to end with {expected_dns_suffix!r}"
+    assert endpoint_url.endswith(expected_dns_suffix), f"Expected endpoint {endpoint_url!r} to end with {expected_dns_suffix!r}"
 
 
 def should_configure_s3fs_with_requested_region_name(
@@ -147,8 +146,7 @@ def should_discover_account_id_via_sts_when_not_provided(monkeypatch: pytest.Mon
         captured_account_ids.append(account_name)
         return MagicMock(name="InstanceProperties")
 
-    monkeypatch.setattr(
-        f"{SLEEPER_CLIENT_MODULE}.load_instance_properties", _capture)
+    monkeypatch.setattr(f"{SLEEPER_CLIENT_MODULE}.load_instance_properties", _capture)
 
     with mock_aws():
         SleeperClient(instance_id=FAKE_INSTANCE_ID, region_name="eu-west-2")
