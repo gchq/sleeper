@@ -26,6 +26,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("key1", new IntType()),
+                    new Field("key1", new StringType()),
                     new Field("key2", new IntType()),
                     new Field("key3", new IntType()))
             .valueFields(new Field("count", new LongType()))
@@ -77,7 +78,7 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, SCHEMA,
-                s3Client, dynamoClient, 2, 3, 4);
+                s3Client, dynamoClient, "F", "G", "U");
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {

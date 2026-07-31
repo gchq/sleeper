@@ -73,13 +73,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldReturnNoResultsIfPartitionDoesNotContainExactValue() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2, 3, 4);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> partitionFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -108,8 +108,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
-                        .add(MIN_ROW_KEY_PREFIX + "-key1", "2")
-                        .add(MAX_ROW_KEY_PREFIX + "-key1", "3")
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
                         .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
@@ -126,13 +126,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldReturnRecordCorrectlyIfPartitionDoesContainExactValue() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2, 3, 4);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> partitionFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -161,8 +161,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
-                        .add(MIN_ROW_KEY_PREFIX + "-key1", "2")
-                        .add(MAX_ROW_KEY_PREFIX + "-key1", "3")
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
                         .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
@@ -175,20 +175,20 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isOne();
         Block records = response.getRecords();
-        assertRecordContained(records, 0, 2, 2, 28);
+        assertRecordContained(records, 0, "F", 2, 28);
     }
 
     @Test
     public void shouldReturnRecordCorrectlyIfPartitionDoesContainedAllOfARange() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2, 3, 4);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> partitionFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -202,8 +202,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .build();
 
         Map<String, ValueSet> predicates = new HashMap<>();
-        predicates.put("key1", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2, true, 3, false)));
+        predicates.put("key1", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                "F", true, "G", false)));
         predicates.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, false, 6, true)));
 
@@ -215,8 +215,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
-                        .add(MIN_ROW_KEY_PREFIX + "-key1", "2")
-                        .add(MAX_ROW_KEY_PREFIX + "-key1", "3")
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
                         .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
@@ -229,15 +229,15 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(28);
         Block records = response.getRecords();
-        assertRecordContained(records, 0, 2, 6, 1);
-        assertRecordContained(records, 27, 2, 6, 28);
+        assertRecordContained(records, 0, "F", 6, 1);
+        assertRecordContained(records, 27, "F", 6, 28);
     }
 
     @Test
     public void shouldHandlePartitionsWhichContainNoFiles() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createEmptyTable(instanceProperties, 2, 3, 4);
+        TableProperties tableProperties = createEmptyTable(instanceProperties, "F", "G", "U");
 
         // When
         List<String> partitionFiles = new ArrayList<>();
@@ -258,8 +258,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
-                        .add(MIN_ROW_KEY_PREFIX + "-key1", "2")
-                        .add(MAX_ROW_KEY_PREFIX + "-key1", "3")
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
                         .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
@@ -320,7 +320,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldApplyCompactionIteratorToResultsIfConfigured() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2, 3, 4);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
@@ -329,7 +329,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> partitionFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -357,8 +357,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
-                        .add(MIN_ROW_KEY_PREFIX + "-key1", "2")
-                        .add(MAX_ROW_KEY_PREFIX + "-key1", "3")
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
                         .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
@@ -374,15 +374,15 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         Block records = response.getRecords();
 
         // First one should just be the normal count
-        long firstCount = 2 * 3 * 6;
+        long firstCount = 3 * 6;
         assertFieldContainedValue(records, 0, "count", firstCount);
 
         // Second should be the first plus second
-        long secondCount = firstCount + 2 * 3 * 7;
+        long secondCount = firstCount + 3 * 7;
         assertFieldContainedValue(records, 1, "count", secondCount);
 
         // Third should be aggregated second plus third
-        long thirdCount = secondCount + 2 * 3 * 8;
+        long thirdCount = secondCount + 3 * 8;
         assertFieldContainedValue(records, 2, "count", thirdCount);
     }
 
@@ -393,13 +393,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 
-    private void assertRecordContained(Block records, int position, int key1, int key2, int key3) {
-        assertFieldContainedValue(records, position, "key1", key1);
+    private void assertRecordContained(Block records, int position, String key1, int key2, int key3) {
+        assertFieldContainedValue(records, position, "key1", new Text(key1));
         assertFieldContainedValue(records, position, "key2", key2);
         assertFieldContainedValue(records, position, "key3", key3);
-        long timestamp = (long) key1 * 10000 + key2 * 100 + key3;
+        long timestamp = (long) key2 * 100 + key3;
         assertFieldContainedValue(records, position, "timestamp", timestamp);
-        assertFieldContainedValue(records, position, "count", (long) key1 * key2 * key3);
+        assertFieldContainedValue(records, position, "count", (long) key2 * key3);
         assertFieldContainedValue(records, position, "str", new Text(key1 + "-" + key2 + "-" + key3));
         assertFieldContainedValue(records, position, "list", Lists.newArrayList(new Text("listValue")));
         /*

@@ -47,6 +47,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.split.SplitPartition;
@@ -103,17 +104,15 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         for (int i = 0; i < leafPartitions.size(); i++) {
             Partition partition = leafPartitions.get(i);
             for (Field field : SCHEMA.getRowKeyFields()) {
-                String fieldName = MIN_ROW_KEY_PREFIX + "-" + field.getName();
-                FieldReader reader = partitions.getFieldReader(fieldName);
-                reader.setPosition(i);
-                Object o = reader.readObject();
-                assertThat(o).isEqualTo(partition.getRegion().getRange(field.getName()).getMin());
+                FieldReader minReader = partitions.getFieldReader(MIN_ROW_KEY_PREFIX + "-" + field.getName());
+                minReader.setPosition(i);
+                assertThat(readRowKeyValue(minReader, field))
+                        .isEqualTo(partition.getRegion().getRange(field.getName()).getMin());
 
-                fieldName = MAX_ROW_KEY_PREFIX + "-" + field.getName();
-                reader = partitions.getFieldReader(fieldName);
-                reader.setPosition(i);
-                o = reader.readObject();
-                assertThat(o).isEqualTo(partition.getRegion().getRange(field.getName()).getMax());
+                FieldReader maxReader = partitions.getFieldReader(MAX_ROW_KEY_PREFIX + "-" + field.getName());
+                maxReader.setPosition(i);
+                assertThat(readRowKeyValue(maxReader, field))
+                        .isEqualTo(partition.getRegion().getRange(field.getName()).getMax());
             }
         }
     }
@@ -166,15 +165,15 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partitionForKey1, partitionToFiles.get(partitionForKey1.getId()));
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2).build());
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("F").build());
         valueSets.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, 8, true)));
 
@@ -206,7 +205,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .collect(Collectors.toList()).get(0);
 
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
@@ -215,13 +214,13 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         Partition firstHalf = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .filter(p -> p.getRegion().getRange("key2").getMax() != null)
                 .collect(Collectors.toList()).get(0);
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2).build());
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("F").build());
         valueSets.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, firstHalf.getRegion().getRange("key2").getMax(), false)));
 
@@ -242,7 +241,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         FieldReader key1Reader = partitions.getFieldReader("_MaxRowKey-key1");
         FieldReader key2Reader = partitions.getFieldReader("_MaxRowKey-key2");
         FieldReader key3Reader = partitions.getFieldReader("_MaxRowKey-key3");
-        assertThat(key1Reader.readObject()).isEqualTo(3);
+        assertThat(key1Reader.readObject().toString()).isEqualTo("G");
         assertThat(key2Reader.readObject()).isEqualTo(firstHalf.getRegion().getRange("key2").getMax());
         assertThat(key3Reader.readObject()).isNull();
     }
@@ -259,7 +258,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
@@ -267,13 +266,13 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         Partition firstHalf = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .filter(p -> p.getRegion().getRange("key2").getMax() != null)
                 .collect(Collectors.toList()).get(0);
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2).build());
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("F").build());
         valueSets.put("key2", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 true, false).add(firstHalf.getRegion().getRange("key2").getMax()).build());
 
@@ -294,9 +293,18 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         FieldReader key1Reader = partitions.getFieldReader("_MinRowKey-key1");
         FieldReader key2Reader = partitions.getFieldReader("_MinRowKey-key2");
         FieldReader key3Reader = partitions.getFieldReader("_MinRowKey-key3");
-        assertThat(key1Reader.readObject()).isEqualTo(2);
+        assertThat(key1Reader.readObject().toString()).isEqualTo("F");
         assertThat(key2Reader.readObject()).isEqualTo(firstHalf.getRegion().getRange("key2").getMax());
         assertThat(key3Reader.readObject()).isEqualTo(Integer.MIN_VALUE);
+    }
+
+    // Arrow returns a string row key as Text, so convert it back to a String.
+    private static Object readRowKeyValue(FieldReader reader, Field field) {
+        Object value = reader.readObject();
+        if (value != null && field.getType() instanceof StringType) {
+            return value.toString();
+        }
+        return value;
     }
 
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {

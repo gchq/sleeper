@@ -86,7 +86,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() >= 4)
+                .filter(p -> ((String) p.getRegion().getRange("key1").getMin()).compareTo("U") >= 0)
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
@@ -102,7 +102,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("key1", SortedRangeSet.of(Range.greaterThanOrEqual(new BlockAllocatorImpl(),
-                Types.MinorType.INT.getType(), 4)));
+                Types.MinorType.VARCHAR.getType(), "U")));
 
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
@@ -135,7 +135,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() <= 2)
+                .filter(p -> ((String) p.getRegion().getRange("key1").getMin()).compareTo("F") <= 0)
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
@@ -149,7 +149,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("key1", SortedRangeSet.of(Range.lessThanOrEqual(new BlockAllocatorImpl(),
-                Types.MinorType.INT.getType(), 2)));
+                Types.MinorType.VARCHAR.getType(), "F")));
 
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
@@ -186,7 +186,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
@@ -198,8 +198,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
-        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2).build());
+        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("F").build());
         predicate.put("key2", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 true, false).add(12).build());
         predicate.put("key3", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -249,8 +249,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
-        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                false, false).add(2).build());
+        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                false, false).add("F").build());
 
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
@@ -337,7 +337,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // Then
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = new SchemaBuilder()
-                .addIntField("key1")
+                .addStringField("key1")
                 .addIntField("key2")
                 .addIntField("key3")
                 .addBigIntField("count")
@@ -360,7 +360,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("key1").getMin() == 3)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("") || p.getRegion().getRange("key1").getMin().equals("G"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .filter(Objects::nonNull)
@@ -372,8 +372,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
-        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(1).add(3).build());
+        predicate.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("D").add("G").build());
 
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
@@ -488,20 +488,20 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
         splitPartition.splitPartition(partitionForKey1, partitionToFiles.get(partitionForKey1.getId()));
         Partition firstHalf = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> (Integer) p.getRegion().getRange("key1").getMin() == 2)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .filter(p -> (Integer) p.getRegion().getRange("key2").getMax() != null)
                 .collect(Collectors.toList()).get(0);
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2).build());
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                true, false).add("F").build());
         valueSets.put("key2", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 false, false).add(firstHalf.getRegion().getRange("key2").getMax()).build());
 

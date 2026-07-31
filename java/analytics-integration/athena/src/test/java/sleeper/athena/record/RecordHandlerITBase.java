@@ -50,7 +50,7 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("key1", new IntType()),
+                    new Field("key1", new StringType()),
                     new Field("key2", new IntType()),
                     new Field("key3", new IntType()))
             .sortKeyFields(
@@ -107,7 +107,7 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {
         return new SchemaBuilder()
-                .addIntField("key1")
+                .addStringField("key1")
                 .addIntField("key2")
                 .addIntField("key3")
                 .addBigIntField("timestamp")

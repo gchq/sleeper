@@ -58,6 +58,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TestUtils {
+    static final List<String> KEY1_VALUES = List.of("D", "F", "G", "U");
 
     private TestUtils() {
     }
@@ -108,19 +109,19 @@ public class TestUtils {
         }
     }
 
-    // Generates a regular grid of rows over three integer row keys. The derived fields are recomputable from the
-    // keys so the assertions can calculate the expected values.
+    // Generates a regular grid of rows over a string row key and two integer row keys. The derived fields are
+    // recomputable from the integer keys so the assertions can calculate the expected values.
     private static List<Row> generateData() {
         List<Row> rows = new ArrayList<>();
-        for (int key1 = 1; key1 <= 4; key1++) {
+        for (String key1 : KEY1_VALUES) {
             for (int key2 = 1; key2 <= 12; key2++) {
                 for (int key3 = 1; key3 <= 28; key3++) {
                     Row row = new Row();
                     row.put("key1", key1);
                     row.put("key2", key2);
                     row.put("key3", key3);
-                    row.put("timestamp", (long) key1 * 10000 + key2 * 100 + key3);
-                    row.put("count", (long) key1 * key2 * key3);
+                    row.put("timestamp", (long) key2 * 100 + key3);
+                    row.put("count", (long) key2 * key3);
                     HashMap<String, String> map = new HashMap<>();
                     map.put("mapKey", "mapValue");
                     row.put("map", map);
