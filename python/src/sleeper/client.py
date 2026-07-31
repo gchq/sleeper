@@ -198,28 +198,35 @@ class SleeperClient:
         """
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
 
-    async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False) -> list:
+    async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False, sql_query: str | None = None) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key matches a given list of query keys.
         The results are aggregated into a single list.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: The name of the table to query.
         :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
                      Example: {"key":["a", "z"]}
         :param query_id: An optional query ID; defaults to a new UUID if not provided.
         :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+        :param sql_query: An optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: A list containing all retrieved rows matching the specified keys and values.
         """
-        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded))
+        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded), sql_query)
         return await self.query_by_web_socket(query)
 
     async def web_socket_range_key_query(
-        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False, sql_query: str | None = None
     ) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key is within specified ranges.
         The results are aggregated into a single list.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: The name of the table to query.
         :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
@@ -228,13 +235,14 @@ class SleeperClient:
         :param min_inclusive: Boolean indicating if the minimum boundary is inclusive.
         :param max_inclusive: Boolean indicating if the maximum boundary is inclusive.
         :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+        :param sql_query: An optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: A list containing all retrieved rows matching the specified key ranges.
         """
-        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
+        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys], sql_query)
         return await self.query_by_web_socket(query)
 
-    def exact_key_query(self, table_name: str, keys, query_id: str | None = None) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str | None = None, sql_query: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are equal to one of a given list. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
@@ -242,10 +250,14 @@ class SleeperClient:
         will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
         stack is deployed.
 
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
+
         :param table_name: the table to query
         :param keys: either a single dict where the key is the row-key field name and the value is a list of values
         to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
         :param query_id: the query ID, will be randomly generated if not provided
+        :param sql_query: an optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: list of result rows
         """
@@ -259,15 +271,18 @@ class SleeperClient:
                 + " or (b) a list of dicts where the key is a row-key field name and the value is the value to query for"
             )
 
-        return self.query_by_sqs(Query(query_id, table_name, regions))
+        return self.query_by_sqs(Query(query_id, table_name, regions, sql_query))
 
-    def range_key_query(self, table_name: str, regions: list, query_id: str | None = None) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str | None = None, sql_query: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
         loaded from S3. This means that there can be significant latency before the results are returned. Note that the
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
         KeepLambdaWarm stack is deployed.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: the table to query
         :param regions: a list of regions; each region should be a dictionary where the key is a row key field name
@@ -277,10 +292,11 @@ class SleeperClient:
             whether the minimum is inclusive, the third is the max of the range and the next is a boolean specifying
             whether the maximum is inclusive.
         :param query_id: the query ID, will be randomly generated if not provided
+        :param sql_query: an optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: list of the result rows
         """
-        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions]))
+        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions], sql_query=sql_query))
 
     def query_by_sqs(self, query: Query):
         """
