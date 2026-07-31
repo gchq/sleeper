@@ -112,10 +112,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-year", "2018")
+                        .add(MAX_ROW_KEY_PREFIX + "-year", "2019")
+                        .add(MIN_ROW_KEY_PREFIX + "-month", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-day", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 1_000_000L,
@@ -165,10 +165,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-year", "2018")
+                        .add(MAX_ROW_KEY_PREFIX + "-year", "2019")
+                        .add(MIN_ROW_KEY_PREFIX + "-month", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-day", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -219,10 +219,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-year", "2018")
+                        .add(MAX_ROW_KEY_PREFIX + "-year", "2019")
+                        .add(MIN_ROW_KEY_PREFIX + "-month", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-day", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -262,10 +262,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2016Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2016")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2017")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-year", "2016")
+                        .add(MAX_ROW_KEY_PREFIX + "-year", "2017")
+                        .add(MIN_ROW_KEY_PREFIX + "-month", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-day", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -307,8 +307,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(emptyFiles))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "")
-                        .add(MAX_ROW_KEY_PREFIX + 0, null)
+                        .add(MIN_ROW_KEY_PREFIX + "-key", "")
+                        .add(MAX_ROW_KEY_PREFIX + "-key", null)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -361,10 +361,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-year", "2018")
+                        .add(MAX_ROW_KEY_PREFIX + "-year", "2019")
+                        .add(MIN_ROW_KEY_PREFIX + "-month", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-day", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,

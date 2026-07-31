@@ -29,8 +29,8 @@ import sleeper.restapi.Route;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -46,8 +46,8 @@ public class AddTableRoute implements Route {
     private final AddTableResponseSerDe responseSerDe;
 
     private AddTableRoute(Builder builder) {
-        instanceProperties = requireNonNull(builder.instanceProperties);
-        addTable = requireNonNull(builder.addTable);
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties);
+        addTable = Objects.requireNonNull(builder.addTable);
         requestSerDe = new AddTableRequestSerDe(instanceProperties);
         responseSerDe = new AddTableResponseSerDe();
     }
@@ -70,8 +70,10 @@ public class AddTableRoute implements Route {
             LOGGER.warn("Add table request was invalid", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
+
         TableProperties tableProperties = request.getProperties();
         List<Object> splitPoints = request.getSplitPoints();
+
         try {
             addTable.addTable(tableProperties, splitPoints);
         } catch (TableAlreadyExistsException e) {
@@ -82,10 +84,12 @@ public class AddTableRoute implements Route {
             LOGGER.warn("Add table request rejected: properties failed validation", e);
             return Route.errorResponse(400, "invalid_request", e.getMessage());
         }
+
         AddTableResponse response = AddTableResponse.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .build();
+
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(201)
                 .withHeaders(Map.of("Content-Type", CONTENT_TYPE_JSON))

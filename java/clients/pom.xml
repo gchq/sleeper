@@ -156,6 +156,7 @@
             <artifactId>container-images</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
