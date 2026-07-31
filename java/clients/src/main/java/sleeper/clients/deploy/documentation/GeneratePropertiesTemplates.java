@@ -64,6 +64,7 @@ public class GeneratePropertiesTemplates {
             "#                           --- LIGHT MODE ---                                  #\n" +
             "#                    Properties set below are designed for an                   #\n" +
             "#                  instance aimed towards reducing running costs                #\n" +
+            "#               and will apply to any bulk import stacks you enable             #\n" +
             "#################################################################################";
 
     private GeneratePropertiesTemplates() {
