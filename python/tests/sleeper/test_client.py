@@ -12,11 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """
-Tests covering SleeperClient's AWS region / partition handling on
-instantiation: whether a region is picked up from an explicit argument
-vs. the AWS_REGION environment variable, and whether the resulting S3
-client resolves to the expected DNS suffix for that region's partition.
-
+Tests covering SleeperClient
 These use moto so no real AWS infrastructure is required. Because
 SleeperClient's constructor only needs `load_instance_properties` to
 return *something* (it isn't consulted again until other methods are
@@ -31,7 +27,6 @@ from unittest.mock import MagicMock
 import pytest
 from moto import mock_aws
 
-# <-- adjust to wherever SleeperClient actually lives
 from sleeper import SleeperClient
 
 # Dotted path used for monkeypatching load_instance_properties. Must point at
@@ -43,11 +38,10 @@ SLEEPER_CLIENT_MODULE = "sleeper.client"
 FAKE_INSTANCE_ID = "test-instance"
 FAKE_ACCOUNT_ID = "123456789012"  # moto's default STS account id
 
-# (region, expected DNS suffix for that region's partition)
 REGION_DNS_SUFFIXES = [
     ("eu-west-2", "amazonaws.com"),
     ("us-east-1", "amazonaws.com"),
-    ("eusc-de-east-1", "amazonaws.eu"),  # AWS European Sovereign Cloud
+    ("eusc-de-east-1", "amazonaws.eu"),
 ]
 
 
@@ -77,9 +71,7 @@ def sleeper_client(region_and_dns_suffix: tuple[str, str]) -> Generator[SleeperC
     Builds a SleeperClient configured for the region under test.
 
     account_name is supplied explicitly so the constructor never calls
-    sts:GetCallerIdentity - this matters because moto/botocore may not yet
-    have full endpoint data for a very newly announced partition, and we
-    don't want that to interfere with the DNS suffix assertions below.
+    sts:GetCallerIdentity
     """
     region_name, _ = region_and_dns_suffix
     with mock_aws():
@@ -106,11 +98,6 @@ def should_configure_s3_client_with_region_specific_dns_suffix(
     """
     The S3 client's resolved endpoint should end with the DNS suffix
     appropriate to the partition that the given region belongs to.
-
-    NB: if this fails specifically for a very newly announced region (e.g.
-    the AWS European Sovereign Cloud), it most likely means the installed
-    botocore/boto3 doesn't yet ship endpoint data for that partition -
-    upgrade the dependency rather than "fixing" the test.
     """
     _, expected_dns_suffix = region_and_dns_suffix
     endpoint_url = sleeper_client._s3_client.meta.endpoint_url
