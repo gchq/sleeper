@@ -50,12 +50,6 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 `sendToIngestBatcher.sh`.
 
 ### Add table
-#### Using the REST API
-
-The `POST /sleeper/tables` endpoint creates a table with a given schema and properties. See the
-[add table endpoint documentation](./rest-api/add-table.md) for the request contract and a worked example.
-
-#### Using scripts
 The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
 file with `--schema` or as part of a configuration directory with `--config-dir`. The table name can be supplied with
 `--table-name`, or read from the table properties file passed to `--table-properties` or `--config-dir`. If
