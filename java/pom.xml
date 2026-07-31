@@ -1827,6 +1827,7 @@
                                 <ignoredUnusedDeclaredDependency>org.aspectj:aspectjrt::</ignoredUnusedDeclaredDependency>
                                 <!-- Ignored due to false positive for dependency in localstack-test -->
                                 <ignoredUnusedDeclaredDependency>com.github.tomakehurst:wiremock-jre8::</ignoredUnusedDeclaredDependency>
+                                 <ignoredUnusedDeclaredDependency>software.amazon.awssdk:apache-client::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
