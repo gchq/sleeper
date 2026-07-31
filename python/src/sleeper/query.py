@@ -88,7 +88,7 @@ class Region:
 
 
 class Query:
-    def __init__(self, query_id: str | None = None, table_name: str | None = None, regions: list[Region] | None = None):
+    def __init__(self, query_id: str | None = None, table_name: str | None = None, regions: list[Region] | None = None, sql_query: str | None = None):
         if query_id is None:
             query_id = str(uuid.uuid4())
         elif not isinstance(query_id, str):
@@ -99,13 +99,18 @@ class Query:
             raise TypeError("regions must be a list")
         if len(regions) == 0:
             raise ValueError("Must provide at least one region")
+        if sql_query is not None and not isinstance(sql_query, str):
+            raise TypeError("sql_query must be a string")
         self.query_id = query_id
         self.table_name = table_name
         self.regions = regions
+        self.sql_query = sql_query
 
     def to_dict(self):
         regions = [region.to_dict() for region in self.regions]
         value = {"tableName": self.table_name, "queryId": self.query_id, "type": "Query", "regions": regions}
+        if self.sql_query is not None:
+            value["sqlQuery"] = self.sql_query
         return value
 
     def to_json(self):
