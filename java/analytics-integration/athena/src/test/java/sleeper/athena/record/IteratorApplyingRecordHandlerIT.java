@@ -30,6 +30,7 @@ import com.amazonaws.athena.connector.lambda.records.RecordResponse;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.athena.AthenaClient;
@@ -402,9 +403,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         assertFieldContainedValue(records, position, "count", (long) key2 * key3);
         assertFieldContainedValue(records, position, "str", new Text(key1 + "-" + key2 + "-" + key3));
         assertFieldContainedValue(records, position, "list", Lists.newArrayList(new Text("listValue")));
-        /*
-         * When Maps are supported, test it here
-         */
+        JsonStringHashMap<String, Object> mapEntry = new JsonStringHashMap<>();
+        mapEntry.put("key", new Text("mapKey"));
+        mapEntry.put("value", new Text("mapValue"));
+        assertFieldContainedValue(records, position, "map", Lists.newArrayList(mapEntry));
     }
 
     /**
