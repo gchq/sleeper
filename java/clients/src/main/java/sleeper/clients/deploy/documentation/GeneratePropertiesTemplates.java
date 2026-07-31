@@ -60,8 +60,15 @@ import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
  */
 public class GeneratePropertiesTemplates {
 
-    private static final String LIGHT_MODE_EXPLANATION = "#                                                                               #\n" +
-            "#                           --- LIGHT MODE ---                                  #\n" +
+    private static final String INSTANCE_PROPERTIES_HEADER = "#################################################################################\n" +
+            "#                           SLEEPER INSTANCE PROPERTIES                         #\n" +
+            "#################################################################################";
+
+    private static final String TABLE_PROPERTIES_HEADER = "#################################################################################\n" +
+            "#                           SLEEPER TABLE PROPERTIES                            #\n" +
+            "#################################################################################";
+
+    private static final String LIGHT_EXAMPLE_EXPLANATION = "\"#################################################################################\n" +
             "#                    Properties set below are designed for an                   #\n" +
             "#                  instance aimed towards reducing running costs                #\n" +
             "#               and will apply to any bulk import stacks you enable             #\n" +
@@ -166,7 +173,7 @@ public class GeneratePropertiesTemplates {
     public static void writeInstancePropertiesTemplate(Writer out) {
         InstanceProperties properties = new InstanceProperties();
         List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
-        writeInstancePropertiesWithHeader(out, properties, propertiesByIsSet, null);
+        writeInstancePropertiesWithHeader(out, properties, propertiesByIsSet, INSTANCE_PROPERTIES_HEADER);
     }
 
     /**
@@ -203,7 +210,7 @@ public class GeneratePropertiesTemplates {
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
 
-        writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_MODE_EXPLANATION);
+        writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_EXAMPLE_EXPLANATION);
     }
 
     /**
@@ -212,7 +219,7 @@ public class GeneratePropertiesTemplates {
      * @param out the writer
      */
     public static void writeTablePropertiesTemplate(Writer out) {
-        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), null);
+        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), TABLE_PROPERTIES_HEADER);
     }
 
     /**
@@ -226,16 +233,13 @@ public class GeneratePropertiesTemplates {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         List<TableProperty> propertiesSet = tableProperties.getPropertiesIndex().getUserDefined().stream()
                 .filter(property -> property.isIncludedInBasicTemplate()).toList();
-        writeTablePropertiesWithHeader(out, tableProperties, propertiesSet, LIGHT_MODE_EXPLANATION);
+        writeTablePropertiesWithHeader(out, tableProperties, propertiesSet, null);
     }
 
-    private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String explanation) {
+    private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String header) {
         PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
-        writer.println("#################################################################################");
-        if (explanation != null) {
-            writer.println(explanation);
+        if (header != null) {
+            writer.println(header);
         }
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
@@ -243,13 +247,11 @@ public class GeneratePropertiesTemplates {
                 .print(properties);
     }
 
-    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, List<TableProperty> propertiesSet, String explanation) {
+    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, List<TableProperty> propertiesSet, String header) {
         PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
-        writer.println("#################################################################################");
-        if (explanation != null) {
-            writer.println(explanation);
+
+        if (header != null) {
+            writer.println(header);
         }
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
