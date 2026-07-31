@@ -24,12 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AthenaHandlerTest {
 
     @Test
-    void shouldMatchSimpleLambdaHandlerDeclaration() {
-        assertThat(LambdaHandler.ATHENA_SIMPLE_COMPOSITE.getHandler())
-                .isEqualTo(SimpleCompositeHandler.class.getName());
-    }
-
-    @Test
     void shouldMatchIteratorApplyingLambdaHandlerDeclaration() {
         assertThat(LambdaHandler.ATHENA_ITERATORS_COMPOSITE.getHandler())
                 .isEqualTo(IteratorApplyingCompositeHandler.class.getName());
