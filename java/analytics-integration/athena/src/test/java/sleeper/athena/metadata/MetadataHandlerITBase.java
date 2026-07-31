@@ -45,11 +45,11 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     private static final String AWS_REGION_SYSTEM_PROPERTY = "aws.region";
     private static final String SECRET_KEY_SYSTEM_PROPERTY = "aws.secretAccessKey";
 
-    protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
+    protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("year", new IntType()),
-                    new Field("month", new IntType()),
-                    new Field("day", new IntType()))
+                    new Field("key1", new IntType()),
+                    new Field("key2", new IntType()),
+                    new Field("key3", new IntType()))
             .valueFields(new Field("count", new LongType()))
             .build();
 
@@ -76,8 +76,8 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
-        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                s3Client, dynamoClient, 2018, 2019, 2020);
+        return TestUtils.createTable(instanceProperties, SCHEMA,
+                s3Client, dynamoClient, 2, 3, 4);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {

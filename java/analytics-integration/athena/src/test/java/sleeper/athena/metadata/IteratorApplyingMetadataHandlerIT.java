@@ -102,7 +102,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         assertThat(partitions.getRowCount()).isEqualTo(4);
         for (int i = 0; i < leafPartitions.size(); i++) {
             Partition partition = leafPartitions.get(i);
-            for (Field field : TIME_SERIES_SCHEMA.getRowKeyFields()) {
+            for (Field field : SCHEMA.getRowKeyFields()) {
                 String fieldName = MIN_ROW_KEY_PREFIX + "-" + field.getName();
                 FieldReader reader = partitions.getFieldReader(fieldName);
                 reader.setPosition(i);
@@ -129,10 +129,10 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         GetSplitsResponse getSplitsResponse;
         try (BlockAllocator blockAllocator = new BlockAllocatorImpl()) {
             Block partitions = blockAllocator.createBlock(SchemaBuilder.newBuilder()
-                    .addIntField("_MinRowKey-year")
-                    .addStringField("_MinRowKey-month")
-                    .addIntField("_MaxRowKey-year")
-                    .addStringField("_MaxRowKey-month")
+                    .addIntField("_MinRowKey-key1")
+                    .addStringField("_MinRowKey-key2")
+                    .addIntField("_MaxRowKey-key1")
+                    .addStringField("_MaxRowKey-key2")
                     .addStringField(RELEVANT_FILES_FIELD)
                     .build());
 
@@ -164,18 +164,18 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         StateStore stateStore = stateStore(instance, table);
-        Partition partition2018 = stateStore.getLeafPartitions()
+        Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
-        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
+        splitPartition.splitPartition(partitionForKey1, partitionToFiles.get(partitionForKey1.getId()));
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2018).build());
-        valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                true, false).add(2).build());
+        valueSets.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, 8, true)));
 
         Constraints queryConstraints = createConstraints(valueSets);
@@ -204,26 +204,26 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         StateStore stateStore = stateStore(instance, table);
-        Partition partition2018 = stateStore.getLeafPartitions()
+        Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
                 .collect(Collectors.toList()).get(0);
 
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
-        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
+        splitPartition.splitPartition(partitionForKey1, partitionToFiles.get(partitionForKey1.getId()));
 
-        Partition firstHalfOf2018 = stateStore.getLeafPartitions()
+        Partition firstHalf = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
-                .filter(p -> p.getRegion().getRange("month").getMax() != null)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key2").getMax() != null)
                 .collect(Collectors.toList()).get(0);
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2018).build());
-        valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                5, true, firstHalfOf2018.getRegion().getRange("month").getMax(), false)));
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                true, false).add(2).build());
+        valueSets.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                5, true, firstHalf.getRegion().getRange("key2").getMax(), false)));
 
         Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
@@ -239,12 +239,12 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
         assertThat(partitions.getRowCount()).isOne();
-        FieldReader yearReader = partitions.getFieldReader("_MaxRowKey-year");
-        FieldReader monthReader = partitions.getFieldReader("_MaxRowKey-month");
-        FieldReader dayReader = partitions.getFieldReader("_MaxRowKey-day");
-        assertThat(yearReader.readObject()).isEqualTo(2019);
-        assertThat(monthReader.readObject()).isEqualTo(firstHalfOf2018.getRegion().getRange("month").getMax());
-        assertThat(dayReader.readObject()).isNull();
+        FieldReader key1Reader = partitions.getFieldReader("_MaxRowKey-key1");
+        FieldReader key2Reader = partitions.getFieldReader("_MaxRowKey-key2");
+        FieldReader key3Reader = partitions.getFieldReader("_MaxRowKey-key3");
+        assertThat(key1Reader.readObject()).isEqualTo(3);
+        assertThat(key2Reader.readObject()).isEqualTo(firstHalf.getRegion().getRange("key2").getMax());
+        assertThat(key3Reader.readObject()).isNull();
     }
 
     @Test
@@ -257,25 +257,25 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         StateStore stateStore = stateStore(instance, table);
-        Partition partition2018 = stateStore.getLeafPartitions()
+        Partition partitionForKey1 = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
                 .collect(Collectors.toList()).get(0);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         SplitPartition splitPartition = splitPartition(stateStore, table);
-        splitPartition.splitPartition(partition2018, partitionToFiles.get(partition2018.getId()));
+        splitPartition.splitPartition(partitionForKey1, partitionToFiles.get(partitionForKey1.getId()));
 
-        Partition firstHalfOf2018 = stateStore.getLeafPartitions()
+        Partition firstHalf = stateStore.getLeafPartitions()
                 .stream()
-                .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
-                .filter(p -> p.getRegion().getRange("month").getMax() != null)
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals(2))
+                .filter(p -> p.getRegion().getRange("key2").getMax() != null)
                 .collect(Collectors.toList()).get(0);
 
         Map<String, ValueSet> valueSets = new HashMap<>();
-        valueSets.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(2018).build());
-        valueSets.put("month", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                true, false).add(firstHalfOf2018.getRegion().getRange("month").getMax()).build());
+        valueSets.put("key1", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                true, false).add(2).build());
+        valueSets.put("key2", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                true, false).add(firstHalf.getRegion().getRange("key2").getMax()).build());
 
         Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
@@ -291,12 +291,12 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
         assertThat(partitions.getRowCount()).isOne();
-        FieldReader yearReader = partitions.getFieldReader("_MinRowKey-year");
-        FieldReader monthReader = partitions.getFieldReader("_MinRowKey-month");
-        FieldReader dayReader = partitions.getFieldReader("_MinRowKey-day");
-        assertThat(yearReader.readObject()).isEqualTo(2018);
-        assertThat(monthReader.readObject()).isEqualTo(firstHalfOf2018.getRegion().getRange("month").getMax());
-        assertThat(dayReader.readObject()).isEqualTo(Integer.MIN_VALUE);
+        FieldReader key1Reader = partitions.getFieldReader("_MinRowKey-key1");
+        FieldReader key2Reader = partitions.getFieldReader("_MinRowKey-key2");
+        FieldReader key3Reader = partitions.getFieldReader("_MinRowKey-key3");
+        assertThat(key1Reader.readObject()).isEqualTo(2);
+        assertThat(key2Reader.readObject()).isEqualTo(firstHalf.getRegion().getRange("key2").getMax());
+        assertThat(key3Reader.readObject()).isEqualTo(Integer.MIN_VALUE);
     }
 
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
@@ -318,11 +318,11 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
     private void validateSplit(Set<Split> splits, Integer expectedValue) {
         long matched = splits.stream()
-                .filter(split -> split.getProperty("_MinRowKey-year").equals(expectedValue.toString()))
+                .filter(split -> split.getProperty("_MinRowKey-key1").equals(expectedValue.toString()))
                 .peek(split -> {
-                    assertThat(split.getProperty("_MaxRowKey-year")).isEqualTo(Integer.toString(expectedValue + 1));
-                    assertThat(split.getProperty("_MinRowKey-month")).isEmpty();
-                    assertThat(split.getProperty("_MaxRowKey-month")).isNull();
+                    assertThat(split.getProperty("_MaxRowKey-key1")).isEqualTo(Integer.toString(expectedValue + 1));
+                    assertThat(split.getProperty("_MinRowKey-key2")).isEmpty();
+                    assertThat(split.getProperty("_MaxRowKey-key2")).isNull();
                     assertThat(split.getProperty(RELEVANT_FILES_FIELD)).isEqualTo("[\"s3a://table/partition-" + expectedValue + "/file1.parquet\"," +
                             "\"s3a://table/partition-" + expectedValue + "/file2.parquet\"]");
                 })
@@ -335,10 +335,10 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
     private void addPartition(Block partitions, int position, int value) {
         partitions.setRowCount(partitions.getRowCount() + 1);
-        BlockUtils.setValue(partitions.getFieldVector("_MinRowKey-year"), position, value);
-        BlockUtils.setValue(partitions.getFieldVector("_MaxRowKey-year"), position, value + 1);
-        BlockUtils.setValue(partitions.getFieldVector("_MinRowKey-month"), position, "");
-        BlockUtils.setValue(partitions.getFieldVector("_MaxRowKey-month"), position, null);
+        BlockUtils.setValue(partitions.getFieldVector("_MinRowKey-key1"), position, value);
+        BlockUtils.setValue(partitions.getFieldVector("_MaxRowKey-key1"), position, value + 1);
+        BlockUtils.setValue(partitions.getFieldVector("_MinRowKey-key2"), position, "");
+        BlockUtils.setValue(partitions.getFieldVector("_MaxRowKey-key2"), position, null);
         BlockUtils.setValue(partitions.getFieldVector(RELEVANT_FILES_FIELD), position, new Gson().toJson(Lists.newArrayList(
                 "s3a://table/partition-" + value + "/file1.parquet",
                 "s3a://table/partition-" + value + "/file2.parquet")));

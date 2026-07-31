@@ -40,10 +40,7 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,29 +102,33 @@ public class TestUtils {
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
-            factory.ingestFromRowIterator(table, generateTimeSeriesData().iterator());
+            factory.ingestFromRowIterator(table, generateData().iterator());
         } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }
 
-    private static List<Row> generateTimeSeriesData() {
-        LocalDate startDate = LocalDate.of(2017, 1, 1);
-        LocalDate endDate = LocalDate.of(2021, 1, 1);
+    // Generates a regular grid of rows over three integer row keys. The derived fields are recomputable from the
+    // keys so the assertions can calculate the expected values.
+    private static List<Row> generateData() {
         List<Row> rows = new ArrayList<>();
-        for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Row row = new Row();
-            row.put("year", date.getYear());
-            row.put("month", date.getMonthValue());
-            row.put("day", date.getDayOfMonth());
-            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
-            HashMap<String, String> map = new HashMap<>();
-            map.put(date.getMonth().name(), date.getMonth().name());
-            row.put("map", map);
-            row.put("list", Lists.newArrayList(date.getEra().toString()));
-            row.put("str", date.toString());
-            rows.add(row);
+        for (int key1 = 1; key1 <= 4; key1++) {
+            for (int key2 = 1; key2 <= 12; key2++) {
+                for (int key3 = 1; key3 <= 28; key3++) {
+                    Row row = new Row();
+                    row.put("key1", key1);
+                    row.put("key2", key2);
+                    row.put("key3", key3);
+                    row.put("timestamp", (long) key1 * 10000 + key2 * 100 + key3);
+                    row.put("count", (long) key1 * key2 * key3);
+                    HashMap<String, String> map = new HashMap<>();
+                    map.put("mapKey", "mapValue");
+                    row.put("map", map);
+                    row.put("list", Lists.newArrayList("listValue"));
+                    row.put("str", key1 + "-" + key2 + "-" + key3);
+                    rows.add(row);
+                }
+            }
         }
 
         return rows;

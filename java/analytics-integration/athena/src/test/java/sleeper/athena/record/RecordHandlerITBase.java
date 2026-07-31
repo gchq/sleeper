@@ -50,9 +50,9 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("year", new IntType()),
-                    new Field("month", new IntType()),
-                    new Field("day", new IntType()))
+                    new Field("key1", new IntType()),
+                    new Field("key2", new IntType()),
+                    new Field("key3", new IntType()))
             .sortKeyFields(
                     new Field("timestamp", new LongType()))
             .valueFields(
@@ -107,9 +107,9 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {
         return new SchemaBuilder()
-                .addIntField("year")
-                .addIntField("month")
-                .addIntField("day")
+                .addIntField("key1")
+                .addIntField("key2")
+                .addIntField("key3")
                 .addBigIntField("timestamp")
                 .addBigIntField("count")
                 .addStringField("str")
