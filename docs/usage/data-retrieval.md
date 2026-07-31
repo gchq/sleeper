@@ -311,7 +311,7 @@ Sleeper allows you to query tables using Amazon Athena. This functionality is ex
 the `AthenaStack` enabled in the `sleeper.optional.stacks` instance property. This stack is not included by default.
 
 Visit the Amazon console and choose Athena from the list of services. You should be able to find your Connector in the
-data source list. If your instance id is "abc123" then the connector will be called "abc123SimpleSleeperConnector".
+data source list. If your instance id is "abc123" then the connector will be called "abc123IteratorApplyingSleeperConnector".
 Click "Query Editor" and then select your connector under "Data Source". When you select it, the tables list should be
 populated. You will need to select a query results location.
 
@@ -323,49 +323,6 @@ will be pushed down to S3 and mean that you scan less data and incur a smaller f
 
 We provide support for all Sleeper data types apart from the map type. This is just because Athena has not yet added
 support for maps. When Athena does add this support, we will be able to add support for it.
-
-### The two different connectors
-
-You might notice that you have a choice of two connectors by default:
-
-* The simple connector
-* The iterator applying connector
-
-You can choose at runtime which one you want to use:
-
-```sql
-SELECT *
-FROM "MyInstanceSimpleSleeperConnector"."MyInstance"."myTable"
-```
-
-or
-
-```sql
-SELECT *
-FROM "MyInstanceIteratorApplyingSleeperConnector"."MyInstance"."myTable"
-```
-
-The simple connector creates one Athena handler for each file. This means that any iterators are not applied. The
-iterator applying connector performs a query time compaction so that each Sleeper leaf partition is processed by a
-single Athena handler. The handler receives the data in sorted order and applies any iterators.
-
-#### Improving query performance with the iterator applying connector
-
-If you want to use the Sleeper iterators, it means we have to read a whole Sleeper partition in one Athena handler. If
-you've got multiple files in a leaf partition, that means reading all the files in one lambda, rather than federating
-out the reads to multiple handlers.
-
-#### Changing the handlers
-
-To alter the handlers that are deployed with your instance, you can change the `sleeper.athena.handler.classes` instance
-property:
-
-```properties
-# Remove the default Simple handler
-sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
-```
-
-When you add or remove a handler, an Athena data catalogue will be deployed for you.
 
 ## Use SQL with Trino
 
