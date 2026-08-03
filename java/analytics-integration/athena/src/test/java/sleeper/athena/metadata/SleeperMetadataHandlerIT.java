@@ -341,6 +341,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 .addIntField("key2")
                 .addIntField("key3")
                 .addBigIntField("count")
+                .addField(SleeperMetadataHandler.arrowMapField("map",
+                        Types.MinorType.VARCHAR.getType(), Types.MinorType.VARCHAR.getType()))
                 .build();
 
         org.apache.arrow.vector.types.pojo.Schema schema = getTableResponse.getSchema();

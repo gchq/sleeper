@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.athena.TestUtils;
+import sleeper.athena.metadata.SleeperMetadataHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -112,6 +113,8 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
                 .addIntField("key3")
                 .addBigIntField("timestamp")
                 .addBigIntField("count")
+                .addField(SleeperMetadataHandler.arrowMapField("map",
+                        Types.MinorType.VARCHAR.getType(), Types.MinorType.VARCHAR.getType()))
                 .addStringField("str")
                 .addListField("list", Types.MinorType.VARCHAR.getType())
                 .build();

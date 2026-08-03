@@ -26,6 +26,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -51,7 +52,9 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
                     new Field("key1", new StringType()),
                     new Field("key2", new IntType()),
                     new Field("key3", new IntType()))
-            .valueFields(new Field("count", new LongType()))
+            .valueFields(
+                    new Field("count", new LongType()),
+                    new Field("map", new MapType(new StringType(), new StringType())))
             .build();
 
     @BeforeEach
