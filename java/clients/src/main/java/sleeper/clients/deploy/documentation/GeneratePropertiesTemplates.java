@@ -68,7 +68,7 @@ public class GeneratePropertiesTemplates {
             "#                           SLEEPER TABLE PROPERTIES                            #\n" +
             "#################################################################################";
 
-    private static final String LIGHT_EXAMPLE_EXPLANATION = "\"#################################################################################\n" +
+    private static final String LIGHT_EXAMPLE_EXPLANATION = "#################################################################################\n" +
             "#                    Properties set below are designed for an                   #\n" +
             "#                  instance aimed towards reducing running costs                #\n" +
             "#               and will apply to any bulk import stacks you enable             #\n" +

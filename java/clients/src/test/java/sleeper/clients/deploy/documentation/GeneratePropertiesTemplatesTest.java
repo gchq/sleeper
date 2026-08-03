@@ -221,31 +221,6 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
-    @DisplayName("Generate instance properties template")
-    class GenerateInstancePropertiesTemplate {
-        private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
-
-        @Test
-        void shouldGenerateEmptyInstanceProperties() {
-            // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
-
-            // Then
-            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
-        }
-
-        @Test
-        void shouldNotSetValuesForAnyPropertyWithDefault() {
-            // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
-
-            // Then
-            assertThat(instancePropertiesWithDefaultValues())
-                    .allSatisfy(property -> assertThat(instanceProperties.isSet(property)).isFalse());
-        }
-    }
-
-    @Nested
     @DisplayName("Generate light instance properties example")
     class GenerateLightInstancePropertiesExample {
         private final String propertiesString = loadFileAsString("example/light/instance.properties");
@@ -285,6 +260,48 @@ class GeneratePropertiesTemplatesTest {
     }
 
     @Nested
+    @DisplayName("Generate light table properties example")
+    class GenerateLightTablePropertiesExample {
+        private final String propertiesString = loadFileAsString("example/light/table.properties");
+
+        @Test
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
+            // Given
+            TableProperties givenProperties = new TableProperties(new InstanceProperties());
+            // When
+            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(tableProperties).isEqualTo(givenProperties);
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate instance properties template")
+    class GenerateInstancePropertiesTemplate {
+        private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
+
+        @Test
+        void shouldGenerateEmptyInstanceProperties() {
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
+        }
+
+        @Test
+        void shouldNotSetValuesForAnyPropertyWithDefault() {
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(instancePropertiesWithDefaultValues())
+                    .allSatisfy(property -> assertThat(instanceProperties.isSet(property)).isFalse());
+        }
+    }
+
+    @Nested
     @DisplayName("Generate table properties template")
     class GenerateTablePropertiesTemplate {
         private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
@@ -306,23 +323,6 @@ class GeneratePropertiesTemplatesTest {
             // Then
             assertThat(tablePropertiesWithDefaultValues())
                     .allSatisfy(property -> assertThat(tableProperties.isSet(property)).isFalse());
-        }
-    }
-
-    @Nested
-    @DisplayName("Generate light table properties example")
-    class GenerateLightTablePropertiesExample {
-        private final String propertiesString = loadFileAsString("example/light/table.properties");
-
-        @Test
-        void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
-            // Given
-            TableProperties givenProperties = new TableProperties(new InstanceProperties());
-            // When
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-
-            // Then
-            assertThat(tableProperties).isEqualTo(givenProperties);
         }
     }
 
