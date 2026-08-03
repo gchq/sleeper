@@ -6,6 +6,35 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.37.4
+
+### 4th August 2026
+
+This includes improvements to bulk import on EKS, and fixes to SQL query filtering, Athena and the Python client.
+
+Bulk import:
+- Bulk import on EKS is now limited to a certain number of bulk import jobs running in EKS at once, with `sleeper.bulk.import.eks.job.concurrency.level`.
+- Bulk import on EKS Auto Mode is now limited to a certain number of CPUs, with `sleeper.bulk.import.eks.automode.nodepool.cpu.limit`.
+- EC2 instance types for bulk import on EKS Auto Mode can be configured with `sleeper.bulk.import.eks.automode.nodepool.instance.types`.
+
+Athena:
+- Added support for map type fields.
+- There are no longer multiple options for the Athena connector in `sleeper.athena.handler.classes`.
+
+Python:
+- SQL filters can be set on queries run via Python.
+
+Documentation:
+- Documented the REST API to add a Sleeper table.
+- New configuration example for a lighter instance with less data.
+
+Bugfixes:
+- SQL filtering is now accepted in queries with `scripts/utility/query.sh`.
+- SQL query filtering now works for tables with a sort key.
+- Fixed queries in Athena.
+- Python client now reads region from `AWS_REGION` environment variable, and allows region to be set explicitly.
+
+
 ## Version 0.37.3
 
 ### 29th July 2026
@@ -13,8 +42,8 @@ available [here](docs/development/roadmap.md).
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
 General issues:
-    - Change Rust builder to use Trixie over Bookworm
-    - New VPC interface endpoints for ECR for environment deployment
+    - Change Rust builder to use Trixie over Bookworm.
+    - New VPC interface endpoints for ECR for environment deployment.
 
 ## Version 0.37.2
 
