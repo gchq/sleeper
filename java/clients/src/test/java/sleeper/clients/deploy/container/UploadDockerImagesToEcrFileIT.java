@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
@@ -77,7 +77,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                 dockerLoginToEcrCommand(),
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndPushMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base"),
+                buildAndLoadMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base"),
                 buildLambdaImageCommand(expectedTag1, lambdaImageDir.toString(), expectedBaseTag),
                 pushImageCommand(expectedTag1),
                 buildLambdaImageCommand(expectedTag2, lambdaImageDir.toString(), expectedBaseTag),

@@ -109,7 +109,7 @@ public class UploadDockerImages {
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
             String baseTag = buildTag(repositoryPrefix, baseImage);
             if (anyUseBaseImage) {
-                buildAndPushImage(baseTag, baseImage, Map.of());
+                buildBaseImage(baseTag, baseImage);
             }
             for (StackDockerImage image : imagesToUpload) {
                 Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag);
@@ -154,11 +154,29 @@ public class UploadDockerImages {
         }
     }
 
+    private void buildBaseImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
+        // A base image is only a build input for other images, which resolve it from the local Docker image store via
+        // the BASE_IMAGE build argument. It is never deployed or run directly, so it is built locally and never pushed.
+        Path dockerfileDirectory = image.resolveBuildContext(baseDockerDirectory, deployConfig);
+        if (image.isMultiplatform()) {
+            String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
+            commandRunner.runOrThrow(dockerBuild(
+                    List.of("docker", "buildx", "build"),
+                    List.of("--platform", platformList, "--load", "-t", tag),
+                    dockerfileDirectory));
+        } else {
+            commandRunner.runOrThrow(dockerBuild(
+                    List.of("docker", "build"),
+                    List.of("-t", tag),
+                    dockerfileDirectory));
+        }
+    }
+
     private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
         StackDockerImage overrideBaseImage = image.createOverrideBaseImage(deployConfig).orElse(null);
         if (overrideBaseImage != null) {
             String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
-            buildAndPushImage(overrideBaseTag, overrideBaseImage, Map.of());
+            buildBaseImage(overrideBaseTag, overrideBaseImage);
             return Map.of("BASE_IMAGE", overrideBaseTag);
         } else if (image.isUseDefaultBaseImage()) {
             return Map.of("BASE_IMAGE", baseTag);

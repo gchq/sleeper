@@ -42,7 +42,7 @@ public class DockerImageCommandTestData {
         commands.add(createBuildxBuilderInstanceCommand());
         commands.add(useBuildxBuilderInstanceCommand());
         String baseTag = tag(instanceProperties, "base");
-        commands.add(buildAndPushMultiplatformImageCommand(baseTag, "./docker/base"));
+        commands.add(buildAndLoadMultiplatformImageCommand(baseTag, "./docker/base"));
         for (String image : images) {
             String tag = tag(instanceProperties, image);
             commands.add(buildImageCommand(tag, "./docker/" + image, baseTag));
@@ -106,11 +106,6 @@ public class DockerImageCommandTestData {
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {
         return pipeline(command("docker", "buildx", "build", "--build-arg", "BASE_IMAGE=" + baseTag, "--platform", "linux/amd64,linux/arm64",
-                "--push", "-t", tag, dockerDirectory));
-    }
-
-    public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "--push", "-t", tag, dockerDirectory));
     }
 

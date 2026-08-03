@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndPushMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
@@ -76,7 +77,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -97,7 +98,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
@@ -120,7 +121,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -147,7 +148,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildLambdaImageCommand(expectedTag, "./docker/lambda", expectedBaseTag),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
@@ -174,7 +175,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildLambdaImageCommand(expectedTag1, "./docker/lambda", expectedBaseTag),
                     pushImageCommand(expectedTag1),
                     buildLambdaImageCommand(expectedTag2, "./docker/lambda", expectedBaseTag),
@@ -202,7 +203,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildLambdaImageCommand(expectedTag, "./docker/lambda", expectedBaseTag),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
@@ -240,7 +241,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildLambdaImageCommand(expectedTag, "./docker/lambda", expectedBaseTag),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
@@ -279,7 +280,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -304,7 +305,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag));
         }
 
@@ -324,7 +325,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
                     buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction", expectedBaseTag));
@@ -367,7 +368,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag));
         }
 
@@ -411,7 +412,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand);
         }
 
@@ -435,7 +436,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(ecrTag, "./docker/ingest", expectedBaseTag),
                     pushCommand);
         }
@@ -538,7 +539,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag, "./docker/statestore-committer", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -584,7 +585,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag, "./docker/data-generation", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -619,7 +620,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./custom/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./custom/base"),
                     buildImageCommand(expectedTag, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag));
         }
@@ -659,13 +660,32 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag1, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag1, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag1),
                     pushImageCommand(expectedTag1),
                     buildImageCommand(expectedBaseTag2, "./custom/base"),
-                    pushImageCommand(expectedBaseTag2),
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag2),
                     pushImageCommand(expectedTag2));
+        }
+
+        @Test
+        void shouldNotPushOverrideBaseImageWhenOverridingBaseForSingleImageOnly() throws Exception {
+            // Given the exact scenario that reported the bug: an override base is set for one image, but no
+            // ECR repository exists for the synthesised <image>-base, so it must be built locally and never pushed.
+            deployConfig = DeployConfiguration.fromLocalBuild().withImageToOverrideBaseDir(Map.of("bulk-import-runner", "./custom/base"));
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.EksBulkImportStack);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner-base:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageCommand(expectedBaseTag, "./custom/base"),
+                    buildImageCommand(expectedTag, "./docker/bulk-import-runner", expectedBaseTag),
+                    pushImageCommand(expectedTag));
         }
     }
 
@@ -688,7 +708,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedSystemTestTag, "./docker/system-test", expectedBaseTag),
                     pushImageCommand(expectedSystemTestTag));
         }

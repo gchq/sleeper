@@ -107,6 +107,10 @@ public class SleeperArtefactRepositories {
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
+            // A base image is only ever a build input, built locally and never uploaded, so it needs no repository.
+            if (deployment.isDefaultBaseImage()) {
+                continue;
+            }
             Repository repository = createRepository(deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
