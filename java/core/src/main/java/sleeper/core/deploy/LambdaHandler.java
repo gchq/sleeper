@@ -35,10 +35,6 @@ public class LambdaHandler {
 
     private static final List<LambdaHandler> ALL = new ArrayList<>();
     private static final Map<String, LambdaHandler> ATHENA_HANDLER_BY_CLASSNAME = new HashMap<>();
-    public static final LambdaHandler ATHENA_SIMPLE_COMPOSITE = builder()
-            .jar(LambdaJar.ATHENA)
-            .handler("sleeper.athena.composite.SimpleCompositeHandler")
-            .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaHandler ATHENA_ITERATORS_COMPOSITE = builder()
             .jar(LambdaJar.ATHENA)
             .handler("sleeper.athena.composite.IteratorApplyingCompositeHandler")
