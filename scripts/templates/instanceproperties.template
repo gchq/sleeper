@@ -1944,9 +1944,8 @@
 # sleeper.athena.spill.bucket.ageoff.days=1
 
 # The fully qualified composite classes to deploy. These are the classes that interact with Athena.
-# You can choose to remove one if you don't need them. Both are deployed by default.
 # (default value shown below, uncomment to set a value)
-# sleeper.athena.handler.classes=sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
+# sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
 
 # The amount of memory (MB) the athena composite handler has.
 # (default value shown below, uncomment to set a value)
