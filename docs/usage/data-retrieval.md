@@ -312,17 +312,13 @@ the `AthenaStack` enabled in the `sleeper.optional.stacks` instance property. Th
 
 Visit the Amazon console and choose Athena from the list of services. You should be able to find your Connector in the
 data source list. If your instance id is "abc123" then the connector will be called "abc123IteratorApplyingSleeperConnector".
-Click "Query Editor" and then select your connector under "Data Source". When you select it, the tables list should be
-populated. You will need to select a query results location.
-
-If you select the three dots next to the table name there is a "preview table" option. If you select this, it will
-populate the SQL input with an example query which will select all columns and limit to the first 10 results.
+Click "Query your data in Athena console" and then select your connector under "Data Source". When you select it, the
+tables list should be populated. If you select the three dots next to the table name there is a "preview table" option.
+If you select this, it will populate the SQL input with an example query which will run a 'SELECT * FROM ... LIMIT 10'
+query.
 
 To make queries in Athena efficient, filter primitive columns where you can (especially the row keys). These predicates
 will be pushed down to S3 and mean that you scan less data and incur a smaller fee as a result.
-
-We provide support for all Sleeper data types apart from the map type. This is just because Athena has not yet added
-support for maps. When Athena does add this support, we will be able to add support for it.
 
 ## Use SQL with Trino
 
