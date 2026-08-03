@@ -187,7 +187,9 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
-        lambda.getNode().addDependency(customResource);
+        if (customResource != null) {
+            lambda.getNode().addDependency(customResource);
+        }
         lambda.addEventSource(new SqsEventSource(leafPartitionQueryQueue, eventSourceProps));
 
         return lambda;
