@@ -106,7 +106,7 @@ public class GeneratePropertiesTemplates {
         writeFile(lightTemplateDir.resolve("instance.properties"),
                 GeneratePropertiesTemplates::writeExampleLightInstanceProperties);
         writeFile(lightTemplateDir.resolve("table.properties"),
-                GeneratePropertiesTemplates::writeExampleLightTableProperties);
+                GeneratePropertiesTemplates::writeExampleBasicTableProperties);
 
         Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
         writeFile(scriptsTemplateDir.resolve("instanceproperties.template"),
@@ -220,20 +220,6 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeTablePropertiesTemplate(Writer out) {
         writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), TABLE_PROPERTIES_HEADER);
-    }
-
-    /**
-     * Writes the light table properties template file to the given writer.
-     * Various properties set for desired EMR settings with the remainder of the properties set to default value and
-     * commented out.
-     *
-     * @param out the writer
-     */
-    public static void writeExampleLightTableProperties(Writer out) {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        List<TableProperty> propertiesSet = tableProperties.getPropertiesIndex().getUserDefined().stream()
-                .filter(property -> property.isIncludedInBasicTemplate()).toList();
-        writeTablePropertiesWithHeader(out, tableProperties, propertiesSet, null);
     }
 
     private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String header) {
