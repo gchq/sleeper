@@ -1176,6 +1176,21 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.cluster.type=FARGATE
 
+# (EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types that the
+# Karpenter NodePool is allowed to launch for Spark pods.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.instance.types=m7g.xlarge,m7g.2xlarge,m7g.4xlarge,m7g.8xlarge,m7g.12xlarge,m7g.16xlarge,m7gd.xlarge,m7gd.2xlarge,m7gd.4xlarge,m7gd.8xlarge,m7gd.12xlarge,m7gd.16xlarge,m7i.xlarge,m7i.2xlarge,m7i.4xlarge,m7i.8xlarge,m7i.12xlarge,m7i.16xlarge,m6id.xlarge,m6id.2xlarge,m6id.4xlarge,m6id.8xlarge,m6id.12xlarge,m6id.16xlarge
+
+# (EKS mode only, automode cluster type only) The maximum total number of CPU cores the Karpenter
+# NodePool is allowed to provision across all nodes. Must be an integer greater than 0.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.cpu.limit=164
+
+# (EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the bulk
+# import namespace. Enforced by a ResourceQuota on count/jobs.batch.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.job.concurrency.level=2
+
 # (EKS auto mode only) Whether to deploy a FluentBit DaemonSet to collect container logs from EKS auto
 # mode nodes and send them to CloudWatch Logs. Disable this if you manage log collection separately or
 # need to avoid the aws-for-fluent-bit image dependency.
@@ -1929,9 +1944,8 @@
 # sleeper.athena.spill.bucket.ageoff.days=1
 
 # The fully qualified composite classes to deploy. These are the classes that interact with Athena.
-# You can choose to remove one if you don't need them. Both are deployed by default.
 # (default value shown below, uncomment to set a value)
-# sleeper.athena.handler.classes=sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
+# sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
 
 # The amount of memory (MB) the athena composite handler has.
 # (default value shown below, uncomment to set a value)

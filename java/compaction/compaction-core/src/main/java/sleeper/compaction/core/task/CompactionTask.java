@@ -49,8 +49,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -82,7 +82,7 @@ public class CompactionTask {
     private final Supplier<Instant> timeSupplier;
     private final ThreadSleep threadSleep;
     private final Duration maxAliveTimeDuration;
-    private final Consumer<Long> progressTracker;
+    private final LongConsumer progressTracker;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -105,7 +105,7 @@ public class CompactionTask {
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep,
-            DoubleSupplier randomJitterFunction, Consumer<Long> progressTracker) {
+            DoubleSupplier randomJitterFunction, LongConsumer progressTracker) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
