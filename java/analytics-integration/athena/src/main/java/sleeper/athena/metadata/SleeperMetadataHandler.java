@@ -460,6 +460,10 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         boolean match = false;
         for (int j = 0; j < rowCount; j++) {
             Object value = valueSet.getValue(j);
+            // Arrow returns VARCHAR values as Text, so convert to a String.
+            if (type instanceof StringType) {
+                value = value.toString();
+            }
             // If the minimum in the partition is less than or equal to the value and the maximum is more than
             // the value, the partition matches.
             if (keyComparator.compare(Key.create(min), Key.create(value)) <= 0 &&
