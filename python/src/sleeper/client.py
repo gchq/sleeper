@@ -13,11 +13,11 @@
 #  limitations under the License.
 import json
 import logging
+import os
 import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Dict, List
 
 import boto3
 import s3fs
@@ -27,14 +27,12 @@ from mypy_boto3_s3 import S3Client, S3ServiceResource
 from mypy_boto3_sqs import SQSServiceResource
 from pyarrow.parquet import ParquetFile
 
-from pq.parquet_deserial import ParquetDeserialiser
-from pq.parquet_serial import ParquetSerialiser
+from pq import ParquetDeserialiser, ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
-from sleeper.properties.config_bucket import load_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, load_instance_properties
+from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.query import Query, Region
 from sleeper.web_socket_query import WebSocketQueryProcessor
 
@@ -60,28 +58,46 @@ class SleeperClient:
         self,
         instance_id,
         use_threads=False,
-        account_name: str = None,
+        region_name: str | None = None,
+        account_name: str | None = None,
         s3_client: S3Client = None,
         s3_resource: S3ServiceResource = None,
         s3_fs: s3fs.S3FileSystem = None,
         sqs_resource: SQSServiceResource = None,
         dynamo_resource: DynamoDBServiceResource = None,
     ):
+        region_name = region_name or os.environ.get("AWS_REGION")
+
+        session = boto3.Session(region_name=region_name)
+
         if account_name is None:
-            sts_client = boto3.client("sts")
+            sts_client = session.client("sts")
             account_name = sts_client.get_caller_identity().get("Account")
+
         if s3_client is None:
-            s3_client = boto3.client("s3")
+            s3_client = session.client("s3")
+
         if s3_resource is None:
-            s3_resource = boto3.resource("s3")
+            s3_resource = session.resource("s3")
+
         if s3_fs is None:
-            s3_fs = s3fs.S3FileSystem(anon=False)
+            s3_fs = s3fs.S3FileSystem(
+                anon=False,
+                client_kwargs={"region_name": region_name},
+            )
+
         if sqs_resource is None:
-            sqs_resource = boto3.resource("sqs")
+            sqs_resource = session.resource("sqs")
+
         if dynamo_resource is None:
-            dynamo_resource = boto3.resource("dynamodb")
+            dynamo_resource = session.resource("dynamodb")
+
         self._instance_id = instance_id
-        self._instance_properties = load_instance_properties(s3_resource, account_name, instance_id)
+        self._instance_properties = load_instance_properties(
+            s3_resource,
+            account_name,
+            instance_id,
+        )
         self._s3_client = s3_client
         self._s3_resource = s3_resource
         self._s3_fs = s3_fs
@@ -89,7 +105,7 @@ class SleeperClient:
         self._dynamo_resource = dynamo_resource
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
-    def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str = None):
+    def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str | None = None):
         """
         Perform a write of the given rows to Sleeper.
         These are treated as a single block of rows to write. Each
@@ -109,7 +125,7 @@ class SleeperClient:
         job = IngestJob(job_id=job_id, table_name=table_name, files=[databucket_file])
         IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
 
-    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
+    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str | None = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name. This is
         done by posting a message containing the list of files to the ingest queue. These
@@ -128,10 +144,10 @@ class SleeperClient:
         self,
         table_name: str,
         files: list,
-        id: str = None,
+        id: str | None = None,
         platform: str = "EMRServerless",
-        platform_spec: dict = None,
-        class_name: str = None,
+        platform_spec: dict | None = None,
+        class_name: str | None = None,
     ):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
@@ -182,28 +198,35 @@ class SleeperClient:
         """
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
 
-    async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False) -> list:
+    async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False, sql_query: str | None = None) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key matches a given list of query keys.
         The results are aggregated into a single list.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: The name of the table to query.
         :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
                      Example: {"key":["a", "z"]}
         :param query_id: An optional query ID; defaults to a new UUID if not provided.
         :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+        :param sql_query: An optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: A list containing all retrieved rows matching the specified keys and values.
         """
-        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded))
+        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded), sql_query)
         return await self.query_by_web_socket(query)
 
     async def web_socket_range_key_query(
-        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False, sql_query: str | None = None
     ) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key is within specified ranges.
         The results are aggregated into a single list.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: The name of the table to query.
         :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
@@ -212,13 +235,14 @@ class SleeperClient:
         :param min_inclusive: Boolean indicating if the minimum boundary is inclusive.
         :param max_inclusive: Boolean indicating if the maximum boundary is inclusive.
         :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+        :param sql_query: An optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: A list containing all retrieved rows matching the specified key ranges.
         """
-        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
+        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys], sql_query)
         return await self.query_by_web_socket(query)
 
-    def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str | None = None, sql_query: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are equal to one of a given list. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
@@ -226,10 +250,14 @@ class SleeperClient:
         will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
         stack is deployed.
 
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
+
         :param table_name: the table to query
         :param keys: either a single dict where the key is the row-key field name and the value is a list of values
         to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
         :param query_id: the query ID, will be randomly generated if not provided
+        :param sql_query: an optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: list of result rows
         """
@@ -243,15 +271,18 @@ class SleeperClient:
                 + " or (b) a list of dicts where the key is a row-key field name and the value is the value to query for"
             )
 
-        return self.query_by_sqs(Query(query_id, table_name, regions))
+        return self.query_by_sqs(Query(query_id, table_name, regions, sql_query))
 
-    def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str | None = None, sql_query: str | None = None) -> list:
         """
         Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
         loaded from S3. This means that there can be significant latency before the results are returned. Note that the
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
         KeepLambdaWarm stack is deployed.
+
+        SQL query filtering is supported. For details on SQL query filtering capabilities,
+        see https://github.com/gchq/sleeper/blob/develop/docs/usage/data-retrieval.md#sql-query-filtering-experimental
 
         :param table_name: the table to query
         :param regions: a list of regions; each region should be a dictionary where the key is a row key field name
@@ -261,10 +292,11 @@ class SleeperClient:
             whether the minimum is inclusive, the third is the max of the range and the next is a boolean specifying
             whether the maximum is inclusive.
         :param query_id: the query ID, will be randomly generated if not provided
+        :param sql_query: an optional SQL query for post-processing results. The source table name is "query_results".
 
         :return: list of the result rows
         """
-        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions]))
+        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions], sql_query=sql_query))
 
     def query_by_sqs(self, query: Query):
         """
@@ -303,7 +335,7 @@ class SleeperClient:
         return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     @contextmanager
-    def create_batch_writer(self, table_name: str, job_id: str = None):
+    def create_batch_writer(self, table_name: str, job_id: str | None = None):
         """
         Creates an object for writing large batches of events to Sleeper.
         Designed to be used within a context manager ('with' statement).
@@ -333,7 +365,7 @@ class SleeperClient:
                     def __init__(self):
                         self.num_rows: int = 0
 
-                    def write(self, rows: List[Dict]):
+                    def write(self, rows: list[dict]):
                         for row in rows:
                             parquet_file.write_record(row)
 
@@ -447,7 +479,7 @@ def _receive_messages(
     deserialiser: ParquetDeserialiser,
     query_id: str,
     timeout: int = DEFAULT_MAX_WAIT_TIME,
-) -> List:
+) -> list:
     """
     Polls the DynamoDB query tracker until the query is completed, then reads the results from S3.
 
@@ -498,17 +530,16 @@ def _receive_messages(
             results = []
             for file in results_files:
                 logger.debug(f"Opening file {results_bucket_name}/{file}")
-                with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f:
-                    with ParquetFile(f) as po:
-                        for row in deserialiser.read(po):
-                            results.append(row)
+                with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f, ParquetFile(f) as po:
+                    for row in deserialiser.read(po):
+                        results.append(row)
 
             logger.debug("Query has finished")
             return results
     raise RuntimeError("No results received from Sleeper within specified timeout.")
 
 
-def _make_ingest_object_key(id: str = None) -> str:
+def _make_ingest_object_key(id: str | None = None) -> str:
     if id is None:
         id = str(uuid.uuid4())
     return f"for_ingest/{id}.parquet"

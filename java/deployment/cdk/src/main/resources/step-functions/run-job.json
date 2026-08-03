@@ -55,6 +55,17 @@
     "logs.$": "$.logs..spark-submit.log"
   },
   "ResultPath": "$.jobResult",
+  "Retry": [
+    {
+      "ErrorEquals": [
+        "EKS.403"
+      ],
+      "IntervalSeconds": 60,
+      "MaxAttempts": 720,
+      "BackoffRate": 1.0,
+      "JitterStrategy": "FULL"
+    }
+  ],
   "Catch": [
     {
       "ErrorEquals": [

@@ -24,8 +24,10 @@ See more information on this in the [data processing document](data-processing.m
 
 ## Add/edit a table
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
-will consist of the following steps:
+Scripts can be used to add, rename and delete tables in a Sleeper instance. Adding a table is also supported over the
+optional [REST API](./rest-api/add-table.md); more endpoints will follow.
+
+If using the scripts, creating a new table will consist of the following steps:
 
 1. Use the `addTable.sh` script to create the table.
 2. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
@@ -48,7 +50,6 @@ We'll look at the table scripts below. See the [ingest batcher documentation](in
 `sendToIngestBatcher.sh`.
 
 ### Add table
-
 The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
 file with `--schema` or as part of a configuration directory with `--config-dir`. The table name can be supplied with
 `--table-name`, or read from the table properties file passed to `--table-properties` or `--config-dir`. If

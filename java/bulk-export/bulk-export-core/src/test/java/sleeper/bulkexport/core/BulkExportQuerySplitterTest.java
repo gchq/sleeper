@@ -90,12 +90,15 @@ public class BulkExportQuerySplitterTest {
         assertThat(splitter().splitIntoLeafPartitionQueries(export)).containsExactly(
                 BulkExportLeafPartitionQuery.forPartition(export, tableProperties, tree.getPartition("LL"))
                         .subExportId("export-1").files(List.of("leftleft.parquet", "left.parquet", "root.parquet"))
+                        .sqlQuery("SELECT * FROM query_results;")
                         .build(),
                 BulkExportLeafPartitionQuery.forPartition(export, tableProperties, tree.getPartition("LR"))
                         .subExportId("export-2").files(List.of("leftright.parquet", "left.parquet", "root.parquet"))
+                        .sqlQuery("SELECT * FROM query_results;")
                         .build(),
                 BulkExportLeafPartitionQuery.forPartition(export, tableProperties, tree.getPartition("R"))
                         .subExportId("export-3").files(List.of("right.parquet", "root.parquet"))
+                        .sqlQuery("SELECT * FROM query_results;")
                         .build());
     }
 
@@ -116,9 +119,11 @@ public class BulkExportQuerySplitterTest {
         assertThat(splitter().splitIntoLeafPartitionQueries(export)).containsExactly(
                 BulkExportLeafPartitionQuery.forPartition(export, tableProperties, tree.getPartition("L"))
                         .subExportId("export-1").files(List.of("left.parquet"))
+                        .sqlQuery("SELECT * FROM query_results;")
                         .build(),
                 BulkExportLeafPartitionQuery.forPartition(export, tableProperties, tree.getPartition("R"))
                         .subExportId("export-2").files(List.of("right.parquet"))
+                        .sqlQuery("SELECT * FROM query_results;")
                         .build());
     }
 
@@ -188,7 +193,9 @@ public class BulkExportQuerySplitterTest {
 
     private BulkExportQuery bulkExportQuery() {
         return BulkExportQuery.builder().exportId("test-export")
-                .tableName(tableProperties.get(TABLE_NAME)).build();
+                .tableName(tableProperties.get(TABLE_NAME))
+                .sqlQuery("SELECT * FROM query_results;")
+                .build();
     }
 
     private FileReferenceFactory fileReferenceFactory() {
