@@ -104,10 +104,7 @@ public class DeployNewInstanceIT {
             updatePropertyFiles(config);
 
             //Verify CDK Command
-            assertThat(deployRequests.size()).isEqualTo(1);
-            DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
-            assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(buildExpectedCDKCommandWithPropertyFile(config, false));
+            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithPropertyFile(config, false));
 
             //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
@@ -125,10 +122,7 @@ public class DeployNewInstanceIT {
             config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
 
             //Verify CDK Command
-            assertThat(deployRequests.size()).isEqualTo(1);
-            DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
-            assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(buildExpectedCDKCommandWithConfigDir(config, false));
+            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithConfigDir(config, false));
 
             //Verify Table properties store saved
             TableProperties expected = new TableProperties(instanceProperties);
@@ -149,10 +143,7 @@ public class DeployNewInstanceIT {
             updatePropertyFiles(config);
 
             //Verify CDK Command
-            assertThat(deployRequests.size()).isEqualTo(1);
-            DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
-            assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(buildExpectedCDKCommandWithPropertyFile(config, false));
+            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithPropertyFile(config, false));
 
             //Verify no table properties stored
             assertThat(tableIndex.streamAllTables()).isEmpty();
@@ -170,10 +161,7 @@ public class DeployNewInstanceIT {
             config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
 
             //Verify CDK Command
-            assertThat(deployRequests.size()).isEqualTo(1);
-            DeployInstanceRequest lastDeployRequest = deployRequests.get(0);
-            assertThat(lastDeployRequest).usingRecursiveComparison()
-                    .isEqualTo(buildExpectedCDKCommandWithConfigDir(config, true));
+            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithConfigDir(config, true));
 
             //Verify Table properties store saved
             TableProperties expected = new TableProperties(instanceProperties);
