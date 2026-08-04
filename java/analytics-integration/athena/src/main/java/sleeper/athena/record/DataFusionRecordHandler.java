@@ -127,6 +127,9 @@ public class DataFusionRecordHandler extends SleeperRecordHandler {
 
         Split split = recordsRequest.getSplit();
         List<String> relevantFiles = new ArrayList<>(readRelevantFiles(split));
+        if (relevantFiles.isEmpty()) {
+            return;
+        }
         List<Field> rowKeyFields = tableSchema.getRowKeyFields();
         List<FieldAsString> rowKeys = split.getProperties().entrySet().stream()
                 .filter(entry -> ROW_KEY_PREFIX_TEST.test(entry.getKey()))

@@ -3929,6 +3929,25 @@
             ]
           }
         },
+        "DataFusionathenahandler9D77ED25": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-DataFusion-athena-handler",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
         "bulkexport1C9790F1": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
