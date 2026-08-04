@@ -104,6 +104,8 @@ To build the Sleeper Docker tools, you can run this script:
 ./scripts/cli/buildAll.sh
 ```
 
+There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
+
 Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
 command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
 and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
