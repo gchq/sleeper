@@ -59,7 +59,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
-    InstanceProperties instanceProperties = generateInstancePropertiesForFile();
+    InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
