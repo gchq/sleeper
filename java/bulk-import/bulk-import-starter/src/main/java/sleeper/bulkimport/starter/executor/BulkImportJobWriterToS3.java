@@ -39,18 +39,17 @@ public class BulkImportJobWriterToS3 implements BulkImportExecutor.WriteJobToBuc
     }
 
     @Override
-    public void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID) {
+    public void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String objectKey) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunID + ".json";
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bulkImportBucket)
-                .key(key)
+                .key(objectKey)
                 .build(),
                 RequestBody.fromString(bulkImportJobJSON));
-        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
+        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), objectKey, bulkImportBucket);
     }
 }
