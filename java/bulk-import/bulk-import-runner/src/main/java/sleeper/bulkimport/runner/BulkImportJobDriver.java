@@ -228,9 +228,9 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     }
 
     private static void startOrThrow(String[] args, BulkImportJobRunner runner) throws Exception {
-        if (args.length != 5) {
-            throw new IllegalArgumentException("Expected 5 arguments:" +
-                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <bulk import mode>");
+        if (args.length != 6) {
+            throw new IllegalArgumentException("Expected 6 arguments:" +
+                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <S3 object key of job definition file> <bulk import mode>");
         }
         String configBucket = args[0];
         String jobId = args[1];
