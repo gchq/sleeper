@@ -160,8 +160,6 @@ public class DeployNewInstance {
     }
 
     public void deploy() throws IOException, InterruptedException {
-        deployInstanceConfiguration.validate();
-
         CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
 
         InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
