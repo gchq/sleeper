@@ -62,10 +62,6 @@ public class DeployNewInstance {
     private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
@@ -75,6 +71,10 @@ public class DeployNewInstance {
         this.configDir = builder.configDir;
         this.ignoreTableFiles = builder.ignoreTableFiles;
         this.deployPaused = builder.deployPaused;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
