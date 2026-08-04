@@ -62,7 +62,7 @@ public class DeployNewInstance {
     private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
-    public DeployNewInstance(Builder builder) {
+    private DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
         this.deployInstanceConfiguration = Objects.requireNonNull(builder.deployInstanceConfiguration, "deployInstanceConfiguration must not be null");
