@@ -57,6 +57,10 @@ public class BulkImportExecutor {
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
+    public static String createJobFileObjectKey(BulkImportJob job, String jobRunId) {
+        return BulkImportJob.FILES_BUCKET_PREFIX + job.getId() + "-" + jobRunId + ".json";
+    }
+
     public void runJob(BulkImportJob bulkImportJob) {
         runJob(bulkImportJob, UUID.randomUUID().toString());
     }
@@ -75,7 +79,7 @@ public class BulkImportExecutor {
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-            String jobFileObjectKey = BulkImportJob.FILES_BUCKET_PREFIX + bulkImportJob.getId() + "-" + jobRunId + ".json";
+            String jobFileObjectKey = createJobFileObjectKey(bulkImportJob, jobRunId);
             writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobFileObjectKey);
             LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
             platformExecutor.runJobOnPlatform(BulkImportArguments.builder()

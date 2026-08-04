@@ -41,10 +41,10 @@ public class BulkImportArguments {
     private final String jobRunId;
 
     private BulkImportArguments(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        bulkImportJob = builder.bulkImportJob;
-        jobFileObjectKey = builder.jobFileObjectKey;
-        jobRunId = builder.jobRunId;
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        bulkImportJob = Objects.requireNonNull(builder.bulkImportJob, "bulkImportJob must not be null");
+        jobFileObjectKey = Objects.requireNonNull(builder.jobFileObjectKey, "jobFileObjectKey must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
     }
 
     public static Builder builder() {
