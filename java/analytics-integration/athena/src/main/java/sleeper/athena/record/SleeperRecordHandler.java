@@ -280,4 +280,14 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     protected InstanceProperties getInstanceProperties() {
         return this.instanceProperties;
     }
+
+    /**
+     * Loads the properties for the named table.
+     *
+     * @param  tableName the table name
+     * @return           the table properties
+     */
+    protected TableProperties getTableProperties(String tableName) {
+        return tablePropertiesProvider.getByName(tableName);
+    }
 }
