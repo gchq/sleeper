@@ -58,7 +58,7 @@ public class BulkImportExecutor {
     }
 
     public static String createJobFileObjectKey(BulkImportJob job, String jobRunId) {
-        return "bulk_import/" + job.getId() + "-" + jobRunId + ".json";
+        return BulkImportJob.FILES_BUCKET_PREFIX + job.getId() + "-" + jobRunId + ".json";
     }
 
     public void runJob(BulkImportJob bulkImportJob) {

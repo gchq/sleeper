@@ -15,11 +15,9 @@
  */
 package sleeper.bulkimport.runner;
 
-import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -46,16 +44,6 @@ public class BulkImportJobLoaderFromS3 {
                 .bucket(bulkImportBucket)
                 .key(objectKey)
                 .build()).asUtf8String();
-        try {
-            return new BulkImportJobSerDe().fromJson(jsonJob);
-        } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed");
-            throw e;
-        } finally {
-            s3Client.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(bulkImportBucket)
-                    .key(objectKey)
-                    .build());
-        }
+        return new BulkImportJobSerDe().fromJson(jsonJob);
     }
 }
