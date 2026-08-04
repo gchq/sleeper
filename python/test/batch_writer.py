@@ -23,10 +23,9 @@ from sleeper import SleeperClient
 def read_files(filename: str):
     parq = ParquetDeserialiser()
     file_rows = []
-    with open(filename, "rb") as file:
-        with ParquetFile(file) as po:
-            for row in parq.read(po):
-                file_rows.append(row)
+    with open(filename, "rb") as file, ParquetFile(file) as po:
+        for row in parq.read(po):
+            file_rows.append(row)
     return file_rows
 
 

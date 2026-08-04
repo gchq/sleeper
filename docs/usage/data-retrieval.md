@@ -33,6 +33,50 @@ Note that as this approach to running queries retrieves the relevant rows from S
 you specify a large range, the query may take a long time to run and may transfer a large amount of data from S3 to your
 machine.
 
+### SQL Query Filtering (Experimental)
+
+When using `query.sh`, you have the option to apply optional SQL query filtering to the results. This capability is
+**experimental** and currently only supported with the **DataFusion query engine**.
+
+After specifying your query range or exact key, the script will prompt you to enter an optional SQL statement:
+
+```
+Enter an optional SQL statement to execute on Sleeper query results. Table name is "query_results".
+Enter SQL statement (blank for none):
+```
+
+The SQL query is executed on the query results, allowing you to:
+- Filter rows based on column values
+- Select specific columns
+- Perform transformations on the data
+- Aggregate results
+
+#### Prerequisites for SQL Query Filtering
+
+1. **DataFusion Query Engine**: The table must be configured to use DataFusion. Set the table property:
+   ```properties
+   sleeper.table.query.data.engine=datafusion
+   ```
+
+2. **Source Table Name**: Regardless of the actual Sleeper table name, the SQL source table is always named `query_results`.
+
+#### Example SQL Queries
+
+Filter rows by value:
+```sql
+SELECT * FROM query_results WHERE timestamp > 1234567890000
+```
+
+Select specific columns:
+```sql
+SELECT id, name, timestamp FROM query_results
+```
+
+Aggregate data:
+```sql
+SELECT id, COUNT(*) as count FROM query_results GROUP BY id
+```
+
 ## Submitting queries to be executed via lambda
 
 This is similar to the `QueryClient` class except that the query is sent to an SQS queue and then executed using AWS
@@ -218,6 +262,35 @@ To send the results to a particular SQS queue use:
 You will need to give Sleeper's writing data IAM role (given by the CloudFormation
 export `<instance-id>-QueryLambdaRoleArn`) permission to write to the above S3 bucket or SQS queue.
 
+### SQL Query Filtering (Experimental)
+
+SQL query filtering is also supported when submitting queries via SQS. See the [SQL Query Filtering](#sql-query-filtering-experimental)
+section under "Running queries directly using the Java client" for details, prerequisites, and example SQL queries.
+
+To apply SQL filtering to an SQS query, add the `processingConfig` field with the `sqlQuery` property:
+
+```JSON
+{
+  "queryId": "a_unique_id",
+  "tableName": "my-table",
+  "type": "Query",
+  "regions": [
+    {
+      "key1": {
+        "min": "goodbye",
+        "minInclusive": true,
+        "max": "hello",
+        "maxInclusive": false
+      },
+      "stringsBase64Encoded": false
+    }
+  ],
+  "processingConfig": {
+    "sqlQuery": "SELECT * FROM query_results WHERE value > 100"
+  }
+}
+```
+
 ## Keep Lambda Warm Optional Stack
 
 Lambdas inherently have a startup time usually refer to as cold start. This can add a significant delay thus increasing
@@ -238,61 +311,14 @@ Sleeper allows you to query tables using Amazon Athena. This functionality is ex
 the `AthenaStack` enabled in the `sleeper.optional.stacks` instance property. This stack is not included by default.
 
 Visit the Amazon console and choose Athena from the list of services. You should be able to find your Connector in the
-data source list. If your instance id is "abc123" then the connector will be called "abc123SimpleSleeperConnector".
-Click "Query Editor" and then select your connector under "Data Source". When you select it, the tables list should be
-populated. You will need to select a query results location.
-
-If you select the three dots next to the table name there is a "preview table" option. If you select this, it will
-populate the SQL input with an example query which will select all columns and limit to the first 10 results.
+data source list. If your instance id is "abc123" then the connector will be called "abc123IteratorApplyingSleeperConnector".
+Click "Query your data in Athena console" and then select your connector under "Data Source". When you select it, the
+tables list should be populated. If you select the three dots next to the table name there is a "preview table" option.
+If you select this, it will populate the SQL input with an example query which will run a 'SELECT * FROM ... LIMIT 10'
+query.
 
 To make queries in Athena efficient, filter primitive columns where you can (especially the row keys). These predicates
 will be pushed down to S3 and mean that you scan less data and incur a smaller fee as a result.
-
-We provide support for all Sleeper data types apart from the map type. This is just because Athena has not yet added
-support for maps. When Athena does add this support, we will be able to add support for it.
-
-### The two different connectors
-
-You might notice that you have a choice of two connectors by default:
-
-* The simple connector
-* The iterator applying connector
-
-You can choose at runtime which one you want to use:
-
-```sql
-SELECT *
-FROM "MyInstanceSimpleSleeperConnector"."MyInstance"."myTable"
-```
-
-or
-
-```sql
-SELECT *
-FROM "MyInstanceIteratorApplyingSleeperConnector"."MyInstance"."myTable"
-```
-
-The simple connector creates one Athena handler for each file. This means that any iterators are not applied. The
-iterator applying connector performs a query time compaction so that each Sleeper leaf partition is processed by a
-single Athena handler. The handler receives the data in sorted order and applies any iterators.
-
-#### Improving query performance with the iterator applying connector
-
-If you want to use the Sleeper iterators, it means we have to read a whole Sleeper partition in one Athena handler. If
-you've got multiple files in a leaf partition, that means reading all the files in one lambda, rather than federating
-out the reads to multiple handlers.
-
-#### Changing the handlers
-
-To alter the handlers that are deployed with your instance, you can change the `sleeper.athena.handler.classes` instance
-property:
-
-```properties
-# Remove the default Simple handler
-sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
-```
-
-When you add or remove a handler, an Athena data catalogue will be deployed for you.
 
 ## Use SQL with Trino
 
