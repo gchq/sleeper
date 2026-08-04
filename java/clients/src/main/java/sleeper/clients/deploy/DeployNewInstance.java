@@ -106,6 +106,18 @@ public class DeployNewInstance {
                     "the instance is manually resumed.")
             .build();
 
+    public static Arguments readArguments(CommandArguments arguments) {
+        return new Arguments(
+                Path.of(arguments.getString("scriptsDirectory")),
+                arguments.getString("instanceId"),
+                arguments.getString("vpcId"),
+                arguments.getString("subnetIds"),
+                arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
+                arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
+                arguments.isFlagSet("ignoreTableFiles"),
+                arguments.isFlagSet("paused"));
+    }
+
     public static SleeperInstanceConfiguration loadConfiguration(Arguments args) throws IOException {
         SleeperInstanceConfiguration config;
         if (args.ignoreTableFiles()) {
@@ -119,18 +131,6 @@ public class DeployNewInstance {
         config.getInstanceProperties().set(SUBNETS, args.subnetIds());
 
         return config;
-    }
-
-    public static Arguments readArguments(CommandArguments arguments) {
-        return new Arguments(
-                Path.of(arguments.getString("scriptsDirectory")),
-                arguments.getString("instanceId"),
-                arguments.getString("vpcId"),
-                arguments.getString("subnetIds"),
-                arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
-                arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
-                arguments.isFlagSet("ignoreTableFiles"),
-                arguments.isFlagSet("paused"));
     }
 
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
