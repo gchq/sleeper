@@ -100,8 +100,20 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "buildx", "create", "--name", "sleeper"));
     }
 
+    public static CommandPipeline createBuildxBuilderWithHostNetworkCommand() {
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--driver-opt", "network=host"));
+    }
+
     public static CommandPipeline useBuildxBuilderInstanceCommand() {
         return pipeline(command("docker", "buildx", "use", "sleeper"));
+    }
+
+    public static CommandPipeline startLocalRegistryCommand() {
+        return pipeline(command("docker", "run", "-d", "-p", "5000:5000", "--name", "sleeper-base-registry", "registry:2"));
+    }
+
+    public static CommandPipeline stopLocalRegistryCommand() {
+        return pipeline(command("docker", "rm", "-f", "sleeper-base-registry"));
     }
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {
@@ -112,6 +124,11 @@ public class DockerImageCommandTestData {
     public static CommandPipeline buildAndLoadMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "--load", "-t", tag, dockerDirectory));
+    }
+
+    public static CommandPipeline pushMultiplatformBaseToLocalRegistryCommand(String tag, String dockerDirectory) {
+        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+                "--push", "-t", tag, dockerDirectory));
     }
 
 }

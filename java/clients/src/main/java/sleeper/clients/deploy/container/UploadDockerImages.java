@@ -49,6 +49,12 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
 
+    // A throwaway local registry used to serve base images to the buildx builder during a build. It is not a
+    // deployment registry: nothing is ever deployed or run from it, and it is torn down at the end of the build.
+    private static final String LOCAL_REGISTRY_PORT = "5000";
+    private static final String LOCAL_REGISTRY_HOST = "localhost:" + LOCAL_REGISTRY_PORT;
+    private static final String LOCAL_REGISTRY_CONTAINER = "sleeper-base-registry";
+
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
@@ -89,7 +95,17 @@ public class UploadDockerImages {
     }
 
     public static void useBuildXBuilder(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
-        commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
+        createBuildXBuilder(commandRunner, false);
+    }
+
+    private static void createBuildXBuilder(CommandPipelineRunner commandRunner, boolean useHostNetwork) throws IOException, InterruptedException {
+        if (useHostNetwork) {
+            // Host networking lets the containerised buildx builder reach the local registry serving base images on
+            // localhost. Without it the builder cannot resolve FROM a locally-built base image.
+            commandRunner.run("docker", "buildx", "create", "--name", "sleeper", "--driver-opt", "network=host");
+        } else {
+            commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
+        }
         commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
     }
 
@@ -101,25 +117,55 @@ public class UploadDockerImages {
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
         boolean anyUseBaseImage = imagesToUpload.stream().anyMatch(StackDockerImage::isUseDefaultBaseImage);
 
-        if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder && anyUseBaseImage) {
-            useBuildXBuilder(commandRunner);
-        }
-
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-            String baseTag = buildTag(repositoryPrefix, baseImage);
-            if (anyUseBaseImage) {
-                buildBaseImage(baseTag, baseImage);
+            // A multiplatform image is built in the buildx "sleeper" builder, which resolves a FROM image from a
+            // registry and cannot see the local Docker image store. When such an image builds on a base image, we
+            // serve base images from a throwaway local registry that both the plain Docker builder and the buildx
+            // builder can pull from. When no multiplatform image needs a base, base images are built straight into
+            // the local Docker image store, and no registry is needed.
+            boolean useLocalRegistry = imagesToUpload.stream()
+                    .anyMatch(image -> image.isMultiplatform() && usesBaseImage(image));
+
+            if (createMultiplatformBuilder && (anyUseBaseImage || useLocalRegistry)) {
+                createBuildXBuilder(commandRunner, useLocalRegistry);
             }
-            for (StackDockerImage image : imagesToUpload) {
-                Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag);
-                buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
+            if (useLocalRegistry) {
+                startLocalRegistry();
+            }
+            try {
+                String baseTag = baseImageTag(repositoryPrefix, baseImage, useLocalRegistry);
+                if (anyUseBaseImage) {
+                    buildBaseImage(baseTag, baseImage, useLocalRegistry);
+                }
+                for (StackDockerImage image : imagesToUpload) {
+                    Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag, useLocalRegistry);
+                    buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
+                }
+            } finally {
+                if (useLocalRegistry) {
+                    stopLocalRegistry();
+                }
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
             for (StackDockerImage image : imagesToUpload) {
                 pullAndPushImage(buildTag(repositoryPrefix, image), image);
             }
         }
+    }
+
+    private boolean usesBaseImage(StackDockerImage image) {
+        return image.isUseDefaultBaseImage() || image.createOverrideBaseImage(deployConfig).isPresent();
+    }
+
+    private void startLocalRegistry() throws IOException, InterruptedException {
+        // Best-effort start; tolerate a registry left running by a previous build, as we do for the buildx builder.
+        commandRunner.run("docker", "run", "-d", "-p", LOCAL_REGISTRY_PORT + ":" + LOCAL_REGISTRY_PORT,
+                "--name", LOCAL_REGISTRY_CONTAINER, "registry:2");
+    }
+
+    private void stopLocalRegistry() throws IOException, InterruptedException {
+        // Best-effort teardown so a failed build does not mask the original error, and no registry is left running.
+        commandRunner.run("docker", "rm", "-f", LOCAL_REGISTRY_CONTAINER);
     }
 
     private void buildAndPushImage(String tag, StackDockerImage image, Map<String, String> buildArgs) throws IOException, InterruptedException {
@@ -154,29 +200,43 @@ public class UploadDockerImages {
         }
     }
 
-    private void buildBaseImage(String tag, StackDockerImage image) throws IOException, InterruptedException {
-        // A base image is only a build input for other images, which resolve it from the local Docker image store via
-        // the BASE_IMAGE build argument. It is never deployed or run directly, so it is built locally and never pushed.
+    private void buildBaseImage(String tag, StackDockerImage image, boolean useLocalRegistry) throws IOException, InterruptedException {
+        // A base image is only a build input for other images, which resolve it via the BASE_IMAGE build argument. It
+        // is never deployed or run directly, so it is never pushed to a deployment registry (e.g. ECR). It is made
+        // available either in the local Docker image store, or in a throwaway local registry when a multiplatform
+        // build needs it (the buildx builder cannot see the local image store).
         Path dockerfileDirectory = image.resolveBuildContext(baseDockerDirectory, deployConfig);
         if (image.isMultiplatform()) {
             String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
+            String loadOrPush = useLocalRegistry ? "--push" : "--load";
             commandRunner.runOrThrow(dockerBuild(
                     List.of("docker", "buildx", "build"),
-                    List.of("--platform", platformList, "--load", "-t", tag),
+                    List.of("--platform", platformList, loadOrPush, "-t", tag),
                     dockerfileDirectory));
         } else {
             commandRunner.runOrThrow(dockerBuild(
                     List.of("docker", "build"),
                     List.of("-t", tag),
                     dockerfileDirectory));
+            if (useLocalRegistry) {
+                commandRunner.runOrThrow("docker", "push", tag);
+            }
         }
     }
 
-    private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
+    private String baseImageTag(String repositoryPrefix, StackDockerImage image, boolean useLocalRegistry) {
+        if (useLocalRegistry) {
+            return LOCAL_REGISTRY_HOST + "/" + image.getImageName() + ":" + version;
+        } else {
+            return buildTag(repositoryPrefix, image);
+        }
+    }
+
+    private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag, boolean useLocalRegistry) throws IOException, InterruptedException {
         StackDockerImage overrideBaseImage = image.createOverrideBaseImage(deployConfig).orElse(null);
         if (overrideBaseImage != null) {
-            String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
-            buildBaseImage(overrideBaseTag, overrideBaseImage);
+            String overrideBaseTag = baseImageTag(repositoryPrefix, overrideBaseImage, useLocalRegistry);
+            buildBaseImage(overrideBaseTag, overrideBaseImage, useLocalRegistry);
             return Map.of("BASE_IMAGE", overrideBaseTag);
         } else if (image.isUseDefaultBaseImage()) {
             return Map.of("BASE_IMAGE", baseTag);

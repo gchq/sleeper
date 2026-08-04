@@ -36,7 +36,11 @@ import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildA
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderWithHostNetworkCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushMultiplatformBaseToLocalRegistryCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.startLocalRegistryCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.stopLocalRegistryCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 
 @DisplayName("Upload Docker images")
@@ -53,17 +57,19 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // When
         uploadAllImages(dockerImageConfiguration);
 
-        // Then
-        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
+        // Then the multiplatform compaction image is built in the buildx builder, so base images are served from a
+        // throwaway local registry that both the plain Docker builder and the buildx builder can pull from.
+        String expectedBaseTag = "localhost:5000/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                createBuildxBuilderInstanceCommand(),
+                createBuildxBuilderWithHostNetworkCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                startLocalRegistryCommand(),
+                pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
@@ -72,7 +78,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedBulkImportTag),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
-                pushImageCommand(expectedEmrTag));
+                pushImageCommand(expectedEmrTag),
+                stopLocalRegistryCommand());
     }
 
     @Test
@@ -84,15 +91,17 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // When
         uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
 
-        // Then
-        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
+        // Then the buildx builder is not created (the caller set one up), but base images are still served from a
+        // local registry because the multiplatform compaction image cannot resolve its base from the local image store.
+        String expectedBaseTag = "localhost:5000/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                startLocalRegistryCommand(),
+                pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
@@ -101,7 +110,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedBulkImportTag),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
-                pushImageCommand(expectedEmrTag));
+                pushImageCommand(expectedEmrTag),
+                stopLocalRegistryCommand());
     }
 
     @Test
@@ -182,28 +192,32 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // When
         uploadAllImages(dockerImageConfiguration, uploader);
 
-        // Then
-        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
-        String expectedSparkBaseTag = "www.somedocker.com/prefix/bulk-import-runner-base:1.0.0";
+        // Then base images (the overridden default base and the per-image spark base) are served from the local
+        // registry, since the multiplatform compaction image builds in the buildx builder.
+        String expectedBaseTag = "localhost:5000/base:1.0.0";
+        String expectedSparkBaseTag = "localhost:5000/bulk-import-runner-base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                createBuildxBuilderInstanceCommand(),
+                createBuildxBuilderWithHostNetworkCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./custom/base"),
+                startLocalRegistryCommand(),
+                pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./custom/base"),
                 buildImageCommand(expectedCommitterTag, "./docker/statestore-committer", expectedBaseTag),
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedSparkBaseTag, "./custom/spark-base"),
+                pushImageCommand(expectedSparkBaseTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedSparkBaseTag),
                 pushImageCommand(expectedBulkImportTag),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
-                pushImageCommand(expectedEmrTag));
+                pushImageCommand(expectedEmrTag),
+                stopLocalRegistryCommand());
     }
 
     @Test
@@ -213,21 +227,23 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         CommandPipeline buildImageCommand = buildImageCommand(
                 "www.somedocker.com/prefix/statestore-committer:1.0.0",
                 "./docker/statestore-committer",
-                "www.somedocker.com/prefix/base:1.0.0");
+                "localhost:5000/base:1.0.0");
         setReturnExitCodeForCommand(42, buildImageCommand);
 
-        // When / Then
-        String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
+        // When / Then the local registry is torn down even though the build fails.
+        String expectedBaseTag = "localhost:5000/base:1.0.0";
         assertThatThrownBy(() -> uploadAllImages(dockerImageConfiguration))
                 .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                     assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                     assertThat(e.getExitCode()).isEqualTo(42);
                 });
         assertThat(commandsThatRan).containsExactly(
-                createBuildxBuilderInstanceCommand(),
+                createBuildxBuilderWithHostNetworkCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
-                buildImageCommand);
+                startLocalRegistryCommand(),
+                pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
+                buildImageCommand,
+                stopLocalRegistryCommand());
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {

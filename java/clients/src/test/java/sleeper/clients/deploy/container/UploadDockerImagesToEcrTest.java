@@ -43,8 +43,12 @@ import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildA
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildLambdaImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderWithHostNetworkCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushMultiplatformBaseToLocalRegistryCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.startLocalRegistryCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.stopLocalRegistryCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -298,15 +302,18 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
 
-            // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            // Then the multiplatform compaction image is built in the buildx builder, which cannot see the local image
+            // store, so its base is served from a throwaway local registry that is torn down afterwards.
+            String expectedBaseTag = "localhost:5000/base:1.0.0";
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderWithHostNetworkCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
-                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag));
+                    startLocalRegistryCommand(),
+                    pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag),
+                    stopLocalRegistryCommand());
         }
 
         @Test
@@ -317,18 +324,21 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
 
-            // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            // Then the single-platform ingest image and the multiplatform compaction image both resolve their base from
+            // the local registry, which both the plain Docker builder and the buildx builder can pull from.
+            String expectedBaseTag = "localhost:5000/base:1.0.0";
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderWithHostNetworkCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
+                    startLocalRegistryCommand(),
+                    pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
-                    buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction", expectedBaseTag));
+                    buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction", expectedBaseTag),
+                    stopLocalRegistryCommand());
         }
     }
 
@@ -362,14 +372,16 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
-            String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+            String expectedBaseTag = "localhost:5000/base:1.0.0";
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderWithHostNetworkCommand(),
                     useBuildxBuilderInstanceCommand(),
-                    buildAndLoadMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
-                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag));
+                    startLocalRegistryCommand(),
+                    pushMultiplatformBaseToLocalRegistryCommand(expectedBaseTag, "./docker/base"),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedBaseTag),
+                    stopLocalRegistryCommand());
         }
 
         @Test
@@ -386,7 +398,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     });
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    createBuildxBuilderInstanceCommand(),
+                    createBuildxBuilderWithHostNetworkCommand(),
                     useBuildxBuilderInstanceCommand());
         }
 
@@ -686,6 +698,33 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildImageCommand(expectedBaseTag, "./custom/base"),
                     buildImageCommand(expectedTag, "./docker/bulk-import-runner", expectedBaseTag),
                     pushImageCommand(expectedTag));
+        }
+
+        @Test
+        void shouldServeMultiplatformOverrideBaseViaLocalRegistry() throws Exception {
+            // Given a multiplatform image with an overridden base. This is the shape of the reported bug (an override
+            // base for a multiplatform image, e.g. bulk-import-runner-base). The override base must be reachable by the
+            // buildx builder, which cannot see the local Docker image store, so it is served from a local registry and
+            // never pushed to ECR.
+            deployConfig = DeployConfiguration.fromLocalBuild().withImageToOverrideBaseDir(Map.of("compaction", "./custom/base"));
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedDefaultBaseTag = "localhost:5000/base:1.0.0";
+            String expectedOverrideBaseTag = "localhost:5000/compaction-base:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    createBuildxBuilderWithHostNetworkCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    startLocalRegistryCommand(),
+                    pushMultiplatformBaseToLocalRegistryCommand(expectedDefaultBaseTag, "./docker/base"),
+                    pushMultiplatformBaseToLocalRegistryCommand(expectedOverrideBaseTag, "./custom/base"),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction", expectedOverrideBaseTag),
+                    stopLocalRegistryCommand());
         }
     }
 
