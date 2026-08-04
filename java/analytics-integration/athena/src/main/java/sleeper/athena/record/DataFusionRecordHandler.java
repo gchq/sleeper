@@ -72,6 +72,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  */
 public class DataFusionRecordHandler extends SleeperRecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionRecordHandler.class);
+    // The Athena block spiller rejects a single writeRows call that generates more than this many rows.
+    private static final int MAX_ROWS_PER_WRITE_CALL = 100;
 
     public DataFusionRecordHandler() {
         this(S3Client.create(), DynamoDbClient.create(),
@@ -171,29 +173,37 @@ public class DataFusionRecordHandler extends SleeperRecordHandler {
         VectorSchemaRoot source = reader.getVectorSchemaRoot();
         while (reader.loadNextBatch()) {
             int rowCount = source.getRowCount();
-            for (int row = 0; row < rowCount; row++) {
-                int fromIndex = row;
+            // The spiller rejects more than MAX_ROWS_PER_WRITE_CALL rows per call (blocks could exceed the max size),
+            // so write each batch in chunks. Within a chunk we copy a column at a time, resolving the source vector by
+            // name and checking the type once per column rather than once per cell.
+            for (int start = 0; start < rowCount; start += MAX_ROWS_PER_WRITE_CALL) {
+                int sourceOffset = start;
+                int chunkRows = Math.min(MAX_ROWS_PER_WRITE_CALL, rowCount - start);
                 spiller.writeRows((block, rowNum) -> {
                     for (FieldVector target : block.getFieldVectors()) {
                         FieldVector from = source.getVector(target.getField().getName());
                         if (from != null) {
-                            copyValue(target, fromIndex, rowNum, from);
+                            copyColumn(target, rowNum, from, sourceOffset, chunkRows);
                         }
                     }
-                    return 1;
+                    return chunkRows;
                 });
             }
         }
     }
 
-    // Copies one value from a DataFusion vector into an Athena block vector. Where the two vectors share an
-    // Arrow minor type this is a direct columnar copy; where DataFusion emits a wider type (e.g. LargeUtf8 for
-    // Athena's Utf8) it falls back to reading and setting the object.
-    private static void copyValue(FieldVector target, int fromIndex, int toIndex, FieldVector source) {
+    // Copies a run of a column from a DataFusion vector into an Athena block vector, writing source rows
+    // [sourceOffset, sourceOffset + rowCount) into target rows [startRow, startRow + rowCount). Where the two vectors
+    // share an Arrow minor type this is a direct columnar copy; otherwise it reads and sets the value.
+    private static void copyColumn(FieldVector target, int startRow, FieldVector source, int sourceOffset, int rowCount) {
         if (source.getMinorType() == target.getMinorType()) {
-            target.copyFromSafe(fromIndex, toIndex, source);
+            for (int row = 0; row < rowCount; row++) {
+                target.copyFromSafe(sourceOffset + row, startRow + row, source);
+            }
         } else {
-            BlockUtils.setValue(target, toIndex, source.getObject(fromIndex));
+            for (int row = 0; row < rowCount; row++) {
+                BlockUtils.setValue(target, startRow + row, source.getObject(sourceOffset + row));
+            }
         }
     }
 
