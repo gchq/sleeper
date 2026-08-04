@@ -233,7 +233,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createBulkImportOnEksFargateConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE.toString());
         setSystemTestTags(properties, "bulkImportOnEksFargate", "Sleeper Maven system test bulk import on EKS w/Fargate");
         return createInstanceConfiguration(properties);
@@ -241,7 +241,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createBulkImportOnEksAutoConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
         setSystemTestTags(properties, "bulkImportOnEksAuto", "Sleeper Maven system test bulk import on EKS Auto Mode");
         return createInstanceConfiguration(properties);
@@ -249,7 +249,7 @@ public class SystemTestInstance {
 
     private static SleeperInstanceConfiguration createBulkImportOnEksPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
-        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
