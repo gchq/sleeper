@@ -51,3 +51,10 @@ vulnerabilities:
   # until support is provided.
   - id: CVE-2026-14257
   - id: GHSA-r292-9mhp-454m
+  - id: CVE-2026-69152
+  - id: CVE-2026-69192
+  - id: CVE-2026-54272
+  - id: CVE-2026-69198
+  - id: CVE-2026-15157
+  - id: CVE-2026-16728
+  - id: CVE-2026-16729
