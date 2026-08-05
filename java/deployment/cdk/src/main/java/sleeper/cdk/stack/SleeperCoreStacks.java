@@ -241,6 +241,13 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
+    /**
+     * Adds a custom resource to delete a bucket's contents.
+     *
+     * @param  scope  the stack to add the custom resource to
+     * @param  bucket the bucket to delete from
+     * @return        a custom resource
+     */
     public CustomResource addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
         return autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
