@@ -13,6 +13,7 @@ on:
       - 'java/compaction/pom.xml'
       - 'java/common/pom.xml'
       - 'java/query/query-datafusion/**'
+      - 'java/analytics-integration/athena/**'
       - 'java/compaction/compaction-datafusion/**'
       - 'java/common/foreign-bridge/**'
       - 'java/query/query-core/**'
