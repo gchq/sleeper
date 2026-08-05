@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sleeper"
-version = "0.37.2.dev1"
+version = "0.37.4.dev1"
 description = "Python client for Sleeper"
 requires-python = ">=3.10"
 
 dependencies = [
     "pyarrow>=25.0.0,<26.0.0",
     "boto3>=1.43.46,<2.0.0",
-    "s3fs>=2026.6.0,<2027.0.0",
+    "s3fs>=2026.7.0,<2027.0.0",
     "boto3-stubs[essential]>=1.43.46,<2.0.0",
     "websockets>=16.1.1,<17.0.0",
     "jproperties>=2.1.2,<3.0.0",
@@ -31,11 +31,12 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.15.22,<0.16.0",
+    "ruff>=0.16.1,<0.17.0",
     "pytest>=9.1.1,<10.0.0",
     "pytest-mock>=3.15.1,<4.0.0",
     "pytest-asyncio>=1.4.0,<2.0.0",
     "testcontainers[localstack]>=4.15.0,<5.0.0",
+    "moto>=5.2.2,<6.0.0",
 ]
 
 [tool.setuptools]

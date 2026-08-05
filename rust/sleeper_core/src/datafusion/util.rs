@@ -14,6 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::datafusion::{cast_udf::CastUDF, metrics::RowCounts};
 use datafusion::{
     arrow::{datatypes::DataType, util::pretty::pretty_format_batches},
     common::{
@@ -28,6 +29,7 @@ use datafusion::{
     physical_plan::{
         ExecutionPlan, Partitioning, accept,
         coalesce_partitions::CoalescePartitionsExec,
+        expressions::Column,
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
@@ -37,8 +39,6 @@ use object_store::{ObjectMeta, ObjectStoreExt};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
-
-use crate::datafusion::{cast_udf::CastUDF, metrics::RowCounts};
 
 /// Maximum number of file upload parts to generate. Implementation will
 /// try to match this, but may not get there exactly.
@@ -153,6 +153,29 @@ pub fn find_topmost_sort_ordering(plan: &Arc<dyn ExecutionPlan>) -> Option<LexOr
     result
 }
 
+/// Removes columns from a lexicographic ordering that are not present in the provided schema.
+///
+/// Takes a [`LexOrdering`] and filters it to only include [`PhysicalSortExpr`] instances whose
+/// column names exist in the given schema. Expressions that reference columns not in the schema
+/// are discarded.
+pub fn remove_non_schema_columns_from_ordering(
+    ordering: &LexOrdering,
+    schema: &Arc<arrow::datatypes::Schema>,
+) -> Option<LexOrdering> {
+    let filtered_exprs = ordering
+        .iter()
+        .filter(|sort_expr| {
+            if let Some(col) = sort_expr.expr.as_any().downcast_ref::<Column>() {
+                schema.field_with_name(col.name()).is_ok()
+            } else {
+                false
+            }
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    LexOrdering::new(filtered_exprs)
+}
+
 /// Takes the urls in `input_paths` list and `output_path`
 /// and registers the appropriate [`object_store::ObjectStore`] for it.
 ///
@@ -243,23 +266,26 @@ pub fn remove_coalesce_physical_stage(
     physical_plan: Arc<dyn ExecutionPlan>,
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
-        // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
-            Ok(
-                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
-                {
-                    let input = coalesce.input().clone();
-                    // Find the correct sort ordering (if any) by traversing down the physical plan
-                    let sort_ordering =
-                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
-                    // Swap it out for a SortPreservingMergeExec
-                    let replacement = SortPreservingMergeExec::new(sort_ordering, input);
-                    // Stop searching down the query plan after making one replacement
-                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
-                } else {
-                    Transformed::no(plan_node)
-                },
-            )
+            let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>() else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            let input = coalesce.input().clone();
+            let ordering_from_input =
+                find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
+
+            let Some(valid_ordering) =
+                remove_non_schema_columns_from_ordering(&ordering_from_input, &input.schema())
+            else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            Ok(Transformed::new(
+                Arc::new(SortPreservingMergeExec::new(valid_ordering, input)),
+                true,
+                TreeNodeRecursion::Stop,
+            ))
         })
         .map(|v| v.data)
 }
@@ -283,25 +309,30 @@ pub fn apply_full_sort_ordering(
     physical_plan: Arc<dyn ExecutionPlan>,
 ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
     physical_plan
-        // Recurse down plan looking for specific node
         .transform_down(|plan_node| {
-            Ok(
-                if let Some(sort_preserve) =
-                    plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
-                {
-                    let input = sort_preserve.input().clone();
-                    // Find the correct sort ordering (if any) by traversing down the physical plan
-                    let sort_ordering =
-                        find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
-                    // Swap for a sort merging stage with complete sort order
-                    let replacement = SortPreservingMergeExec::new(sort_ordering, input)
-                        .with_fetch(sort_preserve.fetch());
-                    // Keep searching down the query plan after making one replacement
-                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Continue)
-                } else {
-                    Transformed::no(plan_node)
-                },
-            )
+            let Some(sort_preserve) = plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
+            else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            let input = sort_preserve.input().clone();
+            let ordering_from_input =
+                find_topmost_sort_ordering(&input).unwrap_or(ordering.clone());
+
+            let Some(valid_ordering) =
+                remove_non_schema_columns_from_ordering(&ordering_from_input, &input.schema())
+            else {
+                return Ok(Transformed::no(plan_node));
+            };
+
+            Ok(Transformed::new(
+                Arc::new(
+                    SortPreservingMergeExec::new(valid_ordering, input)
+                        .with_fetch(sort_preserve.fetch()),
+                ),
+                true,
+                TreeNodeRecursion::Continue,
+            ))
         })
         .map(|v| v.data)
 }
@@ -367,6 +398,7 @@ mod tests {
     use crate::datafusion::util::{
         MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
         calculate_upload_size, find_topmost_sort_ordering, remove_coalesce_physical_stage,
+        remove_non_schema_columns_from_ordering,
     };
     use color_eyre::eyre::Error;
     use datafusion::{
@@ -378,11 +410,15 @@ mod tests {
         catalog::memory::MemorySourceConfig,
         common::{DFSchema, tree_node::TreeNode},
         dataframe,
-        physical_expr::{LexOrdering, PhysicalSortExpr, expressions::Column},
+        physical_expr::{
+            LexOrdering, PhysicalSortExpr,
+            expressions::{Column, Literal},
+        },
         physical_plan::{
             ExecutionPlan, coalesce_partitions::CoalescePartitionsExec, displayable,
             sorts::sort_preserving_merge::SortPreservingMergeExec,
         },
+        scalar::ScalarValue,
     };
     use std::{collections::HashMap, sync::Arc};
 
@@ -859,5 +895,116 @@ mod tests {
 
         // Then
         assert_eq!(result, Some(ordering));
+    }
+
+    #[test]
+    fn should_remove_columns_to_only_include_columns_in_schema() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int64, false),
+        ]));
+        let ordering = LexOrdering::new(vec![
+            PhysicalSortExpr::new(Arc::new(Column::new("a", 0)), SortOptions::default()),
+            PhysicalSortExpr::new(Arc::new(Column::new("b", 1)), SortOptions::default()),
+        ])
+        .unwrap();
+
+        // When
+        let result = remove_non_schema_columns_from_ordering(&ordering, &schema);
+
+        // Then
+        let result = result.unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result, ordering);
+    }
+
+    #[test]
+    fn should_remove_columns_not_in_schema() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int64, false),
+        ]));
+        let ordering = LexOrdering::new(vec![
+            PhysicalSortExpr::new(Arc::new(Column::new("a", 0)), SortOptions::default()),
+            PhysicalSortExpr::new(Arc::new(Column::new("c", 2)), SortOptions::default()),
+            PhysicalSortExpr::new(Arc::new(Column::new("b", 1)), SortOptions::default()),
+        ])
+        .unwrap();
+        let expected = LexOrdering::new(vec![
+            PhysicalSortExpr::new(Arc::new(Column::new("a", 0)), SortOptions::default()),
+            PhysicalSortExpr::new(Arc::new(Column::new("b", 1)), SortOptions::default()),
+        ])
+        .unwrap();
+
+        // When
+        let result = remove_non_schema_columns_from_ordering(&ordering, &schema);
+
+        // Then
+        let result = result.unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn should_return_none_when_no_columns_match() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int64, false),
+        ]));
+        let ordering = LexOrdering::new(vec![
+            PhysicalSortExpr::new(Arc::new(Column::new("x", 0)), SortOptions::default()),
+            PhysicalSortExpr::new(Arc::new(Column::new("y", 1)), SortOptions::default()),
+        ])
+        .unwrap();
+
+        // When
+        let result = remove_non_schema_columns_from_ordering(&ordering, &schema);
+
+        // Then
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn should_preserve_sort_options() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int64, false),
+        ]));
+        let sort_options = SortOptions::new(true, true);
+        let ordering = LexOrdering::new(vec![
+            PhysicalSortExpr::new(Arc::new(Column::new("a", 0)), sort_options),
+            PhysicalSortExpr::new(Arc::new(Column::new("c", 2)), SortOptions::default()),
+        ])
+        .unwrap();
+
+        // When
+        let result = remove_non_schema_columns_from_ordering(&ordering, &schema);
+
+        // Then
+        let result = result.unwrap();
+        assert_eq!(result.len(), 1);
+        let first_expr = &result[0];
+        assert_eq!(first_expr.options, sort_options);
+    }
+
+    #[test]
+    fn should_return_none_when_ordering_contains_only_non_column_expressions() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let ordering = LexOrdering::new(vec![PhysicalSortExpr::new(
+            Arc::new(Literal::new(ScalarValue::Int32(Some(1)))),
+            SortOptions::default(),
+        )])
+        .unwrap();
+
+        // When
+        let result = remove_non_schema_columns_from_ordering(&ordering, &schema);
+
+        // Then
+        assert!(result.is_none());
     }
 }

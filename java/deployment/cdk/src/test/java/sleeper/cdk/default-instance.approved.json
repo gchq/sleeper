@@ -3891,25 +3891,6 @@
             ]
           }
         },
-        "Simpleathenahandler8B8139D8": {
-          "Type": "AWS::Logs::LogGroup",
-          "DeletionPolicy": "Retain",
-          "UpdateReplacePolicy": "Retain",
-          "Properties": {
-            "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-Simple-athena-handler",
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "Logging"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
         "statetransactiondeletiontrigger2C17884E": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
@@ -13227,6 +13208,25 @@
                   "ServerSideEncryptionByDefault": {
                     "SSEAlgorithm": "AES256"
                   }
+                }
+              ]
+            },
+            "LifecycleConfiguration": {
+              "Rules": [
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "bulk_import/",
+                  "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "logs/",
+                  "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "applications/",
+                  "Status": "Enabled"
                 }
               ]
             }

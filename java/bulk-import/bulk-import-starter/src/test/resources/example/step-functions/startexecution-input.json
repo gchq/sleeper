@@ -94,6 +94,7 @@
     "test-job",
     "state-machine-arn",
     "test-job-run",
+    "bulk_import/test-job-test-job-run.json",
     "EKS"
   ],
   "jobPodPrefix": "job-test-job",

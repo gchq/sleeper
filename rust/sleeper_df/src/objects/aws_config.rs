@@ -34,11 +34,17 @@ pub fn unpack_aws_config(params: &FFICommonConfig) -> Option<AwsConfig> {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIAwsConfig {
+    /// AWS region name.
     pub region: *const c_char,
+    /// AWS endpoint URL.
     pub endpoint: *const c_char,
+    /// AWS access key ID.
     pub access_key_id: *const c_char,
+    /// AWS secret access key.
     pub secret_access_key: *const c_char,
+    /// AWS session token.
     pub session_token: *const c_char,
+    /// Whether to allow HTTP (non-HTTPS) connections.
     pub allow_http: bool,
 }
 
