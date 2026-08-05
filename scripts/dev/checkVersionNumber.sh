@@ -12,3 +12,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+set -e
+unset CDPATH
+
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+
+echo "Checking versions:"
+
+# Get the version number in the pom.xml files in the java code
+pushd "${PROJECT_ROOT}/java"
+JAVA_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+popd
+
+# Get the version number in the Python module
+pushd "${PROJECT_ROOT}/python"
+PYTHON_VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+popd
+
+# Get the version number in the Rust code
+pushd "${PROJECT_ROOT}/rust"
+RUST_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+popd
+
+# Check Java and Rust as they should be identical
+if [ $JAVA_VERSION != $RUST_VERSION ]; then
+    echo "Java and Rust versions do not match. Java version: " + $JAVA_VERSION + "Rust version: " + $RUST_VERSION
+    exit 1
+fi
+
+# Extract version number from JAVA_VERSION
+JAVA_VERSION_NUMBER=${JAVA_VERSION%-*}
+# Extract version number from PYTHON_VERSION
+PYTHON_VERSION_NUMBER=${PYTHON_VERSION%.*}
+
+# Check version number against Python version
+if [ $JAVA_VERSION_NUMBER != $PYTHON_VERSION_NUMBER ]; then
+    echo "Java and Python version numbers do not match. Java version: " + $JAVA_VERSION_NUMBER + "Python version: " + $PYTHON_VERSION_NUMBER
+    exit 1
+fi
