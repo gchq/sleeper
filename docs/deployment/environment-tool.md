@@ -31,12 +31,6 @@ once in a given AWS account. Use your account number and region in the command b
 sleeper cdk bootstrap aws://<account>/<region>
 ```
 
-### Rebuild environment
-
-If the environment configuration code has been changed it will need to be rebuilt before deployment.
-Ensure you are working on the branch that contains the changes and execute ```scripts/cli/environment/buildWithDependencies.sh```
-Once complete you can proceed to deploying an environment.
-
 ### Deploy/connect to an environment
 
 The Sleeper environment tool can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking
