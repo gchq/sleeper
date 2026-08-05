@@ -254,7 +254,7 @@ public class SystemTestInstance {
         properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
         properties.setNumber(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL, 5);
-        properties.setNumber(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT, 640); // 5 jobs x 4 cores x (29 executors + 1 driver + 1 submitter), plus slack
+        properties.setNumber(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT, 640); // 5 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
     }
