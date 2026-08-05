@@ -84,7 +84,7 @@ public class QueryStack extends NestedStack {
 
     private IFunction queryExecutorLambda;
     private IFunction leafPartitionQueryLambda;
-    private CustomResource customResource;
+    private CustomResource autoDeleteS3Objects;
 
     public QueryStack(Construct scope,
             String id,
@@ -187,8 +187,8 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
-        if (customResource != null) {
-            lambda.getNode().addDependency(customResource);
+        if (autoDeleteS3Objects != null) {
+            lambda.getNode().addDependency(autoDeleteS3Objects);
         }
         lambda.addEventSource(new SqsEventSource(leafPartitionQueryQueue, eventSourceProps));
 
@@ -311,7 +311,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            customResource = coreStacks.addAutoDeleteS3Objects(this, resultsBucket);
+            autoDeleteS3Objects = coreStacks.addAutoDeleteS3Objects(this, resultsBucket);
         }
 
         return resultsBucket;
