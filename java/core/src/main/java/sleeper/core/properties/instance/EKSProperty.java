@@ -21,7 +21,9 @@ import sleeper.core.properties.model.EksClusterType;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
@@ -65,7 +67,12 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
             .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
                     "that the Karpenter NodePool is allowed to launch for Spark pods.")
-            .defaultValue("m7g.xlarge,m7g.2xlarge,m7g.4xlarge,m7g.8xlarge,m7g.12xlarge,m7g.16xlarge,m7gd.xlarge,m7gd.2xlarge,m7gd.4xlarge,m7gd.8xlarge,m7gd.12xlarge,m7gd.16xlarge,m7i.xlarge,m7i.2xlarge,m7i.4xlarge,m7i.8xlarge,m7i.12xlarge,m7i.16xlarge,m6id.xlarge,m6id.2xlarge,m6id.4xlarge,m6id.8xlarge,m6id.12xlarge,m6id.16xlarge")
+            .defaultValue(Stream.of(
+                    "m7g.xlarge", "m7g.2xlarge", "m7g.4xlarge", "m7g.8xlarge", "m7g.12xlarge", "m7g.16xlarge",
+                    "m7gd.xlarge", "m7gd.2xlarge", "m7gd.4xlarge", "m7gd.8xlarge", "m7gd.12xlarge", "m7gd.16xlarge",
+                    "m7i.xlarge", "m7i.2xlarge", "m7i.4xlarge", "m7i.8xlarge", "m7i.12xlarge", "m7i.16xlarge",
+                    "m6id.xlarge", "m6id.2xlarge", "m6id.4xlarge", "m6id.8xlarge", "m6id.12xlarge", "m6id.16xlarge")
+                    .collect(joining(",")))
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
@@ -73,7 +80,7 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
             .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
                     "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.")
-            .defaultValue("164")
+            .defaultValue("256")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
@@ -137,7 +144,7 @@ public interface EKSProperty {
             .description("(EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores. " +
                     "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("5")
+            .defaultValue("4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.cores")
             .description("(EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. " +
