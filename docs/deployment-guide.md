@@ -91,7 +91,7 @@ This will upload any jars that have changed, update all the docker images, and p
 
 ## Interacting with and editing an instance
 
-There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to adjust an
+There are clients and scripts in the `scripts/deploy`, `scripts/report`, `scripts/table`, and `scripts/utility` directories that can be used to adjust an
 existing instance.
 
 See the [usage guide](usage-guide.md) for information on how to interact with the instance. The admin client described

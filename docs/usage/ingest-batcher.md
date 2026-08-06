@@ -55,7 +55,7 @@ For details of the batcher configuration, see the property descriptions in the e
 You can query the files being processed by the ingest batcher by using the following utility script:
 
 ```shell
-./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+./scripts/report/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
 ```
 
 The query type can be one of the following options:

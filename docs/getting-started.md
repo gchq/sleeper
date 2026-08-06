@@ -93,7 +93,7 @@ version of Sleeper: [Upgrade/redeploy existing instance](deployment-guide.md#upg
 Run the following command to see how many rows are currently in the system:
 
 ```bash
-./scripts/utility/filesStatusReport.sh <instance-id> system-test
+./scripts/report/filesStatusReport.sh <instance-id> system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
