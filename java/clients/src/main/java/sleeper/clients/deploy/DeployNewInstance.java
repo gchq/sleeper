@@ -55,8 +55,8 @@ public class DeployNewInstance {
 
     private final InstanceDeployer deployInstance;
     private final StoreFactory storeFactory;
-    private final SleeperInstanceConfiguration expectedInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
+    private final SleeperInstanceConfiguration expectedInstanceConfiguration;
     private final Path propertiesFile;
     private final Path configDir;
     private final boolean deployPaused;
@@ -64,8 +64,8 @@ public class DeployNewInstance {
     private DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
-        this.expectedInstanceConfiguration = Objects.requireNonNull(builder.expectedInstanceConfiguration, "expectedInstanceConfiguration must not be null");
         this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
+        this.expectedInstanceConfiguration = Objects.requireNonNull(builder.expectedInstanceConfiguration, "expectedInstanceConfiguration must not be null");
         this.propertiesFile = builder.propertiesFile;
         this.configDir = builder.configDir;
         this.deployPaused = builder.deployPaused;
@@ -205,8 +205,8 @@ public class DeployNewInstance {
     public static final class Builder {
         private InstanceDeployer deployInstance;
         private StoreFactory storeFactory;
-        private SleeperInstanceConfiguration expectedInstanceConfiguration;
         private SleeperInternalCdkApp cdkApp;
+        private SleeperInstanceConfiguration expectedInstanceConfiguration;
         private Path propertiesFile;
         private Path configDir;
         private boolean deployPaused = false;
@@ -225,13 +225,13 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder expectedInstanceConfiguration(SleeperInstanceConfiguration expectedInstanceConfiguration) {
-            this.expectedInstanceConfiguration = expectedInstanceConfiguration;
+        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
+            this.cdkApp = cdkApp;
             return this;
         }
 
-        public Builder cdkApp(SleeperInternalCdkApp cdkApp) {
-            this.cdkApp = cdkApp;
+        public Builder expectedInstanceConfiguration(SleeperInstanceConfiguration expectedInstanceConfiguration) {
+            this.expectedInstanceConfiguration = expectedInstanceConfiguration;
             return this;
         }
 
