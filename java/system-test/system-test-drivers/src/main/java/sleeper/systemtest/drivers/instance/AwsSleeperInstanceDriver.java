@@ -101,7 +101,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
             DeployNewInstance.builder()
                     .deployInstance(deployInstance)
                     .storeFactory(StoreFactory.withAwsClients(s3, dynamoDB, sts.getCallerIdentity().account()))
-                    .deployInstanceConfiguration(deployConfig)
+                    .expectedInstanceConfiguration(deployConfig)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .configDir(configDir)
                     .build().deploy();

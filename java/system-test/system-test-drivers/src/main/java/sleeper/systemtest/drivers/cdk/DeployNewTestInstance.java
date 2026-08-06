@@ -73,7 +73,7 @@ public class DeployNewTestInstance {
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
                     .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
-                    .deployInstanceConfiguration(config)
+                    .expectedInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
                     .configDir(configurationPath)
                     .deployPaused(deployPaused)

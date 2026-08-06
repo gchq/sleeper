@@ -55,7 +55,7 @@ public class DeployNewInstance {
 
     private final InstanceDeployer deployInstance;
     private final StoreFactory storeFactory;
-    private final SleeperInstanceConfiguration deployInstanceConfiguration;
+    private final SleeperInstanceConfiguration expectedInstanceConfiguration;
     private final SleeperInternalCdkApp cdkApp;
     private final Path propertiesFile;
     private final Path configDir;
@@ -64,7 +64,7 @@ public class DeployNewInstance {
     private DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
-        this.deployInstanceConfiguration = Objects.requireNonNull(builder.deployInstanceConfiguration, "deployInstanceConfiguration must not be null");
+        this.expectedInstanceConfiguration = Objects.requireNonNull(builder.expectedInstanceConfiguration, "expectedInstanceConfiguration must not be null");
         this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
         this.propertiesFile = builder.propertiesFile;
         this.configDir = builder.configDir;
@@ -140,7 +140,7 @@ public class DeployNewInstance {
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, partitionMetadata, s3Client, ecrClient))
                     .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
-                    .deployInstanceConfiguration(config)
+                    .expectedInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .propertiesFile(args.propertiesFile())
                     .configDir(args.configDir())
@@ -152,7 +152,7 @@ public class DeployNewInstance {
     public void deploy() throws IOException, InterruptedException {
         CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
 
-        InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
+        InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
         cdkCommand = cdkCommand.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
 
         if (propertiesFile != null) {
@@ -162,15 +162,15 @@ public class DeployNewInstance {
         }
 
         deployInstance.deploy(DeployInstanceRequest.builder()
-                .instanceConfig(deployInstanceConfiguration)
+                .instanceConfig(expectedInstanceConfiguration)
                 .cdkCommand(cdkCommand)
                 .cdkApp(cdkApp)
                 .build());
 
-        if (!deployInstanceConfiguration.getTableProperties().isEmpty()) {
+        if (!expectedInstanceConfiguration.getTableProperties().isEmpty()) {
             storeFactory.reloadInstanceProperties(instanceProperties);
 
-            for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
+            for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
                 LOGGER.info("Adding table " + tableProperties.getStatus());
                 new AddTableClient(tableProperties,
                         storeFactory.createTableStore(instanceProperties),
@@ -204,7 +204,7 @@ public class DeployNewInstance {
     public static final class Builder {
         private InstanceDeployer deployInstance;
         private StoreFactory storeFactory;
-        private SleeperInstanceConfiguration deployInstanceConfiguration;
+        private SleeperInstanceConfiguration expectedInstanceConfiguration;
         private SleeperInternalCdkApp cdkApp;
         private Path propertiesFile;
         private Path configDir;
@@ -224,8 +224,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
-            this.deployInstanceConfiguration = deployInstanceConfiguration;
+        public Builder expectedInstanceConfiguration(SleeperInstanceConfiguration expectedInstanceConfiguration) {
+            this.expectedInstanceConfiguration = expectedInstanceConfiguration;
             return this;
         }
 

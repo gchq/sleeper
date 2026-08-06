@@ -221,7 +221,7 @@ public class DeployNewInstanceIT {
                     public void reloadInstanceProperties(InstanceProperties p) {
                     }
                 })
-                .deployInstanceConfiguration(config)
+                .expectedInstanceConfiguration(config)
                 .cdkApp(SleeperInternalCdkApp.STANDARD)
                 .propertiesFile(args.propertiesFile())
                 .configDir(args.configDir())
