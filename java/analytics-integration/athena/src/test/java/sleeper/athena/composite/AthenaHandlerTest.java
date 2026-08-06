@@ -29,4 +29,9 @@ public class AthenaHandlerTest {
                 .isEqualTo(IteratorApplyingCompositeHandler.class.getName());
     }
 
+    @Test
+    void shouldMatchDataFusionLambdaHandlerDeclaration() {
+        assertThat(LambdaHandler.ATHENA_DATAFUSION_COMPOSITE.getHandler())
+                .isEqualTo(DataFusionCompositeHandler.class.getName());
+    }
 }

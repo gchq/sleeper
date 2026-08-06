@@ -39,6 +39,10 @@ public class LambdaHandler {
             .jar(LambdaJar.ATHENA)
             .handler("sleeper.athena.composite.IteratorApplyingCompositeHandler")
             .optionalStack(OptionalStack.AthenaStack).add();
+    public static final LambdaHandler ATHENA_DATAFUSION_COMPOSITE = builder()
+            .jar(LambdaJar.ATHENA)
+            .handler("sleeper.athena.composite.DataFusionCompositeHandler")
+            .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaHandler BULK_IMPORT_STARTER = builder()
             .jar(LambdaJar.BULK_IMPORT_STARTER)
             .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
