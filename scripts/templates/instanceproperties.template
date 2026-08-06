@@ -1183,6 +1183,13 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.cluster.type=FARGATE
 
+# (EKS mode only, automode cluster type only) Whether to configure the node pool for the cluster. If
+# this is enabled, related properties will be applied. Otherwise it will use the default behaviour for
+# EKS Auto Mode.
+# Node pool configuration is currently experimental.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.enabled=false
+
 # (EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types that the
 # Karpenter NodePool is allowed to launch for Spark pods.
 # Only applied if node pool configuration is enabled. Currently experimental.
@@ -1194,13 +1201,6 @@
 # Only applied if node pool configuration is enabled. Currently experimental.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.automode.nodepool.cpu.limit=256
-
-# (EKS mode only, automode cluster type only) Whether to configure the node pool for the cluster. If
-# this is enabled, related properties will be applied. Otherwise it will use the default behaviour for
-# EKS Auto Mode.
-# Node pool configuration is currently experimental.
-# (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.automode.nodepool.enabled=false
 
 # (EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the bulk
 # import namespace. Enforced by a ResourceQuota on count/jobs.batch.

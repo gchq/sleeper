@@ -64,6 +64,16 @@ public interface EKSProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.enabled")
+            .description("(EKS mode only, automode cluster type only) Whether to configure the node pool for the " +
+                    "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
+                    "default behaviour for EKS Auto Mode.\n" +
+                    "Node pool configuration is currently experimental.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
             .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
                     "that the Karpenter NodePool is allowed to launch for Spark pods.\n" +
@@ -84,16 +94,6 @@ public interface EKSProperty {
                     "Only applied if node pool configuration is enabled. Currently experimental.")
             .defaultValue("256") // 2 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true)
-            .build();
-    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.enabled")
-            .description("(EKS mode only, automode cluster type only) Whether to configure the node pool for the " +
-                    "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
-                    "default behaviour for EKS Auto Mode.\n" +
-                    "Node pool configuration is currently experimental.")
-            .defaultValue("false")
-            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
