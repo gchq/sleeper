@@ -56,19 +56,15 @@ public class DeployNewInstance {
     private final InstanceDeployer deployInstance;
     private final StoreFactory storeFactory;
     private final SleeperInternalCdkApp cdkApp;
+    private final CdkCommand cdkCommand;
     private final SleeperInstanceConfiguration expectedInstanceConfiguration;
-    private final Path propertiesFile;
-    private final Path configDir;
-    private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
         this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
+        this.cdkCommand = builder.buildCdkCommand();
         this.expectedInstanceConfiguration = Objects.requireNonNull(builder.expectedInstanceConfiguration, "expectedInstanceConfiguration must not be null");
-        this.propertiesFile = builder.propertiesFile;
-        this.configDir = builder.configDir;
-        this.deployPaused = builder.deployPaused;
     }
 
     public static Builder builder() {
@@ -151,16 +147,7 @@ public class DeployNewInstance {
     }
 
     public void deploy() throws IOException, InterruptedException {
-        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
-
         InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
-        cdkCommand = cdkCommand.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
-
-        if (propertiesFile != null) {
-            cdkCommand = cdkCommand.withPropertiesFile(propertiesFile);
-        } else {
-            cdkCommand = cdkCommand.withConfigurationDirectory(configDir);
-        }
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(expectedInstanceConfiguration)
@@ -248,6 +235,22 @@ public class DeployNewInstance {
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
             return this;
+        }
+
+        private CdkCommand buildCdkCommand() {
+            CdkCommand command = CdkCommand.deployNew();
+            if (propertiesFile != null) {
+                command = command.withPropertiesFile(propertiesFile);
+            }
+            if (configDir != null) {
+                command = command.withConfigurationDirectory(configDir);
+            }
+            if (deployPaused) {
+                command = command.toBuilder().deployPaused(true).build();
+            }
+            InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
+            command = command.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
+            return command;
         }
 
         public DeployNewInstance build() {

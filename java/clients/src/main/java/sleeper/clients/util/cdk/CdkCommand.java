@@ -60,10 +60,16 @@ public record CdkCommand(List<String> command, List<String> arguments) {
     }
 
     public CdkCommand withPropertiesFile(Path propertiesFile) {
+        if (propertiesFile == null) {
+            return this;
+        }
         return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
     }
 
     public CdkCommand withConfigurationDirectory(Path configurationDirectory) {
+        if (configurationDirectory == null) {
+            return this;
+        }
         return builder().command(command).configurationDirectory(configurationDirectory).arguments(arguments).build();
     }
 
