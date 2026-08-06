@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
@@ -186,8 +187,8 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     @Override
-    protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
-        return createPrettyPrinter(writer);
+    protected Builder<InstanceProperty> prettyPrinterBuilder() {
+        return createPrettyPrinterBuilder();
     }
 
     /**
@@ -247,9 +248,18 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * @return        the pretty printer
      */
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinter(PrintWriter writer) {
+        return createPrettyPrinterBuilder().writer(writer).build();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all instance properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
-                .properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll())
-                .writer(writer).build();
+                .properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll());
     }
 
     /**

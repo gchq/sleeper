@@ -21,6 +21,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
@@ -143,8 +144,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
-        return createPrettyPrinter(writer);
+    protected Builder<TableProperty> prettyPrinterBuilder() {
+        return createPrettyPrinterBuilder();
     }
 
     /**
@@ -154,9 +155,18 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @return        the pretty printer
      */
     public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinter(PrintWriter writer) {
+        return createPrettyPrinterBuilder().writer(writer).build();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all table properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
-                .properties(TableProperty.getAll(), TablePropertyGroup.getAll())
-                .writer(writer).build();
+                .properties(TableProperty.getAll(), TablePropertyGroup.getAll());
     }
 
     /**
