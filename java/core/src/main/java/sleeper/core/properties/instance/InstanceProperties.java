@@ -250,8 +250,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     /**
      * Creates a builder for a printer to be used to display all instance properties.
      *
-     * @param  writer the writer to write to
-     * @return        the pretty printer
+     * @return the pretty printer
      */
     public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()

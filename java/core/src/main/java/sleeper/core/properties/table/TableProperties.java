@@ -173,8 +173,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     /**
      * Creates a builder for a printer to be used to display all table properties.
      *
-     * @param  writer the writer to write to
-     * @return        the pretty printer builder
+     * @return the pretty printer builder
      */
     public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
