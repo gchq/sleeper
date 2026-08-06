@@ -93,7 +93,7 @@ version of Sleeper: [Upgrade/redeploy existing instance](deployment-guide.md#upg
 Run the following command to see how many rows are currently in the system:
 
 ```bash
-./scripts/utility/filesStatusReport.sh <instance-id> system-test
+./scripts/report/filesStatusReport.sh <instance-id> system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -101,7 +101,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-./scripts/utility/query.sh <instance-id>
+./scripts/utility/query/query.sh <instance-id>
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a

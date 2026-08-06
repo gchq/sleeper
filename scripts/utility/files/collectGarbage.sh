@@ -16,11 +16,19 @@
 set -e
 unset CDPATH
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 <instance-id> <table-names-as-args>"
+  exit 1
+fi
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.query.QueryLambdaClient "$@"
+echo "-------------------------------------------------------"
+echo "Triggering garbage collection"
+echo "-------------------------------------------------------"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.compaction.TriggerGarbageCollectionClient "$@"

@@ -21,7 +21,7 @@ if [ "$#" -lt 2 ]; then
   exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
@@ -29,6 +29,8 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "-------------------------------------------------------"
-echo "Triggering garbage collection"
+echo "Running compaction job creation"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.compaction.TriggerGarbageCollectionClient "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.compaction.CreateCompactionJobsClient DEFAULT "$@"

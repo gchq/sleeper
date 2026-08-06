@@ -39,24 +39,24 @@ in the INSTANCE_ID environment variable:
 export INSTANCE_ID=mySleeper
 ```
 
-All status reports can be run using the scripts in the `utility` directory, [here](../../scripts/utility). They require
+All status reports can be run using the scripts in the `report` directory, [here](../../scripts/report). They require
 your Sleeper instance id. Some of the reports also require a table name. Some offer a standard option and a verbose
 option.
 
 The available reports are as follows. They can be accessed through the admin client
-with `./scripts/utility/adminClient.sh ${INSTANCE_ID}`, or with the commands below:
+with `./scripts/utility/instance/adminClient.sh ${INSTANCE_ID}`, or with the commands below:
 
 | Report Name                   | Description                                       | Command                                                                                                                                                             | Defaults                                                           |
 |-------------------------------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| Full Status Report            | Prints all of the below reports in one go         | ```./scripts/utility/fullStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_VERBOSE_OUTPUT}```                                                        | VERBOSE = false                                                    |
-| Dead Letters Status Report    | Prints out any messages on the dead letter queues | ```./scripts/utility/deadLettersStatusReport.sh ${INSTANCE_ID}```                                                                                          |                                                                    |
-| Ingest Task Status Report     | Lists the ingest tasks                            | ```./scripts/utility/ingestTaskStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
-| Ingest Job Status Report      | Lists the ingest and bulk import jobs and the number of messages on the queues | ```./scripts/utility/ingestJobStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
-| Ingest Batcher Status Report  | Lists the files held by the ingest batcher and jobs created from those files | ```./scripts/utility/ingestBatcherReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
-| Compaction Task Status Report | Lists the compaction tasks                        | ```./scripts/utility/compactionTaskStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
-| Compaction Job Status Report  | Lists the compaction jobs and the number of messages on the queue | ```./scripts/utility/compactionJobStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
-| Files Status Report           | Lists all the files managed by the state store    | ```./scripts/utility/filesStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_MAXREADY_GC_FILES} ${OPTIONAL_VERBOSE_OUTPUT} ${OPTIONAL_REPORT_TYPE}``` | MAXREADY_GC_FILES = 1000, VERBOSE = false , REPORT_TYPE = standard |
-| Partitions Status Report      | Summarises the partitions within the system       | ```./scripts/utility/partitionsStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME}```                                                                             |                                                                    |
+| Full Status Report            | Prints all of the below reports in one go         | ```./scripts/report/fullStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_VERBOSE_OUTPUT}```                                                        | VERBOSE = false                                                    |
+| Dead Letters Status Report    | Prints out any messages on the dead letter queues | ```./scripts/report/deadLettersStatusReport.sh ${INSTANCE_ID}```                                                                                          |                                                                    |
+| Ingest Task Status Report     | Lists the ingest tasks                            | ```./scripts/report/ingestTaskStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
+| Ingest Job Status Report      | Lists the ingest and bulk import jobs and the number of messages on the queues | ```./scripts/report/ingestJobStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
+| Ingest Batcher Status Report  | Lists the files held by the ingest batcher and jobs created from those files | ```./scripts/report/ingestBatcherReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
+| Compaction Task Status Report | Lists the compaction tasks                        | ```./scripts/report/compactionTaskStatusReport.sh ${INSTANCE_ID} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
+| Compaction Job Status Report  | Lists the compaction jobs and the number of messages on the queue | ```./scripts/report/compactionJobStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_REPORT_TYPE} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | REPORT_TYPE = standard, QUERY_TYPE = prompt |
+| Files Status Report           | Lists all the files managed by the state store    | ```./scripts/report/filesStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_MAXREADY_GC_FILES} ${OPTIONAL_VERBOSE_OUTPUT} ${OPTIONAL_REPORT_TYPE}``` | MAXREADY_GC_FILES = 1000, VERBOSE = false , REPORT_TYPE = standard |
+| Partitions Status Report      | Summarises the partitions within the system       | ```./scripts/report/partitionsStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME}```                                                                             |                                                                    |
 
 ## Retrying messages on DLQs
 

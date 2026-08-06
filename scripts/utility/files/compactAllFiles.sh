@@ -16,22 +16,21 @@
 set -e
 unset CDPATH
 
-#####################
-# Initial variables #
-#####################
-
-if [[ -z $1 ]]; then
-  echo "Usage: $0 <instance-id>"
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 <instance-id> <table-names-as-args>"
   exit 1
 fi
 
-INSTANCE_ID=$1
-
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.PauseSystem "${INSTANCE_ID}"
+echo "-------------------------------------------------------"
+echo "Forcing compaction job creation"
+echo "-------------------------------------------------------"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.compaction.CreateCompactionJobsClient ALL "$@"
