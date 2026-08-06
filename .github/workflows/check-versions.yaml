@@ -2,12 +2,11 @@ name: Check code versions
 on:
   pull_request:
     paths:
-      - '.github/workflows/check-versions.yaml'
-      - '.github/config/chunks.yaml'
-      - '.github/scripts/checkVersionNumber.sh'
-      - 'java/**'
-      - 'python/**'
-      - 'rust/**'
+     - '.github/workflows/check-versions.yaml'
+     - '.github/scripts/checkVersionNumber.sh'
+     - 'java/pom.xml'
+     - 'python/pyproject.toml'
+     - 'rust/Cargo.toml'
 
 jobs:
   build:
