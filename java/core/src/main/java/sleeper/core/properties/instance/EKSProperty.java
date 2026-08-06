@@ -91,8 +91,10 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
             .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
                     "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.\n" +
+                    "The default value assumes 2 concurrent jobs, running on 29 executors and 1 driver, each with 4 " +
+                    "cores, plus one submitter per job and some slack.\n" +
                     "Only applied if node pool configuration is enabled. Currently experimental.")
-            .defaultValue("256") // 2 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
+            .defaultValue("256")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)

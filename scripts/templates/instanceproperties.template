@@ -1198,6 +1198,8 @@
 
 # (EKS mode only, automode cluster type only) The maximum total number of CPU cores the Karpenter
 # NodePool is allowed to provision across all nodes. Must be an integer greater than 0.
+# The default value assumes 2 concurrent jobs, running on 29 executors and 1 driver, each with 4
+# cores, plus one submitter per job and some slack.
 # Only applied if node pool configuration is enabled. Currently experimental.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.automode.nodepool.cpu.limit=256
