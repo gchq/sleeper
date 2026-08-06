@@ -91,6 +91,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES;
@@ -228,16 +229,24 @@ public final class EksBulkImportStack extends NestedStack {
     @SuppressWarnings("unchecked")
     private static Cluster createAutoModeCluster(
             Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, String uniqueBulkImportId) {
+        ComputeConfig computeConfig = null;
+        Map<String, Object> nodePoolManifest = null;
+        if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL)) {
+            computeConfig = ComputeConfig.builder().nodePools(List.of("system")).build(); // Disable general-purpose node pool
+            nodePoolManifest = createNodepoolManifest(instanceProperties);
+        }
         Cluster cluster = Cluster.Builder.create(scope, "EksBulkImportCluster")
                 .clusterName(uniqueBulkImportId)
                 .version(KubernetesVersion.V1_35)
                 .kubectlProviderOptions(createKubectlProviderOptions(scope, instanceProperties))
                 .vpc(coreStacks.getVpc())
                 .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
-                .compute(ComputeConfig.builder().nodePools(List.of("system")).build())
+                .compute(computeConfig)
                 .build();
 
-        cluster.addManifest("nodepool", createNodepoolManifest(instanceProperties));
+        if (nodePoolManifest != null) {
+            cluster.addManifest("nodepool", nodePoolManifest);
+        }
         if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
             addFluentBitLoggingForAutoMode(cluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
         }
