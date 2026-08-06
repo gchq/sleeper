@@ -16,7 +16,7 @@ import logging
 
 import requests
 
-from sleeper.exceptions import SleeperApiError
+from sleeper.exceptions import SleeperApiError, SleeperConfigurationError
 from sleeper.properties import CommonCdkProperty, CommonProperty, InstanceProperties, RestCdkProperty
 from sleeper.rest.table import AddTableRequest, AddTableResponse, TableSchema
 from sleeper.utils.signer import ApiGatewaySigner
@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 
 class RestApiClient:
     def __init__(self, instance_properties: InstanceProperties):
-
         self.instance_properties = instance_properties
         self.region = instance_properties.get(CommonCdkProperty.REGION)
-        self.endpoint = instance_properties.get(RestCdkProperty.REST_BASE_URL)
+        try:
+            self.endpoint = instance_properties.get(RestCdkProperty.REST_BASE_URL)
+        except KeyError as err:
+            raise SleeperConfigurationError("The Sleeper REST API stack has not been deployed. REST API methods such as 'add_table' cannot be used until it is deployed.") from err
 
         self.signer = ApiGatewaySigner(region=self.region)
 
@@ -64,7 +66,6 @@ class RestApiClient:
         return response
 
     def add_table(self, table_name: str, schema: TableSchema, split_points: list) -> AddTableResponse:
-
         properties = {"sleeper.table.name": table_name}
 
         request = AddTableRequest(

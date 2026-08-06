@@ -30,3 +30,11 @@ class SleeperApiError(SleeperError):
         self.response_body = response_body
 
         super().__init__(f"HTTP {status_code}: {message}")
+
+
+class SleeperConfigurationError(SleeperError):
+    def __init__(
+        self,
+        message: str,
+    ):
+        super().__init__(f"Configuration Error: {message}")

@@ -32,7 +32,7 @@ from pq import ParquetDeserialiser, ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, RestCdkProperty, load_instance_properties
+from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, load_instance_properties
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.query import Query, Region
 from sleeper.rest import AddTableResponse, RestApiClient, TableSchema
@@ -95,9 +95,13 @@ class SleeperClient:
         self._sqs_resource = sqs_resource
         self._dynamo_resource = dynamo_resource
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
+        self._rest_client: RestApiClient | None = None
 
-        rest_endpoint = self._instance_properties.get(RestCdkProperty.REST_BASE_URL)
-        self.rest_client: RestApiClient | None = RestApiClient(self._instance_properties) if rest_endpoint else None
+    @property
+    def rest_client(self) -> RestApiClient:
+        if self._rest_client is None:
+            self._rest_client = RestApiClient(self._instance_properties)
+        return self._rest_client
 
     def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str | None = None):
         """
