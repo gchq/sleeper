@@ -79,19 +79,19 @@ public class DeployNewInstance {
             .systemArguments(List.of("scriptsDirectory"))
             .positionalArguments(List.of("scriptsDirectory", "instanceId", "vpcId", "subnetIds"))
             .options(List.of(
-                    CommandOption.longOption("instance-properties"),
-                    CommandOption.longOption("config-dir"),
+                    CommandOption.longOption("properties-file"),
+                    CommandOption.longOption("configuration-dir"),
                     CommandOption.longFlag("paused")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
                     "\n" +
-                    "--instance-properties <file>\n" +
+                    "--properties-file <file>\n" +
                     "Path to an instance properties file.\n" +
-                    "One of --instance-properties and --config-dir must be set but not both.\n" +
+                    "One of --properties-file and --configuration-dir must be set but not both.\n" +
                     "\n" +
-                    "--config-dir <dir>\n" +
+                    "--configuration-dir <dir>\n" +
                     "Path to a directory containing an instance.properties file.\n" +
-                    "One of --instance-properties and --config-dir must be set but not both.\n" +
+                    "One of --properties-file and --configuration-dir must be set but not both.\n" +
                     "\n" +
                     "--paused\n" +
                     "If set, the instance will be deployed paused. Periodic background processes will not run until " +
@@ -104,8 +104,8 @@ public class DeployNewInstance {
                 arguments.getString("instanceId"),
                 arguments.getString("vpcId"),
                 arguments.getString("subnetIds"),
-                arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
-                arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
+                arguments.getOptionalString("properties-file").map(Path::of).orElse(null),
+                arguments.getOptionalString("configuration-dir").map(Path::of).orElse(null),
                 arguments.isFlagSet("paused"));
     }
 
@@ -192,11 +192,11 @@ public class DeployNewInstance {
 
         public Arguments {
             if (propertiesFile == null && configDir == null) {
-                throw new CommandArgumentsException("Either --instance-properties or --config-dir must be provided");
+                throw new CommandArgumentsException("Either --properties-file or --configuration-dir must be provided");
             }
 
             if (propertiesFile != null && configDir != null) {
-                throw new CommandArgumentsException("Cannot use both --instance-properties and --config-dir");
+                throw new CommandArgumentsException("Cannot use both --properties-file and --configuration-dir");
             }
         }
     }

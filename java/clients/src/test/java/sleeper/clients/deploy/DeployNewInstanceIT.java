@@ -82,7 +82,7 @@ public class DeployNewInstanceIT {
             // When
             deployNewInstance(
                     "my-instance", "test-vpc", "test-subnet",
-                    "--instance-properties", propertiesFile.toString());
+                    "--properties-file", propertiesFile.toString());
 
             // Then the combined configuration is derived
             // And the CDK is invoked pointing to the file and the extra configuration
@@ -117,7 +117,7 @@ public class DeployNewInstanceIT {
             // When
             deployNewInstance(
                     "my-instance", "test-vpc", "test-subnet",
-                    "--config-dir", configDir.toString());
+                    "--configuration-dir", configDir.toString());
 
             // Then the combined configuration is derived
             // And the CDK is invoked pointing to the file and the extra configuration
@@ -150,7 +150,7 @@ public class DeployNewInstanceIT {
             // When
             deployNewInstance(
                     "my-instance", "test-vpc", "test-subnet",
-                    "--instance-properties", propertiesFile.toString(),
+                    "--properties-file", propertiesFile.toString(),
                     "--paused");
 
             // Then the combined configuration is derived
@@ -189,16 +189,16 @@ public class DeployNewInstanceIT {
             // When/Then
             assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Either --instance-properties or --config-dir must be provided");
+                    .hasMessage("Either --properties-file or --configuration-dir must be provided");
         }
 
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
             // When/Then
             assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets",
-                    "--instance-properties", "someFile", "--config-dir", "someDir"))
+                    "--properties-file", "someFile", "--configuration-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Cannot use both --instance-properties and --config-dir");
+                    .hasMessage("Cannot use both --properties-file and --configuration-dir");
         }
     }
 
