@@ -66,7 +66,8 @@ public interface EKSProperty {
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
             .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
-                    "that the Karpenter NodePool is allowed to launch for Spark pods.")
+                    "that the Karpenter NodePool is allowed to launch for Spark pods.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
             .defaultValue(Stream.of(
                     "m7g.xlarge", "m7g.2xlarge", "m7g.4xlarge", "m7g.8xlarge", "m7g.12xlarge", "m7g.16xlarge",
                     "m7gd.xlarge", "m7gd.2xlarge", "m7gd.4xlarge", "m7gd.8xlarge", "m7gd.12xlarge", "m7gd.16xlarge",
@@ -79,9 +80,20 @@ public interface EKSProperty {
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
             .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
-                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.")
+                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
             .defaultValue("256") // 2 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.enabled")
+            .description("(EKS mode only, automode cluster type only) Whether to configure the node pool for the " +
+                    "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
+                    "default behaviour for EKS Auto Mode.\n" +
+                    "Node pool configuration is currently experimental.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
