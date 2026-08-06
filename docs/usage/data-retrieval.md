@@ -310,15 +310,23 @@ You can also retrieve data using the Java class `QueryExecutor`.
 Sleeper allows you to query tables using Amazon Athena. This functionality is experimental. To do this, ensure you have
 the `AthenaStack` enabled in the `sleeper.optional.stacks` instance property. This stack is not included by default.
 
-Visit the Amazon console and choose Athena from the list of services. You should be able to find your Connector in the
-data source list. If your instance id is "abc123" then the connector will be called "abc123IteratorApplyingSleeperConnector".
-Click "Query your data in Athena console" and then select your connector under "Data Source". When you select it, the
-tables list should be populated. If you select the three dots next to the table name there is a "preview table" option.
+Two different connectors to Athena are available: `sleeper.athena.composite.DataFusionCompositeHandler` and
+`sleeper.athena.composite.IteratorApplyingCompositeHandler`. The first of these is recommended as it uses DataFusion to
+read the data from the Parquet files in the Sleeper table which results in better performance than the other,
+Java-based one.
+
+Visit the Amazon console and choose Athena from the list of services. Click "Query your data in Athena console" and then
+"Launch query editor". You should be able to find your Connector in the data source list. If your instance id is
+"abc123" then the connector will be called "abc123DataFusionSleeperConnector". When you select your connector
+the tables list should be populated. If you select the three dots next to the table name there is a "preview table" option.
 If you select this, it will populate the SQL input with an example query which will run a 'SELECT * FROM ... LIMIT 10'
 query.
 
-To make queries in Athena efficient, filter primitive columns where you can (especially the row keys). These predicates
-will be pushed down to S3 and mean that you scan less data and incur a smaller fee as a result.
+The integration of Athena with Sleeper inspects the query and uses that to restrict the partitions, and hence files,
+that are read. For example if you have a Sleeper table with 100 leaf partitions, and a schema with a row-key field which
+has type string and a name of 'key' and your Athena query is of the form `SELECT * FROM "abc123"."table1" WHERE key='a'`
+then it will be able to skip 99 partitions, and only read a small number of files, and within those files it will only
+read a small amount of data (rather than the whole file).
 
 ## Use SQL with Trino
 
