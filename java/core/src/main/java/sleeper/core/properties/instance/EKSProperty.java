@@ -187,7 +187,7 @@ public interface EKSProperty {
             .description("JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(
-                    "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
+                    "-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.extra.java.options")
             .description("JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.\n" +

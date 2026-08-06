@@ -1282,12 +1282,12 @@
 # JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
 
 # JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
 
 # The interval between heartbeats from executors to the driver. Used to set
 # spark.executor.heartbeatInterval.
@@ -1961,7 +1961,7 @@
 
 # The fully qualified composite classes to deploy. These are the classes that interact with Athena.
 # (default value shown below, uncomment to set a value)
-# sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
+# sleeper.athena.handler.classes=sleeper.athena.composite.DataFusionCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
 
 # The amount of memory (MB) the athena composite handler has.
 # (default value shown below, uncomment to set a value)

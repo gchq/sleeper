@@ -87,6 +87,10 @@ public class AthenaStack extends NestedStack {
                 LambdaHandler.ATHENA_ITERATORS_COMPOSITE, LogGroupRef.ITERATOR_APPLYING_ATHENA_HANDLER,
                 instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
 
+        createConnector("sleeper.athena.composite.DataFusionCompositeHandler",
+                LambdaHandler.ATHENA_DATAFUSION_COMPOSITE, LogGroupRef.DATAFUSION_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
+
         Utils.addTags(this, instanceProperties);
     }
 
