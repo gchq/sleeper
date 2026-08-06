@@ -225,6 +225,7 @@ public final class EksBulkImportStack extends NestedStack {
         Utils.addTags(this, instanceProperties);
     }
 
+    @SuppressWarnings("unchecked")
     private static Cluster createAutoModeCluster(
             Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, String uniqueBulkImportId) {
         Cluster cluster = Cluster.Builder.create(scope, "EksBulkImportCluster")
@@ -236,7 +237,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .compute(ComputeConfig.builder().nodePools(List.of("system")).build())
                 .build();
 
-        addNodepoolManifest(cluster, instanceProperties);
+        cluster.addManifest("nodepool", createNodepoolManifest(instanceProperties));
         if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
             addFluentBitLoggingForAutoMode(cluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
         }
@@ -508,14 +509,13 @@ public final class EksBulkImportStack extends NestedStack {
         return cluster.addManifest("EksBulkImportNamespace", parseJson("/k8s/namespace.json", namespaceReplacement(namespaceName)));
     }
 
-    @SuppressWarnings("unchecked")
-    private static KubernetesManifest addNodepoolManifest(Cluster cluster, InstanceProperties instanceProperties) {
+    private static Map<String, Object> createNodepoolManifest(InstanceProperties instanceProperties) {
         String instanceTypesJson = instanceProperties.getList(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES).stream()
                 .map(type -> "\"" + type + "\"")
                 .collect(Collectors.joining(","));
-        return cluster.addManifest("nodepool", parseJson("/k8s/nodepool.json", replacements(Map.of(
+        return parseJson("/k8s/nodepool.json", replacements(Map.of(
                 "\"instance-type-placeholder\"", instanceTypesJson,
-                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT)))));
+                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT))));
     }
 
     @SuppressWarnings("unchecked")
