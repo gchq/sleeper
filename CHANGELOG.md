@@ -8,31 +8,38 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.37.4
 
-### 4th August 2026
+### 7th August 2026
 
 This includes improvements to bulk import on EKS, and fixes to SQL query filtering, Athena and the Python client.
 
 Bulk import:
+- Bulk import on EKS now uses the AWS EMR on EKS Docker image as a base.
 - Bulk import on EKS is now limited to a certain number of bulk import jobs running in EKS at once, with `sleeper.bulk.import.eks.job.concurrency.level`.
-- Bulk import on EKS Auto Mode is now limited to a certain number of CPUs, with `sleeper.bulk.import.eks.automode.nodepool.cpu.limit`.
-- EC2 instance types for bulk import on EKS Auto Mode can be configured with `sleeper.bulk.import.eks.automode.nodepool.instance.types`.
+- Bulk import on EKS Auto Mode can now configure a node pool for EC2 instances to run in the cluster. This is currently experimental.
+  - Enable node pool configuration with `sleeper.bulk.import.eks.automode.nodepool.enabled`.
+  - Set the maximum number of CPUs with `sleeper.bulk.import.eks.automode.nodepool.cpu.limit`.
+  - Set EC2 instance types with `sleeper.bulk.import.eks.automode.nodepool.instance.types`.
+- Bulk import job definitions are now retained in S3 for a period configured with `sleeper.bulk.import.job.file.retention.days`.
 
 Athena:
 - Added support for map type fields.
-- There are no longer multiple options for the Athena connector in `sleeper.athena.handler.classes`.
+- Added an Athena connector using the DataFusion data engine, see `sleeper.athena.handler.classes`.
+- Removed the simple Athena connector as its purpose was unclear and there was no equivalent in the other query paths.
 
 Python:
 - SQL filters can be set on queries run via Python.
 
 Documentation:
+- Documented SQL query filtering.
 - Documented the REST API to add a Sleeper table.
-- New configuration example for a lighter instance with less data.
+- New configuration example for a lighter instance with less data, at `example/light`.
 
 Bugfixes:
-- SQL filtering is now accepted in queries with `scripts/utility/query.sh`.
+- When you enter an SQL filter with `scripts/utility/query.sh`, the query no longer fails, and runs with a row retriever that supports SQL.
 - SQL query filtering now works for tables with a sort key.
 - Fixed queries in Athena.
 - Python client now reads region from `AWS_REGION` environment variable, and allows region to be set explicitly.
+- Deleting a Sleeper instance will no longer fail due to writing query results to S3 during the tear down.
 
 
 ## Version 0.37.3
