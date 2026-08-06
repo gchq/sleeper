@@ -15,7 +15,6 @@
  */
 package sleeper.clients.deploy;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -37,6 +37,7 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -46,16 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createDirectory;
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
@@ -67,137 +66,110 @@ public class DeployNewInstanceIT {
             new InMemoryTransactionLogsPerTable());
     Map<Path, String> pathToString = new HashMap<>();
     List<DeployInstanceRequest> deployRequests = new ArrayList<>();
-    Path instancePropertiesFile;
-    String configDir;
-    String instanceId = "someInstance";
-    String vpcId = "someVpc";
-    String subnets = "someSubnet1,someSubnet2";
 
     @TempDir
-    private Path tempDir;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        createTempDirectory(tempDir, null);
-        instancePropertiesFile = tempDir.resolve("instance.properties");
-        Files.writeString(instancePropertiesFile, instanceProperties.saveAsString());
-        Path tables = tempDir.resolve("tables");
-        Path table1 = tables.resolve("table1");
-        createDirectory(tables);
-        createDirectory(table1);
-        Files.writeString(table1.resolve("table.properties"), "sleeper.table.name=file-table\n");
-        Files.writeString(table1.resolve("schema.json"), new SchemaSerDe().toJson(schema));
-        configDir = tempDir.toString();
-    }
+    private Path configDir;
 
     @Nested
     class DeployNew {
 
         @Test
         void shouldDeployNewInstanceWhenUsingInstanceProperties() throws Exception {
-            //When
-            deployNewInstanceWithoutTables(instanceId, vpcId, subnets, "--instance-properties",
-                    instancePropertiesFile.toString());
+            // Given
+            instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+            Path propertiesFile = writeInstancePropertiesFile();
 
-            //Then
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
-            updatePropertyFiles(config);
+            // When
+            deployNewInstance(
+                    "my-instance", "test-vpc", "test-subnet",
+                    "--instance-properties", propertiesFile.toString());
 
-            //Verify CDK Command
-            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithPropertyFile(config, false));
-
-            //Verify no table properties stored
+            // Then the combined configuration is derived
+            // And the CDK is invoked pointing to the file and the extra configuration
+            InstanceProperties expected = new InstanceProperties();
+            expected.set(ID, "my-instance");
+            expected.set(VPC_ID, "test-vpc");
+            expected.set(SUBNETS, "test-subnet");
+            expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(SleeperInstanceConfiguration.withNoTables(expected))
+                    .cdkCommand(CdkCommand.deployNew().withPropertiesFile(propertiesFile).toBuilder()
+                            .instanceId("my-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .build());
             assertThat(tableIndex.streamAllTables()).isEmpty();
+            assertThat(LoadLocalProperties.loadInstancePropertiesNoValidation(propertiesFile)).isEqualTo(instanceProperties);
         }
 
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
-            //When
-            deployNewInstanceWithTables(instanceId, vpcId, subnets, "--config-dir",
-                    configDir);
+            // Given
+            instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+            writeInstancePropertiesFile();
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.set(TABLE_NAME, "test-table");
+            tableProperties.setSchema(createSchemaWithKey("key"));
+            writeTablePropertiesDir(tableProperties);
 
-            //Then
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(tempDir);
-            updatePropertyFiles(config);
-            config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
+            // When
+            deployNewInstance(
+                    "my-instance", "test-vpc", "test-subnet",
+                    "--config-dir", configDir.toString());
 
-            //Verify CDK Command
-            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithConfigDir(config, false));
-
-            //Verify Table properties store saved
-            TableProperties expected = new TableProperties(instanceProperties);
-            expected.setSchema(schema);
-            expected.set(TABLE_ID, tableId("file-table"));
-            expected.set(TABLE_NAME, "file-table");
-            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
-        }
-
-        @Test
-        void shouldDeployNewInstanceWhenUsingInstancePropertiesIgnoringTableFiles() throws Exception {
-            //When
-            deployNewInstanceWithoutTables(instanceId, vpcId, subnets, "--config-dir", configDir,
-                    "--ignoreTableFiles");
-
-            //Then
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfiguration(instancePropertiesFile);
-            updatePropertyFiles(config);
-
-            //Verify CDK Command
-            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithPropertyFile(config, false));
-
-            //Verify no table properties stored
-            assertThat(tableIndex.streamAllTables()).isEmpty();
+            // Then the combined configuration is derived
+            // And the CDK is invoked pointing to the file and the extra configuration
+            InstanceProperties expected = new InstanceProperties();
+            expected.set(ID, "my-instance");
+            expected.set(VPC_ID, "test-vpc");
+            expected.set(SUBNETS, "test-subnet");
+            expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+            TableProperties expectedTable = new TableProperties(expected);
+            expectedTable.set(TABLE_ID, tableId("test-table"));
+            expectedTable.set(TABLE_NAME, "test-table");
+            expectedTable.setSchema(createSchemaWithKey("key"));
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(expected).tableProperties(expectedTable).build())
+                    .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(configDir).toBuilder()
+                            .instanceId("my-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .build());
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedTable);
         }
 
         @Test
         void shouldDeployNewInstancePaused() throws Exception {
-            //When
-            deployNewInstanceWithTables(instanceId, vpcId, subnets, "--config-dir", configDir,
+            // Given
+            Path propertiesFile = writeInstancePropertiesFile();
+
+            // When
+            deployNewInstance(
+                    "my-instance", "test-vpc", "test-subnet",
+                    "--instance-properties", propertiesFile.toString(),
                     "--paused");
 
-            //Then
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(instancePropertiesFile);
-            updatePropertyFiles(config);
-            config.getTableProperties().get(0).set(TABLE_ID, tableId("file-table"));
-
-            //Verify CDK Command
-            assertThat(deployRequests).containsExactly(buildExpectedCDKCommandWithConfigDir(config, true));
-
-            //Verify Table properties store saved
-            TableProperties expected = new TableProperties(instanceProperties);
-            expected.setSchema(schema);
-            expected.set(TABLE_ID, tableId("file-table"));
-            expected.set(TABLE_NAME, "file-table");
-            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expected);
-        }
-
-        private void updatePropertyFiles(SleeperInstanceConfiguration config) {
-            instanceProperties.set(ID, instanceId);
-            instanceProperties.set(VPC_ID, vpcId);
-            instanceProperties.set(SUBNETS, subnets);
-            config.getInstanceProperties().set(ID, instanceId);
-            config.getInstanceProperties().set(VPC_ID, vpcId);
-            config.getInstanceProperties().set(SUBNETS, subnets);
-        }
-
-        private DeployInstanceRequest buildExpectedCDKCommandWithPropertyFile(SleeperInstanceConfiguration config, boolean deployPaused) {
-            CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
-            return DeployInstanceRequest.builder()
-                    .instanceConfig(config)
-                    .cdkCommand(cdkCommand.withPropertiesFile(instancePropertiesFile)
-                            .withNetworkConfiguration(instanceId, vpcId, subnets))
+            // Then the combined configuration is derived
+            // And the CDK is invoked pointing to the file and the extra configuration
+            InstanceProperties expected = new InstanceProperties();
+            expected.set(ID, "my-instance");
+            expected.set(VPC_ID, "test-vpc");
+            expected.set(SUBNETS, "test-subnet");
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(SleeperInstanceConfiguration.withNoTables(expected))
+                    .cdkCommand(CdkCommand.deployNewPaused().withPropertiesFile(propertiesFile).toBuilder()
+                            .instanceId("my-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .build();
-        }
-
-        private DeployInstanceRequest buildExpectedCDKCommandWithConfigDir(SleeperInstanceConfiguration config, boolean deployPaused) {
-            CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
-            return DeployInstanceRequest.builder()
-                    .instanceConfig(config)
-                    .cdkCommand(cdkCommand.withConfigurationDirectory(tempDir)
-                            .withNetworkConfiguration(instanceId, vpcId, subnets))
-                    .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .build();
+                    .build());
+            assertThat(tableIndex.streamAllTables()).isEmpty();
+            assertThat(LoadLocalProperties.loadInstancePropertiesNoValidation(propertiesFile)).isEqualTo(new InstanceProperties());
         }
     }
 
@@ -207,7 +179,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenNotEnoughPositionalArguments() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceWithoutTables())
+            assertThatThrownBy(() -> deployNewInstance())
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 4 positional arguments, found 1");
         }
@@ -215,7 +187,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenNeitherInstancePropertiesOrConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceWithoutTables("my-instance", "my-vpc", "my-subnets"))
+            assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Either --instance-properties or --config-dir must be provided");
         }
@@ -223,42 +195,19 @@ public class DeployNewInstanceIT {
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
             // When/Then
-            assertThatThrownBy(() -> deployNewInstanceWithoutTables("my-instance", "my-vpc", "my-subnets",
+            assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets",
                     "--instance-properties", "someFile", "--config-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot use both --instance-properties and --config-dir");
         }
-
-        @Test
-        void shouldSetIgnoreTableFilesTrueWhenInstancePropertiesUsed() {
-            var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
-                    "scriptsDir", "my-instance", "my-vpc", "my-subnets", "--instance-properties", "someFile"));
-            assertThat(arguments.ignoreTableFiles()).isTrue();
-        }
-
-        @Test
-        void shouldResolvePropertiesFileWhenConfigDirUsed() {
-            var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
-                    "scriptsDir", "my-instance", "my-vpc", "my-subnets", "--config-dir", "someDir"));
-            assertThat(arguments.resolvePropertiesFile()).isEqualTo(Path.of("someDir/instance.properties"));
-        }
-
     }
 
-    private void deployNewInstanceWithoutTables(String... args) throws Exception {
-        deployNewInstance(true, args);
-    }
+    private void deployNewInstance(String... rawArgs) throws Exception {
+        var args = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
+                Stream.concat(Stream.of("scriptsDir"), Arrays.stream(rawArgs)).toArray(String[]::new)));
+        var config = DeployNewInstance.loadConfiguration(args);
 
-    private void deployNewInstanceWithTables(String... args) throws Exception {
-        deployNewInstance(false, args);
-    }
-
-    private void deployNewInstance(boolean isWithTables, String... args) throws Exception {
-        var arguments = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
-                Stream.concat(Stream.of("scriptsDir"), Arrays.stream(args)).toArray(String[]::new)));
-        var config = DeployNewInstance.loadConfiguration(arguments);
-
-        DeployNewInstance.Builder builder = DeployNewInstance.builder()
+        DeployNewInstance.builder()
                 .deployInstance(request -> deployRequests.add(request))
                 .storeFactory(new DeployNewInstance.StoreFactory() {
                     public TablePropertiesStore createTableStore(InstanceProperties p) {
@@ -274,16 +223,10 @@ public class DeployNewInstanceIT {
                 })
                 .deployInstanceConfiguration(config)
                 .cdkApp(SleeperInternalCdkApp.STANDARD)
-                .ignoreTableFiles(arguments.ignoreTableFiles())
-                .deployPaused(arguments.deployPaused());
-
-        if (isWithTables) {
-            builder.propertiesFile(instancePropertiesFile);
-        } else {
-            builder.configDir(tempDir);
-        }
-
-        builder.build().deploy();
+                .propertiesFile(args.propertiesFile())
+                .configDir(args.configDir())
+                .deployPaused(args.deployPaused())
+                .build().deploy();
     }
 
     private String tableId(String tableName) {
@@ -292,11 +235,26 @@ public class DeployNewInstanceIT {
                 .getTableUniqueId();
     }
 
-    private static InstanceProperties generateInstancePropertiesForFile() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.unset(ID);
-        instanceProperties.unset(VPC_ID);
-        instanceProperties.unset(SUBNETS);
-        return instanceProperties;
+    private Path writeInstancePropertiesFile() {
+        Path file = configDir.resolve("instance.properties");
+        try {
+            Files.writeString(file, instanceProperties.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return file;
+    }
+
+    private void writeTablePropertiesDir(TableProperties tableProperties) {
+        Path tablesDir = configDir.resolve("tables");
+        Path tableDir = tablesDir.resolve(tableProperties.get(TABLE_NAME));
+        try {
+            Files.createDirectory(tablesDir);
+            Files.createDirectory(tableDir);
+            Files.writeString(tableDir.resolve("table.properties"), tableProperties.toString());
+            Files.writeString(tableDir.resolve("schema.json"), new SchemaSerDe().toJson(tableProperties.getSchema()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -59,7 +59,6 @@ public class DeployNewInstance {
     private final SleeperInternalCdkApp cdkApp;
     private final Path propertiesFile;
     private final Path configDir;
-    private final boolean ignoreTableFiles;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
@@ -69,7 +68,6 @@ public class DeployNewInstance {
         this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
         this.propertiesFile = builder.propertiesFile;
         this.configDir = builder.configDir;
-        this.ignoreTableFiles = builder.ignoreTableFiles;
         this.deployPaused = builder.deployPaused;
     }
 
@@ -83,7 +81,6 @@ public class DeployNewInstance {
             .options(List.of(
                     CommandOption.longOption("instance-properties"),
                     CommandOption.longOption("config-dir"),
-                    CommandOption.longFlag("ignoreTableFiles"),
                     CommandOption.longFlag("paused")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
@@ -95,11 +92,6 @@ public class DeployNewInstance {
                     "--config-dir <dir>\n" +
                     "Path to a directory containing an instance.properties file.\n" +
                     "One of --instance-properties and --config-dir must be set but not both.\n" +
-                    "\n" +
-                    "--ignoreTableFiles\n" +
-                    "If set, the instance will be deployed on it's own. Otherwise tables will be created based on " +
-                    "any relevent table.properties files found in the specified --config-dir. This flag cannot be used " +
-                    "without the --config-dir optional argument.\n" +
                     "\n" +
                     "--paused\n" +
                     "If set, the instance will be deployed paused. Periodic background processes will not run until " +
@@ -114,14 +106,13 @@ public class DeployNewInstance {
                 arguments.getString("subnetIds"),
                 arguments.getOptionalString("instance-properties").map(Path::of).orElse(null),
                 arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
-                arguments.isFlagSet("ignoreTableFiles"),
                 arguments.isFlagSet("paused"));
     }
 
     public static SleeperInstanceConfiguration loadConfiguration(Arguments args) throws IOException {
         SleeperInstanceConfiguration config;
-        if (args.ignoreTableFiles()) {
-            config = SleeperInstanceConfiguration.fromLocalConfiguration(args.resolvePropertiesFile());
+        if (args.propertiesFile() != null) {
+            config = SleeperInstanceConfiguration.fromLocalConfiguration(args.propertiesFile());
         } else {
             config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
         }
@@ -151,9 +142,8 @@ public class DeployNewInstance {
                     .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
                     .deployInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
-                    .propertiesFile(args.resolvePropertiesFile())
+                    .propertiesFile(args.propertiesFile())
                     .configDir(args.configDir())
-                    .ignoreTableFiles(args.ignoreTableFiles())
                     .deployPaused(args.deployPaused())
                     .build().deploy();
         }
@@ -165,7 +155,7 @@ public class DeployNewInstance {
         InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
         cdkCommand = cdkCommand.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
 
-        if (ignoreTableFiles) {
+        if (propertiesFile != null) {
             cdkCommand = cdkCommand.withPropertiesFile(propertiesFile);
         } else {
             cdkCommand = cdkCommand.withConfigurationDirectory(configDir);
@@ -177,7 +167,7 @@ public class DeployNewInstance {
                 .cdkApp(cdkApp)
                 .build());
 
-        if (!ignoreTableFiles) {
+        if (!deployInstanceConfiguration.getTableProperties().isEmpty()) {
             storeFactory.reloadInstanceProperties(instanceProperties);
 
             for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
@@ -198,7 +188,6 @@ public class DeployNewInstance {
             String subnetIds,
             Path propertiesFile,
             Path configDir,
-            boolean ignoreTableFiles,
             boolean deployPaused) {
 
         public Arguments {
@@ -209,14 +198,6 @@ public class DeployNewInstance {
             if (propertiesFile != null && configDir != null) {
                 throw new CommandArgumentsException("Cannot use both --instance-properties and --config-dir");
             }
-
-            if (propertiesFile != null) {
-                ignoreTableFiles = true;
-            }
-        }
-
-        public Path resolvePropertiesFile() {
-            return propertiesFile != null ? propertiesFile : configDir.resolve("instance.properties");
         }
     }
 
@@ -227,7 +208,6 @@ public class DeployNewInstance {
         private SleeperInternalCdkApp cdkApp;
         private Path propertiesFile;
         private Path configDir;
-        private boolean ignoreTableFiles = false;
         private boolean deployPaused = false;
 
         private Builder() {
@@ -261,11 +241,6 @@ public class DeployNewInstance {
 
         public Builder configDir(Path configDir) {
             this.configDir = configDir;
-            return this;
-        }
-
-        public Builder ignoreTableFiles(boolean ignoreTableFiles) {
-            this.ignoreTableFiles = ignoreTableFiles;
             return this;
         }
 

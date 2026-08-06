@@ -50,6 +50,11 @@ public class DeployInstanceRequest {
     }
 
     @Override
+    public String toString() {
+        return "DeployInstanceRequest{instanceConfig=" + instanceConfig + ", cdkCommand=" + cdkCommand + ", cdkApp=" + cdkApp + "}";
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
