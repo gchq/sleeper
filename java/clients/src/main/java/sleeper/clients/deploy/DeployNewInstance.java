@@ -249,7 +249,11 @@ public class DeployNewInstance {
                 command = command.toBuilder().deployPaused(true).build();
             }
             InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
-            command = command.withNetworkConfiguration(instanceProperties.get(ID), instanceProperties.get(VPC_ID), instanceProperties.get(SUBNETS));
+            command = command.toBuilder()
+                    .instanceId(instanceProperties.get(ID))
+                    .vpcId(instanceProperties.get(VPC_ID))
+                    .subnets(instanceProperties.get(SUBNETS))
+                    .build();
             return command;
         }
 

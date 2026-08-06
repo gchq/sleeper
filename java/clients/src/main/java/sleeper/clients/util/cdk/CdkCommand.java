@@ -73,10 +73,6 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         return builder().command(command).configurationDirectory(configurationDirectory).arguments(arguments).build();
     }
 
-    public CdkCommand withNetworkConfiguration(String instanceId, String vpcId, String subnets) {
-        return toBuilder().instanceId(instanceId).vpcId(vpcId).subnets(subnets).build();
-    }
-
     public Builder toBuilder() {
         return builder().command(command).arguments(arguments);
     }
