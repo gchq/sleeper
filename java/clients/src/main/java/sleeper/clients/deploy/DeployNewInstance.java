@@ -86,16 +86,17 @@ public class DeployNewInstance {
                     "Deploys a new instance of Sleeper.\n" +
                     "\n" +
                     "--properties-file <file>\n" +
-                    "Path to an instance properties file.\n" +
+                    "Path to an instance properties file. Passed to the CDK in the context variable \"propertiesFile\".\n" +
                     "One of --properties-file and --configuration-dir must be set but not both.\n" +
                     "\n" +
                     "--configuration-dir <dir>\n" +
-                    "Path to a directory containing an instance.properties file.\n" +
+                    "Path to a directory containing an instance.properties file. Passed to the CDK in the context variable \"configurationDir\".\n" +
                     "One of --properties-file and --configuration-dir must be set but not both.\n" +
                     "\n" +
                     "--paused\n" +
-                    "If set, the instance will be deployed paused. Periodic background processes will not run until " +
-                    "the instance is manually resumed.")
+                    "If set, the instance will be deployed paused. This will set the CDK context variable " +
+                    "\"deployPaused\". Periodic background processes will not run until the instance is manually " +
+                    "resumed.")
             .build();
 
     public static Arguments readArguments(CommandArguments arguments) {
