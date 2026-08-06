@@ -45,14 +45,10 @@ if [ $JAVA_VERSION != $RUST_VERSION ]; then
     exit 1
 fi
 
-# Extract version number from JAVA_VERSION
-JAVA_VERSION_NUMBER=${JAVA_VERSION%-*}
-
-# Extract version number from PYTHON_VERSION
-PYTHON_VERSION_NUMBER=${PYTHON_VERSION%.*}
+PYTHON_CHECK_VERSION="${JAVA_VERSION//-SNAPSHOT/.dev1}"
 
 # Check version number against Python version
-if [ $JAVA_VERSION_NUMBER != $PYTHON_VERSION_NUMBER ]; then
-    echo "The Java, Rust and Python version numbers do not match. Java/Rust version: $JAVA_VERSION_NUMBER Python version: $PYTHON_VERSION_NUMBER"
+if [ $PYTHON_CHECK_VERSION != $PYTHON_VERSION ]; then
+    echo "Python version number is $PYTHON_VERSION but should be $PYTHON_CHECK_VERSION"
     exit 1
 fi
