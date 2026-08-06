@@ -458,7 +458,9 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     @Override
     public String toString() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        prettyPrinterBuilder().writer(new PrintWriter(stream, false, StandardCharsets.UTF_8)).build().print(this);
+        prettyPrinterBuilder().hideUnsetProperties(true)
+                .writer(new PrintWriter(stream, false, StandardCharsets.UTF_8))
+                .build().print(this);
         return stream.toString(StandardCharsets.UTF_8);
     }
 }

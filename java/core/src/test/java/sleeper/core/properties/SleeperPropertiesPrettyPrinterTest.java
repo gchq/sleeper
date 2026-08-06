@@ -32,14 +32,13 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.testutils.printers.ToStringPrintWriter;
 
-import java.io.PrintWriter;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -358,6 +357,30 @@ class SleeperPropertiesPrettyPrinterTest {
         }
     }
 
+    @Nested
+    @DisplayName("Exclude unset properties")
+    class ExcludeUnset {
+
+        @Test
+        void shouldExcludeUnsetProperties() {
+            // Given
+            InstanceProperties properties = new InstanceProperties();
+            properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
+
+            // When
+            String output = print(InstanceProperties.createPrettyPrinterBuilder().hideUnsetProperties(true), properties);
+
+            // Then
+            assertThat(output).isEqualTo("""
+
+                    ## The following instance properties are commonly used throughout Sleeper.
+
+                    # Whether to keep the Sleeper log groups when the instance is destroyed.
+                    sleeper.retain.logs.after.destroy=true
+                    """);
+        }
+    }
+
     private static String printEmptyInstanceProperties() {
         return printInstanceProperties(new InstanceProperties());
     }
@@ -371,11 +394,11 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(InstanceProperties properties) {
-        return print(InstanceProperties::createPrettyPrinter, properties);
+        return print(InstanceProperties.createPrettyPrinterBuilder(), properties);
     }
 
     private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
-        return print(writer -> InstanceProperties.createPrettyPrinterWithGroup(writer, group), properties);
+        return print(InstanceProperties.createPrettyPrinterBuilderWithGroup(group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
@@ -384,19 +407,19 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printTableProperties(TableProperties tableProperties) {
-        return print(TableProperties::createPrettyPrinter, tableProperties);
+        return print(TableProperties.createPrettyPrinterBuilder(), tableProperties);
     }
 
     private static String printTablePropertiesByGroup(TableProperties tableProperties, PropertyGroup group) {
-        return print(writer -> TableProperties.createPrettyPrinterWithGroup(writer, group), tableProperties);
+        return print(TableProperties.createPrettyPrinterBuilderWithGroup(group), tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
-            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer, SleeperProperties<T> values) {
+            SleeperPropertiesPrettyPrinter.Builder<T> config, SleeperProperties<T> values) {
         // Test against PrintStream as the clients module builds its writer from that.
         // This forces us to ensure the output is flushed to the console before the system continues.
         ToStringPrintWriter out = new ToStringPrintWriter();
-        printer.apply(out.getPrintWriter()).print(values);
+        config.writer(out.getPrintWriter()).build().print(values);
         return out.toString();
     }
 }

@@ -159,17 +159,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     /**
-     * Creates a builder for a printer to be used to display all table properties.
-     *
-     * @param  writer the writer to write to
-     * @return        the pretty printer
-     */
-    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilder() {
-        return SleeperPropertiesPrettyPrinter.builder()
-                .properties(TableProperty.getAll(), TablePropertyGroup.getAll());
-    }
-
-    /**
      * Creates a printer to be used to display table properties in a given group.
      *
      * @param  writer the writer to write to
@@ -178,11 +167,32 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinterWithGroup(
             PrintWriter writer, PropertyGroup group) {
+        return createPrettyPrinterBuilderWithGroup(group).writer(writer).build();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all table properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer builder
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilder() {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(TableProperty.getAll(), TablePropertyGroup.getAll());
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display table properties in a given group.
+     *
+     * @param  group the group to display
+     * @return       the pretty printer builder
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilderWithGroup(PropertyGroup group) {
         return SleeperPropertiesPrettyPrinter.builder()
                 .sortedProperties(TableProperty.getAll().stream()
                         .filter(property -> property.getPropertyGroup().equals(group))
                         .collect(Collectors.toList()))
-                .writer(writer).hideUnknownProperties(true).build();
+                .hideUnknownProperties(true);
     }
 
     public TableStatus getStatus() {

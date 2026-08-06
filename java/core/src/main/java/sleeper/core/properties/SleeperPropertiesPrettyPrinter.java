@@ -36,6 +36,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final List<T> sortedProperties;
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
+    private final boolean hideUnsetProperties;
     private final boolean hideUnknownProperties;
     private final boolean printTemplate;
     private final boolean printGroupDetails;
@@ -44,6 +45,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         sortedProperties = builder.sortedProperties;
         writer = builder.writer;
         propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
+        hideUnsetProperties = builder.hideUnsetProperties;
         hideUnknownProperties = builder.hideUnknownProperties;
         printTemplate = builder.printTemplate;
         printGroupDetails = builder.printGroupDetails;
@@ -91,6 +93,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     public void print(SleeperProperties<T> properties) {
         PropertyGroup currentGroup = null;
         for (T property : sortedProperties) {
+            if (hideUnsetProperties && !properties.isSet(property)) {
+                continue;
+            }
             if (currentGroup == null) {
                 currentGroup = property.getPropertyGroup();
                 printGroupHeader(currentGroup);
@@ -191,6 +196,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     public static final class Builder<T extends SleeperProperty> {
         private List<T> sortedProperties;
         private PrintWriter writer;
+        private boolean hideUnsetProperties;
         private boolean hideUnknownProperties;
         private boolean printTemplate;
         private boolean printGroupDetails = true;
@@ -231,6 +237,17 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
          */
         public Builder<T> writer(PrintWriter writer) {
             this.writer = writer;
+            return this;
+        }
+
+        /**
+         * Sets whether to display properties that are unset.
+         *
+         * @param  hideUnsetProperties true to hide unset properties, false to display them
+         * @return                     this builder
+         */
+        public Builder<T> hideUnsetProperties(boolean hideUnsetProperties) {
+            this.hideUnsetProperties = hideUnsetProperties;
             return this;
         }
 
