@@ -15,6 +15,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - name: Check version numbers are set corectly
+      - name: Check version numbers are set correctly
         run: .github/scripts/checkVersionNumber.sh
 
