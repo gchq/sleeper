@@ -246,8 +246,7 @@ public final class EksBulkImportStack extends NestedStack {
                         AccessPolicy.fromAccessPolicyName("AmazonEKSEditPolicy", AccessPolicyNameOptions.builder()
                                 .accessScopeType(AccessScopeType.NAMESPACE)
                                 .namespaces(List.of(uniqueBulkImportId))
-                                .build())
-                ))
+                                .build())))
                 .build();
 
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
@@ -315,9 +314,8 @@ public final class EksBulkImportStack extends NestedStack {
             Map<String, Object> checkJobStatusState = parseJson(
                     "/step-functions/check-job-status.json",
                     replacements(Map.of(
-                        "partition-placeholder", instanceProperties.get(PARTITION),
-                        "table-name-placeholder", jobLookupTableName.get()
-                    )));
+                            "partition-placeholder", instanceProperties.get(PARTITION),
+                            "table-name-placeholder", jobLookupTableName.get())));
 
             definition = runSparkJob
                     .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
@@ -502,16 +500,14 @@ public final class EksBulkImportStack extends NestedStack {
                 .collect(Collectors.joining(","));
         return cluster.addManifest("nodepool", parseJson("/k8s/nodepool.json", replacements(Map.of(
                 "\"instance-type-placeholder\"", instanceTypesJson,
-                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT)
-        ))));
+                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT)))));
     }
 
     @SuppressWarnings("unchecked")
     private KubernetesManifest addResourceQuotaManifest(Cluster cluster, InstanceProperties instanceProperties, String namespace) {
         return cluster.addManifest("resource-quota", parseJson("/k8s/resource-quota.json", replacements(Map.of(
                 "namespace-placeholder", namespace,
-                "job-limit", instanceProperties.get(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL)
-        ))));
+                "job-limit", instanceProperties.get(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL)))));
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
