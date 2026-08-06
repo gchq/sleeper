@@ -91,6 +91,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES;
@@ -161,51 +162,10 @@ public final class EksBulkImportStack extends NestedStack {
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
 
         EksClusterType bulkImportClusterType = instanceProperties.getEnumValue(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.class);
-
-        KubectlProviderOptions.Builder kubectlProviderOptions = KubectlProviderOptions.builder()
-                .kubectlLayer(new KubectlV35Layer(this, "KubectlLayer"));
-
-        String awscliLayerArn = instanceProperties.get(BULK_IMPORT_EKS_AWSCLI_LAYER_ARN);
-        if (awscliLayerArn != null && !awscliLayerArn.isEmpty()) {
-            kubectlProviderOptions.awscliLayer(LayerVersion.fromLayerVersionArn(this, "awsclilayer", awscliLayerArn));
-        }
-
         if (bulkImportClusterType == EksClusterType.AUTOMODE) {
-            bulkImportCluster = Cluster.Builder.create(this, "EksBulkImportCluster")
-                    .clusterName(uniqueBulkImportId)
-                    .version(KubernetesVersion.V1_35)
-                    .kubectlProviderOptions(kubectlProviderOptions.build())
-                    .vpc(coreStacks.getVpc())
-                    .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
-                    .compute(ComputeConfig.builder().nodePools(List.of("system")).build())
-                    .build();
-
-            addNodepoolManifest(bulkImportCluster, instanceProperties);
-            if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
-                addFluentBitLoggingForAutoMode(bulkImportCluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
-            }
-
+            bulkImportCluster = createAutoModeCluster(this, instanceProperties, coreStacks, uniqueBulkImportId);
         } else if (bulkImportClusterType == EksClusterType.FARGATE) {
-            bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
-                    .clusterName(uniqueBulkImportId)
-                    .version(KubernetesVersion.V1_35)
-                    .kubectlProviderOptions(kubectlProviderOptions.build())
-                    .vpc(coreStacks.getVpc())
-                    .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
-                    .build();
-
-            FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
-                    .fargateProfileName(uniqueBulkImportId)
-                    .vpc(coreStacks.getVpc())
-                    .subnetSelection(SubnetSelection.builder()
-                            .subnets(List.of(coreStacks.getSubnets().get(0)))
-                            .build())
-                    .selectors(List.of(Selector.builder()
-                            .namespace(uniqueBulkImportId)
-                            .build()))
-                    .build());
-
-            addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+            bulkImportCluster = createFargateCluster(this, instanceProperties, coreStacks, uniqueBulkImportId);
         } else {
             throw new IllegalArgumentException("Unknown Bulk Import EKS cluster type: " + bulkImportClusterType);
         }
@@ -246,8 +206,7 @@ public final class EksBulkImportStack extends NestedStack {
                         AccessPolicy.fromAccessPolicyName("AmazonEKSEditPolicy", AccessPolicyNameOptions.builder()
                                 .accessScopeType(AccessScopeType.NAMESPACE)
                                 .namespaces(List.of(uniqueBulkImportId))
-                                .build())
-                ))
+                                .build())))
                 .build();
 
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
@@ -265,6 +224,71 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
 
         Utils.addTags(this, instanceProperties);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Cluster createAutoModeCluster(
+            Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, String uniqueBulkImportId) {
+        ComputeConfig computeConfig = null;
+        Map<String, Object> nodePoolManifest = null;
+        if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL)) {
+            computeConfig = ComputeConfig.builder().nodePools(List.of("system")).build(); // Disable general-purpose node pool
+            nodePoolManifest = createNodepoolManifest(instanceProperties);
+        }
+        Cluster cluster = Cluster.Builder.create(scope, "EksBulkImportCluster")
+                .clusterName(uniqueBulkImportId)
+                .version(KubernetesVersion.V1_35)
+                .kubectlProviderOptions(createKubectlProviderOptions(scope, instanceProperties))
+                .vpc(coreStacks.getVpc())
+                .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                .compute(computeConfig)
+                .build();
+
+        if (nodePoolManifest != null) {
+            cluster.addManifest("nodepool", nodePoolManifest);
+        }
+        if (instanceProperties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED)) {
+            addFluentBitLoggingForAutoMode(cluster, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+        }
+        return cluster;
+    }
+
+    private static Cluster createFargateCluster(
+            Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, String uniqueBulkImportId) {
+
+        Cluster cluster = FargateCluster.Builder.create(scope, "EksBulkImportCluster")
+                .clusterName(uniqueBulkImportId)
+                .version(KubernetesVersion.V1_35)
+                .kubectlProviderOptions(createKubectlProviderOptions(scope, instanceProperties))
+                .vpc(coreStacks.getVpc())
+                .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
+                .build();
+
+        FargateProfile fargateProfile = cluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
+                .fargateProfileName(uniqueBulkImportId)
+                .vpc(coreStacks.getVpc())
+                .subnetSelection(SubnetSelection.builder()
+                        .subnets(List.of(coreStacks.getSubnets().get(0)))
+                        .build())
+                .selectors(List.of(Selector.builder()
+                        .namespace(uniqueBulkImportId)
+                        .build()))
+                .build());
+
+        addFluentBitLogging(cluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+        return cluster;
+    }
+
+    private static KubectlProviderOptions createKubectlProviderOptions(Construct scope, InstanceProperties instanceProperties) {
+
+        KubectlProviderOptions.Builder kubectlProviderOptions = KubectlProviderOptions.builder()
+                .kubectlLayer(new KubectlV35Layer(scope, "KubectlLayer"));
+
+        String awscliLayerArn = instanceProperties.get(BULK_IMPORT_EKS_AWSCLI_LAYER_ARN);
+        if (awscliLayerArn != null && !awscliLayerArn.isEmpty()) {
+            kubectlProviderOptions.awscliLayer(LayerVersion.fromLayerVersionArn(scope, "awsclilayer", awscliLayerArn));
+        }
+        return kubectlProviderOptions.build();
     }
 
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
@@ -315,9 +339,8 @@ public final class EksBulkImportStack extends NestedStack {
             Map<String, Object> checkJobStatusState = parseJson(
                     "/step-functions/check-job-status.json",
                     replacements(Map.of(
-                        "partition-placeholder", instanceProperties.get(PARTITION),
-                        "table-name-placeholder", jobLookupTableName.get()
-                    )));
+                            "partition-placeholder", instanceProperties.get(PARTITION),
+                            "table-name-placeholder", jobLookupTableName.get())));
 
             definition = runSparkJob
                     .next(CustomState.Builder.create(this, "CheckJobStatus").stateJson(checkJobStatusState).build()
@@ -350,7 +373,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private void addFluentBitLoggingForAutoMode(Cluster cluster, ILogGroup logGroup) {
+    private static void addFluentBitLoggingForAutoMode(Cluster cluster, ILogGroup logGroup) {
         // Based on guide at https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html
         // FluentBit runs as a DaemonSet on EC2 nodes managed by EKS auto mode
         String loggingNamespaceName = "amazon-cloudwatch";
@@ -453,7 +476,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, ILogGroup logGroup) {
+    private static void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, ILogGroup logGroup) {
         // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html
 
         KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
@@ -491,27 +514,24 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private KubernetesManifest createNamespace(Cluster cluster, String namespaceName) {
+    private static KubernetesManifest createNamespace(Cluster cluster, String namespaceName) {
         return cluster.addManifest("EksBulkImportNamespace", parseJson("/k8s/namespace.json", namespaceReplacement(namespaceName)));
     }
 
-    @SuppressWarnings("unchecked")
-    private KubernetesManifest addNodepoolManifest(Cluster cluster, InstanceProperties instanceProperties) {
+    private static Map<String, Object> createNodepoolManifest(InstanceProperties instanceProperties) {
         String instanceTypesJson = instanceProperties.getList(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES).stream()
                 .map(type -> "\"" + type + "\"")
                 .collect(Collectors.joining(","));
-        return cluster.addManifest("nodepool", parseJson("/k8s/nodepool.json", replacements(Map.of(
+        return parseJson("/k8s/nodepool.json", replacements(Map.of(
                 "\"instance-type-placeholder\"", instanceTypesJson,
-                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT)
-        ))));
+                "cpu-limit-placeholder", instanceProperties.get(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT))));
     }
 
     @SuppressWarnings("unchecked")
     private KubernetesManifest addResourceQuotaManifest(Cluster cluster, InstanceProperties instanceProperties, String namespace) {
         return cluster.addManifest("resource-quota", parseJson("/k8s/resource-quota.json", replacements(Map.of(
                 "namespace-placeholder", namespace,
-                "job-limit", instanceProperties.get(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL)
-        ))));
+                "job-limit", instanceProperties.get(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL)))));
     }
 
     private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
@@ -554,7 +574,7 @@ public final class EksBulkImportStack extends NestedStack {
                 cluster.addManifest("StepFunctionRoleBinding", parseJson("/k8s/step-function-role-binding.json", namespaceReplacement(namespaceName))));
     }
 
-    private void withDependencyOn(KubernetesManifest namespace, KubernetesManifest... manifests) {
+    private static void withDependencyOn(KubernetesManifest namespace, KubernetesManifest... manifests) {
         for (KubernetesManifest manifest : manifests) {
             manifest.getNode().addDependency(namespace);
         }
