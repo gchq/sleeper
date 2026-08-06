@@ -120,11 +120,11 @@ class GenerateSystemTestSuiteDocumentationIT {
     private static Stream<Arguments> parallelSystemTests() {
         return Stream.of(
                 Arguments.of("Slow1", "AutoStopEcsTaskST"),
-                Arguments.of("Slow2", "EksBulkImportST"),
+                Arguments.of("Slow2", "EksFargateBulkImportST"),
                 Arguments.of("Slow3", "MultipleTablesST"),
                 Arguments.of("Expensive1", "CompactionDataFusionPerformanceST"),
-                Arguments.of("Expensive2", "CompactionPerformanceST"),
-                Arguments.of("Expensive3", "IngestPerformanceST"));
+                Arguments.of("Expensive2", "IngestPerformanceST"),
+                Arguments.of("Expensive3", "CompactionPerformanceST"));
     }
 
     private static String columnContaining(String documentation, String systemTestName) {

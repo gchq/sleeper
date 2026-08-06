@@ -681,6 +681,13 @@
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.starter.memory.mb=4096
 
+# The number of days a bulk import job is held in the bulk import bucket. When a job is submitted to
+# Spark it is written to S3 for Spark to read. This is retained in case the job needs to be retried,
+# and for diagnostic purposes.
+# Defaults to the value of sleeper.log.retention.days.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.job.file.retention.days=30
+
 # The amount of memory allocated to a Spark executor. Used to set spark.executor.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
@@ -1945,7 +1952,7 @@
 
 # The fully qualified composite classes to deploy. These are the classes that interact with Athena.
 # (default value shown below, uncomment to set a value)
-# sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
+# sleeper.athena.handler.classes=sleeper.athena.composite.DataFusionCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
 
 # The amount of memory (MB) the athena composite handler has.
 # (default value shown below, uncomment to set a value)

@@ -15,19 +15,26 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.S3BucketName;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.List;
+
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_JOB_FILE_RETENTION_DAYS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 public class BulkImportBucketStack extends NestedStack {
     private final IBucket importBucket;
@@ -42,6 +49,19 @@ public class BulkImportBucketStack extends NestedStack {
                 .versioned(false)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .encryption(BucketEncryption.S3_MANAGED)
+                .lifecycleRules(List.of(
+                        LifecycleRule.builder()
+                                .prefix(BulkImportJob.FILES_BUCKET_PREFIX)
+                                .expiration(Duration.days(instanceProperties.getInt(BULK_IMPORT_JOB_FILE_RETENTION_DAYS)))
+                                .build(),
+                        LifecycleRule.builder()
+                                .prefix("logs/")
+                                .expiration(Duration.days(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                                .build(),
+                        LifecycleRule.builder()
+                                .prefix("applications/")
+                                .expiration(Duration.days(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                                .build()))
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());

@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.50.0</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.50.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -155,7 +155,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.48.2</aws-crt.version>
+        <aws-crt.version>0.48.3</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
@@ -199,7 +199,7 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.83.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.262.2</cdk.version>
+        <cdk.version>2.263.0</cdk.version>
         <constructs.version>10.8.0</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.139.0</jsii.version>
@@ -249,7 +249,7 @@
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
-        <xmlunit.version>2.12.0</xmlunit.version>
+        <xmlunit.version>2.13.0</xmlunit.version>
         <jsonunit.version>6.0.1</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
