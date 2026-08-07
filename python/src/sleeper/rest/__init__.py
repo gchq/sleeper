@@ -11,6 +11,18 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""
+Public API for interacting with Sleeper REST services.
+
+This module re-exports the primary client and data models used to create
+and manage Sleeper tables via the REST API.
+
+Exports:
+    RestApiClient: Client for interacting with the Sleeper REST API.
+    AddTableRequest: Request model used when creating a table.
+    AddTableResponse: Response model returned after creating a table.
+    TableSchema: Schema definition for a Sleeper table.
+"""
 
 from sleeper.rest.rest_client import RestApiClient
 from sleeper.rest.table import AddTableRequest, AddTableResponse, TableSchema

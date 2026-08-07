@@ -197,6 +197,14 @@ class SleeperClient:
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
 
     def add_table(self, table_name: str, schema: TableSchema, split_points: list | None = None) -> AddTableResponse:
+        """Create a new Sleeper table.
+
+        :param: table_name: Name of the table to create.
+        :param: schema: Schema definition for the table.
+        :param: split_points: Optional initial split points for partitioning.
+
+        :return: AddTableResponse: Details of the created table.
+        """
         return self.rest_client.add_table(table_name=table_name, schema=schema, split_points=split_points)
 
     async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False, sql_query: str | None = None) -> list:

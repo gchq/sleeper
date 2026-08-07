@@ -21,22 +21,18 @@ class ApiGatewaySigner:
     """
     Signs API Gateway requests using AWS Signature Version 4 (SigV4).
 
-    Supports signing requests for:
-    - API Gateway HTTP APIs
-    - API Gateway REST APIs
-    - API Gateway WebSocket APIs
-
-    The returned headers can be supplied directly to an HTTP client
-    or used as part of a WebSocket connection handshake.
+    Supports signing requests for API Gateway HTTP, REST and WebSocket APIs.
+    The returned headers can be supplied directly to an HTTP client or used
+    as part of a WebSocket connection handshake.
     """
 
     def __init__(self, region: str):
         """
         Create a signer for API Gateway requests.
 
-        Args:
-            region: AWS region hosting the API.
+        :param region: The AWS region hosting the API Gateway endpoint.
         """
+
         self.region = region
 
     def sign(
@@ -49,15 +45,13 @@ class ApiGatewaySigner:
         """
         Sign a request using AWS Signature Version 4.
 
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE, etc.).
-            url: Fully-qualified request URL.
-            headers: Optional request headers.
-            body: Optional request payload.
-
-        Returns:
-            Dictionary containing signed request headers.
+        :param method: The HTTP method (GET, POST, PUT, DELETE, etc.).
+        :param url: The fully qualified request URL.
+        :param headers: Optional request headers.
+        :param body: Optional request payload.
+        :return: A dictionary containing the signed request headers.
         """
+
         request_headers = headers.copy() if headers else {}
 
         credentials = Session().get_credentials().get_frozen_credentials()
