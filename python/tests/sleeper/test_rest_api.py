@@ -67,3 +67,10 @@ def rest_client() -> RestApiClient:
     properties.set(RestCdkProperty.REST_BASE_URL, ENDPOINT)
     client = RestApiClient(instance_properties=properties)
     return client
+
+
+@pytest.fixture(autouse=True)
+def aws_credentials(monkeypatch):
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
+    monkeypatch.setenv("AWS_SESSION_TOKEN", "test")
