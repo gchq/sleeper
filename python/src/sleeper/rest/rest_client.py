@@ -78,11 +78,12 @@ class RestApiClient:
 
     def _raise_for_status(self, response: requests.Response) -> None:
         try:
+            logger.debug(f"None 2xx status code. {response.json()}")
             response.raise_for_status()
 
         except requests.HTTPError as err:
             raise SleeperApiError(
                 status_code=response.status_code,
                 message=response.reason,
-                response_body=response.text,
+                response_body=response.json(),
             ) from err

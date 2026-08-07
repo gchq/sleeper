@@ -28,6 +28,7 @@ class SleeperApiError(SleeperError):
     ):
         self.status_code = status_code
         self.response_body = response_body
+        self.message = response_body.get("message")
 
         super().__init__(f"HTTP {status_code}: {message}")
 
