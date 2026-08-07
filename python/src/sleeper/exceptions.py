@@ -12,30 +12,40 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""Exceptions raised by the Sleeper SDK."""
+
+from typing import Any
+
 
 class SleeperError(Exception):
-    """Base exception for the Sleeper SDK."""
+    """Base exception for all Sleeper SDK errors."""
 
 
 class SleeperApiError(SleeperError):
-    """Returned when a Sleeper API request fails."""
+    """Raised when a Sleeper API request returns an error response."""
 
     def __init__(
         self,
         status_code: int,
         message: str,
-        response_body: str | None = None,
+        response_body: dict[str, Any] | None = None,
     ):
+        """
+        Create an API error.
+
+        :param status_code: HTTP status code returned by the API.
+        :param message: HTTP reason phrase or fallback error message.
+        :param response_body: Optional response body returned by the API.
+        """
         self.status_code = status_code
         self.response_body = response_body
-        self.message = response_body.get("message")
 
-        super().__init__(f"HTTP {status_code}: {message}")
+        api_message = response_body.get("message") if response_body and "message" in response_body else message
+
+        self.message = api_message
+
+        super().__init__(f"HTTP {status_code}: {api_message}")
 
 
 class SleeperConfigurationError(SleeperError):
-    def __init__(
-        self,
-        message: str,
-    ):
-        super().__init__(f"Configuration Error: {message}")
+    """Raised when the Sleeper client is incorrectly configured."""
