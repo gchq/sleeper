@@ -65,7 +65,7 @@ class RestApiClient:
 
         return response
 
-    def add_table(self, table_name: str, schema: TableSchema, split_points: list) -> AddTableResponse:
+    def add_table(self, table_name: str, schema: TableSchema, split_points: list | None = None) -> AddTableResponse:
         properties = {"sleeper.table.name": table_name}
 
         request = AddTableRequest(
