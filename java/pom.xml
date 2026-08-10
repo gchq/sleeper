@@ -99,7 +99,7 @@
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
-        <yawk.lz4.version>1.11.1</yawk.lz4.version>
+        <yawk.lz4.version>1.11.2</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
