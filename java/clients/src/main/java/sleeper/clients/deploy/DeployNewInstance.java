@@ -248,12 +248,14 @@ public class DeployNewInstance {
             if (deployPaused) {
                 command = command.toBuilder().deployPaused(true).build();
             }
-            InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
-            command = command.toBuilder()
-                    .instanceId(instanceProperties.get(ID))
-                    .vpcId(instanceProperties.get(VPC_ID))
-                    .subnets(instanceProperties.get(SUBNETS))
-                    .build();
+            if (expectedInstanceConfiguration != null) {
+                InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
+                command = command.toBuilder()
+                        .instanceId(instanceProperties.get(ID))
+                        .vpcId(instanceProperties.get(VPC_ID))
+                        .subnets(instanceProperties.get(SUBNETS))
+                        .build();
+            }
             return command;
         }
 
