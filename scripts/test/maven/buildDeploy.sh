@@ -33,7 +33,7 @@ END_BUILD_TIME=$(record_time)
 "$THIS_DIR/deployTest.sh" "$@" \
   -pl system-test/system-test-suite \
   -Dsleeper.system.test.cluster.enabled=true \
-  -DrunIT=SetupInstanceIT
+  -DrunIT=SetupInstanceST
 
 FINISH_TIME=$(record_time)
 
