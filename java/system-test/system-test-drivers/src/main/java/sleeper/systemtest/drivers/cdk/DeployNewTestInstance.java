@@ -28,9 +28,12 @@ import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.util.FilesUtil;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -69,6 +72,13 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
+
+            Path directory = configurationPath.resolve("temp");
+            Files.createDirectories(directory);
+            FilesUtil.clearDirectory(directory);
+            SaveLocalProperties.saveToDirectory(directory,
+                    config.getInstanceProperties(),
+                    config.getTableProperties().stream());
 
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
