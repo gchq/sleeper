@@ -22,7 +22,7 @@ import jnr.ffi.Struct;
  * A value for a Sleeper row key. Row keys columns may be several different types, e.g. int, long, etc. This class is a
  * strongly typed FFI compatible representation. It consists of the row key data in a C union type and an enum member
  * specifying the type.
- *
+ * <p>
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.

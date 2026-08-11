@@ -48,6 +48,10 @@ docker buildx create --name sleeper --use
 This may not be suitable for all use cases. You can disable this by passing "false" as the second argument. In that
 case, you will need to ensure a Docker builder is set that can build multiplatform images before calling this script.
 
+You can also configure options for the build with `scripts/deploy/setDeployConfig.sh`. For options,
+see [building in a custom environment](custom-environment.md). If it's set to deploy images from a remote repository,
+this publishing will fail.
+
 ### Installing published artefacts
 
 We have scripts to install Sleeper from published artefacts. We have not yet published Sleeper to Maven Central or

@@ -5,6 +5,160 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+
+## Version 0.37.3
+
+### 29th July 2026
+
+This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
+
+General issues:
+    - Change Rust builder to use Trixie over Bookworm
+    - New VPC interface endpoints for ECR for environment deployment
+
+## Version 0.37.2
+
+### 27th July, 2026
+
+This includes improvements to bulk import and queries.
+
+Bulk import:
+- Logs are now sent to CloudWatch with bulk import on EKS Auto Mode.
+- Spark is now configured correctly for bulk import in non-standard AWS partitions.
+
+Query:
+- Added an option to parallelise queries when running locally with QueryExecutor.
+
+Bulk Export:
+- Added support for SQL query filtering.
+
+Configuration:
+- Added `sleeper.table.query.data.engine` to set a different data engine for query than for compaction.
+
+Documentation:
+- Documented local build validation in Rust for developers.
+
+Python
+- Updated to the support multiple support version of python ahead of work on the API
+
+Bugfixes:
+- REST API now has the correct permissions to add a Sleeper table.
+- EKS state machine no longer fails when run in a region with a non-standard partition
+
+
+## Version 0.37.1
+
+### 13th July, 2026
+
+This includes a deployment flexibility improvement for Docker images, upgrades to dependencies and a minor bug fix.
+
+Build:
+- A separate base Dockerfile can now be set for specific Docker images with `setDeployConfig.sh`.
+- Updated to use Rust 1.96.
+
+Documentation:
+- Documented context variables used by Sleeper's CDK apps.
+- Documented overriding CA certificates.
+
+Bugfixes:
+- Queries in DataFusion sometimes failed because of a separate credential provider per query.
+
+
+## Version 0.37.0
+
+### 6th July, 2026
+
+This includes bulk import on EKS Auto Mode, and some improvements to usability and web socket queries.
+
+Bulk import:
+- Added an option to run bulk import on EKS Auto Mode, in `sleeper.bulk.import.eks.cluster.type`.
+
+Query:
+- Increased default retries when throttled publishing results to a web socket.
+- Added query processing options for retries publishing results to a web socket.
+
+Scripts:
+- Script to add a table now takes options for configuration instead of using templates.
+
+Configuration:
+- Made the example configuration files more representative of real usage.
+
+Bugfixes:
+- Resolved some segmentation faults that could occur during calls to DataFusion.
+
+
+## Version 0.36.1
+
+### 24th June, 2026
+
+This is primarily a bug fix release with some usability improvements. Note that some CDK context variables have been
+renamed for consistent capitalisation.
+
+Deployment:
+- Sleeper's CDK apps now have separate context variables for reading instance properties or a full configuration.
+- Sleeper's CDK context variables have been renamed to use camelCase consistently.
+
+Configuration:
+- Removed values from the configuration examples that are usually set separately during deployment.
+
+Bulk import:
+- Added an option to allow access to the EKS Kubernetes API from a security group in the same VPC,
+  with `sleeper.bulk.import.eks.api.allowed.security.groups`.
+
+Bugfixes:
+- When Spark throws an exception during bulk import, it is now correctly stored in the job tracker for reporting.
+- When a bulk import job fails in EKS, the StepFunctions state machine now reports it as failed based on the job tracker.
+- Prevented an occasional SIGSEGV that could occur in compaction tasks.
+- When interrupted, a compaction task will now terminate after the current job finishes.
+
+
+## Version 0.36.0
+
+### 15th June, 2026
+
+This includes support for nullable value fields, ephemeral storage configuration for EKS bulk import and
+various dependency upgrades.
+
+Bulk import:
+- Added configurable ephemeral storage for Spark executor pods in EKS bulk import. A custom executor pod
+  template is now written at deployment time, controlled by the instance property
+  `sleeper.bulk.import.eks.spark.executor.ephemeral.storage`.
+- Some EKS bulk import properties have been separated from their equivalent EMR properties to allow for
+  more targeted configuration. Shared properties between EMR and EKS have been extracted to generic
+  instance-level properties. Some EKS-specific default values have been updated.
+
+REST API:
+- An endpoint to add a Sleeper table has been added to the REST API.
+
+Nullable value fields:
+- Value fields in a Sleeper table schema can now be declared as nullable. Rows may be stored and
+  retrieved with null values for these fields. Aggregations over nullable value columns are forbidden.
+
+Configuration:
+- Spaces are now permitted between items in list-valued configuration properties.
+- Certain resource types can now be excluded from tagging during CDK deployment by using the
+  `sleeper.tags.excluded.resources` property.
+- Added option to enable/disable event count metrics for the follower lambda, controlled by
+  `sleeper.statestore.transactionlog.eventcount.metrics.enabled`.
+
+Build:
+- The Nix Shell configuration has been deleted.
+- Extra configuration can now be set for the Rust toolchain during a build.
+- Container images can now be built using a custom docker image, this can be done with an option on either the `setDeployConfig.sh` or `publishDocker.sh` scripts.
+
+Deployment:
+- Support for non-standard AWS partitions has been improved with the partition now set explicitly
+  in a number of places and passed through to the DataFusion object store. The Hadoop configuration
+  property `fs.s3a.endpoint.region` is now consistently set across all Hadoop configuration contexts, derived from the instance region.
+- Demonstration deployment is now part of the normal build script, previously there was a separate
+  build script to include the demonstration artefacts.
+
+Bugfixes:
+- Log level for cache hits in `TablePropertiesProvider` has been lowered to avoid noise.
+- Logging in EKS bulk import has been fixed.
+- Deploying a pre-published version of Sleeper now correctly uses multiplatform images.
+
+
 ## Version 0.35.3
 
 ### 8th May, 2025

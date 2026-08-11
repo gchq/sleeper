@@ -39,7 +39,7 @@ public class PropertiesDiff {
     private final Map<String, PropertyDiff> changes;
 
     public PropertiesDiff(SleeperProperties<?> before, SleeperProperties<?> after) {
-        this(before.toMap(), after.toMap());
+        this(before.toMapIncludingSchema(), after.toMapIncludingSchema());
     }
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {

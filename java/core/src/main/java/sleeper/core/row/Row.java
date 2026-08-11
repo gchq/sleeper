@@ -22,12 +22,10 @@ import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * The fundamental data item. A {@link Row} consists of a {@link Map} from
@@ -88,10 +86,6 @@ public class Row {
      */
     public void put(String fieldName, Object value) {
         values.put(fieldName, value);
-    }
-
-    public Set<String> getKeys() {
-        return Collections.unmodifiableSet(values.keySet());
     }
 
     /**

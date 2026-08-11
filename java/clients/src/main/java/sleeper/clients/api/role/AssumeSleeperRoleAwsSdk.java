@@ -115,10 +115,11 @@ public class AssumeSleeperRoleAwsSdk {
     public DataFusionAwsConfig dataFusionAwsConfig() {
         AwsSessionCredentials credentials = (AwsSessionCredentials) credentialsProvider.resolveCredentials();
         return DataFusionAwsConfig.builder()
-                .accessKey(credentials.accessKeyId())
-                .secretKey(credentials.secretAccessKey())
+                .accessKeyId(credentials.accessKeyId())
+                .secretAccessKey(credentials.secretAccessKey())
                 .sessionToken(credentials.sessionToken())
                 .region(region)
+                .endpoint(endpointUrl)
                 .build();
     }
 }

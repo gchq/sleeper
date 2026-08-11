@@ -23,7 +23,6 @@ import io.trino.spi.connector.ConnectorPageSink;
 import io.trino.spi.connector.SchemaTableName;
 
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 
 import java.util.Collection;
@@ -43,24 +42,19 @@ public class SleeperPageSink implements ConnectorPageSink {
     private static final Logger LOGGER = Logger.get(SleeperPageSink.class);
 
     private final IngestCoordinator<Page> ingestRecordsPageAsync;
-    private final List<SleeperColumnHandle> sleeperColumnHandlesInOrder;
     private long noOfAppends = 0L;
     private long noOfPositionsWritten = 0L;
 
     /**
      * Construct the page sink.
      *
-     * @param sleeperConnectionAsTrino    the connection to Sleeper
-     * @param schemaTableName             the table to append rows to
-     * @param sleeperColumnHandlesInOrder the columns which are to be appended (must currently be all of the columns in
-     *                                    the table)
+     * @param sleeperConnectionAsTrino the connection to Sleeper
+     * @param schemaTableName          the table to append rows to
      */
     public SleeperPageSink(SleeperConnectionAsTrino sleeperConnectionAsTrino,
-            SchemaTableName schemaTableName,
-            List<SleeperColumnHandle> sleeperColumnHandlesInOrder) {
+            SchemaTableName schemaTableName) {
         LOGGER.debug("Creating a SleeperPageSink for %s", schemaTableName.getTableName());
         this.ingestRecordsPageAsync = sleeperConnectionAsTrino.createIngestCoordinator(schemaTableName);
-        this.sleeperColumnHandlesInOrder = sleeperColumnHandlesInOrder;
     }
 
     /**

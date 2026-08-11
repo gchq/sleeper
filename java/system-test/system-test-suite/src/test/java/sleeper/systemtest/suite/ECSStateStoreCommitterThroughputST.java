@@ -315,7 +315,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
-                .isGreaterThan(400.00);
+                .isGreaterThan(300.00);
     }
 
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {

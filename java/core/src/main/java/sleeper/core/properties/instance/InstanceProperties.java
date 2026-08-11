@@ -33,6 +33,8 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
 
@@ -151,6 +153,31 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         Properties tagsProperties = getTagsProperties();
         tagsProperties.store(stringWriter, "");
         return stringWriter.toString();
+    }
+
+    /**
+     * Create the AWS endpoint URL for a service.
+     *
+     * The protocol will be "https".
+     *
+     * @param  service AWS service to create endpoint for
+     * @return         endpoint URL
+     */
+    public String evaluateAWSEndpoint(String service) {
+        return evaluateAWSEndpoint("https", service, get(REGION), get(DNS_SUFFIX));
+    }
+
+    /**
+     * Creates the AWS endpoint URL for the given parameters.
+     *
+     * @param  protocol  URL protocol
+     * @param  service   AWS service code
+     * @param  region    AWS region ID
+     * @param  dnsSuffix endpoint DNS suffix URL
+     * @return           endpoint URL
+     */
+    public static String evaluateAWSEndpoint(String protocol, String service, String region, String dnsSuffix) {
+        return String.format("%s://%s.%s.%s", protocol, service, region, dnsSuffix);
     }
 
     @Override

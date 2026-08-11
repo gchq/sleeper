@@ -39,6 +39,7 @@ import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
  * other environmental information.
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
+    private final DataFusionAwsConfig awsConfig;
     private final ObjectFactory objectFactory;
     private final TableHadoopConfigurationProvider hadoopProvider;
     private final SketchesStore sketchesStore;
@@ -49,11 +50,12 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         public static final FFIContext<DataFusionCompactionFunctions> INSTANCE = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class);
     }
 
-    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
-        this(objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
+    public DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
+        this(awsConfig, objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
     }
 
-    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {
+    DefaultCompactionRunnerFactory(DataFusionAwsConfig awsConfig, ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {
+        this.awsConfig = awsConfig;
         this.objectFactory = objectFactory;
         this.hadoopProvider = hadoopProvider;
         this.sketchesStore = sketchesStore;
@@ -79,7 +81,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), hadoopConf, ContextHolder.INSTANCE);
+                return new DataFusionCompactionRunner(awsConfig, hadoopConf, ContextHolder.INSTANCE);
             case JAVA:
             default:
                 return createJavaRunner(hadoopConf);

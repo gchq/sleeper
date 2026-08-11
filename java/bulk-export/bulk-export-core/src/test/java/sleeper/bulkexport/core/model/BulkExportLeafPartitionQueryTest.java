@@ -49,6 +49,7 @@ public class BulkExportLeafPartitionQueryTest {
         String tableId = UUID.randomUUID().toString();
         String leafPartitionId = partitions.getPartition("LL").getId();
         String subExportId = UUID.randomUUID().toString();
+        String sqlQuery = "SELECT * FROM query_results;";
         List<String> files = Collections.singletonList("/test/file.parquet");
         BulkExportLeafPartitionQuery query1 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
@@ -59,6 +60,7 @@ public class BulkExportLeafPartitionQueryTest {
                 .subExportId(subExportId)
                 .partitionRegion(regionLL)
                 .files(files)
+                .sqlQuery(sqlQuery)
                 .build();
         BulkExportLeafPartitionQuery query2 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
@@ -69,6 +71,7 @@ public class BulkExportLeafPartitionQueryTest {
                 .subExportId(subExportId)
                 .partitionRegion(regionLL)
                 .files(files)
+                .sqlQuery(sqlQuery)
                 .build();
         BulkExportLeafPartitionQuery query3 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
@@ -79,18 +82,13 @@ public class BulkExportLeafPartitionQueryTest {
                 .subExportId(subExportId)
                 .partitionRegion(regionLL)
                 .files(files)
+                .sqlQuery(sqlQuery)
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
     }
 }

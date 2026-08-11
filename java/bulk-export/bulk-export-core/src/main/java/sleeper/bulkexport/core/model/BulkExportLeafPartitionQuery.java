@@ -43,6 +43,7 @@ public class BulkExportLeafPartitionQuery {
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
+    private final String sqlQuery;
 
     private BulkExportLeafPartitionQuery(Builder builder) {
         tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
@@ -52,6 +53,8 @@ public class BulkExportLeafPartitionQuery {
         leafPartitionId = requireNonNull(builder.leafPartitionId, builder, "leafPartitionId field must be provided");
         partitionRegion = requireNonNull(builder.partitionRegion, builder, "partitionRegion field must be provided");
         files = requireNonNull(builder.files, builder, "files field must be provided");
+        // SQL query filter is optional, don't require non null
+        sqlQuery = builder.sqlQuery;
     }
 
     /**
@@ -68,6 +71,7 @@ public class BulkExportLeafPartitionQuery {
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files)
+                .sqlQuery(sqlQuery)
                 .build();
     }
 
@@ -182,6 +186,16 @@ public class BulkExportLeafPartitionQuery {
         return files;
     }
 
+    /**
+     * Gets the optional SQL query filter to run against data
+     * that will be exported.
+     *
+     * @return the optional SQL query filter
+     */
+    public String getSqlQuery() {
+        return sqlQuery;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -197,12 +211,13 @@ public class BulkExportLeafPartitionQuery {
                 && Objects.equals(regions, that.regions)
                 && Objects.equals(leafPartitionId, that.leafPartitionId)
                 && Objects.equals(partitionRegion, that.partitionRegion)
-                && Objects.equals(files, that.files);
+                && Objects.equals(files, that.files)
+                && Objects.equals(sqlQuery, that.sqlQuery);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, exportId, subExportId, regions, leafPartitionId, partitionRegion, files);
+        return Objects.hash(tableId, exportId, subExportId, regions, leafPartitionId, partitionRegion, files, sqlQuery);
     }
 
     @Override
@@ -215,6 +230,7 @@ public class BulkExportLeafPartitionQuery {
                 ", leafPartitionId='" + leafPartitionId + '\'' +
                 ", partitionRegion=" + partitionRegion +
                 ", files=" + files +
+                ", sqlQuery=" + sqlQuery +
                 '}';
     }
 
@@ -236,6 +252,7 @@ public class BulkExportLeafPartitionQuery {
         private String leafPartitionId;
         private Region partitionRegion;
         private List<String> files;
+        private String sqlQuery;
 
         private Builder() {
         }
@@ -314,6 +331,17 @@ public class BulkExportLeafPartitionQuery {
          */
         public Builder files(List<String> files) {
             this.files = files;
+            return this;
+        }
+
+        /**
+         * Provide the optional SQL query filter.
+         *
+         * @param  sqlQuery optional SQL query filter
+         * @return          the builder object
+         */
+        public Builder sqlQuery(String sqlQuery) {
+            this.sqlQuery = sqlQuery;
             return this;
         }
 

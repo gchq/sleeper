@@ -3891,25 +3891,6 @@
             ]
           }
         },
-        "Simpleathenahandler8B8139D8": {
-          "Type": "AWS::Logs::LogGroup",
-          "DeletionPolicy": "Retain",
-          "UpdateReplacePolicy": "Retain",
-          "Properties": {
-            "RetentionInDays": 30,
-            "LogGroupName": "sleeper-test-instance-Simple-athena-handler",
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "Logging"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
         "statetransactiondeletiontrigger2C17884E": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
@@ -3936,6 +3917,25 @@
           "Properties": {
             "RetentionInDays": 30,
             "LogGroupName": "sleeper-test-instance-bulk-import-EMRServerless-start",
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Logging"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
+        "DataFusionathenahandler9D77ED25": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-DataFusion-athena-handler",
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -4386,7 +4386,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/AutoDeleteS3Objects/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -4406,7 +4406,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -4522,7 +4522,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/Vpc/VpcCustomResourceProvider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -4542,7 +4542,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -4965,7 +4965,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/AutoStopEcsClusterTasks/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -4985,7 +4985,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -6070,6 +6070,34 @@
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
+                    "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:Query",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:ConditionCheckItem",
                     "dynamodb:BatchWriteItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem",
@@ -6907,7 +6935,10 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Action": "sts:AssumeRole",
+                  "Action": [
+                    "sts:AssumeRole",
+                    "sts:TagSession"
+                  ],
                   "Effect": "Allow",
                   "Principal": {
                     "AWS": {
@@ -11932,11 +11963,6 @@
             "EventSourceArn": {
               "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701StreamArn"
             },
-            "MetricsConfig": {
-              "Metrics": [
-                "EventCount"
-              ]
-            },
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -13203,6 +13229,25 @@
                   }
                 }
               ]
+            },
+            "LifecycleConfiguration": {
+              "Rules": [
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "bulk_import/",
+                  "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "logs/",
+                  "Status": "Enabled"
+                },
+                {
+                  "ExpirationInDays": 30,
+                  "Prefix": "applications/",
+                  "Status": "Enabled"
+                }
+              ]
             }
           }
         },
@@ -13659,12 +13704,12 @@
               ]
             },
             "MemorySize": 128,
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Timeout": 900,
             "Handler": "__entrypoint__.handler",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "c398d076c966a47ee4ef862fbaf5ea530bf035b867a0195292c99f77b323ed80.zip"
+              "S3Key": "3fc3a788e8730811e7ec758fb84134e1e24877f8248901484d1e046dee803b5a.zip"
             }
           }
         },
@@ -14539,7 +14584,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/AutoStopEmrServerlessApplication/Provider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -14559,7 +14604,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {
@@ -26411,7 +26456,7 @@
                 "Arn"
               ]
             },
-            "Runtime": "nodejs22.x",
+            "Runtime": "nodejs24.x",
             "Description": "AWS CDK resource provider framework - onEvent (TestInstance/Properties/PropertiesWriterProvider)",
             "Timeout": 900,
             "LoggingConfig": {
@@ -26431,7 +26476,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip"
+              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
             },
             "Tags": [
               {

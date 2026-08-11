@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
+import software.amazon.awssdk.regions.Region;
+
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
@@ -46,6 +48,8 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
+                .region(Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
+                .sts(SleeperLocalStackClients.STS_CLIENT)
                 .s3(SleeperLocalStackClients.S3_CLIENT)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)

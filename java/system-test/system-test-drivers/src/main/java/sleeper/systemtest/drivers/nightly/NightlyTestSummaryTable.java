@@ -29,16 +29,27 @@ import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
+import sleeper.systemtest.drivers.nightly.failures.LastRunFailedException;
+import sleeper.systemtest.drivers.nightly.failures.NoRecentRunException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailedAndNotRepeatedException;
+import sleeper.systemtest.drivers.nightly.failures.TestFailureException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class NightlyTestSummaryTable {
@@ -75,15 +86,6 @@ public class NightlyTestSummaryTable {
         }
     }
 
-    private static boolean doesObjectExist(S3Client s3Client, String bucketName, String objectKey) {
-        try {
-            s3Client.headObject(request -> request.bucket(bucketName).key(objectKey));
-            return true;
-        } catch (NoSuchKeyException e) {
-            return false;
-        }
-    }
-
     public void saveToS3(S3Client s3Client, String bucketName) {
         LOGGER.info("Saving test summary with {} executions to S3 bucket: {}", executions.size(), bucketName);
         s3Client.putObject(
@@ -99,6 +101,30 @@ public class NightlyTestSummaryTable {
             NightlyTestTimestamp timestamp, NightlyTestOutput output) {
         executions.addFirst(execution(timestamp, output));
         return this;
+    }
+
+    public void checkPassedRecentlyOrExit() {
+        try {
+            checkPassedRecently(Instant.now());
+        } catch (TestFailureException e) {
+            LOGGER.error(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    public void checkPassedRecently(Instant now) throws TestFailureException {
+        if (executions.isEmpty()) {
+            throw new NoRecentRunException();
+        }
+        Execution lastRun = getLastRun();
+        if (lastRun.getStartTime().isBefore(now.minus(Duration.ofDays(1)))) {
+            throw new NoRecentRunException(lastRun.getStartTime());
+        }
+        if (lastRun.isAnyTestFailed()) {
+            throw new LastRunFailedException(lastRun);
+        }
+        checkNoTestsFailedAndNotRepeated(now);
+        LOGGER.info("All tests passed, last run started at {}", lastRun.getStartTime());
     }
 
     public String toJson() {
@@ -148,13 +174,50 @@ public class NightlyTestSummaryTable {
         }
     }
 
+    private Execution getLastRun() {
+        return executions.getFirst();
+    }
+
+    private void checkNoTestsFailedAndNotRepeated(Instant now) throws TestFailureException {
+        Set<String> passed = new HashSet<>();
+        Instant maxStartTimeToCheck = now.minus(Duration.ofDays(7));
+        for (Execution execution : executions) {
+            if (execution.getStartTime().isBefore(maxStartTimeToCheck)) {
+                break;
+            }
+            List<Test> failed = new ArrayList<>();
+            for (Test test : execution.getTests()) {
+                if (passed.contains(test.getName())) {
+                    continue;
+                }
+                if (test.isFailed()) {
+                    failed.add(test);
+                } else {
+                    passed.add(test.getName());
+                }
+            }
+            if (!failed.isEmpty()) {
+                throw new TestFailedAndNotRepeatedException(execution, failed);
+            }
+        }
+    }
+
+    private static boolean doesObjectExist(S3Client s3Client, String bucketName, String objectKey) {
+        try {
+            s3Client.headObject(request -> request.bucket(bucketName).key(objectKey));
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
+    }
+
     private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
         return new Execution(timestamp.toInstant(), tests(output.getTests()));
     }
 
     private static List<Test> tests(List<TestResult> testResults) {
         return testResults.stream()
-                .map(result -> new Test(result.getTestName(), result.getExitCode(), result.getInstanceId()))
+                .map(result -> new Test(result.getTestName(), result.getExitCode(), result.getShortId()))
                 .sorted(Comparator.comparing(o -> o.name))
                 .collect(Collectors.toList());
     }
@@ -169,19 +232,65 @@ public class NightlyTestSummaryTable {
             this.startTime = startTime;
             this.tests = tests;
         }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public List<Test> getTests() {
+            return tests;
+        }
+
+        public String describeFailedTests() {
+            return Test.describe(tests.stream().filter(Test::isFailed));
+        }
+
+        public boolean isAnyTestFailed() {
+            return tests.stream().anyMatch(Test::isFailed);
+        }
     }
 
-    @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
+    @SuppressFBWarnings("UWF_NULL_FIELD") // instanceId may be set by GSON with old data
     public static class Test {
 
         private final String name;
         private final Integer exitCode;
-        private final String instanceId;
+        private final String instanceId; // This is kept in order to read old data with GSON. It contained the short ID.
+        private final String shortId;
 
-        public Test(String name, Integer exitCode, String instanceId) {
+        public Test(String name, Integer exitCode, String shortId) {
             this.name = name;
             this.exitCode = exitCode;
-            this.instanceId = instanceId;
+            this.instanceId = null;
+            this.shortId = shortId;
+        }
+
+        public static String describe(List<Test> tests) {
+            return describe(tests.stream());
+        }
+
+        public static String describe(Stream<Test> tests) {
+            return tests.map(Test::getDescription).collect(joining(", "));
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getShortId() {
+            if (instanceId != null) {
+                return instanceId;
+            } else {
+                return shortId;
+            }
+        }
+
+        public String getDescription() {
+            return name + " (short ID " + getShortId() + ")";
+        }
+
+        public boolean isFailed() {
+            return exitCode != 0;
         }
     }
 }

@@ -112,7 +112,7 @@ public final class TableIndexStack extends NestedStack {
         indexByOnlineDynamoTable.grantReadData(grantee);
     }
 
-    private void grantReadWrite(IGrantable grantee) {
+    public void grantReadWrite(IGrantable grantee) {
         indexByNameDynamoTable.grantReadWriteData(grantee);
         indexByIdDynamoTable.grantReadWriteData(grantee);
         indexByOnlineDynamoTable.grantReadWriteData(grantee);

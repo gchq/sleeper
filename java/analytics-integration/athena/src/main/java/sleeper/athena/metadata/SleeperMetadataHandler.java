@@ -39,8 +39,10 @@ import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.athena.AthenaClient;
@@ -64,6 +66,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
@@ -460,6 +463,10 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         boolean match = false;
         for (int j = 0; j < rowCount; j++) {
             Object value = valueSet.getValue(j);
+            // Arrow returns VARCHAR values as Text, so convert to a String.
+            if (type instanceof StringType) {
+                value = value.toString();
+            }
             // If the minimum in the partition is less than or equal to the value and the maximum is more than
             // the value, the partition matches.
             if (keyComparator.compare(Key.create(min), Key.create(value)) <= 0 &&
@@ -492,8 +499,30 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         if (fieldType instanceof ListType) {
             ArrowType elementType = toArrowType(((ListType) fieldType).getElementType());
             schemaBuilder.addListField(field.getName(), elementType);
+        } else if (fieldType instanceof MapType) {
+            MapType mapType = (MapType) fieldType;
+            schemaBuilder.addField(arrowMapField(field.getName(),
+                    toArrowType(mapType.getKeyType()), toArrowType(mapType.getValueType())));
         }
-        // Add support for Map types
+    }
+
+    /**
+     * Builds the Arrow field for a map.
+     *
+     * @param  name      the field name
+     * @param  keyType   the Arrow type of the map keys
+     * @param  valueType the Arrow type of the map values
+     * @return           the Arrow map field
+     */
+    public static org.apache.arrow.vector.types.pojo.Field arrowMapField(String name, ArrowType keyType, ArrowType valueType) {
+        org.apache.arrow.vector.types.pojo.Field key = new org.apache.arrow.vector.types.pojo.Field(
+                MapVector.KEY_NAME, FieldType.notNullable(keyType), null);
+        org.apache.arrow.vector.types.pojo.Field value = new org.apache.arrow.vector.types.pojo.Field(
+                MapVector.VALUE_NAME, FieldType.nullable(valueType), null);
+        org.apache.arrow.vector.types.pojo.Field entries = new org.apache.arrow.vector.types.pojo.Field(
+                MapVector.DATA_VECTOR_NAME, FieldType.notNullable(new ArrowType.Struct()), List.of(key, value));
+        return new org.apache.arrow.vector.types.pojo.Field(
+                name, FieldType.nullable(new ArrowType.Map(false)), List.of(entries));
     }
 
     private boolean addPrimitiveType(SchemaBuilder schemaBuilder, sleeper.core.schema.Field field) {

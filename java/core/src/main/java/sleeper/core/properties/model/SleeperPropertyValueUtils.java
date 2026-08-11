@@ -148,7 +148,7 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is a non-empty string with a maximum length.
+     * Checks if a property value is a non-empty string within a maximum length.
      *
      * @param  string the value
      * @param  length the maximum length

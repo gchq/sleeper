@@ -38,6 +38,51 @@ The system will automatically split the query into smaller export tasks (leaf pa
 }
 ```
 
+#### SQL Query Filtering (Experimental)
+
+Bulk export supports optional SQL query filtering to apply transformations or filtering to the exported data. This capability is **experimental** and currently only supported with the **DataFusion query engine**.
+
+To use SQL query filtering in a bulk export, add the `sqlQuery` field to your bulk export query message:
+
+```json
+{
+  "tableName": "example-table",
+  "exportId": "export-456",
+  "sqlQuery": "SELECT * FROM query_results WHERE value > 100"
+}
+```
+
+The SQL query is executed on the results of the bulk export, allowing you to:
+- Filter rows based on column values
+- Select specific columns
+- Perform transformations on the data
+
+##### Prerequisites for SQL Query Filtering
+
+1. **DataFusion Query Engine**: The table must be configured to use DataFusion. Set the table property:
+   ```properties
+   sleeper.table.query.data.engine=datafusion
+   ```
+
+2. **Source Table Name**: Regardless of the actual Sleeper table name, the SQL source table is always named `query_results`.
+
+##### Example SQL Queries
+
+Filter rows by value:
+```sql
+SELECT * FROM query_results WHERE timestamp > 1234567890000
+```
+
+Select specific columns:
+```sql
+SELECT id, name, timestamp FROM query_results
+```
+
+Aggregate data:
+```sql
+SELECT id, COUNT(*) as count FROM query_results GROUP BY id
+```
+
 ### Step 2: Monitor the export process
 
 Once the export query is submitted, the system will:

@@ -60,7 +60,7 @@ public class QueryWebSocketListener {
         this.connection = connection;
         LOGGER.info("Connected to WebSocket API");
         String queryJson = querySerDe.toJson(query);
-        LOGGER.info("Submitting Query: {}", queryJson);
+        LOGGER.info("Submitting query {} with {} region(s)", query.getQueryId(), query.getRegions().size());
         connection.send(queryJson);
         outstandingQueryIds.add(query.getQueryId());
     }
@@ -95,7 +95,7 @@ public class QueryWebSocketListener {
     }
 
     public void onClose(String reason) {
-        LOGGER.info("Disconnected from WebSocket API: {}", reason);
+        LOGGER.info("Disconnected from WebSocket API with reason: {}", reason);
         handler.handleException(new WebSocketClosedException(reason));
     }
 
@@ -111,9 +111,9 @@ public class QueryWebSocketListener {
     }
 
     private void handleSubqueries(QueryWebSocketMessage message) {
-        LOGGER.info("Query {} split into the following subQueries:", message.getQueryIds());
+        LOGGER.info("Query {} split into the following sub-queries:", message.getQueryId());
         for (String subQueryId : message.getQueryIds()) {
-            LOGGER.info("  " + subQueryId);
+            LOGGER.info("  {}", subQueryId);
             outstandingQueryIds.add(subQueryId);
         }
         outstandingQueryIds.remove(message.getQueryId());

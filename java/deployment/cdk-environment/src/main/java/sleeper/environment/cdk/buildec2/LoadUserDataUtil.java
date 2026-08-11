@@ -28,9 +28,10 @@ class LoadUserDataUtil {
         // Prevent instantiation
     }
 
-    static String userData(BuildEC2Parameters params) {
+    static String userData(BuildEC2Parameters params, String buildSecurityGroupId) {
         return params.fillUserDataTemplate(templateString())
-                .replace("%write-files-yaml%", writeFilesYaml(params));
+                .replace("%write-files-yaml%", writeFilesYaml(params))
+                .replace("${buildSecurityGroup}", buildSecurityGroupId);
     }
 
     static String writeFilesYaml(BuildEC2Parameters params) {

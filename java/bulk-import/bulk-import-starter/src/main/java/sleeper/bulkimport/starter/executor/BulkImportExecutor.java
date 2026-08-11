@@ -57,6 +57,10 @@ public class BulkImportExecutor {
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
+    public static String createJobFileObjectKey(BulkImportJob job, String jobRunId) {
+        return BulkImportJob.FILES_BUCKET_PREFIX + job.getId() + "-" + jobRunId + ".json";
+    }
+
     public void runJob(BulkImportJob bulkImportJob) {
         runJob(bulkImportJob, UUID.randomUUID().toString());
     }
@@ -75,11 +79,12 @@ public class BulkImportExecutor {
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
+            String jobFileObjectKey = createJobFileObjectKey(bulkImportJob, jobRunId);
+            writeJobToBucket.writeJobToBulkImportBucket(bulkImportJob, jobFileObjectKey);
             LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
             platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                     .instanceProperties(instanceProperties)
-                    .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
+                    .bulkImportJob(bulkImportJob).jobRunId(jobRunId).jobFileObjectKey(jobFileObjectKey)
                     .build());
             LOGGER.info("Successfully submitted job");
         } catch (RuntimeException e) {
@@ -125,6 +130,6 @@ public class BulkImportExecutor {
     @FunctionalInterface
     public interface WriteJobToBucket {
 
-        void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String jobRunID);
+        void writeJobToBulkImportBucket(BulkImportJob bulkImportJob, String objectKey);
     }
 }

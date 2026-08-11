@@ -168,8 +168,7 @@ public class SleeperInstanceProps {
      * @return              the configuration
      */
     public static Builder builderFromContext(CdkContext context, S3Client s3Client, EcrClient ecrClient, DynamoDbClient dynamoClient) {
-        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
-        SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        SleeperInstanceConfiguration configuration = loadConfiguration(context);
         String instanceId = context.tryGetContext("id");
         if (instanceId != null) {
             configuration.getInstanceProperties().set(ID, instanceId);
@@ -182,9 +181,26 @@ public class SleeperInstanceProps {
                 .tableProperties(configuration.getTableProperties())
                 .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration.getInstanceProperties()))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
-                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
+                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newInstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
                 .deployPaused(context.getBooleanOrDefault("deployPaused", false));
+    }
+
+    private static SleeperInstanceConfiguration loadConfiguration(CdkContext context) {
+        String propertiesFile = context.tryGetContext("propertiesFile");
+        String configurationDir = context.tryGetContext("configurationDir");
+        if (propertiesFile != null && configurationDir != null) {
+            throw new IllegalArgumentException(
+                    "Both 'propertiesFile' and 'configurationDir' context variables are set - specify exactly one");
+        }
+        if (propertiesFile != null) {
+            return SleeperInstanceConfiguration.fromLocalConfiguration(Path.of(propertiesFile));
+        }
+        if (configurationDir != null) {
+            return SleeperInstanceConfiguration.fromLocalConfigurationDirectory(Path.of(configurationDir));
+        }
+        throw new IllegalArgumentException(
+                "Either 'propertiesFile' or 'configurationDir' context variable must be set");
     }
 
     public void prepareProperties(Stack stack, SleeperNetworking networking) {

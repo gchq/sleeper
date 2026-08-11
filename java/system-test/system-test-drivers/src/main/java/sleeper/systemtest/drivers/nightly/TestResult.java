@@ -25,14 +25,14 @@ import java.util.stream.Stream;
 public class TestResult {
     private final String testName;
     private final int exitCode;
-    private final String instanceId;
+    private final String shortId;
     private final List<Path> rootFiles;
     private final List<Path> nestedFiles;
 
     private TestResult(Builder builder) {
         testName = Objects.requireNonNull(builder.testName, "testName must not be null");
         exitCode = builder.exitCode;
-        instanceId = builder.instanceId;
+        shortId = builder.shortId;
         rootFiles = Objects.requireNonNull(builder.rootFiles, "rootFiles must not be null");
         nestedFiles = Objects.requireNonNull(builder.nestedFiles, "nestedFiles must not be null");
         Collections.sort(rootFiles);
@@ -65,8 +65,8 @@ public class TestResult {
         return exitCode;
     }
 
-    public String getInstanceId() {
-        return instanceId;
+    public String getShortId() {
+        return shortId;
     }
 
     @Override
@@ -80,14 +80,14 @@ public class TestResult {
         TestResult that = (TestResult) object;
         return exitCode == that.exitCode
                 && Objects.equals(testName, that.testName)
-                && Objects.equals(instanceId, that.instanceId)
+                && Objects.equals(shortId, that.shortId)
                 && Objects.equals(rootFiles, that.rootFiles)
                 && Objects.equals(nestedFiles, that.nestedFiles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(testName, exitCode, instanceId, rootFiles, nestedFiles);
+        return Objects.hash(testName, exitCode, shortId, rootFiles, nestedFiles);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class TestResult {
         return "TestResult{" +
                 "testName='" + testName + '\'' +
                 ", exitCode=" + exitCode +
-                ", instanceId='" + instanceId + '\'' +
+                ", instanceId='" + shortId + '\'' +
                 ", rootFiles=" + rootFiles +
                 ", nestedFiles=" + nestedFiles +
                 '}';
@@ -104,7 +104,7 @@ public class TestResult {
     public static final class Builder {
         private String testName;
         private int exitCode = 1;
-        private String instanceId;
+        private String shortId;
         private final List<Path> rootFiles = new ArrayList<>();
         private final List<Path> nestedFiles = new ArrayList<>();
 
@@ -125,8 +125,8 @@ public class TestResult {
             return this;
         }
 
-        public Builder instanceId(String instanceId) {
-            this.instanceId = instanceId;
+        public Builder shortId(String shortId) {
+            this.shortId = shortId;
             return this;
         }
 

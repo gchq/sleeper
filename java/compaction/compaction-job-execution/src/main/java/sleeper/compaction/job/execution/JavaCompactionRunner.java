@@ -48,7 +48,7 @@ import sleeper.sketches.store.SketchesStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
@@ -71,7 +71,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         CompactionJob compactionJob = request.getJob();
         TableProperties tableProperties = request.getTableProperties();
         Region region = request.getRegion();
-        Consumer<Long> callback = request.getProgressCallback();
+        LongConsumer callback = request.getProgressCallback();
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file

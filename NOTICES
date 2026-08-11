@@ -103,6 +103,14 @@ Log4J (org.apache.logging.log4j:log4j-*:2.*)
 
 - Apache License, Version 2.0
 
+Curator (org.apache.curator:*:5.*)
+
+- Apache License, Version 2.0
+
+Dropwizard Metrics (io.dropwizard.metrics:*:4.*)
+
+- Apache License, Version 2.0
+
 Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
@@ -167,7 +175,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:*:5.*, org.apache.httpcomponents.core5:*:5.*)
 
 - Apache License, Version 2.0
 
@@ -259,7 +267,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.*)
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
+JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-*:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
 
 - Eclipse Public License 1.0
 
@@ -267,7 +275,7 @@ Mockito (org.mockito:mockito-core:5.*)
 
 - MIT License
 
-ApprovalTests.Java (com.approvaltests:approvaltests:30.*)
+ApprovalTests.Java (com.approvaltests:approvaltests:31.*)
 
 - Apache License, Version 2.0
 
@@ -279,11 +287,11 @@ Hamcrest (org.hamcrest:hamcrest-core:3.*)
 
 - The 3-Clause BSD License
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:5.*)
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:6.*)
 
 - Apache License, Version 2.0
 
-SLF4J (org.slf4j:slf4j-*:2.*)
+SLF4J (org.slf4j:*:2.*)
 
 - MIT License
 
@@ -314,6 +322,10 @@ Google J2ObjC (com.google.j2objc:j2objc-annotations:3.*)
 ASM (org.ow2.asm:asm:9.*)
 
 - The 3-Clause BSD License
+
+Fabric8 (io.fabric8:kubernetes-*:6.*)
+
+- Apache License, Version 2.0
 
 Docker Java (com.github.docker-java:docker-java-*:3.*)
 
@@ -432,7 +444,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.*)
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:12.*)
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:13.*)
 
 - Apache License, Version 2.0
 
@@ -449,6 +461,10 @@ Checkstyle (com.puppycrawl.tools:checkstyle:12.*)
 - GNU Lesser General Public License, version 2.1
 
 Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
+
+- Apache License, Version 2.0
+
+Exec Maven Plugin (org.codehaus.mojo:exec-maven-plugin:3.*)
 
 - Apache License, Version 2.0
 
@@ -648,6 +664,10 @@ test-log (https://github.com/d-e-s-o/test-log)
 cbindgen (https://github.com/mozilla/cbindgen)
 
 - Mozilla Public License Version 2.0
+
+uuid (https://github.com/uuid-rs/uuid)
+
+- Apache 2 License
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.

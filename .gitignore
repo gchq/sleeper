@@ -27,6 +27,7 @@ __pycache__
 python/build/
 python/src/sleeper.egg-info/
 python/env/
+python/.venv/
 scripts/test/deployAll/system-test-instance.properties
 scripts/test/maven/system-test-instance.properties
 input.json
@@ -34,4 +35,5 @@ input.json
 *.env
 rust/sleeper_df/include/sleeper_df.h
 rust/.cargo-home-mirror/
-/certs/
+certs/*
+!certs/README.md

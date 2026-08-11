@@ -15,7 +15,7 @@
 import argparse
 import uuid
 
-from sleeper.client import SleeperClient
+from sleeper import SleeperClient
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest files from S3 to Sleeper")
@@ -29,6 +29,6 @@ if __name__ == "__main__":
 
     sleeper_client = SleeperClient(args.instance)
 
-    for i in range(int(args.times)):
+    for _i in range(int(args.times)):
         job_id = str(uuid.uuid4())
         sleeper_client.bulk_import_parquet_files_from_s3(args.table, args.files, job_id, args.platform)

@@ -122,6 +122,7 @@ public class BulkExportQuerySplitter {
                     .forPartition(bulkExportQuery, tableProperties, partition)
                     .subExportId(idSupplier.get())
                     .files(files)
+                    .sqlQuery(bulkExportQuery.getSqlQuery())
                     .build();
             LOGGER.debug("Created {}", bulkExportLeafPartitionQuery);
             leafPartitionQueriesList.add(bulkExportLeafPartitionQuery);

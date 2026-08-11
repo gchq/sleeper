@@ -129,6 +129,7 @@ public class KryoSerializerTest {
     }
 
     private static class ImmutableListWrapper {
+        @SuppressWarnings("unused")
         List<String> immutableList = List.of("test");
     }
 }

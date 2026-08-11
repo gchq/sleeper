@@ -303,9 +303,13 @@ public class SleeperMetadata implements ConnectorMetadata {
 
         LOGGER.debug("New domain is %s", rowKeyConstrainedTableTupleDomain);
         LOGGER.debug("Remaining domain is %s", remainingConstraintsTupleDomain);
-        return Optional.of(new ConstraintApplicationResult<>(sleeperTableHandle.withTupleDomain(rowKeyConstrainedTableTupleDomain),
-                remainingConstraintsTupleDomain,
-                false));
+        return Optional.of(constraintResult(sleeperTableHandle, rowKeyConstrainedTableTupleDomain, remainingConstraintsTupleDomain));
+    }
+
+    @SuppressWarnings("deprecation")
+    private static ConstraintApplicationResult<ConnectorTableHandle> constraintResult(
+            SleeperTableHandle handle, TupleDomain<ColumnHandle> constrainedDomain, TupleDomain<ColumnHandle> remainingDomain) {
+        return new ConstraintApplicationResult<>(handle.withTupleDomain(constrainedDomain), remainingDomain, false);
     }
 
     /**

@@ -650,13 +650,11 @@ public class FilterTranslatorIT {
                 .build();
 
         List<Row> rows = new ArrayList<>();
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(reader);
-
-        while (parquetReaderIterator.hasNext()) {
-            rows.add(parquetReaderIterator.next());
+        try (ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(reader)) {
+            while (parquetReaderIterator.hasNext()) {
+                rows.add(parquetReaderIterator.next());
+            }
         }
-
-        reader.close();
         return rows;
     }
 

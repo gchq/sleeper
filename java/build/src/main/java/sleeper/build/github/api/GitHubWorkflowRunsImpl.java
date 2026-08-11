@@ -25,13 +25,9 @@ import sleeper.build.github.GitHubWorkflowRuns;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable {
+public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns {
 
     private final GitHubApi api;
-
-    public GitHubWorkflowRunsImpl(String token) {
-        this(GitHubApi.withToken(token));
-    }
 
     public GitHubWorkflowRunsImpl(GitHubApi api) {
         this.api = api;
@@ -70,10 +66,5 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
 
     private WebTarget repository(GitHubHead head) {
         return api.path("repos").path(head.getOwnerAndRepository());
-    }
-
-    @Override
-    public void close() {
-        api.close();
     }
 }

@@ -19,6 +19,7 @@ package sleeper.cdk.stack;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
@@ -63,6 +64,7 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
@@ -209,6 +211,14 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
+    public void grantReadAndWriteTablesConfig(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        configBucketStack.grantWrite(grantee);
+        tableIndexStack.grantReadWrite(grantee);
+        // Need to check whether any files are present before a user replaces a table's partitions
+        stateStoreStacks.grantReadFileReferencesReadWritePartitions(grantee);
+    }
+
     public void grantReadTableDataBucket(IGrantable grantee) {
         dataStack.grantRead(grantee);
     }
@@ -231,8 +241,15 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
-        autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
+    /**
+     * Adds a custom resource to delete a bucket's contents.
+     *
+     * @param  scope  the stack to add the custom resource to
+     * @param  bucket the bucket to delete from
+     * @return        a custom resource
+     */
+    public CustomResource addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
+        return autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
 
     public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
@@ -323,6 +340,14 @@ public class SleeperCoreStacks {
         ingestTracker.grantWriteJobEvent(grantee);
     }
 
+    public void grantReadIngestJobLookup(IGrantable grantee) {
+        ingestTracker.grantReadJobLookup(grantee);
+    }
+
+    public Optional<String> getIngestJobLookupTableName(String instanceId) {
+        return ingestTracker.getJobLookupTableName(instanceId);
+    }
+
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
     // This means SpotBugs complains if we pass that role into attachToRole.
     // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
@@ -359,6 +384,10 @@ public class SleeperCoreStacks {
 
     public IGrantable getPurgeQueuesPolicyForGrants() {
         return policiesStack.getPurgeQueuesPolicyForGrants();
+    }
+
+    public ManagedPolicy getAdminPolicyForGrants() {
+        return policiesStack.getAdminPolicyForGrants();
     }
 
     public void createRoles() {

@@ -133,14 +133,14 @@ class BulkImportJobDriverTest {
             BulkImportJob job = singleFileImportJob();
             Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
             Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-            Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+            Instant failureTime = Instant.parse("2023-04-06T12:41:01Z");
             RuntimeException rootCause = new RuntimeException("Root cause");
             RuntimeException cause = new RuntimeException("Some cause", rootCause);
             RuntimeException jobFailure = new RuntimeException("Failed running job", cause);
 
             // When
             var driver = driver(
-                    failWithException(jobFailure), startAndFinishTime(startTime, finishTime));
+                    failWithException(jobFailure), startAndFinishTime(startTime, failureTime));
             assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
                     .isSameAs(jobFailure);
 
@@ -149,7 +149,33 @@ class BulkImportJobDriverTest {
                     .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
                             ingestAcceptedStatus(validationTime, 1),
                             validatedIngestStartedStatus(startTime, 1),
-                            failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
+                            failedStatus(failureTime, List.of("Failed running job", "Some cause", "Root cause")))));
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(commitRequestQueue).isEmpty();
+            assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
+        }
+
+        @Test
+        void shouldReportJobFailedForCheckedException() throws Exception {
+            // Given - simulates SparkException, which extends Exception (not RuntimeException or IOException)
+            BulkImportJob job = singleFileImportJob();
+            Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+            Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+            Instant failureTime = Instant.parse("2023-04-06T12:41:01Z");
+            Exception jobFailure = new Exception("Spark job failed");
+
+            // When
+            var driver = driver(
+                    failWithCheckedException(jobFailure), startAndFinishTime(startTime, failureTime));
+            assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
+                    .isSameAs(jobFailure);
+
+            // Then
+            assertThat(allJobsReported())
+                    .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(startTime, 1),
+                            failedStatus(failureTime, List.of("Spark job failed")))));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(commitRequestQueue).isEmpty();
             assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
@@ -376,6 +402,15 @@ class BulkImportJobDriverTest {
         return context -> {
             throw e;
         };
+    }
+
+    private BulkImportJobDriver.BulkImporter<FakeBulkImportContext> failWithCheckedException(Exception e) {
+        return context -> sneakyThrow(e);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> List<FileReference> sneakyThrow(Throwable e) throws E {
+        throw (E) e;
     }
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {

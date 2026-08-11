@@ -29,6 +29,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
@@ -80,9 +81,9 @@ public class InMemorySleeperInstance {
         return new SleeperClient.Builder()
                 .instanceProperties(properties)
                 .tableIndex(tableIndex)
-                .tablePropertiesStore(tablePropertiesStore)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(stateStoreProvider)
+                .addTable(new AddTable(tablePropertiesStore, stateStoreProvider))
                 .rowRetrieverProvider(new InMemoryLeafPartitionRowRetriever(dataStore))
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())

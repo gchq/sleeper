@@ -64,13 +64,13 @@ Rust.
 
 #### `generateDocumentation.sh`
 
-This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
-changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
-grouping, etc.
+This will regenerate the examples and templates for Sleeper configuration properties files, Docker image
+documentation, and system test suite documentation. Use this if you've made changes to Sleeper configuration
+properties, Docker images, or the slow and expensive system test suite annotations.
 
 #### `publishDocker.sh`
 
-Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md).
+Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md). For hooks that adjust how the images are built (e.g. substituting a custom base image), see [building in a custom environment](custom-environment.md).
 
 #### `publishMaven.sh`
 

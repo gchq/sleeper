@@ -70,7 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -608,7 +608,7 @@ public class DataFusionCompactionRunnerIT {
         runTask(job, null);
     }
 
-    private void runTask(CompactionJob job, Consumer<Long> progressCallback) throws Exception {
+    private void runTask(CompactionJob job, LongConsumer progressCallback) throws Exception {
         try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
             CompactionRunner runner = new DataFusionCompactionRunner(
                     // DataFusion spends time trying to auth with AWS unless you override it

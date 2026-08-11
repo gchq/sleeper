@@ -35,6 +35,7 @@ public class QueryProcessingConfig {
     private final Map<String, String> resultsPublisherConfig;
     private final List<Map<String, String>> statusReportDestinations;
     private final List<String> requestedValueFields;
+    private final String sqlQuery;
 
     private QueryProcessingConfig(Builder builder) {
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
@@ -42,6 +43,7 @@ public class QueryProcessingConfig {
         resultsPublisherConfig = Objects.requireNonNull(builder.resultsPublisherConfig, "resultsPublisherConfig must not be null");
         statusReportDestinations = Objects.requireNonNull(builder.statusReportDestinations, "statusReportDestinations must not be null");
         requestedValueFields = builder.requestedValueFields;
+        sqlQuery = builder.sqlQuery;
     }
 
     public static Builder builder() {
@@ -64,6 +66,10 @@ public class QueryProcessingConfig {
 
     public String getQueryTimeIteratorConfig() {
         return queryTimeIteratorConfig;
+    }
+
+    public String getSqlQuery() {
+        return sqlQuery;
     }
 
     public Map<String, String> getResultsPublisherConfig() {
@@ -122,7 +128,8 @@ public class QueryProcessingConfig {
                 .queryTimeIteratorConfig(queryTimeIteratorConfig)
                 .resultsPublisherConfig(resultsPublisherConfig)
                 .statusReportDestinations(statusReportDestinations)
-                .requestedValueFields(requestedValueFields);
+                .requestedValueFields(requestedValueFields)
+                .sqlQuery(sqlQuery);
     }
 
     @Override
@@ -136,18 +143,20 @@ public class QueryProcessingConfig {
         QueryProcessingConfig other = (QueryProcessingConfig) obj;
         return Objects.equals(queryTimeIteratorClassName, other.queryTimeIteratorClassName) && Objects.equals(queryTimeIteratorConfig, other.queryTimeIteratorConfig)
                 && Objects.equals(resultsPublisherConfig, other.resultsPublisherConfig) && Objects.equals(statusReportDestinations, other.statusReportDestinations)
-                && Objects.equals(requestedValueFields, other.requestedValueFields);
+                && Objects.equals(requestedValueFields, other.requestedValueFields)
+                && Objects.equals(sqlQuery, other.sqlQuery);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryTimeIteratorClassName, queryTimeIteratorConfig, resultsPublisherConfig, statusReportDestinations, requestedValueFields);
+        return Objects.hash(queryTimeIteratorClassName, queryTimeIteratorConfig, resultsPublisherConfig, statusReportDestinations, requestedValueFields, sqlQuery);
     }
 
     @Override
     public String toString() {
         return "QueryProcessingConfig{queryTimeIteratorClassName=" + queryTimeIteratorClassName + ", queryTimeIteratorConfig=" + queryTimeIteratorConfig + ", resultsPublisherConfig="
-                + resultsPublisherConfig + ", statusReportDestinations=" + statusReportDestinations + ", requestedValueFields=" + requestedValueFields + "}";
+                + resultsPublisherConfig + ", statusReportDestinations=" + statusReportDestinations + ", requestedValueFields=" + requestedValueFields
+                + ", sqlQuery=" + sqlQuery + "}";
     }
 
     /**
@@ -159,6 +168,7 @@ public class QueryProcessingConfig {
         private Map<String, String> resultsPublisherConfig = Map.of();
         private List<Map<String, String>> statusReportDestinations = List.of();
         private List<String> requestedValueFields;
+        private String sqlQuery;
 
         private Builder() {
         }
@@ -182,6 +192,17 @@ public class QueryProcessingConfig {
          */
         public Builder queryTimeIteratorConfig(String queryTimeIteratorConfig) {
             this.queryTimeIteratorConfig = queryTimeIteratorConfig;
+            return this;
+        }
+
+        /**
+         * Provides the SQL query to run on Sleeper query.
+         *
+         * @param  sqlQuery the SQL query
+         * @return          the builder
+         */
+        public Builder sqlQuery(String sqlQuery) {
+            this.sqlQuery = sqlQuery;
             return this;
         }
 

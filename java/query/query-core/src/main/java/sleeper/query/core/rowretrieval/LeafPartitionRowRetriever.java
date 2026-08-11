@@ -44,7 +44,7 @@ public interface LeafPartitionRowRetriever {
 
     /**
      * Indicates if this implementation can apply row filters and aggregations.
-     *
+     * <p>
      * Some implementations support row filters (e.g. age off) and aggregations (e.g. sum) internally. This
      * method will return true for those implementations. For implementations that do not, then appropriate iterators
      * must be applied to the results of the
@@ -54,6 +54,17 @@ public interface LeafPartitionRowRetriever {
      * @return true if filters and aggregations are supported
      */
     default boolean supportsFiltersAndAggregations() {
+        return false;
+    }
+
+    /**
+     * Indicates if this implementation can apply SQL filtering to query results.
+     * <p>
+     * Some implementations support filtering the Sleeper query results through a user provided SQL query.
+     *
+     * @return true if SQL filtering is supported
+     */
+    default boolean supportsSqlFiltering() {
         return false;
     }
 }

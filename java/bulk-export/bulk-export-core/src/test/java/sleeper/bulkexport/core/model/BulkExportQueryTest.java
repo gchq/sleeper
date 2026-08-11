@@ -32,27 +32,24 @@ public class BulkExportQueryTest {
         BulkExportQuery query1 = BulkExportQuery.builder()
                 .tableId(tableId)
                 .exportId(exportId)
+                .sqlQuery("SELECT * FROM query_results;")
                 .build();
         BulkExportQuery query2 = BulkExportQuery.builder()
                 .tableId(tableId)
                 .exportId(exportId)
+                .sqlQuery("SELECT * FROM query_results;")
                 .build();
         BulkExportQuery query3 = BulkExportQuery.builder()
                 .tableId(tableId)
                 .exportId(exportId.split("-")[0])
+                .sqlQuery("SELECT * FROM query_results;")
                 .build();
 
-        // When
-        boolean test1 = query1.equals(query2);
-        boolean test2 = query1.equals(query3);
-        int hashCode1 = query1.hashCode();
-        int hashCode2 = query2.hashCode();
-        int hashCode3 = query3.hashCode();
-        // Then
-        assertThat(test1).isTrue();
-        assertThat(test2).isFalse();
-        assertThat(hashCode2).isEqualTo(hashCode1);
-        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        // When / Then
+        assertThat(query1).isEqualTo(query2);
+        assertThat(query1).isNotEqualTo(query3);
+        assertThat(query1.hashCode()).isEqualTo(query2.hashCode());
+        assertThat(query1.hashCode()).isNotEqualTo(query3.hashCode());
     }
 
     @Test

@@ -19,7 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.retries.LegacyRetryStrategy;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
 import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClientBuilder;
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.ForbiddenException;
@@ -31,9 +34,17 @@ import sleeper.query.runner.output.WebSocketOutput;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 public class ApiGatewayWebSocketOutput {
+
+    // This uses the AWS SDK's defaults for the base & max delay for throttling retries,
+    // and sets a number of attempts to get a minimum wait time over 10 seconds.
+    private static final int DEFAULT_MAX_ATTEMPTS = 7;
+    private static final double DEFAULT_THROTTLING_BASE_DELAY_SECS = 0.5;
+    private static final double DEFAULT_THROTTLING_MAX_DELAY_SECS = 20.0;
 
     private final ApiGatewayManagementApiClient client;
     private final String connectionId;
@@ -65,7 +76,10 @@ public class ApiGatewayWebSocketOutput {
 
         ApiGatewayManagementApiClientBuilder clientBuilder = ApiGatewayManagementApiClient.builder()
                 .region(Region.of(region))
-                .endpointOverride(URI.create(endpoint));
+                .endpointOverride(URI.create(endpoint))
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .retryStrategy(retryStrategy(config))
+                        .build());
 
         String accessKey = config.get(WebSocketOutput.ACCESS_KEY);
         String secretKey = config.get(WebSocketOutput.SECRET_KEY);
@@ -90,9 +104,28 @@ public class ApiGatewayWebSocketOutput {
             clientGone = true;
             throw new IOException(e);
         } catch (LimitExceededException | PayloadTooLargeException | ForbiddenException e) {
-            // Convert to checked exception
             throw new IOException(e);
         }
+    }
+
+    private static LegacyRetryStrategy retryStrategy(Map<String, String> config) {
+        // Tuned for a slow-consuming WebSocket client. The API Gateway Management API throttles per-connection;
+        // we use a longer throttling backoff than the SDK defaults so the client has time to drain its buffer.
+        double baseDelaySecs = Optional.ofNullable(config.get(WebSocketOutput.THROTTLING_RETRY_BASE_DELAY_SECS))
+                .map(Double::parseDouble)
+                .orElse(DEFAULT_THROTTLING_BASE_DELAY_SECS);
+        double maxDelaySecs = Optional.ofNullable(config.get(WebSocketOutput.THROTTLING_RETRY_MAX_DELAY_SECS))
+                .map(Double::parseDouble)
+                .orElse(DEFAULT_THROTTLING_MAX_DELAY_SECS);
+        int maxAttempts = Optional.ofNullable(config.get(WebSocketOutput.MAX_ATTEMPTS))
+                .map(Integer::parseInt)
+                .orElse(DEFAULT_MAX_ATTEMPTS);
+        return LegacyRetryStrategy.builder()
+                .throttlingBackoffStrategy(BackoffStrategy.exponentialDelayHalfJitter(
+                        Duration.ofMillis((long) (baseDelaySecs * 1000)),
+                        Duration.ofMillis((long) (maxDelaySecs * 1000))))
+                .maxAttempts(maxAttempts)
+                .build();
     }
 
 }

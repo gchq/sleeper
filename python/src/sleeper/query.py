@@ -51,7 +51,7 @@ class Range:
 
 
 class Region:
-    def __init__(self, row_key_field_to_range: dict[str, Range] = None, strings_base64_encoded: bool = False):
+    def __init__(self, row_key_field_to_range: dict[str, Range] | None = None, strings_base64_encoded: bool = False):
         if not isinstance(row_key_field_to_range, dict):
             raise TypeError("row_key_field_to_range must be a dictionary")
         if len(row_key_field_to_range) == 0:
@@ -71,7 +71,7 @@ class Region:
 
     @staticmethod
     def list_from_field_to_exact_values(field_to_values: dict, strings_base64_encoded: bool = False):
-        return list(chain.from_iterable(map(lambda item: map(lambda value: Region.exact_value(item[0], value, strings_base64_encoded), item[1]), field_to_values.items())))
+        return list(chain.from_iterable((Region.exact_value(item[0], value, strings_base64_encoded) for value in item[1]) for item in field_to_values.items()))
 
     @staticmethod
     def from_field_to_tuple(field_to_tuple: dict, strings_base64_encoded: bool = False):
@@ -88,7 +88,7 @@ class Region:
 
 
 class Query:
-    def __init__(self, query_id: str = None, table_name: str = None, regions: list[Region] = None):
+    def __init__(self, query_id: str | None = None, table_name: str | None = None, regions: list[Region] | None = None, sql_query: str | None = None):
         if query_id is None:
             query_id = str(uuid.uuid4())
         elif not isinstance(query_id, str):
@@ -99,13 +99,18 @@ class Query:
             raise TypeError("regions must be a list")
         if len(regions) == 0:
             raise ValueError("Must provide at least one region")
+        if sql_query is not None and not isinstance(sql_query, str):
+            raise TypeError("sql_query must be a string")
         self.query_id = query_id
         self.table_name = table_name
         self.regions = regions
+        self.sql_query = sql_query
 
     def to_dict(self):
         regions = [region.to_dict() for region in self.regions]
         value = {"tableName": self.table_name, "queryId": self.query_id, "type": "Query", "regions": regions}
+        if self.sql_query is not None:
+            value["sqlQuery"] = self.sql_query
         return value
 
     def to_json(self):

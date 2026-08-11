@@ -135,6 +135,7 @@ public class FilterTranslator {
 
     }
 
+    @SuppressWarnings("unchecked")
     private <CT extends Comparable<CT>, C extends Operators.Column<CT> & Operators.SupportsEqNotEq> List<FilterPredicate> createExactPredicates(
             String columnName,
             EquatableValueSet acceptedValues,
@@ -183,12 +184,12 @@ public class FilterTranslator {
 
     }
 
+    @SuppressWarnings("unchecked")
     private <CT extends Comparable<CT>, R, C extends Operators.Column<CT> & Operators.SupportsLtGt> Stream<FilterPredicate> createRangePredicates(
             String columnName,
             SortedRangeSet valueSet,
             Function<String, C> columnCreator) {
         return createRangePredicates(columnName, valueSet, columnCreator, o -> (CT) o);
-
     }
 
     private <CT extends Comparable<CT>, C extends Operators.Column<CT> & Operators.SupportsLtGt> Stream<FilterPredicate> createRangePredicates(

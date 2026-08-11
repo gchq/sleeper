@@ -23,5 +23,7 @@ The following instance properties relate to bulk import, i.e. ingesting data usi
 | sleeper.bulk.import.eks.job.queue.url             | The URL of the queue for bulk import jobs using EKS.                                   |
 | sleeper.bulk.import.eks.job.queue.arn             | The ARN of the queue for bulk import jobs using EKS.                                   |
 | sleeper.bulk.import.eks.statemachine.arn          | The ARN of the state machine for bulk import jobs using EKS.                           |
-| sleeper.bulk.import.eks.k8s.namespace             | The namespace ID of the bulk import cluster using EKS.                                 |
-| sleeper.bulk.import.eks.k8s.endpoint              | The endpoint of the bulk import cluster using EKS.                                     |
+| sleeper.bulk.import.eks.k8s.namespace             | The ID of the Kubernetes namespace where Spark jobs will run for bulk import.          |
+| sleeper.bulk.import.eks.k8s.cluster.name          | The name of the EKS cluster for bulk import.                                           |
+| sleeper.bulk.import.eks.k8s.endpoint              | The endpoint of the EKS cluster for bulk import.                                       |
+| sleeper.bulk.import.eks.k8s.ca.data               | The certificate authority data of the EKS cluster for bulk import.                     |

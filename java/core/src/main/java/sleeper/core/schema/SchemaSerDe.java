@@ -50,19 +50,23 @@ public class SchemaSerDe {
     private final Gson gsonPrettyPrinting;
 
     public SchemaSerDe() {
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
-                .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
-                .registerTypeAdapter(Field.class, new FieldJsonSerializer())
-                .registerTypeAdapter(Field.class, new FieldJsonDeserializer())
-                .create();
-        this.gsonPrettyPrinting = new GsonBuilder()
+        this.gson = registerTypeAdapters(new GsonBuilder()).create();
+        this.gsonPrettyPrinting = registerTypeAdapters(new GsonBuilder())
                 .setPrettyPrinting()
-                .registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
+                .create();
+    }
+
+    /**
+     * Registers type adapters to allow GSON to parse Schema objects.
+     *
+     * @param  builder the GSON builder
+     * @return         the updated builder
+     */
+    public static GsonBuilder registerTypeAdapters(GsonBuilder builder) {
+        return builder.registerTypeAdapter(Type.class, new AbstractTypeJsonSerializer())
                 .registerTypeAdapter(Type.class, new AbstractTypeJsonDeserializer())
                 .registerTypeAdapter(Field.class, new FieldJsonSerializer())
-                .registerTypeAdapter(Field.class, new FieldJsonDeserializer())
-                .create();
+                .registerTypeAdapter(Field.class, new FieldJsonDeserializer());
     }
 
     /**
@@ -123,7 +127,7 @@ public class SchemaSerDe {
     /**
      * A GSON plugin to serialise a type.
      */
-    public static class AbstractTypeJsonSerializer implements JsonSerializer<Type> {
+    private static class AbstractTypeJsonSerializer implements JsonSerializer<Type> {
 
         @Override
         public JsonElement serialize(Type type, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
@@ -166,7 +170,7 @@ public class SchemaSerDe {
     /**
      * A GSON plugin to deserialise a type.
      */
-    public static class AbstractTypeJsonDeserializer implements JsonDeserializer<Type> {
+    private static class AbstractTypeJsonDeserializer implements JsonDeserializer<Type> {
 
         @Override
         public Type deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
@@ -195,7 +199,7 @@ public class SchemaSerDe {
     /**
      * A GSON plugin to serialise a field. Omits the "nullable" property when false.
      */
-    public static class FieldJsonSerializer implements JsonSerializer<Field> {
+    private static class FieldJsonSerializer implements JsonSerializer<Field> {
 
         @Override
         public JsonElement serialize(Field field, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
@@ -212,7 +216,7 @@ public class SchemaSerDe {
     /**
      * A GSON plugin to deserialise a field. Treats a missing "nullable" property as false.
      */
-    public static class FieldJsonDeserializer implements JsonDeserializer<Field> {
+    private static class FieldJsonDeserializer implements JsonDeserializer<Field> {
 
         @Override
         public Field deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {

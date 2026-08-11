@@ -28,8 +28,9 @@ use crate::{
         unalias::unalias_view_projection_columns,
         util::{
             add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
-            remove_coalesce_physical_stage, retrieve_input_size,
+            calculate_upload_size, find_topmost_sort_ordering, output_partition_count,
+            register_store, remove_coalesce_physical_stage,
+            remove_non_schema_columns_from_ordering, retrieve_input_size,
         },
     },
     filter_aggregation_config::aggregate::Aggregate,
@@ -362,12 +363,6 @@ impl<'a> SleeperOperations<'a> {
             // key fields appear in sort expression
             physical_plan = apply_full_sort_ordering(order, physical_plan)?;
         }
-
-        // Check physical plan is free of `SortExec` stages.
-        // Issue <https://github.com/gchq/sleeper/issues/5248>
-        if self.config.input_files_sorted() {
-            check_for_sort_exec(&physical_plan)?;
-        }
         Ok(physical_plan)
     }
 
@@ -385,12 +380,17 @@ impl<'a> SleeperOperations<'a> {
             if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
                 // Remove aliased column names to make things look correct for Java
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
+                // Find the correct sort ordering (if any) by traversing down the physical plan
+                let top_most_sort_ordering =
+                    find_topmost_sort_ordering(&physical_plan).unwrap_or(ordering.clone());
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
-                if output_partition_count(&physical_plan) > 1 {
-                    Arc::new(SortPreservingMergeExec::new(
-                        ordering.clone(),
-                        physical_plan,
-                    ))
+                // but only if a sort order remains after removing columns no longer present in schema
+                if let Some(ordering) = remove_non_schema_columns_from_ordering(
+                    &top_most_sort_ordering,
+                    &physical_plan.schema(),
+                ) && output_partition_count(&physical_plan) > 1
+                {
+                    Arc::new(SortPreservingMergeExec::new(ordering, physical_plan))
                 } else {
                     physical_plan
                 }
@@ -409,16 +409,15 @@ impl<'a> SleeperOperations<'a> {
     ///
     /// # Errors
     /// The columns in the schema must match the row and sort key field names.
-    pub fn create_sort_expr_ordering(
+    pub fn create_physical_sort_expr_ordering(
         &self,
         frame: &DataFrame,
     ) -> Result<Option<LexOrdering>, DataFusionError> {
         let plan_schema = frame.schema().as_arrow();
-        let sorting_columns = self.config.sorting_columns();
 
         Ok(LexOrdering::new(
-            sorting_columns
-                .iter()
+            self.config
+                .sorting_columns_iter()
                 .map(|col_name| {
                     Ok(PhysicalSortExpr::new(
                         Arc::new(Column::new_with_schema(col_name, plan_schema)?),

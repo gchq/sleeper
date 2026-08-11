@@ -64,7 +64,7 @@ public class SystemTestInfrastructureCdkApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
+        Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesFile"));
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 

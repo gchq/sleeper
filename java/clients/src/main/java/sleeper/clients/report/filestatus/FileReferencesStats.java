@@ -71,10 +71,10 @@ public class FileReferencesStats {
         Integer max = null;
         int total = 0;
         int count = 0;
-        Map<Integer, Integer> frequencyCounts = new HashMap<>();
+        FrequencyCounts frequencyCounts = new FrequencyCounts();
         for (Map.Entry<String, Set<String>> entry : partitionIdToFiles.entrySet()) {
             int size = entry.getValue().size();
-            frequencyCounts.merge(size, 1, Integer::sum);
+            frequencyCounts.add(size);
             if (null == min) {
                 min = size;
             } else if (size < min) {
@@ -89,7 +89,7 @@ public class FileReferencesStats {
             count++;
 
         }
-        List<Integer> flatCounts = toFlatCounts(frequencyCounts);
+        List<Integer> flatCounts = frequencyCounts.toFlatCounts();
         return new FileReferencesStats(min, max, mean(total, count), median(flatCounts),
                 percentile(flatCounts, 0.90d), percentile(flatCounts, 0.99d), references.size());
     }
@@ -136,19 +136,6 @@ public class FileReferencesStats {
         } else {
             return total / (double) count;
         }
-    }
-
-    private static List<Integer> toFlatCounts(Map<Integer, Integer> frequencyCounts) {
-        List<Integer> flatCounts = frequencyCounts.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<Integer, Integer>::getKey))
-                .collect(Collector.of(ArrayList::new, (container, entry) -> {
-                    for (int i = 0; i < entry.getValue(); i++) {
-                        container.add(entry.getKey());
-                    }
-                }, (left, right) -> {
-                    left.addAll(right);
-                    return left;
-                }, Collector.Characteristics.IDENTITY_FINISH));
-        return flatCounts;
     }
 
     /**
@@ -205,5 +192,30 @@ public class FileReferencesStats {
 
     public Integer getTotalReferences() {
         return totalReferences;
+    }
+
+    /**
+     * Counts frequency of distinct values.
+     */
+    private static class FrequencyCounts {
+        private final Map<Integer, Integer> valueToFrequency = new HashMap<>();
+
+        @SuppressWarnings("null")
+        void add(int value) {
+            valueToFrequency.merge(value, 1, Integer::sum);
+        }
+
+        private List<Integer> toFlatCounts() {
+            List<Integer> flatCounts = valueToFrequency.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<Integer, Integer>::getKey))
+                    .collect(Collector.of(ArrayList::new, (container, entry) -> {
+                        for (int i = 0; i < entry.getValue(); i++) {
+                            container.add(entry.getKey());
+                        }
+                    }, (left, right) -> {
+                        left.addAll(right);
+                        return left;
+                    }, Collector.Characteristics.IDENTITY_FINISH));
+            return flatCounts;
+        }
     }
 }

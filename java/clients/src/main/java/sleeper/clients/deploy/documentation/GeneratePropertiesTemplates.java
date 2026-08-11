@@ -33,78 +33,46 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
-import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
-import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
+import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 
 /**
  * Generates template files to be filled in when deploying an instance of Sleeper, or creating tables.
  */
 public class GeneratePropertiesTemplates {
 
-    private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "basic-example",
-            VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh");
+    private static final String INSTANCE_PROPERTIES_HEADER = "#################################################################################\n" +
+            "#                           SLEEPER INSTANCE PROPERTIES                         #\n" +
+            "#################################################################################";
 
-    private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
-            TABLE_NAME, "example-table",
-            FILTERING_CONFIG, "ageOff(timestamp,3600000)",
-            SPLIT_POINTS_FILE, "example/full/splits.txt");
+    private static final String TABLE_PROPERTIES_HEADER = "#################################################################################\n" +
+            "#                           SLEEPER TABLE PROPERTIES                            #\n" +
+            "#################################################################################";
 
-    private static final Map<InstanceProperty, String> FULL_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "full-example",
-            VPC_ID, "1234567890",
-            SUBNETS, "subnet-abcdefgh",
-            BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key",
-            DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000",
-            LOGGING_LEVEL, "INFO",
-            ROOT_LOGGING_LEVEL, "INFO",
-            APACHE_LOGGING_LEVEL, "INFO",
-            PARQUET_LOGGING_LEVEL, "WARN",
-            AWS_LOGGING_LEVEL, "INFO");
-
-    private static final Map<TableProperty, String> FULL_TABLE_EXAMPLE_VALUES = Map.of(
-            TABLE_NAME, "example-table",
-            ROW_GROUP_SIZE, DEFAULT_ROW_GROUP_SIZE.getDefaultValue(),
-            PAGE_SIZE, DEFAULT_PAGE_SIZE.getDefaultValue(),
-            COMPRESSION_CODEC, DEFAULT_COMPRESSION_CODEC.getDefaultValue(),
-            GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION.getDefaultValue(),
-            STATESTORE_CLASSNAME, STATESTORE_CLASSNAME.getDefaultValue(),
-            SPLIT_POINTS_FILE, "example/full/splits.txt");
-
-    private static final Map<InstanceProperty, String> TEMPLATE_INSTANCE_VALUES = Map.of(
-            ID, "set-automatically",
-            VPC_ID, "set-automatically",
-            SUBNETS, "set-automatically");
-
-    private static final Map<TableProperty, String> TEMPLATE_TABLE_VALUES = Map.of(
-            TABLE_NAME, "changeme");
+    private static final String LIGHT_EXAMPLE_EXPLANATION = "#################################################################################\n" +
+            "#                    Properties set below are designed for an                   #\n" +
+            "#                  instance aimed towards reducing running costs                #\n" +
+            "#               and will apply to any bulk import stacks you enable             #\n" +
+            "#################################################################################";
 
     private GeneratePropertiesTemplates() {
     }
@@ -134,6 +102,12 @@ public class GeneratePropertiesTemplates {
         writeFile(basicExampleDir.resolve("table.properties"),
                 GeneratePropertiesTemplates::writeExampleBasicTableProperties);
 
+        Path lightTemplateDir = Files.createDirectories(repositoryRoot.resolve("example/light"));
+        writeFile(lightTemplateDir.resolve("instance.properties"),
+                GeneratePropertiesTemplates::writeExampleLightInstanceProperties);
+        writeFile(lightTemplateDir.resolve("table.properties"),
+                GeneratePropertiesTemplates::writeExampleBasicTableProperties);
+
         Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
         writeFile(scriptsTemplateDir.resolve("instanceproperties.template"),
                 GeneratePropertiesTemplates::writeInstancePropertiesTemplate);
@@ -152,7 +126,6 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeExampleFullInstanceProperties(Writer writer) {
         InstanceProperties properties = new InstanceProperties();
-        FULL_INSTANCE_EXAMPLE_VALUES.forEach(properties::set);
 
         writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
     }
@@ -164,7 +137,7 @@ public class GeneratePropertiesTemplates {
      */
     public static void writeExampleFullTableProperties(Writer writer) {
         TableProperties properties = new TableProperties(new InstanceProperties());
-        FULL_TABLE_EXAMPLE_VALUES.forEach(properties::set);
+
         writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
     }
 
@@ -176,8 +149,7 @@ public class GeneratePropertiesTemplates {
     public static void writeExampleBasicInstanceProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new InstanceProperties(),
-                InstancePropertyGroup.getAll(),
-                BASIC_INSTANCE_EXAMPLE_VALUES);
+                InstancePropertyGroup.getAll());
     }
 
     /**
@@ -188,98 +160,107 @@ public class GeneratePropertiesTemplates {
     public static void writeExampleBasicTableProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new TableProperties(new InstanceProperties()),
-                TablePropertyGroup.getAll(),
-                BASIC_TABLE_EXAMPLE_VALUES);
+                TablePropertyGroup.getAll());
     }
 
     /**
-     * Writes the instance properties template file to the given writer.
+     * Writes the basic instance properties template file to the given writer.
+     * All properties set to default and commented out.
      *
      * @param out the writer
      */
+    @SuppressWarnings("null")
     public static void writeInstancePropertiesTemplate(Writer out) {
         InstanceProperties properties = new InstanceProperties();
-        TEMPLATE_INSTANCE_VALUES.forEach(properties::set);
-
-        Map<Boolean, List<InstanceProperty>> propertiesByIsSet = properties.getPropertiesIndex()
-                .getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate)
-                .collect(Collectors.groupingBy(properties::isSet));
-        List<InstanceProperty> templateProperties = propertiesByIsSet.get(true);
-        List<InstanceProperty> defaultProperties = propertiesByIsSet.get(false);
-
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
-        writer.println("#################################################################################");
-        writer.println();
-        writer.println("############################");
-        writer.println("# Properties set by script #");
-        writer.println("############################");
-        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
-                templateProperties, InstancePropertyGroup.getAll(), writer)
-                .printGroupDetails(false)
-                .build().print(properties);
-        writer.println();
-        writer.println();
-        writer.println("####################");
-        writer.println("# Other properties #");
-        writer.println("####################");
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                defaultProperties, InstancePropertyGroup.getAll(), writer)
-                .print(properties);
+        List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
+        writeInstancePropertiesWithHeader(out, properties, propertiesByIsSet, INSTANCE_PROPERTIES_HEADER);
     }
 
     /**
-     * Writes the table properties template file to the given writer.
+     * Writes the light variant of the instance properties template file to the given writer.
+     * Various properties set for desired EMR settings with the remainder of the properties set to default value and
+     * commented out.
+     *
+     * @param out the writer
+     */
+    public static void writeExampleLightInstanceProperties(Writer out) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        // Emr Serverless properties
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
+
+        // EKS properties
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "60Gi");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
+        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
+
+        // Default table values
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
+        instanceProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
+
+        // Stack
+        instanceProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
+
+        List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
+
+        writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_EXAMPLE_EXPLANATION);
+    }
+
+    /**
+     * Writes the basic table properties template file to the given writer.
      *
      * @param out the writer
      */
     public static void writeTablePropertiesTemplate(Writer out) {
-        TableProperties properties = new TableProperties(new InstanceProperties());
-        TEMPLATE_TABLE_VALUES.forEach(properties::set);
+        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), TABLE_PROPERTIES_HEADER);
+    }
 
+    private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String header) {
         PrintWriter writer = new PrintWriter(out);
-        writer.println("#################################################################################");
-        writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
-        writer.println("#################################################################################");
+        if (header != null) {
+            writer.println(header);
+        }
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                TableProperty.getAll(), TablePropertyGroup.getAll(), writer)
+                propertiesSet, InstancePropertyGroup.getAll(), writer)
+                .print(properties);
+    }
+
+    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, List<TableProperty> propertiesSet, String header) {
+        PrintWriter writer = new PrintWriter(out);
+
+        if (header != null) {
+            writer.println(header);
+        }
+        writer.println();
+        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                propertiesSet, TablePropertyGroup.getAll(), writer)
                 .print(properties);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
             Writer out, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) {
-        List<T> definitionsForExampleProperties = properties.getPropertiesIndex().getUserDefined().stream()
-                .filter(properties::isSet)
-                .toList();
         List<T> definitionsForTemplate = properties.getPropertiesIndex().getUserDefined().stream()
                 .filter(SleeperProperty::isIncludedInTemplate)
                 .filter(not(properties::isSet))
                 .toList();
         PrintWriter writer = new PrintWriter(out);
-        writer.println("##################");
-        writer.println("# Example values #");
-        writer.println("##################");
-        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(definitionsForExampleProperties, propertyGroups, writer)
-                .printGroupDetails(false)
-                .build().print(properties);
-        writer.println();
-        writer.println();
-        writer.println("####################");
-        writer.println("# Other properties #");
-        writer.println("####################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(definitionsForTemplate, propertyGroups, writer)
                 .print(properties);
     }
 
     private static <T extends SleeperProperty> void writeBasicPropertiesTemplate(
-            Writer writer, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups, Map<T, String> basicValues) {
-        basicValues.forEach(properties::set);
+            Writer writer, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) {
         writePropertiesTemplate(writer, properties, propertyGroups,
                 properties.getPropertiesIndex().getUserDefined().stream()
-                        .filter(property -> property.isIncludedInBasicTemplate()
-                                || basicValues.containsKey(property)));
+                        .filter(property -> property.isIncludedInBasicTemplate()));
     }
 
     private static <T extends SleeperProperty> void writePropertiesTemplate(

@@ -28,7 +28,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         if: ${{ ! inputs.skipRust }}
         with:
-         toolchain: 1.93
+         toolchain: 1.96
       - uses: mozilla-actions/sccache-action@v0.0.10
         if: ${{ ! inputs.skipRust }}
       - name: Cache dependencies

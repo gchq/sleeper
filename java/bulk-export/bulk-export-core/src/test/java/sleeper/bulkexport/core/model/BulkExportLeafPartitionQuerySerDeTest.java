@@ -85,7 +85,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
     }
 
     @Test
-    public void shouldSerDeBulkExportLeafPartitionQueryUsingSchema() {
+    public void shouldSerDeBulkExportLeafPartitionQueryWithSqlQuery() {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
@@ -93,6 +93,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         String exportId = "e-id";
         String subExportId = "se-id";
         String leafPartitionId = "lp-id";
+        String sqlQuery = "SELECT * FROM query_results LIMIT 1;";
         RangeFactory rangeFactory = new RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange(field, 1, true, 10, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, 0, 1000));
@@ -104,6 +105,42 @@ public class BulkExportLeafPartitionQuerySerDeTest {
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(Collections.singletonList("/test/file.parquet"))
+                .sqlQuery(sqlQuery)
+                .build();
+
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
+
+        // When
+        String json = querySerDe.toJson(bulkExportLeafPartitionQuery, true);
+        BulkExportLeafPartitionQuery deserialisedQuery = querySerDe.fromJson(json);
+
+        // Then
+        assertThat(bulkExportLeafPartitionQuery).isEqualTo(deserialisedQuery);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    public void shouldSerDeBulkExportLeafPartitionQueryUsingSchema() {
+        // Given
+        String tableId = "t-id";
+        tableProperties.set(TABLE_ID, tableId);
+
+        String exportId = "e-id";
+        String subExportId = "se-id";
+        String leafPartitionId = "lp-id";
+        String sqlQuery = "SELECT * FROM query_results LIMIT 1;";
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region1 = new Region(rangeFactory.createRange(field, 1, true, 10, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, 0, 1000));
+        BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery.builder()
+                .tableId(tableId)
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of(region1))
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(Collections.singletonList("/test/file.parquet"))
+                .sqlQuery(sqlQuery)
                 .build();
 
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromSchema(schema);

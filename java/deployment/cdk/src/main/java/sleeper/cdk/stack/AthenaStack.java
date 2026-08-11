@@ -83,11 +83,12 @@ public class AthenaStack extends NestedStack {
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
         List<Policy> connectorPolicies = createConnectorPolicies(this, instanceProperties);
 
-        createConnector("sleeper.athena.composite.SimpleCompositeHandler",
-                LambdaHandler.ATHENA_SIMPLE_COMPOSITE, LogGroupRef.SIMPLE_ATHENA_HANDLER,
-                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
         createConnector("sleeper.athena.composite.IteratorApplyingCompositeHandler",
                 LambdaHandler.ATHENA_ITERATORS_COMPOSITE, LogGroupRef.ITERATOR_APPLYING_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
+
+        createConnector("sleeper.athena.composite.DataFusionCompositeHandler",
+                LambdaHandler.ATHENA_DATAFUSION_COMPOSITE, LogGroupRef.DATAFUSION_ATHENA_HANDLER,
                 instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
 
         Utils.addTags(this, instanceProperties);

@@ -16,10 +16,17 @@
 
 package sleeper.systemtest.drivers.util;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.regions.PartitionMetadata;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.retries.StandardRetryStrategy;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -29,6 +36,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.EcsClientBuilder;
+import software.amazon.awssdk.services.eks.EksClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -58,6 +67,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
+    private final Region region;
     private final AwsCredentialsProvider credentialsProvider;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
@@ -77,12 +87,14 @@ public class SystemTestClients {
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
     private final SfnClient sfn;
+    private final EksClient eks;
     private final CommandPipelineRunner commandRunner = CommandUtils::runCommandLogOutput;
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
 
     private SystemTestClients(Builder builder) {
+        region = builder.region;
         credentialsProvider = builder.credentialsProvider;
         s3 = builder.s3;
         s3Async = builder.s3Async;
@@ -102,6 +114,7 @@ public class SystemTestClients {
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
         sfn = builder.sfn;
+        eks = builder.eks;
         dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
@@ -112,7 +125,9 @@ public class SystemTestClients {
     }
 
     public static SystemTestClients fromDefaults() {
+        Region region = DefaultAwsRegionProviderChain.builder().build().getRegion();
         return builder()
+                .region(region)
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
@@ -123,15 +138,19 @@ public class SystemTestClients {
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
                 .emr(EmrClient.create())
-                .ecs(EcsClient.create())
+                .ecs(systemTestEcsClientBuilder().build())
                 .autoScaling(AutoScalingClient.create())
                 .ecr(EcrClient.create())
                 .ec2(Ec2Client.create())
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
+                .dataFusionAwsConfig(() -> {
+                    PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
+                    return DataFusionAwsConfig.getDefault(region, partitionMetadata);
+                })
                 .sfn(SfnClient.create())
-                .dataFusionAwsConfig(DataFusionAwsConfig::getDefault)
+                .eks(EksClient.create())
                 .build();
     }
 
@@ -139,6 +158,7 @@ public class SystemTestClients {
         AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
+                .region(region)
                 .credentialsProvider(aws.credentialsProvider())
                 .s3(aws.buildClient(S3Client.builder()))
                 .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
@@ -149,7 +169,7 @@ public class SystemTestClients {
                 .cloudFormation(aws.buildClient(CloudFormationClient.builder()))
                 .emrServerless(aws.buildClient(EmrServerlessClient.builder()))
                 .emr(aws.buildClient(EmrClient.builder()))
-                .ecs(aws.buildClient(EcsClient.builder()))
+                .ecs(aws.buildClient(systemTestEcsClientBuilder()))
                 .autoScaling(aws.buildClient(AutoScalingClient.builder()))
                 .ecr(aws.buildClient(EcrClient.builder()))
                 .ec2(aws.buildClient(Ec2Client.builder()))
@@ -157,10 +177,15 @@ public class SystemTestClients {
                 .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
                 .sfn(aws.buildClient(SfnClient.builder()))
+                .eks(aws.buildClient(EksClient.builder()))
                 .dataFusionAwsConfig(aws::dataFusionAwsConfig)
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
+    }
+
+    public Region getRegion() {
+        return region;
     }
 
     public AwsCredentialsProvider getCredentialsProvider() {
@@ -239,6 +264,10 @@ public class SystemTestClients {
         return sfn;
     }
 
+    public EksClient getEks() {
+        return eks;
+    }
+
     public CommandPipelineRunner getCommandRunner() {
         return commandRunner;
     }
@@ -255,6 +284,10 @@ public class SystemTestClients {
         return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
     }
 
+    public KubernetesClient createKubernetesClient(InstanceProperties instanceProperties) {
+        return EksClientFactory.createKubernetesClient(instanceProperties, region, credentialsProvider);
+    }
+
     public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
         return tableProperties -> createHadoopConf(instanceProperties, tableProperties);
     }
@@ -264,6 +297,8 @@ public class SystemTestClients {
     }
 
     private static LambdaClientBuilder systemTestLambdaClientBuilder() {
+        // This is intended to allow for direct synchronous lambda invocations from a test,
+        // accommodating the timeout of a lambda invocation.
         return LambdaClient.builder()
                 .overrideConfiguration(builder -> builder
                         .apiCallTimeout(Duration.ofMinutes(11))
@@ -272,7 +307,22 @@ public class SystemTestClients {
                         .socketTimeout(Duration.ofMinutes(11)));
     }
 
+    private static EcsClientBuilder systemTestEcsClientBuilder() {
+        // This is intended to accommodate situations where the ECS API is having problems, and we still want a test to
+        // be able to eventually start data generation ECS tasks.
+        BackoffStrategy backoffStrategy = BackoffStrategy.exponentialDelay(Duration.ofSeconds(1), Duration.ofMinutes(1));
+        return EcsClient.builder()
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                        .retryStrategy(StandardRetryStrategy.builder()
+                                .maxAttempts(10)
+                                .backoffStrategy(backoffStrategy)
+                                .throttlingBackoffStrategy(backoffStrategy)
+                                .build())
+                        .build());
+    }
+
     public static class Builder {
+        private Region region;
         private AwsCredentialsProvider credentialsProvider;
         private S3Client s3;
         private S3AsyncClient s3Async;
@@ -292,11 +342,17 @@ public class SystemTestClients {
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
         private SfnClient sfn;
+        private EksClient eks;
         private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
 
         private Builder() {
+        }
+
+        public Builder region(Region region) {
+            this.region = region;
+            return this;
         }
 
         public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
@@ -387,6 +443,11 @@ public class SystemTestClients {
 
         public Builder sfn(SfnClient sfn) {
             this.sfn = sfn;
+            return this;
+        }
+
+        public Builder eks(EksClient eks) {
+            this.eks = eks;
             return this;
         }
 

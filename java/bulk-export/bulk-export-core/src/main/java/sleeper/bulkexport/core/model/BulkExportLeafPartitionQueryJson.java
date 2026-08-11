@@ -36,6 +36,7 @@ class BulkExportLeafPartitionQueryJson {
     private final String leafPartitionId;
     private final JsonElement partitionRegion;
     private final List<String> files;
+    private final String sqlQuery;
 
     private BulkExportLeafPartitionQueryJson(Builder builder) {
         tableId = builder.tableId;
@@ -45,6 +46,7 @@ class BulkExportLeafPartitionQueryJson {
         leafPartitionId = builder.leafPartitionId;
         partitionRegion = builder.partitionRegion;
         files = builder.files;
+        this.sqlQuery = builder.sqlQuery;
     }
 
     static BulkExportLeafPartitionQueryJson from(BulkExportLeafPartitionQuery leafQuery,
@@ -58,6 +60,7 @@ class BulkExportLeafPartitionQueryJson {
                 .leafPartitionId(leafQuery.getLeafPartitionId())
                 .partitionRegion(regionSerDe.toJsonTree(leafQuery.getPartitionRegion()))
                 .files(leafQuery.getFiles())
+                .sqlQuery(leafQuery.getSqlQuery())
                 .build();
     }
 
@@ -72,6 +75,7 @@ class BulkExportLeafPartitionQueryJson {
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files)
+                .sqlQuery(sqlQuery)
                 .build();
     }
 
@@ -129,6 +133,7 @@ class BulkExportLeafPartitionQueryJson {
         private String leafPartitionId;
         private JsonElement partitionRegion;
         private List<String> files;
+        private String sqlQuery;
 
         private Builder() {
         }
@@ -165,6 +170,11 @@ class BulkExportLeafPartitionQueryJson {
 
         public Builder files(List<String> files) {
             this.files = files;
+            return this;
+        }
+
+        public Builder sqlQuery(String sqlQuery) {
+            this.sqlQuery = sqlQuery;
             return this;
         }
 

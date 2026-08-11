@@ -16,39 +16,7 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <instance-id> <table-name>"
-  exit 1
-fi
-
-INSTANCE_ID=$1
-TABLE_NAME=$2
-
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
-GENERATED_DIR=${SCRIPTS_DIR}/generated
-JAR_DIR=${SCRIPTS_DIR}/jars
-TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
-TABLE_PROPERTIES=${TABLE_DIR}/table.properties
-SCHEMA=${TABLE_DIR}/schema.json
-
-VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-
-echo "Generating properties"
-
-mkdir -p "${TABLE_DIR}"
-
-# Schema
-cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
-
-# Table Properties
-sed \
-  -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
-  "${TEMPLATE_DIR}/tableproperties.template" \
-  > "${TABLE_PROPERTIES}"
-
-echo "-------------------------------------------------------"
-echo "Adding table"
-echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.table.AddTable "${INSTANCE_ID}" "${TABLE_PROPERTIES}" "${SCHEMA}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.table.AddTableClient "$@"

@@ -29,7 +29,9 @@ arrow = { workspace = true, features = ["ffi"] }
 aggregator_udfs = { path = "../aggregator_udfs" }
 async-trait = { workspace = true }
 aws-config = { workspace = true }
-aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+aws-credential-types = { workspace = true, features = [
+    "hardcoded-credentials",
+] }
 aws-types = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
@@ -42,11 +44,14 @@ log = { workspace = true }
 num-format = { workspace = true }
 object_store = { workspace = true }
 objectstore_ext = { path = "../objectstore_ext" }
+query_sql = { path = "../query_sql" }
 regex = { workspace = true }
 rust_sketch = { path = "../rust_sketch" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
+uuid = { workspace = true }
 thiserror = { workspace = true }
+tokio-util = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

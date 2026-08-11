@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.athena.TestUtils;
+import sleeper.athena.metadata.SleeperMetadataHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -50,9 +51,9 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("year", new IntType()),
-                    new Field("month", new IntType()),
-                    new Field("day", new IntType()))
+                    new Field("key1", new StringType()),
+                    new Field("key2", new IntType()),
+                    new Field("key3", new IntType()))
             .sortKeyFields(
                     new Field("timestamp", new LongType()))
             .valueFields(
@@ -107,11 +108,13 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {
         return new SchemaBuilder()
-                .addIntField("year")
-                .addIntField("month")
-                .addIntField("day")
+                .addStringField("key1")
+                .addIntField("key2")
+                .addIntField("key3")
                 .addBigIntField("timestamp")
                 .addBigIntField("count")
+                .addField(SleeperMetadataHandler.arrowMapField("map",
+                        Types.MinorType.VARCHAR.getType(), Types.MinorType.VARCHAR.getType()))
                 .addStringField("str")
                 .addListField("list", Types.MinorType.VARCHAR.getType())
                 .build();

@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.table.AddTable;
+import sleeper.clients.table.AddTableClient;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -118,7 +118,7 @@ public class DeployNewInstance {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, deployInstanceConfiguration.getInstanceId());
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTable(instanceProperties, tableProperties,
+            new AddTableClient(tableProperties,
                     S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .run();

@@ -14,10 +14,8 @@
 
 import uuid
 
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty
+from sleeper.properties import CommonCdkProperty, CommonProperty, InstanceProperties
 from sleeper.properties.config_bucket import config_bucket_for_account_instance
-from sleeper.properties.instance_properties import InstanceProperties
-from sleeper.properties.user_defined_properties import CommonProperty
 
 
 def create_test_instance_properties() -> InstanceProperties:

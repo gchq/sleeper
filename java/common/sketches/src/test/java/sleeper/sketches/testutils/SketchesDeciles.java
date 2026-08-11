@@ -26,7 +26,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +61,11 @@ public class SketchesDeciles {
         return from(sketches);
     }
 
-    public static SketchesDeciles fromFile(Schema schema, FileReference file, SketchesStore sketchesStore) throws IOException {
+    public static SketchesDeciles fromFile(Schema schema, FileReference file, SketchesStore sketchesStore) {
         return fromFile(schema, file.getFilename(), sketchesStore);
     }
 
-    public static SketchesDeciles fromFile(Schema schema, String file, SketchesStore sketchesStore) throws IOException {
+    public static SketchesDeciles fromFile(Schema schema, String file, SketchesStore sketchesStore) {
         return from(sketchesStore.loadFileSketches(file, schema));
     }
 

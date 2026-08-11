@@ -30,6 +30,8 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.AddTable;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
@@ -49,7 +51,8 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientQueryProvider queryProvider = SleeperClientQueryProvider.createDefaultForEachClient();
+    private SleeperClientQueryProvider queryProvider;
+    private Integer queryThreadPoolSize;
 
     /**
      * Creates a Sleeper client.
@@ -60,16 +63,18 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients);
         TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
+        SleeperClientQueryProvider provider = getQueryProvider(instanceProperties);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = provider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo());
 
         return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(tablePropertiesProvider)
-                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
+                .stateStoreProvider(stateStoreProvider)
+                .addTable(new AddTable(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()), stateStoreProvider))
                 .objectFactory(ObjectFactory.noUserJars())
                 .rowRetrieverProvider(rowRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
@@ -80,6 +85,16 @@ public class AwsSleeperClientBuilder {
                         awsClients.awsCredentialsProvider()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
+    }
+
+    private SleeperClientQueryProvider getQueryProvider(InstanceProperties instanceProperties) {
+        if (queryProvider != null) {
+            return queryProvider;
+        } else if (queryThreadPoolSize != null) {
+            return SleeperClientQueryProvider.withThreadPoolForEachClient(instanceProperties, queryThreadPoolSize);
+        } else {
+            return SleeperClientQueryProvider.createDefaultForEachClient(instanceProperties);
+        }
     }
 
     private InstanceProperties loadInstanceProperties(SleeperClientAwsClients awsClients) {
@@ -122,7 +137,8 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+        this.queryThreadPoolSize = queryThreadPoolSize;
+        return this;
     }
 
     /**

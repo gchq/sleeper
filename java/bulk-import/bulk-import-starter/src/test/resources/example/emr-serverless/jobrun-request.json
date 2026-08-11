@@ -8,6 +8,7 @@
         "my-job",
         "my-application-EMRS",
         "run-id",
+        "folder/job.json",
         "EMR"
       ]
     }

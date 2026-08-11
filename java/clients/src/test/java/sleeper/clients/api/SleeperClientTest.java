@@ -74,8 +74,6 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("instanceProperties");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().tableIndex(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("tableIndex");
-        assertThatThrownBy(() -> instance.sleeperClientBuilder().tablePropertiesStore(null).build())
-                .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesStore");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().tablePropertiesProvider(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesProvider");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().stateStoreProvider(null).build())

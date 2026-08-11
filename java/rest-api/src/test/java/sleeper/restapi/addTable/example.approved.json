@@ -1,0 +1,16 @@
+{
+  "properties": {
+    "sleeper.table.name": "my-table"
+  },
+  "schema": {
+    "rowKeyFields": [
+      {
+        "name": "key",
+        "type": "StringType"
+      }
+    ],
+    "sortKeyFields": [],
+    "valueFields": []
+  },
+  "splitPoints": []
+}

@@ -19,7 +19,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,rustfmt
-          toolchain: 1.93
+          toolchain: 1.96
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Check formatting
         working-directory: ./rust

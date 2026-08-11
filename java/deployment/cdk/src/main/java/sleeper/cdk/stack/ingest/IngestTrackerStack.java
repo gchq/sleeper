@@ -36,6 +36,7 @@ import sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 
 import java.util.List;
+import java.util.Optional;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -131,5 +132,15 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
     @Override
     public void grantWriteTaskEvent(IGrantable grantee) {
         tasksTable.grantWriteData(grantee);
+    }
+
+    @Override
+    public void grantReadJobLookup(IGrantable grantee) {
+        jobsTable.grant(grantee, "dynamodb:GetItem");
+    }
+
+    @Override
+    public Optional<String> getJobLookupTableName(String instanceId) {
+        return Optional.of(jobsTable.getTableName());
     }
 }

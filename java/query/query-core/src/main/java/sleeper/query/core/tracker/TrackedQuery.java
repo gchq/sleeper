@@ -15,6 +15,8 @@
  */
 package sleeper.query.core.tracker;
 
+import sleeper.query.core.output.ResultsOutputInfo;
+
 import java.time.Instant;
 import java.util.Objects;
 
@@ -48,6 +50,12 @@ public class TrackedQuery {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Builder toBuilder() {
+        return builder().queryId(queryId).subQueryId(subQueryId)
+                .lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
+                .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage);
     }
 
     public String getQueryId() {
@@ -224,6 +232,27 @@ public class TrackedQuery {
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
             return this;
+        }
+
+        /**
+         * Provides information on the results of the query.
+         *
+         * @param  outputInfo the information
+         * @return            the builder
+         */
+        public Builder outputInfo(ResultsOutputInfo outputInfo) {
+            return rowCount(outputInfo.getRowCount())
+                    .error(outputInfo.getError());
+        }
+
+        /**
+         * Provides the error.
+         *
+         * @param  error the error
+         * @return       the builder
+         */
+        public Builder error(Exception error) {
+            return errorMessage(error == null ? null : error.getMessage());
         }
 
         public TrackedQuery build() {

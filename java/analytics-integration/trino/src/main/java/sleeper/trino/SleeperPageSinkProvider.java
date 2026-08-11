@@ -48,7 +48,6 @@ public class SleeperPageSinkProvider implements ConnectorPageSinkProvider {
         SleeperInsertTableHandle sleeperInsertTableHandle = (SleeperInsertTableHandle) insertTableHandle;
         return new SleeperPageSink(
                 sleeperConnectionAsTrino,
-                sleeperInsertTableHandle.getSleeperTableHandle().getSchemaTableName(),
-                sleeperInsertTableHandle.getSleeperColumnHandlesInOrder());
+                sleeperInsertTableHandle.getSleeperTableHandle().getSchemaTableName());
     }
 }

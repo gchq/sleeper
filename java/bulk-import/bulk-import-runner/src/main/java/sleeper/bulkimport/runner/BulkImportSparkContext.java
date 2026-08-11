@@ -74,7 +74,11 @@ public class BulkImportSparkContext implements BulkImportContext<BulkImportSpark
     }
 
     public static BulkImportJobDriver.ContextCreator<BulkImportSparkContext> creator(InstanceProperties instanceProperties) {
-        return (tableProperties, partitions, job) -> create(instanceProperties, tableProperties, partitions, job.getFiles());
+        return creator(instanceProperties, createSparkConf());
+    }
+
+    public static BulkImportJobDriver.ContextCreator<BulkImportSparkContext> creator(InstanceProperties instanceProperties, SparkConf conf) {
+        return (tableProperties, partitions, job) -> create(instanceProperties, tableProperties, conf, partitions, job.getFiles());
     }
 
     /**
@@ -82,15 +86,16 @@ public class BulkImportSparkContext implements BulkImportContext<BulkImportSpark
      *
      * @param  instanceProperties the instance properties
      * @param  tableProperties    the table properties
+     * @param  conf               the Spark configuration
      * @param  partitions         all partitions in the Sleeper table partition tree
      * @param  filenames          the paths to the input Parquet files, excluding the file system
      * @return                    the context for the bulk import
      */
     public static BulkImportSparkContext create(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
+            InstanceProperties instanceProperties, TableProperties tableProperties, SparkConf conf,
             List<Partition> partitions, List<String> filenames) {
         LOGGER.info("Initialising Spark");
-        SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
+        SparkSession session = new SparkSession.Builder().config(conf).getOrCreate();
         Seq<SparkStrategy> strategies = JavaConverters.iterableAsScalaIterable(List.<SparkStrategy>of(ExplicitRepartitionStrategy$.MODULE$)).toSeq();
         session.experimental().extraStrategies_$eq(strategies);
 

@@ -59,6 +59,7 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
         this(sleeperTableHandle.getSleeperColumnHandleListInOrder(), partitionMinKeys);
     }
 
+    @SuppressWarnings("null")
     public SleeperPartitioningHandle(List<SleeperColumnHandle> sleeperColumnHandlesInOrder, List<Key> partitionMinKeys) {
         this.sleeperColumnHandlesInOrder = sleeperColumnHandlesInOrder;
         List<PrimitiveType> rowKeySleeperPrimitiveTypesInOrder = sleeperColumnHandlesInOrder.stream()

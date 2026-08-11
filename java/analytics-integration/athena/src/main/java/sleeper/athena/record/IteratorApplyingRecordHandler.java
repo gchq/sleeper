@@ -123,7 +123,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema,
             TableProperties tableProperties) throws RowRetrievalException, IteratorCreationException {
         Split split = recordsRequest.getSplit();
-        Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
+        Set<String> relevantFiles = readRelevantFiles(split);
         List<Field> rowKeyFields = schema.getRowKeyFields();
 
         List<FieldAsString> rowKeys = split.getProperties().entrySet().stream()
@@ -135,6 +135,11 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         List<Object> maxRowKeys = getRowKey(rowKeys, rowKeyFields, "Max");
 
         return createIterator(relevantFiles, minRowKeys, maxRowKeys, schema, tableProperties, recordsRequest.getConstraints().getSummary());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> readRelevantFiles(Split split) {
+        return new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
     }
 
     private List<Object> getRowKey(List<FieldAsString> rowKeyStream, List<Field> rowKeyFields, String indicator) {
@@ -153,7 +158,9 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     private FieldAtDimension getFieldAtDimension(List<Field> rowKeyFields, FieldAsString entry) {
         String key = entry.fieldName();
-        Integer index = Integer.valueOf(key.substring(key.lastIndexOf("RowKey") + 6));
+        // The metadata handler names the split property <prefix>-<fieldName> (e.g. _MinRowKey-mykey).
+        String fieldName = key.substring(key.indexOf('-') + 1);
+        int index = dimensionOfRowKeyField(rowKeyFields, fieldName);
         String stringValue = entry.value();
         Type type = rowKeyFields.get(index).getType();
         if (type instanceof StringType) {
@@ -167,6 +174,15 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         } else {
             throw new RuntimeException("Unexpected Primitive type: " + type);
         }
+    }
+
+    private static int dimensionOfRowKeyField(List<Field> rowKeyFields, String fieldName) {
+        for (int i = 0; i < rowKeyFields.size(); i++) {
+            if (rowKeyFields.get(i).getName().equals(fieldName)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Row key field not found in schema: " + fieldName);
     }
 
     /**

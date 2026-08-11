@@ -15,6 +15,7 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.github.api.GitHubApi;
 import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 
 import java.io.IOException;
@@ -32,8 +33,8 @@ public class CheckGitHubStatusMain {
             return;
         }
         CheckGitHubStatusConfig configuration = CheckGitHubStatusConfig.fromGitHubAndChunks(Paths.get(args[0]), Paths.get(args[1]));
-        try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
-            ChunkStatuses status = configuration.checkStatus(gitHub);
+        try (GitHubApi gitHub = configuration.gitHubApi()) {
+            ChunkStatuses status = configuration.checkStatus(new GitHubWorkflowRunsImpl(gitHub));
             status.report(System.out);
             if (status.isFailCheck()) {
                 System.exit(1);

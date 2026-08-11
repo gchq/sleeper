@@ -26,18 +26,24 @@ BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_S
 
 pushd "$THIS_DIR"/base
 rm -rf certs
-# Copy custom CA certs into build context if present at repo root
-if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null)" ]; then
+# Copy custom CA certs into build context if present at repo root.
+# Ignore README.md — the certs directory is checked into Git via a placeholder README,
+# so we only treat the directory as populated when it contains at least one other file.
+if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; then
   cp -r "$BASE_DIR/certs" certs
+  rm -f certs/README.md
 fi
 docker build -t sleeper-rust-builder-base:current .
 popd
 
 pushd "$THIS_DIR"/base-sccache
 rm -rf certs
-# Copy custom CA certs into build context if present at repo root
-if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null)" ]; then
+# Copy custom CA certs into build context if present at repo root.
+# Ignore README.md — the certs directory is checked into Git via a placeholder README,
+# so we only treat the directory as populated when it contains at least one other file.
+if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; then
   cp -r "$BASE_DIR/certs" certs
+  rm -f certs/README.md
 fi
 docker build -t sleeper-rust-builder-sccache:current .
 popd

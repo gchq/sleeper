@@ -18,6 +18,8 @@ package sleeper.core.properties;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import sleeper.core.properties.table.TableProperty;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,6 +32,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -412,8 +415,26 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      *
      * @return the copied map
      */
-    public Map<String, String> toMap() {
-        return PropertiesUtils.toMap(properties);
+    public Map<String, String> toMapIncludingSchema() {
+        return Collections.unmodifiableMap(toMutableMap());
+    }
+
+    /**
+     * Converts and copies all set values of properties into a hash map, except the schema.
+     *
+     * @return the copied map
+     */
+    public Map<String, String> toMapExcludingSchema() {
+        Map<String, String> map = toMutableMap();
+        map.remove(TableProperty.SCHEMA.getPropertyName());
+        return Collections.unmodifiableMap(map);
+    }
+
+    private Map<String, String> toMutableMap() {
+        return properties.stringPropertyNames().stream()
+                .collect(Collectors.toMap(
+                        propertyName -> propertyName,
+                        properties::getProperty));
     }
 
     @Override

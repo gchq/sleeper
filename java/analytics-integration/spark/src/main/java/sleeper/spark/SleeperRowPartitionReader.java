@@ -68,7 +68,8 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
         this.allocator = new RootAllocator();
         this.ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
-        LeafPartitionRowRetriever rowRetriever = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext).getRowRetriever(tableProperties);
+        LeafPartitionRowRetriever rowRetriever = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(instanceProperties), allocator, ffiContext)
+                .getRowRetriever(tableProperties);
 
         this.leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), this.tableProperties, rowRetriever);
 

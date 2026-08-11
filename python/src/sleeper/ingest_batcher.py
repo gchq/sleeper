@@ -16,12 +16,11 @@ import json
 
 from mypy_boto3_sqs import SQSServiceResource
 
-from sleeper.properties.cdk_defined_properties import IngestCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import IngestCdkProperty, InstanceProperties
 
 
 class IngestBatcherSubmitRequest:
-    def __init__(self, table_name: str = None, files: list[str] = None):
+    def __init__(self, table_name: str | None = None, files: list[str] | None = None):
         if table_name is None:
             raise ValueError("table_name must be specified")
         if files is None:

@@ -37,17 +37,34 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
+import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -59,21 +76,21 @@ class GeneratePropertiesTemplatesTest {
         GeneratePropertiesTemplates.createTemplates(tempDir);
     }
 
-    static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
-        @Override
-        public Stream<Arguments> provideArguments(ExtensionContext context) {
-            return Stream.of(
-                    Arguments.of(ID, "full-example"),
-                    Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNETS, "subnet-abcdefgh"));
-        }
-    }
-
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
         @Override
         public Stream<Arguments> provideArguments(ExtensionContext context) {
             return CdkDefinedInstanceProperty.getAll().stream()
                     .map(Arguments::of);
+        }
+    }
+
+    static class DeploymentInstancePropertyValues implements ArgumentsProvider {
+        @Override
+        public Stream<Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of(ID),
+                    Arguments.of(VPC_ID),
+                    Arguments.of(SUBNETS));
         }
     }
 
@@ -85,19 +102,20 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldGenerateValidInstanceProperties() {
             // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+            InstanceProperties validProperties = instancePropertiesFromString(propertiesString);
+            validProperties.set(ID, "test-id");
+            validProperties.set(VPC_ID, "test-vpc");
+            validProperties.set(SUBNETS, "test-subnets");
 
             // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThatCode(validProperties::validate).doesNotThrowAnyException();
         }
 
         @ParameterizedTest
-        @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
-        void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
+        @ArgumentsSource(DeploymentInstancePropertyValues.class)
+        void shouldNotSetDeploymentProperties(UserDefinedInstanceProperty property) {
             assertThat(instancePropertiesFromString(propertiesString)
-                    .get(property))
-                    .isEqualTo(value);
+                    .get(property)).isNull();
         }
 
         @ParameterizedTest
@@ -136,20 +154,23 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/full/table.properties");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromFullExample() {
             // When
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            tableProperties.setSchema(createSchemaWithKey("key"));
 
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(tableProperties).isEqualTo(new TableProperties(new InstanceProperties()));
         }
 
         @Test
         void shouldNotSetSchemaInFile() {
             assertThat(propertiesString)
                     .doesNotContain(SCHEMA.getPropertyName());
+        }
+
+        @Test
+        void shouldWritePropertyNotIncludedInBasicExample() {
+            assertThat(propertiesString).contains("# sleeper.table.parquet.compression.codec=");
         }
     }
 
@@ -159,10 +180,8 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/instance.properties");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .get(ID))
-                    .isEqualTo("basic-example");
+        void shouldGenerateEmptyInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
     }
 
@@ -172,14 +191,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("example/basic/table.properties");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromBasicExample() {
             // When
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            tableProperties.setSchema(createSchemaWithKey("key"));
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
         }
 
         @Test
@@ -189,10 +206,73 @@ class GeneratePropertiesTemplatesTest {
         }
 
         @Test
-        void shouldIncludeSpecificallySetProperty() {
-            assertThat(tablePropertiesFromString(propertiesString)
-                    .get(FILTERING_CONFIG))
-                    .isEqualTo("ageOff(timestamp,3600000)");
+        void shouldWritePropertyIncludedInBasicExample() {
+            assertThat(propertiesString).contains("""
+                    # A unique name identifying this table.
+                    # (uncomment to set a value)
+                    # sleeper.table.name=
+                    """);
+        }
+
+        @Test
+        void shouldNotWritePropertyNotIncludedInBasicExample() {
+            assertThat(propertiesString).doesNotContain("sleeper.table.parquet.compression.codec");
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate light instance properties example")
+    class GenerateLightInstancePropertiesExample {
+        private final String propertiesString = loadFileAsString("example/light/instance.properties");
+
+        @Test
+        void shouldGenerateLightInstanceProperties() {
+            // Given
+            InstanceProperties givenProperties = new InstanceProperties();
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
+
+            // EKS properties
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "60Gi");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
+
+            // Default table values
+            givenProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
+            givenProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
+
+            // Stack
+            givenProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
+
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(instanceProperties).isEqualTo(givenProperties);
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate light table properties example")
+    class GenerateLightTablePropertiesExample {
+        private final String propertiesString = loadFileAsString("example/light/table.properties");
+
+        @Test
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
+            // Given
+            TableProperties givenProperties = new TableProperties(new InstanceProperties());
+            // When
+            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(tableProperties).isEqualTo(givenProperties);
         }
     }
 
@@ -202,21 +282,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
+        void shouldGenerateEmptyInstanceProperties() {
             // When
             InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
 
             // Then
-            assertThatCode(instanceProperties::validate)
-                    .doesNotThrowAnyException();
-        }
-
-        @Test
-        void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
-            assertThat(propertiesString).containsSubsequence(
-                    "# Properties set by script #",
-                    "set-automatically",
-                    "# Other properties #");
+            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
         }
 
         @Test
@@ -236,14 +307,12 @@ class GeneratePropertiesTemplatesTest {
         private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
 
         @Test
-        void shouldGenerateValidTablePropertiesIfSchemaIsAdded() {
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromTemplate() {
             // When
             TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-            tableProperties.setSchema(createSchemaWithKey("key"));
 
             // Then
-            assertThatCode(tableProperties::validate)
-                    .doesNotThrowAnyException();
+            assertThat(tableProperties).isEqualTo(new TableProperties(new InstanceProperties()));
         }
 
         @Test
@@ -266,7 +335,7 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
-        return InstanceProperties.createAndValidate(loadProperties(propertiesString));
+        return InstanceProperties.createWithoutValidation(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
@@ -274,8 +343,11 @@ class GeneratePropertiesTemplatesTest {
     }
 
     private Stream<InstanceProperty> instancePropertiesWithDefaultValues() {
+        // List of exemptions, where they have a default property but neither it or the default are set
+        List<InstanceProperty> exemptions = List.of(ARTEFACTS_DEPLOYMENT_ID);
+
         return InstanceProperty.getAll().stream()
-                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+                .filter(property -> (property.getDefaultValue() != null || property.getDefaultProperty() != null) && !exemptions.contains(property));
     }
 
     private Stream<TableProperty> tablePropertiesWithDefaultValues() {

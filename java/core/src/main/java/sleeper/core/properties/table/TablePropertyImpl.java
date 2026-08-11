@@ -43,6 +43,7 @@ class TablePropertyImpl implements TableProperty {
     private final Predicate<String> validationPredicate;
     private final boolean editable;
     private final boolean includedInTemplate;
+    private final boolean includedInBasicTemplate;
     private final boolean setBySleeper;
 
     private TablePropertyImpl(Builder builder) {
@@ -55,6 +56,7 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
+        includedInBasicTemplate = builder.includedInBasicTemplate;
         setBySleeper = builder.setBySleeper;
     }
 
@@ -121,6 +123,11 @@ class TablePropertyImpl implements TableProperty {
         return includedInTemplate;
     }
 
+    @Override
+    public boolean isIncludedInBasicTemplate() {
+        return includedInBasicTemplate;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -139,6 +146,7 @@ class TablePropertyImpl implements TableProperty {
         private Consumer<TableProperty> addToIndex;
         private boolean editable = true;
         private boolean includedInTemplate = true;
+        private boolean includedInBasicTemplate = false;
         private boolean setBySleeper;
 
         private Builder() {
@@ -199,6 +207,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder includedInTemplate(boolean includedInTemplate) {
             this.includedInTemplate = includedInTemplate;
+            return this;
+        }
+
+        public Builder includedInBasicTemplate(boolean includedInBasicTemplate) {
+            this.includedInBasicTemplate = includedInBasicTemplate;
             return this;
         }
 

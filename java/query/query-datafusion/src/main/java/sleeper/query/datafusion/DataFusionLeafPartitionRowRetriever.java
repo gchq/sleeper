@@ -27,25 +27,41 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIBytes;
+import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.foreign.datafusion.FFIParquetOptions;
+import sleeper.foreign.datafusion.extension.FFIExtension;
+import sleeper.foreign.datafusion.extension.FFISQLExtension;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_INDEX_ENABLED;
+import static sleeper.core.properties.table.TableProperty.PARQUET_ROW_GROUP_SIZE_ROWS;
+import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
@@ -56,7 +72,6 @@ import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_I
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
-    private static final Object LOCK = new Object();
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
@@ -102,32 +117,85 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // Segmentation faults can occur if multiple threads are trying to allocate and de-allocate query parameter and result
         // objects in JNR-FFI. Therefore we acquire a lock on those parts of the system. This doesn't prevent
         // result retrieval happening in parallel, once the query planning step has finished.
-        int result;
-        FFIQueryResults results;
-        synchronized (LOCK) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        int nativeCallResult;
+        FFIQueryResults queryResults;
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
-            // Create NULL pointer which will be set by the FFI call upon return
-            results = new FFIQueryResults(runtime);
-
+        // Create NULL pointer which will be set by the FFI call upon return
+        queryResults = new FFIQueryResults(runtime);
+        try {
             // Perform native query
-            result = functions.query_stream(context, params, results);
-        }
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion query failed, return code: {}", result);
-            throw new RowRetrievalException("DataFusion query failed with return code " + result);
-        }
+            nativeCallResult = functions.query_stream(context, params, queryResults);
 
-        // A zeroed (NULL) results pointer is NEVER correct here
-        if (results.arrowArrayStream.longValue() == 0) {
-            throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
-        }
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
 
-        // Convert pointer from Rust to Java FFI Arrow array stream.
-        // At this point Java assumes ownership of the stream and must release it when no longer needed.
-        return Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue()));
+            // A zeroed (NULL) results pointer is NEVER correct here
+            if (queryResults.arrowArrayStream.longValue() == 0) {
+                throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
+            }
+
+            // Convert pointer from Rust to Java FFI Arrow array stream.
+            // At this point Java assumes ownership of the stream and must release it when no longer needed.
+            return Data.importArrayStream(allocator, ArrowArrayStream.wrap(queryResults.arrowArrayStream.longValue()));
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(queryResults);
+        }
+    }
+
+    /**
+     * Executes a Sleeper leaf partition query via Apache DataFusion.
+     *
+     * Results are written to the specified file.
+     *
+     * @param  leafPartitionQuery    the sub query
+     * @param  outputFile            the output file for the query results
+     * @param  dataReadSchema        a schema containing all key fields for the table, and all value fields required
+     *                               for the query
+     * @param  tableProperties       the properties for the table being queried
+     * @return                       batches of Arrow records
+     * @throws RowRetrievalException for any DataFusion failure
+     */
+    public RowsProcessed queryToFile(LeafPartitionQuery leafPartitionQuery, String outputFile, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
+        DataFusionQueryFunctions functions = context.getFunctions();
+        // Segmentation faults can occur if multiple threads are trying to allocate and de-allocate query parameter and result
+        // objects in JNR-FFI. Therefore we acquire a lock on those parts of the system. This doesn't prevent
+        // result retrieval happening in parallel, once the query planning step has finished.
+        int nativeCallResult;
+        FFIFileResult fileResults;
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, outputFile, dataReadSchema, tableProperties, awsConfig, runtime);
+
+        // Create NULL pointer which will be set by the FFI call upon return
+        fileResults = new FFIFileResult(runtime);
+        try {
+            // Perform native query
+            nativeCallResult = functions.query_file(context, params, fileResults);
+
+            // Check result
+            if (nativeCallResult != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", nativeCallResult);
+                throw new RowRetrievalException("DataFusion query failed with return code " + nativeCallResult);
+            }
+
+            long totalNumberOfRowsRead = fileResults.rows_read.get();
+            long rowsWritten = fileResults.rows_written.get();
+
+            LOGGER.info("Query to file job {}: Read {} rows and wrote {} rows",
+                    leafPartitionQuery.getQueryId(), totalNumberOfRowsRead, rowsWritten);
+
+            return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+        } finally {
+            // Do not prematurely reclaim these objects, even if it appears safe to do so
+            Reference.reachabilityFence(params);
+            Reference.reachabilityFence(fileResults);
+        }
     }
 
     /**
@@ -139,6 +207,22 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @return true since DataFusion query path supports native SQL.
+     */
+    @Override
+    public boolean supportsSqlFiltering() {
+        return true;
+    }
+
+    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
+            TableProperties tableProperties, DataFusionAwsConfig awsConfig,
+            jnr.ffi.Runtime runtime) {
+        return createFFIQueryData(query, null, dataReadSchema, tableProperties, awsConfig, runtime);
+    }
+
+    /**
      * Creates the input struct that contains all the information needed by the Rust code
      * side of the compaction.
      *
@@ -147,34 +231,61 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * region etc.
      *
      * @param  query           all details for this leaf partition query
+     * @param  outputFile      the optional file to write results to
      * @param  dataReadSchema  the input schema to read
      * @param  tableProperties the properties for the table being queried
      * @param  awsConfig       settings to access AWS, or null to use defaults
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
-    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
+    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, String outputFile, Schema dataReadSchema,
             TableProperties tableProperties, DataFusionAwsConfig awsConfig,
             jnr.ffi.Runtime runtime) {
+        FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
         FFIParquetOptions parquetOptions = new FFIParquetOptions(runtime);
         parquetOptions.read_page_indexes.set(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED));
 
-        FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
-        common.parquet_options.set(parquetOptions);
+        // Most queries will not write output to a file
+        if (outputFile != null) {
+            common.output_file.set(outputFile);
+            // These options are only relevant on file output, not Arrow record batch output
+            parquetOptions.max_row_group_size.set(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS));
+            parquetOptions.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
+            parquetOptions.compression.set(tableProperties.get(COMPRESSION_CODEC));
+            parquetOptions.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
+            parquetOptions.column_truncate_length.set(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+            parquetOptions.stats_truncate_length.set(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+            parquetOptions.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+            parquetOptions.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+            parquetOptions.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        }
+
+        common.job_id.set(query.getQueryId());
+        common.setParquetOptions(parquetOptions);
         common.setInputFiles(query.getFiles().toArray(String[]::new));
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
-        common.setRowKeyCols(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new));
-        common.setSortKeyCols(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new));
-        common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
+        // Queries don't need sketch files
         common.write_sketch_file.set(false);
         common.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
+        common.setRowKeyCols(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new));
+        common.setSortKeyCols(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new));
         common.aggregation_config.set(Optional.ofNullable(tableProperties.get(AGGREGATION_CONFIG)).orElse(""));
         common.filtering_config.set(Optional.ofNullable(tableProperties.get(FILTERING_CONFIG)).orElse(""));
+        common.setRegion(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.setCommonConfig(common);
+
+        List<FFIExtension> extensions = new ArrayList<>();
+        if (query.getSqlQuery() != null) {
+            FFISQLExtension sqlExtension = new FFISQLExtension(runtime, query.getSqlQuery());
+            FFIExtension extension = new FFIExtension(runtime);
+            extension.setSqlExtension(sqlExtension);
+            extensions.add(extension);
+        }
+        queryConfig.setExtensions(extensions.toArray(FFIExtension[]::new));
 
         // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
         // requested value fields, if it does, grab the value fields from the dataReadSchema, since this

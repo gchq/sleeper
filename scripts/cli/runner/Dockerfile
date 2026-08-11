@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG RUN_IMAGE
+ARG RUN_IMAGE=sleeper-builder:current
 FROM ${RUN_IMAGE}
 
 ARG SET_UID

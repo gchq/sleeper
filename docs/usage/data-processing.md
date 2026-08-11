@@ -1,12 +1,13 @@
 Data Processing
 ===============
 
-Sleeper supports three modes of data processing that can be applied either to a table as a whole, or to an individual
+Sleeper supports several modes of data processing that can be applied either to a table as a whole, or to an individual
 query:
 
 - Aggregation of rows with the same row key and sort key values
 - Filtering of rows
 - Custom iterators over sorted data
+- SQL query filtering (experimental)
 
 Aggregation and filtering can be configured against a Sleeper table in table properties, and will be applied whenever
 the table data is read. These are implemented in both the Java and DataFusion data engines. This means that if the table
@@ -26,6 +27,9 @@ not recommended.
 
 We intend to keep the configuration as simple as possible for aggregation and filtering, rather than introducing many
 operations and options. We are planning alternatives to apply other types of processing in DataFusion.
+
+For more flexible data transformation and filtering, SQL query filtering provides an experimental capability to apply
+arbitrary SQL transformations to query results. See the [data retrieval documentation](data-retrieval.md) for details.
 
 ## Types of processing
 
@@ -113,3 +117,25 @@ To apply a custom iterator to write the results back to the table, during both c
 in the table properties. We may remove this in the future due to the performance and cost implications. This is set in
 the table properties `sleeper.table.iterator.class.name` and `sleeper.table.iterator.config`. See
 the [table properties documentation](properties/table/data_definition.md).
+
+### SQL Query Filtering
+
+SQL query filtering is an **experimental** capability that allows you to apply arbitrary SQL transformations and
+filtering to query results or bulk exports. This is useful when you need flexible, ad-hoc transformations that go beyond
+the predefined aggregation and filtering operations.
+
+SQL query filtering is currently only supported with the **DataFusion query engine**. When using SQL query filtering:
+
+- The SQL query is executed on the results after the Sleeper query has been executed
+- The results are available as a table named `query_results`, regardless of the actual Sleeper table name
+- You can filter rows, select specific columns, aggregate data, and perform other SQL operations
+- This applies to both regular queries (via `query.sh`, SQS, or WebSocket) and bulk exports
+
+To use SQL query filtering, ensure your table has the following property set:
+
+```properties
+sleeper.table.query.data.engine=datafusion
+```
+
+See the [data retrieval documentation](data-retrieval.md) and [export documentation](export.md) for examples of how to
+use SQL query filtering with different query submission methods.

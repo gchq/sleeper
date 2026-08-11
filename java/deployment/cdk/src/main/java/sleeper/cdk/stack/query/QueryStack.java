@@ -18,6 +18,7 @@ package sleeper.cdk.stack.query;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -83,6 +84,7 @@ public class QueryStack extends NestedStack {
 
     private IFunction queryExecutorLambda;
     private IFunction leafPartitionQueryLambda;
+    private CustomResource autoDeleteS3Objects;
 
     public QueryStack(Construct scope,
             String id,
@@ -185,6 +187,9 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
+        if (autoDeleteS3Objects != null) {
+            lambda.getNode().addDependency(autoDeleteS3Objects);
+        }
         lambda.addEventSource(new SqsEventSource(leafPartitionQueryQueue, eventSourceProps));
 
         return lambda;
@@ -306,7 +311,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            coreStacks.addAutoDeleteS3Objects(this, resultsBucket);
+            autoDeleteS3Objects = coreStacks.addAutoDeleteS3Objects(this, resultsBucket);
         }
 
         return resultsBucket;

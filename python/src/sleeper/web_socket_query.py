@@ -25,8 +25,7 @@ from enum import Enum
 import boto3
 import websockets
 
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty
 from sleeper.query import Query
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class MessageType(Enum):
 
 
 class WebSocketQueryProcessor:
-    def __init__(self, instance_properties: InstanceProperties = None, endpoint: str = None, region: str = None):
+    def __init__(self, instance_properties: InstanceProperties = None, endpoint: str | None = None, region: str | None = None):
         # Validate input
         if (instance_properties is None and (endpoint is None or region is None)) or (instance_properties is not None and (endpoint is not None or region is not None)):
             raise ValueError("Either 'instance_properties' must be provided, or both 'endpoint' and 'region' must be provided.")
@@ -74,7 +73,7 @@ class WebSocketQueryProcessor:
         Returns:
             bytes: The derived signing key.
         """
-        k_date = hmac.new(f"AWS4{key}".encode("utf-8"), date_stamp.encode("utf-8"), hashlib.sha256).digest()
+        k_date = hmac.new(f"AWS4{key}".encode(), date_stamp.encode("utf-8"), hashlib.sha256).digest()
         k_region = hmac.new(k_date, region_name.encode("utf-8"), hashlib.sha256).digest()
         k_service = hmac.new(k_region, service_name.encode("utf-8"), hashlib.sha256).digest()
         k_signing = hmac.new(k_service, b"aws4_request", hashlib.sha256).digest()
@@ -101,7 +100,7 @@ class WebSocketQueryProcessor:
         )
 
         # Get current timestamp
-        t = datetime.datetime.now(datetime.timezone.utc)
+        t = datetime.datetime.now(datetime.UTC)
         amz_date = t.strftime("%Y%m%dT%H%M%SZ")
         date_stamp = t.strftime("%Y%m%d")
 
@@ -165,7 +164,7 @@ class WebSocketQueryProcessor:
                 logger.info("Waiting for results")
                 try:
                     response = await asyncio.wait_for(websocket.recv(), timeout=30)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.error("Timeout occurred while waiting for response.")
                     break
                 except websocket.exception.ConnectClosedError:

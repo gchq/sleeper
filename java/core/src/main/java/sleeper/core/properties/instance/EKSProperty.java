@@ -17,8 +17,14 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.EksClusterType;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties relating to bulk import on AWS EKS.
@@ -28,6 +34,16 @@ public interface EKSProperty {
             .description("(EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EKS_API_ALLOWED_SECURITY_GROUPS = Index.propertyBuilder("sleeper.bulk.import.eks.api.allowed.security.groups")
+            .description("(EKS mode only) IDs of security groups that should be permitted to reach the EKS Kubernetes " +
+                    "API. Each ID listed here is added as an ingress rule on TCP/443 to the cluster's security " +
+                    "group.\n" +
+                    "Required if you want to call the API from another host inside the cluster's VPC, since the " +
+                    "cluster's default security group only permits traffic from the cluster itself. Leave unset for " +
+                    "deployments where only the cluster's own components need API access, or where the API accessed " +
+                    "from outside the VPC.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty EKS_IS_NATIVE_LIBS_IMAGE = Index.propertyBuilder("sleeper.bulk.import.eks.is.native.libs.image")
             .description("(EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with " +
                     "native Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be " +
@@ -35,6 +51,71 @@ public interface EKSProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .defaultValue("false")
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AWSCLI_LAYER_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.awscli.layer.arn")
+            .description("(EKS mode only) The ARN of a Lambda Layer providing the AWS CLI to use with the EKS " +
+                    "kubectl provider. If not set, the default AWS CLI layer included with the CDK will be used.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_TYPE = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.type")
+            .description("(EKS mode only) The type of EKS cluster to deploy for bulk import.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
+            .defaultValue(EksClusterType.FARGATE.toString())
+            .validationPredicate(EksClusterType::isValid)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.enabled")
+            .description("(EKS mode only, automode cluster type only) Whether to configure the node pool for the " +
+                    "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
+                    "default behaviour for EKS Auto Mode.\n" +
+                    "Node pool configuration is currently experimental.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
+            .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
+                    "that the Karpenter NodePool is allowed to launch for Spark pods.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
+            .defaultValue(Stream.of(
+                    "m8g.xlarge", "m8g.2xlarge", "m8g.4xlarge", "m8g.8xlarge", "m8g.12xlarge", "m8g.16xlarge",
+                    "m8gd.xlarge", "m8gd.2xlarge", "m8gd.4xlarge", "m8gd.8xlarge", "m8gd.12xlarge", "m8gd.16xlarge",
+                    "m8i.xlarge", "m8i.2xlarge", "m8i.4xlarge", "m8i.8xlarge", "m8i.12xlarge", "m8i.16xlarge",
+                    "m8id.xlarge", "m8id.2xlarge", "m8id.4xlarge", "m8id.8xlarge", "m8id.12xlarge", "m8id.16xlarge")
+                    .collect(joining(",")))
+            .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
+            .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
+                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.\n" +
+                    "The default value assumes 2 concurrent jobs, running on 29 executors and 1 driver, each with 4 " +
+                    "cores, plus one submitter per job and some slack.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
+            .defaultValue("256")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.eks.job.concurrency.level")
+            .description("(EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the " +
+                    "bulk import namespace. Enforced by a ResourceQuota on count/jobs.batch.")
+            .defaultValue("2")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED = Index.propertyBuilder("sleeper.bulk.import.eks.automode.fluentbit.logging.enabled")
+            .description("(EKS auto mode only) Whether to deploy a FluentBit DaemonSet to collect container logs " +
+                    "from EKS auto mode nodes and send them to CloudWatch Logs. Disable this if you manage log " +
+                    "collection separately or need to avoid the aws-for-fluent-bit image dependency.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.executor.instances")
             .description("(EKS mode only) The number of Spark executors. Used to set spark.executor.instances.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -108,7 +189,7 @@ public interface EKSProperty {
             .description("JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(
-                    "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
+                    "-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.extra.java.options")
             .description("JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.\n" +

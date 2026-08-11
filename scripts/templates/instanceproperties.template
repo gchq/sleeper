@@ -2,40 +2,21 @@
 #                           SLEEPER INSTANCE PROPERTIES                         #
 #################################################################################
 
-############################
-# Properties set by script #
-############################
 
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
 # globally unique as it will be used to name AWS resources such as S3 buckets.
-sleeper.id=set-automatically
-
-# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
-# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
-# can set this in SleeperInstanceProps under networking.
-sleeper.vpc=set-automatically
-
-# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
-# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
-# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
-# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
-# networking.
-sleeper.subnets=set-automatically
-
-
-####################
-# Other properties #
-####################
-
-## The following instance properties are commonly used throughout Sleeper.
+# This property may be passed as an argument during deployment. If using using the Sleeper CDK app,
+# you can set the context variable "id". If using your own CDK app, you can set this directly.
+# (uncomment to set a value)
+# sleeper.id=
 
 # The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
 # artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
 # default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
-# (default value shown below, uncomment to set a value)
-# sleeper.artefacts.deployment=set-automatically
+# (uncomment to set a value)
+# sleeper.artefacts.deployment=
 
 # The S3 bucket containing the jar files of the Sleeper components. If unset, it will be set by the
 # CDK during deployment, based on `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
@@ -47,8 +28,8 @@ sleeper.subnets=set-automatically
 # default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
 # is not.
 # ECR repository names are generated in the format `<prefix>/<image name>`.
-# (default value shown below, uncomment to set a value)
-# sleeper.ecr.repository.prefix=set-automatically
+# (uncomment to set a value)
+# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
 # assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that bucket contains two
@@ -69,12 +50,12 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.stack.tag.name=DeploymentStack
 
-# Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., when the
+# Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., when the
 # instance is destroyed.
 # (default value shown below, uncomment to set a value)
 # sleeper.retain.infra.after.destroy=true
 
-# Whether to keep the sleeper log groups when the instance is destroyed.
+# Whether to keep the Sleeper log groups when the instance is destroyed.
 # (default value shown below, uncomment to set a value)
 # sleeper.retain.logs.after.destroy=true
 
@@ -117,10 +98,24 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.endpoint.url=
 
+# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
+# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
+# can set this in SleeperInstanceProps under networking.
+# (uncomment to set a value)
+# sleeper.vpc=
+
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
 # (default value shown below, uncomment to set a value)
 # sleeper.vpc.endpoint.check=true
+
+# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
+# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
+# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
+# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
+# networking.
+# (uncomment to set a value)
+# sleeper.subnets=
 
 # The Hadoop filesystem used to connect to S3.
 # (default value shown below, uncomment to set a value)
@@ -686,6 +681,13 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.starter.memory.mb=4096
 
+# The number of days a bulk import job is held in the bulk import bucket. When a job is submitted to
+# Spark it is written to S3 for Spark to read. This is retained in case the job needs to be retried,
+# and for diagnostic purposes.
+# Defaults to the value of sleeper.log.retention.days.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.job.file.retention.days=30
+
 # The amount of memory allocated to a Spark executor. Used to set spark.executor.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
@@ -737,13 +739,13 @@ sleeper.subnets=set-automatically
 # spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.emr.spark.executor.cores=5
+# sleeper.bulk.import.emr.spark.executor.cores=4
 
 # (Non-persistent or persistent EMR mode only) The number of cores used by the driver. Used to set
 # spark.driver.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.emr.spark.driver.cores=5
+# sleeper.bulk.import.emr.spark.driver.cores=4
 
 # (Non-persistent or persistent EMR mode only) The default timeout for network interactions in Spark.
 # Used to set spark.network.timeout.
@@ -1156,11 +1158,62 @@ sleeper.subnets=set-automatically
 # (uncomment to set a value)
 # sleeper.bulk.import.eks.cluster.admin.roles=
 
+# (EKS mode only) IDs of security groups that should be permitted to reach the EKS Kubernetes API.
+# Each ID listed here is added as an ingress rule on TCP/443 to the cluster's security group.
+# Required if you want to call the API from another host inside the cluster's VPC, since the cluster's
+# default security group only permits traffic from the cluster itself. Leave unset for deployments
+# where only the cluster's own components need API access, or where the API accessed from outside the
+# VPC.
+# (uncomment to set a value)
+# sleeper.bulk.import.eks.api.allowed.security.groups=
+
 # (EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with native
 # Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be built based
 # on the official Spark Docker image, so this should be false.
 # (default value shown below, uncomment to set a value)
 # sleeper.bulk.import.eks.is.native.libs.image=false
+
+# (EKS mode only) The ARN of a Lambda Layer providing the AWS CLI to use with the EKS kubectl
+# provider. If not set, the default AWS CLI layer included with the CDK will be used.
+# (uncomment to set a value)
+# sleeper.bulk.import.eks.awscli.layer.arn=
+
+# (EKS mode only) The type of EKS cluster to deploy for bulk import.
+# Valid values are: [fargate, automode]
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.cluster.type=FARGATE
+
+# (EKS mode only, automode cluster type only) Whether to configure the node pool for the cluster. If
+# this is enabled, related properties will be applied. Otherwise it will use the default behaviour for
+# EKS Auto Mode.
+# Node pool configuration is currently experimental.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.enabled=false
+
+# (EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types that the
+# Karpenter NodePool is allowed to launch for Spark pods.
+# Only applied if node pool configuration is enabled. Currently experimental.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.instance.types=m8g.xlarge,m8g.2xlarge,m8g.4xlarge,m8g.8xlarge,m8g.12xlarge,m8g.16xlarge,m8gd.xlarge,m8gd.2xlarge,m8gd.4xlarge,m8gd.8xlarge,m8gd.12xlarge,m8gd.16xlarge,m8i.xlarge,m8i.2xlarge,m8i.4xlarge,m8i.8xlarge,m8i.12xlarge,m8i.16xlarge,m8id.xlarge,m8id.2xlarge,m8id.4xlarge,m8id.8xlarge,m8id.12xlarge,m8id.16xlarge
+
+# (EKS mode only, automode cluster type only) The maximum total number of CPU cores the Karpenter
+# NodePool is allowed to provision across all nodes. Must be an integer greater than 0.
+# The default value assumes 2 concurrent jobs, running on 29 executors and 1 driver, each with 4
+# cores, plus one submitter per job and some slack.
+# Only applied if node pool configuration is enabled. Currently experimental.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.nodepool.cpu.limit=256
+
+# (EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the bulk
+# import namespace. Enforced by a ResourceQuota on count/jobs.batch.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.job.concurrency.level=2
+
+# (EKS auto mode only) Whether to deploy a FluentBit DaemonSet to collect container logs from EKS auto
+# mode nodes and send them to CloudWatch Logs. Disable this if you manage log collection separately or
+# need to avoid the aws-for-fluent-bit image dependency.
+# (default value shown below, uncomment to set a value)
+# sleeper.bulk.import.eks.automode.fluentbit.logging.enabled=true
 
 # (EKS mode only) The number of Spark executors. Used to set spark.executor.instances.
 # See https://spark.apache.org/docs/latest/configuration.html.
@@ -1231,12 +1284,12 @@ sleeper.subnets=set-automatically
 # JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+# sleeper.bulk.import.eks.spark.executor.extra.java.options=-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
 
 # JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.
 # See https://spark.apache.org/docs/latest/configuration.html.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+# sleeper.bulk.import.eks.spark.driver.extra.java.options=-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
 
 # The interval between heartbeats from executors to the driver. Used to set
 # spark.executor.heartbeatInterval.
@@ -1451,6 +1504,7 @@ sleeper.subnets=set-automatically
 # sleeper.compaction.job.commit.batching.window.seconds=30
 
 # The visibility timeout for the queue of compaction jobs.
+# This should be greater than the value of sleeper.compaction.keepalive.period.seconds.
 # (default value shown below, uncomment to set a value)
 # sleeper.compaction.queue.visibility.timeout.seconds=900
 
@@ -1864,6 +1918,10 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.dashboard.time.window.minutes=5
 
+# Enables/disables event count metrics specific to the transaction log follower lambda.
+# (default value shown below, uncomment to set a value)
+# sleeper.statestore.transactionlog.eventcount.metrics.enabled=false
+
 
 ## The following instance properties relate to logging.
 
@@ -1904,9 +1962,8 @@ sleeper.subnets=set-automatically
 # sleeper.athena.spill.bucket.ageoff.days=1
 
 # The fully qualified composite classes to deploy. These are the classes that interact with Athena.
-# You can choose to remove one if you don't need them. Both are deployed by default.
 # (default value shown below, uncomment to set a value)
-# sleeper.athena.handler.classes=sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
+# sleeper.athena.handler.classes=sleeper.athena.composite.DataFusionCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
 
 # The amount of memory (MB) the athena composite handler has.
 # (default value shown below, uncomment to set a value)

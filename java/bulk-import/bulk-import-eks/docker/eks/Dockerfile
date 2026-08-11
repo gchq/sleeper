@@ -12,22 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/spark:3.5.6-scala2.12-java17-ubuntu
-
-ENV PATH="$PATH:/opt/spark/bin"
-USER root
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
-RUN rm /opt/spark/jars/*
-RUN mkdir /opt/spark/workdir
-USER spark
-
-# Replace Spark jars with versions managed by Sleeper (the version of Spark must match)
-COPY ./spark/* /opt/spark/jars
-COPY ./bulk-import-runner.jar /opt/spark/workdir
+ARG BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/emr-7.12.0:latest
+FROM ${BASE_IMAGE}
 
 USER root
+
+RUN mkdir -p /opt/spark/workdir && chown hadoop:hadoop /opt/spark/workdir
+COPY --chown=hadoop:hadoop ./bulk-import-runner.jar /opt/spark/workdir/
+
 COPY ./sleeper-entrypoint.sh /opt/sleeper-entrypoint.sh
 RUN chmod +x /opt/sleeper-entrypoint.sh
-USER spark
 
+USER hadoop:hadoop
 ENTRYPOINT ["/opt/sleeper-entrypoint.sh"]

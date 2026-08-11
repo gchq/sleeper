@@ -16,6 +16,7 @@
  */
 use chrono::Local;
 use env_logger::Env;
+use log::warn;
 use std::{io::Write, sync::Once};
 
 /// An object guaranteed to only initialise once. Thread safe.
@@ -44,5 +45,8 @@ pub fn maybe_cfg_log() {
             .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
             .format_target(false)
             .init();
+        if let Err(e) = color_eyre::install() {
+            warn!("Couldn't install color_eyre error handler {e}");
+        }
     });
 }

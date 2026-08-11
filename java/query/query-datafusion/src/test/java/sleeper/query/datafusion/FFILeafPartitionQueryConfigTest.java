@@ -35,7 +35,7 @@ class FFILeafPartitionQueryConfigTest {
 
         // Then
         assertThat(config.common).isNotNull();
-        assertThat(config.query_region_len.get()).isEqualTo(0);
+        assertThat(config.query_regions_len.get()).isEqualTo(0);
         assertThat(config.query_regions).isNotNull();
         assertThat(config.requested_value_fields_set.get()).isFalse();
         assertThat(config.requested_value_fields_len.get()).isEqualTo(0);
@@ -55,7 +55,7 @@ class FFILeafPartitionQueryConfigTest {
         config.setQueryRegions(new FFISleeperRegion[]{region1, region2});
 
         // Then
-        assertThat(config.query_region_len.get()).isEqualTo(2);
+        assertThat(config.query_regions_len.get()).isEqualTo(2);
     }
 
     @Test

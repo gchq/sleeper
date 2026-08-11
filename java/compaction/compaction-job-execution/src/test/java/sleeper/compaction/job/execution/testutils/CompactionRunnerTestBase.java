@@ -41,6 +41,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -52,6 +53,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -97,8 +99,9 @@ public class CompactionRunnerTestBase {
         runTask(job, hadoopConf, null);
     }
 
-    protected void runTask(CompactionJob job, Configuration hadoopConf, Consumer<Long> progressCallback) throws Exception {
-        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
+    protected void runTask(CompactionJob job, Configuration hadoopConf, LongConsumer progressCallback) throws Exception {
+        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
     }

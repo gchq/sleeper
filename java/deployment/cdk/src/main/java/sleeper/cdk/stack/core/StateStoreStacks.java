@@ -42,7 +42,8 @@ public final class StateStoreStacks {
         transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
         grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
         transactionLog.grantClearSnapshots(policiesStack.getClearInstancePolicyForGrants());
-        grantAccess(readWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
+        // Need to check whether any files are present before a user replaces a table's partitions
+        grantAccess(readFileReferencesReadWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
     }
 
     public void grantReadFileReferencesAndPartitions(IGrantable grantee) {

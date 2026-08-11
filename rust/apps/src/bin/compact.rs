@@ -28,7 +28,7 @@ use sleeper_core::{
     run_compaction,
     sleeper_context::SleeperContext,
 };
-use std::{collections::HashMap, io::Write, sync::Arc, time::Duration};
+use std::{collections::HashMap, io::Write, sync::Arc};
 use url::Url;
 
 const JOB_ID: &str = "CLI_job";
@@ -71,6 +71,13 @@ struct CmdLineArgs {
     /// Sleeper filter configuration
     #[arg(short = 'f', long, required = false, num_args = 1)]
     filter_config: Option<String>,
+}
+
+extern "C" fn progress(rows: usize) {
+    println!(
+        "Compaction has written {} rows",
+        rows.to_formatted_string(&Locale::en)
+    );
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -149,7 +156,7 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let details = CommonConfigBuilder::new()
-        .job_id(Some(JOB_ID.into()))
+        .job_id(JOB_ID.into())
         .aws_config(None)
         .input_files(input_urls)
         .input_files_sorted(true)
@@ -170,20 +177,8 @@ async fn main() -> color_eyre::Result<()> {
         .build()?;
 
     let context = Arc::new(SleeperContext::default());
-    let context_clone = context.clone();
-    tokio::spawn(async move {
-        loop {
-            tokio::time::sleep(Duration::from_secs(5)).await;
-            if let Some(row_count) = context_clone.get_compaction_rows_read(JOB_ID) {
-                println!(
-                    "Compaction has read {} rows",
-                    row_count.to_formatted_string(&Locale::en)
-                );
-            }
-        }
-    });
 
-    let result = run_compaction(&details, &context).await?;
+    let result = run_compaction(&details, &context, Some(progress)).await?;
     info!(
         "Compaction read {} rows and wrote {} rows",
         result.rows_read.to_formatted_string(&Locale::en),

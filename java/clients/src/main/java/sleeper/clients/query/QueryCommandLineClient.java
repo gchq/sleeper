@@ -16,13 +16,9 @@
 package sleeper.clients.query;
 
 import org.apache.commons.codec.binary.Base64;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -40,6 +36,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,17 +54,8 @@ public abstract class QueryCommandLineClient {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
     private final Supplier<String> queryIdSupplier;
-    protected ConsoleInput in;
-    protected ConsoleOutput out;
-
-    protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties) {
-        this(s3Client, dynamoClient, instanceProperties, ConsoleInput.stdIn(), ConsoleOutput.stdOut());
-    }
-
-    protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties,
-            ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoClient), S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient), in, out);
-    }
+    protected final ConsoleInput in;
+    protected final ConsoleOutput out;
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out) {
@@ -146,10 +134,16 @@ public abstract class QueryCommandLineClient {
 
         Region region = new Region(ranges);
 
+        String sqlQuery = promptSQLQuery();
+
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery(sqlQuery)
+                        .build())
                 .build();
     }
 
@@ -220,10 +214,17 @@ public abstract class QueryCommandLineClient {
             i++;
         }
         Region region = new Region(ranges);
+
+        String sqlQuery = promptSQLQuery();
+
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery(sqlQuery)
+                        .build())
                 .build();
     }
 
@@ -255,6 +256,16 @@ public abstract class QueryCommandLineClient {
         out.println("The table has the schema " + tablePropertiesProvider.getByName(tableName).getSchema());
 
         return tableName;
+    }
+
+    private String promptSQLQuery() {
+        out.println("Enter an optional SQL statement to execute on Sleeper query results. Table name is \"query_results\".");
+        String sqlQuery = in.promptLine("Enter SQL statement (blank for none): ");
+        if (sqlQuery.strip().isEmpty()) {
+            return null;
+        } else {
+            return sqlQuery;
+        }
     }
 
     protected InstanceProperties getInstanceProperties() {

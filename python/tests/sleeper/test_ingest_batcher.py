@@ -17,11 +17,9 @@ import json
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
 
-from sleeper.client import SleeperClient
+from sleeper import SleeperClient
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty
-from sleeper.properties.config_bucket import save_instance_properties
-from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -35,7 +33,7 @@ def should_send_to_ingest_batcher(queue: Queue, sender: IngestBatcherSender):
     sender.send(request)
 
     # Then
-    assert [{"tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"tableName": "test-table", "files": ["file-1.parquet"]}]
 
 
 def should_send_to_ingest_batcher_with_client(queue: Queue, sleeper_client: SleeperClient):
@@ -43,7 +41,7 @@ def should_send_to_ingest_batcher_with_client(queue: Queue, sleeper_client: Slee
     sleeper_client.submit_to_ingest_batcher("test-table", ["file-1.parquet"])
 
     # Then
-    assert [{"tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
+    assert receive_messages(queue) == [{"tableName": "test-table", "files": ["file-1.parquet"]}]
 
 
 @pytest.fixture
@@ -72,4 +70,4 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 
 def receive_messages(queue: Queue) -> list[dict]:
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: json.loads(message.body), messages))
+    return [json.loads(message.body) for message in messages]

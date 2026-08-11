@@ -77,6 +77,8 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
     private static final String JOB_LAST_UPDATE_TYPE = "LastUpdateType";
     public static final String JOB_LAST_VALIDATION_RESULT = "LastValidationResult";
     public static final String VALIDATION_INDEX = "by-validation";
+    public static final String UPDATE_TYPE_FINISHED = DynamoDBIngestJobStatusFormat.UPDATE_TYPE_FINISHED;
+    public static final String UPDATE_TYPE_ADDED_FILES = DynamoDBIngestJobStatusFormat.UPDATE_TYPE_ADDED_FILES;
 
     private final DynamoDbClient dynamoDB;
     private final String updatesTableName;

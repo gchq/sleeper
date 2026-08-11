@@ -68,9 +68,10 @@ public class SleeperDemonstrationCdkApp extends Stack {
 
         // Sleeper instance
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, networking, loggingStack, autoDeleteS3Stack);
-        SleeperOptionalStacks.create(this, props, coreStacks);
+        SleeperOptionalStacks optionalStacks = SleeperOptionalStacks.create(this, props, coreStacks);
 
         coreStacks.createRoles();
+        optionalStacks.finishAfterRolesCreated();
 
         // Stack for writing random data
         if (instanceProperties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {

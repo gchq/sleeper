@@ -17,6 +17,7 @@
           "test-job",
           "test-cluster",
           "test-run",
+          "bulk_import/test-job-test-run.json",
           "EMR"
         ]
       }

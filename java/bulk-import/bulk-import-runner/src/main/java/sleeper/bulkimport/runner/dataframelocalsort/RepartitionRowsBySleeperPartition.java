@@ -31,6 +31,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Repartitions data to establish a one to one equivalence between Spark partition and Sleeper partition. This can
  * ensure that all the data for each Sleeper partition will be gathered together on a single node of the Spark cluster.
@@ -66,8 +68,23 @@ public class RepartitionRowsBySleeperPartition {
                 ExpressionEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
-        return new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
-                .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+        return explicitRepartition(dataWithPartition, numLeafPartitions);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Dataset<Row> explicitRepartition(Dataset<Row> dataWithPartition, int numLeafPartitions) {
+        // This can work with new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
+        // but the Eclipse JDT server (also used by VS Code) has a long-standing problem where it reads "package" as a
+        // reserved keyword before seeing that the next character is $, so it can't compile that correctly.
+        // We use reflection here to allow running this code through an IDE using JDT.
+        try {
+            Class<?> cls = Class.forName("com.joom.spark.package$implicits$ExplicitRepartitionWrapper");
+            Object wrapper = cls.getConstructor(Dataset.class).newInstance(dataWithPartition);
+            return (Dataset<Row>) cls.getMethod("explicitRepartition", int.class, Column.class)
+                    .invoke(wrapper, numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

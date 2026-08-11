@@ -72,11 +72,15 @@ public class LeafPartitionQueryExecutor {
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
+        if (leafPartitionQuery.getSqlQuery() != null && !retriever.supportsSqlFiltering()) {
+            throw new QueryException("Query contains SQL query filter which is not supported by query results retriever: " + retriever.getClass().getName() +
+                    ". You may need to select a different query engine in the table properties for this table.");
+        }
+
         Schema tableSchema = tableProperties.getSchema();
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
         boolean needFiltersAndAggregations = !retriever.supportsFiltersAndAggregations();
-
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties), needFiltersAndAggregations);
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()

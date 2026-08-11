@@ -7,8 +7,8 @@
   },
   "subjects": [
     {
-      "kind": "User",
-      "name": "user-placeholder",
+      "kind": "Group",
+      "name": "step-function",
       "namespace": "namespace-placeholder"
     }
   ],

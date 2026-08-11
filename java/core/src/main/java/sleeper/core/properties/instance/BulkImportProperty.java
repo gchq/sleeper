@@ -21,6 +21,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 
 /**
@@ -55,6 +56,15 @@ public interface BulkImportProperty {
     UserDefinedInstanceProperty BULK_IMPORT_STARTER_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.bulk.import.starter.memory.mb")
             .description("The amount of memory in MB for lambda functions that start bulk import jobs.")
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_JOB_FILE_RETENTION_DAYS = Index.propertyBuilder("sleeper.bulk.import.job.file.retention.days")
+            .description("The number of days a bulk import job is held in the bulk import bucket. When a job is " +
+                    "submitted to Spark it is written to S3 for Spark to read. This is retained in case the job " +
+                    "needs to be retried, and for diagnostic purposes.\n" +
+                    "Defaults to the value of sleeper.log.retention.days.")
+            .defaultProperty(LOG_RETENTION_IN_DAYS)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 

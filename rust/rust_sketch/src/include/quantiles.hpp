@@ -82,7 +82,7 @@ struct serialization_bridge : public datasketches::quantiles_sketch<T, C, A> {
      * @return number of bytes
      */
     ::size_t get_serialized_size_bytes() const {
-        return datasketches::quantiles_sketch<T, C, A>::get_serialized_size_bytes();
+        return datasketches::quantiles_sketch<T, C, A>::get_serialized_size_bytes(serializer_t<T>{});
     }
 
     /**

@@ -79,7 +79,7 @@ public class DockerImageConfiguration {
     public List<StackDockerImage> getAllNonBaseImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
-                        .filter(not(DockerDeployment::isBaseImage))
+                        .filter(not(DockerDeployment::isDefaultBaseImage))
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()
@@ -91,7 +91,7 @@ public class DockerImageConfiguration {
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
         Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(not(DockerDeployment::isBaseImage))
+                .filter(not(DockerDeployment::isDefaultBaseImage))
                 .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }

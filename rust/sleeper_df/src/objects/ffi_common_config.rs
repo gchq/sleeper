@@ -39,24 +39,37 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
-    // job_id can be NULL
+    /// Job ID for this operation.
     pub job_id: *const c_char,
-    // If this field is NULL use defaults.
+    /// AWS configuration. May be NULL to use defaults.
     pub aws_config: *const FFIAwsConfig,
+    /// Length of input files array.
     pub input_files_len: usize,
+    /// Input file paths (S3 URLs or local paths).
     pub input_files: *const FFIBytes,
+    /// Whether input files are pre-sorted.
     pub input_files_sorted: bool,
+    /// Output file path (S3 URL or local path). Only used when writing output to file.
     pub output_file: *const c_char,
+    /// Whether to write a sketch file alongside output. Only applies to file output.
     pub write_sketch_file: bool,
+    /// Whether to use readahead store to reduce object store GET requests.
     pub use_readahead_store: bool,
+    /// Length of row key columns array.
     pub row_key_cols_len: usize,
+    /// Row key column names.
     pub row_key_cols: *const FFIBytes,
+    /// Length of sort key columns array.
     pub sort_key_cols_len: usize,
+    /// Sort key column names.
     pub sort_key_cols: *const FFIBytes,
+    /// Query or compaction region.
     pub region: *const FFISleeperRegion,
+    /// Aggregation configuration JSON. See docs/usage/data-retrieval.md for format details.
     pub aggregation_config: *const c_char,
+    /// Filtering configuration JSON. See docs/usage/data-retrieval.md for format details.
     pub filtering_config: *const c_char,
-    // If this field is NULL, then use defaults
+    /// Parquet options. May be NULL to use defaults.
     pub parquet_options: *const FFIParquetOptions,
 }
 
@@ -89,6 +102,9 @@ impl FFICommonConfig {
         &self,
         file_output_enabled: bool,
     ) -> Result<CommonConfig<'a>, color_eyre::Report> {
+        if self.job_id.is_null() {
+            bail!("FFICommonConfig job_id is NULL");
+        }
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }
@@ -114,7 +130,6 @@ impl FFICommonConfig {
             &FFIParquetOptions::default()
         };
         parquet_options.check_for_nulls()?;
-
         // We do this separately since we need the values for computing the region
         let row_key_cols = self.row_key_cols()?;
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();
@@ -140,12 +155,8 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
-        let job_id = unsafe { self.job_id.as_ref() }
-            .map(|p| unpack_string(p))
-            .transpose()?;
-
         CommonConfigBuilder::new()
-            .job_id(job_id)
+            .job_id(unpack_string(self.job_id)?)
             .aws_config(unpack_aws_config(self))
             .input_files(self.input_files()?)
             .input_files_sorted(self.input_files_sorted)

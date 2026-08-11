@@ -22,7 +22,7 @@ use crate::{
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
-        util::{explain_plan, retrieve_object_metas},
+        util::{check_for_sort_exec, explain_plan, retrieve_object_metas},
     },
     sleeper_context::SleeperContext,
 };
@@ -66,7 +66,7 @@ pub async fn compact(
     let ops = SleeperOperations::new(config);
     info!(
         "DataFusion compaction for job ID {}: {ops}",
-        config.job_id().unwrap_or(&"<unknown>".to_owned())
+        config.job_id(),
     );
 
     let runtime = sleeper_context.retrieve_runtime_env()?;
@@ -145,7 +145,7 @@ fn add_completion_stage<'a>(
     frame: DataFrame,
 ) -> Result<(Option<LexOrdering>, DataFrame), DataFusionError> {
     // Create sort ordering from schema and row key and sort key columns
-    let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
+    let sort_ordering = ops.create_physical_sort_expr_ordering(&frame)?;
     let frame = completer.complete_frame(frame)?;
     Ok((sort_ordering, frame))
 }
@@ -165,16 +165,21 @@ async fn execute_compaction_plan<'a>(
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
     let physical_plan = ops.to_physical_plan(frame, sort_ordering).await?;
+
+    // Check physical plan is free of `SortExec` stages.
+    // Issue <https://github.com/gchq/sleeper/issues/5248>
+    if ops.config.input_files_sorted() {
+        check_for_sort_exec(&physical_plan)?;
+    }
+
     debug!(
         "Physical plan\n{}",
         displayable(physical_plan.as_ref()).indent(true)
     );
 
     // Put pointer to filter stage in sleeper context
-    if let Some(compaction_job_id) = ops.config.job_id()
-        && let Some(filter_stage) = find_filter_exec_stage(physical_plan.clone())?
-    {
-        sleeper_context.set_filter_stage(compaction_job_id, &filter_stage);
+    if let Some(filter_stage) = find_filter_exec_stage(physical_plan.clone())? {
+        sleeper_context.set_filter_stage(ops.config.job_id(), &filter_stage);
     }
 
     match completer.execute_frame(physical_plan, task_ctx).await? {

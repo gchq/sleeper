@@ -68,6 +68,15 @@ if [ -f "$CRONTAB_FILE" ] && [ ! -f "$NIGHTLY_TEST_SETTINGS_FILE" ]; then
   runuser --login "$LOGIN_USER" -c "crontab $CRONTAB_FILE"
 fi
 
+# Seed the system test instance properties override file with this EC2's security group ID, so that EKS bulk import
+# clusters deployed by the system tests permit the EC2 to reach their Kubernetes API.
+SYSTEM_TEST_PROPERTIES_TEMPLATE="$REPOSITORY_DIR/scripts/test/maven/system-test-instance.properties.template"
+SYSTEM_TEST_PROPERTIES_FILE="$REPOSITORY_DIR/scripts/test/maven/system-test-instance.properties"
+if [ -f "$SYSTEM_TEST_PROPERTIES_TEMPLATE" ] && [ ! -f "$SYSTEM_TEST_PROPERTIES_FILE" ]; then
+  runuser --login "$LOGIN_USER" -c "cp $SYSTEM_TEST_PROPERTIES_TEMPLATE $SYSTEM_TEST_PROPERTIES_FILE"
+  runuser --login "$LOGIN_USER" -c "printf '\nsleeper.bulk.import.eks.api.allowed.security.groups=${buildSecurityGroup}\n' >> $SYSTEM_TEST_PROPERTIES_FILE"
+fi
+
 if [ -f /var/run/reboot-required ]; then
   /sbin/shutdown -r now && exit
 fi

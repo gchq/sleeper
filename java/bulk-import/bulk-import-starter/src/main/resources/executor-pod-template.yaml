@@ -1,6 +1,20 @@
 apiVersion: v1
 kind: Pod
 spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: spark-app-name
+                operator: In
+                values:
+                  - spark-app-selector-placeholder
+              - key: spark-role
+                operator: In
+                values:
+                  - driver
+          topologyKey: topology.kubernetes.io/zone
   containers:
     - name: spark-kubernetes-executor
       resources:

@@ -19,26 +19,26 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.environment.cdk.config.AppParameters.BUILD_ROOT_VOLUME_SIZE_GIB;
 
 public class IntParameterTest {
+    private static final IntParameter TEST_PARAM = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 350);
 
     @Test
     public void useDefaultValueWhenUnset() {
         AppContext context = AppContext.empty();
-        assertThat(context.get(BUILD_ROOT_VOLUME_SIZE_GIB)).isEqualTo(350);
+        assertThat(context.get(TEST_PARAM)).isEqualTo(350);
     }
 
     @Test
     public void canSetValue() {
-        AppContext context = AppContext.of(BUILD_ROOT_VOLUME_SIZE_GIB.value(123));
-        assertThat(context.get(BUILD_ROOT_VOLUME_SIZE_GIB)).isEqualTo(123);
+        AppContext context = AppContext.of(TEST_PARAM.value(123));
+        assertThat(context.get(TEST_PARAM)).isEqualTo(123);
     }
 
     @Test
     public void refuseLettersInValue() {
-        AppContext context = AppContext.of(BUILD_ROOT_VOLUME_SIZE_GIB.value("abc"));
-        assertThatThrownBy(() -> context.get(BUILD_ROOT_VOLUME_SIZE_GIB))
+        AppContext context = AppContext.of(TEST_PARAM.value("abc"));
+        assertThatThrownBy(() -> context.get(TEST_PARAM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("buildRootVolumeSizeGiB")
                 .hasCauseInstanceOf(NumberFormatException.class);

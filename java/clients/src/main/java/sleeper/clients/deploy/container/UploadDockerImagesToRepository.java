@@ -37,10 +37,15 @@ public class UploadDockerImagesToRepository {
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
         boolean createMultiplatformBuilder = optionalArgument(args, 2).map(Boolean::parseBoolean).orElse(true);
+        DeployConfiguration deployConfig = DeployConfiguration.fromScriptsDirectory(scriptsDirectory);
+
+        if (deployConfig.dockerImageLocation() != DockerImageLocation.LOCAL_BUILD) {
+            throw new IllegalArgumentException("Currently not configured to build Docker images locally. Please set your deploy configuration first.");
+        }
 
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
-                .deployConfig(DeployConfiguration.fromLocalBuild())
+                .deployConfig(deployConfig)
                 .createMultiplatformBuilder(createMultiplatformBuilder)
                 .build();
         uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);

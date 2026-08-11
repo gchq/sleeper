@@ -131,9 +131,9 @@ class NightlyTestOutputFileSystemIT {
             assertThat(NightlyTestOutput.from(tempDir))
                     .isEqualTo(new NightlyTestOutput(List.of(
                             TestResult.builder().testName("bulkImportPerformance")
-                                    .instanceId("bulk-import-instance").exitCode(0).build(),
+                                    .shortId("bulk-import-instance").exitCode(0).build(),
                             TestResult.builder().testName("compactionPerformance")
-                                    .instanceId("compaction-instance").exitCode(1).build())));
+                                    .shortId("compaction-instance").exitCode(1).build())));
         }
 
         @Test

@@ -61,6 +61,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
         LeafPartitionQuery query2 = LeafPartitionQuery.builder()
@@ -69,6 +70,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
         LeafPartitionQuery query3 = LeafPartitionQuery.builder()
@@ -77,6 +79,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
         LeafPartitionQuery query4 = LeafPartitionQuery.builder()
@@ -85,6 +88,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
         LeafPartitionQuery query5 = LeafPartitionQuery.builder()
@@ -93,6 +97,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
         LeafPartitionQuery query6 = LeafPartitionQuery.builder()
@@ -101,6 +106,7 @@ public class LeafPartitionQueryTest {
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName("iteratorClassName")
                         .queryTimeIteratorConfig("iteratorConfig")
+                        .sqlQuery("SELECT * FROM query_results")
                         .build())
                 .build();
 
