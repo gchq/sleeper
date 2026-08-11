@@ -20,8 +20,8 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.events.IRule;
 import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.events.IRule;
 
 import sleeper.environment.cdk.buildec2.BuildEC2Deployment;
 import sleeper.environment.cdk.builduptime.AutoShutdownSchedule;
