@@ -444,7 +444,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.*)
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:12.*)
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:13.*)
 
 - Apache License, Version 2.0
 
