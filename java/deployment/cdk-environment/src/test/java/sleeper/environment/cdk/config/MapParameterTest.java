@@ -38,29 +38,36 @@ public class MapParameterTest {
     }
 
     @Test
-    public void canSetOneEntry() {
-        AppContext context = AppContext.of(TAGS.value("Project=sleeper"));
+    public void canSetOnePair() {
+        AppContext context = AppContext.of(TAGS.value("Project", "sleeper"));
         assertThat(context.get(TAGS))
                 .containsExactly(Map.entry("Project", "sleeper"));
     }
 
     @Test
-    public void canSetMultipleEntriesKeepingOrder() {
-        AppContext context = AppContext.of(TAGS.value("Project=sleeper", "Owner=alice"));
+    public void canSetMultiplePairsKeepingOrder() {
+        AppContext context = AppContext.of(TAGS.value("Project", "sleeper", "Owner", "alice"));
         assertThat(context.get(TAGS))
                 .containsExactly(Map.entry("Project", "sleeper"), Map.entry("Owner", "alice"));
     }
 
     @Test
-    public void allowEqualsSignInValue() {
-        AppContext context = AppContext.of(TAGS.value("Filter=a=b"));
-        assertThat(context.get(TAGS))
-                .containsExactly(Map.entry("Filter", "a=b"));
+    public void refuseOddNumberOfEntries() {
+        AppContext context = AppContext.of(TAGS.value("Project", "sleeper", "Owner"));
+        assertThatThrownBy(() -> context.get(TAGS))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void refuseEntryWithoutEquals() {
-        AppContext context = AppContext.of(TAGS.value("Project"));
+    public void refuseEmptyValue() {
+        AppContext context = AppContext.of(TAGS.value("Project", ""));
+        assertThatThrownBy(() -> context.get(TAGS))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void refuseEmptyKey() {
+        AppContext context = AppContext.of(TAGS.value("", "sleeper"));
         assertThatThrownBy(() -> context.get(TAGS))
                 .isInstanceOf(IllegalArgumentException.class);
     }

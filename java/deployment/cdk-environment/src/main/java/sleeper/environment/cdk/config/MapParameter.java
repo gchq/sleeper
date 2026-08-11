@@ -44,7 +44,7 @@ public class MapParameter {
         } else if (value instanceof String) {
             return readMap((String) value);
         } else {
-            throw new IllegalArgumentException(key + " must be a comma-separated list of key=value pairs");
+            throw new IllegalArgumentException(key + " must be a comma-separated list of key,value pairs");
         }
     }
 
@@ -53,12 +53,18 @@ public class MapParameter {
         if (value.isEmpty()) {
             return map;
         }
-        for (String entry : value.split(",")) {
-            int index = entry.indexOf('=');
-            if (index < 0) {
-                throw new IllegalArgumentException(key + " entry must be in the form key=value, got: " + entry);
+        String[] entries = value.split(",", -1);
+        if (entries.length % 2 != 0) {
+            throw new IllegalArgumentException(
+                    key + " must have a value for every key (even number of comma-separated entries), got: " + value);
+        }
+        for (int i = 0; i < entries.length; i += 2) {
+            String tagKey = entries[i];
+            String tagValue = entries[i + 1];
+            if (tagKey.isEmpty() || tagValue.isEmpty()) {
+                throw new IllegalArgumentException(key + " must not contain an empty key or value, got: " + value);
             }
-            map.put(entry.substring(0, index), entry.substring(index + 1));
+            map.put(tagKey, tagValue);
         }
         return map;
     }
