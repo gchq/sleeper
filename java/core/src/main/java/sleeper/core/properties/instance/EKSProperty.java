@@ -79,10 +79,10 @@ public interface EKSProperty {
                     "that the Karpenter NodePool is allowed to launch for Spark pods.\n" +
                     "Only applied if node pool configuration is enabled. Currently experimental.")
             .defaultValue(Stream.of(
-                    "m7g.xlarge", "m7g.2xlarge", "m7g.4xlarge", "m7g.8xlarge", "m7g.12xlarge", "m7g.16xlarge",
-                    "m7gd.xlarge", "m7gd.2xlarge", "m7gd.4xlarge", "m7gd.8xlarge", "m7gd.12xlarge", "m7gd.16xlarge",
-                    "m7i.xlarge", "m7i.2xlarge", "m7i.4xlarge", "m7i.8xlarge", "m7i.12xlarge", "m7i.16xlarge",
-                    "m6id.xlarge", "m6id.2xlarge", "m6id.4xlarge", "m6id.8xlarge", "m6id.12xlarge", "m6id.16xlarge")
+                    "m8g.xlarge", "m8g.2xlarge", "m8g.4xlarge", "m8g.8xlarge", "m8g.12xlarge", "m8g.16xlarge",
+                    "m8gd.xlarge", "m8gd.2xlarge", "m8gd.4xlarge", "m8gd.8xlarge", "m8gd.12xlarge", "m8gd.16xlarge",
+                    "m8i.xlarge", "m8i.2xlarge", "m8i.4xlarge", "m8i.8xlarge", "m8i.12xlarge", "m8i.16xlarge",
+                    "m8id.xlarge", "m8id.2xlarge", "m8id.4xlarge", "m8id.8xlarge", "m8id.12xlarge", "m8id.16xlarge")
                     .collect(joining(",")))
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -158,7 +158,7 @@ public interface EKSProperty {
             .description("(EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores. " +
                     "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("4")
+            .defaultValue("5")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.cores")
             .description("(EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. " +
