@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/emr-7.12.0:latest
+ARG BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/emr-7.13.0:latest
 FROM ${BASE_IMAGE}
 
 USER root
