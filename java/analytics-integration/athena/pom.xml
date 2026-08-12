@@ -19,7 +19,7 @@
     <parent>
         <artifactId>analytics-integration</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.37.3</version>
+        <version>0.37.4-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>query-runner</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-datafusion</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

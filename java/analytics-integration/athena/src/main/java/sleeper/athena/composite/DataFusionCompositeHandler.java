@@ -17,14 +17,19 @@ package sleeper.athena.composite;
 
 import com.amazonaws.athena.connector.lambda.handlers.CompositeHandler;
 
-import sleeper.athena.metadata.SimpleMetadataHandler;
-import sleeper.athena.record.SimpleRecordHandler;
+import sleeper.athena.metadata.IteratorApplyingMetadataHandler;
+import sleeper.athena.record.DataFusionRecordHandler;
 
 import java.io.IOException;
 
-public class SimpleCompositeHandler extends CompositeHandler {
+/**
+ * A CompositeHandler allows us to combine the Metadata and Record Handler into a single Lambda function. This composite
+ * Handler delegates to the {@link IteratorApplyingMetadataHandler} (which supplies the same splits) and the
+ * {@link DataFusionRecordHandler}, which reads data directly as Apache Arrow record batches from DataFusion.
+ */
+public class DataFusionCompositeHandler extends CompositeHandler {
 
-    public SimpleCompositeHandler() throws IOException {
-        super(new SimpleMetadataHandler(), new SimpleRecordHandler());
+    public DataFusionCompositeHandler() throws IOException {
+        super(new IteratorApplyingMetadataHandler(), new DataFusionRecordHandler());
     }
 }

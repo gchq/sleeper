@@ -31,9 +31,8 @@ public interface AthenaProperty {
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_CLASSES = Index.propertyBuilder("sleeper.athena.handler.classes")
-            .description("The fully qualified composite classes to deploy. These are the classes that interact with Athena. " +
-                    "You can choose to remove one if you don't need them. Both are deployed by default.")
-            .defaultValue("sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
+            .description("The fully qualified composite classes to deploy. These are the classes that interact with Athena.")
+            .defaultValue("sleeper.athena.composite.DataFusionCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = Index.propertyBuilder("sleeper.athena.handler.memory.mb")

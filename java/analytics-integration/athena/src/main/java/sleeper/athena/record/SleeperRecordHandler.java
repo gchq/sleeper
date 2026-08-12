@@ -163,7 +163,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
             } else if (type instanceof ListType) {
                 addListExtractorFactory(rowWriterBuilder, name, (ListType) type);
             } else if (type instanceof MapType) {
-                // do nothing as Maps aren't supported
+                addMapExtractorFactory(rowWriterBuilder, name);
             } else {
                 throw new RuntimeException("Unrecognised type: " + type);
             }
@@ -194,6 +194,23 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @param type             the type of the field
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
+        rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {
+            Row row = (Row) context;
+            Object object = row.get(name);
+            if (object != null) {
+                BlockUtils.setComplexValue(vector, rowNum, FieldResolver.DEFAULT, object);
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Adds an extractor factory for Maps.
+     *
+     * @param rowWriterBuilder the WriterBuilder
+     * @param name             the name of the field
+     */
+    private void addMapExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {
             Row row = (Row) context;
             Object object = row.get(name);
@@ -262,5 +279,15 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     protected InstanceProperties getInstanceProperties() {
         return this.instanceProperties;
+    }
+
+    /**
+     * Loads the properties for the named table.
+     *
+     * @param  tableName the table name
+     * @return           the table properties
+     */
+    protected TableProperties getTableProperties(String tableName) {
+        return tablePropertiesProvider.getByName(tableName);
     }
 }

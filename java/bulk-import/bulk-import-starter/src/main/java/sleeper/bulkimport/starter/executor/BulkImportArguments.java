@@ -30,18 +30,21 @@ import java.util.stream.Stream;
 
 import static java.util.Map.entry;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class BulkImportArguments {
 
     private final InstanceProperties instanceProperties;
     private final BulkImportJob bulkImportJob;
+    private final String jobFileObjectKey;
     private final String jobRunId;
 
     private BulkImportArguments(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        bulkImportJob = builder.bulkImportJob;
-        jobRunId = builder.jobRunId;
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        bulkImportJob = Objects.requireNonNull(builder.bulkImportJob, "bulkImportJob must not be null");
+        jobFileObjectKey = Objects.requireNonNull(builder.jobFileObjectKey, "jobFileObjectKey must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
     }
 
     public static Builder builder() {
@@ -61,14 +64,21 @@ public class BulkImportArguments {
     }
 
     private List<String> sparkSubmitCommandForCluster(String taskId, String jarLocation, Map<String, String> baseSparkConfig, String bulkImportMode) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        String jobId = bulkImportJob.getId();
         return Stream.of(
                 Stream.of("spark-submit", "--deploy-mode", "cluster"),
                 sparkSubmitParameters(baseSparkConfig),
-                Stream.of(jarLocation, configBucket, jobId, taskId, jobRunId, bulkImportMode))
+                Stream.of(jarLocation),
+                Stream.of(entryPointArguments(taskId, bulkImportMode)))
                 .flatMap(partialArgs -> partialArgs)
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public String[] entryPointArgumentsForServerless() {
+        return entryPointArguments(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME) + "-EMRS", "EMR");
+    }
+
+    private String[] entryPointArguments(String taskId, String bulkImportMode) {
+        return new String[]{instanceProperties.get(CONFIG_BUCKET), bulkImportJob.getId(), taskId, jobRunId, jobFileObjectKey, bulkImportMode};
     }
 
     public String sparkSubmitParametersForServerless() {
@@ -123,9 +133,33 @@ public class BulkImportArguments {
         return jobRunId;
     }
 
+    @Override
+    public String toString() {
+        return "BulkImportArguments{instanceProperties=" + instanceProperties + ", bulkImportJob=" + bulkImportJob + ", jobFileObjectKey=" + jobFileObjectKey + ", jobRunId=" + jobRunId + "}";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(instanceProperties, bulkImportJob, jobFileObjectKey, jobRunId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof BulkImportArguments)) {
+            return false;
+        }
+        BulkImportArguments other = (BulkImportArguments) obj;
+        return Objects.equals(instanceProperties, other.instanceProperties) && Objects.equals(bulkImportJob, other.bulkImportJob) && Objects.equals(jobFileObjectKey, other.jobFileObjectKey)
+                && Objects.equals(jobRunId, other.jobRunId);
+    }
+
     public static final class Builder {
         private InstanceProperties instanceProperties;
         private BulkImportJob bulkImportJob;
+        private String jobFileObjectKey;
         private String jobRunId;
 
         private Builder() {
@@ -138,6 +172,11 @@ public class BulkImportArguments {
 
         public Builder bulkImportJob(BulkImportJob bulkImportJob) {
             this.bulkImportJob = bulkImportJob;
+            return this;
+        }
+
+        public Builder jobFileObjectKey(String jobFileObjectKey) {
+            this.jobFileObjectKey = jobFileObjectKey;
             return this;
         }
 

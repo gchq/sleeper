@@ -31,12 +31,6 @@ once in a given AWS account. Use your account number and region in the command b
 sleeper cdk bootstrap aws://<account>/<region>
 ```
 
-### Rebuild environment
-
-If the environment configuration code has been changed it will need to be rebuilt before deployment.
-Ensure you are working on the branch that contains the changes and execute ```scripts/cli/environment/buildWithDependencies.sh```
-Once complete you can proceed to deploying an environment.
-
 ### Deploy/connect to an environment
 
 The Sleeper environment tool can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking
@@ -69,6 +63,16 @@ sleeper environment deploy <environment-id> -c deployEc2=false
 # Deploy EC2 in an existing VPC
 sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
 ```
+
+You can apply tags to every resource created for the environment with a comma-separated list of
+`key,value` pairs. Entries are read in order as alternating keys and values, so there must be an even
+number of them (a value for every key):
+
+```bash
+sleeper environment deploy <environment-id> -c tags=Project,sleeper,Owner,john
+```
+
+The tags are shown for confirmation before deploying.
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your

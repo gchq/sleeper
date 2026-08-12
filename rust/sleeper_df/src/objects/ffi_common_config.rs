@@ -39,23 +39,37 @@ use url::Url;
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
+    /// Job ID for this operation.
     pub job_id: *const c_char,
-    // If this field is NULL use defaults.
+    /// AWS configuration. May be NULL to use defaults.
     pub aws_config: *const FFIAwsConfig,
+    /// Length of input files array.
     pub input_files_len: usize,
+    /// Input file paths (S3 URLs or local paths).
     pub input_files: *const FFIBytes,
+    /// Whether input files are pre-sorted.
     pub input_files_sorted: bool,
+    /// Output file path (S3 URL or local path). Only used when writing output to file.
     pub output_file: *const c_char,
+    /// Whether to write a sketch file alongside output. Only applies to file output.
     pub write_sketch_file: bool,
+    /// Whether to use readahead store to reduce object store GET requests.
     pub use_readahead_store: bool,
+    /// Length of row key columns array.
     pub row_key_cols_len: usize,
+    /// Row key column names.
     pub row_key_cols: *const FFIBytes,
+    /// Length of sort key columns array.
     pub sort_key_cols_len: usize,
+    /// Sort key column names.
     pub sort_key_cols: *const FFIBytes,
+    /// Query or compaction region.
     pub region: *const FFISleeperRegion,
+    /// Aggregation configuration JSON. See docs/usage/data-retrieval.md for format details.
     pub aggregation_config: *const c_char,
+    /// Filtering configuration JSON. See docs/usage/data-retrieval.md for format details.
     pub filtering_config: *const c_char,
-    // If this field is NULL, then use defaults
+    /// Parquet options. May be NULL to use defaults.
     pub parquet_options: *const FFIParquetOptions,
 }
 
