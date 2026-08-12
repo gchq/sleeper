@@ -117,7 +117,7 @@ public class DeployNewInstanceIT {
             // When
             deployNewInstance(
                     "my-instance", "test-vpc", "test-subnet",
-                    "--configuration-dir", configDir.toString());
+                    "--config-dir", configDir.toString());
 
             // Then the combined configuration is derived
             // And the CDK is invoked pointing to the file and the extra configuration
@@ -189,16 +189,16 @@ public class DeployNewInstanceIT {
             // When/Then
             assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Either --properties-file or --configuration-dir must be provided");
+                    .hasMessage("Either --properties-file or --config-dir must be provided");
         }
 
         @Test
         void shouldRejectWhenBothInstancePropertiesAndConfigDirSet() {
             // When/Then
             assertThatThrownBy(() -> deployNewInstance("my-instance", "my-vpc", "my-subnets",
-                    "--properties-file", "someFile", "--configuration-dir", "someDir"))
+                    "--properties-file", "someFile", "--config-dir", "someDir"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Cannot use both --properties-file and --configuration-dir");
+                    .hasMessage("Cannot use both --properties-file and --config-dir");
         }
     }
 

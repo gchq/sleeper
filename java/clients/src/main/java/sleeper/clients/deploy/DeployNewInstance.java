@@ -78,18 +78,18 @@ public class DeployNewInstance {
             .positionalArguments(List.of("scriptsDirectory", "instanceId", "vpcId", "subnetIds"))
             .options(List.of(
                     CommandOption.longOption("properties-file"),
-                    CommandOption.longOption("configuration-dir"),
+                    CommandOption.longOption("config-dir"),
                     CommandOption.longFlag("paused")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
                     "\n" +
                     "--properties-file <file>\n" +
                     "Path to an instance properties file. Passed to the CDK in the context variable \"propertiesFile\".\n" +
-                    "One of --properties-file and --configuration-dir must be set but not both.\n" +
+                    "One of --properties-file and --config-dir must be set but not both.\n" +
                     "\n" +
-                    "--configuration-dir <dir>\n" +
+                    "--config-dir <dir>\n" +
                     "Path to a directory containing an instance.properties file. Passed to the CDK in the context variable \"configurationDir\".\n" +
-                    "One of --properties-file and --configuration-dir must be set but not both.\n" +
+                    "One of --properties-file and --config-dir must be set but not both.\n" +
                     "\n" +
                     "--paused\n" +
                     "If set, the instance will be deployed paused. This will set the CDK context variable " +
@@ -104,7 +104,7 @@ public class DeployNewInstance {
                 arguments.getString("vpcId"),
                 arguments.getString("subnetIds"),
                 arguments.getOptionalString("properties-file").map(Path::of).orElse(null),
-                arguments.getOptionalString("configuration-dir").map(Path::of).orElse(null),
+                arguments.getOptionalString("config-dir").map(Path::of).orElse(null),
                 arguments.isFlagSet("paused"));
     }
 
@@ -183,11 +183,11 @@ public class DeployNewInstance {
 
         public Arguments {
             if (propertiesFile == null && configDir == null) {
-                throw new CommandArgumentsException("Either --properties-file or --configuration-dir must be provided");
+                throw new CommandArgumentsException("Either --properties-file or --config-dir must be provided");
             }
 
             if (propertiesFile != null && configDir != null) {
-                throw new CommandArgumentsException("Cannot use both --properties-file and --configuration-dir");
+                throw new CommandArgumentsException("Cannot use both --properties-file and --config-dir");
             }
         }
     }
