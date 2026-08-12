@@ -73,10 +73,10 @@ public class DeployNewTestInstance {
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
 
-            Path directory = scriptsDirectory.resolve("temp");
-            Files.createDirectories(directory);
-            FilesUtil.clearDirectory(directory);
-            SaveLocalProperties.saveToDirectory(directory,
+            Path generatedDir = scriptsDirectory.resolve("generated");
+            Files.createDirectories(generatedDir);
+            FilesUtil.clearDirectory(generatedDir);
+            SaveLocalProperties.saveToDirectory(generatedDir,
                     config.getInstanceProperties(),
                     config.getTableProperties().stream());
 
