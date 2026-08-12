@@ -113,6 +113,12 @@ public class FilesStatusReport {
                     "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.")
             .build();
 
+    /**
+     * Reads the arguments from the command line.
+     *
+     * @param  arguments the parsed command line arguments
+     * @return           the arguments
+     */
     public static Arguments readArguments(CommandArguments arguments) {
         return new Arguments(
                 arguments.getString("instance-id"),
@@ -124,6 +130,15 @@ public class FilesStatusReport {
                         .orElse(DEFAULT_STATUS_REPORTER));
     }
 
+    /**
+     * Holds the arguments for the files status report command.
+     *
+     * @param instanceId    the Sleeper instance ID
+     * @param tableName     the name of the table to report on
+     * @param maxNoRefFiles the maximum number of files with no references to count
+     * @param verbose       if true, the report will include detailed file information
+     * @param reporterType  the output format, one of STANDARD, JSON, CSV
+     */
     public record Arguments(
             String instanceId,
             String tableName,
