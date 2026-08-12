@@ -19,6 +19,7 @@ import software.constructs.Construct;
 import software.constructs.Node;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @FunctionalInterface
@@ -48,6 +49,10 @@ public interface AppContext {
 
     default int get(IntParameter integer) {
         return integer.get(this);
+    }
+
+    default Map<String, String> get(MapParameter map) {
+        return map.get(this);
     }
 
     static AppContext of(Construct construct) {

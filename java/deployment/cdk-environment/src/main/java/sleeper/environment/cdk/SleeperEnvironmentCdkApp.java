@@ -20,6 +20,7 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.events.IRule;
 
 import sleeper.environment.cdk.buildec2.BuildEC2Deployment;
@@ -34,6 +35,7 @@ import java.util.List;
 import static sleeper.environment.cdk.config.AppParameters.BUILD_UPTIME_LAMBDA_JAR;
 import static sleeper.environment.cdk.config.AppParameters.DEPLOY_EC2;
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
+import static sleeper.environment.cdk.config.AppParameters.TAGS;
 
 /**
  * Deploys an environment suitable for Sleeper, including a VPC and an EC2 instance to run the deployment from.
@@ -69,6 +71,8 @@ public class SleeperEnvironmentCdkApp {
             List<IRule> autoStopRules = nightlyTests.automateUptimeGetAutoStopRules(buildEc2, buildUptime);
             AutoShutdownSchedule.create(stack, buildUptime, buildEc2, autoStopRules);
         }
+        Tags tags = Tags.of(app);
+        context.get(TAGS).forEach(tags::add);
         app.synth();
     }
 
