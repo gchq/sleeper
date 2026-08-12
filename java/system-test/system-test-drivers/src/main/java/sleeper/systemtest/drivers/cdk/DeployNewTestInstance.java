@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 import sleeper.core.properties.local.SaveLocalProperties;
@@ -82,7 +83,8 @@ public class DeployNewTestInstance {
 
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
+                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient))
+                    .instancePropertiesLoader(id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, id))
                     .expectedInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
                     .configDir(configurationPath)

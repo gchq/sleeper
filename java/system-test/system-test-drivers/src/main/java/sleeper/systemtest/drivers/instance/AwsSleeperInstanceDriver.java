@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstance;
@@ -56,7 +55,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     private final SystemTestParameters parameters;
     private final S3Client s3;
-    private final StsClient sts;
     private final DynamoDbClient dynamoDB;
     private final CloudFormationClient cloudFormationClient;
     private final AwsResetInstanceOnFirstConnect resetInstance;
@@ -65,7 +63,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
-        this.sts = clients.getSts();
         this.dynamoDB = clients.getDynamo();
         this.cloudFormationClient = clients.getCloudFormation();
         this.resetInstance = new AwsResetInstanceOnFirstConnect(clients);
@@ -100,7 +97,8 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             DeployNewInstance.builder()
                     .deployInstance(deployInstance)
-                    .storeFactory(StoreFactory.withAwsClients(s3, dynamoDB, sts.getCallerIdentity().account()))
+                    .storeFactory(StoreFactory.withAwsClients(s3, dynamoDB))
+                    .instancePropertiesLoader(id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3, parameters.getAccount(), id))
                     .expectedInstanceConfiguration(deployConfig)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .configDir(configDir)

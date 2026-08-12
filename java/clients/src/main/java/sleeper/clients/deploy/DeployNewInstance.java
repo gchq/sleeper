@@ -55,6 +55,7 @@ public class DeployNewInstance {
 
     private final InstanceDeployer deployInstance;
     private final StoreFactory storeFactory;
+    private final InstancePropertiesLoader instancePropertiesLoader;
     private final SleeperInternalCdkApp cdkApp;
     private final CdkCommand cdkCommand;
     private final SleeperInstanceConfiguration expectedInstanceConfiguration;
@@ -62,6 +63,7 @@ public class DeployNewInstance {
     private DeployNewInstance(Builder builder) {
         this.deployInstance = Objects.requireNonNull(builder.deployInstance, "deployInstance must not be null");
         this.storeFactory = Objects.requireNonNull(builder.storeFactory, "storeFactory must not be null");
+        this.instancePropertiesLoader = Objects.requireNonNull(builder.instancePropertiesLoader, "instancePropertiesLoader must not be null");
         this.cdkApp = Objects.requireNonNull(builder.cdkApp, "cdkApp must not be null");
         this.cdkCommand = builder.buildCdkCommand();
         this.expectedInstanceConfiguration = Objects.requireNonNull(builder.expectedInstanceConfiguration, "expectedInstanceConfiguration must not be null");
@@ -136,7 +138,8 @@ public class DeployNewInstance {
 
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(args.scriptsDirectory(), accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient, accountName))
+                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient))
+                    .instancePropertiesLoader(instanceId -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId))
                     .expectedInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .propertiesFile(args.propertiesFile())
@@ -156,13 +159,13 @@ public class DeployNewInstance {
                 .build());
 
         if (!expectedInstanceConfiguration.getTableProperties().isEmpty()) {
-            storeFactory.reloadInstanceProperties(instanceProperties);
+            InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
 
             for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
                 LOGGER.info("Adding table " + tableProperties.getStatus());
                 new AddTableClient(tableProperties,
-                        storeFactory.createTableStore(instanceProperties),
-                        storeFactory.createStateStore(instanceProperties))
+                        storeFactory.createTableStore(deployedProperties),
+                        storeFactory.createStateStore(deployedProperties))
                         .run();
             }
         }
@@ -192,6 +195,7 @@ public class DeployNewInstance {
     public static final class Builder {
         private InstanceDeployer deployInstance;
         private StoreFactory storeFactory;
+        private InstancePropertiesLoader instancePropertiesLoader;
         private SleeperInternalCdkApp cdkApp;
         private SleeperInstanceConfiguration expectedInstanceConfiguration;
         private Path propertiesFile;
@@ -209,6 +213,11 @@ public class DeployNewInstance {
 
         public Builder storeFactory(StoreFactory storeFactory) {
             this.storeFactory = storeFactory;
+            return this;
+        }
+
+        public Builder instancePropertiesLoader(InstancePropertiesLoader instancePropertiesLoader) {
+            this.instancePropertiesLoader = instancePropertiesLoader;
             return this;
         }
 
@@ -274,9 +283,7 @@ public class DeployNewInstance {
 
         StateStoreProvider createStateStore(InstanceProperties instanceProperties);
 
-        void reloadInstanceProperties(InstanceProperties instanceProperties);
-
-        static StoreFactory withAwsClients(S3Client s3Client, DynamoDbClient dynamoClient, String accountName) {
+        static StoreFactory withAwsClients(S3Client s3Client, DynamoDbClient dynamoClient) {
             return new StoreFactory() {
                 public TablePropertiesStore createTableStore(InstanceProperties p) {
                     return S3TableProperties.createStore(p, s3Client, dynamoClient);
@@ -284,10 +291,6 @@ public class DeployNewInstance {
 
                 public StateStoreProvider createStateStore(InstanceProperties p) {
                     return StateStoreFactory.createProvider(p, s3Client, dynamoClient);
-                }
-
-                public void reloadInstanceProperties(InstanceProperties p) {
-                    S3InstanceProperties.reloadGivenAccountAndInstanceId(s3Client, p, accountName, p.get(ID));
                 }
             };
         }

@@ -217,10 +217,8 @@ public class DeployNewInstanceIT {
                     public StateStoreProvider createStateStore(InstanceProperties p) {
                         return stateStoreProvider;
                     }
-
-                    public void reloadInstanceProperties(InstanceProperties p) {
-                    }
                 })
+                .instancePropertiesLoader(id -> instanceProperties)
                 .expectedInstanceConfiguration(config)
                 .cdkApp(SleeperInternalCdkApp.STANDARD)
                 .propertiesFile(args.propertiesFile())
