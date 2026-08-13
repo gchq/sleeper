@@ -24,24 +24,34 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-echo "Downloading Sleeper CLI"
+
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
-chmod a+x "$TEMP_PATH"
-echo "Downloaded command"
 
-# Set registry used for non github repositories
-if [ -n "$REGISTRY" ]; then
-  "$TEMP_PATH" cli set-registry "$REGISTRY"
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
+if [ -f "$LOCAL_SCRIPT" ]; then
+  echo "Local Sleeper CLI found, using that"
+  SCRIPT_PATH="$LOCAL_SCRIPT"
+else
+  echo "Downloading Sleeper CLI"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  SCRIPT_PATH="$TEMP_PATH"
+  echo "Downloaded command"
 fi
-"$TEMP_PATH" cli pull-images
+chmod a+x "$SCRIPT_PATH"
+
+# Set registry if provided, overriding the default
+if [ -n "$REGISTRY" ]; then
+  "$SCRIPT_PATH" cli set-registry "$REGISTRY"
+fi
+"$SCRIPT_PATH" cli pull-images
 echo "Downloaded Docker images"
 
 EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
-mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
 rmdir "$TEMP_DIR"
 echo "Installed"
 
