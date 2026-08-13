@@ -66,7 +66,7 @@ def should_test_client_creates_table(mock_post, rest_client: RestApiClient):
 
 
 @patch("sleeper.rest.rest_client.requests.post")
-def should_test_client_tires_to_create_existing_table(mock_post, rest_client: RestApiClient):
+def should_test_client_tries_to_create_existing_table(mock_post, rest_client: RestApiClient):
     error_response = MagicMock()
     error_response.status_code = 409
     error_response.json.return_value = {"message": "Table already exists", "error": "table_already_exists"}
