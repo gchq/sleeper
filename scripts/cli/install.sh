@@ -16,6 +16,14 @@
 set -e
 unset CDPATH
 
+REGISTRY=""
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --registry) REGISTRY="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
 echo "Downloading Sleeper CLI"
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
@@ -23,6 +31,10 @@ curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDo
 chmod a+x "$TEMP_PATH"
 echo "Downloaded command"
 
+# Set registry used for non github repositories
+if [ -n "$REGISTRY" ]; then
+  "$TEMP_PATH" cli set-registry "$REGISTRY"
+fi
 "$TEMP_PATH" cli pull-images
 echo "Downloaded Docker images"
 
