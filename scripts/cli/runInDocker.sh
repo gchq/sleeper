@@ -264,6 +264,12 @@ elif [ "$COMMAND" == "cli" ]; then
     upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
     pull_docker_images
+  elif [ "$SUBCOMMAND" == "set-registry" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-registry <registry>"
+      exit 1
+    fi
+    set_registry "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage
