@@ -106,11 +106,11 @@ public class FilesStatusReport {
                     "--max-no-ref-files <number>\n" +
                     "Maximum number of files with no references to count. Defaults to 1000.\n" +
                     "\n" +
-                    "--verbose\n" +
-                    "If set, the report will include detailed file information.\n" +
-                    "\n" +
                     "--report-type <type>\n" +
-                    "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.")
+                    "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.\n" +
+                    "\n" +
+                    "--verbose\n" +
+                    "If set, the report will include detailed file information.")
             .build();
 
     /**
@@ -148,8 +148,7 @@ public class FilesStatusReport {
 
         public Arguments {
             if (!FILE_STATUS_REPORTERS.containsKey(reporterType)) {
-                throw new CommandArgumentsException("Report type not supported: " + reporterType +
-                        ". Valid types: " + String.join(", ", FILE_STATUS_REPORTERS.keySet()));
+                throw new CommandArgumentsException("Report type not supported: " + reporterType + ". Valid types: " + String.join(", ", FILE_STATUS_REPORTERS.keySet()));
             }
         }
     }
