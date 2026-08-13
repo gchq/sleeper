@@ -37,6 +37,22 @@ if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
     RUNNER_PATH="$HOME_RUNNER_PATH"
 fi
 
+# Allow setting of registry to pull docker images from
+REGISTRY_CONFIG_PATH="$HOME/.sleeper/registry"
+get_registry() {
+  if [ -f "$REGISTRY_CONFIG_PATH" ]; then
+    cat "$REGISTRY_CONFIG_PATH"
+  else
+    echo "ghcr.io/gchq"
+  fi
+}
+
+set_registry() {
+  mkdir -p "$HOME/.sleeper"
+  echo "$1" > "$REGISTRY_CONFIG_PATH"
+  echo "Registry set to: $1"
+}
+
 run_in_docker() {
   local RUN_PARAMS
   RUN_PARAMS=()
@@ -129,7 +145,7 @@ pull_docker_images() {
   echo "Pulling CLI Docker images"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
-    REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
+    REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:latest"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
     # Use docker build rather than docker pull + docker tag, so that BuildKit
