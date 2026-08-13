@@ -138,14 +138,23 @@ get_version() {
 }
 
 pull_docker_images() {
-  echo "Downloading CLI runner Dockerfile"
+
   mkdir -p "$HOME_RUNNER_PATH"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
+  VERSION="latest"
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "CLI was previously installed from a local repo. Copyign DockerFile and version from there."
+    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    cp "$LOCAL_REPO/cli/runner/Dockerfile" $HOME_RUNNER_PATH
+    VERSION=$(<"$LOCAL_REPO/templates/version.txt")
+  else
+    echo "Downloading CLI runner Dockerfile"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
+  fi
 
   echo "Pulling CLI Docker images"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
-    REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:latest"
+    REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:$VERSION"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
     # Use docker build rather than docker pull + docker tag, so that BuildKit
@@ -220,11 +229,22 @@ upgrade_cli() {
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
-  chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images
+
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "Local Sleeper CLI found, using that"
+    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    SCRIPT_PATH="$LOCAL_REPO/cli/runInDocker.sh"
+  else
+    echo "Downloading Sleeper CLI"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+    SCRIPT_PATH="$TEMP_PATH"
+    echo "Downloaded command"
+  fi
+
+  chmod a+x "$SCRIPT_PATH"
+  "$SCRIPT_PATH" cli pull-images
   remove_old_images
-  mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+  cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
 

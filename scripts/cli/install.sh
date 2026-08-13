@@ -33,6 +33,9 @@ LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
 if [ -f "$LOCAL_SCRIPT" ]; then
   echo "Local Sleeper CLI found, using that"
   SCRIPT_PATH="$LOCAL_SCRIPT"
+  echo "Saving local scripts repo path to ~/.sleeper/local-repo"
+  mkdir -p "$HOME/.sleeper"
+  echo $(cd "$THIS_DIR" && cd .. && pwd) > ~/.sleeper/local-repo
 else
   echo "Downloading Sleeper CLI"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
