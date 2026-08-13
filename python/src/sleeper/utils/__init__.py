@@ -11,11 +11,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
-"""Public API for the Sleeper Python client."""
+"""
+Utility classes and helper functions used throughout the Sleeper
+Python client.
 
-from sleeper.client import SleeperClient
-from sleeper.logging import enable_logging
+This package contains reusable functionality that is shared across
+multiple modules.
+"""
 
-__all__ = ("SleeperClient", "enable_logging")
+from sleeper.utils.signer import ApiGatewaySigner
+
+__all__ = ("ApiGatewaySigner",)

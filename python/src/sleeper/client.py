@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import json
 import logging
 import os
@@ -34,20 +35,10 @@ from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitReque
 from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, load_instance_properties
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
 from sleeper.query import Query, Region
+from sleeper.rest import AddTableResponse, RestApiClient, TableSchema
 from sleeper.web_socket_query import WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-# Has a handler?
-hasHandler: bool = len(logger.handlers) > 1
-# Extract handler
-handler: logging.Handler = logger.handlers[0] if hasHandler else logging.StreamHandler()
-log_format_string: str = "%(asctime)s %(levelname)s %(filename)s/%(funcName)s %(message)s"
-handler.setFormatter(logging.Formatter(log_format_string))
-# Need to add it?
-if not hasHandler:
-    logger.addHandler(handler)
-    logger.propagate = 0
 
 DEFAULT_MAX_WAIT_TIME = 120
 """The default maximum amount of time to wait for queries to be finished."""
@@ -104,6 +95,13 @@ class SleeperClient:
         self._sqs_resource = sqs_resource
         self._dynamo_resource = dynamo_resource
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
+        self._rest_client: RestApiClient | None = None
+
+    @property
+    def rest_client(self) -> RestApiClient:
+        if self._rest_client is None:
+            self._rest_client = RestApiClient(self._instance_properties)
+        return self._rest_client
 
     def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str | None = None):
         """
@@ -197,6 +195,17 @@ class SleeperClient:
         :param query: the bulk export query to send
         """
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
+
+    def add_table(self, table_name: str, schema: TableSchema, split_points: list | None = None) -> AddTableResponse:
+        """Create a new Sleeper table.
+
+        :param: table_name: Name of the table to create.
+        :param: schema: Schema definition for the table.
+        :param: split_points: Optional initial split points for partitioning.
+
+        :return: AddTableResponse: Details of the created table.
+        """
+        return self.rest_client.add_table(table_name=table_name, schema=schema, split_points=split_points)
 
     async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False, sql_query: str | None = None) -> list:
         """

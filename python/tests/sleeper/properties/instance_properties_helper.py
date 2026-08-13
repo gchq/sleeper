@@ -26,4 +26,5 @@ def create_test_instance_properties() -> InstanceProperties:
     properties.set(CommonCdkProperty.ACCOUNT, account)
     properties.set(CommonCdkProperty.CONFIG_BUCKET, config_bucket_for_account_instance(account, instance_id))
     properties.set(CommonCdkProperty.DATA_BUCKET, f"sleeper-{instance_id}-table-data")
+    properties.set(CommonCdkProperty.REGION, "test-region")
     return properties

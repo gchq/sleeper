@@ -11,11 +11,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
-"""Public API for the Sleeper Python client."""
+import logging
 
-from sleeper.client import SleeperClient
-from sleeper.logging import enable_logging
 
-__all__ = ("SleeperClient", "enable_logging")
+def enable_logging(level: int = logging.INFO) -> None:
+    logger = logging.getLogger("sleeper")
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(filename)s/%(funcName)s %(message)s"))
+
+    logger.addHandler(handler)
+    logger.setLevel(level)
