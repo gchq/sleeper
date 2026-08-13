@@ -29,6 +29,24 @@ chmod +x ./sleeper-install.sh
 Relaunch your terminal and check that the command `sleeper version` gives a version number. Note that this will be the
 version of the CLI, rather than the version of Sleeper you will deploy.
 
+### Installing from a local repository
+
+If you have cloned the Sleeper repository locally, you can run the install script directly from the repository. It will
+automatically detect `runInDocker.sh` alongside it and use that instead of downloading it from GitHub:
+
+```bash
+./scripts/cli/install.sh
+```
+
+You can also specify a custom container registry to pull Docker images from, for example if you have pre-published
+the images to a private registry:
+
+```bash
+./scripts/cli/install.sh --registry your.registry.example.com/sleeper
+```
+
+The registry can also be updated later using `sleeper cli set-registry <registry>`.
+
 ### Commands
 
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
