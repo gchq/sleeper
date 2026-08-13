@@ -96,11 +96,11 @@
         <profile>
             <activation>
                 <property>
-                    <name>skipRust</name>
+                    <name>skipRustX86</name>
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rust</id>
+            <id>rustX86</id>
             <build>
                 <plugins>
                     <plugin>
@@ -108,8 +108,8 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <!-- You need one execution per cross target you are building. Make sure
-                            you add
-                            the appropriate resources plugin execution below! -->
+					you add
+					the appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux x86_64)</id>
                                 <phase>generate-resources</phase>
@@ -118,14 +118,33 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+								${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>x86_64</argument>
-                                    </arguments>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>skipRustAarch64</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <id>rustAarch64</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- You need one execution per cross target you are building. Make sure
+					you add
+					the appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux Aarch64)</id>
                                 <phase>generate-resources</phase>
@@ -134,12 +153,9 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+								${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>aarch64</argument>
-                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
