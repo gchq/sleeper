@@ -142,7 +142,7 @@ pull_docker_images() {
   mkdir -p "$HOME_RUNNER_PATH"
   VERSION="latest"
   if [ -f "$HOME/.sleeper/local-repo" ]; then
-    echo "CLI was previously installed from a local repo. Copyign DockerFile and version from there."
+    echo "CLI was previously installed from a local repo. Copying DockerFile and version from there."
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
     cp "$LOCAL_REPO/cli/runner/Dockerfile" $HOME_RUNNER_PATH
     VERSION=$(<"$LOCAL_REPO/templates/version.txt")
@@ -245,7 +245,7 @@ upgrade_cli() {
   "$SCRIPT_PATH" cli pull-images
   remove_old_images
   cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
-  rmdir "$TEMP_DIR"
+  rm -rf "$TEMP_DIR"
   echo "Updated"
 
   # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.

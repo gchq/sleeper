@@ -55,7 +55,7 @@ EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
 cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
-rmdir "$TEMP_DIR"
+rm -rf "$TEMP_DIR"
 echo "Installed"
 
 # Ensure executable directory is on path
