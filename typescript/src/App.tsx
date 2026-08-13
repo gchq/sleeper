@@ -1,28 +1,23 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom'
+import Layout from './components/Layout'
 import InstanceProperties from './pages/InstanceProperties'
+import TableProperties from './pages/TableProperties'
 import './App.css'
 
+const router = createBrowserRouter([
+	{
+		element: <Layout />,
+		children: [
+			{ path: '/', element: <Navigate to="/instance/properties" replace /> },
+			{ path: '/instance/properties', element: <InstanceProperties /> },
+			{ path: '/tables/:tableId/properties', element: <TableProperties /> },
+			{ path: '*', element: <p className="placeholder">Select a section from the navigation.</p> },
+		],
+	},
+])
+
 function App() {
-	return (
-		<BrowserRouter>
-			<div className="app">
-				<header className="app-header">
-					<h1>Sleeper</h1>
-					<nav className="app-nav">
-						<NavLink to="/instance/properties" className={({ isActive }) => (isActive ? 'active' : '')}>
-							Instance Properties
-						</NavLink>
-					</nav>
-				</header>
-				<main className="app-main">
-					<Routes>
-						<Route path="/instance/properties" element={<InstanceProperties />} />
-						<Route path="*" element={<p className="placeholder">Select a section from the navigation above.</p>} />
-					</Routes>
-				</main>
-			</div>
-		</BrowserRouter>
-	)
+	return <RouterProvider router={router} />
 }
 
 export default App
