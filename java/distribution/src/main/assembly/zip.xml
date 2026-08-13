@@ -31,6 +31,14 @@
             </excludes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../scripts/report</directory>
+            <outputDirectory>scripts/report</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../scripts/table</directory>
+            <outputDirectory>scripts/table</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../scripts/utility</directory>
             <outputDirectory>scripts/utility</outputDirectory>
         </fileSet>

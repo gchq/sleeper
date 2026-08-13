@@ -16,13 +16,31 @@
 set -e
 unset CDPATH
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+#####################
+# Initial variables #
+#####################
+
+if [[ -z $1 ]]; then
+  echo "Usage: $0 <instance-id>"
+  exit 1
+fi
+
+INSTANCE_ID=$1
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+GENERATED_DIR=${SCRIPTS_DIR}/generated
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
-  --add-opens java.base/java.nio=ALL-UNNAMED \
-  sleeper.clients.query.QueryClient "$@"
+# Download to temporary directory
+TEMP_DIR=$(mktemp -d)
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.properties.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
+
+# Overwrite generated directory
+mkdir -p "$GENERATED_DIR"
+rm -rf "${GENERATED_DIR:?}"/*
+mv "$TEMP_DIR"/* "$GENERATED_DIR"
+rmdir "$TEMP_DIR"
