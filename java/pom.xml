@@ -47,6 +47,7 @@
         <module>statestore-committer</module>
         <module>statestore-lambda</module>
         <module>system-test</module>
+        <module>api</module>
     </modules>
 
     <properties>
