@@ -100,7 +100,7 @@
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rustX86</id>
+            <id>rustx86</id>
             <build>
                 <plugins>
                     <plugin>
@@ -133,15 +133,13 @@
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rustAarch64</id>
+            <id>rustaarch64</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- You need one execution per cross target you are building. Make sure you add the
-                            appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux Aarch64)</id>
                                 <phase>generate-resources</phase>
