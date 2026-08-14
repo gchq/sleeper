@@ -19,7 +19,10 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
@@ -36,10 +39,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,10 +58,31 @@ public class DataResource {
     private static final String REQUEST_METRICS_FILTER_ID = "all";
     private static final int DAY_SECONDS = 24 * 60 * 60;
 
-    private static final List<String> REQUEST_METRICS = Arrays.asList(
-            "HeadRequests", "GetRequests", "PutRequests", "PostRequests", "DeleteRequests",
-            "BytesDownloaded", "BytesUploaded",
-            "4xxErrors", "5xxErrors");
+    private enum MetricType {
+        STORAGE_STANDARD("Average", "StandardStorage"),
+        STORAGE_ALL("Average", "AllStorageTypes"),
+        REQUEST("Sum", null);
+
+        final String stat;
+        final String storageType;
+
+        MetricType(String stat, String storageType) {
+            this.stat = stat;
+            this.storageType = storageType;
+        }
+    }
+
+    private static final Map<String, MetricType> METRIC_TYPES = new LinkedHashMap<>();
+    static {
+        METRIC_TYPES.put("BucketSizeBytes", MetricType.STORAGE_STANDARD);
+        METRIC_TYPES.put("NumberOfObjects", MetricType.STORAGE_ALL);
+        for (String name : Arrays.asList(
+                "HeadRequests", "GetRequests", "PutRequests", "PostRequests", "DeleteRequests",
+                "BytesDownloaded", "BytesUploaded",
+                "4xxErrors", "5xxErrors")) {
+            METRIC_TYPES.put(name, MetricType.REQUEST);
+        }
+    }
 
     private final S3Client s3Client;
     private final CloudWatchClient cloudWatchClient;
@@ -79,68 +105,144 @@ public class DataResource {
     @Path("/data")
     @Produces(MediaType.APPLICATION_JSON)
     public DataMetrics getDataMetrics() {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-        String bucketName = instanceProperties.get(DATA_BUCKET);
-        String region = instanceProperties.get(REGION);
-        String consoleUrl = String.format(
-                "https://s3.console.aws.amazon.com/s3/buckets/%s?region=%s",
-                bucketName, region);
+        String bucketName = loadDataBucketName();
+        String region = loadRegion();
+        String consoleUrl = buildConsoleUrl(bucketName, region);
 
         Instant end = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         Instant windowStart = end.minus(Duration.ofHours(24));
         Instant previousWindowStart = end.minus(Duration.ofHours(48));
 
-        Map<String, Double> storageCurrent = queryStorageMetrics(bucketName, windowStart, end);
-        Map<String, Double> storagePrevious = queryStorageMetrics(bucketName, previousWindowStart, windowStart);
-        Map<String, Double> requestsCurrent = queryRequestMetrics(bucketName, windowStart, end);
-        Map<String, Double> requestsPrevious = queryRequestMetrics(bucketName, previousWindowStart, windowStart);
+        Map<String, Double> current = latestValues(bucketName, windowStart, end);
+        Map<String, Double> previous = latestValues(bucketName, previousWindowStart, windowStart);
 
         return new DataMetrics(
                 bucketName,
                 region,
                 consoleUrl,
-                compare(storageCurrent, storagePrevious, "BucketSizeBytes"),
-                compare(storageCurrent, storagePrevious, "NumberOfObjects"),
+                compare(current, previous, "BucketSizeBytes"),
+                compare(current, previous, "NumberOfObjects"),
                 new RequestMetrics(
-                        compare(requestsCurrent, requestsPrevious, "HeadRequests"),
-                        compare(requestsCurrent, requestsPrevious, "GetRequests"),
-                        compare(requestsCurrent, requestsPrevious, "PutRequests"),
-                        compare(requestsCurrent, requestsPrevious, "PostRequests"),
-                        compare(requestsCurrent, requestsPrevious, "DeleteRequests")),
-                compare(requestsCurrent, requestsPrevious, "BytesDownloaded"),
-                compare(requestsCurrent, requestsPrevious, "BytesUploaded"),
+                        compare(current, previous, "HeadRequests"),
+                        compare(current, previous, "GetRequests"),
+                        compare(current, previous, "PutRequests"),
+                        compare(current, previous, "PostRequests"),
+                        compare(current, previous, "DeleteRequests")),
+                compare(current, previous, "BytesDownloaded"),
+                compare(current, previous, "BytesUploaded"),
                 new ErrorMetrics(
-                        compare(requestsCurrent, requestsPrevious, "4xxErrors"),
-                        compare(requestsCurrent, requestsPrevious, "5xxErrors")));
+                        compare(current, previous, "4xxErrors"),
+                        compare(current, previous, "5xxErrors")));
     }
 
-    private Map<String, Double> queryStorageMetrics(String bucketName, Instant start, Instant end) {
-        List<MetricDataQuery> queries = List.of(
-                storageQuery("bucketSizeBytes", "BucketSizeBytes", bucketName, "StandardStorage"),
-                storageQuery("numberOfObjects", "NumberOfObjects", bucketName, "AllStorageTypes"));
-        Map<String, String> idToName = Map.of(
-                "bucketSizeBytes", "BucketSizeBytes",
-                "numberOfObjects", "NumberOfObjects");
-        return runQueries(queries, idToName, start.minus(Duration.ofHours(24)), end);
-    }
+    @GET
+    @Path("/data/metrics")
+    @Produces(MediaType.APPLICATION_JSON)
+    public MetricsSeries getMetricsSeries(
+            @QueryParam("metrics") String metricsParam,
+            @QueryParam("startTime") String startTimeParam,
+            @QueryParam("endTime") String endTimeParam,
+            @QueryParam("period") Integer periodParam) {
+        if (metricsParam == null || metricsParam.isBlank()) {
+            throw new WebApplicationException("Missing 'metrics' query parameter", Response.Status.BAD_REQUEST);
+        }
+        Instant startTime = parseInstant("startTime", startTimeParam);
+        Instant endTime = parseInstant("endTime", endTimeParam);
+        if (!endTime.isAfter(startTime)) {
+            throw new WebApplicationException("'endTime' must be after 'startTime'", Response.Status.BAD_REQUEST);
+        }
+        int period = periodParam == null ? DAY_SECONDS : periodParam;
+        if (period <= 0) {
+            throw new WebApplicationException("'period' must be positive", Response.Status.BAD_REQUEST);
+        }
 
-    private Map<String, Double> queryRequestMetrics(String bucketName, Instant start, Instant end) {
+        List<String> metricNames = Arrays.stream(metricsParam.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        for (String name : metricNames) {
+            if (!METRIC_TYPES.containsKey(name)) {
+                throw new WebApplicationException("Unknown metric: " + name, Response.Status.BAD_REQUEST);
+            }
+        }
+
+        String bucketName = loadDataBucketName();
         List<MetricDataQuery> queries = new ArrayList<>();
         Map<String, String> idToName = new HashMap<>();
-        for (int i = 0; i < REQUEST_METRICS.size(); i++) {
-            String metricName = REQUEST_METRICS.get(i);
+        for (int i = 0; i < metricNames.size(); i++) {
+            String name = metricNames.get(i);
             String id = "m" + i;
-            queries.add(requestQuery(id, metricName, bucketName));
-            idToName.put(id, metricName);
+            queries.add(buildQuery(id, name, bucketName, period));
+            idToName.put(id, name);
         }
-        return runQueries(queries, idToName, start, end);
+        GetMetricDataResponse response = cloudWatchClient.getMetricData(builder -> builder
+                .startTime(startTime)
+                .endTime(endTime)
+                .scanBy(ScanBy.TIMESTAMP_ASCENDING)
+                .metricDataQueries(queries));
+
+        Map<String, MetricSeries> byName = new LinkedHashMap<>();
+        for (String name : metricNames) {
+            byName.put(name, new MetricSeries(name, new ArrayList<>()));
+        }
+        for (MetricDataResult result : response.metricDataResults()) {
+            String name = idToName.get(result.id());
+            if (name == null) continue;
+            List<Instant> timestamps = result.timestamps();
+            List<Double> values = result.values();
+            if (timestamps == null || values == null) continue;
+            List<Point> points = byName.get(name).points();
+            int count = Math.min(timestamps.size(), values.size());
+            for (int i = 0; i < count; i++) {
+                points.add(new Point(timestamps.get(i).toString(), values.get(i)));
+            }
+        }
+
+        return new MetricsSeries(
+                startTime.toString(),
+                endTime.toString(),
+                period,
+                new ArrayList<>(byName.values()));
     }
 
-    private Map<String, Double> runQueries(
-            List<MetricDataQuery> queries, Map<String, String> idToName,
-            Instant start, Instant end) {
+    private String loadDataBucketName() {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        return instanceProperties.get(DATA_BUCKET);
+    }
+
+    private String loadRegion() {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        return instanceProperties.get(REGION);
+    }
+
+    private static String buildConsoleUrl(String bucketName, String region) {
+        return String.format("https://s3.console.aws.amazon.com/s3/buckets/%s?region=%s", bucketName, region);
+    }
+
+    private static Instant parseInstant(String paramName, String value) {
+        if (value == null || value.isBlank()) {
+            throw new WebApplicationException("Missing '" + paramName + "' query parameter", Response.Status.BAD_REQUEST);
+        }
+        try {
+            return Instant.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new WebApplicationException(
+                    "'" + paramName + "' is not a valid ISO-8601 instant: " + value,
+                    Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private Map<String, Double> latestValues(String bucketName, Instant start, Instant end) {
+        List<MetricDataQuery> queries = new ArrayList<>();
+        Map<String, String> idToName = new HashMap<>();
+        int i = 0;
+        for (String name : METRIC_TYPES.keySet()) {
+            String id = "m" + i++;
+            queries.add(buildQuery(id, name, bucketName, DAY_SECONDS));
+            idToName.put(id, name);
+        }
         GetMetricDataResponse response = cloudWatchClient.getMetricData(builder -> builder
-                .startTime(start)
+                .startTime(start.minus(Duration.ofHours(24)))
                 .endTime(end)
                 .scanBy(ScanBy.TIMESTAMP_DESCENDING)
                 .metricDataQueries(queries));
@@ -156,38 +258,30 @@ public class DataResource {
         return results;
     }
 
-    private static MetricDataQuery storageQuery(String id, String metricName, String bucketName, String storageType) {
+    private static MetricDataQuery buildQuery(String id, String metricName, String bucketName, int period) {
+        MetricType type = METRIC_TYPES.get(metricName);
         return MetricDataQuery.builder()
                 .id(id)
                 .metricStat(MetricStat.builder()
                         .metric(Metric.builder()
                                 .namespace(S3_NAMESPACE)
                                 .metricName(metricName)
-                                .dimensions(
-                                        Dimension.builder().name("BucketName").value(bucketName).build(),
-                                        Dimension.builder().name("StorageType").value(storageType).build())
+                                .dimensions(dimensionsFor(type, bucketName))
                                 .build())
-                        .stat("Average")
-                        .period(DAY_SECONDS)
+                        .stat(type.stat)
+                        .period(period)
                         .build())
                 .build();
     }
 
-    private static MetricDataQuery requestQuery(String id, String metricName, String bucketName) {
-        return MetricDataQuery.builder()
-                .id(id)
-                .metricStat(MetricStat.builder()
-                        .metric(Metric.builder()
-                                .namespace(S3_NAMESPACE)
-                                .metricName(metricName)
-                                .dimensions(
-                                        Dimension.builder().name("BucketName").value(bucketName).build(),
-                                        Dimension.builder().name("FilterId").value(REQUEST_METRICS_FILTER_ID).build())
-                                .build())
-                        .stat("Sum")
-                        .period(DAY_SECONDS)
-                        .build())
-                .build();
+    private static List<Dimension> dimensionsFor(MetricType type, String bucketName) {
+        Dimension bucket = Dimension.builder().name("BucketName").value(bucketName).build();
+        if (type == MetricType.REQUEST) {
+            return List.of(bucket,
+                    Dimension.builder().name("FilterId").value(REQUEST_METRICS_FILTER_ID).build());
+        }
+        return List.of(bucket,
+                Dimension.builder().name("StorageType").value(type.storageType).build());
     }
 
     private static Comparison compare(Map<String, Double> current, Map<String, Double> previous, String name) {
@@ -220,6 +314,19 @@ public class DataResource {
             Comparison bytesDownloaded,
             Comparison bytesUploaded,
             ErrorMetrics errors) {
+    }
+
+    public record Point(String time, Double value) {
+    }
+
+    public record MetricSeries(String metric, List<Point> points) {
+    }
+
+    public record MetricsSeries(
+            String startTime,
+            String endTime,
+            int period,
+            List<MetricSeries> series) {
     }
 
 }
