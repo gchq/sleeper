@@ -119,6 +119,9 @@
                                     <executable>${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>x86_64</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
@@ -150,6 +153,9 @@
                                     <executable>${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>aarch64</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
