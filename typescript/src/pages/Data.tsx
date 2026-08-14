@@ -1,5 +1,17 @@
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import Sparkline, { type SparklinePoint } from '../components/Sparkline'
 import Title from '../components/Title'
 import { useApi } from '../hooks/useApi'
+import {
+	METRIC_GROUPS,
+	colorForMetric,
+	formatByKind,
+	formatBytes,
+	formatCount,
+	type MetricDef,
+	type MetricGroupDef,
+} from '../lib/dataMetrics'
 import './Data.css'
 
 interface Comparison {
@@ -32,21 +44,57 @@ interface DataMetrics {
 	errors: ErrorMetrics
 }
 
-function formatBytes(bytes: number | null): string {
-	if (bytes === null || bytes === undefined) return '—'
-	if (!Number.isFinite(bytes)) return '—'
-	if (bytes === 0) return '0 B'
-	const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-	const i = Math.min(units.length - 1, Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024)))
-	const value = bytes / Math.pow(1024, i)
-	const decimals = i === 0 || Math.abs(value) >= 100 ? 0 : Math.abs(value) >= 10 ? 1 : 2
-	return `${value.toFixed(decimals)} ${units[i]}`
+interface SeriesResponse {
+	startTime: string
+	endTime: string
+	period: number
+	series: Array<{ metric: string; points: Array<{ time: string; value: number | null }> }>
 }
 
-function formatCount(value: number | null): string {
-	if (value === null || value === undefined) return '—'
-	if (!Number.isFinite(value)) return '—'
-	return Math.round(value).toLocaleString()
+type ComparisonMap = Record<string, Comparison>
+type SparklineMap = Record<string, SparklinePoint[]>
+
+function collectComparisons(data: DataMetrics): ComparisonMap {
+	return {
+		bucketSizeBytes: data.bucketSizeBytes,
+		numberOfObjects: data.numberOfObjects,
+		head: data.requests.head,
+		get: data.requests.get,
+		put: data.requests.put,
+		post: data.requests.post,
+		delete: data.requests.delete,
+		bytesDownloaded: data.bytesDownloaded,
+		bytesUploaded: data.bytesUploaded,
+		status4xx: data.errors.status4xx,
+		status5xx: data.errors.status5xx,
+	}
+}
+
+const STORAGE_METRIC_NAMES = ['BucketSizeBytes', 'NumberOfObjects']
+const OPERATIONAL_METRIC_NAMES = [
+	'HeadRequests', 'GetRequests', 'PutRequests', 'PostRequests', 'DeleteRequests',
+	'BytesDownloaded', 'BytesUploaded',
+	'4xxErrors', '5xxErrors',
+]
+
+function buildSeriesUrl(metricNames: string[], rangeSeconds: number, period: number, anchor: number): string {
+	const endTime = new Date(anchor)
+	const startTime = new Date(anchor - rangeSeconds * 1000)
+	const params = new URLSearchParams()
+	params.set('metrics', metricNames.join(','))
+	params.set('startTime', startTime.toISOString())
+	params.set('endTime', endTime.toISOString())
+	params.set('period', String(period))
+	return `/data/metrics?${params.toString()}`
+}
+
+function extractPoints(response: SeriesResponse | null, cloudWatchName: string): SparklinePoint[] {
+	if (!response) return []
+	const series = response.series.find((s) => s.metric === cloudWatchName)
+	if (!series) return []
+	return series.points
+		.map((p) => ({ time: Date.parse(p.time), value: p.value }))
+		.filter((p) => Number.isFinite(p.time))
 }
 
 interface DeltaOptions {
@@ -81,28 +129,137 @@ function Delta({ comparison, options }: { comparison: Comparison; options: Delta
 }
 
 interface MetricCardProps {
-	label: string
+	group: MetricGroupDef
+	metric: MetricDef
 	comparison: Comparison
-	format: (value: number | null) => string
-	invertColor?: boolean
-	compareLabel?: string
+	compareLabel: string
+	sparklinePoints: SparklinePoint[]
+	sparklineDomain: [number, number]
+	sparklineLoading: boolean
+	sparklineWindow: string
 }
 
-function MetricCard({ label, comparison, format, invertColor, compareLabel = 'vs previous 24h' }: MetricCardProps) {
+function MetricCard({
+	group,
+	metric,
+	comparison,
+	compareLabel,
+	sparklinePoints,
+	sparklineDomain,
+	sparklineLoading,
+	sparklineWindow,
+}: MetricCardProps) {
+	const format = formatByKind(metric.format)
+	const to = `/data/graph/${group.slug}?metrics=${encodeURIComponent(metric.key)}`
+	const color = colorForMetric(group, metric)
 	return (
-		<div className="metric-card">
-			<div className="metric-label">{label}</div>
+		<Link className="metric-card metric-card-link" to={to} title={`View ${metric.label} graph`}>
+			<div className="metric-label">{metric.label}</div>
 			<div className="metric-value">{format(comparison.current)}</div>
 			<div className="metric-compare">
-				<Delta comparison={comparison} options={{ format, invertColor }} />
+				<Delta comparison={comparison} options={{ format, invertColor: metric.invertColor }} />
 				<span className="metric-compare-label">{compareLabel}</span>
 			</div>
-		</div>
+			<div className="metric-sparkline">
+				{sparklineLoading ? (
+					<div className="sparkline sparkline-loading" aria-hidden="true" />
+				) : (
+					<Sparkline
+						points={sparklinePoints}
+						domain={sparklineDomain}
+						color={color}
+						height={36}
+						title={`${metric.label} — ${sparklineWindow}`}
+					/>
+				)}
+				<span className="metric-sparkline-label">{sparklineWindow}</span>
+			</div>
+		</Link>
 	)
 }
 
+interface GroupSectionProps {
+	group: MetricGroupDef
+	comparisons: ComparisonMap
+	compareLabel: string
+	sparklines: SparklineMap
+	sparklineDomain: [number, number]
+	sparklineLoading: boolean
+	sparklineWindow: string
+}
+
+function GroupSection({
+	group,
+	comparisons,
+	compareLabel,
+	sparklines,
+	sparklineDomain,
+	sparklineLoading,
+	sparklineWindow,
+}: GroupSectionProps) {
+	return (
+		<section className="data-section">
+			<h3 className="data-section-title">{group.title}</h3>
+			<div className="metric-grid">
+				{group.metrics.map((metric) => (
+					<MetricCard
+						key={metric.key}
+						group={group}
+						metric={metric}
+						comparison={comparisons[metric.key] ?? { current: null, previous: null }}
+						compareLabel={compareLabel}
+						sparklinePoints={sparklines[metric.key] ?? []}
+						sparklineDomain={sparklineDomain}
+						sparklineLoading={sparklineLoading}
+						sparklineWindow={sparklineWindow}
+					/>
+				))}
+			</div>
+		</section>
+	)
+}
+
+const DAY = 24 * 60 * 60
+const HOUR = 60 * 60
+
 export default function Data() {
 	const { data, error, loading } = useApi<DataMetrics>('/data', 60, 30)
+
+	// Round the anchor to the current minute so URLs stay stable across renders
+	// (otherwise useApi would refetch every render).
+	const anchor = useMemo(() => {
+		const d = new Date()
+		d.setSeconds(0, 0)
+		return d.getTime()
+	}, [])
+
+	const storageUrl = useMemo(
+		() => buildSeriesUrl(STORAGE_METRIC_NAMES, 7 * DAY, DAY, anchor),
+		[anchor],
+	)
+	const operationalUrl = useMemo(
+		() => buildSeriesUrl(OPERATIONAL_METRIC_NAMES, DAY, HOUR, anchor),
+		[anchor],
+	)
+
+	const { data: storageData, loading: storageLoading } = useApi<SeriesResponse>(storageUrl, 0, 30)
+	const { data: operationalData, loading: operationalLoading } = useApi<SeriesResponse>(operationalUrl, 0, 30)
+
+	const sparklinesByGroup: Record<string, SparklineMap> = useMemo(() => {
+		const map: Record<string, SparklineMap> = {}
+		for (const group of METRIC_GROUPS) {
+			const source = group.slug === 'storage' ? storageData : operationalData
+			const entry: SparklineMap = {}
+			for (const metric of group.metrics) {
+				entry[metric.key] = extractPoints(source ?? null, metric.cloudWatchName)
+			}
+			map[group.slug] = entry
+		}
+		return map
+	}, [storageData, operationalData])
+
+	const storageDomain: [number, number] = [anchor - 7 * DAY * 1000, anchor]
+	const operationalDomain: [number, number] = [anchor - DAY * 1000, anchor]
 
 	if (error) {
 		return (
@@ -128,6 +285,8 @@ export default function Data() {
 		)
 	}
 
+	const comparisons = collectComparisons(data)
+
 	return (
 		<>
 			<Title>Data</Title>
@@ -150,69 +309,25 @@ export default function Data() {
 					</div>
 				</section>
 
-				<section className="data-section">
-					<h3 className="data-section-title">Storage</h3>
-					<div className="metric-grid">
-						<MetricCard
-							label="Bucket size"
-							comparison={data.bucketSizeBytes}
-							format={formatBytes}
-							compareLabel="vs 24h ago"
+				{METRIC_GROUPS.map((group) => {
+					const isStorage = group.slug === 'storage'
+					return (
+						<GroupSection
+							key={group.slug}
+							group={group}
+							comparisons={comparisons}
+							compareLabel={isStorage ? 'vs 24h ago' : 'vs previous 24h'}
+							sparklines={sparklinesByGroup[group.slug] ?? {}}
+							sparklineDomain={isStorage ? storageDomain : operationalDomain}
+							sparklineLoading={isStorage ? storageLoading : operationalLoading}
+							sparklineWindow={isStorage ? 'last 7 days' : 'last 24 hours'}
 						/>
-						<MetricCard
-							label="Number of objects"
-							comparison={data.numberOfObjects}
-							format={formatCount}
-							compareLabel="vs 24h ago"
-						/>
-					</div>
-				</section>
-
-				<section className="data-section">
-					<h3 className="data-section-title">Requests (last 24h)</h3>
-					<div className="metric-grid">
-						<MetricCard label="HEAD" comparison={data.requests.head} format={formatCount} />
-						<MetricCard label="GET" comparison={data.requests.get} format={formatCount} />
-						<MetricCard label="PUT" comparison={data.requests.put} format={formatCount} />
-						<MetricCard label="POST" comparison={data.requests.post} format={formatCount} />
-						<MetricCard label="DELETE" comparison={data.requests.delete} format={formatCount} />
-					</div>
-				</section>
-
-				<section className="data-section">
-					<h3 className="data-section-title">Data transfer (last 24h)</h3>
-					<div className="metric-grid">
-						<MetricCard
-							label="Bytes downloaded"
-							comparison={data.bytesDownloaded}
-							format={formatBytes}
-						/>
-						<MetricCard
-							label="Bytes uploaded"
-							comparison={data.bytesUploaded}
-							format={formatBytes}
-						/>
-					</div>
-				</section>
-
-				<section className="data-section">
-					<h3 className="data-section-title">Errors (last 24h)</h3>
-					<div className="metric-grid">
-						<MetricCard
-							label="4xx errors"
-							comparison={data.errors.status4xx}
-							format={formatCount}
-							invertColor
-						/>
-						<MetricCard
-							label="5xx errors"
-							comparison={data.errors.status5xx}
-							format={formatCount}
-							invertColor
-						/>
-					</div>
-				</section>
+					)
+				})}
 			</div>
 		</>
 	)
 }
+
+// re-export helpers for consumers of this file
+export { formatBytes, formatCount }

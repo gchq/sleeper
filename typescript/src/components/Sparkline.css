@@ -1,0 +1,19 @@
+.sparkline {
+	display: block;
+	width: 100%;
+	overflow: visible;
+}
+
+.sparkline-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #9ca3af;
+	font-size: 0.7rem;
+	font-style: italic;
+	background: repeating-linear-gradient(
+		to right,
+		transparent 0 4px,
+		#f3f4f6 4px 5px
+	);
+}

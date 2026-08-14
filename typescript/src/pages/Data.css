@@ -79,6 +79,24 @@
 	min-width: 0;
 }
 
+.metric-card-link {
+	text-decoration: none;
+	color: inherit;
+	transition: border-color 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease;
+	cursor: pointer;
+}
+
+.metric-card-link:hover {
+	border-color: #1a56db;
+	box-shadow: 0 2px 8px rgba(26, 86, 219, 0.12);
+}
+
+.metric-card-link:focus-visible {
+	outline: none;
+	border-color: #1a56db;
+	box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.25);
+}
+
 .metric-label {
 	font-size: 0.75rem;
 	text-transform: uppercase;
@@ -137,4 +155,31 @@
 	color: #9ca3af;
 	font-weight: normal;
 	font-style: italic;
+}
+
+.metric-sparkline {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	margin-top: auto;
+	padding-top: 0.5rem;
+}
+
+.metric-sparkline-label {
+	font-size: 0.7rem;
+	color: #9ca3af;
+	letter-spacing: 0.02em;
+}
+
+.sparkline-loading {
+	height: 36px;
+	background: linear-gradient(90deg, #f3f4f6 0, #e5e7eb 50%, #f3f4f6 100%);
+	background-size: 200% 100%;
+	animation: sparkline-shimmer 1.4s ease-in-out infinite;
+	border-radius: 3px;
+}
+
+@keyframes sparkline-shimmer {
+	0% { background-position: 100% 0; }
+	100% { background-position: -100% 0; }
 }
