@@ -110,9 +110,14 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 // Default to sending results back to client via WebSocket connection
                 if (query.getResultsPublisherConfig().get(ResultsOutput.DESTINATION) == null ||
                         query.getResultsPublisherConfig().get(ResultsOutput.DESTINATION).equals(WebSocketOutput.DESTINATION_NAME)) {
-                    query.getResultsPublisherConfig().put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
-                    query.getResultsPublisherConfig().put(WebSocketOutput.ENDPOINT, endpoint);
-                    query.getResultsPublisherConfig().put(WebSocketOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
+
+                    LOGGER.info("Updating resultsPublisherConfig for websocket output");
+                    Map<String, String> resultsPublisherConfig = new HashMap<>(query.getResultsPublisherConfig());
+                    resultsPublisherConfig.put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+                    resultsPublisherConfig.put(WebSocketOutput.ENDPOINT, endpoint);
+                    resultsPublisherConfig.put(WebSocketOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
+
+                    query = query.withResultsPublisherConfig(resultsPublisherConfig);
                 }
 
                 LOGGER.info("Query to be processed: {}", query);
