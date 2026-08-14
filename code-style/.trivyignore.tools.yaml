@@ -41,6 +41,13 @@ vulnerabilities:
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
+  # gobinary
+  - id: CVE-2026-33818
+  - id: CVE-2026-56853
+  - id: CVE-2026-56858
+  - id: CVE-2026-56859
+  - id: CVE-2026-56860
+  - id: CVE-2026-56862
 
   # Due to AWS SDK using a shaded version of Jackson, we are unable to update until below has been resolved:
   # https://github.com/gchq/sleeper/issues/7459
