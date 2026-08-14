@@ -15,6 +15,9 @@
  */
 package sleeper.clients.query.exception;
 
+/**
+ * Thrown when a query times out waiting for results via the WebSocket API.
+ */
 public class WebSocketTimeoutException extends WebSocketException {
 
     public WebSocketTimeoutException(long timeoutMilliseconds, Exception cause) {

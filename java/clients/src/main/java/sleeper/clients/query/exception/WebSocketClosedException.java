@@ -15,6 +15,9 @@
  */
 package sleeper.clients.query.exception;
 
+/**
+ * Thrown when the WebSocket connection is closed unexpectedly during a query.
+ */
 public class WebSocketClosedException extends WebSocketException {
 
     public WebSocketClosedException(String reason) {
