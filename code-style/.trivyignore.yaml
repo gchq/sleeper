@@ -42,6 +42,15 @@ vulnerabilities:
   - id: CVE-2026-42507
   - id: CVE-2026-39822
   - id: CVE-2026-42505
+  # gobinary / stdlib
+  - id: CVE-2026-39821
+  - id: CVE-2026-46600
+  - id: CVE-2026-33818
+  - id: CVE-2026-56853
+  - id: CVE-2026-56858
+  - id: CVE-2026-56859
+  - id: CVE-2026-56860
+  - id: CVE-2026-56862
 
   # The RIE also has some vulnerabilities in its dependencies.
   # github.com/go-chi/chi/v5
