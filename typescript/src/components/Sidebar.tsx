@@ -2,6 +2,7 @@ import type { ChangeEvent, MouseEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useTablesList } from '../contexts/TablesContext'
+import './Sidebar.css'
 
 interface TablePage {
 	key: string
@@ -106,6 +107,14 @@ export default function Sidebar() {
 					>
 						<span className="sidebar-link-icon" aria-hidden="true">IP</span>
 						{!collapsed && <span className="sidebar-link-label">Instance Properties</span>}
+					</NavLink>
+					<NavLink
+						to="/data"
+						className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+						title="Data"
+					>
+						<span className="sidebar-link-icon" aria-hidden="true">D</span>
+						{!collapsed && <span className="sidebar-link-label">Data</span>}
 					</NavLink>
 				</div>
 

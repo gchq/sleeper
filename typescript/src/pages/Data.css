@@ -1,0 +1,140 @@
+.data-bucket-header {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 0.85rem 1rem;
+	margin-bottom: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.data-bucket-label {
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.data-bucket-name {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.data-bucket-name code {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.95rem;
+	color: #1a56db;
+	background: #eef2ff;
+	padding: 0.2rem 0.5rem;
+	border-radius: 4px;
+	overflow-wrap: anywhere;
+}
+
+.data-bucket-link {
+	font-size: 0.85rem;
+	color: #1a56db;
+	text-decoration: none;
+	padding: 0.3rem 0.55rem;
+	border: 1px solid #c7d2fe;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.data-bucket-link:hover {
+	background: #eef2ff;
+	border-color: #1a56db;
+}
+
+.data-section {
+	margin-bottom: 1.5rem;
+}
+
+.data-section-title {
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #4b5563;
+	font-weight: 600;
+	margin: 0 0 0.6rem;
+}
+
+.metric-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 0.75rem;
+}
+
+.metric-card {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 0.85rem 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.metric-label {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.metric-value {
+	font-size: 1.4rem;
+	font-weight: 600;
+	color: #111827;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+.metric-compare {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+}
+
+.metric-compare-label {
+	color: #9ca3af;
+	font-size: 0.75rem;
+}
+
+.metric-delta {
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.metric-delta-pct {
+	margin-left: 0.25rem;
+	font-weight: normal;
+	color: inherit;
+	opacity: 0.85;
+}
+
+.metric-delta-up {
+	color: #0f5132;
+}
+
+.metric-delta-down {
+	color: #b91c1c;
+}
+
+.metric-delta-neutral {
+	color: #6b7280;
+	font-weight: normal;
+}
+
+.metric-delta-missing {
+	color: #9ca3af;
+	font-weight: normal;
+	font-style: italic;
+}

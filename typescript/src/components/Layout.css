@@ -1,0 +1,11 @@
+.app {
+	display: flex;
+	flex-direction: row;
+	min-height: 100vh;
+}
+
+.app-main {
+	flex: 1;
+	padding: 2rem;
+	min-width: 0;
+}

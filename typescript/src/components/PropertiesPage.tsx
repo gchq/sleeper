@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
+import './PropertiesPage.css'
 
 export interface PropertiesPageAdapter {
 	title: string
