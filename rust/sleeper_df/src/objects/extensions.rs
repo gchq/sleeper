@@ -27,6 +27,7 @@ use std::{collections::HashMap, fmt::Display, mem::discriminant, slice};
 #[derive(Debug, Copy, Clone)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum FFIExtensionVariant {
+    /// SQL query extension for filtering during execution.
     SQL = 1,
 }
 
@@ -79,6 +80,7 @@ impl Display for FFIExtensionVariant {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub union FFIExtensionData {
+    /// SQL query extension data.
     pub sql: *const FFISQLExtension,
 }
 
@@ -116,11 +118,16 @@ impl FFIExtension {
 }
 
 /// Get all instances of a given extension type from an array.
+///
+/// If `extensions_len` is 0, then `extensions` may be NULL.
 pub fn find_extensions_type<'a>(
     variant: FFIExtensionVariant,
     extensions: *const FFIExtension,
     extensions_len: usize,
 ) -> Vec<&'a FFIExtension> {
+    if extensions_len == 0 {
+        return Vec::new();
+    }
     unsafe { slice::from_raw_parts(extensions, extensions_len) }
         .iter()
         // only keep instances that match the given extension type
@@ -130,12 +137,18 @@ pub fn find_extensions_type<'a>(
 
 /// Checks the extension array and ensures all extensions are permitted.
 ///
+/// If `extensions_len` is 0, then `extensions` may be NULL.
 /// # Errors
 /// Error will occur if any extension is type is contained more than its permitted maximum.
 pub fn validate_extensions(
     extensions: *const FFIExtension,
     extensions_len: usize,
 ) -> Result<(), color_eyre::Report> {
+    // If length is zero, extensions array may be NULL
+    if extensions_len == 0 {
+        return Ok(());
+    }
+
     let Some(_) = (unsafe { extensions.as_ref() }) else {
         bail!("FFIExtension array is NULL");
     };
@@ -176,12 +189,24 @@ mod tests {
     }
 
     #[test]
-    pub fn should_fail_on_null_pointer() {
+    pub fn should_succeed_with_null_pointer_when_length_is_zero() {
         // Given
         let null_ptr: *const FFIExtension = std::ptr::null();
 
         // When
         let result = validate_extensions(null_ptr, 0);
+
+        // Then
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    pub fn should_fail_on_null_pointer_when_length_is_nonzero() {
+        // Given
+        let null_ptr: *const FFIExtension = std::ptr::null();
+
+        // When
+        let result = validate_extensions(null_ptr, 1);
 
         // Then
         assert!(result.is_err());
@@ -291,6 +316,18 @@ mod tests {
         );
 
         // Then - should find nothing
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    pub fn find_extensions_type_returns_empty_for_null_pointer_with_zero_length() {
+        // Given - NULL pointer with zero length
+        let null_ptr: *const FFIExtension = std::ptr::null();
+
+        // When
+        let result = find_extensions_type(FFIExtensionVariant::SQL, null_ptr, 0);
+
+        // Then - should find nothing without panicking
         assert!(result.is_empty());
     }
 

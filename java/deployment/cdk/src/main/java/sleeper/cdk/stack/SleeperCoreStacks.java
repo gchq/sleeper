@@ -19,6 +19,7 @@ package sleeper.cdk.stack;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
@@ -240,8 +241,15 @@ public class SleeperCoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
-        autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
+    /**
+     * Adds a custom resource to delete a bucket's contents.
+     *
+     * @param  scope  the stack to add the custom resource to
+     * @param  bucket the bucket to delete from
+     * @return        a custom resource
+     */
+    public CustomResource addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
+        return autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
 
     public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {

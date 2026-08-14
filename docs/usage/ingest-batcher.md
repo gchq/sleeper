@@ -24,7 +24,7 @@ files for access.
 Files can be submitted as messages to the batcher submission SQS queue. A script is available to do this:
 
 ```bash
-./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
+./scripts/table/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
 ```
 
 Paths to the files must be in an S3 bucket, specified with the bucket name and object key like
@@ -55,7 +55,7 @@ For details of the batcher configuration, see the property descriptions in the e
 You can query the files being processed by the ingest batcher by using the following utility script:
 
 ```shell
-./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+./scripts/report/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
 ```
 
 The query type can be one of the following options:

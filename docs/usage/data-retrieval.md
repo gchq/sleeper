@@ -22,7 +22,7 @@ class `sleeper.clients.query.QueryClient`. This class retrieves data directly fr
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/query.sh ${INSTANCE_ID}
+./scripts/utility/query/query.sh ${INSTANCE_ID}
 ```
 
 This will give you the option of running either an "exact" query which allows you to type in either the exact key that
@@ -87,7 +87,7 @@ to SQS which could cost a lot of money.
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/lambdaQuery.sh ${INSTANCE_ID}
+./scripts/utility/query/lambdaQuery.sh ${INSTANCE_ID}
 ```
 
 This will first ask you to choose whether you want the results to be sent to an S3 bucket or an SQS queue. If you
@@ -117,7 +117,7 @@ executed in a lambda and the results returned directly through the WebSocket. Th
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/webSocketQuery.sh ${INSTANCE_ID}
+./scripts/utility/query/webSocketQuery.sh ${INSTANCE_ID}
 ```
 
 This will print the results to standard out.
@@ -310,62 +310,23 @@ You can also retrieve data using the Java class `QueryExecutor`.
 Sleeper allows you to query tables using Amazon Athena. This functionality is experimental. To do this, ensure you have
 the `AthenaStack` enabled in the `sleeper.optional.stacks` instance property. This stack is not included by default.
 
-Visit the Amazon console and choose Athena from the list of services. You should be able to find your Connector in the
-data source list. If your instance id is "abc123" then the connector will be called "abc123SimpleSleeperConnector".
-Click "Query Editor" and then select your connector under "Data Source". When you select it, the tables list should be
-populated. You will need to select a query results location.
+Two different connectors to Athena are available: `sleeper.athena.composite.DataFusionCompositeHandler` and
+`sleeper.athena.composite.IteratorApplyingCompositeHandler`. The first of these is recommended as it uses DataFusion to
+read the data from the Parquet files in the Sleeper table which results in better performance than the other,
+Java-based one.
 
-If you select the three dots next to the table name there is a "preview table" option. If you select this, it will
-populate the SQL input with an example query which will select all columns and limit to the first 10 results.
+Visit the Amazon console and choose Athena from the list of services. Click "Query your data in Athena console" and then
+"Launch query editor". You should be able to find your Connector in the data source list. If your instance id is
+"abc123" then the connector will be called "abc123DataFusionSleeperConnector". When you select your connector
+the tables list should be populated. If you select the three dots next to the table name there is a "preview table" option.
+If you select this, it will populate the SQL input with an example query which will run a 'SELECT * FROM ... LIMIT 10'
+query.
 
-To make queries in Athena efficient, filter primitive columns where you can (especially the row keys). These predicates
-will be pushed down to S3 and mean that you scan less data and incur a smaller fee as a result.
-
-We provide support for all Sleeper data types apart from the map type. This is just because Athena has not yet added
-support for maps. When Athena does add this support, we will be able to add support for it.
-
-### The two different connectors
-
-You might notice that you have a choice of two connectors by default:
-
-* The simple connector
-* The iterator applying connector
-
-You can choose at runtime which one you want to use:
-
-```sql
-SELECT *
-FROM "MyInstanceSimpleSleeperConnector"."MyInstance"."myTable"
-```
-
-or
-
-```sql
-SELECT *
-FROM "MyInstanceIteratorApplyingSleeperConnector"."MyInstance"."myTable"
-```
-
-The simple connector creates one Athena handler for each file. This means that any iterators are not applied. The
-iterator applying connector performs a query time compaction so that each Sleeper leaf partition is processed by a
-single Athena handler. The handler receives the data in sorted order and applies any iterators.
-
-#### Improving query performance with the iterator applying connector
-
-If you want to use the Sleeper iterators, it means we have to read a whole Sleeper partition in one Athena handler. If
-you've got multiple files in a leaf partition, that means reading all the files in one lambda, rather than federating
-out the reads to multiple handlers.
-
-#### Changing the handlers
-
-To alter the handlers that are deployed with your instance, you can change the `sleeper.athena.handler.classes` instance
-property:
-
-```properties
-# Remove the default Simple handler
-sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingCompositeHandler
-```
-
-When you add or remove a handler, an Athena data catalogue will be deployed for you.
+The integration of Athena with Sleeper inspects the query and uses that to restrict the partitions, and hence files,
+that are read. For example if you have a Sleeper table with 100 leaf partitions, and a schema with a row-key field which
+has type string and a name of 'key' and your Athena query is of the form `SELECT * FROM "abc123"."table1" WHERE key='a'`
+then it will be able to skip 99 partitions, and only read a small number of files, and within those files it will only
+read a small amount of data (rather than the whole file).
 
 ## Use SQL with Trino
 

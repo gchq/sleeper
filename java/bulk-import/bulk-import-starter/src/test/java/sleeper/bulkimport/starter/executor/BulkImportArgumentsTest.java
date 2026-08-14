@@ -47,6 +47,7 @@ public class BulkImportArgumentsTest {
                         .files(Lists.newArrayList("file1.parquet"))
                         .build())
                 .jobRunId("test-run")
+                .jobFileObjectKey("folder/job.json")
                 .build();
 
         // When / Then
@@ -61,6 +62,7 @@ public class BulkImportArgumentsTest {
                         "my-job",
                         "test-task",
                         "test-run",
+                        "folder/job.json",
                         "EMR");
     }
 }

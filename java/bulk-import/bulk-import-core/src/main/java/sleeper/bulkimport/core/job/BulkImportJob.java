@@ -26,6 +26,12 @@ import java.util.Objects;
  * POJO containing information needed to run a bulk import job.
  */
 public class BulkImportJob {
+
+    /**
+     * The prefix for files holding a bulk import job in the bulk import bucket.
+     */
+    public static final String FILES_BUCKET_PREFIX = "bulk_import/";
+
     private final String id;
     private final String tableName;
     private final String tableId;

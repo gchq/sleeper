@@ -24,16 +24,16 @@ The following steps explain how to prepare and publish a release for Sleeper.
    be temporarily commented out or if it can be made clearer to a user or API consumer that this code isn't expected to
    work yet.
 
-4. Check for anything that might break backwards compatibility. See [Support for in-place upgrade](upgrade-support.md)
-   for details of checks to make.
+4. Check for any changes in the release that might break backwards compatibility.
+   See [Support for in-place upgrade](upgrade-support.md) for details of checks to make.
 
 5. Make sure the [NOTICES](../../NOTICES) file is up to date.
 
 6. Create pull requests for the changelog and roadmap update. These can stay on hold until the release is ready. The
    changelog should be updated with any bug fixes or further changes.
 
-7. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
-   of release.
+7. Review the status badges on the external repository, which also includes the output of nightly system tests. If there
+   are any failures, fix them. This should be done daily, regardless of release.
 
 There should be a cron job configured to run the test suite nightly. This setup is documented in
 the [system tests guide](system-tests.md#nightly-test-scripts).
@@ -65,7 +65,7 @@ if they are likely to either affect performance or involve changes to the way th
 10. Test a simple query:
 
 ```bash
-./scripts/utility/query.sh ${ID}
+./scripts/utility/query/query.sh ${ID}
 ```
 
 Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa' to 'aaaazz'.
@@ -75,7 +75,7 @@ should be in the region of 900 results.
 11. Test a query that will be executed by lambda:
 
 ```bash
-./scripts/utility/lambdaQuery.sh ${ID}
+./scripts/utility/query/lambdaQuery.sh ${ID}
 ```
 
 Choose the S3 results bucket option and then choose the same options as above. It should say "COMPLETED".
@@ -85,7 +85,7 @@ should be quicker.
 12. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
-./scripts/utility/webSocketQuery.sh ${ID}
+./scripts/utility/query/webSocketQuery.sh ${ID}
 ```
 
 Choose the same options as above, and results should be returned.

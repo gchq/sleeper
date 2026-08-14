@@ -27,7 +27,7 @@ import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Expensive2;
+import sleeper.systemtest.suite.testutil.parallel.Expensive3;
 
 import java.time.Duration;
 import java.util.Map;
@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PE
 
 @SystemTest
 // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
-@Expensive2
+@Expensive3
 public class CompactionPerformanceST {
 
     @BeforeEach

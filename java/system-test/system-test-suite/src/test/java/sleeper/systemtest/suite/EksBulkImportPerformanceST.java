@@ -38,7 +38,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-// Expensive because it takes a lot of very costly EKS instances to import this many rows.
+// Expensive because it takes a lot of very costly EC2 instances to import this many rows.
 @Expensive2
 public class EksBulkImportPerformanceST {
     @BeforeEach
@@ -74,7 +74,7 @@ public class EksBulkImportPerformanceST {
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5),
                         "jobs finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 5_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(8_000_000, 11_000_000),
                         "meets expected performance");
         assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))

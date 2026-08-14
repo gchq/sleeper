@@ -30,6 +30,7 @@ import com.amazonaws.athena.connector.lambda.records.RecordResponse;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.athena.AthenaClient;
@@ -49,12 +50,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,13 +74,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldReturnNoResultsIfPartitionDoesNotContainExactValue() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        List<String> partition2018Files = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
+        List<String> partitionFiles = stateStore.getLeafPartitions().stream()
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -97,10 +94,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .build();
 
         Map<String, ValueSet> predicates = new HashMap<>();
-        predicates.put("month", EquatableValueSet
+        predicates.put("key2", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
                 .add(2).build());
-        predicates.put("day", EquatableValueSet
+        predicates.put("key3", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
                 .add(30).build());
 
@@ -111,11 +108,11 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
-                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
+                        .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 1_000_000L,
@@ -130,13 +127,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldReturnRecordCorrectlyIfPartitionDoesContainExactValue() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        List<String> partition2018Files = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
+        List<String> partitionFiles = stateStore.getLeafPartitions().stream()
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -150,10 +147,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .build();
 
         Map<String, ValueSet> predicates = new HashMap<>();
-        predicates.put("month", EquatableValueSet
+        predicates.put("key2", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
                 .add(2).build());
-        predicates.put("day", EquatableValueSet
+        predicates.put("key3", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
                 .add(28).build());
 
@@ -164,11 +161,11 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
-                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
+                        .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -179,20 +176,20 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isOne();
         Block records = response.getRecords();
-        assertRecordContainedDay(records, 0, 2018, Month.FEBRUARY, 28);
+        assertRecordContained(records, 0, "F", 2, 28);
     }
 
     @Test
     public void shouldReturnRecordCorrectlyIfPartitionDoesContainedAllOfARange() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        List<String> partition2018Files = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
+        List<String> partitionFiles = stateStore.getLeafPartitions().stream()
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -206,9 +203,9 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .build();
 
         Map<String, ValueSet> predicates = new HashMap<>();
-        predicates.put("year", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                2018, true, 2019, false)));
-        predicates.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+        predicates.put("key1", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.VARCHAR.getType(),
+                "F", true, "G", false)));
+        predicates.put("key2", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, false, 6, true)));
 
         RecordResponse rawResponse = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
@@ -218,11 +215,11 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
-                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
+                        .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -231,20 +228,20 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         // Then
         assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertThat(response.getRecordCount()).isEqualTo(30);
+        assertThat(response.getRecordCount()).isEqualTo(28);
         Block records = response.getRecords();
-        assertRecordContainedDay(records, 0, 2018, Month.JUNE, 1);
-        assertRecordContainedDay(records, 29, 2018, Month.JUNE, 30);
+        assertRecordContained(records, 0, "F", 6, 1);
+        assertRecordContained(records, 27, "F", 6, 28);
     }
 
     @Test
     public void shouldHandlePartitionsWhichContainNoFiles() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createEmptyTable(instanceProperties, 2016, 2017, 2018);
+        TableProperties tableProperties = createEmptyTable(instanceProperties, "F", "G", "U");
 
         // When
-        List<String> partition2016Files = new ArrayList<>();
+        List<String> partitionFiles = new ArrayList<>();
 
         IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
@@ -261,11 +258,11 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 UUID.randomUUID().toString(),
                 new TableName(tableName, tableName),
                 createArrowSchema(),
-                Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2016Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2016")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2017")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
+                        .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -307,8 +304,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null).add(RELEVANT_FILES_FIELD, new Gson().toJson(emptyFiles))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "")
-                        .add(MAX_ROW_KEY_PREFIX + 0, null)
+                        .add(MIN_ROW_KEY_PREFIX + "-key", "")
+                        .add(MAX_ROW_KEY_PREFIX + "-key", null)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -324,7 +321,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     public void shouldApplyCompactionIteratorToResultsIfConfigured() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties, 2016, 2017, 2018);
+        TableProperties tableProperties = createTable(instanceProperties, "F", "G", "U");
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
@@ -332,8 +329,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
-        List<String> partition2018Files = stateStore.getLeafPartitions().stream()
-                .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
+        List<String> partitionFiles = stateStore.getLeafPartitions().stream()
+                .filter(p -> p.getRegion().getRange("key1").getMin().equals("F"))
                 .map(Partition::getId)
                 .map(partitionToFiles::get)
                 .flatMap(List::stream)
@@ -347,10 +344,10 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .build();
 
         Map<String, ValueSet> predicates = new HashMap<>();
-        predicates.put("month", EquatableValueSet
+        predicates.put("key2", EquatableValueSet
                 .newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(), true, false)
                 .add(3).build());
-        predicates.put("day", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+        predicates.put("key3", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, false, 8, true)));
 
         RecordResponse rawResponse = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
@@ -360,11 +357,11 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 new TableName(tableName, tableName),
                 createArrowSchema(),
                 Split.newBuilder(spillLocation, null)
-                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partition2018Files))
-                        .add(MIN_ROW_KEY_PREFIX + 0, "2018")
-                        .add(MAX_ROW_KEY_PREFIX + 0, "2019")
-                        .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
-                        .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
+                        .add(RELEVANT_FILES_FIELD, new Gson().toJson(partitionFiles))
+                        .add(MIN_ROW_KEY_PREFIX + "-key1", "F")
+                        .add(MAX_ROW_KEY_PREFIX + "-key1", "G")
+                        .add(MIN_ROW_KEY_PREFIX + "-key2", MIN_VALUE)
+                        .add(MIN_ROW_KEY_PREFIX + "-key3", MIN_VALUE)
                         .build(),
                 createConstraints(predicates),
                 Integer.MAX_VALUE,
@@ -378,15 +375,15 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         Block records = response.getRecords();
 
         // First one should just be the normal count
-        long firstCount = 2018 * 3 * 6;
+        long firstCount = 3 * 6;
         assertFieldContainedValue(records, 0, "count", firstCount);
 
         // Second should be the first plus second
-        long secondCount = firstCount + 2018 * 3 * 7;
+        long secondCount = firstCount + 3 * 7;
         assertFieldContainedValue(records, 1, "count", secondCount);
 
         // Third should be aggregated second plus third
-        long thirdCount = secondCount + 2018 * 3 * 8;
+        long thirdCount = secondCount + 3 * 8;
         assertFieldContainedValue(records, 2, "count", thirdCount);
     }
 
@@ -397,19 +394,19 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 
-    private void assertRecordContainedDay(Block records, int position, int year, Month month, int day) {
-        assertFieldContainedValue(records, position, "year", year);
-        assertFieldContainedValue(records, position, "month", month.getValue());
-        assertFieldContainedValue(records, position, "day", day);
-        LocalDate date = LocalDate.of(year, month, day);
-        long timestamp = Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime();
+    private void assertRecordContained(Block records, int position, String key1, int key2, int key3) {
+        assertFieldContainedValue(records, position, "key1", new Text(key1));
+        assertFieldContainedValue(records, position, "key2", key2);
+        assertFieldContainedValue(records, position, "key3", key3);
+        long timestamp = (long) key2 * 100 + key3;
         assertFieldContainedValue(records, position, "timestamp", timestamp);
-        assertFieldContainedValue(records, position, "count", (long) year * (long) month.getValue() * (long) day);
-        assertFieldContainedValue(records, position, "str", new Text(date.toString()));
-        assertFieldContainedValue(records, position, "list", Lists.newArrayList(new Text(date.getEra().toString())));
-        /*
-         * When Maps are supported, test it here
-         */
+        assertFieldContainedValue(records, position, "count", (long) key2 * key3);
+        assertFieldContainedValue(records, position, "str", new Text(key1 + "-" + key2 + "-" + key3));
+        assertFieldContainedValue(records, position, "list", Lists.newArrayList(new Text("listValue")));
+        JsonStringHashMap<String, Object> mapEntry = new JsonStringHashMap<>();
+        mapEntry.put("key", new Text("mapKey"));
+        mapEntry.put("value", new Text("mapValue"));
+        assertFieldContainedValue(records, position, "map", Lists.newArrayList(mapEntry));
     }
 
     /**

@@ -16,15 +16,14 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
+import sleeper.bulkimport.starter.executor.BulkImportExecutor;
+import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
@@ -34,8 +33,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
 import java.util.UUID;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     private final SystemTestInstanceContext instance;
@@ -54,15 +51,14 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
         String jobRunId = UUID.randomUUID().toString();
         jobTracker().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now())
                 .jobRunId(jobRunId).build());
-        s3Client.putObject(PutObjectRequest.builder()
-                .bucket(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET))
-                .key("bulk_import/" + job.getId() + "-" + jobRunId + ".json")
-                .build(),
-                RequestBody.fromString(new BulkImportJobSerDe().toJson(job)));
+        String jobFileObjectKey = BulkImportExecutor.createJobFileObjectKey(job, jobRunId);
+        new BulkImportJobWriterToS3(instance.getInstanceProperties(), s3Client)
+                .writeJobToBulkImportBucket(job, jobFileObjectKey);
         executor().runJobOnPlatform(BulkImportArguments.builder()
+                .instanceProperties(instance.getInstanceProperties())
                 .bulkImportJob(job)
                 .jobRunId(jobRunId)
-                .instanceProperties(instance.getInstanceProperties())
+                .jobFileObjectKey(jobFileObjectKey)
                 .build());
     }
 

@@ -104,6 +104,8 @@ To build the Sleeper Docker tools, you can run this script:
 ./scripts/cli/buildAll.sh
 ```
 
+There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
+
 Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
 command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
 and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
@@ -224,3 +226,14 @@ See [development scripts](development/dev-scripts.md) for scripts that can assis
 ## Building in a custom environment
 
 If your build environment needs to substitute the default container base image, route `cargo` or `rustup` traffic through internal mirrors, or trust a private certificate authority, see [building in a custom environment](development/custom-environment.md) for the available hooks and environment variables.
+
+## REST API development
+
+### Adding a new endpoint
+
+When you introduce a new endpoint:
+
+1. Add the route implementation under [java/rest-api](../../java/rest-api/src/main/java/sleeper/restapi) and register it in
+   `RestApiLambda#buildRoutes` so it is dispatched at runtime.
+2. Add a prose companion page under [docs/rest-api/](../usage/rest-api/) with a worked example, and
+   link it from the endpoints table in the [REST API overview](../usage/rest-api/rest-api-overview.md).

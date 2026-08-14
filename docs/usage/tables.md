@@ -24,8 +24,10 @@ See more information on this in the [data processing document](data-processing.m
 
 ## Add/edit a table
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
-will consist of the following steps:
+Scripts can be used to add, rename and delete tables in a Sleeper instance. Adding a table is also supported over the
+optional [REST API](./rest-api/add-table.md); more endpoints will follow.
+
+If using the scripts, creating a new table will consist of the following steps:
 
 1. Use the `addTable.sh` script to create the table.
 2. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
@@ -40,15 +42,14 @@ Here's an example of how you might use these together to create and add data to 
 
 ```bash
 ID=my-instance-id
-./scripts/utility/addTable.sh $ID --table-name table1 --schema ./schema.json
-./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
+./scripts/table/addTable.sh $ID --table-name table1 --schema ./schema.json
+./scripts/table/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
 We'll look at the table scripts below. See the [ingest batcher documentation](ingest-batcher.md) for more information on
 `sendToIngestBatcher.sh`.
 
 ### Add table
-
 The `addTable.sh` script creates a new table in an existing Sleeper instance. You must provide a schema, either as a
 file with `--schema` or as part of a configuration directory with `--config-dir`. The table name can be supplied with
 `--table-name`, or read from the table properties file passed to `--table-properties` or `--config-dir`. If
@@ -56,23 +57,23 @@ file with `--schema` or as part of a configuration directory with `--config-dir`
 
 ```bash
 # Create a table with a name and schema file (default table properties will be used)
-./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file>
+./scripts/table/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file>
 
 # Create a table with a schema and custom table properties (table name read from the properties file)
-./scripts/utility/addTable.sh <instance-id> --schema <schema-file> --table-properties <table-properties-file>
+./scripts/table/addTable.sh <instance-id> --schema <schema-file> --table-properties <table-properties-file>
 
 # Override the table name from a properties file
-./scripts/utility/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file> --table-properties <table-properties-file>
+./scripts/table/addTable.sh <instance-id> --table-name <table-name> --schema <schema-file> --table-properties <table-properties-file>
 
 # Create a table using a configuration directory containing schema.json and table.properties (table name read from table.properties)
-./scripts/utility/addTable.sh <instance-id> --config-dir <config-dir>
+./scripts/table/addTable.sh <instance-id> --config-dir <config-dir>
 ```
 
 Note: `--schema`, `--table-properties`, and `--config-dir` cannot all be specified at the same time.
 
 For more information please run:
 ```bash
-./scripts/utility/addTable.sh --help
+./scripts/table/addTable.sh --help
 ```
 
 See [creating a schema](schema.md) for how to create a schema file.
@@ -89,7 +90,7 @@ which can waste compute resources. It is often worthwhile to pre-split the table
 One way to do this is by taking a sample of your data to generate a split points file:
 
 ```bash
-./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <read-max-rows-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
+./scripts/table/estimateSplitPoints.sh <schema-file> <num-partitions> <read-max-rows-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
 ```
 
 The schema file should be the `schema.json` file you created for your table.
@@ -122,13 +123,13 @@ with Sleeper or if you created a table with the wrong schema.
 You can reinitialise the table quickly by running the following command:
 
 ```bash
-./scripts/utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
+./scripts/table/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
 ```
 
 For example
 
 ```bash
-./scripts/utility/reinitialiseTable.sh sleeper-my-sleeper-config my-sleeper-table true /tmp/split-points.txt false
+./scripts/table/reinitialiseTable.sh sleeper-my-sleeper-config my-sleeper-table true /tmp/split-points.txt false
 ```
 
 If you want to change the table schema you'll need to change it directly in the table properties file in the S3 config
@@ -140,8 +141,8 @@ name.
 You can rename or delete a table using the following commands:
 
 ```bash
-./scripts/utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
-./scripts/utility/deleteTable.sh <instance-id> <table-name>
+./scripts/table/renameTable.sh <instance-id> <old-table-name> <new-table-name>
+./scripts/table/deleteTable.sh <instance-id> <table-name>
 ```
 
 You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
@@ -152,8 +153,8 @@ all the data. This will permanently delete all data held in the table, as well a
 You can take a table offline or put it online with the following commands:
 
 ```bash
-./scripts/utility/takeTableOffline.sh <instance-id> <table-name>
-./scripts/utility/putTableOnline.sh <instance-id> <table-name>
+./scripts/table/takeTableOffline.sh <instance-id> <table-name>
+./scripts/table/putTableOnline.sh <instance-id> <table-name>
 ```
 
 These scripts will set the table property `sleeper.table.online`, and update an index of table status to match.

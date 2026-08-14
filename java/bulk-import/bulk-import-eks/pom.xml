@@ -19,51 +19,9 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.37.3</version>
+        <version>0.37.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>bulk-import-eks</artifactId>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_${scala.version}</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-kubernetes_${scala.version}</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-memory-unsafe</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <!-- The Spark Docker image uses an old version of Hadoop, which is not compatible with the -->
-                        <!-- version used in EMR. -->
-                        <!-- This outputs the jars required to run Spark in EKS, to completely replace the jars -->
-                        <!-- in the Spark Docker image with versions managed by Sleeper. -->
-                        <!-- The version of Spark must match between the base image and Sleeper. -->
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/spark</outputDirectory>
-                            <includeScope>runtime</includeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

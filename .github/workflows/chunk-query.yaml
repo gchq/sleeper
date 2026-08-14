@@ -16,8 +16,6 @@ on:
       - 'java/common/foreign-bridge/**'
       - 'java/analytics-integration/pom.xml'
       - 'java/analytics-integration/trino/**'
-      - 'java/analytics-integration/athena/**'
-      - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'

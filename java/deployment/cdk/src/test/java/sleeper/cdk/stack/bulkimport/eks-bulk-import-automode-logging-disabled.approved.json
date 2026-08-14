@@ -1456,6 +1456,27 @@
             }
           }
         },
+        "EksBulkImportClustermanifestnodepoolD869A443": {
+          "Type": "Custom::AWSCDK-EKS-KubernetesResource",
+          "DependsOn": [
+            "EksBulkImportClusterKubectlReadyBarrier70AEA7AF"
+          ],
+          "DeletionPolicy": "Delete",
+          "UpdateReplacePolicy": "Delete",
+          "Properties": {
+            "ServiceToken": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
+              ]
+            },
+            "PruneLabel": "aws.cdk.eks/prune-c8c5e13b0fab04ec5d18917b3479d3fcd9b1b6f365",
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "Manifest": "[{\"apiVersion\":\"karpenter.sh/v1\",\"kind\":\"NodePool\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8c5e13b0fab04ec5d18917b3479d3fcd9b1b6f365\":\"\"},\"name\":\"sleeper-general-purpose\"},\"spec\":{\"disruption\":{\"budgets\":[{\"nodes\":\"10%\"}],\"consolidateAfter\":\"30s\",\"consolidationPolicy\":\"WhenEmpty\"},\"limits\":{\"cpu\":\"256\"},\"template\":{\"spec\":{\"expireAfter\":\"336h\",\"nodeClassRef\":{\"group\":\"eks.amazonaws.com\",\"kind\":\"NodeClass\",\"name\":\"default\"},\"requirements\":[{\"key\":\"karpenter.sh/capacity-type\",\"operator\":\"In\",\"values\":[\"on-demand\"]},{\"key\":\"node.kubernetes.io/instance-type\",\"operator\":\"In\",\"values\":[\"m8g.xlarge\",\"m8g.2xlarge\",\"m8g.4xlarge\",\"m8g.8xlarge\",\"m8g.12xlarge\",\"m8g.16xlarge\",\"m8gd.xlarge\",\"m8gd.2xlarge\",\"m8gd.4xlarge\",\"m8gd.8xlarge\",\"m8gd.12xlarge\",\"m8gd.16xlarge\",\"m8i.xlarge\",\"m8i.2xlarge\",\"m8i.4xlarge\",\"m8i.8xlarge\",\"m8i.12xlarge\",\"m8i.16xlarge\",\"m8id.xlarge\",\"m8id.2xlarge\",\"m8id.4xlarge\",\"m8id.8xlarge\",\"m8id.12xlarge\",\"m8id.16xlarge\"]},{\"key\":\"kubernetes.io/os\",\"operator\":\"In\",\"values\":[\"linux\"]}],\"terminationGracePeriod\":\"24h0m0s\"}}}}]"
+          }
+        },
         "BulkImportEKSJobDeadLetterQueue8A2BEEE4": {
           "Type": "AWS::SQS::Queue",
           "DeletionPolicy": "Delete",
@@ -1956,8 +1977,7 @@
           "Properties": {
             "ComputeConfig": {
               "NodePools": [
-                "system",
-                "general-purpose"
+                "system"
               ],
               "NodeRoleArn": {
                 "Fn::GetAtt": [
@@ -2098,6 +2118,28 @@
             ]
           }
         },
+        "EksBulkImportClustermanifestresourcequota8337CD0B": {
+          "Type": "Custom::AWSCDK-EKS-KubernetesResource",
+          "DependsOn": [
+            "EksBulkImportClusterKubectlReadyBarrier70AEA7AF",
+            "EksBulkImportClustermanifestEksBulkImportNamespaceD8BAEC22"
+          ],
+          "DeletionPolicy": "Delete",
+          "UpdateReplacePolicy": "Delete",
+          "Properties": {
+            "ServiceToken": {
+              "Fn::GetAtt": [
+                "EksBulkImportClusterKubectlProviderframeworkonEvent3292302A",
+                "Arn"
+              ]
+            },
+            "PruneLabel": "aws.cdk.eks/prune-c85b5067f222414ebc1be4064d1e579c511f06820f",
+            "ClusterName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
+            },
+            "Manifest": "[{\"apiVersion\":\"v1\",\"kind\":\"ResourceQuota\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c85b5067f222414ebc1be4064d1e579c511f06820f\":\"\"},\"name\":\"job-quota\",\"namespace\":\"sleeper-test-instance-bulk-import-eks\"},\"spec\":{\"hard\":{\"count/jobs.batch\":\"2\"}}}]"
+          }
+        },
         "EksBulkImportClusterSparkServiceAccountRoleOverflowPolicy1A5D71DA5": {
           "Type": "AWS::IAM::ManagedPolicy",
           "DependsOn": [
@@ -2180,7 +2222,7 @@
                       "Endpoint"
                     ]
                   },
-                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"metadata\":{\"annotations\":{\"karpenter.sh/do-not-disrupt\":\"true\"}},\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"CheckJobStatus\":{\"Next\":\"JobStatusDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::aws-sdk:dynamodb:getItem\",\"Parameters\":{\"TableName\":\"",
+                  "\",\"Namespace\":\"sleeper-test-instance-bulk-import-eks\",\"Job\":{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"metadata\":{\"name.$\":\"$.job.id\"},\"spec\":{\"ttlSecondsAfterFinished\":600,\"backoffLimit\":0,\"template\":{\"metadata\":{\"annotations\":{\"karpenter.sh/do-not-disrupt\":\"true\"}},\"spec\":{\"serviceAccountName\":\"spark-submit\",\"containers\":[{\"image\":\"test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3\",\"name\":\"spark-submit\",\"args.$\":\"$.args\",\"env\":[{\"name\":\"EXECUTOR_POD_TEMPLATE\",\"value.$\":\"$.executorPodTemplate\"}]}],\"restartPolicy\":\"Never\"}}}},\"LogOptions\":{\"RetrieveLogs\":true,\"LogParameters\":{\"tailLines\":[\"10\"]}}},\"ResultSelector\":{\"succeeded.$\":\"$.status.succeeded\",\"logs.$\":\"$.logs..spark-submit.log\"},\"ResultPath\":\"$.jobResult\",\"Retry\":[{\"ErrorEquals\":[\"EKS.403\"],\"IntervalSeconds\":60,\"MaxAttempts\":720,\"BackoffRate\":1,\"JitterStrategy\":\"FULL\"}],\"Catch\":[{\"ErrorEquals\":[\"States.ALL\"],\"ResultPath\":\"$.error\",\"Next\":\"CreateErrorMessage\"}]},\"CheckJobStatus\":{\"Next\":\"JobStatusDecision\",\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::aws-sdk:dynamodb:getItem\",\"Parameters\":{\"TableName\":\"",
                   {
                     "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Ref"
                   },
@@ -2244,6 +2286,9 @@
                 }
               ],
               "Level": "ALL"
+            },
+            "StateMachineName": {
+              "Ref": "EksBulkImportClusterCA73CFAF"
             },
             "RoleArn": {
               "Fn::GetAtt": [

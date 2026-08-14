@@ -38,6 +38,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,8 +46,24 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
+import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
 class GeneratePropertiesTemplatesTest {
@@ -200,6 +217,62 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldNotWritePropertyNotIncludedInBasicExample() {
             assertThat(propertiesString).doesNotContain("sleeper.table.parquet.compression.codec");
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate light instance properties example")
+    class GenerateLightInstancePropertiesExample {
+        private final String propertiesString = loadFileAsString("example/light/instance.properties");
+
+        @Test
+        void shouldGenerateLightInstanceProperties() {
+            // Given
+            InstanceProperties givenProperties = new InstanceProperties();
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
+
+            // EKS properties
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "60Gi");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
+            givenProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
+
+            // Default table values
+            givenProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
+            givenProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
+
+            // Stack
+            givenProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
+
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(instanceProperties).isEqualTo(givenProperties);
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate light table properties example")
+    class GenerateLightTablePropertiesExample {
+        private final String propertiesString = loadFileAsString("example/light/table.properties");
+
+        @Test
+        void shouldGenerateEmptyTablePropertiesWhenLoadedFromExample() {
+            // Given
+            TableProperties givenProperties = new TableProperties(new InstanceProperties());
+            // When
+            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(tableProperties).isEqualTo(givenProperties);
         }
     }
 

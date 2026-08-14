@@ -38,6 +38,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 
 public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
+    private static final Duration MAX_WAIT = Duration.ofSeconds(5);
+
     @Nested
     @DisplayName("Run queries")
     class RunQuery {
@@ -137,7 +139,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -157,7 +159,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -177,7 +179,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -196,7 +198,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -215,7 +217,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -234,7 +236,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -253,7 +255,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -272,7 +274,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -291,7 +293,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedExceptionally()
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketClosedException.class);
             assertThat(connection.isConnected()).isFalse();
@@ -308,7 +310,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
             // When / Then
             assertThat(runQueryFuture(query))
-                    .failsWithin(Duration.ofMillis(10))
+                    .failsWithin(MAX_WAIT)
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(TimeoutException.class);
             assertThat(connection.isConnected()).isFalse();
