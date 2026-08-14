@@ -48,6 +48,9 @@ vulnerabilities:
   - id: CVE-2026-56859
   - id: CVE-2026-56860
   - id: CVE-2026-56862
+  # golang.org/x/mod
+  - id: CVE-2026-56864
+  - id: CVE-2026-56865
 
   # Due to AWS SDK using a shaded version of Jackson, we are unable to update until below has been resolved:
   # https://github.com/gchq/sleeper/issues/7459
