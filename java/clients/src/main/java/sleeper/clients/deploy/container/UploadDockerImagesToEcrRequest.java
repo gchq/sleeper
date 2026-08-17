@@ -28,12 +28,10 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
     private final List<StackDockerImage> images;
-    private final boolean overwriteExistingTag;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         images = requireNonNull(builder.images, "images must not be null");
-        overwriteExistingTag = builder.overwriteExistingTag;
     }
 
     public static Builder builder() {
@@ -50,10 +48,6 @@ public class UploadDockerImagesToEcrRequest {
 
     public List<StackDockerImage> getImages() {
         return images;
-    }
-
-    public boolean isOverwriteExistingTag() {
-        return overwriteExistingTag;
     }
 
     @Override
@@ -81,7 +75,6 @@ public class UploadDockerImagesToEcrRequest {
     public static final class Builder {
         private String ecrPrefix;
         private List<StackDockerImage> images;
-        private boolean overwriteExistingTag;
 
         private Builder() {
         }
@@ -97,11 +90,6 @@ public class UploadDockerImagesToEcrRequest {
 
         public Builder images(List<StackDockerImage> images) {
             this.images = images;
-            return this;
-        }
-
-        public Builder overwriteExistingTag(boolean overwriteExistingTag) {
-            this.overwriteExistingTag = overwriteExistingTag;
             return this;
         }
 
