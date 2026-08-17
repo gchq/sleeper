@@ -64,6 +64,27 @@
 	border-radius: 3px;
 }
 
+.tables-rows {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.tables-rows-value {
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	color: #111827;
+	min-width: 4.5rem;
+	text-align: right;
+}
+
+.tables-rows .sparkline,
+.tables-rows .sparkline-loading {
+	width: 110px;
+	height: 30px;
+	flex: none;
+}
+
 .tables-status {
 	display: inline-block;
 	font-size: 0.75rem;

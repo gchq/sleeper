@@ -171,15 +171,6 @@
 	letter-spacing: 0.02em;
 }
 
-.sparkline-loading {
+.metric-sparkline .sparkline-loading {
 	height: 36px;
-	background: linear-gradient(90deg, #f3f4f6 0, #e5e7eb 50%, #f3f4f6 100%);
-	background-size: 200% 100%;
-	animation: sparkline-shimmer 1.4s ease-in-out infinite;
-	border-radius: 3px;
-}
-
-@keyframes sparkline-shimmer {
-	0% { background-position: 100% 0; }
-	100% { background-position: -100% 0; }
 }
