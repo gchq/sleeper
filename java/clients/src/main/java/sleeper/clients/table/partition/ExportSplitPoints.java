@@ -21,18 +21,11 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.range.Range;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArray;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
 
@@ -42,10 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.local.WriteSplitPoints.writeSplitPoints;
@@ -65,52 +55,7 @@ public class ExportSplitPoints {
     }
 
     public List<Object> getSplitPoints() {
-        Type rowKey0Type = schema.getRowKeyTypes().get(0);
-        List<Partition> leafPartitions = stateStore.getLeafPartitions();
-        SortedSet<Comparable<?>> splitPoints = new TreeSet<>();
-
-        for (Partition partition : leafPartitions) {
-            Range range = partition.getRegion().getRange(schema.getRowKeyFieldNames().get(0));
-            Object min = range.getMin();
-            Object max = range.getMax();
-            if (rowKey0Type instanceof ByteArrayType) {
-                if (null != min) {
-                    splitPoints.add(ByteArray.wrap((byte[]) min));
-                }
-                if (null != max) {
-                    splitPoints.add(ByteArray.wrap((byte[]) max));
-                }
-            } else {
-                if (null != min) {
-                    splitPoints.add((Comparable) min);
-                }
-                if (null != max) {
-                    splitPoints.add((Comparable) max);
-                }
-            }
-        }
-
-        // Remove minimum value as that is not a split point
-        if (rowKey0Type instanceof IntType) {
-            splitPoints.remove(Integer.MIN_VALUE);
-        } else if (rowKey0Type instanceof LongType) {
-            splitPoints.remove(Long.MIN_VALUE);
-        } else if (rowKey0Type instanceof StringType) {
-            splitPoints.remove("");
-        } else if (rowKey0Type instanceof ByteArrayType) {
-            splitPoints.remove(ByteArray.wrap(new byte[]{}));
-        }
-
-        List<Object> splitPointsToReturn = new ArrayList<>();
-        for (Comparable<?> splitPoint : splitPoints) {
-            if (rowKey0Type instanceof ByteArrayType) {
-                splitPointsToReturn.add(((ByteArray) splitPoint).getArray());
-            } else {
-                splitPointsToReturn.add(splitPoint);
-            }
-        }
-
-        return splitPointsToReturn;
+        return new PartitionTree(stateStore.getAllPartitions()).getSplitPoints(schema);
     }
 
     public static void main(String[] args) throws IOException {

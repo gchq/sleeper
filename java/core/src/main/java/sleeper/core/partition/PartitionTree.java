@@ -19,7 +19,13 @@ import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -237,6 +245,58 @@ public class PartitionTree {
 
     public List<Partition> getLeafPartitions() {
         return streamLeafPartitions().toList();
+    }
+
+    /**
+     * Derives the split points on the first row key dimension from the leaf partitions. This is the inverse of
+     * {@link PartitionsFromSplitPoints} - the returned values are ordered and match what a user would have supplied
+     * to create these partitions. Note that only split points in the first dimension are returned.
+     *
+     * @param  schema the Sleeper table schema
+     * @return        the ordered split points on the first row key
+     */
+    public List<Object> getSplitPoints(Schema schema) {
+        Type rowKey0Type = schema.getRowKeyTypes().get(0);
+        String rowKey0Name = schema.getRowKeyFieldNames().get(0);
+        SortedSet<Comparable<?>> splitPoints = new TreeSet<>();
+
+        for (Partition partition : getLeafPartitions()) {
+            Range range = partition.getRegion().getRange(rowKey0Name);
+            addBoundary(splitPoints, rowKey0Type, range.getMin());
+            addBoundary(splitPoints, rowKey0Type, range.getMax());
+        }
+
+        // Remove the minimum value as that is not a split point.
+        if (rowKey0Type instanceof IntType) {
+            splitPoints.remove(Integer.MIN_VALUE);
+        } else if (rowKey0Type instanceof LongType) {
+            splitPoints.remove(Long.MIN_VALUE);
+        } else if (rowKey0Type instanceof StringType) {
+            splitPoints.remove("");
+        } else if (rowKey0Type instanceof ByteArrayType) {
+            splitPoints.remove(ByteArray.wrap(new byte[]{}));
+        }
+
+        List<Object> splitPointsToReturn = new ArrayList<>();
+        for (Comparable<?> splitPoint : splitPoints) {
+            if (rowKey0Type instanceof ByteArrayType) {
+                splitPointsToReturn.add(((ByteArray) splitPoint).getArray());
+            } else {
+                splitPointsToReturn.add(splitPoint);
+            }
+        }
+        return splitPointsToReturn;
+    }
+
+    private static void addBoundary(SortedSet<Comparable<?>> splitPoints, Type rowKey0Type, Object boundary) {
+        if (boundary == null) {
+            return;
+        }
+        if (rowKey0Type instanceof ByteArrayType) {
+            splitPoints.add(ByteArray.wrap((byte[]) boundary));
+        } else {
+            splitPoints.add((Comparable<?>) boundary);
+        }
     }
 
     /**
