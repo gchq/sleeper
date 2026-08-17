@@ -15,12 +15,15 @@ ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
 # Install Lambda Runtime Interface Emulator
+# Root is required here to write into /usr/local/bin/, which is owned by root.
+USER root
 RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
+USER sleeper
 
 WORKDIR /function
-COPY lambda.jar ./
-COPY aws-lambda-java-runtime.jar ./
-COPY entrypoint.sh /
+COPY --chown=sleeper:sleeper lambda.jar ./
+COPY --chown=sleeper:sleeper aws-lambda-java-runtime.jar ./
+COPY --chown=sleeper:sleeper entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]
