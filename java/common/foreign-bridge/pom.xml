@@ -96,7 +96,7 @@
         <profile>
             <activation>
                 <property>
-                    <name>skipRustX86</name>
+                    <name>rust.x86_64.skip</name>
                     <value>!true</value>
                 </property>
             </activation>
@@ -131,7 +131,7 @@
         <profile>
             <activation>
                 <property>
-                    <name>skipRustAarch64</name>
+                    <name>rust.aarch64.skip</name>
                     <value>!true</value>
                 </property>
             </activation>
