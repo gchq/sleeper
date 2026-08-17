@@ -16,6 +16,7 @@ ARG BASE_IMAGE=public.ecr.aws/emr-on-eks/spark/emr-7.12.0:latest
 FROM ${BASE_IMAGE}
 
 USER root
+RUN dnf upgrade && dnf clean all
 
 RUN mkdir -p /opt/spark/workdir && chown hadoop:hadoop /opt/spark/workdir
 COPY --chown=hadoop:hadoop ./bulk-import-runner.jar /opt/spark/workdir/
