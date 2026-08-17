@@ -1,3 +1,5 @@
+import { useInstance } from "../contexts/InstanceContext"
+
 type TitleChild = string | number
 
 interface TitleProps {
@@ -5,6 +7,7 @@ interface TitleProps {
 }
 
 export default function Title({ children }: TitleProps) {
-	const title = (Array.isArray(children) ? children.join('') : String(children)) + ' - Sleeper'
+	const { instanceId } = useInstance()
+	const title = (Array.isArray(children) ? children.join('') : String(children)) + ' - ' + instanceId + ' - Sleeper'
 	return <title>{title}</title>
 }

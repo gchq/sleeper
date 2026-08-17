@@ -51,6 +51,31 @@
 	white-space: nowrap;
 }
 
+.sidebar-instance {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	padding: 0.5rem 1rem;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.sidebar-instance-label {
+	font-size: 0.65rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.sidebar-instance-id {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	color: #333;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 .sidebar-toggle {
 	background: none;
 	border: 1px solid transparent;

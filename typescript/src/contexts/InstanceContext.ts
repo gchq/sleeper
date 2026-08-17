@@ -11,14 +11,14 @@ export interface InstanceFeatures {
 }
 
 export interface InstanceInfo {
-	instanceName: string
+	instanceId: string
 	version: string
 	tables: TableStatus[]
 	features: InstanceFeatures
 }
 
 export interface InstanceValue {
-	instanceName: string | null
+	instanceId: string | null
 	version: string | null
 	tables: TableStatus[] | null
 	features: InstanceFeatures | null

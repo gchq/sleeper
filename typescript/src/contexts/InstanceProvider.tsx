@@ -6,7 +6,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
 	const { data, loading, error, reload } = useApi<InstanceInfo>('/instance')
 	const value = useMemo<InstanceValue>(
 		() => ({
-			instanceName: null,
+			instanceId: null,
 			version: null,
 			tables: null,
 			features: null,

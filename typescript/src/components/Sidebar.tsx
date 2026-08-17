@@ -37,7 +37,7 @@ function readLastTable(): string | null {
 export default function Sidebar() {
 	const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
 	const [lastTableId, setLastTableId] = useState<string | null>(readLastTable)
-	const { tables, loading: tablesLoading, error: tablesError, version } = useInstance()
+	const { tables, loading: tablesLoading, error: tablesError, version, instanceId } = useInstance()
 	const { tableId: routeTableId } = useParams<{ tableId?: string }>()
 	const navigate = useNavigate()
 	const selectedTableId = routeTableId ?? lastTableId
@@ -101,6 +101,13 @@ export default function Sidebar() {
 					{collapsed ? '›' : '‹'}
 				</button>
 			</div>
+
+			{!collapsed && instanceId && (
+				<div className="sidebar-instance" title={instanceId}>
+					<span className="sidebar-instance-label">Instance</span>
+					<span className="sidebar-instance-id">{instanceId}</span>
+				</div>
+			)}
 
 			<nav className="sidebar-nav" aria-label="Main navigation">
 				<div className="sidebar-section">
