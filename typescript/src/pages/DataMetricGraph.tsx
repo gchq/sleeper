@@ -208,7 +208,6 @@ function ChartTooltip({ active, payload, label, selected }: TooltipProps) {
 
 export default function DataMetricGraph() {
 	const { group: groupSlug } = useParams<{ group: string }>()
-	const [searchParams, setSearchParams] = useSearchParams()
 	const group = findGroupBySlug(groupSlug)
 
 	if (!group) {
@@ -224,13 +223,23 @@ export default function DataMetricGraph() {
 		)
 	}
 
+	return <DataMetricGraphView group={group} />
+}
+
+function DataMetricGraphView({ group }: { group: MetricGroupDef }) {
+	const [searchParams, setSearchParams] = useSearchParams()
+
 	const rangeKey = searchParams.get('range') ?? '24h'
 	const range = RANGES.find((r) => r.key === rangeKey) ?? RANGES[2]
 	const allowedPeriods = periodsAllowedForRange(range.seconds)
 	const requestedPeriodKey = searchParams.get('period')
 	const period = allowedPeriods.find((p) => p.key === requestedPeriodKey) ?? defaultPeriodForRange(range.seconds)
-	const selected = parseSelectedMetrics(searchParams.get('metrics'), group)
-	const effectiveSelected = selected.length > 0 ? selected : [group.metrics[0]]
+	const metricsParam = searchParams.get('metrics')
+	const selected = parseSelectedMetrics(metricsParam, group)
+	const effectiveSelected = useMemo(() => {
+		const parsed = parseSelectedMetrics(metricsParam, group)
+		return parsed.length > 0 ? parsed : [group.metrics[0]]
+	}, [metricsParam, group])
 	const { axes, axisIdForMetric } = buildAxes(effectiveSelected)
 
 	function updateParams(mutate: (params: URLSearchParams) => void) {

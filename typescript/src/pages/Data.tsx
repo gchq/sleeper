@@ -7,8 +7,6 @@ import {
 	METRIC_GROUPS,
 	colorForMetric,
 	formatByKind,
-	formatBytes,
-	formatCount,
 	type MetricDef,
 	type MetricGroupDef,
 } from '../lib/dataMetrics'
@@ -328,6 +326,3 @@ export default function Data() {
 		</>
 	)
 }
-
-// re-export helpers for consumers of this file
-export { formatBytes, formatCount }

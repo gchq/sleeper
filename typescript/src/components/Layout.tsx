@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import { TablesProvider } from '../contexts/TablesContext'
+import { TablesProvider } from '../contexts/TablesProvider'
 import './Layout.css'
 
 export default function Layout() {
