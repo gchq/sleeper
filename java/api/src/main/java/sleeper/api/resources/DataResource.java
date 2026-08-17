@@ -51,7 +51,7 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 
-@Path("/api")
+@Path("/api/data")
 public class DataResource {
 
     private static final String S3_NAMESPACE = "AWS/S3";
@@ -102,7 +102,6 @@ public class DataResource {
     }
 
     @GET
-    @Path("/data")
     @Produces(MediaType.APPLICATION_JSON)
     public DataMetrics getDataMetrics() {
         String bucketName = loadDataBucketName();
@@ -136,7 +135,7 @@ public class DataResource {
     }
 
     @GET
-    @Path("/data/metrics")
+    @Path("/metrics")
     @Produces(MediaType.APPLICATION_JSON)
     public MetricsSeries getMetricsSeries(
             @QueryParam("metrics") String metricsParam,

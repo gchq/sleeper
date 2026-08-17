@@ -33,7 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.Map;
 import java.util.Properties;
 
-@Path("/api")
+@Path("/api/instance/properties")
 public class InstancePropertiesResource {
 
     private final S3Client s3Client;
@@ -52,7 +52,6 @@ public class InstancePropertiesResource {
     }
 
     @GET
-    @Path("/instance/properties")
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getInstanceProperties() {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
@@ -60,7 +59,6 @@ public class InstancePropertiesResource {
     }
 
     @POST
-    @Path("/instance/properties")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateInstanceProperties(Map<String, String> changes) {

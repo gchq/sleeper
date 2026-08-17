@@ -119,6 +119,11 @@
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 
         <!-- Health check endpoint -->
         <dependency>
