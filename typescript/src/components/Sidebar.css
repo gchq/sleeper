@@ -32,6 +32,9 @@
 }
 
 .sidebar-title {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
 	font-size: 1.25rem;
 	font-weight: 700;
 	margin: 0;
@@ -39,6 +42,13 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.sidebar-version {
+	font-size: 0.7rem;
+	font-weight: 500;
+	color: #888;
+	white-space: nowrap;
 }
 
 .sidebar-toggle {

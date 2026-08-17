@@ -1,17 +1,17 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import { TablesProvider } from '../contexts/TablesProvider'
+import { InstanceProvider } from '../contexts/InstanceProvider'
 import './Layout.css'
 
 export default function Layout() {
 	return (
-		<TablesProvider>
+		<InstanceProvider>
 			<div className="app">
 				<Sidebar />
 				<main className="app-main">
 					<Outlet />
 				</main>
 			</div>
-		</TablesProvider>
+		</InstanceProvider>
 	)
 }

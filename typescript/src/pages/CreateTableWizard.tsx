@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch, postJson, postRaw } from '../lib/api'
-import { useTablesList, type TableStatus } from '../contexts/TablesContext'
+import { useInstance, type TableStatus } from '../contexts/InstanceContext'
 import {
 	PRIMITIVE_TYPES,
 	PRIMITIVE_TYPE_LABELS,
@@ -42,7 +42,7 @@ interface Props {
 const STEPS = ['Name', 'Schema', 'Split points', 'Review'] as const
 
 export default function CreateTableWizard({ onClose, onCreated }: Props) {
-	const { tables } = useTablesList()
+	const { tables } = useInstance()
 	const [step, setStep] = useState(0)
 	const [name, setName] = useState('')
 	const [schema, setSchema] = useState<SchemaDraft>({

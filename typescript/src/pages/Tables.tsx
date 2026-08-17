@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Sparkline, { type SparklinePoint } from '../components/Sparkline'
 import Title from '../components/Title'
 import { useApi } from '../hooks/useApi'
-import { useTablesList } from '../contexts/TablesContext'
+import { useInstance } from '../contexts/InstanceContext'
 import { formatCount, METRIC_COLORS } from '../lib/dataMetrics'
 import CreateTableWizard from './CreateTableWizard'
 import './Tables.css'
@@ -66,7 +66,7 @@ function RowCountCell({
 }
 
 export default function Tables() {
-	const { tables, loading, error, reload } = useTablesList()
+	const { tables, loading, error, reload } = useInstance()
 	const [wizardOpen, setWizardOpen] = useState(false)
 	const { data: rowCounts, loading: rowCountsLoading } = useApi<RowCountsResponse>('/tables/row-counts', 60, 30)
 

@@ -1,7 +1,7 @@
 import type { ChangeEvent, MouseEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate, useParams } from 'react-router-dom'
-import { useTablesList } from '../contexts/TablesContext'
+import { useInstance } from '../contexts/InstanceContext'
 import './Sidebar.css'
 
 interface TablePage {
@@ -37,7 +37,7 @@ function readLastTable(): string | null {
 export default function Sidebar() {
 	const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
 	const [lastTableId, setLastTableId] = useState<string | null>(readLastTable)
-	const { tables, loading: tablesLoading, error: tablesError } = useTablesList()
+	const { tables, loading: tablesLoading, error: tablesError, version } = useInstance()
 	const { tableId: routeTableId } = useParams<{ tableId?: string }>()
 	const navigate = useNavigate()
 	const selectedTableId = routeTableId ?? lastTableId
@@ -84,7 +84,12 @@ export default function Sidebar() {
 	return (
 		<aside className={collapsed ? 'sidebar sidebar-collapsed' : 'sidebar'}>
 			<div className="sidebar-header">
-				{!collapsed && <h1 className="sidebar-title">Sleeper</h1>}
+				{!collapsed && (
+					<h1 className="sidebar-title">
+						Sleeper
+						{version && <span className="sidebar-version" title={"v" + version}>v{version}</span>}
+					</h1>
+				)}
 				<button
 					type="button"
 					className="sidebar-toggle"
