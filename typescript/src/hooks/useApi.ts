@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { apiUrl } from '../lib/api'
 
 interface UseApiResult<T> {
 	data: T | null
 	loading: boolean
 	error: string | null
+	reload: () => void
 }
 
 export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: number): UseApiResult<T> {
@@ -19,57 +21,55 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 	const [data, setData] = useState<T | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const controllerRef = useRef<AbortController | null>(null)
+
+	const load = useCallback(() => {
+		// Abort any request already in flight (interval tick or previous reload)
+		controllerRef.current?.abort()
+		const controller = new AbortController()
+		controllerRef.current = controller
+
+		setLoading(true)
+		const signal = AbortSignal.any([
+			controller.signal,
+			AbortSignal.timeout(resolvedTimeout * 1000)
+		])
+
+		fetch(apiUrl(url), { signal })
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error(`HTTP error: ${response.status}`)
+				}
+				return response.json()
+			})
+			.then((json: T) => {
+				if (!controller.signal.aborted) {
+					setData(json)
+					setError(null)
+					setLoading(false)
+				}
+			})
+			.catch((err: Error) => {
+				if (!controller.signal.aborted) {
+					setError(err.name === 'TimeoutError' ? `Request timed out after ${resolvedTimeout}s` : err.message)
+					setLoading(false)
+				}
+			})
+	}, [url, resolvedTimeout])
 
 	useEffect(() => {
 		setData(null)
 		setError(null)
-
-		let cancelled = false
-		const controller = new AbortController()
-
-		function load() {
-			setLoading(true)
-			const signal = AbortSignal.any([
-				controller.signal,
-				AbortSignal.timeout(resolvedTimeout * 1000)
-			])
-
-			fetch('/api' + url, { signal })
-				.then((response) => {
-					if (!response.ok) {
-						throw new Error(`HTTP error: ${response.status}`)
-					}
-					return response.json()
-				})
-				.then((json: T) => {
-					if (!cancelled) {
-						setData(json)
-						setError(null)
-						setLoading(false)
-					}
-				})
-				.catch((err: Error) => {
-					if (!cancelled) {
-						setError(err.name === 'TimeoutError' ? `Request timed out after ${resolvedTimeout}s` : err.message)
-						setLoading(false)
-					}
-				})
-		}
-
 		load()
 
-		if (refreshInterval === 0) return () => {
-			cancelled = true
-			controller.abort()
-		}
+		if (refreshInterval === 0) return () => controllerRef.current?.abort()
 
 		const id = setInterval(load, refreshInterval * 1000)
 		return () => {
-			cancelled = true
-			controller.abort()
+			controllerRef.current?.abort()
 			clearInterval(id)
 		}
-	}, [url, refreshInterval, resolvedTimeout])
+	}, [load, refreshInterval])
 
-	return { data, loading, error }
+	return { data, loading, error, reload: load }
 }

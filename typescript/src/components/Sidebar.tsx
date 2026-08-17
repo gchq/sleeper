@@ -116,6 +116,15 @@ export default function Sidebar() {
 						<span className="sidebar-link-icon" aria-hidden="true">D</span>
 						{!collapsed && <span className="sidebar-link-label">Data</span>}
 					</NavLink>
+					<NavLink
+						to="/tables"
+						end
+						className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+						title="Tables"
+					>
+						<span className="sidebar-link-icon" aria-hidden="true">T</span>
+						{!collapsed && <span className="sidebar-link-label">Tables</span>}
+					</NavLink>
 				</div>
 
 				<div className="sidebar-section">

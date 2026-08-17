@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
+import { postJson } from '../lib/api'
 import './PropertiesPage.css'
 
 export interface PropertiesPageAdapter {
@@ -288,11 +289,7 @@ function EditPropertyModal({
 		setValidating(true)
 		setValidationError(null)
 		try {
-			const resp = await fetch('/api' + validatePath, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: prop.name, value }),
-			})
+			const resp = await postJson(validatePath, { name: prop.name, value })
 			if (!resp.ok) {
 				setValidationError(`Validation request failed: HTTP ${resp.status}`)
 				return
@@ -587,15 +584,9 @@ function BasketModal({
 	)
 }
 
-function withReloadKey(path: string, key: number): string {
-	if (key === 0) return path
-	return path.includes('?') ? `${path}&_=${key}` : `${path}?_=${key}`
-}
-
 export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAdapter }) {
-	const [reloadKey, setReloadKey] = useState(0)
 	const { data, error } = useApi<PropertiesResponse>(adapter.definitionsPath)
-	const { data: values } = useApi<Record<string, string>>(withReloadKey(adapter.valuesPath, reloadKey))
+	const { data: values, reload: reloadValues } = useApi<Record<string, string>>(adapter.valuesPath)
 	const [search, setSearch] = useState('')
 	const [onlyWithValue, setOnlyWithValue] = useState(false)
 	const [onlyNonDefault, setOnlyNonDefault] = useState(false)
@@ -623,7 +614,6 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 		setBasket({})
 		setConflicts([])
 		setApplyError(null)
-		setReloadKey(0)
 	}, [adapterKey])
 
 	const hasPending = Object.keys(basket).length > 0
@@ -762,11 +752,7 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 		try {
 			const payload: Record<string, string> = {}
 			for (const c of Object.values(basket)) payload[c.name] = c.newValue
-			const resp = await fetch('/api' + adapter.savePath, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			})
+			const resp = await postJson(adapter.savePath, payload)
 			if (!resp.ok) {
 				setApplyError(await parseApplyError(resp))
 				return
@@ -774,7 +760,7 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 			setBasket({})
 			setConflicts([])
 			setShowBasket(false)
-			setReloadKey((k) => k + 1)
+			reloadValues()
 		} catch (err) {
 			setApplyError({ message: (err as Error).message })
 		} finally {

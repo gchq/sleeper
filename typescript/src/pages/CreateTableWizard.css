@@ -1,0 +1,295 @@
+.wizard-modal {
+	max-width: 720px;
+	/* Let the body scroll internally instead of the whole modal, so the
+	   footer actions stay pinned and never overlap the content. */
+	overflow: hidden;
+}
+
+/* ── Body / footer layout ── */
+
+.wizard-body {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 220px;
+	border-top: 1px solid #e5e7eb;
+	padding-top: 0.9rem;
+}
+
+.wizard-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	flex-shrink: 0;
+	border-top: 1px solid #e5e7eb;
+	padding-top: 0.9rem;
+}
+
+/* ── Step indicator ── */
+
+.wizard-steps {
+	display: flex;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	gap: 0.5rem;
+}
+
+.wizard-step {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex: 1;
+	font-size: 0.8rem;
+	color: #9ca3af;
+}
+
+.wizard-step-num {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #f3f4f6;
+	color: #9ca3af;
+	font-size: 0.75rem;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.wizard-step.active {
+	color: #1a56db;
+	font-weight: 600;
+}
+
+.wizard-step.active .wizard-step-num {
+	background: #1a56db;
+	color: #fff;
+}
+
+.wizard-step.done {
+	color: #166534;
+}
+
+.wizard-step.done .wizard-step-num {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.wizard-field-block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+/* ── Template / example picker ── */
+
+.wizard-picker-row {
+	display: flex;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
+.wizard-picker-row .wizard-template-picker {
+	flex: 1;
+	min-width: 200px;
+}
+
+.wizard-template-picker {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.6rem 0.75rem;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+}
+
+.wizard-template-picker select {
+	padding: 0.4rem 0.5rem;
+	font-size: 0.85rem;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	background: #fff;
+	color: #333;
+	cursor: pointer;
+	max-width: 320px;
+}
+
+/* ── Schema step ── */
+
+.wizard-schema {
+	display: flex;
+	flex-direction: column;
+	gap: 1.1rem;
+}
+
+.wizard-schema-section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.wizard-schema-section-head h4 {
+	margin: 0;
+	font-size: 0.9rem;
+}
+
+.wizard-schema-hint {
+	margin: 0.15rem 0 0.5rem;
+	font-size: 0.78rem;
+	color: #6b7280;
+}
+
+.wizard-schema-empty {
+	margin: 0 0 0.4rem;
+	font-size: 0.8rem;
+	color: #9ca3af;
+	font-style: italic;
+}
+
+.wizard-field-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.4rem;
+}
+
+.wizard-field-name {
+	flex: 1;
+	min-width: 0;
+}
+
+.wizard-field-type,
+.wizard-field-subrow select {
+	padding: 0.45rem 0.5rem;
+	font-size: 0.85rem;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	background: #fff;
+	color: #333;
+	cursor: pointer;
+}
+
+.wizard-field-nullable {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-size: 0.8rem;
+	color: #4b5563;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+}
+
+.wizard-field-nullable input {
+	margin: 0;
+	cursor: pointer;
+}
+
+.wizard-field-remove {
+	white-space: nowrap;
+}
+
+.wizard-value-field {
+	border: 1px solid #f0f0f0;
+	border-radius: 6px;
+	padding: 0.5rem 0.6rem;
+	margin-bottom: 0.5rem;
+}
+
+.wizard-value-field .wizard-field-row {
+	margin-bottom: 0;
+}
+
+.wizard-field-subrow {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+	padding-left: 0.5rem;
+}
+
+.wizard-field-sublabel {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+/* ── Split points ── */
+
+.wizard-splitpoints {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	min-height: 140px;
+}
+
+/* ── Review ── */
+
+.wizard-review {
+	display: flex;
+	flex-direction: column;
+	gap: 0.9rem;
+}
+
+.wizard-review-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.wizard-review-value {
+	font-size: 0.95rem;
+	color: #111827;
+}
+
+.wizard-review-schema {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.wizard-review-json {
+	margin: 0;
+	background: #fafafa;
+	border: 1px solid #e5e7eb;
+	border-radius: 4px;
+	padding: 0.75rem;
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	line-height: 1.45;
+	color: #222;
+	overflow-x: auto;
+}
+
+/* ── Success panel ── */
+
+.wizard-success {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.wizard-success p {
+	margin: 0;
+	font-size: 0.95rem;
+}
+
+.wizard-success-id {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.6rem 0.75rem;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+}
+
+.wizard-success-id code {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.9rem;
+	color: #1a56db;
+	overflow-wrap: anywhere;
+}

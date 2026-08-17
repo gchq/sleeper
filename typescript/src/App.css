@@ -99,3 +99,128 @@ body {
 	padding: 0.35rem;
 	line-height: 1;
 }
+
+/* ── Modals ── */
+
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+	padding: 2rem;
+}
+
+.modal {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+	padding: 1.5rem;
+	max-width: 640px;
+	width: 100%;
+	max-height: calc(100vh - 4rem);
+	overflow-y: auto;
+	overflow-x: hidden;
+	display: flex;
+	flex-direction: column;
+	gap: 0.9rem;
+	min-width: 0;
+}
+
+.modal code {
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.modal-title {
+	margin: 0;
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 1rem;
+	color: #1a56db;
+	overflow-wrap: anywhere;
+}
+
+.modal-description {
+	margin: 0;
+	color: #444;
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+.modal-meta {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+	font-size: 0.8rem;
+	color: #4b5563;
+}
+
+.modal-meta code {
+	background: #f3f4f6;
+	padding: 0 0.35em;
+	border-radius: 3px;
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+}
+
+.modal-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.modal-field-label {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.modal-input {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.85rem;
+	padding: 0.5rem 0.6rem;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	resize: vertical;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.modal-input:focus {
+	outline: none;
+	border-color: #1a56db;
+	box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
+}
+
+.modal-actions {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-top: 0.25rem;
+}
+
+.modal-error {
+	margin: 0;
+	padding: 0.5rem 0.7rem;
+	background: #fee2e2;
+	border-left: 3px solid #dc2626;
+	color: #991b1b;
+	font-size: 0.85rem;
+	border-radius: 4px;
+}
+
+.modal-empty {
+	color: #6b7280;
+	font-style: italic;
+	margin: 0;
+}
+
+.modal-note {
+	color: #6b7280;
+	font-size: 0.8rem;
+	margin: 0;
+}

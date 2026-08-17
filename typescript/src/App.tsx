@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Data from './pages/Data'
 import InstanceProperties from './pages/InstanceProperties'
 import TableProperties from './pages/TableProperties'
+import Tables from './pages/Tables'
 import './App.css'
 
 const DataMetricGraph = lazy(() => import('./pages/DataMetricGraph'))
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
 		children: [
 			{ path: '/', element: <Navigate to="/instance/properties" replace /> },
 			{ path: '/instance/properties', element: <InstanceProperties /> },
+			{ path: '/tables', element: <Tables /> },
 			{ path: '/data', element: <Data /> },
 			{
 				path: '/data/graph/:group',

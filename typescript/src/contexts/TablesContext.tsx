@@ -11,13 +11,17 @@ interface TablesListValue {
 	tables: TableStatus[] | null
 	loading: boolean
 	error: string | null
+	reload: () => void
 }
 
 const TablesContext = createContext<TablesListValue | null>(null)
 
 export function TablesProvider({ children }: { children: ReactNode }) {
-	const { data: tables, loading, error } = useApi<TableStatus[]>('/tables')
-	const value = useMemo<TablesListValue>(() => ({ tables, loading, error }), [tables, loading, error])
+	const { data: tables, loading, error, reload } = useApi<TableStatus[]>('/tables')
+	const value = useMemo<TablesListValue>(
+		() => ({ tables, loading, error, reload }),
+		[tables, loading, error, reload],
+	)
 	return <TablesContext.Provider value={value}>{children}</TablesContext.Provider>
 }
 
