@@ -100,15 +100,13 @@
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rustx86</id>
+            <id>rust-x86</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- You need one execution per cross target you are building. Make sure you add the
-                            appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux x86_64)</id>
                                 <phase>generate-resources</phase>
@@ -116,7 +114,8 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+                                    <executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
@@ -136,7 +135,7 @@
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rustaarch64</id>
+            <id>rust-aarch64</id>
             <build>
                 <plugins>
                     <plugin>
@@ -150,7 +149,8 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
+                                    <executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
