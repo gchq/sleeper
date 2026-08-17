@@ -26,6 +26,14 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
+import software.amazon.awssdk.services.cloudwatch.model.GetMetricDataResponse;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
+import software.amazon.awssdk.services.cloudwatch.model.MetricDataQuery;
+import software.amazon.awssdk.services.cloudwatch.model.MetricDataResult;
+import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
+import software.amazon.awssdk.services.cloudwatch.model.ScanBy;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -49,19 +57,35 @@ import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreFactory;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 @Path("/api/tables")
 public class TablesResource {
 
+    // Latest RowCount value from the last hour
+    private static final int LATEST_PERIOD_SECONDS = 60;
+    private static final Duration LATEST_WINDOW = Duration.ofHours(1);
+
+    // RowCount hourly average over the last 7 days
+    private static final int ROW_COUNT_PERIOD_SECONDS = 60 * 60;
+    private static final Duration ROW_COUNT_WINDOW = Duration.ofDays(7);
+
     private final S3Client s3Client;
     private final DynamoDbClient dynamoDbClient;
+    private final CloudWatchClient cloudWatchClient;
     private final String instanceId;
     private final String accountName;
 
@@ -69,11 +93,13 @@ public class TablesResource {
     public TablesResource(
         S3Client s3Client,
         DynamoDbClient dynamoDbClient,
+        CloudWatchClient cloudWatchClient,
         @ConfigProperty(name = "sleeper.instance.id") String instanceId,
         @ConfigProperty(name = "sleeper.account.name") String accountName
     ) {
         this.s3Client = s3Client;
         this.dynamoDbClient = dynamoDbClient;
+        this.cloudWatchClient = cloudWatchClient;
         this.instanceId = instanceId;
         this.accountName = accountName;
     }
@@ -85,6 +111,112 @@ public class TablesResource {
         DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
         return tableIndex.streamAllTables().collect(Collectors.toList());
     }
+
+    @GET
+    @Path("/row-counts")
+    @Produces(MediaType.APPLICATION_JSON)
+    public RowCountsResponse getRowCounts() {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
+        List<TableStatus> tables = tableIndex.streamAllTables().collect(Collectors.toList());
+
+        String namespace = instanceProperties.get(METRICS_NAMESPACE);
+        Instant endTime = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+        Instant sparklineStart = endTime.truncatedTo(ChronoUnit.HOURS).minus(ROW_COUNT_WINDOW);
+
+        // Sparkline: hourly average over the last 7 days.
+        Map<String, List<Point>> pointsByTableId = querySeries(
+                tables, namespace, sparklineStart, endTime, "Average", ROW_COUNT_PERIOD_SECONDS);
+        // Displayed value: the single most recent published RowCount at native resolution.
+        Map<String, List<Point>> latestByTableId = querySeries(
+                tables, namespace, endTime.minus(LATEST_WINDOW), endTime, "Maximum", LATEST_PERIOD_SECONDS);
+
+        List<TableRowCounts> series = new ArrayList<>();
+        for (TableStatus table : tables) {
+            String tableId = table.getTableUniqueId();
+            series.add(new TableRowCounts(
+                    tableId,
+                    table.getTableName(),
+                    latestPointValue(latestByTableId.get(tableId)),
+                    pointsByTableId.get(tableId)));
+        }
+        return new RowCountsResponse(
+                sparklineStart.toString(),
+                endTime.toString(),
+                ROW_COUNT_PERIOD_SECONDS,
+                series);
+    }
+
+    private Map<String, List<Point>> querySeries(
+            List<TableStatus> tables, String namespace, Instant start, Instant end, String stat, int period) {
+        List<MetricDataQuery> queries = new ArrayList<>();
+        Map<String, TableStatus> idToTable = new HashMap<>();
+        for (int i = 0; i < tables.size(); i++) {
+            TableStatus table = tables.get(i);
+            String id = "t" + i;
+            queries.add(buildRowCountQuery(id, namespace, instanceId, table.getTableName(), stat, period));
+            idToTable.put(id, table);
+        }
+
+        Map<String, List<Point>> pointsByTableId = new LinkedHashMap<>();
+        for (TableStatus table : tables) {
+            pointsByTableId.put(table.getTableUniqueId(), new ArrayList<>());
+        }
+        if (queries.isEmpty()) {
+            return pointsByTableId;
+        }
+        GetMetricDataResponse response = cloudWatchClient.getMetricData(builder -> builder
+                .startTime(start)
+                .endTime(end)
+                .scanBy(ScanBy.TIMESTAMP_ASCENDING)
+                .metricDataQueries(queries));
+        for (MetricDataResult result : response.metricDataResults()) {
+            TableStatus table = idToTable.get(result.id());
+            if (table == null) {
+                continue;
+            }
+            List<Instant> timestamps = result.timestamps();
+            List<Double> values = result.values();
+            if (timestamps == null || values == null) {
+                continue;
+            }
+            List<Point> points = pointsByTableId.get(table.getTableUniqueId());
+            int count = Math.min(timestamps.size(), values.size());
+            for (int i = 0; i < count; i++) {
+                points.add(new Point(timestamps.get(i).toString(), values.get(i)));
+            }
+        }
+        return pointsByTableId;
+    }
+
+    private static Double latestPointValue(List<Point> points) {
+        if (points == null || points.isEmpty()) {
+            return null;
+        }
+        return points.get(points.size() - 1).value();
+    }
+
+    private static MetricDataQuery buildRowCountQuery(
+            String id, String namespace, String instanceId, String tableName, String stat, int period) {
+        return MetricDataQuery.builder()
+                .id(id)
+                .metricStat(MetricStat.builder()
+                        .metric(Metric.builder()
+                                .namespace(namespace)
+                                .metricName("RowCount")
+                                .dimensions(
+                                        Dimension.builder().name("instanceId").value(instanceId).build(),
+                                        Dimension.builder().name("tableName").value(tableName).build())
+                                .build())
+                        .stat(stat)
+                        .period(period)
+                        .build())
+                .build();
+    }
+
+    public record Point(String time, Double value) {}
+    public record TableRowCounts(String tableUniqueId, String tableName, Double latestRowCount, List<Point> points) {}
+    public record RowCountsResponse(String startTime, String endTime, int period, List<TableRowCounts> series) {}
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
