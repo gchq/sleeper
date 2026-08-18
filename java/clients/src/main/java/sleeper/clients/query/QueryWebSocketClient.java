@@ -71,7 +71,7 @@ public class QueryWebSocketClient {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
         }
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
+        QueryWebSocketFuture future = new QueryWebSocketFuture();
         QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
@@ -125,9 +125,9 @@ public class QueryWebSocketClient {
         /**
          * Opens a WebSocket connection and returns it.
          *
-         * @param  instanceProperties the instance properties containing the API URL
-         * @param  messageHandler     the listener that will receive messages from the API
-         * @return                    the open connection
+         * @param  instanceProperties   the instance properties containing the API URL
+         * @param  messageHandler       the listener that will receive messages from the API
+         * @return                      the open connection
          * @throws InterruptedException if the thread is interrupted while connecting
          */
         Connection connect(InstanceProperties instanceProperties, QueryWebSocketListener messageHandler) throws InterruptedException;
