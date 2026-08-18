@@ -30,6 +30,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
+import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
@@ -162,8 +163,10 @@ public class DeployNewInstance {
             InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
 
             for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
-                LOGGER.info("Adding table " + tableProperties.getStatus());
-                new AddTableClient(tableProperties,
+                TableProperties deployedTableProperties = new TableProperties(deployedProperties,
+                        PropertiesUtils.loadProperties(tableProperties.saveAsString()));
+                LOGGER.info("Adding table " + deployedTableProperties.getStatus());
+                new AddTableClient(deployedTableProperties,
                         storeFactory.createTableStore(deployedProperties),
                         storeFactory.createStateStore(deployedProperties))
                         .run();
