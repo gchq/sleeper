@@ -15,6 +15,9 @@
  */
 package sleeper.clients.util.cdk;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
@@ -30,6 +33,8 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 
 public class InvokeCdk {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(InvokeCdk.class);
 
     @FunctionalInterface
     public interface OutputDirFactory {
@@ -84,8 +89,13 @@ public class InvokeCdk {
 
     private static void deleteQuietly(Path dir) {
         try (var stream = Files.walk(dir).sorted(Comparator.reverseOrder())) {
-            stream.forEach(p -> p.toFile().delete());
-        } catch (IOException ignored) {
+            stream.forEach(p -> {
+                if (!p.toFile().delete()) {
+                    LOGGER.warn("Failed to delete CDK output file: {}", p);
+                }
+            });
+        } catch (IOException e) {
+            LOGGER.warn("Failed to delete CDK output directory: {}", dir, e);
         }
     }
 
