@@ -101,7 +101,7 @@
         <org.lz4.version>1.8.1</org.lz4.version>
         <yawk.lz4.version>1.11.2</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
-        <avro.version>1.12.1</avro.version>
+        <avro.version>1.12.2</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.2</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
