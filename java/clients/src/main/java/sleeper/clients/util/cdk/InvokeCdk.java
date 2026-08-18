@@ -21,22 +21,31 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 public class InvokeCdk {
 
+    @FunctionalInterface
+    interface OutputDirFactory {
+        Path create() throws IOException;
+    }
+
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
+    private final OutputDirFactory outputDirFactory;
 
     private InvokeCdk(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
+        outputDirFactory = requireNonNull(builder.outputDirFactory, "outputDirFactory must not be null");
     }
 
     public static Builder builder() {
@@ -50,18 +59,33 @@ public class InvokeCdk {
     public void invoke(SleeperInternalCdkApp cdkApp, CdkCommand cdkCommand) throws IOException, InterruptedException {
         String appClassName = cdkApp.getCdkAppClassName();
         Path jarFile = cdkApp.getCdkJarFile(jarsDirectory, version);
-        List<String> command = new ArrayList<>(List.of(
-                "cdk",
-                "-a", String.format("java -cp \"%s\" %s",
-                        jarFile, appClassName)));
-        command.addAll(cdkCommand.command());
-        command.addAll(cdkCommand.arguments());
-        command.add("*");
+        // Use a unique temp directory for CDK output so concurrent deployments don't conflict
+        // on cdk.out. CDK 2.x locks cdk.out and fails if another process is using it.
+        Path outputDir = outputDirFactory.create();
+        try {
+            List<String> command = new ArrayList<>(List.of(
+                    "cdk",
+                    "--output", outputDir.toString(),
+                    "-a", String.format("java -cp \"%s\" %s",
+                            jarFile, appClassName)));
+            command.addAll(cdkCommand.command());
+            command.addAll(cdkCommand.arguments());
+            command.add("*");
 
-        int exitCode = runCommand.run(command.toArray(new String[0]));
+            int exitCode = runCommand.run(command.toArray(new String[0]));
 
-        if (exitCode != 0) {
-            throw new CdkFailedException(exitCode);
+            if (exitCode != 0) {
+                throw new CdkFailedException(exitCode);
+            }
+        } finally {
+            deleteQuietly(outputDir);
+        }
+    }
+
+    private static void deleteQuietly(Path dir) {
+        try (var stream = Files.walk(dir).sorted(Comparator.reverseOrder())) {
+            stream.forEach(p -> p.toFile().delete());
+        } catch (IOException ignored) {
         }
     }
 
@@ -69,6 +93,7 @@ public class InvokeCdk {
         private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
         private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
+        private OutputDirFactory outputDirFactory = () -> Files.createTempDirectory("sleeper-cdk");
 
         private Builder() {
         }
@@ -89,6 +114,11 @@ public class InvokeCdk {
 
         public Builder runCommand(CommandRunner runCommand) {
             this.runCommand = runCommand;
+            return this;
+        }
+
+        Builder outputDirFactory(OutputDirFactory outputDirFactory) {
+            this.outputDirFactory = outputDirFactory;
             return this;
         }
 
