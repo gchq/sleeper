@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 public class InvokeCdk {
 
     @FunctionalInterface
-    interface OutputDirFactory {
+    public interface OutputDirFactory {
         Path create() throws IOException;
     }
 
@@ -117,7 +117,7 @@ public class InvokeCdk {
             return this;
         }
 
-        Builder outputDirFactory(OutputDirFactory outputDirFactory) {
+        public Builder outputDirFactory(OutputDirFactory outputDirFactory) {
             this.outputDirFactory = outputDirFactory;
             return this;
         }
