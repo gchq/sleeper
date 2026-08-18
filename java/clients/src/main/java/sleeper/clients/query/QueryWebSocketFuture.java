@@ -22,10 +22,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A future that completes with query results received via a WebSocket connection.
- *
- * @param <T> unused type parameter inherited from {@link CompletableFuture}
  */
-public class QueryWebSocketFuture<T> extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
+public class QueryWebSocketFuture extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
 
     @Override
     public void handleException(RuntimeException e) {
