@@ -85,6 +85,17 @@ Runs a single integration or unit test. Cannot be used with system tests.
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
 modules relate to one another.
 
+#### `parse_trivy_report.py`
+
+This will parse output from Trivy and convert it to various formats. Here are some example commands to use this to
+generate entries for an ignore file:
+
+```bash
+trivy image $TAG &> test.log &
+less -R test.log # Follow the output with shift+F in less
+scripts/dev/parse_trivy_report.py ./test.log --ignores > ./ignores.yaml
+```
+
 #### `updateVersionNumber.sh`
 
 This is used during the release process to update the version number across the project, see
