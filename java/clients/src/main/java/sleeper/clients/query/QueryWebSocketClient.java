@@ -33,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 
+/**
+ * Sends queries to Sleeper via the WebSocket API and collects the results.
+ */
 public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
     public static final long DEFAULT_TIMEOUT_MS = 120000L;
@@ -55,12 +58,20 @@ public class QueryWebSocketClient {
         this.timeoutMs = timeoutMs;
     }
 
+    /**
+     * Submits a query via the WebSocket API and returns a future that completes with the results.
+     *
+     * @param  query                    the query to run
+     * @return                          a future completing with the rows returned by the query
+     * @throws InterruptedException     if the thread is interrupted while connecting
+     * @throws IllegalArgumentException if the WebSocket API URL is not set in the instance properties
+     */
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
         }
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketFuture<List<Row>> future = new QueryWebSocketFuture<>();
+        QueryWebSocketFuture future = new QueryWebSocketFuture();
         QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query, future);
         Connection connection = adapter.connect(instanceProperties, listener);
         try {
@@ -82,16 +93,43 @@ public class QueryWebSocketClient {
         }
     }
 
+    /**
+     * A live WebSocket connection that can send messages and be closed.
+     */
     public interface Connection {
 
+        /**
+         * Sends a message over the WebSocket connection.
+         *
+         * @param message the message to send
+         */
         void send(String message);
 
+        /**
+         * Closes the WebSocket connection without blocking.
+         */
         void close();
 
+        /**
+         * Closes the WebSocket connection and blocks until it is fully closed.
+         *
+         * @throws InterruptedException if the thread is interrupted while waiting
+         */
         void closeBlocking() throws InterruptedException;
     }
 
+    /**
+     * Creates a WebSocket connection to the query API for a given instance.
+     */
     public interface Adapter {
+        /**
+         * Opens a WebSocket connection and returns it.
+         *
+         * @param  instanceProperties   the instance properties containing the API URL
+         * @param  messageHandler       the listener that will receive messages from the API
+         * @return                      the open connection
+         * @throws InterruptedException if the thread is interrupted while connecting
+         */
         Connection connect(InstanceProperties instanceProperties, QueryWebSocketListener messageHandler) throws InterruptedException;
     }
 }
