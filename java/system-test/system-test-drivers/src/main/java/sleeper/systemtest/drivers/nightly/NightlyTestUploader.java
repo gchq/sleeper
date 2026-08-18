@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.nightly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.util.Objects;
 
@@ -51,9 +52,14 @@ public class NightlyTestUploader {
 
     public void upload(NightlyTestUploadFile file) {
         LOGGER.info("Uploading {}", file);
-        s3Client.putObject(
-                request -> request.bucket(bucketName).key(prefix + "/" + file.getRelativeS3Key()),
-                file.getFile());
+        try {
+            s3Client.putObject(
+                    request -> request.bucket(bucketName).key(prefix + "/" + file.getRelativeS3Key()),
+                    file.getFile());
+        } catch (S3Exception e) {
+            LOGGER.error("Failed to upload {} to S3 due to {}", file.getRelativeS3Key(), e.getMessage());
+            e.printStackTrace();
+        }
         LOGGER.info("Uploaded {}", file);
     }
 

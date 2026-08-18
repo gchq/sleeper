@@ -20,10 +20,9 @@ USER root
 RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
-USER sleeper
 
 WORKDIR /function
-COPY --chown=sleeper:sleeper lambda.jar ./
-COPY --chown=sleeper:sleeper aws-lambda-java-runtime.jar ./
-COPY --chown=sleeper:sleeper entrypoint.sh /
+COPY lambda.jar ./
+COPY aws-lambda-java-runtime.jar ./
+COPY entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]
