@@ -37,7 +37,6 @@ public class SystemTestDeploymentFactory {
         return new DeployInstance(
                 createSyncJars(parameters, clients),
                 createDockerUploader(parameters, clients),
-                DeployInstance.WriteLocalProperties.underScriptsDirectory(parameters.getScriptsDirectory()),
                 createInvokeCdk(parameters, clients));
     }
 

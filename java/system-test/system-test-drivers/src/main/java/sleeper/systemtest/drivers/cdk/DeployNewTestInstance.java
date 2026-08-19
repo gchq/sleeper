@@ -25,11 +25,16 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.util.FilesUtil;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -48,7 +53,7 @@ public class DeployNewTestInstance {
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-        Path propertiesFile = Path.of(args[1]);
+        Path configurationPath = Path.of(args[1]);
         String instanceId = args[2];
         String vpcId = args[3];
         String subnetIds = args[4];
@@ -64,17 +69,25 @@ public class DeployNewTestInstance {
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
 
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate));
+                    configurationPath, templates(scriptsDirectory, splitPointsFileForTemplate));
             config.getInstanceProperties().set(ID, instanceId);
             config.getInstanceProperties().set(VPC_ID, vpcId);
             config.getInstanceProperties().set(SUBNETS, subnetIds);
+
+            Path generatedDir = scriptsDirectory.resolve("generated");
+            Files.createDirectories(generatedDir);
+            FilesUtil.clearDirectory(generatedDir);
+            SaveLocalProperties.saveToDirectory(generatedDir,
+                    config.getInstanceProperties(),
+                    config.getTableProperties().stream());
+
             DeployNewInstance.builder()
                     .deployInstance(DeployInstance.fromScriptsDirectory(scriptsDirectory, accountName, region, partitionMetadata, s3Client, ecrClient))
-                    .accountName(accountName)
-                    .s3Client(s3Client)
-                    .dynamoClient(dynamoClient)
-                    .deployInstanceConfiguration(config)
+                    .storeFactory(StoreFactory.withAwsClients(s3Client, dynamoClient))
+                    .instancePropertiesLoader(id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, id))
+                    .expectedInstanceConfiguration(config)
                     .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .configDir(configurationPath)
                     .deployPaused(deployPaused)
                     .build().deploy();
         }

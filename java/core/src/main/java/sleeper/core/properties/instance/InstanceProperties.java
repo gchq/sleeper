@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
@@ -186,8 +187,8 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     @Override
-    protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
-        return createPrettyPrinter(writer);
+    protected Builder<InstanceProperty> prettyPrinterBuilder() {
+        return createPrettyPrinterBuilder();
     }
 
     /**
@@ -225,6 +226,16 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     /**
+     * Creates a printer to be used to display all instance properties.
+     *
+     * @param  writer the writer to write to
+     * @return        the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinter(PrintWriter writer) {
+        return createPrettyPrinterBuilder().writer(writer).build();
+    }
+
+    /**
      * Creates a printer to be used to display instance properties in a given group.
      *
      * @param  writer the writer to write to
@@ -233,23 +244,31 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      */
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinterWithGroup(
             PrintWriter writer, PropertyGroup group) {
+        return createPrettyPrinterBuilderWithGroup(group).writer(writer).build();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all instance properties.
+     *
+     * @return the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilder() {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll());
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display instance properties in a given group.
+     *
+     * @param  group the group to display
+     * @return       the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilderWithGroup(PropertyGroup group) {
         return SleeperPropertiesPrettyPrinter.builder()
                 .sortedProperties(InstanceProperty.getAll().stream()
                         .filter(property -> property.getPropertyGroup().equals(group))
                         .collect(Collectors.toList()))
-                .writer(writer).hideUnknownProperties(true).build();
-    }
-
-    /**
-     * Creates a printer to be used to display all instance properties.
-     *
-     * @param  writer the writer to write to
-     * @return        the pretty printer
-     */
-    public static SleeperPropertiesPrettyPrinter<InstanceProperty> createPrettyPrinter(PrintWriter writer) {
-        return SleeperPropertiesPrettyPrinter.builder()
-                .properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll())
-                .writer(writer).build();
+                .hideUnknownProperties(true);
     }
 
     /**

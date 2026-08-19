@@ -60,11 +60,21 @@ public record CdkCommand(List<String> command, List<String> arguments) {
     }
 
     public CdkCommand withPropertiesFile(Path propertiesFile) {
+        if (propertiesFile == null) {
+            return this;
+        }
         return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
     }
 
     public CdkCommand withConfigurationDirectory(Path configurationDirectory) {
+        if (configurationDirectory == null) {
+            return this;
+        }
         return builder().command(command).configurationDirectory(configurationDirectory).arguments(arguments).build();
+    }
+
+    public Builder toBuilder() {
+        return builder().command(command).arguments(arguments);
     }
 
     public static final class Builder {
@@ -91,6 +101,18 @@ public record CdkCommand(List<String> command, List<String> arguments) {
         public Builder arguments(List<String> arguments) {
             this.arguments.addAll(arguments);
             return this;
+        }
+
+        public Builder instanceId(String id) {
+            return context("id", id);
+        }
+
+        public Builder vpcId(String vpcId) {
+            return context("vpc", vpcId);
+        }
+
+        public Builder subnets(String subnets) {
+            return context("subnets", subnets);
         }
 
         public Builder propertiesFile(Path propertiesFile) {
