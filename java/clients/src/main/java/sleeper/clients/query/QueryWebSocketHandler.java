@@ -19,9 +19,22 @@ import sleeper.core.row.Row;
 
 import java.util.List;
 
+/**
+ * Handles events from a WebSocket query session.
+ */
 public interface QueryWebSocketHandler {
 
+    /**
+     * Handles an exception that occurred during query processing.
+     *
+     * @param e the exception
+     */
     void handleException(RuntimeException e);
 
+    /**
+     * Handles the final results of a query.
+     *
+     * @param results the rows returned by the query
+     */
     void handleResults(List<Row> results);
 }

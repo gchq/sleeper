@@ -146,6 +146,51 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
+    public void unassignFiles(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
+        for (int i = 0; i < filesInJob.size(); i += filesInAssignJobBatch) {
+            List<IngestBatcherTrackedFile> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
+            try {
+                TransactWriteItemsRequest request = TransactWriteItemsRequest.builder()
+                        .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                        .transactItems(filesInBatch.stream()
+                                .flatMap(file -> Stream.of(
+                                        TransactWriteItem.builder()
+                                                .delete(Delete.builder()
+                                                        .tableName(requestsTableName)
+                                                        .key(DynamoDBIngestRequestFormat.createKey(file.toBuilder().jobId(jobId).build()))
+                                                        .conditionExpression("attribute_exists(#filepath)")
+                                                        .expressionAttributeNames(Map.of("#filepath", FILE_PATH))
+                                                        .build())
+                                                .build(),
+                                        TransactWriteItem.builder()
+                                                .put(Put.builder()
+                                                        .tableName(requestsTableName)
+                                                        .item(DynamoDBIngestRequestFormat.createRecord(
+                                                                tablePropertiesProvider, file))
+                                                        .conditionExpression("attribute_not_exists(#filepath)")
+                                                        .expressionAttributeNames(Map.of("#filepath", FILE_PATH))
+                                                        .build())
+                                                .build()))
+                                .collect(Collectors.toList()))
+                        .build();
+
+                TransactWriteItemsResponse result = dynamoDB.transactWriteItems(request);
+                List<ConsumedCapacity> consumedCapacity = Optional.ofNullable(result.consumedCapacity()).orElse(List.of());
+                double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::capacityUnits).sum();
+                LOGGER.debug("Unassigned {} files from job {}, capacity consumed = {}",
+                        filesInBatch.size(), jobId, totalConsumed);
+            } catch (TransactionCanceledException e) {
+                LOGGER.error("{} files could not be unassigned, leaving them assigned to job {}.", filesInBatch.size(), jobId);
+                long numFailures = e.cancellationReasons().stream()
+                        .filter(reason -> !"None".equals(reason.code())).count();
+                LOGGER.error("Cancellation reasons ({} failures): {}", numFailures, e.cancellationReasons(), e);
+            } catch (RuntimeException e) {
+                LOGGER.error("{} files could not be unassigned, leaving them assigned to job {}.", filesInBatch.size(), jobId, e);
+            }
+        }
+    }
+
+    @Override
     public List<IngestBatcherTrackedFile> getAllFilesNewestFirst() {
         return streamPagedItems(dynamoDB, ScanRequest.builder()
                 .tableName(requestsTableName).build())
