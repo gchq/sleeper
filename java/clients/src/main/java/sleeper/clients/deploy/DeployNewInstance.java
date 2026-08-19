@@ -44,6 +44,7 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -152,26 +153,32 @@ public class DeployNewInstance {
 
     public void deploy() throws IOException, InterruptedException {
         InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
+        List<TableProperties> tablePropertiesList = expectedInstanceConfiguration.getTableProperties();
+
+        List<TableProperties> storedTableProperties = new ArrayList<>();
+        for (TableProperties tableProperties : tablePropertiesList) {
+            TableProperties deployedTableProperties = new TableProperties(instanceProperties,
+                    PropertiesUtils.loadProperties(tableProperties.saveAsString()));
+            LOGGER.info("Adding table " + deployedTableProperties.getStatus());
+            new AddTableClient(deployedTableProperties,
+                    storeFactory.createTableStore(instanceProperties),
+                    storeFactory.createStateStore(instanceProperties))
+                    .run();
+            storedTableProperties.add(deployedTableProperties);
+        }
+
+        SleeperInstanceConfiguration configWithIds = storedTableProperties.isEmpty()
+                ? expectedInstanceConfiguration
+                : SleeperInstanceConfiguration.builder()
+                        .instanceProperties(instanceProperties)
+                        .tableProperties(storedTableProperties)
+                        .build();
 
         deployInstance.deploy(DeployInstanceRequest.builder()
-                .instanceConfig(expectedInstanceConfiguration)
+                .instanceConfig(configWithIds)
                 .cdkCommand(cdkCommand)
                 .cdkApp(cdkApp)
                 .build());
-
-        if (!expectedInstanceConfiguration.getTableProperties().isEmpty()) {
-            InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
-
-            for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
-                TableProperties deployedTableProperties = new TableProperties(deployedProperties,
-                        PropertiesUtils.loadProperties(tableProperties.saveAsString()));
-                LOGGER.info("Adding table " + deployedTableProperties.getStatus());
-                new AddTableClient(deployedTableProperties,
-                        storeFactory.createTableStore(deployedProperties),
-                        storeFactory.createStateStore(deployedProperties))
-                        .run();
-            }
-        }
         LOGGER.info("Finished deployment of new instance");
     }
 
