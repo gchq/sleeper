@@ -56,10 +56,17 @@ public class FilesStatusReportMainTest {
         }
 
         @Test
-        void shouldReadReportType() {
+        void shouldReadReportTypeJson() {
             Arguments args = readArguments("my-instance", "my-table", "--report-type", "json");
 
             assertThat(args.reporterType()).isEqualTo("JSON");
+        }
+
+        @Test
+        void shouldReadReportTypeCsv() {
+            Arguments args = readArguments("my-instance", "my-table", "--report-type", "csv");
+
+            assertThat(args.reporterType()).isEqualTo("CSV");
         }
     }
 
@@ -70,7 +77,7 @@ public class FilesStatusReportMainTest {
         void shouldRejectUnknownReportType() {
             assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "unknown"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessageContaining("Report type not supported");
+                    .hasMessageContaining("Report type not supported: UNKNOWN");
         }
     }
 

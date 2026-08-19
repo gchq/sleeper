@@ -21,13 +21,16 @@ import sleeper.clients.report.tables.JsonListTablesReporter;
 import sleeper.clients.report.tables.ListTablesReporter;
 import sleeper.clients.report.tables.StandardListTablesReporter;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 /**
  * Lists all tables in a Sleeper instance with ID, either in standard or JSON format.
@@ -40,6 +43,16 @@ public class ListTablesReport {
         REPORTERS.put(DEFAULT_REPORTER, new StandardListTablesReporter());
         REPORTERS.put("JSON", new JsonListTablesReporter());
     }
+
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id"))
+            .options(List.of(CommandOption.longOption("report-type")))
+            .helpSummary("" +
+                    "Creates a report listing all the tables within a Sleeper instance.\n" +
+                    "\n" +
+                    "--report-type <type>\n" +
+                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.")
+            .build();
 
     private final SleeperClient client;
     private final ListTablesReporter reporter;
@@ -57,35 +70,39 @@ public class ListTablesReport {
     }
 
     public static void main(String[] args) {
-        try {
-            if (args.length < 1 || args.length > 2) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            ListTablesReporter reporter = getReporter(args, 1);
+        Arguments arguments = CommandArguments.parseAndValidateOrExit(USAGE, args, ListTablesReport::readArguments);
 
-            try (SleeperClient client = SleeperClient.builder().instanceId(instanceId).build()) {
-                new ListTablesReport(client, reporter).run();
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            printUsage();
-            System.exit(1);
+        try (SleeperClient client = SleeperClient.builder().instanceId(arguments.instanceId()).build()) {
+            new ListTablesReport(client, REPORTERS.get(arguments.reportType())).run();
         }
     }
 
-    private static void printUsage() {
-        System.out.println("" +
-                "Usage: <instance-id> <optional-report-type-standard-or-json>");
+    /**
+     * Reads the arguments from the command line.
+     *
+     * @param  arguments the parsed command line arguments
+     * @return           the arguments
+     */
+    public static Arguments readArguments(CommandArguments arguments) {
+        return new Arguments(
+                arguments.getString("instance-id"),
+                arguments.getOptionalString("report-type")
+                        .map(s -> s.toUpperCase(Locale.ROOT))
+                        .orElse(DEFAULT_REPORTER));
     }
 
-    private static ListTablesReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+    /**
+     * Holds the arguments for the list tables report command.
+     * Arguments
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param reportType the output format, either STANDARD or JSON
+     */
+    public record Arguments(String instanceId, String reportType) {
+        public Arguments {
+            if (!REPORTERS.containsKey(reportType)) {
+                throw new CommandArgumentsException("Report type not supported: " + reportType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+            }
         }
-        return REPORTERS.get(reporterType);
     }
 }
