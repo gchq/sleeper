@@ -37,6 +37,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+/**
+ * Handles WebSocket messages from the query API, assembling results across sub-queries.
+ */
 public class QueryWebSocketListener {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketListener.class);
 
@@ -56,6 +59,11 @@ public class QueryWebSocketListener {
         this.handler = handler;
     }
 
+    /**
+     * Called when the WebSocket connection is opened. Sends the initial query.
+     *
+     * @param connection the newly opened connection
+     */
     public void onOpen(Connection connection) {
         this.connection = connection;
         LOGGER.info("Connected to WebSocket API");
@@ -65,6 +73,11 @@ public class QueryWebSocketListener {
         outstandingQueryIds.add(query.getQueryId());
     }
 
+    /**
+     * Called when a message is received from the WebSocket API.
+     *
+     * @param json the raw JSON message
+     */
     public void onMessage(String json) {
         QueryWebSocketMessage message;
         try {
@@ -94,11 +107,21 @@ public class QueryWebSocketListener {
         }
     }
 
+    /**
+     * Called when the WebSocket connection is closed. Notifies the handler of an unexpected closure.
+     *
+     * @param reason the reason the connection was closed
+     */
     public void onClose(String reason) {
         LOGGER.info("Disconnected from WebSocket API with reason: {}", reason);
         handler.handleException(new WebSocketClosedException(reason));
     }
 
+    /**
+     * Called when an error occurs on the WebSocket connection.
+     *
+     * @param error the exception that was raised
+     */
     public void onError(Exception error) {
         handler.handleException(new WebSocketErrorException(error));
         close();
