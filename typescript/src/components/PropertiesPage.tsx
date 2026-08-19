@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useBlocker } from 'react-router-dom'
+import { useBlocker, useSearchParams } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
 import { postJson } from '../lib/api'
 import './PropertiesPage.css'
@@ -587,12 +587,37 @@ function BasketModal({
 export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAdapter }) {
 	const { data, error } = useApi<PropertiesResponse>(adapter.definitionsPath)
 	const { data: values, reload: reloadValues } = useApi<Record<string, string>>(adapter.valuesPath)
-	const [search, setSearch] = useState('')
-	const [onlyWithValue, setOnlyWithValue] = useState(false)
-	const [onlyNonDefault, setOnlyNonDefault] = useState(false)
-	const [onlyEditable, setOnlyEditable] = useState(false)
-	const [showDescriptions, setShowDescriptions] = useState(true)
-	const [view, setView] = useState<View>('table')
+
+	const [searchParams, setSearchParams] = useSearchParams()
+	const setParam = useCallback(
+		(key: string, value: string | null) => {
+			setSearchParams(
+				(prev) => {
+					const next = new URLSearchParams(prev)
+					if (value === null) next.delete(key)
+					else next.set(key, value)
+					return next
+				},
+				{ replace: true },
+			)
+		},
+		[setSearchParams],
+	)
+
+	const search = searchParams.get('filter') ?? ''
+	const onlyWithValue = searchParams.has('hasValue')
+	const onlyNonDefault = searchParams.has('nonDefault')
+	const onlyEditable = searchParams.has('editable')
+	const showDescriptions = searchParams.get('descriptions') !== '0'
+	const view: View = searchParams.get('view') === 'text' ? 'text' : 'table'
+
+	const setSearch = useCallback((v: string) => setParam('filter', v || null), [setParam])
+	const setOnlyWithValue = useCallback((v: boolean) => setParam('hasValue', v ? '1' : null), [setParam])
+	const setOnlyNonDefault = useCallback((v: boolean) => setParam('nonDefault', v ? '1' : null), [setParam])
+	const setOnlyEditable = useCallback((v: boolean) => setParam('editable', v ? '1' : null), [setParam])
+	const setShowDescriptions = useCallback((v: boolean) => setParam('descriptions', v ? null : '0'), [setParam])
+	const setView = useCallback((v: View) => setParam('view', v === 'text' ? 'text' : null), [setParam])
+
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 	const [basket, setBasket] = useState<Basket>({})
 	const [editing, setEditing] = useState<{

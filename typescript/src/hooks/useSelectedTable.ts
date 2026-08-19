@@ -1,16 +1,16 @@
 import { useParams } from 'react-router-dom'
-import type { TableStatus } from '../contexts/InstanceContext'
+import type { InstanceValue, TableStatus } from '../contexts/InstanceContext'
 import { useInstance } from '../contexts/InstanceContext'
 
-export interface SelectedTable {
-	table: TableStatus | null
-	loading: boolean
-	error: string | null
+// table is undefined if the current URL does not contain a tableId param
+// table is null if the current URL contains a tableId param but that tableId does not exist
+export interface SelectedTable extends InstanceValue {
+	table?: TableStatus | null
 }
 
 export function useSelectedTable(): SelectedTable {
 	const { tableId } = useParams<{ tableId?: string }>()
-	const { tables, loading, error } = useInstance()
-	if (!tableId || !tables) return { table: null, loading, error }
-	return { table: tables.find((t) => t.tableUniqueId === tableId) ?? null, loading, error }
+	const instance = useInstance()
+	if (!tableId) return instance
+	return { ...instance, table: instance.tables?.find((t) => t.tableUniqueId === tableId) ?? null }
 }

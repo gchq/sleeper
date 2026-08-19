@@ -1,6 +1,7 @@
 import type { ChangeEvent, MouseEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate, useParams } from 'react-router-dom'
+import { NavLink, useMatch, useNavigate } from 'react-router-dom'
+import type { InstanceFeatures } from '../contexts/InstanceContext'
 import { useInstance } from '../contexts/InstanceContext'
 import './Sidebar.css'
 
@@ -8,13 +9,14 @@ interface TablePage {
 	key: string
 	label: string
 	shortLabel: string
+	feature?: keyof InstanceFeatures
 }
 
 const TABLE_PAGES: TablePage[] = [
 	{ key: 'properties', label: 'Table Properties', shortLabel: 'TP' },
+	{ key: 'ingest-batcher', label: 'Ingest Batcher', shortLabel: 'IB', feature: 'IngestBatcher' },
 ]
 
-const DEFAULT_TABLE_PAGE = TABLE_PAGES[0].key
 const COLLAPSED_STORAGE_KEY = 'sleeper-sidebar-collapsed'
 const LAST_TABLE_STORAGE_KEY = 'sleeper-sidebar-last-table'
 
@@ -35,18 +37,19 @@ function readLastTable(): string | null {
 }
 
 export default function Sidebar() {
-	const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
-	const [lastTableId, setLastTableId] = useState<string | null>(readLastTable)
-	const { tables, loading: tablesLoading, error: tablesError, version, instanceId } = useInstance()
-	const { tableId: routeTableId } = useParams<{ tableId?: string }>()
 	const navigate = useNavigate()
+	const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
+	const { tables, loading, error, version, instanceId, features } = useInstance()
+
+	const [lastTableId, setLastTableId] = useState<string | null>(readLastTable)
+	const tablePageMatch = useMatch('/tables/:tableId/:tablePage')
+	const routeTableId = tablePageMatch?.params.tableId
 	const selectedTableId = routeTableId ?? lastTableId
 
 	useEffect(() => {
 		try {
 			window.localStorage.setItem(COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
 		} catch {
-			// ignore quota / privacy-mode failures
 		}
 	}, [collapsed])
 
@@ -56,7 +59,6 @@ export default function Sidebar() {
 		try {
 			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, routeTableId)
 		} catch {
-			// ignore
 		}
 	}, [routeTableId, lastTableId])
 
@@ -67,14 +69,21 @@ export default function Sidebar() {
 		try {
 			window.localStorage.removeItem(LAST_TABLE_STORAGE_KEY)
 		} catch {
-			// ignore
 		}
 	}, [tables, lastTableId])
 
 	function onTableChange(e: ChangeEvent<HTMLSelectElement>) {
 		const id = e.target.value
 		if (!id) return
-		navigate(`/tables/${encodeURIComponent(id)}/${DEFAULT_TABLE_PAGE}`)
+		if (tablePageMatch) {
+			return navigate(`/tables/${encodeURIComponent(id)}/${tablePageMatch.params.tablePage}`)
+		}
+
+		setLastTableId(id)
+		try {
+			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, id)
+		} catch {
+		}
 	}
 
 	function onDisabledLinkClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -137,25 +146,36 @@ export default function Sidebar() {
 						<span className="sidebar-link-icon" aria-hidden="true">T</span>
 						{!collapsed && <span className="sidebar-link-label">Tables</span>}
 					</NavLink>
+					{features?.IngestBatcher && (
+						<NavLink
+							to="/ingest-batcher"
+							end
+							className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+							title="Ingest Batcher"
+						>
+							<span className="sidebar-link-icon" aria-hidden="true">IB</span>
+							{!collapsed && <span className="sidebar-link-label">Ingest Batcher</span>}
+						</NavLink>
+					)}
 				</div>
 
 				<div className="sidebar-section">
 					{!collapsed && <div className="sidebar-section-label">Table</div>}
 					{!collapsed && (
 						<div className="sidebar-table-select">
-							{tablesError ? (
-								<span className="sidebar-error" title={tablesError}>
+							{error ? (
+								<span className="sidebar-error" title={error}>
 									Failed to load tables
 								</span>
 							) : (
 								<select
 									value={selectedTableId ?? ''}
 									onChange={onTableChange}
-									disabled={tablesLoading && !tables}
+									disabled={loading && !tables}
 									aria-label="Select a table"
 								>
 									<option value="" disabled={!!selectedTableId}>
-										{tablesLoading && !tables
+										{loading && !tables
 											? 'Loading tables…'
 											: tables && tables.length === 0
 												? 'No tables available'
@@ -171,7 +191,8 @@ export default function Sidebar() {
 							)}
 						</div>
 					)}
-					{TABLE_PAGES.map((p) => {
+
+					{TABLE_PAGES.filter((p) => !p.feature || features?.[p.feature]).map((p) => {
 						const disabled = !selectedTableId
 						const to = disabled ? '#' : `/tables/${encodeURIComponent(selectedTableId)}/${p.key}`
 						return (
@@ -185,7 +206,7 @@ export default function Sidebar() {
 									if (disabled) classes.push('disabled')
 									return classes.join(' ')
 								}}
-								title={disabled ? `${p.label} (select a table first)` : p.label}
+								title={p.label}
 								onClick={disabled ? onDisabledLinkClick : undefined}
 								aria-disabled={disabled}
 								tabIndex={disabled ? -1 : undefined}

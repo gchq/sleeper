@@ -39,7 +39,7 @@ export default function TableProperties() {
 
 			<PropertiesPage
 				adapter={{
-					title: 'Table Properties',
+					title: 'Table Properties: ' + table.tableName,
 					definitionsPath: '/sleeper/table/properties',
 					valuesPath: `/tables/${encoded}/properties`,
 					validatePath: '/sleeper/table/properties/validate',

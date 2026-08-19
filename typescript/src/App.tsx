@@ -8,6 +8,7 @@ import Tables from './pages/Tables'
 import './App.css'
 
 const DataMetricGraph = lazy(() => import('./pages/DataMetricGraph'))
+const IngestBatcher = lazy(() => import('./pages/IngestBatcher'))
 
 const router = createBrowserRouter([
 	{
@@ -16,6 +17,22 @@ const router = createBrowserRouter([
 			{ path: '/', element: <Navigate to="/instance/properties" replace /> },
 			{ path: '/instance/properties', element: <InstanceProperties /> },
 			{ path: '/tables', element: <Tables /> },
+			{
+				path: '/ingest-batcher',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestBatcher />
+					</Suspense>
+				),
+			},
+			{
+				path: '/tables/:tableId/ingest-batcher',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestBatcher />
+					</Suspense>
+				),
+			},
 			{ path: '/data', element: <Data /> },
 			{
 				path: '/data/graph/:group',
