@@ -96,7 +96,7 @@
         <profile>
             <activation>
                 <property>
-                    <name>rust.x86_64.skip</name>
+                    <name>rust.x86.skip</name>
                     <value>!true</value>
                 </property>
             </activation>
@@ -159,6 +159,26 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>rust.skip</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <id>rust-skip-all</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
