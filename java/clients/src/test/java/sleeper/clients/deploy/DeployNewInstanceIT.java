@@ -107,6 +107,12 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             // Given
+            // Set the same properties that CDK would write to S3, so that instancePropertiesLoader
+            // (which the new deploy() calls after CDK to reload deployed properties) returns
+            // the right base when AddTableClient creates tables.
+            instanceProperties.set(ID, "my-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
             instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             writeInstancePropertiesFile();
             TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -119,19 +125,17 @@ public class DeployNewInstanceIT {
                     "my-instance", "test-vpc", "test-subnet",
                     "--config-dir", configDir.toString());
 
-            // Then the combined configuration is derived
-            // And the CDK is invoked pointing to the file and the extra configuration
+            // Then CDK is invoked before AddTableClient runs — tables have no ID in the CDK request
             InstanceProperties expected = new InstanceProperties();
             expected.set(ID, "my-instance");
             expected.set(VPC_ID, "test-vpc");
             expected.set(SUBNETS, "test-subnet");
             expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
-            TableProperties expectedTable = new TableProperties(expected);
-            expectedTable.set(TABLE_ID, tableId("test-table"));
-            expectedTable.set(TABLE_NAME, "test-table");
-            expectedTable.setSchema(createSchemaWithKey("key"));
+            TableProperties expectedTableForCdk = new TableProperties(expected);
+            expectedTableForCdk.set(TABLE_NAME, "test-table");
+            expectedTableForCdk.setSchema(createSchemaWithKey("key"));
             assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
-                    .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(expected).tableProperties(expectedTable).build())
+                    .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(expected).tableProperties(expectedTableForCdk).build())
                     .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(configDir).toBuilder()
                             .instanceId("my-instance")
                             .vpcId("test-vpc")
@@ -139,7 +143,12 @@ public class DeployNewInstanceIT {
                             .build())
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .build());
-            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedTable);
+            // AddTableClient runs after CDK and assigns TABLE_ID using the reloaded deployed properties
+            TableProperties expectedCreatedTable = new TableProperties(instanceProperties);
+            expectedCreatedTable.set(TABLE_ID, tableId("test-table"));
+            expectedCreatedTable.set(TABLE_NAME, "test-table");
+            expectedCreatedTable.setSchema(createSchemaWithKey("key"));
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedCreatedTable);
         }
 
         @Test
