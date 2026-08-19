@@ -28,15 +28,12 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
@@ -45,18 +42,16 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
 
-public class DeployInstance {
+public class DeployInstance implements InstanceDeployer {
     public static final Logger LOGGER = LoggerFactory.getLogger(DeployInstance.class);
 
     private final SyncJars syncJars;
     private final UploadDockerImagesToEcr dockerImageUploader;
-    private final WriteLocalProperties writeLocalProperties;
     private final InvokeCdk invokeCdk;
 
-    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, WriteLocalProperties writeLocalProperties, InvokeCdk invokeCdk) {
+    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, InvokeCdk invokeCdk) {
         this.syncJars = syncJars;
         this.dockerImageUploader = dockerImageUploader;
-        this.writeLocalProperties = writeLocalProperties;
         this.invokeCdk = invokeCdk;
     }
 
@@ -67,7 +62,6 @@ public class DeployInstance {
                 new UploadDockerImagesToEcr(
                         UploadDockerImages.fromScriptsDirectory(scriptsDirectory, ecrClient),
                         account, region, partitionMetadata),
-                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.fromScriptsDirectory(scriptsDirectory));
     }
 
@@ -87,30 +81,9 @@ public class DeployInstance {
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
-        Path configurationDirectory = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand().withConfigurationDirectory(configurationDirectory));
-    }
-
-    public interface WriteLocalProperties {
-        Path write(SleeperInstanceConfiguration instanceConfig) throws IOException;
-
-        static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
-            return toDirectory(scriptsDirectory.resolve("generated"));
-        }
-
-        static WriteLocalProperties toDirectory(Path directory) {
-            return instanceConfig -> {
-                LOGGER.info("Writing instance configuration to local directory: {}", directory);
-                Files.createDirectories(directory);
-                ClientUtils.clearDirectory(directory);
-                SaveLocalProperties.saveToDirectory(directory,
-                        instanceConfig.getInstanceProperties(),
-                        instanceConfig.getTableProperties().stream());
-                return directory;
-            };
-        }
+        invokeCdk.invoke(request.getCdkApp(), request.getCdkCommand());
     }
 }

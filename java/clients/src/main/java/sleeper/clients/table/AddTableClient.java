@@ -76,20 +76,20 @@ public class AddTableClient {
             .helpSummary("" +
                     "Adds a new table to an existing Sleeper instance.\n" +
                     "\n" +
+                    "--config-dir <dir>\n" +
+                    "Path to a directory containing schema.json and table.properties. " +
+                    "Can be combined with --schema or --table-properties to override the corresponding file " +
+                    "from the directory, but not both at the same time." +
+                    "\n" +
+                    "--schema <file>\n" +
+                    "Path to the schema JSON file. Used with the --table-properties option or a --config-dir that doesn't have a schema in it.\n" +
+                    "\n" +
                     "--table-name <name>\n" +
                     "Name of the new table. May also be set in --table-properties or --config-dir. " +
                     "If --table-name is provided alongside --table-properties or --config-dir, it overrides the name in the file.\n" +
                     "\n" +
-                    "--schema <file>\n" +
-                    "Path to the schema JSON file.\n" +
-                    "\n" +
                     "--table-properties <file>\n" +
-                    "Optional path to a table properties file. If not set, default table properties will be used.\n" +
-                    "\n" +
-                    "--config-dir <dir>\n" +
-                    "Path to a directory containing schema.json and table.properties. " +
-                    "Can be combined with --schema or --table-properties to override the corresponding file " +
-                    "from the directory, but not both at the same time.")
+                    "Optional path to a table properties file. If not set, no properties will be set and default values will apply.")
             .build();
 
     public static Arguments readArguments(CommandArguments arguments, FileReader files) {

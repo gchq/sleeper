@@ -31,6 +31,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.cli.CommandArguments;
@@ -53,6 +54,7 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final boolean deployPaused;
     private final SleeperInternalCdkApp forceCdkApp;
+    private final Path configDir;
 
     private DeployExistingInstance(Builder builder) {
         deployInstance = builder.deployInstance;
@@ -60,6 +62,7 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         deployPaused = builder.deployPaused;
         forceCdkApp = builder.forceCdkApp;
+        configDir = builder.configDir;
     }
 
     public static Builder builder() {
@@ -107,6 +110,7 @@ public class DeployExistingInstance {
                     .deployPaused(args.deployPaused())
                     .forceCdkApp(args.forceCdkApp())
                     .loadPropertiesFromS3(accountName, s3Client, dynamoClient)
+                    .configDir(args.scriptsDirectory().resolve("generated"))
                     .build().update();
         }
     }
@@ -115,9 +119,11 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
+        SaveLocalProperties.createDirectoryAndSaveProperties(configDir, properties, tablePropertiesList.stream());
+        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting();
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
-                .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
+                .cdkCommand(cdkCommand.withConfigurationDirectory(configDir))
                 .cdkApp(getCdkApp())
                 .build());
 
@@ -143,6 +149,7 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private boolean deployPaused;
         private SleeperInternalCdkApp forceCdkApp;
+        private Path configDir;
 
         private Builder() {
         }
@@ -178,6 +185,11 @@ public class DeployExistingInstance {
 
         public Builder forceCdkApp(SleeperInternalCdkApp forceCdkApp) {
             this.forceCdkApp = forceCdkApp;
+            return this;
+        }
+
+        public Builder configDir(Path configDir) {
+            this.configDir = configDir;
             return this;
         }
 
