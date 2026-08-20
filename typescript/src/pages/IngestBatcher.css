@@ -64,6 +64,11 @@
 	border-radius: 6px;
 }
 
+.batcher-ingest-file {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
 .batcher-info {
 	margin-bottom: 1.25rem;
 	padding: 0.85rem 1.1rem;

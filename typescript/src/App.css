@@ -211,6 +211,8 @@ body {
 	color: #991b1b;
 	font-size: 0.85rem;
 	border-radius: 4px;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .modal-empty {

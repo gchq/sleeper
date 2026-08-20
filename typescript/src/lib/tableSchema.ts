@@ -176,7 +176,7 @@ export const SCHEMA_TEMPLATES: SchemaTemplate[] = [
 		label: 'Simple key-value',
 		description: 'A string key with a single string value.',
 		schema: {
-			rowKeys: [key('id', 'StringType')],
+			rowKeys: [key('key', 'StringType')],
 			sortKeys: [],
 			valueFields: [primitiveValue('value', 'StringType')],
 		},
@@ -186,7 +186,7 @@ export const SCHEMA_TEMPLATES: SchemaTemplate[] = [
 		label: 'Versioned key-value',
 		description: 'A string key, sorted by time, with a single string value.',
 		schema: {
-			rowKeys: [key('id', 'StringType')],
+			rowKeys: [key('key', 'StringType')],
 			sortKeys: [key('timestamp', 'LongType')],
 			valueFields: [primitiveValue('value', 'StringType')],
 		},

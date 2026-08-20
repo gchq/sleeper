@@ -19,6 +19,7 @@ import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Types;
 
 import sleeper.core.schema.Field;
@@ -32,16 +33,72 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Converts a Sleeper schema to Parquet format. Produces a Parquet {@link MessageType}.
  */
-class SchemaConverter {
+public class SchemaConverter {
 
     private SchemaConverter() {
     }
 
-    static MessageType getSchema(Schema schema) {
+    /**
+     * Checks whether a Parquet file's schema is compatible with a Sleeper table schema for ingest.
+     *
+     * A file is compatible if, for every field in the table schema, the file has a column of the
+     * same name and matching type. Column order and any extra columns in the file are irrelevant,
+     * and nullability (required vs optional) is ignored.
+     *
+     * @param  fileSchema  the schema read from a Parquet file
+     * @param  tableSchema the Sleeper table schema
+     * @return             true if the file can be ingested into a table with this schema
+     */
+    public static boolean isFileSchemaCompatibleWithTable(MessageType fileSchema, Schema tableSchema) {
+        for (Type expectedField : getSchema(tableSchema).getFields()) {
+            if (!fileSchema.containsField(expectedField.getName())) {
+                return false;
+            }
+            if (!typesMatchIgnoringNullability(fileSchema.getType(expectedField.getName()), expectedField)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Compares two Parquet types by name and structure, ignoring repetition (required vs optional) at
+    // every level, so nullability differences don't make a file incompatible. Recurses into groups for
+    // map/list value fields.
+    private static boolean typesMatchIgnoringNullability(Type actual, Type expected) {
+        if (!actual.getName().equals(expected.getName())) {
+            return false;
+        }
+        if (!Objects.equals(actual.getLogicalTypeAnnotation(), expected.getLogicalTypeAnnotation())) {
+            return false;
+        }
+        if (actual.isPrimitive() != expected.isPrimitive()) {
+            return false;
+        }
+        if (actual.isPrimitive()) {
+            PrimitiveType actualPrimitive = actual.asPrimitiveType();
+            PrimitiveType expectedPrimitive = expected.asPrimitiveType();
+            return actualPrimitive.getPrimitiveTypeName() == expectedPrimitive.getPrimitiveTypeName()
+                    && actualPrimitive.getTypeLength() == expectedPrimitive.getTypeLength();
+        }
+        GroupType actualGroup = actual.asGroupType();
+        GroupType expectedGroup = expected.asGroupType();
+        if (actualGroup.getFieldCount() != expectedGroup.getFieldCount()) {
+            return false;
+        }
+        for (int i = 0; i < expectedGroup.getFieldCount(); i++) {
+            if (!typesMatchIgnoringNullability(actualGroup.getType(i), expectedGroup.getType(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static MessageType getSchema(Schema schema) {
         List<Field> types = schema.getAllFields();
         List<org.apache.parquet.schema.Type> primitiveTypes = new ArrayList<>();
         for (Field field : types) {

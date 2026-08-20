@@ -88,6 +88,25 @@ export function formatCount(value: number | null): string {
 	return Math.round(value).toLocaleString()
 }
 
+export function formatCountCompact(value: number | null): string {
+	if (value === null || value === undefined) return '—'
+	if (!Number.isFinite(value)) return '—'
+	const rounded = Math.round(value)
+	const abs = Math.abs(rounded)
+	if (abs < 1000) return rounded.toLocaleString()
+	const units = [
+		{ threshold: 1e12, suffix: 'T' },
+		{ threshold: 1e9, suffix: 'B' },
+		{ threshold: 1e6, suffix: 'M' },
+		{ threshold: 1e3, suffix: 'K' },
+	]
+	const unit = units.find((u) => abs >= u.threshold)
+	if (!unit) return rounded.toLocaleString()
+	const scaled = rounded / unit.threshold
+	const decimals = Math.abs(scaled) < 10 ? 1 : 0
+	return `${scaled.toFixed(decimals).replace(/\.0$/, '')}${unit.suffix}`
+}
+
 export function formatByKind(kind: MetricFormatKind): (value: number | null) => string {
 	return kind === 'bytes' ? formatBytes : formatCount
 }

@@ -108,6 +108,11 @@
             <groupId>io.quarkiverse.amazonservices</groupId>
             <artifactId>quarkus-amazon-cloudwatch</artifactId>
         </dependency>
+        <!-- AWS SQS -->
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-sqs</artifactId>
+        </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>url-connection-client</artifactId>
@@ -127,6 +132,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-batcher-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 

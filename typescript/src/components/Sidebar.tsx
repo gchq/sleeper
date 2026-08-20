@@ -1,6 +1,6 @@
 import type { ChangeEvent, MouseEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { NavLink, useMatch, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import type { InstanceFeatures } from '../contexts/InstanceContext'
 import { useInstance } from '../contexts/InstanceContext'
 import './Sidebar.css'
@@ -38,6 +38,7 @@ function readLastTable(): string | null {
 
 export default function Sidebar() {
 	const navigate = useNavigate()
+	const location = useLocation()
 	const [collapsed, setCollapsed] = useState<boolean>(readCollapsed)
 	const { tables, loading, error, version, instanceId, features } = useInstance()
 
@@ -50,6 +51,7 @@ export default function Sidebar() {
 		try {
 			window.localStorage.setItem(COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
 		} catch {
+			// Ignore localStorage failures (e.g. private mode or quota exceeded).
 		}
 	}, [collapsed])
 
@@ -59,6 +61,7 @@ export default function Sidebar() {
 		try {
 			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, routeTableId)
 		} catch {
+			// Ignore localStorage failures (e.g. private mode or quota exceeded).
 		}
 	}, [routeTableId, lastTableId])
 
@@ -69,6 +72,7 @@ export default function Sidebar() {
 		try {
 			window.localStorage.removeItem(LAST_TABLE_STORAGE_KEY)
 		} catch {
+			// Ignore localStorage failures (e.g. private mode or quota exceeded).
 		}
 	}, [tables, lastTableId])
 
@@ -76,13 +80,14 @@ export default function Sidebar() {
 		const id = e.target.value
 		if (!id) return
 		if (tablePageMatch) {
-			return navigate(`/tables/${encodeURIComponent(id)}/${tablePageMatch.params.tablePage}`)
+			return navigate(`/tables/${encodeURIComponent(id)}/${tablePageMatch.params.tablePage}${location.search}`)
 		}
 
 		setLastTableId(id)
 		try {
 			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, id)
 		} catch {
+			// Ignore localStorage failures (e.g. private mode or quota exceeded).
 		}
 	}
 

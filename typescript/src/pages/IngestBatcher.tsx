@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Title from '../components/Title'
+import IngestFileWizard from '../components/IngestFileWizard'
+import ReloadButton from '../components/ReloadButton'
 import { useApi } from '../hooks/useApi'
 import { useSelectedTable } from '../hooks/useSelectedTable'
 import { formatBytes } from '../lib/dataMetrics'
@@ -119,12 +121,13 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 	const limit = clampLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT))
 
 	const [pathInput, setPathInput] = useState(pathFilter)
+	const [ingestOpen, setIngestOpen] = useState(false)
 
 	const query = new URLSearchParams({ mode, limit: String(limit) })
 	if (pathFilter) query.set('path', pathFilter)
 	if (table?.tableUniqueId) query.set('tableId', table.tableUniqueId)
 
-	const { data, loading, error } = useApi<BatcherFilesResponse>('/ingest-batcher/files?' + query)
+	const { data, loading, error, reload, nextReloadAt } = useApi<BatcherFilesResponse>('/ingest-batcher/files?' + query)
 	const files = data?.files ?? []
 	const hasMore = data?.hasMore ?? false
 
@@ -201,7 +204,20 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 						onChange={(e) => setPathInput(e.target.value)}
 						aria-label="Filter by file path"
 					/>
+					<ReloadButton onReload={reload} loading={loading} nextReloadAt={nextReloadAt} />
+					<button type="button" className="btn btn-primary batcher-ingest-file" onClick={() => setIngestOpen(true)}>
+						Ingest File
+					</button>
 				</div>
+
+				{ingestOpen && (
+					<IngestFileWizard
+						onClose={() => setIngestOpen(false)}
+						onSubmitted={reload}
+						defaultMethod="ingest_batcher"
+						presetTableId={table?.tableUniqueId}
+					/>
+				)}
 
 				{mode === 'pending' && <BatchInfoBanner table={table} />}
 

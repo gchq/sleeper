@@ -6,6 +6,8 @@ interface UseApiResult<T> {
 	loading: boolean
 	error: string | null
 	reload: () => void
+	refreshInterval: number
+	nextReloadAt: number | null
 }
 
 export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: number): UseApiResult<T> {
@@ -21,6 +23,7 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 	const [data, setData] = useState<T | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [nextReloadAt, setNextReloadAt] = useState<number | null>(null)
 	const controllerRef = useRef<AbortController | null>(null)
 
 	const load = useCallback(() => {
@@ -29,6 +32,7 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 		const controller = new AbortController()
 		controllerRef.current = controller
 
+		setNextReloadAt(refreshInterval > 0 ? Date.now() + refreshInterval * 1000 : null)
 		setLoading(true)
 		const signal = AbortSignal.any([
 			controller.signal,
@@ -55,7 +59,7 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 					setLoading(false)
 				}
 			})
-	}, [url, resolvedTimeout])
+	}, [url, resolvedTimeout, refreshInterval])
 
 	useEffect(() => {
 		setData(null)
@@ -71,5 +75,5 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 		}
 	}, [load, refreshInterval])
 
-	return { data, loading, error, reload: load }
+	return { data, loading, error, reload: load, refreshInterval, nextReloadAt }
 }

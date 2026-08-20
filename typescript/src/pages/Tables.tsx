@@ -4,7 +4,7 @@ import Sparkline, { type SparklinePoint } from '../components/Sparkline'
 import Title from '../components/Title'
 import { useApi } from '../hooks/useApi'
 import { useInstance } from '../contexts/InstanceContext'
-import { formatCount, METRIC_COLORS } from '../lib/dataMetrics'
+import { formatCount, formatCountCompact, METRIC_COLORS } from '../lib/dataMetrics'
 import CreateTableWizard from './CreateTableWizard'
 import './Tables.css'
 
@@ -48,7 +48,9 @@ function RowCountCell({
 }) {
 	return (
 		<div className="tables-rows">
-			<span className="tables-rows-value">{formatCount(value)}</span>
+			<span className="tables-rows-value" title={value !== null ? formatCount(value) : undefined}>
+				{formatCountCompact(value)}
+			</span>
 			{loading ? (
 				<div className="sparkline sparkline-loading" aria-hidden="true" />
 			) : (
