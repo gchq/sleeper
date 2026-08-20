@@ -488,7 +488,8 @@ class BulkImportJobDriverIT {
                 .valueFields(
                         new Field("value1", new StringType()),
                         new Field("value2", new ListType(new IntType())),
-                        new Field("value3", new MapType(new StringType(), new LongType())))
+                        new Field("value3", new MapType(new StringType(), new LongType())),
+                        new Field("value4", new ByteArrayType()))
                 .build();
     }
 
@@ -526,6 +527,7 @@ class BulkImportJobDriverIT {
             Map<String, Long> map = new HashMap<>();
             map.put("A", 1L);
             row.put("value3", map);
+            row.put("value4", ("" + i).getBytes(StandardCharsets.UTF_8));
             rows.add(row);
             // Add row again but with the sort field set to a different value
             Row row2 = new Row(row);
@@ -547,6 +549,7 @@ class BulkImportJobDriverIT {
             Map<String, Long> map = new HashMap<>();
             map.put("A", 1L);
             row.put("value3", map);
+            row.put("value4", ("" + i).getBytes(StandardCharsets.UTF_8));
             rows.add(row);
         }
         Collections.shuffle(rows);
@@ -564,6 +567,7 @@ class BulkImportJobDriverIT {
             Map<String, Long> map = new HashMap<>();
             map.put("A", 1L);
             row.put("value3", map);
+            row.put("value4", ("" + i).getBytes(StandardCharsets.UTF_8));
             rows.add(row);
             // Add row again but with the sort field set to a different value
             Row row2 = new Row(row);

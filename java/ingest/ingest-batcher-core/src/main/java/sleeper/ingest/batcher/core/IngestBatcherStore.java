@@ -23,6 +23,8 @@ public interface IngestBatcherStore {
 
     List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob);
 
+    void unassignFiles(String jobId, List<IngestBatcherTrackedFile> filesInJob);
+
     List<IngestBatcherTrackedFile> getAllFilesNewestFirst();
 
     List<IngestBatcherTrackedFile> getPendingFilesOldestFirst();

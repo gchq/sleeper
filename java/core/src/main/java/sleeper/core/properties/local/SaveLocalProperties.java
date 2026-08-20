@@ -18,6 +18,7 @@ package sleeper.core.properties.local;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.util.FilesUtil;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -35,6 +36,22 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 public class SaveLocalProperties {
 
     private SaveLocalProperties() {
+    }
+
+    /**
+     * Creates a given directory and saves instance and table properties to the given directory.
+     *
+     * @param  directory             the directory
+     * @param  instanceProperties    the instance properties
+     * @param  tablePropertiesStream the table properties
+     * @throws IOException           if we could not write to the file system
+     */
+    public static void createDirectoryAndSaveProperties(
+            Path directory, InstanceProperties instanceProperties,
+            Stream<TableProperties> tablePropertiesStream) throws IOException {
+        Files.createDirectories(directory);
+        FilesUtil.clearDirectory(directory);
+        saveToDirectory(directory, instanceProperties, tablePropertiesStream);
     }
 
     /**
