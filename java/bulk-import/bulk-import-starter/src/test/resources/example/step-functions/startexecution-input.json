@@ -32,6 +32,8 @@
     "--conf",
     "spark.executor.memoryOverhead=1g",
     "--conf",
+    "spark.executorEnv.JAVA_HOME=/opt/java/openjdk",
+    "--conf",
     "spark.hadoop.fs.s3a.aws.credentials.provider=software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider",
     "--conf",
     "spark.hadoop.fs.s3a.block.size=32M",

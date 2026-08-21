@@ -49,6 +49,31 @@ public class DeployInstanceRequest {
         return cdkCommand;
     }
 
+    @Override
+    public String toString() {
+        return "DeployInstanceRequest{instanceConfig=" + instanceConfig + ", cdkCommand=" + cdkCommand + ", cdkApp=" + cdkApp + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DeployInstanceRequest instanceRequest = (DeployInstanceRequest) o;
+
+        return Objects.equals(instanceConfig, instanceRequest.instanceConfig) &&
+                Objects.equals(cdkCommand, instanceRequest.cdkCommand) &&
+                Objects.equals(cdkApp, instanceRequest.cdkApp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(instanceConfig, cdkCommand, cdkApp);
+    }
+
     public static class Builder {
         private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
