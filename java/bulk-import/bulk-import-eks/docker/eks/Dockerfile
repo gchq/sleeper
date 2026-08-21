@@ -27,13 +27,9 @@ USER spark
 COPY ./spark/* /opt/spark/jars
 COPY ./bulk-import-runner.jar /opt/spark/workdir
 
-#RUN mkdir -p /opt/spark/workdir && chown hadoop:hadoop /opt/spark/workdir
-#COPY --chown=hadoop:hadoop ./bulk-import-runner.jar /opt/spark/workdir/
-
 USER root
 COPY ./sleeper-entrypoint.sh /opt/sleeper-entrypoint.sh
 RUN chmod +x /opt/sleeper-entrypoint.sh
 USER spark
 
-#USER hadoop:hadoop
 ENTRYPOINT ["/opt/sleeper-entrypoint.sh"]
