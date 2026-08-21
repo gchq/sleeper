@@ -44,16 +44,6 @@ public class ListTablesReport {
         REPORTERS.put("JSON", new JsonListTablesReporter());
     }
 
-    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
-            .positionalArguments(List.of("instance-id"))
-            .options(List.of(CommandOption.longOption("report-type")))
-            .helpSummary("" +
-                    "Creates a report listing all the tables within a Sleeper instance.\n" +
-                    "\n" +
-                    "--report-type <type>\n" +
-                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.")
-            .build();
-
     private final SleeperClient client;
     private final ListTablesReporter reporter;
 
@@ -76,6 +66,16 @@ public class ListTablesReport {
             new ListTablesReport(client, REPORTERS.get(arguments.reportType())).run();
         }
     }
+
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id"))
+            .options(List.of(CommandOption.longOption("report-type")))
+            .helpSummary("" +
+                    "Creates a report listing all the tables within a Sleeper instance.\n" +
+                    "\n" +
+                    "--report-type <type>\n" +
+                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.")
+            .build();
 
     /**
      * Reads the arguments from the command line.
