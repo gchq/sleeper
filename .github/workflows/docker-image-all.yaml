@@ -10,6 +10,7 @@ jobs:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: ingest
+      mavenOptions: -DskipRust
   bulk-import-runner:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
