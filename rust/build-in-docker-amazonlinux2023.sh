@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Copyright 2022-2026 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -ex
+unset CDPATH
+
+PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+PLATFORM=$1
+shift
+if [ "$PLATFORM" = "x86_64" ]; then
+  CARGO_TARGET="x86_64-unknown-linux-gnu"
+elif [ "$PLATFORM" = "aarch64" ]; then
+  CARGO_TARGET="aarch64-unknown-linux-gnu"
+else
+  echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
+  exit 1
+fi
+
+if [[ -z $1 ]]; then
+  BUILD_COMMAND=(cargo build --target ${CARGO_TARGET} --release --package sleeper_df)
+else
+  BUILD_COMMAND=("$@")
+fi
+
+if [ "$IN_CLI_CONTAINER" = "true" ]; then
+  PATH_IN_MOUNT="${PROJECT_DIR#$CONTAINER_MOUNT_PATH}"
+  MOUNT_DIR="$HOST_MOUNT_PATH/$PATH_IN_MOUNT"
+else
+  MOUNT_DIR="$PROJECT_DIR"
+fi
+
+RUN_PARAMS=()
+if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
+  RUN_PARAMS+=(-it)
+fi
+RUN_PARAMS+=(
+  --rm
+  -v "$MOUNT_DIR":/workspace
+  -w /workspace/rust
+  -e SCCACHE_ERROR_LOG
+  -e SCCACHE_LOG
+  -e SSCACHE_CACHE_SIZE
+  -e SCCACHE_GHA_ENABLED
+  -e ACTIONS_CACHE_URL
+  -e ACTIONS_RESULTS_URL
+  -e ACTIONS_RUNTIME_TOKEN
+  -e ACTIONS_CACHE_SERVICE_V2
+)
+
+# If the caller set EXTRA_CARGO_CONFIG (e.g. to point cargo at an internal crates.io
+# mirror), build a throwaway CARGO_HOME containing the project's existing
+# .cargo/config.toml plus the extra snippet appended. We do this in a separate
+# directory rather than editing the checked-in config so the working tree stays
+# clean and the mirror settings don't leak into other builds.
+#
+# Assumes EXTRA_CARGO_CONFIG holds valid TOML, possibly with \n escapes — printf %b
+# interprets them so callers can pass multi-line config as a single env var.
+# The ${VAR:-} form lets `set -u` callers run without tripping on an unset var,
+# and `: > file` truncates/creates the file when no base config exists to copy.
+if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
+  ALT_CARGO_HOME="$PROJECT_DIR/rust/.cargo-home-mirror"
+  mkdir -p "$ALT_CARGO_HOME"
+  if [ -f "$PROJECT_DIR/rust/.cargo/config.toml" ]; then
+    cp "$PROJECT_DIR/rust/.cargo/config.toml" "$ALT_CARGO_HOME/config.toml"
+  else
+    : > "$ALT_CARGO_HOME/config.toml"
+  fi
+  printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
+  RUN_PARAMS+=(
+    -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
+    -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
+  )
+fi
+
+RUN_PARAMS+=("sleeper-rust-builder-al2023:current")
+
+# Skip pulling image if environment variable is set and non-empty
+if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
+  echo "Skipping Docker image pull"
+else
+  docker pull "${BUILD_IMAGE}"
+fi
+
+docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"
