@@ -100,7 +100,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     }
 
     @Test
-    void shouldLeaveFileAssignedIfFailedToSendJob() {
+    void shouldUnassignFileIfFailedToSendJob() {
         // Given
         tableProperties.set(TABLE_ID, "fail-table");
         IngestBatcherTrackedFile request = addFileToStore(builder -> builder
@@ -121,9 +121,8 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
         batchFilesWithJobIds(List.of("fail-job-id"), builder -> builder.queueClient(queueClient));
 
         // Then
-        assertThat(store.getPendingFilesOldestFirst()).isEmpty();
-        assertThat(store.getAllFilesNewestFirst())
-                .containsExactly(onJob("fail-job-id", request));
+        assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
+        assertThat(store.getAllFilesNewestFirst()).containsExactly(request);
         verify(queueClient).send("fail-ingest-queue-url", expectedJob);
     }
 }

@@ -49,6 +49,15 @@ public class InMemoryIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
+    public void unassignFiles(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
+        filesInJob.forEach(file -> {
+            IngestBatcherTrackedFile fileWithJob = file.toBuilder().jobId(jobId).build();
+            requests.remove(keyFor(fileWithJob));
+            requests.put(keyFor(file), file);
+        });
+    }
+
+    @Override
     public List<IngestBatcherTrackedFile> getAllFilesNewestFirst() {
         return requests.values().stream()
                 .sorted(Comparator.comparing(IngestBatcherTrackedFile::getReceivedTime).reversed())

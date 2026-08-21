@@ -128,17 +128,17 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     }
 
     @Test
-    void shouldConsumeFilesAndRequireResubmissionIfQueueIsNotConfigured() {
+    void shouldLeaveFilesPendingIfQueueIsNotConfigured() {
         instanceProperties.unset(INGEST_JOB_QUEUE_URL);
         tableProperties.setEnum(INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST);
-        addFileToStore("test-bucket/ingest.parquet");
+        IngestBatcherTrackedFile request = addFileToStore("test-bucket/ingest.parquet");
 
         // When
         batchFilesWithJobIds("test-job");
 
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEmpty();
-        assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+        assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
     }
 
     @Test

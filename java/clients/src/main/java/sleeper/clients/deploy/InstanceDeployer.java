@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.query.exception;
+package sleeper.clients.deploy;
 
-/**
- * Thrown when an error response is received via the WebSocket API during a query.
- */
-public class WebSocketErrorException extends WebSocketException {
-    public WebSocketErrorException(String errorMessage) {
-        super("Error while running queries: " + errorMessage);
-    }
+import java.io.IOException;
 
-    public WebSocketErrorException(Exception error) {
-        super("Error while running queries", error);
-    }
+public interface InstanceDeployer {
+    void deploy(DeployInstanceRequest request) throws IOException, InterruptedException;
 }
