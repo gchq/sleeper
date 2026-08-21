@@ -91,7 +91,7 @@ RUN_PARAMS+=("sleeper-rust-builder-al2023:current")
 if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
   echo "Skipping Docker image pull"
 else
-  docker pull "${BUILD_IMAGE}"
+  docker pull "sleeper-rust-builder-al2023:current"
 fi
 
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"

@@ -2,9 +2,9 @@ FROM amazonlinux:2023
 # Find architecture of host, e.g. amd64 or arm64
 ARG BUILDARCH
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
-
 # Avoid downloading hosts dnf metadata cache again by symlinking the cache from container into the sysroot
 # matching the host architecture
+
 RUN case "${BUILDARCH}" in \
     "amd64") ln -s /var/cache/dnf /opt/sysroot/x86_64/var/cache ;;\
     "arm64") ln -s /var/cache/dnf /opt/sysroot/aarch64/var/cache ;;\
@@ -76,20 +76,20 @@ ENV CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
     CXX_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang++ \
     CXX_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang++
 
+RUN echo 'alias ll="ls -l"' >> /etc/bashrc
 
 # Configure Rust to use per-target cross-compilation wrappers and lld linker
 # The linker path points to our clang/clang++ wrappers (which inject --target and --sysroot)
 # rustflags adds -fuse-ld=lld only at link time to avoid "unused parameter" errors during C compilation
 RUN mkdir -p /usr/local/.cargo \
     && cat > /usr/local/.cargo/config.toml <<'EOF'
-    [target.aarch64-unknown-linux-gnu]
-    linker = "/usr/local/bin/aarch64-linux-gnu-clang"
-    rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+[target.aarch64-unknown-linux-gnu]
+linker = "/usr/local/bin/aarch64-linux-gnu-clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
-    [target.x86_64-unknown-linux-gnu]
-    linker = "/usr/local/bin/x86_64-linux-gnu-clang"
-    rustflags = ["-C", "link-arg=-fuse-ld=lld"]
-    EOF
+[target.x86_64-unknown-linux-gnu]
+linker = "/usr/local/bin/x86_64-linux-gnu-clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+EOF
 
-RUN echo 'alias ll="ls -l"' >> /etc/bashrc
 WORKDIR /workspace
