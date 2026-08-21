@@ -159,7 +159,7 @@ public class DeployNewInstance {
                 .cdkApp(cdkApp)
                 .build());
 
-        // CDK must complete before AddTableClient runs — it creates the DynamoDB tables
+        // CDK must complete before AddTableClient runs as it creates the DynamoDB tables
         // (transaction log, table index) that AddTableClient writes to.
         // Reload from S3 to get the CDK-defined properties (DynamoDB table names, etc.).
         InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
