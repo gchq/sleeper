@@ -87,7 +87,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
 
-        Path configDir = parameters.getScriptsDirectory().resolve("example");
+        Path configDir = parameters.getScriptsDirectory().resolve("generated");
         try {
             SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig.getInstanceProperties(), deployConfig.getTableProperties().stream());
         } catch (IOException e) {
