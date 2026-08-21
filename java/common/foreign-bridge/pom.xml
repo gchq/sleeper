@@ -165,10 +165,7 @@
         </profile>
         <profile>
             <activation>
-                <property>
-                    <name>rust.skip</name>
-                    <value>true</value>
-                </property>
+                <condition>matches(rust.skip, true)||matches(skipRust, true)</condition>
             </activation>
             <id>rust-skip-all</id>
             <build>
