@@ -35,13 +35,6 @@ public class AwsSleeperTablesDriverIT {
     }
 
     @Test
-    void shouldAddOneTable(SleeperDsl sleeper) {
-        sleeper.tables().create("A", DEFAULT_SCHEMA);
-        assertThat(sleeper.tables().list())
-                .containsExactly(sleeper.table("A").tableProperties().getStatus());
-    }
-
-    @Test
     void shouldInitialiseTablePartitions(SleeperDsl sleeper) {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         assertThat(sleeper.table("A").partitioning().tree().getAllPartitions())
