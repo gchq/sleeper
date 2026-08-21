@@ -119,19 +119,18 @@ public class DeployNewInstanceIT {
                     "my-instance", "test-vpc", "test-subnet",
                     "--config-dir", configDir.toString());
 
-            // Then the combined configuration is derived
-            // And the CDK is invoked pointing to the file and the extra configuration
+            // Then CDK is invoked before AddTableClient runs — tables have no ID in the CDK request
             InstanceProperties expected = new InstanceProperties();
             expected.set(ID, "my-instance");
             expected.set(VPC_ID, "test-vpc");
             expected.set(SUBNETS, "test-subnet");
             expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
-            TableProperties expectedTable = new TableProperties(expected);
-            expectedTable.set(TABLE_ID, tableId("test-table"));
-            expectedTable.set(TABLE_NAME, "test-table");
-            expectedTable.setSchema(createSchemaWithKey("key"));
+            TableProperties expectedTableForCdk = new TableProperties(expected);
+            expectedTableForCdk.set(TABLE_NAME, "test-table");
+            expectedTableForCdk.setSchema(createSchemaWithKey("key"));
+            expectedTableForCdk.set(TABLE_ID, tableId("test-table"));
             assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
-                    .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(expected).tableProperties(expectedTable).build())
+                    .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(expected).tableProperties(expectedTableForCdk).build())
                     .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(configDir).toBuilder()
                             .instanceId("my-instance")
                             .vpcId("test-vpc")
@@ -139,7 +138,17 @@ public class DeployNewInstanceIT {
                             .build())
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
                     .build());
-            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedTable);
+            // AddTableClient runs after CDK and assigns TABLE_ID using the reloaded deployed properties
+            InstanceProperties expectedDeployedProperties = new InstanceProperties();
+            expectedDeployedProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+            expectedDeployedProperties.set(ID, "my-instance");
+            expectedDeployedProperties.set(VPC_ID, "test-vpc");
+            expectedDeployedProperties.set(SUBNETS, "test-subnet");
+            TableProperties expectedCreatedTable = new TableProperties(expectedDeployedProperties);
+            expectedCreatedTable.set(TABLE_ID, tableId("test-table"));
+            expectedCreatedTable.set(TABLE_NAME, "test-table");
+            expectedCreatedTable.setSchema(createSchemaWithKey("key"));
+            assertThat(tablePropertiesStore.streamAllTables()).containsExactly(expectedCreatedTable);
         }
 
         @Test
@@ -206,6 +215,7 @@ public class DeployNewInstanceIT {
         var args = DeployNewInstance.readArguments(CommandArgumentReader.parse(DeployNewInstance.USAGE,
                 Stream.concat(Stream.of("scriptsDir"), Arrays.stream(rawArgs)).toArray(String[]::new)));
         var config = DeployNewInstance.loadConfiguration(args);
+        InstanceProperties deployedProperties = InstanceProperties.copyOf(instanceProperties);
 
         DeployNewInstance.builder()
                 .deployInstance(request -> deployRequests.add(request))
@@ -218,7 +228,12 @@ public class DeployNewInstanceIT {
                         return stateStoreProvider;
                     }
                 })
-                .instancePropertiesLoader(id -> instanceProperties)
+                .instancePropertiesLoader(id -> {
+                    deployedProperties.set(ID, config.getInstanceProperties().get(ID));
+                    deployedProperties.set(VPC_ID, config.getInstanceProperties().get(VPC_ID));
+                    deployedProperties.set(SUBNETS, config.getInstanceProperties().get(SUBNETS));
+                    return deployedProperties;
+                })
                 .expectedInstanceConfiguration(config)
                 .cdkApp(SleeperInternalCdkApp.STANDARD)
                 .propertiesFile(args.propertiesFile())
