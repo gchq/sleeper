@@ -17,6 +17,7 @@ set -ex
 unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+BUILD_IMAGE="sleeper-rust-builder-al2023:current"
 
 PLATFORM=$1
 shift
@@ -46,6 +47,7 @@ RUN_PARAMS=()
 if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
   RUN_PARAMS+=(-it)
 fi
+
 RUN_PARAMS+=(
   --rm
   -v "$MOUNT_DIR":/workspace
@@ -81,17 +83,20 @@ if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
   printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
   RUN_PARAMS+=(
     -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
+    -v sleeper-cargo-registry:/workspace/rust/.cargo-home-mirror/registry
     -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
   )
+else
+  RUN_PARAMS+=(-v sleeper-cargo-registry:/usr/local/.cargo/registry)
 fi
 
-RUN_PARAMS+=("sleeper-rust-builder-al2023:current")
+RUN_PARAMS+=("${BUILD_IMAGE}")
 
 # Skip pulling image if environment variable is set and non-empty
 if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
   echo "Skipping Docker image pull"
 else
-  docker pull "sleeper-rust-builder-al2023:current"
+  docker pull "${BUILD_IMAGE}"
 fi
 
 docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"
