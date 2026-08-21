@@ -47,6 +47,9 @@ public class QueryResultsSQSQueuePoller {
         this.resultsSQSQueueUrl = resultsSQSQueueUrl;
     }
 
+    /**
+     * Polls the SQS results queue until no messages arrive for 15 consecutive polls.
+     */
     public void run() {
         int numConsecutiveNoMessages = 0;
         while (numConsecutiveNoMessages < 15) {

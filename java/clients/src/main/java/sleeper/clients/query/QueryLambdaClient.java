@@ -138,6 +138,11 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         super.runQueries(tableProperties);
     }
 
+    /**
+     * Sends a query to the query SQS queue.
+     *
+     * @param query the query to submit
+     */
     public void submitQuery(Query query) {
         querySender.sendQuery(query.withResultsPublisherConfig(resultsPublisherConfig));
     }

@@ -72,6 +72,11 @@ public abstract class QueryCommandLineClient {
         this.out = out;
     }
 
+    /**
+     * Runs an interactive query session, prompting the user to select a table and enter queries.
+     *
+     * @throws InterruptedException if the thread is interrupted
+     */
     public void run() throws InterruptedException {
         TableProperties tableProperties = getTableProperties();
         init(tableProperties);

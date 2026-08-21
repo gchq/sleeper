@@ -19,7 +19,7 @@ import json
 import logging
 
 from pq import ParquetSerialiser
-from sleeper import SleeperClient
+from sleeper import SleeperClient, enable_logging
 
 
 async def run():
@@ -28,7 +28,6 @@ async def run():
 
     logger.debug("Sending query via web socket")
     rows = await sleeper_client.web_socket_exact_key_query(table_name=args.table, keys=args.keys, query_id=args.queryid, strings_base64_encoded=args.base64_encoded)
-
     file_path = args.outdir + "/" + args.queryid + ".parquet"
     logger.debug(f"Saving resulst to disk at {file_path}")
     with open(file_path, "wb") as file:
@@ -57,10 +56,12 @@ if __name__ == "__main__":
 
     sleeper_client_logger = logging.getLogger("sleeper.client")
     if args.debug:
-        sleeper_client_logger.setLevel(logging.DEBUG)
+        # Enable Sleeper Client logging level
+        enable_logging(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
     else:
-        sleeper_client_logger.setLevel(logging.INFO)
+        # Enable Sleeper Client logging level
+        enable_logging(logging.INFO)
         logger.setLevel(logging.INFO)
 
     asyncio.run(run())

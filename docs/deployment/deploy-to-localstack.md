@@ -40,7 +40,7 @@ Once the instance is deployed, you can launch the admin client to view the insta
 instance, as well as running partition and file status reports.
 
 ```shell
-./scripts/utility/adminClient.sh <instance-id>
+./scripts/utility/instance/adminClient.sh <instance-id>
 ```
 
 ## Standard ingest
@@ -108,9 +108,9 @@ You can view the statistic for jobs and tasks by using the `compactionJobStatusR
 
 ```shell
 # To view all jobs
-./scripts/utility/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
+./scripts/report/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
 # To view all tasks
-./scripts/utility/compactionTaskStatusReport.sh <instance-id> standard -a
+./scripts/report/compactionTaskStatusReport.sh <instance-id> standard -a
 ```
 
 
@@ -121,7 +121,7 @@ To query the data in your Sleeper instance, you can run the following utility sc
 web socket queries do not work against a Sleeper instance deployed against LocalStack.
 
 ```shell
-./scripts/utility/query.sh <instance-id>
+./scripts/utility/query/query.sh <instance-id>
 ```
 
 ## Tear down instance

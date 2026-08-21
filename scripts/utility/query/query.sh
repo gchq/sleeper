@@ -16,15 +16,13 @@
 set -e
 unset CDPATH
 
-if [[ -z $1 ]]; then
-  echo "Usage: $0 <instance-id>"
-  exit 1
-fi
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
   --add-opens java.base/java.nio=ALL-UNNAMED \
-  sleeper.clients.admin.AdminClient "${SCRIPTS_DIR}" "$@"
+  sleeper.clients.query.QueryClient "$@"
