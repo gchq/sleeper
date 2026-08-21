@@ -53,7 +53,7 @@ public class ListTableReportTest {
         void shouldRejectUnknownReportType() {
             assertThatThrownBy(() -> readArguments("fail-instance", "--report-type", "broken-report-type"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessageContaining("Report type not supported: BROKEN-REPORT-TYPE");
+                    .hasMessageContaining("Report type not supported: BROKEN-REPORT-TYPE. Valid types: JSON, STANDARD");
         }
     }
 

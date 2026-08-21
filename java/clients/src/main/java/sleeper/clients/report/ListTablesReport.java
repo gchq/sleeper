@@ -93,7 +93,6 @@ public class ListTablesReport {
 
     /**
      * Holds the arguments for the list tables report command.
-     * Arguments
      *
      * @param instanceId the Sleeper instance ID
      * @param reportType the output format, either STANDARD or JSON

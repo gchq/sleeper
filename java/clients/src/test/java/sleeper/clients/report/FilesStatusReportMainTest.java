@@ -77,7 +77,7 @@ public class FilesStatusReportMainTest {
         void shouldRejectUnknownReportType() {
             assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "unknown"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessageContaining("Report type not supported: UNKNOWN");
+                    .hasMessageContaining("Report type not supported: UNKNOWN. Valid types: CSV, JSON, STANDARD");
         }
     }
 
