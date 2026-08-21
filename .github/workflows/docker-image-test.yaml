@@ -14,6 +14,9 @@ on:
       dockerOptions:
         required: false
         type: string
+      mavenOptions:
+        required: false
+        type: string
       trivyIgnore:
         default: code-style/.trivyignore.yaml
         required: false
@@ -69,7 +72,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode install -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode install -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository ${{ inputs.mavenOptions }}
         working-directory: ./java
       - name: Copy build output
         working-directory: ./scripts/build
