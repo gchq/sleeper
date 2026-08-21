@@ -34,6 +34,9 @@ import java.net.URI;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 
+/**
+ * A WebSocket connection to the Sleeper query WebSocket API, authenticated with AWS IAM.
+ */
 class QueryWebSocketConnection extends WebSocketClient implements QueryWebSocketClient.Connection {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketConnection.class);
 

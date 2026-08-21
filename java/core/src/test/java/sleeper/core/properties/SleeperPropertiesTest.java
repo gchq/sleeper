@@ -19,10 +19,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 import sleeper.core.properties.model.IngestQueue;
 
-import java.io.PrintWriter;
 import java.util.List;
 import java.util.Properties;
 
@@ -517,7 +517,7 @@ class SleeperPropertiesTest {
         }
 
         @Override
-        protected SleeperPropertiesPrettyPrinter<SleeperProperty> getPrettyPrinter(PrintWriter writer) {
+        protected Builder<SleeperProperty> prettyPrinterBuilder() {
             return null;
         }
     }
