@@ -30,7 +30,6 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
-import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
@@ -164,8 +163,7 @@ public class DeployNewInstance {
         // Reload from S3 to get the CDK-defined properties (DynamoDB table names, etc.).
         InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
         for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
-            TableProperties deployedTableProperties = new TableProperties(deployedProperties,
-                    PropertiesUtils.loadProperties(tableProperties.saveAsString()));
+            TableProperties deployedTableProperties = new TableProperties(deployedProperties, tableProperties.getProperties());
             LOGGER.info("Adding table " + deployedTableProperties.getStatus());
             new AddTableClient(deployedTableProperties,
                     storeFactory.createTableStore(deployedProperties),
