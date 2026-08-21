@@ -56,6 +56,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkExportTag = "www.somedocker.com/prefix/bulk-export:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
@@ -67,8 +68,9 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
-                pushImageCommand(expectedBulkImportTag),
+                buildImageCommand(expectedBulkExportTag, "./docker/bulk-export", expectedBaseTag),
+                pushImageCommand(expectedBulkExportTag),
+                buildAndPushMultiplatformImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
                 pushImageCommand(expectedEmrTag));
@@ -87,6 +89,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedBaseTag = "www.somedocker.com/prefix/base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkExportTag = "www.somedocker.com/prefix/bulk-export:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
@@ -96,8 +99,9 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
-                pushImageCommand(expectedBulkImportTag),
+                buildImageCommand(expectedBulkExportTag, "./docker/bulk-export", expectedBaseTag),
+                pushImageCommand(expectedBulkExportTag),
+                buildAndPushMultiplatformImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
                 pushImageCommand(expectedEmrTag));
@@ -186,6 +190,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedSparkBaseTag = "www.somedocker.com/prefix/bulk-import-runner-base:1.0.0";
         String expectedCommitterTag = "www.somedocker.com/prefix/statestore-committer:1.0.0";
         String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkExportTag = "www.somedocker.com/prefix/bulk-export:1.0.0";
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
         String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
@@ -197,10 +202,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedCommitterTag),
                 buildImageCommand(expectedIngestTag, "./docker/ingest", expectedBaseTag),
                 pushImageCommand(expectedIngestTag),
-                buildImageCommand(expectedSparkBaseTag, "./custom/spark-base"),
-                pushImageCommand(expectedSparkBaseTag),
-                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedSparkBaseTag),
-                pushImageCommand(expectedBulkImportTag),
+                buildImageCommand(expectedBulkExportTag, "./docker/bulk-export", expectedBaseTag),
+                pushImageCommand(expectedBulkExportTag),
+                buildAndPushMultiplatformImageCommand(expectedSparkBaseTag, "./custom/spark-base"),
+                buildAndPushMultiplatformImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner", expectedSparkBaseTag),
                 buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction", expectedBaseTag),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless", expectedBaseTag),
                 pushImageCommand(expectedEmrTag));
