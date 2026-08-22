@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.53.1</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.53.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -194,7 +194,7 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.6.0-jre</guava.version>
+        <guava.version>33.7.0-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.83.1</google.grpc.version>
