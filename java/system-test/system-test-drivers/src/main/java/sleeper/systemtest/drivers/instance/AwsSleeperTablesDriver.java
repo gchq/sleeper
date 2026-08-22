@@ -61,7 +61,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         this.s3 = clients.getS3();
         this.dynamoDB = clients.getDynamo();
         this.credentialsProvider = clients.getCredentialsProvider();
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = clients.getHttpClient();
     }
 
     @Override
